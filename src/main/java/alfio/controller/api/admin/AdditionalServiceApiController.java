@@ -78,7 +78,7 @@ public class AdditionalServiceApiController {
 
     @RequestMapping(value = "/event/{eventId}/additional-services", method = RequestMethod.GET)
     public List<EventModification.AdditionalService> loadAll(@PathVariable("eventId") int eventId) {
-        return optionally(() -> eventRepository.findById(eventId))
+        return eventRepository.findOptionalById(eventId)
             .map(event -> additionalServiceRepository.loadAllForEvent(eventId)
                             .stream()
                             .map(as -> EventModification.AdditionalService.from(as)//.withAdditionalFields() TODO to be implemented
@@ -95,7 +95,7 @@ public class AdditionalServiceApiController {
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
         Validate.isTrue(additionalServiceId == additionalService.getId(), "wrong input");
-        return optionally(() -> eventRepository.findById(eventId))
+        return eventRepository.findOptionalById(eventId)
             .map(event -> {
                 int result = additionalServiceRepository.update(additionalServiceId, additionalService.isFixPrice(),
                     additionalService.getOrdinal(), additionalService.getAvailableQuantity(), additionalService.getMaxQtyPerOrder(), additionalService.getInception().toZonedDateTime(event.getZoneId()),
@@ -118,7 +118,7 @@ public class AdditionalServiceApiController {
     public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable("eventId") int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
-        return optionally(() -> eventRepository.findById(eventId))
+        return eventRepository.findOptionalById(eventId)
             .map(event -> {
                 AffectedRowCountAndKey<Integer> result = additionalServiceRepository.insert(eventId,
                     Optional.ofNullable(additionalService.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
@@ -147,7 +147,7 @@ public class AdditionalServiceApiController {
     @RequestMapping(value = "/event/{eventId}/additional-services/{additionalServiceId}", method = RequestMethod.DELETE)
     @Transactional
     public ResponseEntity<String> remove(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, Principal principal) {
-        return optionally(() -> eventRepository.findById(eventId))
+        return eventRepository.findOptionalById(eventId)
             .map(event -> optionally(() -> additionalServiceRepository.getById(additionalServiceId, eventId))
                 .map(as -> {
                     log.debug("{} is deleting additional service #{}", principal.getName(), additionalServiceId);

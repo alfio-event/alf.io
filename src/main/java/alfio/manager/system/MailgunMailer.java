@@ -18,9 +18,9 @@ package alfio.manager.system;
 
 import alfio.model.Event;
 import alfio.model.system.Configuration;
-import com.squareup.okhttp.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import okhttp3.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -40,13 +40,13 @@ class MailgunMailer implements Mailer {
 
     
     private RequestBody prepareBody(Event event, String to, List<String> cc, String subject, String text,
-            Optional<String> html, Attachment... attachments)
+                                    Optional<String> html, Attachment... attachments)
             throws IOException {
 
         String from = event.getDisplayName() + " <" + configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_FROM)) +">";
 
         if (ArrayUtils.isEmpty(attachments)) {
-            FormEncodingBuilder builder = new FormEncodingBuilder()
+            FormBody.Builder builder = new FormBody.Builder()
                     .add("from", from)
                     .add("to", to)
                     .add("subject", subject)
@@ -63,9 +63,8 @@ class MailgunMailer implements Mailer {
             return builder.build();
 
         } else {
-            // https://github.com/square/okhttp/blob/parent-2.1.0/samples/guide/src/main/java/com/squareup/okhttp/recipes/PostMultipart.java
-            MultipartBuilder multipartBuilder = new MultipartBuilder()
-                    .type(MultipartBuilder.FORM);
+            MultipartBody.Builder multipartBuilder = new MultipartBody.Builder()
+                    .setType(MultipartBody.FORM);
 
             multipartBuilder.addFormDataPart("from", from)
                     .addFormDataPart("to", to)
@@ -109,6 +108,9 @@ class MailgunMailer implements Mailer {
             Response resp = client.newCall(request).execute();
             if (!resp.isSuccessful()) {
                 log.warn("sending email was not successful:" + resp);
+            } else {
+                //close response body, in order to prevent leaks
+                resp.body().close();
             }
         } catch (IOException e) {
             log.warn("error while sending email", e);

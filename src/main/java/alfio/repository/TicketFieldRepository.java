@@ -17,7 +17,10 @@
 package alfio.repository;
 
 import alfio.config.support.PlatformProvider;
-import alfio.model.*;
+import alfio.model.FieldNameAndValue;
+import alfio.model.TicketFieldConfiguration;
+import alfio.model.TicketFieldDescription;
+import alfio.model.TicketFieldValue;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.*;
 import org.apache.commons.lang3.StringUtils;
@@ -72,9 +75,7 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("select field_name, field_value from ticket_field_value inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where ticket_id_fk = :ticketId")
     List<FieldNameAndValue> findNameAndValue(@Bind("ticketId") int ticketId);
 
-    default void updateOrInsert(Map<String, List<String>> values, Ticket ticket, Event event) {
-        int ticketId = ticket.getId();
-        int eventId = event.getId();
+    default void updateOrInsert(Map<String, List<String>> values, int ticketId, int eventId) {
         Map<String, TicketFieldValue> toUpdate = findAllByTicketIdGroupedByName(ticketId);
         values = Optional.ofNullable(values).orElseGet(Collections::emptyMap);
         Map<String, Integer> fieldNameToId = findAdditionalFieldsForEvent(eventId).stream().collect(Collectors.toMap(TicketFieldConfiguration::getName, TicketFieldConfiguration::getId));

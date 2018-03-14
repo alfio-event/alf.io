@@ -1,26 +1,19 @@
 <div class="page-header">
-    <h1>{{event.displayName}} 
-    	<a class="btn btn-default visible-xs-inline visible-sm-inline" data-ng-if="isInternal(event)" data-ui-sref="events.single.configuration({eventName: event.shortName})"><i class="fa fa-wrench"></i><span class="sr-only"> settings</span></a>
-    	<button type="button" ng-click="openDeleteWarning(event)" class="btn btn-danger visible-xs-inline visible-sm-inline" ng-if="isInternal(event)"><i class="fa fa-trash"></i> Delete</button>
-	</h1>
+    <h1>{{event.displayName}}</h1>
     <h4 class="text-muted">{{event.shortDescription}}</h4>
-    <div data-ng-if="isInternal(event)" class="visible-xs visible-sm">
-        <span><button class="btn btn-primary" type="button" data-ng-click="openFieldSelectionModal()" ><i class="fa fa-download"></i> download attendees' data</button></span>
-        <span><a class="btn btn-warning" data-ui-sref="events.single.show-resources({eventName: event.shortName})"><i class="fa fa-file-text-o" aria-hidden="true"></i> show/edit email and ticket templates</a></span>
-        <span><a class="btn btn-warning" data-ui-sref="events.single.compose-custom-message({eventName: event.shortName})"><i class="fa fa-envelope"></i> send a message to attendees</a></span>
-        <waiting-queue-display-counter data-event="event"></waiting-queue-display-counter>
-        <span><a class="btn btn-warning" data-ng-click="downloadSponsorsScan()" ><i class="fa fa-download"></i> download sponsors scan</a></span>
-        <span><a class="btn btn-default" data-ui-sref="events.single.email-log({eventName:event.shortName})"><i class="fa fa-paper-plane-o"></i> view sent messages</a></span>
-        <span><a class="btn btn-default" data-ui-sref="events.single.plugin-log({eventName:event.shortName})"><i class="fa fa-plug"></i> view Plugins log</a></span>
-    </div>
 </div>
 <div class="alert alert-warning" data-ng-if="event.status !== 'PUBLIC'">
-    <h4><i class="fa fa-eye-slash"></i> this event has not yet been published. Therefore only people who know the direct URL can see it. <a class="btn btn-warning" ng-click="activateEvent(event.id)">Publish now</a></h4>
+    <h4>
+        <i class="fa fa-eye-slash"></i>
+        this event has not yet been published. Therefore only people who know the direct URL
+        (<a ng-href="{{eventPublicURL}}" target="_blank">{{eventPublicURL}}</a>) can see it.</h4>
+
+        <a class="btn btn-warning" ng-click="activateEvent(event.id)">Publish now</a>
 </div>
 <div uib-alert type="success" close="closeActivationAlert()" data-ng-if="eventHasBeenActivated">
     <h4><i class="fa fa-info-circle"></i> Congratulations, this event has been successfully published! <a class="btn btn-default" ng-click="deactivateEvent(event.id)">Undo</a></h4>
 </div>
-<event-overview data-event="event"></event-overview>
+<event-overview data-event="event" ng-if="event.displayStatistics"></event-overview>
 
 <div class="panel panel-default">
     <div class="panel-heading">
@@ -33,11 +26,11 @@
     </div>
     <div class="panel-body">
         <div class="row">
-            <div class="col-xs-1 hide-overflowing-text">
+            <div class="col-md-1 hide-overflowing-text hidden-xs hidden-sm">
                 <img data-ng-if="event.fileBlobIdIsPresent" data-ng-src="/file/{{event.fileBlobId}}" class="img-responsive event-logo">
                 <a href="{{event.imageUrl}}" data-ng-if="!event.fileBlobIdIsPresent" target="_blank">{{event.imageUrl}}</a>
             </div>
-            <div class="col-xs-6">
+            <div class="col-md-6 col-xs-12">
                 <dl class="dl-horizontal">
                     <dt>Public URL</dt>
                     <dd><a ng-href="{{eventPublicURL}}" target="_blank">{{eventPublicURL}}</a></dd>
@@ -52,7 +45,9 @@
                     <dt>Location</dt>
                     <dd><a ng-href="{{event.geolocation.mapUrl}}" target="_blank">{{event.location}}</a></dd>
                     <dt data-ng-if="isInternal(event)">Languages</dt>
-                    <dd data-ng-if="isInternal(event)"><span data-ng-repeat="cl in event.contentLanguages">{{cl.displayLanguage}}<span data-ng-if="!$last">, </span></span></dd>
+                    <dd data-ng-if="isInternal(event)">
+                        <ul class="list-inline"><li data-ng-repeat="cl in event.contentLanguages"><img ng-src="../resources/images/flags/{{cl.flag}}.gif" class="img-center"> {{cl.displayLanguage}}</li></ul>
+                    </dd>
                     <dt>Start Date/Time</dt>
                     <dd>{{event.formattedBegin | formatDate}}</dd>
                     <dt>End Date/Time</dt>
@@ -61,7 +56,7 @@
                     <dd>{{event.timeZone}}</dd>
                 </dl>
             </div>
-            <div class="col-xs-5">
+            <div class="col-md-5 hidden-xs hidden-sm">
                 <div data-ng-repeat="cl in event.contentLanguages">
                     <p class="text-muted"><display-commonmark-preview text="event.description[cl.locale]"></display-commonmark-preview> {{event.description[cl.locale]}}</p>
                 </div>

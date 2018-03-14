@@ -17,7 +17,6 @@
 package alfio.model.modification;
 
 import alfio.model.TicketCategory;
-import alfio.model.TicketCategoryDescription;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -25,10 +24,8 @@ import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Getter
 public class TicketCategoryModification {
@@ -43,6 +40,13 @@ public class TicketCategoryModification {
     private final boolean tokenGenerationRequested;
     private final String dateString;
     private final boolean bounded;
+    private final String code;
+
+    private final DateTimeModification validCheckInFrom;
+    private final DateTimeModification validCheckInTo;
+
+    private final DateTimeModification ticketValidityStart;
+    private final DateTimeModification ticketValidityEnd;
 
     @JsonCreator
     public TicketCategoryModification(@JsonProperty("id") Integer id,
@@ -54,7 +58,12 @@ public class TicketCategoryModification {
                                       @JsonProperty("price") BigDecimal price,
                                       @JsonProperty("tokenGenerationRequested") boolean tokenGenerationRequested,
                                       @JsonProperty("dateString") String dateString,
-                                      @JsonProperty("bounded") boolean bounded) {
+                                      @JsonProperty("bounded") boolean bounded,
+                                      @JsonProperty("code") String code,
+                                      @JsonProperty("validCheckInFrom") DateTimeModification validCheckInFrom,
+                                      @JsonProperty("validCheckInTo") DateTimeModification validCheckInTo,
+                                      @JsonProperty("ticketValidityStart") DateTimeModification ticketValidityStart,
+                                      @JsonProperty("ticketValidityEnd") DateTimeModification ticketValidityEnd) {
         this.id = id;
         this.name = name;
         this.maxTickets = maxTickets;
@@ -65,20 +74,29 @@ public class TicketCategoryModification {
         this.tokenGenerationRequested = tokenGenerationRequested;
         this.dateString = dateString;
         this.bounded = bounded;
+        this.code = code;
+        this.validCheckInFrom = validCheckInFrom;
+        this.validCheckInTo = validCheckInTo;
+        this.ticketValidityStart = ticketValidityStart;
+        this.ticketValidityEnd = ticketValidityEnd;
     }
 
     public int getPriceInCents() {
         return Optional.ofNullable(price).map(MonetaryUtil::unitToCents).orElse(0);
     }
 
-    public static TicketCategoryModification fromTicketCategory(TicketCategory tc, List<TicketCategoryDescription> ticketCategoryDescriptions, ZoneId zoneId) {
+    public static TicketCategoryModification fromTicketCategory(TicketCategory tc, Map<String, String> ticketCategoryDescriptions, ZoneId zoneId) {
         return new TicketCategoryModification(tc.getId(),
                 tc.getName(),
                 tc.getMaxTickets(),
                 DateTimeModification.fromZonedDateTime(tc.getInception(zoneId)),
                 DateTimeModification.fromZonedDateTime(tc.getExpiration(zoneId)),
-                ticketCategoryDescriptions.stream().collect(Collectors.toMap(TicketCategoryDescription::getLocale, TicketCategoryDescription::getDescription)),
+                ticketCategoryDescriptions,
                 tc.getPrice(),
-                tc.isAccessRestricted(), "", tc.isBounded());
+                tc.isAccessRestricted(), "", tc.isBounded(), tc.getCode(),
+                DateTimeModification.fromZonedDateTime(tc.getValidCheckInFrom(zoneId)),
+                DateTimeModification.fromZonedDateTime(tc.getValidCheckInTo(zoneId)),
+                DateTimeModification.fromZonedDateTime(tc.getTicketValidityStart()),
+                DateTimeModification.fromZonedDateTime(tc.getTicketValidityEnd()));
     }
 }

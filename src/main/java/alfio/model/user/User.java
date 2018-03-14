@@ -19,8 +19,14 @@ package alfio.model.user;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
+import java.io.Serializable;
+
 @Getter
-public class User {
+public class User implements Serializable {
+
+    public enum Type {
+        INTERNAL, DEMO
+    }
 
     private final int id;
     private final String username;

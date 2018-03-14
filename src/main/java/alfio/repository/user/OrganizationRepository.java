@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface OrganizationRepository {
@@ -33,11 +34,24 @@ public interface OrganizationRepository {
     Organization getById(@Bind("id") int id);
 
     @Query("SELECT * FROM organization where name = :name")
-    List<Organization> findByName(@Bind("name") String name);
+    Optional<Organization> findByName(@Bind("name") String name);
+
+    @Query("SELECT id FROM organization where name = :name")
+    int getIdByName(@Bind("name") String name);
 
     @Query("INSERT INTO organization(name, description, email) VALUES (:name, :description, :email)")
     int create(@Bind("name") String name, @Bind("description") String description, @Bind("email") String email);
 
     @Query("update organization set name = :name, description = :description, email = :email where id = :id")
     int update(@Bind("id") int id, @Bind("name") String name, @Bind("description") String description, @Bind("email") String email);
+
+    @Query("(select organization.* from organization inner join j_user_organization on org_id = organization.id where j_user_organization.user_id = (select ba_user.id from ba_user where ba_user.username = :username)) " +
+        " union " +
+        "(select * from organization where 'ROLE_ADMIN' in (select role from ba_user inner join authority on ba_user.username = authority.username where ba_user.username = :username))")
+    List<Organization> findAllForUser(@Bind("username") String username);
+
+    @Query("(select organization.* from organization inner join j_user_organization on org_id = organization.id where j_user_organization.user_id = (select ba_user.id from ba_user where ba_user.username = :username) and organization.id = :orgId) " +
+        " union " +
+        "(select * from organization where 'ROLE_ADMIN' in (select role from ba_user inner join authority on ba_user.username = authority.username where ba_user.username = :username) and id = :orgId)")
+    Optional<Organization> findOrganizationForUser(@Bind("username") String username, @Bind("orgId") int orgId);
 }

@@ -18,8 +18,10 @@ package alfio.model.modification;
 
 import lombok.Data;
 
+import java.io.Serializable;
+
 @Data
-public class TicketReservationModification {
+public class TicketReservationModification implements Serializable {
     private Integer ticketCategoryId;
     private Integer amount;
 }

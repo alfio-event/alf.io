@@ -27,16 +27,20 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
+import alfio.model.user.User;
+import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.Assert;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 
 public class IntegrationTestUtil {
@@ -87,16 +91,17 @@ public class IntegrationTestUtil {
     public static Pair<Event, String> initEvent(List<TicketCategoryModification> categories,
                                                 OrganizationRepository organizationRepository,
                                                 UserManager userManager,
-                                                EventManager eventManager) {
+                                                EventManager eventManager,
+                                                EventRepository eventRepository) {
 
         String organizationName = UUID.randomUUID().toString();
         String username = UUID.randomUUID().toString();
         String eventName = UUID.randomUUID().toString();
 
         userManager.createOrganization(organizationName, "org", "email@example.com");
-        Organization organization = organizationRepository.findByName(organizationName).get(0);
-        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR);
-        userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER);
+        Organization organization = organizationRepository.findByName(organizationName).get();
+        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.OPERATOR, User.Type.INTERNAL);
+        userManager.insertUser(organization.getId(), username+"_owner", "test", "test", "test@example.com", Role.OWNER, User.Type.INTERNAL);
 
         LocalDateTime expiration = LocalDateTime.now().plusDays(5).plusHours(1);
 
@@ -107,16 +112,18 @@ public class IntegrationTestUtil {
 
         EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", "url", null,
                 eventName, "event display name", organization.getId(),
-                "muh location", desc,
+                "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, null);
         eventManager.createEvent(em);
-        return Pair.of(eventManager.getSingleEvent(eventName, username), username);
+        Event event = eventManager.getSingleEvent(eventName, username);
+        Assert.assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());
+        return Pair.of(event, username);
     }
 
     public static void initAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {
-        userRepository.create(UserManager.ADMIN_USERNAME, "", "The", "Administrator", "admin@localhost", true);
+        userRepository.create(UserManager.ADMIN_USERNAME, "", "The", "Administrator", "admin@localhost", true, User.Type.INTERNAL);
         authorityRepository.create(UserManager.ADMIN_USERNAME, Role.ADMIN.getRoleName());
     }
 }

@@ -21,6 +21,7 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
@@ -51,8 +52,8 @@ public class FullTicketInfo {
                           @Column("t_last_name") String lastName,
                           @Column("t_email_address") String email,
                           @Column("t_locked_assignment") boolean lockedAssignment,
-                          //
                           @Column("t_user_language") String userLanguage,
+                          @Column("t_ext_reference") String extReference,
                           //
                           @Column("tr_id") String trId,
                           @Column("tr_validity") Date trValidity,
@@ -76,6 +77,8 @@ public class FullTicketInfo {
                           @Column("tr_vat_nr") String vatNr,
                           @Column("tr_vat_country") String vatCountry,
                           @Column("tr_invoice_requested") boolean invoiceRequested,
+                          @Column("tr_used_vat_percent") BigDecimal usedVatPercent,
+                          @Column("tr_vat_included") Boolean vatIncluded,
                           //
                           //
                           @Column("tc_id") int tcId,
@@ -87,14 +90,22 @@ public class FullTicketInfo {
                           @Column("tc_access_restricted") boolean tcAccessRestricted,
                           @Column("tc_tc_status") TicketCategory.Status tcStatus,
                           @Column("tc_event_id") int tcEventId,
-                          @Column("tc_bounded") boolean bounded) {
+                          @Column("tc_bounded") boolean bounded,
+                          @Column("tc_category_code") String code,
+                          @Column("tc_valid_checkin_from") ZonedDateTime validCheckInFrom,
+                          @Column("tc_valid_checkin_to") ZonedDateTime validCheckInTo,
+                          @Column("tc_ticket_validity_start") ZonedDateTime ticketValidityStart,
+                          @Column("tc_ticket_validity_end") ZonedDateTime ticketValidityEnd
+                          ) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
-            lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts);
+            lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
-                trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested);
+                trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage,
+            directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent, vatIncluded);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
-                tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts);
+                tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts, code, validCheckInFrom, validCheckInTo,
+                ticketValidityStart, ticketValidityEnd);
 
     }
 }

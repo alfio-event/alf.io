@@ -20,8 +20,8 @@ import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
-import com.squareup.okhttp.*;
 import lombok.extern.log4j.Log4j2;
+import okhttp3.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 
@@ -71,18 +71,15 @@ public class MailjetMailer implements Mailer  {
             mailPayload.put("Attachments", Arrays.stream(attachment).map(MailjetMailer::fromAttachment).collect(Collectors.toList()));
         }
 
-        try {
-            RequestBody body = RequestBody.create(MediaType.parse("application/json"), Json.GSON.toJson(mailPayload));
-            Request request = new Request.Builder().url("https://api.mailjet.com/v3/send")
-                .header("Authorization", Credentials.basic(apiKeyPublic, apiKeyPrivate))
-                .post(body)
-                .build();
-
-            Response resp = client.newCall(request).execute();
+        RequestBody body = RequestBody.create(MediaType.parse("application/json"), Json.GSON.toJson(mailPayload));
+        Request request = new Request.Builder().url("https://api.mailjet.com/v3/send")
+            .header("Authorization", Credentials.basic(apiKeyPublic, apiKeyPrivate))
+            .post(body)
+            .build();
+        try (Response resp = client.newCall(request).execute()) {
             if (!resp.isSuccessful()) {
                 log.warn("sending email was not successful:" + resp);
             }
-
         } catch(IOException e) {
             log.warn("error while sending email", e);
         }

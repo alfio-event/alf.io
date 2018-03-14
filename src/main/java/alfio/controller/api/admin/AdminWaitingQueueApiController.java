@@ -16,36 +16,77 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.EventManager;
+import alfio.manager.EventStatisticsManager;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.WaitingQueueManager;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
+import alfio.model.modification.ConfigurationModification;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
+import alfio.util.EventUtil;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
+import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import static alfio.model.system.ConfigurationKeys.STOP_WAITING_QUEUE_SUBSCRIPTIONS;
 import static alfio.util.OptionalWrapper.optionally;
+import static java.util.Collections.singletonList;
 
 @RestController
 @RequestMapping("/admin/api/event/{eventName}/waiting-queue")
+@AllArgsConstructor
 public class AdminWaitingQueueApiController {
 
     private final WaitingQueueManager waitingQueueManager;
     private final EventManager eventManager;
+    private final TicketReservationManager ticketReservationManager;
+    private final ConfigurationManager configurationManager;
+    private final EventStatisticsManager eventStatisticsManager;
 
-    @Autowired
-    public AdminWaitingQueueApiController(WaitingQueueManager waitingQueueManager,
-                                          EventManager eventManager) {
-        this.waitingQueueManager = waitingQueueManager;
-        this.eventManager = eventManager;
+    @RequestMapping(value = "/status", method = RequestMethod.GET)
+    public Map<String, Boolean> getStatusForEvent(@PathVariable("eventName") String eventName, Principal principal) {
+        return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
+            .map(this::loadStatus)
+            .orElse(Collections.emptyMap());
+    }
+
+    private Map<String, Boolean> loadStatus(Event event) {
+        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        List<SaleableTicketCategory> stcList = eventManager.loadTicketCategories(event)
+            .stream()
+            .filter(tc -> !tc.isAccessRestricted())
+            .map(tc -> new SaleableTicketCategory(tc, "", now, event, ticketReservationManager.countAvailableTickets(event, tc), tc.getMaxTickets(), null))
+            .collect(Collectors.toList());
+        boolean active = EventUtil.checkWaitingQueuePreconditions(event, stcList, configurationManager, eventStatisticsManager.noSeatsAvailable());
+        boolean paused = active && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), STOP_WAITING_QUEUE_SUBSCRIPTIONS), false);
+        Map<String, Boolean> result = new HashMap<>();
+        result.put("active", active);
+        result.put("paused", paused);
+        return result;
+    }
+
+    @RequestMapping(value = "/status", method = RequestMethod.PUT)
+    public Map<String, Boolean> setStatusForEvent(@PathVariable("eventName") String eventName, @RequestBody SetStatusForm form, Principal principal) {
+        return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
+            .map(event -> {
+                configurationManager.saveAllEventConfiguration(event.getId(), event.getOrganizationId(),
+                    singletonList(new ConfigurationModification(null, ConfigurationKeys.STOP_WAITING_QUEUE_SUBSCRIPTIONS.name(), String.valueOf(form.status))),
+                    principal.getName());
+                return loadStatus(event);
+            }).orElse(Collections.emptyMap());
     }
 
     @RequestMapping(value = "/count", method = RequestMethod.GET)
@@ -95,6 +136,11 @@ public class AdminWaitingQueueApiController {
             })
             .map(ResponseEntity::ok)
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.BAD_REQUEST));
+    }
+
+    @Data
+    private static class SetStatusForm {
+        private boolean status;
     }
 
 

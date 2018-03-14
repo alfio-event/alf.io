@@ -93,6 +93,9 @@
             loadPluginsConfig: function(eventId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/plugin/load').error(HttpErrorHandler.handle);
             },
+            getPlatformModeStatus: function(orgId) {
+                return $http.get('/admin/api/configuration/platform-mode/status/'+orgId).error(HttpErrorHandler.handle);
+            },
             bulkUpdatePlugins: function(eventId, pluginConfigOptions) {
                 return $http.post('/admin/api/configuration/events/'+eventId+'/plugin/update-bulk', pluginConfigOptions).error(HttpErrorHandler.handle);
             },
@@ -112,8 +115,18 @@
                         mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';}),
                         mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';})
                     };
+                };
+
+                if(angular.isDefined(original['MAP']) && original['MAP'].length > 0) {
+                    transformed.map = {
+                        MAPS_PROVIDER: _.find(original['MAP'], function(e) {return e.key === 'MAPS_PROVIDER';}),
+                        MAPS_CLIENT_API_KEY: _.find(original['MAP'], function(e) {return e.key === 'MAPS_CLIENT_API_KEY';}),
+                        MAPS_HERE_APP_ID: _.find(original['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_ID';}),
+                        MAPS_HERE_APP_CODE: _.find(original['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_CODE';})
+                    }
                 }
-                _.forEach(['PAYMENT_STRIPE', 'PAYMENT_PAYPAL', 'PAYMENT_OFFLINE', 'INVOICE_EU'], function(group) {
+
+                _.forEach(['PAYMENT', 'PAYMENT_STRIPE', 'PAYMENT_PAYPAL', /*'PAYMENT_MOLLIE',*/ 'PAYMENT_OFFLINE', 'INVOICE_EU', 'ALFIO_PI'], function(group) {
                     if(angular.isDefined(original[group]) && original[group].length > 0) {
                         transformed[_.camelCase(group)] = {
                             settings: original[group]
@@ -145,29 +158,53 @@
         });
     }
 
+
+    function handleEuCountries(conf, euCountries) {
+        if(conf.invoiceEu) {
+            var euCountries = _.map(euCountries, function(o) {
+                var key = Object.keys(o)[0];
+                return {key: key, value: o[key]};
+            });
+            _.forEach(_.filter(conf.invoiceEu.settings, function(e) {return e.key === 'COUNTRY_OF_BUSINESS'}), function(cb) {
+                cb.listValues = euCountries;
+            });
+        }
+    }
+
     ConfigurationController.$inject = ['OrganizationService', 'EventService', '$q', '$rootScope'];
 
-    function SystemConfigurationController(ConfigurationService, EventService, NotificationHandler, $rootScope, $q) {
+    function SystemConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $rootScope, $q) {
         var systemConf = this;
         systemConf.loading = true;
 
+        systemConf.keys = Object.keys;
+
         var loadAll = function() {
             systemConf.loading = true;
-            $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll(), ConfigurationService.loadEUCountries()]).then(function(results) {
+            $q.all([EventService.getAllLanguages(), ConfigurationService.loadAll(), ConfigurationService.loadEUCountries(), ExtensionService.loadSystem()]).then(function(results) {
                 systemConf.allLanguages = results[0].data;
                 loadSettings(systemConf, results[1].data, ConfigurationService);
                 if(systemConf.general) {
                     systemConf.general.selectedLanguages = _.chain(systemConf.allLanguages).map('value').filter(function(x) {return parseInt(systemConf.general.supportedTranslations.value) & x;}).value();
+                    systemConf.isLanguageSelected = function(lang) {
+                        return systemConf.general.selectedLanguages.indexOf(lang.value) > -1;
+                    };
+                    systemConf.toggleLanguageSelection = function(lang) {
+                        if(systemConf.isLanguageSelected(lang)) {
+                            _.remove(systemConf.general.selectedLanguages, function(l) { return l === lang.value });
+                        } else {
+                            systemConf.general.selectedLanguages.push(lang.value);
+                        }
+                        systemConf.updateLocales();
+                    }
                 }
-                if(systemConf.invoiceEu) {
-                    var euCountries = _.map(results[2].data, function(o) {
-                        var key = Object.keys(o)[0];
-                        return {key: key, value: o[key]};
-                    });
-                    _.forEach(_.filter(systemConf.invoiceEu.settings, function(e) {return e.key === 'COUNTRY_OF_BUSINESS'}), function(cb) {
-                        cb.listValues = euCountries;
-                    });
+                handleEuCountries(systemConf, results[2].data);
+                if(systemConf.alfioPi) {
+                    systemConf.alfioPiOptions = _.filter(systemConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
                 }
+
+                systemConf.extensionSettings = results[3].data;
+
             }, function() {
                 systemConf.loading = false;
             });
@@ -179,7 +216,7 @@
                 return;
             }
             systemConf.loading = true;
-            ConfigurationService.bulkUpdate(systemConf.settings).then(function() {
+            $q.all([ConfigurationService.bulkUpdate(systemConf.settings), ExtensionService.saveBulkSystemSetting(systemConf.extensionSettings)]).then(function() {
                 loadAll();
                 NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
@@ -197,22 +234,35 @@
             return ConfigurationService.removeSystemConfig(config);
         };
 
+        systemConf.deleteExtensionSetting = function(config) {
+            return ExtensionService.deleteSystemSettingValue(config);
+        };
+
         $rootScope.$on('ReloadSettings', function() {
             loadAll();
         });
     }
 
-    SystemConfigurationController.$inject = ['ConfigurationService', 'EventService', 'NotificationHandler', '$rootScope', '$q'];
+    SystemConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$rootScope', '$q'];
 
-    function OrganizationConfigurationController(ConfigurationService, OrganizationService, $stateParams, $q, $rootScope) {
+    function OrganizationConfigurationController(ConfigurationService, OrganizationService, ExtensionService, NotificationHandler, $stateParams, $q, $rootScope) {
         var organizationConf = this;
         organizationConf.organizationId = $stateParams.organizationId;
         var load = function() {
             organizationConf.loading = true;
-            $q.all([OrganizationService.getOrganization(organizationConf.organizationId), ConfigurationService.loadOrganizationConfig(organizationConf.organizationId)])
-                .then(function(result) {
+            $q.all([OrganizationService.getOrganization(organizationConf.organizationId),
+                ConfigurationService.loadOrganizationConfig(organizationConf.organizationId),
+                ConfigurationService.loadEUCountries(),
+                ConfigurationService.getPlatformModeStatus(organizationConf.organizationId),
+                ExtensionService.loadOrganizationConfigWithOrgId(organizationConf.organizationId)
+            ]).then(function(result) {
                     organizationConf.organization = result[0].data;
                     loadSettings(organizationConf, result[1].data, ConfigurationService);
+                    handleEuCountries(organizationConf, result[2].data);
+                    var platformModeStatus = result[3].data;
+                    organizationConf.platformModeEnabled = platformModeStatus.enabled;
+                    organizationConf.stripeConnected = platformModeStatus.stripeConnected;
+                    organizationConf.extensionSettings = result[4].data;
                 }, function() {
                     organizationConf.loading = false;
                 });
@@ -223,9 +273,12 @@
                 return;
             }
             organizationConf.loading = true;
-            ConfigurationService.updateOrganizationConfig(organizationConf.organization, organizationConf.settings).then(function() {
+            $q.all([ConfigurationService.updateOrganizationConfig(organizationConf.organization, organizationConf.settings),
+                ExtensionService.saveBulkOrganizationSetting(organizationConf.organizationId, organizationConf.extensionSettings)]).then(function() {
                 load();
+                NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
+                NotificationHandler.showError("Unable to save the configuration");
                 alert(e.data);
                 organizationConf.loading = false;
             });
@@ -235,14 +288,18 @@
             return ConfigurationService.removeOrganizationConfig(config, organizationConf.organizationId);
         };
 
+        organizationConf.deleteExtensionSetting = function(config) {
+            return ExtensionService.deleteOrganizationSettingValue(organizationConf.organizationId, config);
+        };
+
         $rootScope.$on('ReloadSettings', function() {
             load();
         });
     }
 
-    OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', '$stateParams', '$q', '$rootScope'];
+    OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', 'ExtensionService', 'NotificationHandler', '$stateParams', '$q', '$rootScope'];
 
-    function EventConfigurationController(ConfigurationService, EventService, $q, $rootScope, $stateParams) {
+    function EventConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $q, $rootScope, $stateParams) {
         var eventConf = this;
         var getData = function() {
             if(angular.isDefined($stateParams.eventName)) {
@@ -252,7 +309,7 @@
                     var event = result.data.event;
                     eventConf.eventName = event.shortName;
                     eventConf.eventId = event.id;
-                    $q.all([ConfigurationService.loadEventConfig(eventConf.eventId), ConfigurationService.loadPluginsConfig(eventConf.eventId)]).then(function(result) {
+                    $q.all([ConfigurationService.loadEventConfig(eventConf.eventId), ConfigurationService.loadPluginsConfig(eventConf.eventId), ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)]).then(function(result) {
                         deferred.resolve([{data:event}].concat(result));
                     }, function(e) {
                         deferred.reject(e);
@@ -264,7 +321,7 @@
             } else {
                 eventConf.eventId = $stateParams.eventId;
                 eventConf.organizationId = $stateParams.organizationId;
-                return $q.all([EventService.getEventById($stateParams.eventId), ConfigurationService.loadEventConfig($stateParams.eventId), ConfigurationService.loadPluginsConfig($stateParams.eventId)])
+                return $q.all([EventService.getEventById($stateParams.eventId), ConfigurationService.loadEventConfig($stateParams.eventId), ConfigurationService.loadPluginsConfig($stateParams.eventId), ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)])
             }
         };
 
@@ -275,6 +332,11 @@
                     loadSettings(eventConf, result[1].data, ConfigurationService);
                     eventConf.pluginSettings = result[2].data;
                     eventConf.pluginSettingsByPluginId = _.groupBy(result[2].data, 'pluginId');
+                    if(eventConf.alfioPi) {
+                        eventConf.alfioPiOptions = _.filter(eventConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
+                        eventConf.labelLayout = _.find(eventConf.alfioPi.settings, function(pi) { return pi.key === 'LABEL_LAYOUT'});
+                    }
+                    eventConf.extensionSettings = result[3].data;
                     eventConf.loading = false;
                 }, function() {
                     eventConf.loading = false;
@@ -282,14 +344,22 @@
         };
         load();
 
+        eventConf.isLabelPrintingEnabled = function() {
+            return _.any(eventConf.alfioPi.settings, function(pi) { return pi.key === 'LABEL_PRINTING_ENABLED' && pi.value === "true"});
+        };
+
         eventConf.saveSettings = function(frm) {
             if(!frm.$valid) {
                 return;
             }
             eventConf.loading = true;
-            $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings), ConfigurationService.bulkUpdatePlugins(eventConf.eventId, eventConf.pluginSettings)]).then(function() {
+            $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings),
+                ConfigurationService.bulkUpdatePlugins(eventConf.eventId, eventConf.pluginSettings),
+                ExtensionService.saveBulkEventSetting(eventConf.organizationId, eventConf.eventId, eventConf.extensionSettings)]).then(function() {
                 load();
+                NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
+                NotificationHandler.showError("Unable to save the configuration");
                 alert(e.data);
                 eventConf.loading = false;
             });
@@ -299,12 +369,16 @@
             return ConfigurationService.removeEventConfig(config, eventConf.eventId);
         };
 
+        eventConf.deleteExtensionSetting = function(config) {
+            return ExtensionService.deleteEventSettingValue(eventConf.organizationId, eventConf.eventId, config);
+        };
+
         $rootScope.$on('ReloadSettings', function() {
             load();
         });
     }
 
-    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', '$q', '$rootScope', '$stateParams'];
+    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams'];
 
     function loadSettings(container, settings, ConfigurationService) {
         var general = settings['GENERAL'] || [];
@@ -401,6 +475,12 @@
                             };
                             ctrl.payment = {
                                 settings: onlyBasic(settings['PAYMENT'])
+                            };
+                            ctrl.map = {
+                                MAPS_PROVIDER: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_PROVIDER';}),
+                                MAPS_CLIENT_API_KEY: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_CLIENT_API_KEY';}),
+                                MAPS_HERE_APP_ID: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_ID';}),
+                                MAPS_HERE_APP_CODE: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_CODE';})
                             };
                         });
                         ctrl.saveSettings = function(frm, settings, pluginSettings) {

@@ -107,14 +107,14 @@ public class CustomMessageManager {
                 })
                 .forEach(triple -> {
                     Ticket ticket = triple.getLeft();
-                    MessageModification m = Optional.ofNullable(byLanguage.get(ticket.getUserLanguage())).orElseGet(() -> byLanguage.get("en")).get(0);
+                    MessageModification m = Optional.ofNullable(byLanguage.get(ticket.getUserLanguage())).orElseGet(() -> byLanguage.get(byLanguage.keySet().stream().findFirst().orElseThrow(IllegalStateException::new))).get(0);
                     Model model = triple.getRight();
                     String subject = renderResource(m.getSubject(), model, m.getLocale(), templateManager);
                     String text = renderResource(m.getText(), model, m.getLocale(), templateManager);
                     List<Mailer.Attachment> attachments = new ArrayList<>();
                     if(m.isAttachTicket()) {
                         ticketReservationManager.findById(ticket.getTicketsReservationId()).ifPresent(reservation -> {
-                            ticketCategoryRepository.getById(ticket.getCategoryId()).ifPresent(ticketCategory -> {
+                            ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId()).ifPresent(ticketCategory -> {
                                 attachments.add(generateTicketAttachment(ticket, reservation, ticketCategory, organization));
                             });
                         });

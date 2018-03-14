@@ -21,7 +21,7 @@
                 </div>
 
                 <div data-ng-if="organizationConf.general">
-                    <div data-ng-repeat="setting in organizationConf.general.settings | orderBy:'configurationPathLevel'" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
+                    <div data-ng-repeat="setting in organizationConf.general.settings | orderBy:'configurationPathLevel'" >
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="organizationConf.globalSettings" data-delete-handler="organizationConf.delete(config)"></setting>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                 </div>
 
                 <div data-ng-if="organizationConf.mail">
-                    <div data-ng-if="organizationConf.mail.type" class="system-setting">
+                    <div data-ng-if="organizationConf.mail.type">
                         <div class="radio-inline">
                             <label>
                                 <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'smtp'">
@@ -51,11 +51,17 @@
                                 Mailjet.com
                             </label>
                         </div>
-                        <div data-ng-repeat="setting in organizationConf.mail.settings | mailSettingsFilter:organizationConf.mail.type.value"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
+                        <div class="radio-inline">
+                            <label>
+                                <input type="radio" name="mailer.type" data-ng-model="organizationConf.mail.type.value" data-ng-value="'disabled'">
+                                Disable
+                            </label>
+                        </div>
+                        <div data-ng-repeat="setting in organizationConf.mail.settings | mailSettingsFilter:organizationConf.mail.type.value"  >
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                         <div>
-                            <setting obj="organizationConf.mail.maxEmailPerCycle" class="system-setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                            <setting obj="organizationConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                         <div>
                             <setting obj="organizationConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
@@ -67,7 +73,7 @@
                             <setting obj="organizationConf.mail.cc" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                     </div>
-                    <div data-ng-repeat="setting in organizationConf.mail.settings" data-ng-if="!organizationConf.mail.type"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}">
+                    <div data-ng-repeat="setting in organizationConf.mail.settings" data-ng-if="!organizationConf.mail.type"  >
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                     </div>
                 </div>
@@ -80,7 +86,7 @@
                 </div>
                 <div>
                     <div data-ng-repeat="setting in organizationConf.settings.INVOICE">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                     </div>
                 </div>
 
@@ -90,25 +96,47 @@
                     </div>
                     <div class="panel-body">
                         <div data-ng-repeat="setting in organizationConf.invoiceEu.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}" list-values="setting.listValues"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)"  list-values="setting.listValues"></setting>
                         </div>
                     </div>
                 </div>
 
-                <div class="page-header" data-ng-if="organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentOffline">
+                <div class="page-header" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
                     <h2>Payment</h2>
                     <span>Payment provider settings</span>
+                </div>
+
+                <div data-ng-if="organizationConf.payment" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-dollar"></i> General</div>
+                    </div>
+                    <div class="panel-body">
+                        <div data-ng-repeat="setting in organizationConf.payment.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                        </div>
+                    </div>
                 </div>
 
                 <div data-ng-if="organizationConf.paymentStripe" class="panel panel-default">
                     <div class="panel-heading">
                         <div class="panel-title"><i class="fa fa-cc-stripe"></i> Stripe configuration</div>
                     </div>
-                    <div class="panel-body">
+                    <div class="panel-body" ng-if="!organizationConf.platformModeEnabled">
                         <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
                         <div data-ng-repeat="setting in organizationConf.paymentStripe.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
+                    </div>
+                    <div class="panel-body" ng-if="organizationConf.platformModeEnabled">
+                        <div class="row">
+                            <div class="col-xs-4 col-md-3">
+                                <a class="stripe-connect" ng-href="configuration/payment/stripe/connect/{{organizationConf.organizationId}}"><span>Connect with Stripe</span></a>
+                            </div>
+                            <div class="col-xs-8 col-md-9" ng-class="{'text-success': organizationConf.stripeConnected}">
+                                <i class="fa" ng-class="{'fa-check': organizationConf.stripeConnected, 'fa-question': !organizationConf.stripeConnected}"></i> <span ng-if="organizationConf.stripeConnected">Connected</span> <span ng-if="!organizationConf.stripeConnected">NOT Connected</span>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -120,12 +148,28 @@
                         <div class="alert alert-info">
                             <p><i class="fa fa-info-circle"></i> in order to accept payments through PayPal, you must create and enable a new <strong>REST API app</strong>, as explained <a href="https://developer.paypal.com/docs/integration/admin/manage-apps/" target="_blank">here</a></p>
                             <p>Once you have created your app and tested the integration, you can enable live payments by inserting the <strong>Live</strong> Client ID and Secret, and enabling the "live mode" below.</p>
+                            <p><strong>IMPORTANT:</strong> if you are going to accept payments in a currency you don't hold, please make sure to enable automatic currency conversion. </p>
+                            <p>To do that, go to <a href="https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref">PayPal dashboard</a> and select <code>Profile</code> -> <code>Profile and Settings</code> -> <code>My Selling Tools</code> -> <code>Block Payments</code></p>
                         </div>
                         <div data-ng-repeat="setting in organizationConf.paymentPaypal.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
                     </div>
                 </div>
+
+                <!--<div data-ng-if="organizationConf.paymentMollie" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"></i> Mollie configuration</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="alert alert-info">
+                            <p><i class="fa fa-info-circle"></i> in order to accept payments through Mollie, you must have Live API key.</p>
+                        </div>
+                        <div data-ng-repeat="setting in organizationConf.paymentMollie.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                        </div>
+                    </div>
+                </div>-->
 
                 <div data-ng-if="organizationConf.paymentOffline" class="panel panel-default">
                     <div class="panel-heading">
@@ -136,7 +180,23 @@
                             <p><i class="fa fa-info-circle"></i> In order to be able to accept offline payments, you must fill your <strong>Bank Account</strong> data.</p>
                         </div>
                         <div data-ng-repeat="setting in organizationConf.paymentOffline.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-header" data-ng-if="organizationConf.extensionSettings">
+                    <h2>Extension settings</h2>
+                </div>
+                <div class="panel panel-default" data-ng-repeat="settingId in organizationConf.extensionSettings | keys">
+                    <div class="panel-heading">
+                        <div class="panel-title">Extension: {{organizationConf.extensionSettings[settingId][0].extensionName}}</div>
+                    </div>
+                    <div class="panel-body">
+                        <div>
+                            <div data-ng-repeat="setting in organizationConf.extensionSettings[settingId]">
+                                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.deleteExtensionSetting(setting)"></setting>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -9,12 +9,12 @@
             onClose: '<',
             onConfirm: '<'
         },
-        controller: ReservationViewCtrl,
+        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', ReservationViewCtrl],
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams) {
+    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler) {
         var ctrl = this;
 
         ctrl.notification = {
@@ -87,19 +87,23 @@
         };
 
         function loadAudit() {
-            AdminReservationService.getAudit(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
-                ctrl.audit = res.data.data;
-            });
+            if(ctrl.event.visibleForCurrentUser) {
+                AdminReservationService.getAudit(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                    ctrl.audit = res.data.data;
+                });
+            }
         }
 
         function loadPaymentInfo() {
-            ctrl.loadingPaymentInfo = true;
-            AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
-                ctrl.paymentInfo = res.data.data;
-                ctrl.loadingPaymentInfo = false;
-            }, function() {
-                ctrl.loadingPaymentInfo = false;
-            });
+            if(ctrl.event.visibleForCurrentUser) {
+                ctrl.loadingPaymentInfo = true;
+                AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                    ctrl.paymentInfo = res.data.data;
+                    ctrl.loadingPaymentInfo = false;
+                }, function() {
+                    ctrl.loadingPaymentInfo = false;
+                });
+            }
         }
 
         ctrl.update = function(frm) {
@@ -114,15 +118,13 @@
             ctrl.loading = true;
             var notifyError = function(message) {
                 ctrl.loading = false;
-                delete ctrl.confirmationMessage;
-                ctrl.errorMessage = message || 'An unexpected error has occurred. Please retry';
+                NotificationHandler.showError(message || 'An unexpected error has occurred. Please retry');
             };
             AdminReservationService.notify(ctrl.event.shortName, ctrl.reservation.id, {notification: {customer: customer, attendees:(!customer)}}).then(function(r) {
                 var result = r.data;
                 ctrl.loading = false;
                 if(result.success) {
-                    ctrl.confirmationMessage = 'Success!';
-                    delete ctrl.errorMessage;
+                    NotificationHandler.showSuccess('Success!');
                 } else {
                     notifyError(result.errors.map(function (e) {
                         return e.description;
@@ -131,11 +133,6 @@
             }, function() {
                 notifyError();
             });
-        };
-
-        ctrl.hideMessages = function() {
-            delete ctrl.errorMessage;
-            delete ctrl.confirmationMessage;
         };
 
         ctrl.notifyCustomer = function() {

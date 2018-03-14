@@ -16,7 +16,7 @@
  */
 package alfio.util;
 
-import alfio.model.modification.TicketCategoryWithStatistic;
+import alfio.model.TicketCategoryStatisticView;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.runner.RunWith;
@@ -30,9 +30,9 @@ import static org.mockito.Mockito.when;
 @RunWith(JunitSuiteRunner.class)
 public class PreReservedTicketDistributorTest {{
     describe("PreReservedTicketDistributor", it -> {
-        TicketCategoryWithStatistic cat1 = it.usesMock(TicketCategoryWithStatistic.class);
-        TicketCategoryWithStatistic cat2 = it.usesMock(TicketCategoryWithStatistic.class);
-        TicketCategoryWithStatistic cat3 = it.usesMock(TicketCategoryWithStatistic.class);
+        TicketCategoryStatisticView cat1 = it.usesMock(TicketCategoryStatisticView.class);
+        TicketCategoryStatisticView cat2 = it.usesMock(TicketCategoryStatisticView.class);
+        TicketCategoryStatisticView cat3 = it.usesMock(TicketCategoryStatisticView.class);
         it.isSetupWith(() -> {
             when(cat1.getId()).thenReturn(1);
             when(cat2.getId()).thenReturn(2);
@@ -42,10 +42,10 @@ public class PreReservedTicketDistributorTest {{
         int cat2Capacity = 12;
         int cat3Capacity = 20;
 
-        List<Pair<Integer, TicketCategoryWithStatistic>> data = Arrays.asList(Pair.of(cat1Capacity, cat1), Pair.of(cat2Capacity, cat2), Pair.of(cat3Capacity, cat3));
+        List<Pair<Integer, TicketCategoryStatisticView>> data = Arrays.asList(Pair.of(cat1Capacity, cat1), Pair.of(cat2Capacity, cat2), Pair.of(cat3Capacity, cat3));
 
         it.should("include all the categories (42 tickets requested)", expect -> {
-            List<Pair<Integer, TicketCategoryWithStatistic>> pairs = data.stream().collect(new PreReservedTicketDistributor(42));
+            List<Pair<Integer, TicketCategoryStatisticView>> pairs = data.stream().collect(new PreReservedTicketDistributor(42));
             expect.that(pairs.size()).is(3);
             expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, cat1));
             expect.that(pairs.get(1)).is(Pair.of(cat2Capacity, cat2));
@@ -53,7 +53,7 @@ public class PreReservedTicketDistributorTest {{
         });
 
         it.should("include all the categories (43 tickets requested)", expect -> {
-            List<Pair<Integer, TicketCategoryWithStatistic>> pairs = data.stream().collect(new PreReservedTicketDistributor(43));
+            List<Pair<Integer, TicketCategoryStatisticView>> pairs = data.stream().collect(new PreReservedTicketDistributor(43));
             expect.that(pairs.size()).is(3);
             expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, cat1));
             expect.that(pairs.get(1)).is(Pair.of(cat2Capacity, cat2));
@@ -61,20 +61,20 @@ public class PreReservedTicketDistributorTest {{
         });
 
         it.should("include only the first category (1 ticket requested)", expect -> {
-            List<Pair<Integer, TicketCategoryWithStatistic>> pairs = data.stream().collect(new PreReservedTicketDistributor(1));
+            List<Pair<Integer, TicketCategoryStatisticView>> pairs = data.stream().collect(new PreReservedTicketDistributor(1));
             expect.that(pairs.size()).is(1);
             expect.that(pairs.get(0)).is(Pair.of(1, cat1));
         });
 
         it.should("include only the first two categories (20 tickets requested)", expect -> {
-            List<Pair<Integer, TicketCategoryWithStatistic>> pairs = data.stream().collect(new PreReservedTicketDistributor(20));
+            List<Pair<Integer, TicketCategoryStatisticView>> pairs = data.stream().collect(new PreReservedTicketDistributor(20));
             expect.that(pairs.size()).is(2);
             expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, cat1));
             expect.that(pairs.get(1)).is(Pair.of(10, cat2));
         });
 
         it.should("include all the categories (23 tickets requested)", expect -> {
-            List<Pair<Integer, TicketCategoryWithStatistic>> pairs = data.stream().collect(new PreReservedTicketDistributor(23));
+            List<Pair<Integer, TicketCategoryStatisticView>> pairs = data.stream().collect(new PreReservedTicketDistributor(23));
             expect.that(pairs.size()).is(3);
             expect.that(pairs.get(0)).is(Pair.of(cat1Capacity, cat1));
             expect.that(pairs.get(1)).is(Pair.of(cat2Capacity, cat2));

@@ -39,20 +39,20 @@
                             <td style="width:180px">{{#i18n}}ticket.date-time{{/i18n}}</td>
                             <td>			{{#event.sameDay}}
                                 {{#i18n}}event-days.same-day
-                                    [{{#format-date}}{{event.begin}} EEE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-                                    [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
-                                    [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
+                                    [{{#format-date}}{{validityStart}} EEE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                                    [{{#format-date}}{{validityStart}} HH:mm{{/format-date}}]
+                                    [{{#format-date}}{{validityEnd}} HH:mm (z){{/format-date}}]
                                 {{/i18n}}
                             {{/event.sameDay}}
                                 {{^event.sameDay}}
                                     {{#i18n}}event-days.not-same-day
-                                        [{{#format-date}}{{event.begin}} EE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-                                        [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]
+                                        [{{#format-date}}{{validityStart}} EE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                                        [{{#format-date}}{{validityStart}} HH:mm{{/format-date}}]
                                     {{/i18n}}
                                     -
                                     {{#i18n}}event-days.not-same-day
-                                        [{{#format-date}}{{event.end}} EE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
-                                        [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]
+                                        [{{#format-date}}{{validityEnd}} EE dd MMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]
+                                        [{{#format-date}}{{validityEnd}} HH:mm (z){{/format-date}}]
                                     {{/i18n}}
                                 {{/event.sameDay}}</td>
                         </tr>
@@ -86,7 +86,7 @@
 			</tr>
 			<tr>
 				<td>{{#i18n}}ticket.order-information{{/i18n}}</td>
-				<td>{{reservationId}} by {{reservation.fullName}}</td>
+				<td>{{#i18n}}ticket.order-information-values [{{reservationId}}] [{{reservation.fullName}}]{{/i18n}}</td>
 			</tr>
 		</table>
 		{{#deskPaymentRequired}}

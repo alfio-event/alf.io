@@ -157,9 +157,13 @@
         </div>
 
         <hr class="wMarginTop30px"/>
-        <div class="pull-left">
-            <button class="btn btn-lg btn-default" ng-click="reset()" type="button">Reset values</button>
+        <div class="row">
+            <div class="col-xs-12 col-md-10 col-md-push-2">
+                <control-buttons data-form-obj="editEvent"></control-buttons>
+            </div>
+            <div class="col-xs-12 col-md-2 col-md-pull-10">
+                <button class="btn btn-lg btn-block btn-default" ng-click="reset()" type="button">Reset values</button>
+            </div>
         </div>
-        <control-buttons data-form-obj="editEvent"></control-buttons>
     </form>
 </div>

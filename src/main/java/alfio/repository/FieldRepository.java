@@ -19,6 +19,9 @@ package alfio.repository;
 import alfio.model.TicketFieldConfiguration;
 import ch.digitalfondue.npjt.*;
 
+import java.util.List;
+import java.util.Set;
+
 @QueryRepository
 interface FieldRepository {
 
@@ -29,10 +32,16 @@ interface FieldRepository {
                                                         @Bind("maxLength") Integer maxLength, @Bind("minLength") Integer minLength, @Bind("required") boolean required, @Bind("context") TicketFieldConfiguration.Context context,
                                                         @Bind("additionalServiceId") Integer additionalServiceId);
 
+    @Query("update ticket_field_configuration set field_required = :required, field_restricted_values = :restrictedValues where id = :id")
+    int updateRequiredAndRestrictedValues(@Bind("id") int id, @Bind("required") boolean required, @Bind("restrictedValues") String restrictedValues);
+
     @Query("insert into ticket_field_description(ticket_field_configuration_id_fk, field_locale, description) values (:ticketConfigurationId, :locale, :description)")
     int insertDescription(@Bind("ticketConfigurationId") int ticketConfigurationId, @Bind("locale") String locale, @Bind("description") String description);
 
     @Query("update ticket_field_description set description = :description where ticket_field_configuration_id_fk = :ticketConfigurationId and field_locale = :locale")
     int updateDescription(@Bind("ticketConfigurationId") int ticketConfigurationId, @Bind("locale") String locale, @Bind("description") String description);
+
+    @Query("select distinct lower(field_name) from ticket_field_configuration where lower(field_name) in (:fieldNames) and event_id_fk = :eventId")
+    List<String> getExistingFields(@Bind("eventId") int eventId, @Bind("fieldNames") Set<String> fieldName);
 
 }

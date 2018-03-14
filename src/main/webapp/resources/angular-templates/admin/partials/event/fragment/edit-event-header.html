@@ -49,7 +49,7 @@
         <div class="col-xs-6">
             <div class="form-group" bs-form-error="editEventHeader.timeZone">
                 <label for="timeZone">Event time zone</label>
-                <input class="form-control" id="timeZone" readonly name="timeZone" data-ng-model="obj.geolocation.timeZone" required />
+                <select class="form-control" id="timeZone" name="timeZone" data-ng-model="obj.geolocation.timeZone" required ng-options="tz as tz for tz in timezones"></select>
             </div>
         </div>
     </div>
@@ -57,10 +57,13 @@
     <div data-ng-if="obj.type === 'INTERNAL'">
         <div class="row">
             <div class="col-xs-12">
-                <div class="form-group" bs-form-error="editEventHeader.organizationId">
-                    <label for="languages">Languages</label>
-                    <select id="languages" name="languages" class="form-control" multiple data-ng-model="selectedLanguages.langs" data-ng-options="lang.value as lang.displayLanguage for lang in allLanguages" data-ng-change="updateLocales()" required></select>
-                    <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.languages" data-show-existing-errors="showExistingErrors"></field-error>
+                <div class="form-group">
+                    <label>Languages</label>
+                    <div class="checkbox" ng-repeat="lang in allLanguages">
+                        <label>
+                            <input type="checkbox" ng-checked="isLanguageSelected(lang)" name="lang.value" ng-click="toggleLanguageSelection(lang)"> <img ng-src="../resources/images/flags/{{lang.flag}}.gif" class="img-center"> <span ng-class="{'text-muted': !isLanguageSelected(lang)}">{{lang.displayLanguage}}</span>
+                        </label>
+                    </div>
                 </div>
             </div>
             <div class="col-xs-12 col-sm-6" data-ng-repeat="langValue in selectedLanguages.langs">

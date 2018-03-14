@@ -7,8 +7,7 @@
             <edit-event-header data-show-dates-warning="true" data-show-existing-errors="true" data-event-obj="event" data-target-obj="eventHeader" data-organizations="organizations"  data-all-languages="allLanguages" data-all-languages-mapping="allLanguagesMapping"></edit-event-header>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-success" type="submit" data-ng-disabled="headerForm.$waiting">save</button>
-            <button class="btn btn-default" data-ng-disabled="headerForm.$waiting" data-ng-click="cancel()">cancel</button>
+            <control-buttons data-form-obj="headerForm" data-success-text="Save" data-cancel-handler="cancel"></control-buttons>
         </div>
     </form>
 </div>

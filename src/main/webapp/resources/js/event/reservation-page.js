@@ -238,6 +238,7 @@
 
                 } else {
                     $('#payment-method-STRIPE').find('input').val('').removeAttr('required');
+                    methodSelected(method);
                 }
             });
         }
@@ -293,7 +294,7 @@
 
 
         function disableBillingFields() {
-            $('#vatNr,#vatCountryCode,#billing-address').attr('required', false).attr('disabled', '');
+            $('#vatNr,#vatCountryCode').attr('required', false).attr('disabled', '');
         }
 
         disableBillingFields();
@@ -312,6 +313,7 @@
                 }
             } else {
                 element.find('.field-required').attr('required', false);
+                $('#billing-address').attr('required', false,).attr('disabled');
                 element.addClass('hidden');
                 disableBillingFields();
             }
@@ -375,4 +377,34 @@
             }
         })
     });
+
+    window.recaptchaLoadCallback = function() {
+        window.recaptchaReady = true;
+        var methods = $('input[name=paymentMethod]');
+        if(methods.length === 1) {
+            methodSelected(methods.val());
+        } else if(methods.length === 0) {
+            $('#captcha-FREE').each(function(e) {
+                methodSelected('FREE');
+            });
+        }
+    };
+
+    var methodSelected = function(method) {
+        if((method === 'FREE' || method === 'OFFLINE' || method === 'ON_SITE') && window.recaptchaReady) {
+            $('.g-recaptcha').each(function(i, e) {
+                try {
+                    grecaptcha.reset(e.id);
+                } catch(x) {}
+            });
+            try {
+                grecaptcha.render('captcha-'+method, {
+                    'sitekey': $('#captcha-'+method).attr('data-sitekey'),
+                    'hl': $('html').attr('lang')
+                });
+            } catch(x) {}
+        }
+    };
+
+
 })();

@@ -16,16 +16,20 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.controller.api.support.PageAndContent;
 import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
 import alfio.model.EmailMessage;
 import alfio.model.Event;
+import alfio.model.LightweightMailMessage;
 import lombok.AllArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.security.Principal;
@@ -49,12 +53,16 @@ public class EmailMessageApiController {
     }
 
     @RequestMapping("/")
-    public List<LightweightEmailMessage> loadEmailMessages(@PathVariable("eventName") String eventName, Principal principal) {
+    public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable("eventName") String eventName,
+                                                                                    @RequestParam(value = "page", required = false) Integer page,
+                                                                                    @RequestParam(value = "search", required = false) String search,
+                                                                                    Principal principal) {
         Event event = eventManager.getSingleEvent(eventName, principal.getName());
         ZoneId zoneId = event.getZoneId();
-        return notificationManager.loadAllMessagesForEvent(event.getId()).stream()
+        Pair<Integer, List<LightweightMailMessage>> found = notificationManager.loadAllMessagesForEvent(event.getId(), page, search);
+        return new PageAndContent<>(found.getRight().stream()
             .map(m -> new LightweightEmailMessage(m, zoneId, true))
-            .collect(Collectors.toList());
+            .collect(Collectors.toList()), found.getLeft());
     }
 
     @RequestMapping("/{messageId}")

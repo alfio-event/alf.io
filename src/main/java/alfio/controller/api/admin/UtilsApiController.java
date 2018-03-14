@@ -16,13 +16,15 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.config.Initializer;
 import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTagInterceptor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -47,11 +49,13 @@ public class UtilsApiController {
     private static final List<String> CURRENCIES_BLACKLIST = Arrays.asList("USN", "USS");
     private final EventNameManager eventNameManager;
     private final String version;
+    private final Environment environment;
 
     @Autowired
-    public UtilsApiController(EventNameManager eventNameManager, @Value("${alfio.version}") String version) {
+    public UtilsApiController(EventNameManager eventNameManager, @Value("${alfio.version}") String version, Environment environment) {
         this.eventNameManager = eventNameManager;
         this.version = version;
+        this.environment = environment;
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)
@@ -80,10 +84,11 @@ public class UtilsApiController {
     }
 
     @RequestMapping(value = "/alfio/info", method = GET)
-    public Map<String, String> getApplicationInfo(Principal principal) {
-        Map<String, String> applicationInfo = new HashMap<>();
+    public Map<String, Object> getApplicationInfo(Principal principal) {
+        Map<String, Object> applicationInfo = new HashMap<>();
         applicationInfo.put("version", version);
         applicationInfo.put("username", principal.getName());
+        applicationInfo.put("isDemoMode", environment.acceptsProfiles(Initializer.PROFILE_DEMO));
         return applicationInfo;
     }
 

@@ -1,6 +1,7 @@
 language: java
 before_script:
   - psql -c 'create database alfio;' -U postgres
+  - bash .travis.install-mysql-5.7.sh
   - mysql -u root -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
   - mysql -u root -e 'select VERSION()'
   - mysql -u root -e 'select @@sql_mode'
@@ -60,6 +61,9 @@ matrix:
           env: PROFILE="-Ddbenv=MYSQL -Dmariadb10.1"
           addons:
               mariadb: 10.1
+        - jdk: oraclejdk8
+          env: PROFILE="-Ddbenv=MYSQL -Dmysql.5.7"
+
 script:
     - TERM=dumb ./gradlew build jacocoTestReport $PROFILE
 after_success:

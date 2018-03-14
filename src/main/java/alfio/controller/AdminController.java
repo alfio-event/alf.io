@@ -17,7 +17,8 @@
 package alfio.controller;
 
 import alfio.manager.system.ConfigurationManager;
-import org.springframework.beans.factory.annotation.Autowired;
+import alfio.manager.user.UserManager;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -26,15 +27,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.security.Principal;
 
 @Controller
+@AllArgsConstructor
 @RequestMapping("/admin")
 public class AdminController {
 
     private final ConfigurationManager configurationManager;
-
-    @Autowired
-    public AdminController(ConfigurationManager configurationManager) {
-        this.configurationManager = configurationManager;
-    }
+    private final UserManager userManager;
 
     //catch both "/admin" and "/admin/"
     @RequestMapping("")
@@ -43,6 +41,7 @@ public class AdminController {
         model.addAttribute("username", principal.getName());
         model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
         model.addAttribute("isAdmin", principal.getName().equals("admin"));
+        model.addAttribute("isOwner", userManager.isOwner(userManager.findUserByUsername(principal.getName())));
         return "/admin/index";
     }
 }

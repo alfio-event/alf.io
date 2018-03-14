@@ -8,7 +8,7 @@
     var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
     var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
     
-    var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-additional-services', 'alfio-event-statistic', 'ui.ace']);
+    var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-plugins', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-additional-services', 'alfio-event-statistic', 'ui.ace', 'monospaced.qrcode']);
 
     var loadEvent = {
         'loadEvent': function($stateParams, EventService) {
@@ -20,7 +20,7 @@
         this.loadEvent = loadEvent.data.event;
     }
 
-    admin.config(function($stateProvider, $urlRouterProvider) {
+    admin.config(function($stateProvider, $urlRouterProvider, growlProvider) {
         $urlRouterProvider.otherwise("/");
         $stateProvider
             .state('index', {
@@ -183,6 +183,16 @@
                 },
                 controllerAs: 'ctrl'
             })
+            .state('events.single.ticketsList', {
+                url: '/category/:categoryId/tickets',
+                template: '<tickets-list event="$ctrl.event" category-id="$ctrl.categoryId"></tickets-list>',
+                controller: ['loadEvent', '$stateParams', function(loadEvent, $stateParams) {
+                    this.event = loadEvent.data.event;
+                    this.categoryId = $stateParams.categoryId;
+                }],
+                controllerAs: '$ctrl',
+                resolve: loadEvent
+            })
             .state('events.single.pending-payments', {
                 url: '/pending-payments/',
                 templateUrl: BASE_STATIC_URL + '/pending-payments/index.html',
@@ -231,6 +241,26 @@
                 data: {
                     view: 'CREATE_RESERVATION'
                 }
+            }).state('events.single.import-reservation', {
+                url:'/reservation/import',
+                template: '<reservation-import event="ctrl.event"></reservation-import>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'IMPORT_RESERVATION'
+                }
+            }).state('events.single.import-status', {
+                url:'/reservation/import/:requestId/status',
+                template: '<reservation-import-progress event="ctrl.event"></reservation-import-progress>',
+                controller: function(getEvent) {
+                    this.event = getEvent.data.event;
+                },
+                controllerAs: 'ctrl',
+                data: {
+                    view: 'IMPORT_STATUS'
+                }
             }).state('events.single.view-reservation', {
                 url:'/reservation/:reservationId?fromCreation',
                 template: '<reservation-view event="ctrl.event" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',
@@ -247,7 +277,29 @@
                         return AdminReservationService.load($stateParams.eventName, $stateParams.reservationId);
                     }
                 }
+            }).state('extension', {
+                url: '/extension',
+                abstract: true,
+                template: '<div><div data-ui-view></div></div>'
+            }).state('extension.list', {
+                url: '/list',
+                template: '<extension></extension>'
+            }).state('extension.new', {
+                url: '/new',
+                template: '<extension-add-update></extension-add-update>'
+            }).state('extension.edit', {
+                url: '/:path/:name/edit',
+                template: '<extension-add-update to-update="ctrl.toUpdate" close="ctrl.close($script)" dismiss="ctrl.dismiss()"></extension-add-update>',
+                controllerAs: 'ctrl',
+                controller: ['$stateParams', function($stateParams) {
+                    this.toUpdate = {path: $stateParams.path, name: $stateParams.name};
+                }]
+            }).state('extension.log', {
+                url: '/log',
+                template: '<extension-log></extension-log>'
             });
+
+        growlProvider.globalPosition('bottom-right');
     });
 
     navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
@@ -303,15 +355,36 @@
         return deferred.promise;
     };
 
-    admin.controller('MenuController', ['$scope', '$http', '$window', 'UtilsService', function($scope, $http, $window, UtilsService) {
+    admin.controller('MenuController', ['$scope', '$http', '$window', 'UtilsService', '$state', '$rootScope', 'EventService', function($scope, $http, $window, UtilsService, $state, $rootScope, EventService) {
         var ctrl = this;
         ctrl.menuCollapsed = true;
+        ctrl.eventName = $state.params.eventName;
+        $rootScope.$on('$stateChangeSuccess', function(event, toState, toParams) {
+            ctrl.eventName = toParams.eventName;
+        });
         ctrl.toggleCollapse = function(currentStatus) {
             ctrl.menuCollapsed = !currentStatus;
         };
+        var deleteCheckInDatabase = function () {
+            try {
+                Dexie.delete('AlfioDatabase');
+                $window.sessionStorage.clear();
+            } catch (e) {
+            }
+        };
+
+        $window.addEventListener("beforeunload", deleteCheckInDatabase);
+
         ctrl.doLogout = function() {
             UtilsService.logout().then(function() {
+                //delete alf.io IndexedDb
+                deleteCheckInDatabase();
                 $window.location.reload();
+            });
+        };
+        ctrl.openDeleteWarning = function() {
+            EventService.deleteEvent(ctrl.event).then(function(result) {
+                $state.go('index');
             });
         };
     }]);
@@ -382,7 +455,8 @@
                         return {
                             id: p.paymentProxy,
                             description: PAYMENT_PROXY_DESCRIPTIONS[p.paymentProxy] || 'Unknown provider ('+p.paymentProxy+')  Please check configuration',
-                            enabled: p.status === 'ACTIVE'
+                            enabled: p.status === 'ACTIVE',
+                            onlyForCurrency: p.onlyForCurrency
                         };
                     });
                 });
@@ -581,9 +655,9 @@
                                                         $window,
                                                         $uibModal,
                                                         PAYMENT_PROXY_DESCRIPTIONS,
-                                                        AdditionalServiceManager,
-                                                        $location,
-                                                        $anchorScroll) {
+                                                        UtilsService,
+                                                        NotificationHandler,
+                                                        $timeout) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -610,8 +684,10 @@
 
                 $scope.loading = false;
                 $scope.loadingMap = true;
-                LocationService.getMapUrl(result.event.latitude, result.event.longitude).success(function(mapUrl) {
+                LocationService.getMapUrl(result.event.latitude, result.event.longitude).then(function(mapUrl) {
                     $scope.event.geolocation = {
+                        latitude: result.event.latitude,
+                        longitude: result.event.longitude,
                         mapUrl: mapUrl,
                         timeZone: result.event.timeZone
                     };
@@ -625,8 +701,14 @@
                 };
             });
         };
+        $scope.baseUrl = window.location.origin;
         loadData().then(function() {
             initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
+            $scope.selection = {
+                active: true,
+                expired: $scope.event.ticketCategories.filter(function(tc) { return tc.containingOrphans; }).length > 0,
+                freeText: ''
+            };
         });
         $scope.allocationStrategyRadioClass = 'radio';
         $scope.evaluateCategoryStatusClass = function(index, category) {
@@ -635,7 +717,7 @@
             }
             return 'category-' + $rootScope.evaluateBarType(index);
         };
-        
+
         $scope.evaluateClass = function(token) {
             switch(token.status) {
                 case 'WAITING':
@@ -649,11 +731,6 @@
             }
         };
 
-        $scope.selection = {
-            active: true,
-            expired: false,
-            freeText: ''
-        };
 
         $scope.getActualCapacity = function(category, event) {
             return category.bounded ? category.maxTickets : (event.dynamicAllocation + category.checkedInTickets + category.soldTickets);
@@ -669,10 +746,6 @@
 
         $scope.toggleTokenViewCollapse = function(category) {
             category.isTokenViewExpanded = !category.isTokenViewExpanded;
-        };
-
-        $scope.toggleTicketViewCollapse = function(category) {
-            category.isTicketViewExpanded = !category.isTicketViewExpanded;
         };
 
         $scope.isPending = function(token) {
@@ -691,18 +764,40 @@
             });
         };
 
+        $scope.containsValidTokens = function(tokens) {
+            return _.all(tokens, function(t) {
+                return t.status !== 'WAITING';
+            });
+        };
+
+        $scope.groupTokensByStatus = function(tokens) {
+            return _.chain(tokens)
+                .filter(function(t) { return t.status !== 'CANCELLED'; })
+                .sortByOrder(['id'], ['desc'])
+                .groupBy(function(token) {
+                    switch(token.status) {
+                        case 'FREE':
+                            return token.sentTimestamp === null ? 'Free' : 'Invitation Sent';
+                        case 'PENDING':
+                            return 'Pending';
+                        case 'TAKEN':
+                            return 'Confirmed';
+                    }
+                }).value();
+        };
+
         $scope.eventHeader = {};
         $scope.eventPrices = {};
 
         var validationErrorHandler = function(result, form, fieldsContainer) {
             return $q(function(resolve, reject) {
-                if(result.data['errorCount'] == 0) {
+                if(result.data['errorCount'] === 0) {
                     resolve(result);
                 } else {
                     _.forEach(result.data.validationErrors, function(error) {
                         var field = fieldsContainer[error.fieldName];
                         if(angular.isDefined(field)) {
-                            if (error.code == ERROR_CODES.DUPLICATE) {
+                            if (error.code === ERROR_CODES.DUPLICATE) {
                                 field.$setValidity(ERROR_CODES.DUPLICATE, false);
                                 field.$setTouched();
                             } else {
@@ -714,11 +809,6 @@
                     reject('validation error');
                 }
             });
-        };
-
-        var errorHandler = function(error) {
-            $log.error(error.data);
-            alert(error.data);
         };
 
         $scope.editHeader = function() {
@@ -745,7 +835,7 @@
                             validationErrorHandler(result, form, form.editEventHeader).then(function(result) {
                                 $scope.$close(eventHeader);
                             });
-                        }, errorHandler);
+                        });
                     };
                 }
             });
@@ -753,6 +843,24 @@
                 loadData().then(function(res) {
                     $rootScope.$emit('ReloadEventPie', res.data.event);
                 });
+            });
+        };
+
+        var reloadIfSeatsModification = function(seatsModified) {
+            var message = "Modification applied. " + (seatsModified ? "Seats modification will become effective in 30s. The data will be reloaded automatically." : "");
+            return loadData().then(function(res) {
+                NotificationHandler.showSuccess(message);
+                $rootScope.$emit('ReloadEventPie', res.data.event);
+                if(seatsModified) {
+                    $timeout(function() {
+                        var info = NotificationHandler.showInfo("Reloading data...");
+                        loadData().then(function(res2) {
+                            info.destroy();
+                            NotificationHandler.showSuccess("Success!");
+                            $rootScope.$emit('ReloadEventPie', res2.data.event);
+                        });
+                    }, 30000 );
+                }
             });
         };
 
@@ -765,6 +873,7 @@
                 controller: function($scope) {
                     $scope.eventPrices = parentScope.eventPrices;
                     $scope.event = parentScope.event;
+                    var seats = $scope.event.availableSeats;
                     $scope.allowedPaymentProxies = parentScope.allowedPaymentProxies;
 
                     $scope.cancel = function() {
@@ -778,15 +887,13 @@
                         angular.extend(obj, eventPrices);
                         EventService.updateEventPrices(obj).then(function(result) {
                             validationErrorHandler(result, form, form.editPrices).then(function(result) {
-                                $scope.$close(eventPrices);
+                                $scope.$close(eventPrices.availableSeats !== seats);
                             });
-                        }, errorHandler);
+                        });
                     };
                 }
             });
-            editPrices.result.then(function() {
-                loadData();
-            });
+            editPrices.result.then(reloadIfSeatsModification);
         };
 
         $scope.openDeleteWarning = function(event) {
@@ -805,6 +912,7 @@
                 backdrop: 'static',
                 controller: function($scope) {
                     $scope.allLanguagesMapping = parentScope.allLanguagesMapping;
+                    var original = angular.extend({}, category);
                     $scope.ticketCategory = category;
                     $scope.event = event;
                     $scope.editMode = true;
@@ -817,12 +925,12 @@
                         }
                         EventService.saveTicketCategory(event, category).then(function(result) {
                             validationErrorHandler(result, form, form).then(function() {
-                                loadData().then(function(res) {
-                                    $rootScope.$emit('ReloadEventPie', res.data.event);
-                                });
-                                $scope.$close(true);
+                                reloadIfSeatsModification(!original || (original.bounded ^ category.bounded || original.maxTickets !== category.maxTickets))
+                                    .then(function() {
+                                        $scope.$close(true);
+                                    });
                             });
-                        }, errorHandler);
+                        });
                     };
                 }
             });
@@ -856,27 +964,30 @@
                             validationErrorHandler(result, form, form).then(function() {
                                 $scope.$close(true);
                             });
-                        }, errorHandler);
+                        });
                     };
                 }
-            });
-        };
-
-        $scope.toggleLocking = function(event, ticket, category) {
-            EventService.toggleTicketLocking(event, ticket, category).then(function() {
-                loadData();
-            });
-        };
-
-        $scope.removeTicket = function(event, ticket) {
-            EventService.removeTicketModal(event, ticket.ticketReservation.id, ticket.id).then(function() {
-                loadData();
             });
         };
 
         $scope.editCategory = function(category, event) {
             var inception = moment(category.formattedInception);
             var expiration = moment(category.formattedExpiration);
+
+            function prepareValidDate(date) {
+                if(date) {
+                    var m = moment(date);
+                    return {date: m.format('YYYY-MM-DD'), time: m.format('HH:mm')}
+                } else {
+                    return null
+                }
+            }
+
+            var validCheckInFrom = prepareValidDate(category.formattedValidCheckInFrom);
+            var validCheckInTo = prepareValidDate(category.formattedValidCheckInTo);
+            var ticketValidityStart = prepareValidDate(category.formattedTicketValidityStart);
+            var ticketValidityEnd = prepareValidDate(category.formattedTicketValidityEnd);
+
             var categoryObj = {
                 id: category.id,
                 name: category.name,
@@ -884,6 +995,7 @@
                 description: category.description,
                 maxTickets: category.maxTickets,
                 bounded: category.bounded,
+                code: category.code,
                 inception: {
                     date: inception.format('YYYY-MM-DD'),
                     time: inception.format('HH:mm')
@@ -892,6 +1004,10 @@
                     date: expiration.format('YYYY-MM-DD'),
                     time: expiration.format('HH:mm')
                 },
+                validCheckInTo: validCheckInTo,
+                validCheckInFrom: validCheckInFrom,
+                ticketValidityStart: ticketValidityStart,
+                ticketValidityEnd: ticketValidityEnd,
                 tokenGenerationRequested: category.accessRestricted,
                 sticky: false
             };
@@ -907,12 +1023,14 @@
             });
         };
 
-        getPendingPayments();
         $scope.registerPayment = function(eventName, id) {
             $scope.loading = true;
             EventService.registerPayment(eventName, id).success(function() {
-                loadData();
-                getPendingPayments();
+                loadData().then(function(res) {
+                    if(res.data.event.visibleForCurrentUser) {
+                        getPendingPayments();
+                    }
+                });
             }).error(function() {
                 $scope.loading = false;
             });
@@ -920,8 +1038,11 @@
         $scope.deletePayment = function(eventName, id) {
             $scope.loading = true;
             EventService.cancelPayment(eventName, id).success(function() {
-                loadData();
-                getPendingPayments();
+                loadData().then(function(res) {
+                    if(res.data.event.visibleForCurrentUser) {
+                        getPendingPayments();
+                    }
+                });
             }).error(function() {
                 $scope.loading = false;
             });
@@ -947,9 +1068,16 @@
         };
 
         $scope.activateEvent = function(id) {
-            EventService.toggleActivation(id, true).then(function() {
-                $scope.eventHasBeenActivated = true;
-                loadData();
+
+            UtilsService.getApplicationInfo().then(function(appInfo) {
+                if (appInfo.data.isDemoMode) {
+                    NotificationHandler.showError('Cannot publish events in demo mode for privacy reasons');
+                } else {
+                    EventService.toggleActivation(id, true).then(function() {
+                        $scope.eventHasBeenActivated = true;
+                        loadData();
+                    });
+                }
             });
         };
 
@@ -983,6 +1111,9 @@
             [categoryFilterListener, eventUpdateListener].forEach(function(f) {f();});
         });
 
+        $scope.categoryHasDescriptions = function(category) {
+            return category && category.description ? Object.keys(category.description).length > 0 : false;
+        };
 
     });
 
@@ -1030,13 +1161,29 @@
         };
         $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes';
     });
-    
-    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log, $state, EventService, CheckInService, AdminReservationService, $uibModal) {
+
+
+    admin.controller('EventCheckInController', function($scope, $stateParams, $timeout, $log,
+                                                        $state, EventService, CheckInService,
+                                                        AdminReservationService, $uibModal, $window, $q,
+                                                        NotificationHandler) {
 
         $scope.selection = {};
         $scope.checkedInSelection = {};
-
+        $scope.itemsPerPage = 20;
+        $scope.currentPage = 1;
+        $scope.currentPageCheckedIn = 1;
         $scope.advancedSearch = {};
+        $scope.tickets = [];
+        $scope.checkedInTickets = [];
+
+        var db = new Dexie('AlfioDatabase', {autoOpen: false});
+        db.version(1).stores({
+            alfioCheckIn: "id, status, lastName"
+        });
+        db.open()['catch'](function(err) {
+            $scope.disabled = true;
+        });
 
         $scope.resetAdvancedSearch = function() {
             $scope.advancedSearch = {};
@@ -1056,19 +1203,40 @@
 
         EventService.getEvent($stateParams.eventName).success(function(result) {
             $scope.event = result.event;
-            CheckInService.findAllTickets(result.event.id).success(function(tickets) {
-                $scope.tickets = tickets;
-            });
+            loadTickets(result.event.id);
         });
 
-        $scope.toBeCheckedIn = function(ticket) {
-            return  ['TO_BE_PAID', 'ACQUIRED'].indexOf(ticket.status) >= 0;
-        };
-
-
         function reloadTickets() {
-            CheckInService.findAllTickets($scope.event.id).success(function(tickets) {
-                $scope.tickets = tickets;
+            loadTickets($scope.event.id);
+        }
+
+        function loadTickets(eventId) {
+            return CheckInService.findAllTicketIds(eventId).then(function(resp) {
+                var chain = $q.when([]);
+                var transactions = [];
+                if(resp.data.length > 0) {
+                    var chunks = _.chunk(resp.data, 200);
+                    $scope.chunks = chunks.length;
+                    $scope.loading = true;
+                    var completedChunks = 0;
+                    $scope.completedChunks = completedChunks;
+                    _.forEach(chunks, function(array) {
+                        chain = chain.then(function() {
+                            return CheckInService.downloadTickets(eventId, array)
+                                .then(function(resp) {
+                                    $scope.completedChunks = ++completedChunks;
+                                    transactions.push(db.transaction('rw', db.alfioCheckIn, function() {
+                                        return db.alfioCheckIn.bulkPut(resp.data);
+                                    }));
+                                });
+                        });
+                    });
+                }
+                return chain.then(function() {
+                    $q.all(transactions).then(function() {
+                        loadTicketsFromDB(db, $scope);
+                    });
+                });
             });
         }
         
@@ -1105,7 +1273,7 @@
                     }
                 }
             })
-        }
+        };
 
         var parentScope = $scope;
 
@@ -1147,9 +1315,17 @@
         };
 
         $scope.manualCheckIn = function(ticket) {
-            CheckInService.manualCheckIn(ticket).then($scope.reloadTickets).then(function() {
-                $scope.selection = {};
-            });
+            CheckInService.manualCheckIn(ticket)
+                .then(function(result) {
+                    if(result.data) {
+                        return NotificationHandler.showSuccess(ticket.fullName+" checked in!")
+                    } else {
+                        return NotificationHandler.showWarning("Can't check-in "+ticket.fullName)
+                    }
+                })
+                .then($scope.reloadTickets).then(function() {
+                    $scope.selection = {};
+                });
         };
 
         $scope.showQrCode = function(ticket, event) {
@@ -1170,7 +1346,97 @@
         };
 
         $scope.revertCheckIn = function(ticket) {
-            CheckInService.revertCheckIn(ticket).then($scope.reloadTickets);
+            CheckInService.revertCheckIn(ticket).then(function(result) {
+                if(result.data) {
+                    NotificationHandler.showSuccess("Reverted "+ticket.fullName);
+                }
+            }).then($scope.reloadTickets);
+        };
+
+        $scope.triggerSearch = function() {
+            loadTicketsFromDB(db, $scope);
+        };
+
+        $scope.updatePage = function(newPage) {
+            $scope.currentPage = newPage;
+            loadTicketsFromDB(db, $scope, newPage);
+        };
+
+        $scope.updatePageCheckedIn = function(newPage) {
+            $scope.currentPageCheckedIn = newPage;
+            loadTicketsFromDB(db, $scope, newPage);
+        };
+
+        var loadTicketsFromDB = function (db, $scope, newPage) {
+
+            var eventId = $scope.event.id;
+            var query = $scope.selection.freeText;
+            var pageNotCheckedIn = $scope.currentPage;
+            var offsetNotCheckedIn = query ? 0 : $scope.itemsPerPage * (pageNotCheckedIn - 1);
+
+            var pageCheckedIn = $scope.currentPageCheckedIn;
+            var offsetCheckedIn = query ? 0 : $scope.itemsPerPage * (pageCheckedIn - 1);
+
+            var filter = function(ticket) {
+                return ticket.eventId === eventId && (!query || query === '' ||
+                    ([ticket.fullName, ticket.email, ticket.ticketCategory.name, ticket.uuid, ticket.ticketsReservationId].join('/')).toLowerCase().indexOf(query.toLowerCase()) > -1);
+            };
+
+            var deferred1 = $q.defer();
+            var deferred2 = $q.defer();
+            db.alfioCheckIn
+                .where("status")
+                .notEqual('CHECKED_IN')
+                .and(filter)
+                .offset(offsetNotCheckedIn)
+                .limit($scope.itemsPerPage)
+                .toArray()
+                .then(function (tickets) {
+                    $timeout(function () {
+                        $scope.tickets = tickets;
+                        deferred1.resolve();
+                    }, 50);
+                });
+
+            db.alfioCheckIn
+                .where("status")
+                .equals('CHECKED_IN')
+                .and(filter)
+                .offset(offsetCheckedIn)
+                .limit($scope.itemsPerPage)
+                .toArray()
+                .then(function(tickets) {
+                    $timeout(function() {
+                        $scope.checkedInTickets = tickets;
+                        deferred2.resolve();
+                    }, 50);
+                });
+
+            db.alfioCheckIn
+                .where("status")
+                .notEqual('CHECKED_IN')
+                .and(filter)
+                .count()
+                .then(function (count) {
+                    $timeout(function () {
+                        $scope.count = count;
+                    }, 50);
+                });
+
+            db.alfioCheckIn
+                .where("status")
+                .equals('CHECKED_IN')
+                .and(filter)
+                .count()
+                .then(function(count) {
+                    $timeout(function() {
+                        $scope.checkedInCount = count;
+                    }, 50);
+                });
+
+            $q.all([deferred1.promise, deferred2.promise]).then(function() {
+                $scope.loading = false;
+            })
         };
     });
 
@@ -1407,7 +1673,7 @@
 
 
         $q.all([EventService.getSelectedLanguages($stateParams.eventName),
-            EventService.getCategoriesContainingTickets($stateParams.eventName), EventService.getEvent($stateParams.eventName)])
+            EventService.getEvent($stateParams.eventName)])
         .then(function(results) {
                 $scope.messages = _.map(results[0].data, function(r) {
                     return {
@@ -1421,10 +1687,10 @@
                 });
                 $scope.fullName = 'John Doe';
 
-                $scope.categories = results[1].data;
+                $scope.categories = results[1].data.event.ticketCategories;
                 $scope.categoryId = undefined;
 
-                var eventDescriptor = results[2].data;
+                var eventDescriptor = results[1].data;
                 $scope.organization = eventDescriptor.organization;
                 $scope.eventName = eventDescriptor.event.shortName;
         });
@@ -1527,6 +1793,7 @@
     }]);
 
     admin.run(function($rootScope, PriceCalculator) {
+
         $rootScope.evaluateBarType = function(index) {
             var barClasses = ['warning', 'info', 'success'];
             if(index < barClasses.length) {

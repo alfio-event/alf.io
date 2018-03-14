@@ -3,8 +3,7 @@ alf.io
 
 alf.io
 
-[![Build Status](http://img.shields.io/travis/exteso/alf.io/master.svg)](https://travis-ci.org/exteso/alf.io) [![Coverage Status](https://img.shields.io/coveralls/exteso/alf.io.svg)](https://coveralls.io/r/exteso/alf.io)
-[![Coverity Scan Build Status](https://img.shields.io/coverity/scan/5232.svg)](https://scan.coverity.com/projects/5232)
+[![Build Status](http://img.shields.io/travis/alfio-event/alf.io/master.svg)](https://travis-ci.org/alfio-event/alf.io) [![Coverage Status](https://img.shields.io/coveralls/alfio-event/alf.io.svg)](https://coveralls.io/r/alfio-event/alf.io)
 
 ## Prerequisites
 
@@ -21,7 +20,7 @@ the project. Simply execute the wrapper along with the appropriate task, for exa
 ./gradlew clean
 ```
 
-#### Running with multiple profiles
+#### Running with multiple profiles
 
 You must specify a project property at the command line, such as
 ```
@@ -46,6 +45,10 @@ vi custom.jvmargs
 ```
 
 Please be aware that since this file could contain sensitive information (such as Google Maps private API key) it will be automatically ignored by git.
+
+#### For debug
+
+Add a new line with: `-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005` in custom.jvmargs
 
 
 #### Using hsqldb gui
@@ -116,7 +119,7 @@ TODO
  docker run --name alfio-proxy --link alfio-web:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy
  ```
 
-### Test alf.io application
+### Test alf.io application
  * See alfio-web logs: `docker logs alfio-web` or `less /path/to/logs/alfio.log`
  * Copy admin password in a secure place
  * Get IP of your docker container: (only on Mac/Windows, on linux the proxy will bind directly on your public IP)
@@ -128,3 +131,13 @@ TODO
 
 The certificate at src/main/resources/alfio/certificates/AppleWWDRCA.cer has been imported for https://github.com/ryantenney/passkit4j#usage functionality.
 It will expire the 02/07/23 (as https://www.apple.com/certificateauthority/).
+
+## Available spring profiles:
+
+ - dev: enable dev mode
+ - debug-csp: add report-uri and log csp violations
+ - http: enable if behind proxy or the call chain is not full https
+ - spring-boot: added when launched by spring-boot
+ - demo: enable demo mode, the accounts for the admin will be created on the fly
+ - disable-jobs: disable jobs
+ - jdbc-session: enable saving the http session in the database

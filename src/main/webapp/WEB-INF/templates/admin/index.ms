@@ -6,7 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="_csrf" content="{{_csrf.token}}"/>
     <meta name="_csrf_header" content="{{_csrf.headerName}}"/>
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/css/bootstrap-admin.min.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/chartist/dist/chartist.min.css">
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.css">
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/admin.css" />
@@ -32,6 +32,9 @@
     <script src="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-animate/angular-animate.min.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/qrcode-generator/js/qrcode.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/qrcode-generator/js/qrcode_UTF8.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/angular-qrcode/angular-qrcode.js"></script>
     <script src="{{request.contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/directive/admin-directive.js"></script>
@@ -51,6 +54,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/event-statistic/event-statistic.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/expired-events-list/expired-events-list.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/active-events-list/active-events-list.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/event-data-to-collect/event-data-to-collect.js"></script>
 
@@ -72,22 +76,32 @@
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/reservation.service.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/import/reservation-import.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservation/view/reservation-view.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/reservations-list/reservations-list.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/tickets-list/tickets-list.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/label-template/label-template.js"></script>
+
+    <script src="{{request.contextPath}}/resources/js/admin/feature/extension/extension.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/extension/extension.service.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/extension/add-update/extension-add-update.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/extension/log/extension-log.js"></script>
 
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/bootstrap-daterangepicker/daterangepicker.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/ace-builds/src-min-noconflict/ace.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/angular-ui-ace/ui-ace.js"></script>
+    <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/dexie/dist/dexie.min.js"></script>
+    <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/papaparse/papaparse.min.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
 <body>
     <div class="navbar navbar-default navbar-fixed-top" role="navigation" data-ng-controller="MenuController as ctrl">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-xs-12 col-md-10 col-md-push-1">
+                <div class="col-xs-12 col-lg-11">
                     <div class="navbar-header">
                         <button type="button" class="navbar-toggle" data-ng-click="ctrl.toggleCollapse(ctrl.menuCollapsed)">
                             <span class="sr-only">Toggle navigation</span>
@@ -100,18 +114,62 @@
                     <div class="navbar-left">
                         <div class="collapse navbar-collapse" data-uib-collapse="ctrl.menuCollapsed">
                             <ul class="nav navbar-nav">
-                                <li data-ui-sref-active="active"><a data-ui-sref="index">Dashboard</a></li>
-                                {{#isAdmin}}<li data-ui-sref-active="active"><a data-ui-sref="organizations">Organizations</a></li>{{/isAdmin}}
-                                <li data-ui-sref-active="active"><a data-ui-sref="users">Users</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="configuration.system">Configuration</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="index" ng-click="ctrl.menuCollapsed = true">Dashboard</a></li>
+                                {{#isOwner}}
+                                <li data-ui-sref-active="active"><a data-ui-sref="organizations" ng-click="ctrl.menuCollapsed = true">Organizations</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="users" ng-click="ctrl.menuCollapsed = true">Users</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="configuration.system" ng-click="ctrl.menuCollapsed = true">Configuration</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="extension.list" ng-click="ctrl.menuCollapsed = true">Extension</a></li>
+                                {{/isOwner}}
+                            </ul>
+                            <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
+                                <li class="navbar-header"><h4>Actions</h4></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.create-reservation({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-magic"></i> create reservation</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.configuration({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-wrench"></i> edit configuration</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.show-resources({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-file-text-o" aria-hidden="true"></i> customize templates</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="events.single.compose-custom-message({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-envelope"></i> compose message</a></li>
+                                <li data-ui-sref-active="active" data-ng-if="!ctrl.event.expired"><a data-ui-sref="events.single.checkIn({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-check"></i> Check-in</a></li>
+                            </ul>
+                            <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
+                                <li class="navbar-header"><h4>Status</h4></li>
+                                <li data-ui-sref-active="active" waiting-queue-display-counter="" data-event-name="ctrl.eventName" data-style-class="navbar-link"></li>
+                                <li data-ui-sref-active="active" pending-payments-link="" data-style-class="emulate-nav-pills-link" data-event-name="ctrl.eventName"></li>
+                            </ul>
+
+                            <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
+                                <li class="navbar-header"><h4>Navigate</h4></li>
+                                <li role="presentation" data-ui-sref-active="active">
+                                    <a ui-sref="events.single.dataToCollect({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-info-circle"></i> Attendees' data to collect</a>
+                                </li>
+                                <li role="presentation" data-ui-sref-active="active">
+                                    <a ui-sref="events.single.promoCodes({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-percent"></i> Promo Codes</a>
+                                </li>
+                                <li role="presentation" data-ui-sref-active="active">
+                                    <a ui-sref="events.single.additionalServices({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-money"></i> Additional options</a>
+                                </li>
+                                <li role="presentation" data-ui-sref-active="active">
+                                    <a ui-sref="events.single.donations({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-gift"></i> Donation options</a>
+                                </li>
+                                <li role="presentation" data-ui-sref-active="active">
+                                    <a data-ui-sref="events.single.reservationsList({eventName:ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-ticket"></i> Reservations</a>
+                                </li>
+                                <li role="presentation" data-ui-sref-active="active">
+                                    <a data-ui-sref="events.single.email-log({eventName:ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-paper-plane-o"></i> E-mail log</a>
+                                </li>
+                                <li role="presentation" data-ui-sref-active="active">
+                                    <a data-ui-sref="events.single.plugin-log({eventName:ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-plug"></i> Plugins log</a>
+                                </li>
+                            </ul>
+                            <ul class="nav navbar-nav visible-sm visible-xs">
                                 <li class="nav-divider"></li>
-                                <li class="visible-xs navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>
-                                <li class="visible-xs"><a href="#" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-edit"></i> edit account</a></li>
-                                <li class="visible-xs"><a href="" data-ng-click="ctrl.doLogout()">Logout</a></li>
+                                <li class="visible-xs visible-sm">
+                                    <div class="pull-left"><a href="#" class="navbar-link" ng-click="ctrl.menuCollapsed = true" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-user"></i> {{username}}</a></div>
+                                    <div class="pull-right"><a href="" class="navbar-link" data-ng-click="ctrl.doLogout()"><i class="fa fa-sign-out"></i> Log out</a></div>
+                                </li>
                             </ul>
                         </div>
                     </div>
-                    <div class="navbar-right hidden-xs">
+                    <div class="navbar-right hidden-sm hidden-xs">
                         <ul class="nav navbar-nav">
                             <li role="presentation" class="navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>
                             <li role="presentation" data-ui-sref-active="active"> <a data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-edit"></i> edit account</a></li>
@@ -123,20 +181,22 @@
         </div>
     </div>
     <div growl></div>
-    <div data-ng-controller="LayoutController as ctrl" data-ng-switch="ctrl.displaySidebar">
-        <div class="container-fluid menu-spacer" data-ng-show="ctrl.displaySidebar">
+    <div data-ng-controller="LayoutController as ctrl">
+        <div class="container-fluid menu-spacer">
             <div class="row">
-                <div class="hidden-xs hidden-sm col-md-2 col-md-push-1">
+                <div class="hidden-xs hidden-sm col-md-3 col-lg-2" ng-if="ctrl.displaySidebar">
                     <alfio-sidebar></alfio-sidebar>
                 </div>
-                <div class="col-sm-12 col-xs-12 col-md-8 col-md-push-1">
+                <div class="col-sm-12 col-xs-12" ng-class="{'col-md-9': ctrl.displaySidebar}">
+                    {{#errorMessage}}
+                        <div class="container wMarginTop10px">
+                            <div class="alert alert-danger text-center"><i class="fa fa-warning"></i> <strong>{{errorMessage}}</strong></div>
+                        </div>
+                    {{/errorMessage}}
                     <div data-ui-view></div>
                 </div>
             </div>
-        </div>
-        <div class="container-fluid menu-spacer" data-ng-if="!ctrl.displaySidebar">
-            <div data-ui-view></div>
-            <footer class="text-center">
+            <footer class="text-center" ng-if="!ctrl.displaySidebar">
                 <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{alfioVersion}}</h5>
                 <small><a href="https://github.com/exteso/alf.io/issues" target="_blank">report an issue</a> or <a href="https://groups.google.com/d/forum/alfio" target="_blank">ask for help</a></small>
                 <div class="wMarginTop10px">

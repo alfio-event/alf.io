@@ -24,6 +24,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -88,7 +89,8 @@ public enum TemplateResource {
     TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", sampleTicket());
+            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null);
+            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", sampleTicket(), ticketCategory);
         }
     },
     TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
@@ -116,7 +118,7 @@ public enum TemplateResource {
     TICKET_PDF("/alfio/templates/ticket.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000);
+            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null);
             return buildModelForTicketPDF(organization, event, sampleTicketReservation(), ticketCategory, sampleTicket(), imageData, "ABCD");
         }
     },
@@ -205,13 +207,13 @@ public enum TemplateResource {
     private static Ticket sampleTicket(String firstName, String lastName, String email) {
         return new Ticket(0, "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", ZonedDateTime.now(), 0, "ACQUIRED", 0,
             "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", firstName + " " + lastName, firstName, lastName, email, false, "en",
-            1000, 1000, 80, 0);
+            1000, 1000, 80, 0, null);
     }
 
     private static TicketReservation sampleTicketReservation() {
         return new TicketReservation("597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", new Date(), TicketReservation.TicketReservationStatus.COMPLETE,
             "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
-            PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456", "CH", false);
+            PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456", "CH", false, new BigDecimal("8.00"), true);
     }
 
     private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
@@ -338,14 +340,22 @@ public enum TemplateResource {
                                                                Event event,
                                                                TicketReservation ticketReservation,
                                                                String ticketURL,
-                                                               Ticket ticket) {
+                                                               Ticket ticket,
+                                                               TicketCategory ticketCategory) {
         Map<String, Object> model = new HashMap<>();
         model.put("organization", organization);
         model.put("event", event);
         model.put("ticketReservation", ticketReservation);
         model.put("ticketUrl", ticketURL);
         model.put("ticket", ticket);
+        model.put("googleCalendarUrl", EventUtil.getGoogleCalendarURL(event, ticketCategory, null));
+        fillTicketValidity(event, ticketCategory, model);
         return model;
+    }
+
+    public static void fillTicketValidity(Event event, TicketCategory ticketCategory, Map<String, Object> model) {
+        model.put("validityStart", Optional.ofNullable(ticketCategory.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin()));
+        model.put("validityEnd", Optional.ofNullable(ticketCategory.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd()));
     }
 
     // used by TICKET_HAS_CHANGED_OWNER
@@ -399,6 +409,7 @@ public enum TemplateResource {
         model.put("event", event);
         model.put("organization", organization);
         model.put("reservationId", reservationId);
+        fillTicketValidity(event, ticketCategory, model);
 
         model.put("qrCodeDataUri", "data:image/png;base64," + Base64.getEncoder().encodeToString(createQRCode(qrCodeText)));
 

@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -31,7 +32,7 @@ import java.util.*;
 public class TicketReservation {
 
     public enum TicketReservationStatus {
-        PENDING, IN_PAYMENT, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED
+        PENDING, IN_PAYMENT, EXTERNAL_PROCESSING_PAYMENT, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED
     }
 
     private final String id;
@@ -51,11 +52,14 @@ public class TicketReservation {
     private final String userLanguage;
     private final boolean directAssignmentRequested;
     private final String invoiceNumber;
+    @JsonIgnore
     private final String invoiceModel;
     private final PriceContainer.VatStatus vatStatus;
     private final String vatNr;
     private final String vatCountryCode;
     private final boolean invoiceRequested;
+    private final BigDecimal usedVatPercent;
+    private final Boolean vatIncluded;
 
     public TicketReservation(@Column("id") String id,
                              @Column("validity") Date validity,
@@ -78,7 +82,9 @@ public class TicketReservation {
                              @Column("vat_status") PriceContainer.VatStatus vatStatus,
                              @Column("vat_nr") String vatNr,
                              @Column("vat_country") String vatCountryCode,
-                             @Column("invoice_requested") boolean invoiceRequested) {
+                             @Column("invoice_requested") boolean invoiceRequested,
+                             @Column("used_vat_percent") BigDecimal usedVatPercent,
+                             @Column("vat_included") Boolean vatIncluded) {
         this.id = id;
         this.validity = validity;
         this.status = status;
@@ -101,6 +107,8 @@ public class TicketReservation {
         this.vatNr = vatNr;
         this.vatCountryCode = vatCountryCode;
         this.invoiceRequested = invoiceRequested;
+        this.usedVatPercent = usedVatPercent;
+        this.vatIncluded = vatIncluded;
     }
 
     public boolean isStuck() {
@@ -129,6 +137,14 @@ public class TicketReservation {
 
     public boolean getHasInvoiceOrReceiptDocument() {
         return invoiceModel != null;
+    }
+
+    public boolean getHasBeenPaid() {
+        return status == TicketReservationStatus.COMPLETE;
+    }
+
+    public boolean getHasVatNumber() {
+        return StringUtils.isNotEmpty(vatNr);
     }
 
     public List<String> getLineSplittedBillingAddress() {

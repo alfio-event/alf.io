@@ -55,4 +55,17 @@ public class EventStatisticView {
     private final int pendingTickets;
     private final int dynamicAllocation;
 
+    public boolean isLiveData() {
+        return true;
+    }
+
+    public static EventStatisticView empty(int eventId) {
+        return new EventStatisticView(false, false, 0, 0, 0, 0, 0, 0, 0, eventId) {
+            @Override
+            public boolean isLiveData() {
+                return false;
+            }
+        };
+    }
+
 }

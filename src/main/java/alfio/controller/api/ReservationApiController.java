@@ -24,6 +24,7 @@ import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.model.*;
 import alfio.model.result.ValidationResult;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.util.Json;
@@ -119,17 +120,14 @@ public class ReservationApiController {
             .filter(t -> t.getRight().isValid())
             .ifPresent(t -> {
                 VatDetail vd = t.getRight();
-                String billingAddress = paymentForm.getBillingAddress();
-                if(t.getRight().isVatExempt()) {
-                    billingAddress = vd.getName() + "\n" + vd.getAddress();
-                    PriceContainer.VatStatus vatStatus = t.getLeft().getVatStatus() == NOT_INCLUDED ? NOT_INCLUDED_EXEMPT : INCLUDED_EXEMPT;
-                    ticketReservationRepository.updateBillingData(vatStatus, vd.getVatNr(), country, paymentForm.isInvoiceRequested(), reservationId);
-                    OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, t.getLeft(), Locale.forLanguageTag(t.getMiddle().getUserLanguage()));
-                    ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
-                }
+                String billingAddress = vd.getName() + "\n" + vd.getAddress();
+                PriceContainer.VatStatus vatStatus = determineVatStatus(t.getLeft().getVatStatus(), t.getRight().isVatExempt());
+                ticketReservationRepository.updateBillingData(vatStatus, vd.getVatNr(), country, paymentForm.isInvoiceRequested(), reservationId);
+                OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, t.getLeft(), Locale.forLanguageTag(t.getMiddle().getUserLanguage()));
+                ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
                 ticketReservationRepository.updateTicketReservation(reservationId, t.getMiddle().getStatus().name(), paymentForm.getEmail(),
                     paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), locale.getLanguage(), billingAddress, null,
-                    Optional.ofNullable(paymentForm.getPaymentMethod()).map(p -> p.name()).orElse(null));
+                    Optional.ofNullable(paymentForm.getPaymentMethod()).map(PaymentProxy::name).orElse(null));
                 paymentForm.getTickets().forEach((ticketId, owner) -> {
                     if(isNotEmpty(owner.getEmail()) && ((isNotEmpty(owner.getFirstName()) && isNotEmpty(owner.getLastName())) || isNotEmpty(owner.getFullName()))) {
                         ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, Optional.empty(), request, (tr) -> {}, Optional.empty());
@@ -147,5 +145,12 @@ public class ReservationApiController {
                 }
             })
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    private static PriceContainer.VatStatus determineVatStatus(PriceContainer.VatStatus current, boolean isVatExempt) {
+        if(!isVatExempt) {
+            return current;
+        }
+        return current == NOT_INCLUDED ? NOT_INCLUDED_EXEMPT : INCLUDED_EXEMPT;
     }
 }

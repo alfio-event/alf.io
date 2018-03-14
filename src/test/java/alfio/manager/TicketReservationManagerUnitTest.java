@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
 import alfio.util.TemplateManager;
 import org.junit.Before;
 import org.junit.Test;
@@ -102,6 +103,10 @@ public class TicketReservationManagerUnitTest {
     private InvoiceSequencesRepository invoiceSequencesRepository;
     @Mock
     private AuditingRepository auditingRepository;
+    @Mock
+    private UserRepository userRepository;
+    @Mock
+    private ExtensionManager extensionManager;
 
     @Before
     public void setUp() {
@@ -127,7 +132,9 @@ public class TicketReservationManagerUnitTest {
             additionalServiceItemRepository,
             additionalServiceTextRepository,
             invoiceSequencesRepository,
-            auditingRepository);
+            auditingRepository,
+            userRepository,
+            extensionManager);
     }
 
     @Test
@@ -262,7 +269,7 @@ public class TicketReservationManagerUnitTest {
         when(ticket.getSrcPriceCts()).thenReturn(ticketPaidPrice);
         when(ticket.getCategoryId()).thenReturn(1);
         when(ticketRepository.findTicketsInReservation(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
-        when(ticketCategoryRepository.getById(eq(1), eq(1))).thenReturn(ticketCategory);
+        when(ticketCategoryRepository.getByIdAndActive(eq(1), eq(1))).thenReturn(ticketCategory);
     }
 
     private void initReservationWithAdditionalServices(boolean eventVatIncluded, AdditionalService.VatType additionalServiceVatType, int ticketSrcPrice, int asSrcPrice) {

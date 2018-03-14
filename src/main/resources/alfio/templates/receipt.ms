@@ -79,16 +79,16 @@
     </tbody>
     <tfoot>
         {{^orderSummary.free}}
-        {{^event.vatIncluded}}
-            <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
-        {{/event.vatIncluded}}
+        {{^ticketReservation.vatIncluded}}
+            <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+        {{/ticketReservation.vatIncluded}}
         {{/orderSummary.free}}
         <tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td class="text-right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
 
         {{^orderSummary.free}}
-        {{#event.vatIncluded}}
-            <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
-        {{/event.vatIncluded}}
+        {{#ticketReservation.vatIncluded}}
+            <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{ticketReservation.usedVatPercent}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+        {{/ticketReservation.vatIncluded}}
         {{/orderSummary.free}}
     </tfoot>
 </table>

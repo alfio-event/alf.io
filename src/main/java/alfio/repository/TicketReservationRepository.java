@@ -16,12 +16,12 @@
  */
 package alfio.repository;
 
-import alfio.model.PriceContainer;
-import alfio.model.TicketReservation;
-import alfio.model.TicketReservationInfo;
+import alfio.model.*;
 import ch.digitalfondue.npjt.*;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -29,8 +29,12 @@ import java.util.Optional;
 @QueryRepository
 public interface TicketReservationRepository {
 
-    @Query("insert into tickets_reservation(id, validity, promo_code_id_fk, status, user_language, event_id_fk) values (:id, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId)")
-    int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity, @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId, @Bind("userLanguage") String userLanguage, @Bind("eventId") int eventId);
+    @Query("insert into tickets_reservation(id, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included) values (:id, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :eventVat, :vatIncluded)")
+    int createNewReservation(@Bind("id") String id, @Bind("validity") Date validity,
+                             @Bind("promotionCodeDiscountId") Integer promotionCodeDiscountId, @Bind("userLanguage") String userLanguage,
+                             @Bind("eventId") int eventId,
+                             @Bind("eventVat") BigDecimal eventVat,
+                             @Bind("vatIncluded") Boolean vatIncluded);
 
     @Query("update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email, user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod where id = :reservationId")
     int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,
@@ -50,19 +54,22 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set full_name = :fullName where id = :reservationId")
     int updateAssignee(@Bind("reservationId") String reservationId, @Bind("fullName") String fullName);
 
-    @Query("select id from tickets_reservation where status = 'OFFLINE_PAYMENT'")
-    List<String> findAllReservationsWaitingForPayment();
+    @Query("select id from tickets_reservation where status = 'OFFLINE_PAYMENT' and event_id_fk = :eventId")
+    List<String> findAllReservationsWaitingForPaymentInEventId(@Bind("eventId") int eventId);
+
+    @Query("select count(id) from tickets_reservation where status = 'OFFLINE_PAYMENT' and event_id_fk = :eventId")
+    Integer findAllReservationsWaitingForPaymentCountInEventId(@Bind("eventId") int eventId);
 
     @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and offline_payment_reminder_sent = false")
     @QueriesOverride({
         @QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false", db = "PGSQL"),
-        @QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date('day') <= :expiration and offline_payment_reminder_sent = false", db = "MYSQL")})
+        @QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date(validity) <= :expiration and offline_payment_reminder_sent = false", db = "MYSQL")})
     List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
 
     @Query("select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and event_id_fk = :eventId")
     @QueriesOverride({
         @QueryOverride(value = "select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and event_id_fk = :eventId", db = "PGSQL"),
-        @QueryOverride(value = "select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and date('day') <= :expiration and event_id_fk = :eventId", db = "MYSQL")})
+        @QueryOverride(value = "select id, full_name, first_name, last_name, email_address, event_id_fk from tickets_reservation where status = 'OFFLINE_PAYMENT' and date(validity) <= :expiration and event_id_fk = :eventId", db = "MYSQL")})
     List<TicketReservationInfo> findAllOfflinePaymentReservationWithExpirationBefore(@Bind("expiration") ZonedDateTime expiration, @Bind("eventId") int eventId);
 
     @Query("update tickets_reservation set offline_payment_reminder_sent = true where id = :reservationId")
@@ -78,7 +85,10 @@ public interface TicketReservationRepository {
     String lockReservationForUpdate(@Bind("reservationId") String reservationId);
 
     @Query("update tickets_reservation set status = :status where id = :reservationId")
-    int updateTicketStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
+    int updateReservationStatus(@Bind("reservationId") String reservationId, @Bind("status") String status);
+
+    @Query("update tickets_reservation set status = :status where id in (:reservationIds)")
+    int updateReservationsStatus(@Bind("reservationIds") Collection<String> ids, @Bind("status") String status);
 
     @Query("select * from tickets_reservation where id = :id")
     TicketReservation findReservationById(@Bind("id") String id);
@@ -107,11 +117,28 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set invoice_number = :invoiceNumber where id = :reservationId")
     int setInvoiceNumber(@Bind("reservationId") String reservationId, @Bind("invoiceNumber") String invoiceNumber);
 
-    @Query("select * from  tickets_reservation where invoice_number is not null and event_id_fk = :eventId order by confirmation_ts desc, validity desc")
+    @Query("select * from tickets_reservation where invoice_number is not null and event_id_fk = :eventId order by confirmation_ts desc, validity desc")
     List<TicketReservation> findAllReservationsWithInvoices(@Bind("eventId") int eventId);
 
-    @Query("select * from tickets_reservation where event_id_fk = :eventId order by confirmation_ts desc, validity desc")
-    List<TicketReservation> findAllReservationsInEvent(@Bind("eventId") int eventId);
+    @Query("select count(*) from tickets_reservation where invoice_number is not null and event_id_fk = :eventId")
+    Integer countInvoices(@Bind("eventId") int eventId);
+
+
+    String FIND_RESERVATIONS_IN_EVENT = " select * from tickets_reservation where event_id_fk = :eventId and status in (:status) " +
+        " and (:search is null or (lower(id) like lower(:search) or lower(full_name) like lower(:search) or lower(first_name) like lower(:search) or lower(last_name) like lower(:search) or lower(email_address) like lower(:search) or lower(billing_address) like lower(:search))) " +
+        " order by confirmation_ts desc, validity desc ";
+
+    @Query("select * from (" + FIND_RESERVATIONS_IN_EVENT +"limit :pageSize offset :offset) as r_tbl")
+    List<TicketReservation> findAllReservationsInEvent(@Bind("eventId") int eventId,
+                                                       @Bind("offset") int offset,
+                                                       @Bind("pageSize") int pageSize,
+                                                       @Bind("search") String toSearch,
+                                                       @Bind("status") List<String> toFilter);
+
+    @Query("select count(*) from (" + FIND_RESERVATIONS_IN_EVENT + ") as r_tbl")
+    Integer countAllReservationsInEvent(@Bind("eventId") int eventId,
+                                        @Bind("search") String toSearch,
+                                        @Bind("status") List<String> toFilter);
 
     @Query("update tickets_reservation set vat_status = :vatStatus, vat_nr = :vatNr, vat_country = :vatCountry, invoice_requested = :invoiceRequested where id = :reservationId")
     int updateBillingData(@Bind("vatStatus") PriceContainer.VatStatus vatStatus,
@@ -119,4 +146,32 @@ public interface TicketReservationRepository {
                           @Bind("vatCountry") String country,
                           @Bind("invoiceRequested") boolean invoiceRequested,
                           @Bind("reservationId") String reservationId);
+
+
+    @Query("select count(ticket.id) ticket_sold, to_char(trunc(confirmation_ts), 'yyyy-MM-dd') as day from ticket " +
+        "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
+        "ticket.event_id = :eventId and " +
+        "confirmation_ts is not null and " +
+        "confirmation_ts >= :from and " +
+        "confirmation_ts <= :to " +
+        "group by day order by day asc")
+    @QueriesOverride({
+        @QueryOverride(value = "select count(ticket.id) ticket_sold, to_char(date_trunc('day', confirmation_ts), 'YYYY-MM-DD') as day from ticket " +
+            "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
+            "ticket.event_id = :eventId and " +
+            "confirmation_ts is not null and " +
+            "confirmation_ts >= :from and " +
+            "confirmation_ts <= :to  group by day order by day asc", db = "PGSQL"),
+        @QueryOverride(value = "select count(ticket.id) ticket_sold, date_format(date(confirmation_ts), '%Y-%m-%d') as day from ticket " +
+            "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
+            "ticket.event_id = :eventId and " +
+            "confirmation_ts is not null and " +
+            "confirmation_ts >= :from and " +
+            "confirmation_ts <= :to group by day order by day asc", db = "MYSQL")})
+    List<TicketSoldStatistic> getSoldStatistic(@Bind("eventId") int eventId, @Bind("from") Date from, @Bind("to") Date to);
+
+
+
+    @Query("select id, event_id_fk from tickets_reservation where id in (:ids)")
+    List<ReservationIdAndEventId> getReservationIdAndEventId(@Bind("ids") Collection<String> ids);
 }

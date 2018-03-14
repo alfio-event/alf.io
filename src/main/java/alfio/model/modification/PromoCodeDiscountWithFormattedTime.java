@@ -19,6 +19,7 @@ package alfio.model.modification;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import alfio.model.EventStatistic;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import lombok.experimental.Delegate;
@@ -47,10 +48,10 @@ public class PromoCodeDiscountWithFormattedTime {
     }
     
     public String getFormattedStart() {
-        return getUtcStart().withZoneSameInstant(eventZoneId).format(EventWithStatistics.JSON_DATE_FORMATTER);
+        return getUtcStart().withZoneSameInstant(eventZoneId).format(EventStatistic.JSON_DATE_FORMATTER);
     }
 
     public String getFormattedEnd() {
-        return getUtcEnd().withZoneSameInstant(eventZoneId).format(EventWithStatistics.JSON_DATE_FORMATTER);
+        return getUtcEnd().withZoneSameInstant(eventZoneId).format(EventStatistic.JSON_DATE_FORMATTER);
     }
 }

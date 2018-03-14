@@ -23,15 +23,16 @@ import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,15 +43,14 @@ import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.PARTIAL_RESERVATION_ID_LENGTH;
-import static alfio.model.system.ConfigurationPathLevel.EVENT;
-import static alfio.model.system.ConfigurationPathLevel.ORGANIZATION;
-import static alfio.model.system.ConfigurationPathLevel.SYSTEM;
+import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.model.system.ConfigurationPathLevel.*;
 import static alfio.util.OptionalWrapper.optionally;
 
 @Component
 @Transactional
 @Log4j2
+@AllArgsConstructor
 public class ConfigurationManager {
 
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> ORGANIZATION_CONFIGURATION = collectConfigurationKeysByCategory(ORGANIZATION);
@@ -63,15 +63,6 @@ public class ConfigurationManager {
     private final ConfigurationRepository configurationRepository;
     private final UserManager userManager;
     private final EventRepository eventRepository;
-
-    @Autowired
-    public ConfigurationManager(ConfigurationRepository configurationRepository,
-                                UserManager userManager,
-                                EventRepository eventRepository) {
-        this.configurationRepository = configurationRepository;
-        this.userManager = userManager;
-        this.eventRepository = eventRepository;
-    }
 
     //TODO: refactor, not the most beautiful code, find a better solution...
     private Configuration findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
@@ -153,28 +144,59 @@ public class ConfigurationManager {
 
     // begin SYSTEM related configuration methods
 
+    public void saveConfig(ConfigurationPathKey pathKey, String value) {
+        ConfigurationPath path = pathKey.getPath();
+        switch (path.pathLevel()) {
+            case SYSTEM:
+                saveSystemConfiguration(pathKey.getKey(), value);
+                break;
+            case ORGANIZATION:
+                OrganizationConfigurationPath orgPath = (OrganizationConfigurationPath) path;
+                saveOrganizationConfiguration(orgPath.getId(), pathKey.getKey().name(), value);
+                break;
+            case EVENT:
+                EventConfigurationPath eventPath = (EventConfigurationPath) path;
+                saveEventConfiguration(eventPath.getId(), eventPath.getOrganizationId(), pathKey.getKey().name(), value);
+                break;
+        }
+    }
+
     public void saveAllSystemConfiguration(List<ConfigurationModification> list) {
         list.forEach(c -> saveSystemConfiguration(ConfigurationKeys.fromString(c.getKey()), c.getValue()));
+    }
+
+    private void saveOrganizationConfiguration(int organizationId, String key, String optionValue) {
+        Optional<String> value = evaluateValue(key, optionValue);
+        Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, key);
+        if (!value.isPresent()) {
+            configurationRepository.deleteOrganizationLevelByKey(key, organizationId);
+        } else if (existing.isPresent()) {
+            configurationRepository.updateOrganizationLevel(organizationId, key, value.get());
+        } else {
+            configurationRepository.insertOrganizationLevel(organizationId, key, value.get(), ConfigurationKeys.fromString(key).getDescription());
+        }
     }
 
     public void saveAllOrganizationConfiguration(int organizationId, List<ConfigurationModification> list, String username) {
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "Cannot update settings, user is not owner");
         list.stream()
             .filter(TO_BE_SAVED)
-            .forEach(c -> {
-                Optional<String> value = evaluateValue(c.getKey(), c.getValue());
-                Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, c.getKey());
-                if (!value.isPresent()) {
-                    configurationRepository.deleteOrganizationLevelByKey(c.getKey(), organizationId);
-                } else if (existing.isPresent()) {
-                    configurationRepository.updateOrganizationLevel(organizationId, c.getKey(), value.get());
-                } else {
-                    configurationRepository.insertOrganizationLevel(organizationId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
-                }
-            });
+            .forEach(c -> saveOrganizationConfiguration(organizationId, c.getKey(), c.getValue()));
     }
 
-    public void saveEventConfiguration(int eventId, int organizationId, List<ConfigurationModification> list, String username) {
+    private void saveEventConfiguration(int eventId, int organizationId, String key, String optionValue) {
+        Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, key);
+        Optional<String> value = evaluateValue(key, optionValue);
+        if(!value.isPresent()) {
+            configurationRepository.deleteEventLevelByKey(key, eventId);
+        } else if (existing.isPresent()) {
+            configurationRepository.updateEventLevel(eventId, organizationId, key, value.get());
+        } else {
+            configurationRepository.insertEventLevel(organizationId, eventId, key, value.get(), ConfigurationKeys.fromString(key).getDescription());
+        }
+    }
+
+    public void saveAllEventConfiguration(int eventId, int organizationId, List<ConfigurationModification> list, String username) {
         User user = userManager.findUserByUsername(username);
         Validate.isTrue(userManager.isOwnerOfOrganization(user, organizationId), "Cannot update settings, user is not owner");
         Event event = eventRepository.findById(eventId);
@@ -184,17 +206,7 @@ public class ConfigurationManager {
         }
         list.stream()
             .filter(TO_BE_SAVED)
-            .forEach(c -> {
-                Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, c.getKey());
-                Optional<String> value = evaluateValue(c.getKey(), c.getValue());
-                if(!value.isPresent()) {
-                    configurationRepository.deleteEventLevelByKey(c.getKey(), eventId);
-                } else if (existing.isPresent()) {
-                    configurationRepository.updateEventLevel(eventId, organizationId, c.getKey(), value.get());
-                } else {
-                    configurationRepository.insertEventLevel(organizationId, eventId, c.getKey(), value.get(), ConfigurationKeys.fromString(c.getKey()).getDescription());
-                }
-            });
+            .forEach(c -> saveEventConfiguration(eventId, organizationId, c.getKey(), c.getValue()));
     }
 
     public void saveCategoryConfiguration(int categoryId, int eventId, List<ConfigurationModification> list, String username) {
@@ -282,7 +294,21 @@ public class ConfigurationManager {
         }
         boolean isAdmin = userManager.isAdmin(user);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().filter(checkActualConfigurationLevel(isAdmin, ORGANIZATION)).sorted().collect(groupByCategory());
-        return groupByCategory(isAdmin ? union(SYSTEM, ORGANIZATION) : ORGANIZATION_CONFIGURATION, existing);
+        String paymentMethodsBlacklist = getStringConfigValue(Configuration.from(organizationId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST), "");
+        Map<SettingCategory, List<Configuration>> result = groupByCategory(isAdmin ? union(SYSTEM, ORGANIZATION) : ORGANIZATION_CONFIGURATION, existing);
+        List<SettingCategory> toBeRemoved = PaymentProxy.availableProxies()
+            .stream()
+            .filter(pp -> paymentMethodsBlacklist.contains(pp.getKey()))
+            .flatMap(pp -> pp.getSettingCategories().stream())
+            .collect(Collectors.toList());
+
+        if(toBeRemoved.isEmpty()) {
+            return result;
+        } else {
+            return result.entrySet().stream()
+                .filter(entry -> !toBeRemoved.contains(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
     }
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfig(int eventId, String username) {
@@ -294,7 +320,22 @@ public class ConfigurationManager {
         }
         boolean isAdmin = userManager.isAdmin(user);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().filter(checkActualConfigurationLevel(isAdmin, EVENT)).sorted().collect(groupByCategory());
-        return groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing);
+        boolean offlineCheckInEnabled = areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED).test(event);
+        return removeAlfioPISettingsIfNeeded(offlineCheckInEnabled, groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing));
+    }
+
+    public Predicate<Event> areBooleanSettingsEnabledForEvent(ConfigurationKeys... keys) {
+        return event -> Arrays.stream(keys)
+            .allMatch(k -> getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId()).apply(k), false));
+    }
+
+    private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
+        if(offlineCheckInEnabled) {
+            return settings;
+        }
+        return settings.entrySet().stream()
+            .filter(e -> e.getKey() != ConfigurationKeys.SettingCategory.ALFIO_PI)
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     static Map<ConfigurationKeys.SettingCategory, List<Configuration>> union(ConfigurationPathLevel... levels) {
@@ -402,5 +443,10 @@ public class ConfigurationManager {
     public boolean hasAllConfigurationsForInvoice(Event event) {
         return getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_ADDRESS)).isPresent() &&
             getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.VAT_NR)).isPresent();
+    }
+
+    public boolean isRecaptchaForOfflinePaymentEnabled(Event event) {
+        return getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), false)
+            && getStringConfigValue(Configuration.getSystemConfiguration(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), null) != null;
     }
 }

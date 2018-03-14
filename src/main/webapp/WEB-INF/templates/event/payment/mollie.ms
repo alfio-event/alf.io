@@ -1,0 +1,1 @@
+<div class="wMarginBottom wMarginTop text-muted">{{#i18n}}reservation-page.mollie.description{{/i18n}}</div>

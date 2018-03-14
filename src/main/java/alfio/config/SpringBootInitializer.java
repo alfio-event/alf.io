@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
@@ -46,7 +47,8 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
         org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration.class})
+        org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.session.SessionAutoConfiguration.class})
 @Configuration
 @Profile(Initializer.PROFILE_SPRING_BOOT)
 @Log4j2
@@ -76,7 +78,7 @@ public class SpringBootInitializer {
     }
 
     @Bean
-    public EmbeddedServletContainerCustomizer embeddedServletContainerCustomizer() {
+    public EmbeddedServletContainerCustomizer embeddedServletContainerCustomizer(Environment environment) {
         return (container) -> {
             container.addInitializers(SERVLET_CONTEXT_INITIALIZER);
             //container.setRegisterJspServlet(false);
@@ -88,7 +90,9 @@ public class SpringBootInitializer {
             mimeMappings.put("svg", "image/svg+xml");
             container.setSessionTimeout(2, TimeUnit.HOURS);
             container.setMimeMappings(new MimeMappings(mimeMappings));
-            container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404-not-found"), new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/500-internal-server-error"), new ErrorPage("/session-expired"));
+            if(!environment.acceptsProfiles("dev")) {
+                container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404-not-found"), new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/500-internal-server-error"), new ErrorPage("/session-expired"));
+            }
 
             Optional.ofNullable(System.getProperty("alfio.worker.name")).ifPresent(workerName -> {
                 ((JettyEmbeddedServletContainerFactory)container).addServerCustomizers(server -> {

@@ -9,7 +9,6 @@ build/
 *.ipr
 *.iws
 /build/
-.gradle/
 deploy*.sh
 custom.jvmargs
 classes/
@@ -17,5 +16,5 @@ logs/
 /bin/
 .DS_Store
 out/
-
+.clever.json
 !/src/main/webapp/resources/bower_components/angular-growl-v2/build/

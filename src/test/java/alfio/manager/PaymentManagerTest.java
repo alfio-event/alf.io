@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.repository.AuditingRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
@@ -30,6 +31,7 @@ import com.stripe.model.Charge;
 import org.junit.runner.RunWith;
 
 import java.time.ZonedDateTime;
+import java.util.Optional;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
 import static org.mockito.Matchers.*;
@@ -45,17 +47,19 @@ public class PaymentManagerTest {{
     TransactionRepository failureTR = mock(TransactionRepository.class);
     AuditingRepository auditingRepository = mock(AuditingRepository.class);
     UserRepository userRepository = mock(UserRepository.class);
+    TicketRepository ticketRepository = mock(TicketRepository.class);
+
     final String paymentId = "customer#1";
     final String error = "errorCode";
     Event event = mock(Event.class);
     CustomerName customerName = mock(CustomerName.class);
     try {
-        when(successStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenReturn(new Charge() {{
+        when(successStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenReturn(Optional.of(new Charge() {{
             setId(paymentId);
-        }});
+        }}));
         when(failureStripe.chargeCreditCard(anyString(), anyLong(), any(Event.class), anyString(), anyString(), anyString(), anyString())).thenThrow(new AuthenticationException("401", "42", 401));
         when(failureStripe.handleException(any(StripeException.class))).thenReturn(error);
-        when(failureTR.insert(anyString(), anyString(), anyString(), any(ZonedDateTime.class), anyInt(), anyString(), anyString(), anyString()))
+        when(failureTR.insert(anyString(), anyString(), anyString(), any(ZonedDateTime.class), anyInt(), anyString(), anyString(), anyString(), anyLong(), anyLong()))
                 .thenThrow(new NullPointerException());
     } catch (StripeException e) {
         throw new AssertionError("it should not have thrown any exception!!");
@@ -63,14 +67,14 @@ public class PaymentManagerTest {{
 
     describe("success flow", it -> {
         it.should("return a successful payment result", expect -> {
-            expect.that(new PaymentManager(successStripe, null, transactionRepository, configurationManager, auditingRepository, userRepository).processStripePayment("", "", 100, event, "", customerName, ""))
+            expect.that(new PaymentManager(successStripe, null, null, transactionRepository, configurationManager, auditingRepository, userRepository, ticketRepository).processStripePayment("", "", 100, event, "", customerName, ""))
                     .is(PaymentResult.successful(paymentId));
         });
     });
 
     describe("stripe error", it -> {
         it.should("return an unsuccessful payment result", expect -> {
-            expect.that(new PaymentManager(failureStripe, null, transactionRepository, configurationManager, auditingRepository, userRepository).processStripePayment("", "", 100, event, "", customerName, ""))
+            expect.that(new PaymentManager(failureStripe, null, null, transactionRepository, configurationManager, auditingRepository, userRepository, ticketRepository).processStripePayment("", "", 100, event, "", customerName, ""))
                     .is(PaymentResult.unsuccessful(error));
         });
     });
@@ -78,7 +82,7 @@ public class PaymentManagerTest {{
     describe("internal error", it -> {
         it.should("throw IllegalStateException in case of internal error", expect -> {
             expect.exception(IllegalStateException.class, () -> {
-                new PaymentManager(successStripe, null, failureTR, configurationManager, auditingRepository, userRepository).processStripePayment("", "", 100, event, "", customerName, "");
+                new PaymentManager(successStripe, null, null, failureTR, configurationManager, auditingRepository, userRepository, ticketRepository).processStripePayment("", "", 100, event, "", customerName, "");
             });
         });
     });

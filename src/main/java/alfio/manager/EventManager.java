@@ -16,7 +16,7 @@
  */
 package alfio.manager;
 
-import alfio.manager.location.LocationManager;
+import alfio.config.Initializer;
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.system.ConfigurationManager;
@@ -25,8 +25,11 @@ import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketFieldConfiguration.Context;
-import alfio.model.modification.*;
+import alfio.model.modification.EventModification;
 import alfio.model.modification.EventModification.AdditionalField;
+import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
+import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.TicketFieldDescriptionModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.system.Configuration;
@@ -34,9 +37,11 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
@@ -45,7 +50,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.flywaydb.core.Flyway;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -64,9 +69,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.modification.DateTimeModification.toZonedDateTime;
 import static alfio.util.EventUtil.*;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -74,19 +81,18 @@ import static java.util.stream.Collectors.toList;
 @Component
 @Transactional
 @Log4j2
+@AllArgsConstructor
 public class EventManager {
 
     private static final Predicate<TicketCategory> IS_CATEGORY_BOUNDED = TicketCategory::isBounded;
     private final UserManager userManager;
     private final EventRepository eventRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
-    private final EventStatisticsManager eventStatisticsManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final TicketRepository ticketRepository;
     private final SpecialPriceRepository specialPriceRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
-    private final LocationManager locationManager;
     private final NamedParameterJdbcTemplate jdbc;
     private final ConfigurationManager configurationManager;
     private final PluginManager pluginManager;
@@ -94,68 +100,35 @@ public class EventManager {
     private final EventDeleterRepository eventDeleterRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
-    private final InvoiceSequencesRepository invoiceSequencesRepository;
     private final Flyway flyway;
+    private final Environment environment;
+    private final OrganizationRepository organizationRepository;
+    private final AuditingRepository auditingRepository;
+    private final ExtensionManager extensionManager;
 
-    @Autowired
-    public EventManager(UserManager userManager,
-                        EventRepository eventRepository,
-                        EventDescriptionRepository eventDescriptionRepository,
-                        EventStatisticsManager eventStatisticsManager,
-                        TicketCategoryRepository ticketCategoryRepository,
-                        TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository,
-                        TicketRepository ticketRepository,
-                        SpecialPriceRepository specialPriceRepository,
-                        PromoCodeDiscountRepository promoCodeRepository,
-                        LocationManager locationManager,
-                        NamedParameterJdbcTemplate jdbc,
-                        ConfigurationManager configurationManager,
-                        PluginManager pluginManager,
-                        TicketFieldRepository ticketFieldRepository,
-                        EventDeleterRepository eventDeleterRepository,
-                        AdditionalServiceRepository additionalServiceRepository, AdditionalServiceTextRepository additionalServiceTextRepository,
-                        InvoiceSequencesRepository invoiceSequencesRepository,
-                        Flyway flyway) {
-        this.userManager = userManager;
-        this.eventRepository = eventRepository;
-        this.eventDescriptionRepository = eventDescriptionRepository;
-        this.eventStatisticsManager = eventStatisticsManager;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-        this.ticketCategoryDescriptionRepository = ticketCategoryDescriptionRepository;
-        this.ticketRepository = ticketRepository;
-        this.specialPriceRepository = specialPriceRepository;
-        this.promoCodeRepository = promoCodeRepository;
-        this.locationManager = locationManager;
-        this.jdbc = jdbc;
-        this.configurationManager = configurationManager;
-        this.pluginManager = pluginManager;
-        this.ticketFieldRepository = ticketFieldRepository;
-        this.eventDeleterRepository = eventDeleterRepository;
-        this.additionalServiceRepository = additionalServiceRepository;
-        this.additionalServiceTextRepository = additionalServiceTextRepository;
-        this.invoiceSequencesRepository = invoiceSequencesRepository;
-        this.flyway = flyway;
-    }
 
     public Event getSingleEvent(String eventName, String username) {
-        final Event event = eventRepository.findByShortName(eventName);
-        checkOwnership(event, username, event.getOrganizationId());
-        return event;
+        return getOptionalByName(eventName, username).orElseThrow(IllegalStateException::new);
+    }
+
+    public Optional<Event> getOptionalByName(String eventName, String username) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .filter(checkOwnership(username, organizationRepository));
     }
 
     public Event getSingleEventById(int eventId, String username) {
-        final Event event = eventRepository.findById(eventId);
-        checkOwnership(event, username, event.getOrganizationId());
-        return event;
+        return optionally(() -> eventRepository.findById(eventId))
+            .filter(checkOwnership(username, organizationRepository))
+            .orElseThrow(IllegalStateException::new);
     }
 
     public void checkOwnership(Event event, String username, int organizationId) {
         Validate.isTrue(organizationId == event.getOrganizationId(), "invalid organizationId");
-        userManager.findUserOrganizations(username)
-                .stream()
-                .filter(o -> o.getId() == organizationId)
-                .findAny()
-                .orElseThrow(IllegalArgumentException::new);
+        Validate.isTrue(checkOwnership(username, organizationRepository).test(event), "User is not authorized");
+    }
+
+    public static Predicate<Event> checkOwnership(String username, OrganizationRepository organizationRepository) {
+        return event -> organizationRepository.findOrganizationForUser(username, event.getOrganizationId()).isPresent();
     }
 
     public List<TicketCategory> loadTicketCategories(Event event) {
@@ -189,14 +162,21 @@ public class EventManager {
         createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId());
         createAdditionalFields(event, em);
         createCategoriesForEvent(em, event);
-        createAllTicketsForEvent(event);
+        createAllTicketsForEvent(event, em);
         initPlugins(event);
+        extensionManager.handleEventCreation(event);
     }
 
     public void toggleActiveFlag(int id, String username, boolean activate) {
         Event event = eventRepository.findById(id);
         checkOwnership(event, username, event.getOrganizationId());
-        eventRepository.updateEventStatus(id, activate ? Event.Status.PUBLIC : Event.Status.DRAFT);
+
+        if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
+            throw new IllegalStateException("demo mode");
+        }
+        Event.Status status = activate ? Event.Status.PUBLIC : Event.Status.DRAFT;
+        eventRepository.updateEventStatus(id, status);
+        extensionManager.handleEventStatusChange(event, status);
     }
 
     private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {
@@ -250,15 +230,30 @@ public class EventManager {
         }
     }
 
+    private static String toSerializedRestrictedValues(EventModification.WithRestrictedValues f) {
+        List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValuesAsString()).orElseGet(Collections::emptyList);
+        return "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
+    }
+
 	private void insertAdditionalField(Event event, AdditionalField f, int order) {
-		List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValues()).orElseGet(Collections::emptyList).stream().map(EventModification.RestrictedValue::getValue).collect(Collectors.toList());
-        String serializedRestrictedValues = "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
+        String serializedRestrictedValues = toSerializedRestrictedValues(f);
         Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
         Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as))).orElse(-1);
         Context context = linkedAdditionalService.isPresent() ? Context.ADDITIONAL_SERVICE : Context.ATTENDEE;
 		int configurationId = ticketFieldRepository.insertConfiguration(event.getId(), f.getName(), order, f.getType(), serializedRestrictedValues, f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId).getKey();
 		f.getDescription().forEach((locale, value) -> ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value)));
 	}
+
+    public void updateAdditionalField(int id, EventModification.UpdateAdditionalField f) {
+        String serializedRestrictedValues = toSerializedRestrictedValues(f);
+        ticketFieldRepository.updateRequiredAndRestrictedValues(id, f.isRequired(), serializedRestrictedValues);
+        f.getDescription().forEach((locale, value) -> {
+            String val = Json.GSON.toJson(value.getDescription());
+            if(0 == ticketFieldRepository.updateDescription(id, locale, val)) {
+                ticketFieldRepository.insertDescription(id, locale, val);
+            }
+        });
+    }
 
     private Integer findAdditionalService(Event event, EventModification.AdditionalService as) {
         ZoneId utc = ZoneId.of("UTC");
@@ -278,13 +273,13 @@ public class EventManager {
     public void updateEventHeader(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
         int eventId = original.getId();
-        final GeolocationResult geolocation = geolocate(em.getLocation());
-        final ZoneId zoneId = geolocation.getZoneId();
+
+        final ZoneId zoneId = ZoneId.of(em.getZoneId());
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
         final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
         eventRepository.updateHeader(eventId, em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.getTermsAndConditionsUrl(),
-            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), geolocation.getLatitude(), geolocation.getLongitude(),
-            begin, end, geolocation.getTimeZone(), em.getOrganizationId(), em.getLocales());
+            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(),
+            begin, end, em.getZoneId(), em.getOrganizationId(), em.getLocales());
 
         createOrUpdateEventDescription(eventId, em);
 
@@ -297,12 +292,11 @@ public class EventManager {
     public void updateEventPrices(Event original, EventModification em, String username) {
         checkOwnership(original, username, em.getOrganizationId());
         int eventId = original.getId();
-        final EventWithStatistics eventWithStatistics = eventStatisticsManager.fillWithStatistics(original);
-        int seatsDifference = em.getAvailableSeats() - original.getAvailableSeats();
+        int seatsDifference = em.getAvailableSeats() - eventRepository.countExistingTickets(original.getId());
         if(seatsDifference < 0) {
-            int allocatedSeats = eventWithStatistics.getTicketCategories().stream()
-                    .filter(TicketCategoryWithStatistic::isBounded)
-                    .mapToInt(TicketCategoryWithStatistic::getMaxTickets)
+            int allocatedSeats = ticketCategoryRepository.findByEventId(original.getId()).stream()
+                    .filter(TicketCategory::isBounded)
+                    .mapToInt(TicketCategory::getMaxTickets)
                     .sum();
             if(em.getAvailableSeats() < allocatedSeats) {
                 throw new IllegalArgumentException(format("cannot reduce max tickets to %d. There are already %d tickets allocated. Try updating categories first.", em.getAvailableSeats(), allocatedSeats));
@@ -315,7 +309,7 @@ public class EventManager {
         if(seatsDifference != 0) {
             Event modified = eventRepository.findById(eventId);
             if(seatsDifference > 0) {
-                final MapSqlParameterSource[] params = generateEmptyTickets(modified, Date.from(ZonedDateTime.now(modified.getZoneId()).toInstant()), seatsDifference).toArray(MapSqlParameterSource[]::new);
+                final MapSqlParameterSource[] params = generateEmptyTickets(modified, Date.from(ZonedDateTime.now(modified.getZoneId()).toInstant()), seatsDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
                 jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
             } else {
                 List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, Math.abs(seatsDifference), singletonList(TicketStatus.FREE.name()));
@@ -343,13 +337,13 @@ public class EventManager {
         }).map(b -> {
             int eventId = event.getId();
             int sum = ticketCategoryRepository.getTicketAllocation(eventId);
-            int notBoundedTickets = ticketRepository.countFreeTicketsForUnbounded(eventId);
+            int notAllocated = ticketRepository.countNotAllocatedFreeAndReleasedTicket(eventId);
             int requestedTickets = tcm.isBounded() ? tcm.getMaxTickets() : 1;
-            return new Result.Builder<>(() -> insertCategory(tcm, event))
-                .addValidation(() -> sum + requestedTickets <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
-                .addValidation(() -> requestedTickets <= notBoundedTickets, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
-                .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
-                .build();
+            return new Result.Builder<Integer>()
+                .checkPrecondition(() -> sum + requestedTickets <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                .checkPrecondition(() -> requestedTickets <= notAllocated, ErrorCode.CategoryError.ALL_TICKETS_ASSIGNED)
+                .checkPrecondition(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
+                .build(() -> insertCategory(tcm, event));
         }).orElseGet(() -> Result.error(ErrorCode.EventError.ACCESS_DENIED));
     }
 
@@ -374,60 +368,73 @@ public class EventManager {
         }
     }
 
-    public Result<TicketCategory> updateCategory(int categoryId, Event event, TicketCategoryModification tcm, String username) {
+    Result<TicketCategory> updateCategory(int categoryId, Event event, TicketCategoryModification tcm,
+                                          String username, boolean resetTicketsToFree) {
         checkOwnership(event, username, event.getOrganizationId());
         int eventId = event.getId();
-        final List<TicketCategory> categories = ticketCategoryRepository.findByEventId(eventId);
-        return categories.stream().filter(tc -> tc.getId() == categoryId).findFirst()
-            .map(existing -> new Result.Builder<>(() -> {
-                    updateCategory(tcm, event.isFreeOfCharge(), event.getZoneId(), event);
-                    return ticketCategoryRepository.getById(categoryId, eventId);
-                })
-                .addValidation(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
-                .addValidation(() -> tcm.getMaxTickets() - existing.getMaxTickets() + categories.stream().mapToInt(TicketCategory::getMaxTickets).sum() <= event.getAvailableSeats(), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
-                .addValidation(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
-                .addValidation(() -> tcm.isBounded() == existing.isBounded() || ticketRepository.countPendingOrReleasedForCategory(eventId, existing.getId()) == 0, ErrorCode.custom("", "It is not safe to change allocation strategy right now because there are pending reservations."))
-                .addValidation(() -> !existing.isAccessRestricted() || tcm.isBounded() == existing.isAccessRestricted(), ErrorCode.custom("", "Dynamic allocation is not compatible with restricted access"))
-                .addValidation(() -> {
-                    if(tcm.isBounded() && !existing.isBounded()) {
-                        int newSize = tcm.getMaxTickets();
-                        int confirmed = ticketRepository.countConfirmedForCategory(eventId, existing.getId());
-                        return newSize >= confirmed;
-                    } else {
-                        return true;
-                    }
-                }, ErrorCode.custom("", "Not enough tickets"))
-                .build()
-             )
+        return Optional.of(ticketCategoryRepository.getById(categoryId)).filter(tc -> tc.getId() == categoryId)
+            .map(existing -> new Result.Builder<TicketCategory>()
+                    .checkPrecondition(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
+                    .checkPrecondition(() -> tcm.getMaxTickets() - existing.getMaxTickets() + ticketRepository.countAllocatedTicketsForEvent(eventId) <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                    .checkPrecondition(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
+                    .checkPrecondition(() -> tcm.isBounded() == existing.isBounded() || ticketRepository.countPendingOrReleasedForCategory(eventId, existing.getId()) == 0, ErrorCode.custom("", "It is not safe to change allocation strategy right now because there are pending reservations."))
+                    .checkPrecondition(() -> !existing.isAccessRestricted() || tcm.isBounded() == existing.isAccessRestricted(), ErrorCode.custom("", "Dynamic allocation is not compatible with restricted access"))
+                    .checkPrecondition(() -> {
+                        // see https://github.com/exteso/alf.io/issues/335
+                        // handle the case when the user try to shrink a category with tokens that are already sent
+                        // we should fail if there are not enough free token left
+                        int addedTicket = tcm.getMaxTickets() - existing.getMaxTickets();
+                        if(addedTicket < 0 &&
+                            existing.isAccessRestricted() &&
+                            specialPriceRepository.countNotSentToken(categoryId) < Math.abs(addedTicket)) {
+                            return false;
+                        } else {
+                            return true;
+                        }
+                    }, ErrorCode.CategoryError.NOT_ENOUGH_FREE_TOKEN_FOR_SHRINK)
+                    .checkPrecondition(() -> {
+                        if(tcm.isBounded() && !existing.isBounded()) {
+                            int newSize = tcm.getMaxTickets();
+                            int confirmed = ticketRepository.countConfirmedForCategory(eventId, existing.getId());
+                            return newSize >= confirmed;
+                        } else {
+                            return true;
+                        }
+                    }, ErrorCode.custom("", "Not enough tickets"))
+                    .build(() -> {
+                        updateCategory(tcm, event.isFreeOfCharge(), event.getZoneId(), event, resetTicketsToFree);
+                        return ticketCategoryRepository.getByIdAndActive(categoryId, eventId);
+                    })
+            )
             .orElseGet(() -> Result.error(ErrorCode.CategoryError.NOT_FOUND));
     }
 
-    void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {
-        eventStatisticsManager.getSingleEventWithStatistics(em.getShortName(), username).getTicketCategories().stream()
-                .map(tc -> Triple.of(tc, tc.getInception(zoneId), tc.getExpiration(zoneId)))
-                .filter(t -> t.getRight().isAfter(end))
-                .forEach(t -> fixTicketCategoryDates(end, t.getLeft(), t.getMiddle(), t.getRight()));
+    Result<TicketCategory> updateCategory(int categoryId, Event event, TicketCategoryModification tcm, String username) {
+        return updateCategory(categoryId, event, tcm, username, false);
     }
 
-    private void fixTicketCategoryDates(ZonedDateTime end, TicketCategoryWithStatistic tc, ZonedDateTime inception, ZonedDateTime expiration) {
+    void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {
+        Event event = getSingleEvent(em.getShortName(), username);
+        ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
+            .map(tc -> Triple.of(tc, tc.getInception(zoneId), tc.getExpiration(zoneId)))
+            .filter(t -> t.getRight().isAfter(end))
+            .forEach(t -> fixTicketCategoryDates(end, t.getLeft(), t.getMiddle(), t.getRight()));
+    }
+
+    private void fixTicketCategoryDates(ZonedDateTime end, TicketCategory tc, ZonedDateTime inception, ZonedDateTime expiration) {
         final ZonedDateTime newExpiration = ObjectUtils.min(end, expiration);
         Objects.requireNonNull(newExpiration);
         Validate.isTrue(inception.isBefore(newExpiration), format("Cannot fix dates for category \"%s\" (id: %d), try updating that category first.", tc.getName(), tc.getId()));
         ticketCategoryRepository.fixDates(tc.getId(), inception, newExpiration);
     }
 
-    private GeolocationResult geolocate(String location) {
-        Pair<String, String> coordinates = locationManager.geocode(location);
-        return new GeolocationResult(coordinates, locationManager.getTimezone(coordinates));
-    }
-
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
         Event event = eventRepository.findById(eventId);
-        reallocateTickets(eventStatisticsManager.loadTicketCategoryWithStats(srcCategoryId, event), Optional.of(ticketCategoryRepository.getById(targetCategoryId, event.getId())), event);
+        reallocateTickets(ticketCategoryRepository.findStatisticWithId(srcCategoryId, eventId), Optional.of(ticketCategoryRepository.getByIdAndActive(targetCategoryId, event.getId())), event);
     }
 
-    void reallocateTickets(TicketCategoryWithStatistic src, Optional<TicketCategory> target, Event event) {
-        int notSoldTickets = src.getNotSoldTickets();
+    void reallocateTickets(TicketCategoryStatisticView src, Optional<TicketCategory> target, Event event) {
+        int notSoldTickets = src.getNotSoldTicketsCount();
         if(notSoldTickets == 0) {
             log.debug("since all the ticket have been sold, ticket moving is not needed anymore.");
             return;
@@ -437,15 +444,20 @@ public class EventManager {
         if(locked != notSoldTickets) {
             throw new IllegalStateException(String.format("Expected %d free tickets, got %d.", notSoldTickets, locked));
         }
-        ticketCategoryRepository.updateSeatsAvailability(src.getId(), src.getSoldTickets());
+        ticketCategoryRepository.updateSeatsAvailability(src.getId(), src.getSoldTicketsCount());
         if(target.isPresent()) {
             TicketCategory targetCategory = target.get();
             ticketCategoryRepository.updateSeatsAvailability(targetCategory.getId(), targetCategory.getMaxTickets() + locked);
             ticketRepository.moveToAnotherCategory(lockedTickets, targetCategory.getId(), targetCategory.getSrcPriceCts());
-            insertTokens(targetCategory, locked);
+            if(targetCategory.isAccessRestricted()) {
+                insertTokens(targetCategory, locked);
+            } else {
+                ticketRepository.resetTickets(lockedTickets);
+            }
         } else {
             int result = ticketRepository.unbindTicketsFromCategory(event.getId(), src.getId(), lockedTickets);
             Validate.isTrue(result == locked, String.format("Expected %d modified tickets, got %d.", locked, result));
+            ticketRepository.resetTickets(lockedTickets);
         }
         specialPriceRepository.cancelExpiredTokens(src.getId());
     }
@@ -453,13 +465,13 @@ public class EventManager {
     public void unbindTickets(String eventName, int categoryId, String username) {
         Event event = getSingleEvent(eventName, username);
         Validate.isTrue(ticketCategoryRepository.countUnboundedCategoriesByEventId(event.getId()) > 0, "cannot unbind tickets: there aren't any unbounded categories");
-        TicketCategoryWithStatistic ticketCategory = eventStatisticsManager.loadTicketCategoryWithStats(categoryId, event);
+        TicketCategoryStatisticView ticketCategory = ticketCategoryRepository.findStatisticWithId(categoryId, event.getId());
         Validate.isTrue(ticketCategory.isBounded(), "cannot unbind tickets from an unbounded category!");
         reallocateTickets(ticketCategory, Optional.empty(), event);
     }
 
     MapSqlParameterSource[] prepareTicketsBulkInsertParameters(ZonedDateTime creation,
-                                                               Event event) {
+                                                               Event event, int requestedTickets, TicketStatus ticketStatus) {
 
         //FIXME: the date should be inserted as ZonedDateTime !
         Date creationDate = Date.from(creation.toInstant());
@@ -468,15 +480,15 @@ public class EventManager {
         Stream<MapSqlParameterSource> boundedTickets = categories.stream()
                 .filter(IS_CATEGORY_BOUNDED)
                 .flatMap(tc -> generateTicketsForCategory(tc, event, creationDate, 0));
-        int existingTickets = categories.stream()
+        int generatedTickets = categories.stream()
                 .filter(IS_CATEGORY_BOUNDED)
                 .mapToInt(TicketCategory::getMaxTickets)
                 .sum();
-        if(existingTickets >= event.getAvailableSeats()) {
+        if(generatedTickets >= requestedTickets) {
             return boundedTickets.toArray(MapSqlParameterSource[]::new);
         }
 
-        return Stream.concat(boundedTickets, generateEmptyTickets(event, creationDate, event.getAvailableSeats() - existingTickets)).toArray(MapSqlParameterSource[]::new);
+        return Stream.concat(boundedTickets, generateEmptyTickets(event, creationDate, requestedTickets - generatedTickets, ticketStatus)).toArray(MapSqlParameterSource[]::new);
     }
 
     private Stream<MapSqlParameterSource> generateTicketsForCategory(TicketCategory tc,
@@ -484,7 +496,7 @@ public class EventManager {
                                                                      Date creationDate,
                                                                      int existing) {
         Optional<TicketCategory> filteredTC = Optional.of(tc).filter(TicketCategory::isBounded);
-        int missingTickets = filteredTC.map(c -> Math.abs(c.getMaxTickets() - existing)).orElseGet(() -> event.getAvailableSeats() - existing);
+        int missingTickets = filteredTC.map(c -> Math.abs(c.getMaxTickets() - existing)).orElseGet(() -> eventRepository.countExistingTickets(event.getId()) - existing);
         return generateStreamForTicketCreation(missingTickets)
                     .map(ps -> buildTicketParams(event.getId(), creationDate, filteredTC, tc.getSrcPriceCts(), ps));
     }
@@ -500,18 +512,20 @@ public class EventManager {
                 .sum();
         int notAssignedTickets = em.getAvailableSeats() - requestedSeats;
         Validate.isTrue(notAssignedTickets >= 0, "Total categories' seats cannot be more than the actual event seats");
-        Validate.isTrue(notAssignedTickets > 0 || em.getTicketCategories().stream().noneMatch(tc -> !tc.isBounded()), "Cannot add an unbounded category if there aren't any free tickets");
+        Validate.isTrue(notAssignedTickets > 0 || em.getTicketCategories().stream().allMatch(TicketCategoryModification::isBounded), "Cannot add an unbounded category if there aren't any free tickets");
 
         em.getTicketCategories().forEach(tc -> {
             final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
             final int maxTickets = tc.isBounded() ? tc.getMaxTickets() : 0;
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
-                tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price);
+                tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
+                toZonedDateTime(tc.getValidCheckInFrom(), zoneId), toZonedDateTime(tc.getValidCheckInTo(), zoneId),
+                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId));
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
             if (tc.isTokenGenerationRequested()) {
-                final TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getKey(), event.getId());
+                final TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), event.getId());
                 final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategory, ticketCategory.getMaxTickets());
                 jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
             }
@@ -523,13 +537,20 @@ public class EventManager {
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPriceInCents(), event.isFreeOfCharge());
         final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
-            tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.isBounded() ? tc.getMaxTickets() : 0, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price);
-        TicketCategory ticketCategory = ticketCategoryRepository.getById(category.getKey(), eventId);
+            tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.isBounded() ? tc.getMaxTickets() : 0, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
+            toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
+            toZonedDateTime(tc.getValidCheckInTo(), zoneId),
+            toZonedDateTime(tc.getTicketValidityStart(), zoneId),
+            toZonedDateTime(tc.getTicketValidityEnd(), zoneId));
+        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
-            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), singletonList(TicketStatus.FREE.name()));
+            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
             jdbc.batchUpdate(ticketRepository.bulkTicketUpdate(), lockedTickets.stream().map(id -> new MapSqlParameterSource("id", id).addValue("categoryId", ticketCategory.getId()).addValue("srcPriceCts", ticketCategory.getSrcPriceCts())).toArray(MapSqlParameterSource[]::new));
             if(tc.isTokenGenerationRequested()) {
                 insertTokens(ticketCategory);
+                ticketRepository.revertToFree(eventId, ticketCategory.getId(), lockedTickets);
+            } else {
+                ticketRepository.resetTickets(lockedTickets);//reset to RELEASED
             }
         }
 
@@ -558,24 +579,38 @@ public class EventManager {
         }));
     }
 
-    private void updateCategory(TicketCategoryModification tc, boolean freeOfCharge, ZoneId zoneId, Event event) {
+    private void updateCategory(TicketCategoryModification tc,
+                                boolean freeOfCharge,
+                                ZoneId zoneId,
+                                Event event,
+                                boolean resetTicketsToFree) {
+
         int eventId = event.getId();
         final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
-        TicketCategory original = ticketCategoryRepository.getById(tc.getId(), eventId);
+        TicketCategory original = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         ticketCategoryRepository.update(tc.getId(), tc.getName(), tc.getInception().toZonedDateTime(zoneId),
-                tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), tc.isTokenGenerationRequested(), price);
-        TicketCategory updated = ticketCategoryRepository.getById(tc.getId(), eventId);
+                tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), tc.isTokenGenerationRequested(), price, StringUtils.trimToNull(tc.getCode()),
+                toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
+                toZonedDateTime(tc.getValidCheckInTo(), (zoneId)),
+                toZonedDateTime(tc.getTicketValidityStart(), zoneId),
+                toZonedDateTime(tc.getTicketValidityEnd(), zoneId));
+        TicketCategory updated = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         int addedTickets = 0;
         if(original.isBounded() ^ tc.isBounded()) {
             handleTicketAllocationStrategyChange(event, original, tc);
         } else {
             addedTickets = updated.getMaxTickets() - original.getMaxTickets();
-            handleTicketNumberModification(event, original, updated, addedTickets);
+            handleTicketNumberModification(event, original, updated, addedTickets, resetTicketsToFree);
         }
         handleTokenModification(original, updated, addedTickets);
         handlePriceChange(event, original, updated);
 
         insertOrUpdateTicketCategoryDescription(tc.getId(), tc, event);
+
+        //
+
+        auditingRepository.insertUpdateTicketInCategoryId(tc.getId());
+
     }
 
     private void handleTicketAllocationStrategyChange(Event event, TicketCategory original, TicketCategoryModification updated) {
@@ -588,22 +623,22 @@ public class EventManager {
             int addedTickets = newSize - confirmed;
             List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, addedTickets, singletonList(TicketStatus.FREE.name()));
             Validate.isTrue(ids.size() == addedTickets, "not enough tickets");
-            Validate.isTrue(ticketRepository.moveToAnotherCategory(ids, original.getId(), updated.getPriceInCents()) == ids.size(), "not enough tickets");
+            Validate.isTrue(ids.size() == 0 || ticketRepository.moveToAnotherCategory(ids, original.getId(), updated.getPriceInCents()) == ids.size(), "not enough tickets");
         } else {
-            reallocateTickets(eventStatisticsManager.loadTicketCategoryWithStats(original.getId(), event), Optional.empty(), event);
+            reallocateTickets(ticketCategoryRepository.findStatisticWithId(original.getId(), event.getId()), Optional.empty(), event);
         }
         ticketCategoryRepository.updateBoundedFlag(original.getId(), updated.isBounded());
     }
 
     void handlePriceChange(Event event, TicketCategory original, TicketCategory updated) {
-        if(original.getSrcPriceCts() == updated.getSrcPriceCts()) {
+        if(original.getSrcPriceCts() == updated.getSrcPriceCts() || !original.isBounded()) {
             return;
         }
         final List<Integer> ids = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), updated.getId(), updated.getMaxTickets(), singletonList(TicketStatus.FREE.name()));
         if(ids.size() < updated.getMaxTickets()) {
             throw new IllegalStateException("Tickets have already been sold (or are in the process of being sold) for this category. Therefore price update is not allowed.");
         }
-        //there's no need to calculate final price, vat etc, since these values will be update at the time of reservation
+        //there's no need to calculate final price, vat etc, since these values will be updated at the time of reservation
         ticketRepository.updateTicketPrice(updated.getId(), event.getId(), updated.getSrcPriceCts(), 0, 0, 0);
     }
 
@@ -620,7 +655,7 @@ public class EventManager {
                 jdbc.batchUpdate(specialPriceRepository.bulkInsert(), prepareTokenBulkInsertParameters(updated, addedTickets));
             } else {
                 int absDifference = Math.abs(addedTickets);
-                final List<Integer> ids = specialPriceRepository.lockTokens(updated.getId(), absDifference);
+                final List<Integer> ids = specialPriceRepository.lockNotSentTokens(updated.getId(), absDifference);
                 Validate.isTrue(ids.size() - absDifference == 0, "not enough tokens");
                 specialPriceRepository.cancelTokens(ids);
             }
@@ -628,7 +663,7 @@ public class EventManager {
 
     }
 
-    void handleTicketNumberModification(Event event, TicketCategory original, TicketCategory updated, int addedTickets) {
+    void handleTicketNumberModification(Event event, TicketCategory original, TicketCategory updated, int addedTickets, boolean resetToFree) {
         if(addedTickets == 0) {
             log.debug("ticket handling not required since the number of ticket wasn't modified");
             return;
@@ -638,10 +673,18 @@ public class EventManager {
 
         if(addedTickets > 0) {
             //the updated category contains more tickets than the older one
-            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), addedTickets, singletonList(TicketStatus.FREE.name()));
+            List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), addedTickets, asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
+            Validate.isTrue(addedTickets == lockedTickets.size(), "Cannot add %d tickets. There are only %d free tickets.", addedTickets, lockedTickets.size());
             jdbc.batchUpdate(ticketRepository.bulkTicketUpdate(), lockedTickets.stream()
                     .map(id -> new MapSqlParameterSource("id", id).addValue("categoryId", updated.getId()).addValue("srcPriceCts", updated.getSrcPriceCts()))
                     .toArray(MapSqlParameterSource[]::new));
+            if(updated.isAccessRestricted()) {
+                //since the updated category is not public, the tickets shouldn't be distributed to waiting people.
+                ticketRepository.revertToFree(event.getId(), updated.getId(), lockedTickets);
+            } else if(!resetToFree) {
+                ticketRepository.resetTickets(lockedTickets);
+            }
+
         } else {
             int absDifference = Math.abs(addedTickets);
             final List<Integer> ids = ticketRepository.lockTicketsToInvalidate(event.getId(), updated.getId(), absDifference);
@@ -650,25 +693,24 @@ public class EventManager {
                 throw new IllegalStateException("Cannot invalidate "+absDifference+" tickets. There are only "+actualDifference+" free tickets");
             }
             ticketRepository.invalidateTickets(ids);
-            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), Math.abs(addedTickets)).toArray(MapSqlParameterSource[]::new);
+            final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), absDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
             jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
         }
     }
 
     private MapSqlParameterSource[] prepareTokenBulkInsertParameters(TicketCategory tc, int limit) {
         return generateStreamForTicketCreation(limit)
-                .map(ps -> {
+                .peek(ps -> {
                     ps.addValue("code", UUID.randomUUID().toString());
                     ps.addValue("priceInCents", tc.getSrcPriceCts());
                     ps.addValue("ticketCategoryId", tc.getId());
                     ps.addValue("status", SpecialPrice.Status.WAITING.name());
-                    return ps;
                 })
                 .toArray(MapSqlParameterSource[]::new);
     }
 
-    private void createAllTicketsForEvent(Event event) {
-        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(event.getZoneId()), event);
+    private void createAllTicketsForEvent(Event event, EventModification em) {
+        final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(event.getZoneId()), event, em.getAvailableSeats(), TicketStatus.FREE);
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 
@@ -676,11 +718,11 @@ public class EventManager {
         String paymentProxies = collectPaymentProxies(em);
         BigDecimal vat = !em.isInternal() || em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
         String privateKey = UUID.randomUUID().toString();
-        final GeolocationResult result = geolocate(em.getLocation());
+        ZoneId zoneId = ZoneId.of(em.getZoneId());
         String currentVersion = flyway.info().current().getVersion().getVersion();
         return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.isInternal() ? em.getTermsAndConditionsUrl() : "",
-            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), result.getLatitude(), result.getLongitude(), em.getBegin().toZonedDateTime(result.getZoneId()),
-            em.getEnd().toZonedDateTime(result.getZoneId()), result.getTimeZone(), em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
+            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(), em.getBegin().toZonedDateTime(zoneId),
+            em.getEnd().toZonedDateTime(zoneId), em.getZoneId(), em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
             vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion, Event.Status.DRAFT).getKey();
     }
 
@@ -692,7 +734,7 @@ public class EventManager {
     }
 
     public TicketCategory getTicketCategoryById(int id, int eventId) {
-        return ticketCategoryRepository.getById(id, eventId);
+        return ticketCategoryRepository.getByIdAndActive(id, eventId);
     }
 
     public AdditionalService getAdditionalServiceById(int id, int eventId) {
@@ -834,6 +876,7 @@ public class EventManager {
 		eventDeleterRepository.deleteEventMigration(eventId);
 		eventDeleterRepository.deleteSponsorScan(eventId);
 		eventDeleterRepository.deleteTicket(eventId);
+		eventDeleterRepository.deleteTransactions(eventId);
 		eventDeleterRepository.deleteReservation(eventId);
 		
 		eventDeleterRepository.deletePromoCode(eventId);
@@ -847,6 +890,12 @@ public class EventManager {
 		eventDeleterRepository.deleteEvent(eventId);
 		
 	}
+
+    public void disableEventsFromUsers(List<Integer> userIds) {
+        if(!userIds.isEmpty()) {
+            eventRepository.disableEventsForUsers(userIds);
+        }
+    }
 
     @Data
     private static final class GeolocationResult {

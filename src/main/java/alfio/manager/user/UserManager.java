@@ -36,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,7 +47,6 @@ import static java.util.stream.Collectors.toList;
 public class UserManager {
 
     public static final String ADMIN_USERNAME = "admin";
-    private static final Function<Integer, Integer> ID_EVALUATOR = id -> Optional.ofNullable(id).orElse(Integer.MIN_VALUE);
     private final AuthorityRepository authorityRepository;
     private final OrganizationRepository organizationRepository;
     private final UserOrganizationRepository userOrganizationRepository;
@@ -61,15 +60,22 @@ public class UserManager {
 
     public List<UserWithOrganizations> findAllUsers(String username) {
         List<Organization> organizations = findUserOrganizations(username);
-        Map<Integer, List<UserOrganization>> usersAndOrganizations = userOrganizationRepository.findByOrganizationIdsOrderByUserId(organizations.stream().map(Organization::getId).collect(toList()))
-            .stream()
-            .collect(Collectors.groupingBy(UserOrganization::getUserId));
-        return userRepository.findByIds(usersAndOrganizations.keySet())
-            .stream()
-            .map(u -> {
-                List<UserOrganization> userOrganizations = usersAndOrganizations.get(u.getId());
-                return new UserWithOrganizations(u, organizations.stream().filter(o -> userOrganizations.stream().anyMatch(uo -> uo.getOrganizationId() == o.getId())).collect(toList()));
-            }).collect(toList());
+        Predicate<Collection<?>> isNotEmpty = ks -> !ks.isEmpty();
+        return Optional.of(organizations)
+            .filter(isNotEmpty)
+            .flatMap(org -> {
+                Map<Integer, List<UserOrganization>> usersAndOrganizations = userOrganizationRepository.findByOrganizationIdsOrderByUserId(organizations.stream().map(Organization::getId).collect(toList()))
+                    .stream()
+                    .collect(Collectors.groupingBy(UserOrganization::getUserId));
+                return Optional.of(usersAndOrganizations.keySet())
+                    .filter(isNotEmpty)
+                    .map(ks -> userRepository.findByIds(ks)
+                        .stream()
+                        .map(u -> {
+                            List<UserOrganization> userOrganizations = usersAndOrganizations.get(u.getId());
+                            return new UserWithOrganizations(u, organizations.stream().filter(o -> userOrganizations.stream().anyMatch(uo -> uo.getOrganizationId() == o.getId())).collect(toList()));
+                        }).collect(toList()));
+            }).orElseGet(Collections::emptyList);
     }
 
     public List<User> findAllEnabledUsers(String username) {
@@ -85,13 +91,17 @@ public class UserManager {
         return userRepository.findEnabledByUsername(username).orElseThrow(IllegalArgumentException::new);
     }
 
+    public boolean usernameExists(String username) {
+        return userRepository.findIdByUserName(username).isPresent();
+    }
+
     public User findUser(int id) {
         return userRepository.findById(id);
     }
 
     public Collection<Role> getAvailableRoles(String username) {
         User user = findUserByUsername(username);
-        return isAdmin(user) || isOwner(user) ? EnumSet.of(Role.OWNER, Role.OPERATOR, Role.SUPERVISOR, Role.SPONSOR) : Collections.emptySet();
+        return isAdmin(user) || isOwner(user) ? EnumSet.of(Role.OWNER, Role.OPERATOR, Role.SUPERVISOR, Role.SPONSOR, Role.API_CONSUMER) : Collections.emptySet();
     }
 
     /**
@@ -104,7 +114,7 @@ public class UserManager {
     }
 
     public List<Organization> findUserOrganizations(String username) {
-        return findUserOrganizations(userRepository.getByUsername(username));
+        return organizationRepository.findAllForUser(username);
     }
 
     public Organization findOrganizationById(int id, String username) {
@@ -113,16 +123,6 @@ public class UserManager {
                 .filter(o -> o.getId() == id)
                 .findFirst()
                 .orElseThrow(IllegalArgumentException::new);
-    }
-
-    public List<Organization> findUserOrganizations(User user) {
-        if (isAdmin(user)) {
-            return organizationRepository.findAll();
-        }
-        return userOrganizationRepository.findByUserId(user.getId())
-                .stream()
-                .map(uo -> organizationRepository.getById(uo.getOrganizationId()))
-                .collect(toList());
     }
 
     public boolean isAdmin(User user) {
@@ -143,10 +143,11 @@ public class UserManager {
     }
 
     @Transactional
-    public void createOrganization(String name, String description, String email) {
+    public int createOrganization(String name, String description, String email) {
         organizationRepository.create(name, description, email);
-        int orgId = organizationRepository.findByName(name).stream().findFirst().orElseThrow(IllegalStateException::new).getId();
+        int orgId = organizationRepository.getIdByName(name);
         invoiceSequencesRepository.initFor(orgId);
+        return orgId;
     }
 
     @Transactional
@@ -155,12 +156,7 @@ public class UserManager {
     }
 
     public ValidationResult validateOrganization(Integer id, String name, String email, String description) {
-        int orgId = ID_EVALUATOR.apply(id);
-        final long existing = organizationRepository.findByName(name)
-                .stream()
-                .filter(o -> o.getId() != orgId)
-                .count();
-        if(existing > 0) {
+        if(organizationRepository.findByName(name).isPresent()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("name", "There is already another organization with the same name."));
         }
         Validate.notBlank(name, "name can't be empty");
@@ -186,10 +182,15 @@ public class UserManager {
     }
 
     @Transactional
-    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role) {
-        Organization organization = organizationRepository.getById(organizationId);
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType) {
         String userPassword = PasswordGenerator.generateRandomPassword();
-        AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true);
+        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, userPassword);
+    }
+
+    @Transactional
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, String userPassword) {
+        Organization organization = organizationRepository.getById(organizationId);
+        AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true, userType);
         userOrganizationRepository.create(result.getKey(), organization.getId());
         authorityRepository.create(username, role.getRoleName());
         return new UserWithPassword(userRepository.findById(result.getKey()), userPassword, UUID.randomUUID().toString());
@@ -205,7 +206,7 @@ public class UserManager {
 
     @Transactional
     public boolean updatePassword(String username, String newPassword) {
-        User user = userRepository.findByUsername(username).stream().findFirst().orElseThrow(IllegalStateException::new);
+        User user = userRepository.findByUsername(username).orElseThrow(IllegalStateException::new);
         Validate.isTrue(PasswordGenerator.isValid(newPassword), "invalid password");
         Validate.isTrue(userRepository.resetPassword(user.getId(), passwordEncoder.encode(newPassword)) == 1, "error during password update");
         return true;
@@ -230,12 +231,7 @@ public class UserManager {
     }
 
     public ValidationResult validateUser(Integer id, String username, int organizationId, String role, String firstName, String lastName, String emailAddress) {
-        int userId = ID_EVALUATOR.apply(id);
-        final long existing = userRepository.findByUsername(username)
-                .stream()
-                .filter(u -> u.getId() != userId)
-                .count();
-        if(existing > 0) {
+        if(userRepository.findByUsername(username).isPresent()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("username", "There is already another user with the same username."));
         }
         return ValidationResult.of(Stream.of(Pair.of(firstName, "firstName"), Pair.of(lastName, "lastName"), Pair.of(emailAddress, "emailAddress"))
@@ -246,8 +242,6 @@ public class UserManager {
 
     public ValidationResult validateNewPassword(String username, String oldPassword, String newPassword, String newPasswordConfirm) {
         return userRepository.findByUsername(username)
-            .stream()
-            .findFirst()
             .map(u -> {
                 List<ValidationResult.ErrorDescriptor> errors = new ArrayList<>();
                 Optional<String> password = userRepository.findPasswordByUsername(username);
@@ -266,4 +260,11 @@ public class UserManager {
     }
 
 
+    public List<Integer> disableAccountsOlderThan(Date date, User.Type type) {
+        List<Integer> userIds = userRepository.findUserToDisableOlderThan(date, type);
+        if(!userIds.isEmpty()) {
+            userRepository.disableAccountsOlderThan(date, type);
+        }
+        return userIds;
+    }
 }

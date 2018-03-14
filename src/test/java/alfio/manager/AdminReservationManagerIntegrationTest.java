@@ -28,10 +28,7 @@ import alfio.model.modification.AdminReservationModification.Category;
 import alfio.model.modification.AdminReservationModification.CustomerData;
 import alfio.model.modification.AdminReservationModification.TicketsInfo;
 import alfio.model.result.Result;
-import alfio.repository.EmailMessageRepository;
-import alfio.repository.SpecialPriceRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -85,6 +82,8 @@ public class AdminReservationManagerIntegrationTest {
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private SpecialPriceRepository specialPriceRepository;
+    @Autowired
+    private EventRepository eventRepository;
 
     @Test
     public void testReserveFromExistingCategory() throws Exception {
@@ -92,7 +91,7 @@ public class AdminReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         performExistingCategoryTest(categories, false, Collections.singletonList(1), false, true, 0, AVAILABLE_SEATS);
     }
 
@@ -102,11 +101,11 @@ public class AdminReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null),
             new TicketCategoryModification(null, "2nd", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         performExistingCategoryTest(categories, false, Arrays.asList(10,10), false, true, 0, AVAILABLE_SEATS);
     }
 
@@ -116,7 +115,7 @@ public class AdminReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         performExistingCategoryTest(categories, false, Collections.singletonList(1), false, true, 0, AVAILABLE_SEATS);
     }
 
@@ -126,7 +125,7 @@ public class AdminReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         performExistingCategoryTest(categories, false, Collections.singletonList(1), true, true, AVAILABLE_SEATS, AVAILABLE_SEATS+1);
     }
 
@@ -136,7 +135,7 @@ public class AdminReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
         performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
     }
 
@@ -146,7 +145,7 @@ public class AdminReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
         performExistingCategoryTest(categories, true, Collections.singletonList(AVAILABLE_SEATS + 1), false, false, 0, AVAILABLE_SEATS);
     }
 
@@ -156,7 +155,7 @@ public class AdminReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         performExistingCategoryTest(categories, true, Collections.singletonList(AVAILABLE_SEATS + 1), false, false, 0, AVAILABLE_SEATS);
     }
 
@@ -166,8 +165,8 @@ public class AdminReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true));
-        Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager);
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
@@ -184,9 +183,9 @@ public class AdminReservationManagerIntegrationTest {
         assertNotNull(data.getLeft());
         int categoryId = tickets.get(0).getCategoryId();
         Event modified = eventManager.getSingleEvent(event.getShortName(), username);
-        assertEquals(attendees + 1, modified.getAvailableSeats());
+        assertEquals(attendees + 1, eventRepository.countExistingTickets(event.getId()).intValue());
         assertEquals(attendees, ticketRepository.findPendingTicketsInCategories(Collections.singletonList(categoryId)).size());
-        TicketCategory categoryModified = ticketCategoryRepository.getById(categoryId, event.getId());
+        TicketCategory categoryModified = ticketCategoryRepository.getByIdAndActive(categoryId, event.getId());
         assertEquals(categoryModified.getMaxTickets(), attendees);
         ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.PENDING)));
         adminReservationManager.confirmReservation(event.getShortName(), data.getLeft().getId(), username);
@@ -200,8 +199,8 @@ public class AdminReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager);
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+        Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
@@ -226,7 +225,7 @@ public class AdminReservationManagerIntegrationTest {
         int resNewCategoryId = tickets.get(2).getCategoryId();
 
         Event modified = eventManager.getSingleEvent(event.getShortName(), username);
-        assertEquals(AVAILABLE_SEATS, modified.getAvailableSeats());
+        assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());
         assertEquals(3, ticketRepository.findPendingTicketsInCategories(Arrays.asList(resExistingCategoryId, resNewCategoryId)).size());
         assertEquals(3, ticketRepository.findTicketsInReservation(data.getLeft().getId()).size());
 
@@ -246,7 +245,7 @@ public class AdminReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
         Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
         assertNotNull(testResult);
         Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.confirmReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), testResult.getMiddle());
@@ -254,7 +253,7 @@ public class AdminReservationManagerIntegrationTest {
         Triple<TicketReservation, List<Ticket>, Event> triple = result.getData();
         assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, triple.getLeft().getStatus());
         triple.getMiddle().forEach(t -> assertEquals(Ticket.TicketStatus.ACQUIRED, t.getStatus()));
-        assertTrue(emailMessageRepository.findByEventId(triple.getRight().getId()).isEmpty());
+        assertTrue(emailMessageRepository.findByEventId(triple.getRight().getId(), 0, 50, null).isEmpty());
         ticketCategoryRepository.findByEventId(triple.getRight().getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.TAKEN)));
         assertFalse(ticketRepository.findAllReservationsConfirmedButNotAssigned(triple.getRight().getId()).contains(triple.getLeft().getId()));
     }
@@ -263,7 +262,7 @@ public class AdminReservationManagerIntegrationTest {
                                                                                  List<Integer> attendeesNr, boolean addSeatsIfNotAvailable, boolean expectSuccess,
                                                                                  int reservedTickets, int expectedEventSeats) {
         assertEquals("Test error: categories' size must be equal to attendees' size", categories.size(), attendeesNr.size());
-        Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager);
+        Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
@@ -306,13 +305,13 @@ public class AdminReservationManagerIntegrationTest {
         assertTrue(data.getRight().size() == attendeesNr.stream().mapToInt(i -> i).sum());
         assertNotNull(data.getLeft());
         Event modified = eventManager.getSingleEvent(event.getShortName(), username);
-        assertEquals(expectedEventSeats, modified.getAvailableSeats());
+        assertEquals(expectedEventSeats, eventRepository.countExistingTickets(event.getId()).intValue());
         List<Ticket> tickets = ticketRepository.findPendingTicketsInCategories(existingCategories.stream().map(TicketCategory::getId).collect(toList()));
         assertEquals(attendeesNr.stream().mapToInt(i -> i).sum(), tickets.size() - reservedTickets);
         if(bounded) {
             final Iterator<Integer> iterator = attendeesNr.iterator();
             existingCategories.forEach(existingCategory -> {
-                TicketCategory categoryModified = ticketCategoryRepository.getById(existingCategory.getId(), event.getId());
+                TicketCategory categoryModified = ticketCategoryRepository.getByIdAndActive(existingCategory.getId(), event.getId());
                 assertEquals(categoryModified.getMaxTickets(), iterator.next().intValue());
             });
         }
@@ -334,7 +333,7 @@ public class AdminReservationManagerIntegrationTest {
 
     private List<Attendee> generateAttendees(int count) {
         return IntStream.range(0, count)
-            .mapToObj(i -> new Attendee(null, "Attendee "+i, "Test" + i, "attendee"+i+"@test.ch"))
+            .mapToObj(i -> new Attendee(null, "Attendee "+i, "Test" + i, "attendee"+i+"@test.ch", "en",false, null, Collections.emptyMap()))
             .collect(toList());
     }
 }

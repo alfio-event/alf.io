@@ -220,21 +220,21 @@ public enum PlatformProvider {
 
         @Override
         public String getUrl(Environment env) {
-            String dbHost = Objects.requireNonNull(System.getenv("DB_PORT_5432_TCP_ADDR"), "DB_PORT_5432_TCP_ADDR env variable is missing");
-            String port = Objects.requireNonNull(System.getenv("DB_PORT_5432_TCP_PORT"), "DB_PORT_5432_TCP_PORT env variable is missing");
-            String dbName = Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_DB"), "DB_ENV_POSTGRES_DB env variable is missing");
+            String dbHost = Objects.requireNonNull(System.getenv("POSTGRES_PORT_5432_TCP_ADDR"), "POSTGRES_PORT_5432_TCP_ADDR env variable is missing");
+            String port = Objects.requireNonNull(System.getenv("POSTGRES_PORT_5432_TCP_PORT"), "POSTGRES_PORT_5432_TCP_PORT env variable is missing");
+            String dbName = Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_DB"), "POSTGRES_ENV_POSTGRES_DB env variable is missing");
             return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName;
         }
 
         @Override
         public String getUsername(Environment env) {
-            return Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_USERNAME"), "DB_ENV_POSTGRES_USERNAME env variable is missing");
+            return Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_USERNAME"), "POSTGRES_ENV_POSTGRES_USERNAME env variable is missing");
         }
 
 
         @Override
         public String getPassword(Environment env) {
-            return Objects.requireNonNull(System.getenv("DB_ENV_POSTGRES_PASSWORD"), "DB_ENV_POSTGRES_PASSWORD env variable is missing");
+            return Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_PASSWORD"), "POSTGRES_ENV_POSTGRES_PASSWORD env variable is missing");
         }
 
         @Override
@@ -250,7 +250,7 @@ public enum PlatformProvider {
 
         @Override
         public boolean isHosting(Environment env) {
-            return ofNullable(env.getProperty("DB_ENV_POSTGRES_DB")).isPresent();
+            return ofNullable(System.getenv("POSTGRES_ENV_POSTGRES_DB")).isPresent();
         }
     },
 
@@ -294,6 +294,45 @@ public enum PlatformProvider {
             return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
         }
 
+    },
+
+    CLEVER_CLOUD {
+        @Override
+        public String getUrl(Environment env) {
+            return String.format("jdbc:postgresql://%s:%s/%s", env.getRequiredProperty("POSTGRESQL_ADDON_HOST"),
+                env.getRequiredProperty("POSTGRESQL_ADDON_PORT"), env.getRequiredProperty("POSTGRESQL_ADDON_DB"));
+        }
+
+        @Override
+        public String getUsername(Environment env) {
+            return env.getRequiredProperty("POSTGRESQL_ADDON_USER");
+        }
+
+        @Override
+        public String getPassword(Environment env) {
+            return env.getRequiredProperty("POSTGRESQL_ADDON_PASSWORD");
+        }
+
+        @Override
+        public String getDriveClassName(Environment env) {
+            return POSTGRESQL_DRIVER;
+        }
+
+        @Override
+        public String getDialect(Environment env) {
+            return PGSQL;
+        }
+
+        @Override
+        public int getMaxActive(Environment env) {
+            //default limit to 5, to be on the safe side
+            return Integer.parseInt(env.getProperty("POSTGRESQL_ADDON_MAXCONN", "5"));
+        }
+
+        @Override
+        public boolean isHosting(Environment env) {
+            return ofNullable(env.getProperty("CC_DEPLOYMENT_ID")).isPresent();
+        }
     };
 
     private static final String POSTGRESQL_DRIVER = "org.postgresql.Driver";

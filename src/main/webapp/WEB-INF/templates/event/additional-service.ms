@@ -72,7 +72,7 @@
                 {{/fixPrice}}
                 {{^fixPrice}}
                     <input name="additionalService[{{index}}].additionalServiceId" value="{{id}}" type="hidden">
-                    <input type="number" min="0" step="any" name="additionalService[{{index}}].amount" class="form-control" title="">
+                    <input type="number" min="0" step="any" name="additionalService[{{index}}].amount" class="form-control" title="" value="0">
                 {{/fixPrice}}
             {{/saleable}}
             {{^saleable}}

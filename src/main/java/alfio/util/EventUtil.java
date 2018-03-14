@@ -18,15 +18,21 @@ package alfio.util;
 
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.modification.EventWithStatistics;
-import alfio.model.modification.TicketCategoryWithStatistic;
+import alfio.model.*;
 import alfio.model.system.Configuration;
+import biweekly.ICalVersion;
+import biweekly.ICalendar;
+import biweekly.component.VEvent;
+import biweekly.io.text.ICalWriter;
 import lombok.experimental.UtilityClass;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -34,11 +40,11 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
-import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
+import static alfio.model.system.ConfigurationKeys.*;
 import static java.time.temporal.ChronoField.*;
 
 @UtilityClass
+@Log4j2
 public class EventUtil {
 
     private static final DateTimeFormatter JSON_TIME_FORMATTER = new DateTimeFormatterBuilder()
@@ -59,6 +65,11 @@ public class EventUtil {
         .toFormatter(Locale.ROOT);
 
     public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<Event> noTicketsAvailable) {
+        return !configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), STOP_WAITING_QUEUE_SUBSCRIPTIONS), false)
+            && checkWaitingQueuePreconditions(event, categories, configurationManager, noTicketsAvailable);
+    }
+
+    public static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<Event> noTicketsAvailable) {
         return findLastCategory(categories).map(lastCategory -> {
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             if(isPreSales(event, categories)) {
@@ -76,7 +87,7 @@ public class EventUtil {
     }
 
     private static Optional<SaleableTicketCategory> findFirstCategory(List<SaleableTicketCategory> categories) {
-        return sortCategories(categories, (c1, c2) -> c1.getUtcExpiration().compareTo(c2.getUtcExpiration())).findFirst();
+        return sortCategories(categories, Comparator.comparing(SaleableTicketCategory::getUtcExpiration)).findFirst();
     }
 
     private static Stream<SaleableTicketCategory> sortCategories(List<SaleableTicketCategory> categories, Comparator<SaleableTicketCategory> comparator) {
@@ -90,9 +101,9 @@ public class EventUtil {
         return findFirstCategory(categories).map(c -> now.isBefore(c.getZonedInception())).orElse(false);
     }
 
-    public static Stream<MapSqlParameterSource> generateEmptyTickets(Event event, Date creationDate, int limit) {
+    public static Stream<MapSqlParameterSource> generateEmptyTickets(Event event, Date creationDate, int limit, Ticket.TicketStatus ticketStatus) {
         return generateStreamForTicketCreation(limit)
-                .map(ps -> buildTicketParams(event.getId(), creationDate, Optional.empty(), 0, ps));
+            .map(ps -> buildTicketParams(event.getId(), creationDate, Optional.empty(), 0, ps, ticketStatus));
     }
 
     public static Stream<MapSqlParameterSource> generateStreamForTicketCreation(int limit) {
@@ -105,20 +116,65 @@ public class EventUtil {
                                               Optional<TicketCategory> tc,
                                               int srcPriceCts,
                                               MapSqlParameterSource ps) {
+        return buildTicketParams(eventId, creation, tc, srcPriceCts, ps, Ticket.TicketStatus.FREE);
+    }
+
+    private static MapSqlParameterSource buildTicketParams(int eventId,
+                                                           Date creation,
+                                                           Optional<TicketCategory> tc,
+                                                           int srcPriceCts,
+                                                           MapSqlParameterSource ps,
+                                                           Ticket.TicketStatus ticketStatus) {
         return ps.addValue("uuid", UUID.randomUUID().toString())
-                .addValue("creation", creation)
-                .addValue("categoryId", tc.map(TicketCategory::getId).orElse(null))
-                .addValue("eventId", eventId)
-                .addValue("status", Ticket.TicketStatus.FREE.name())
-                .addValue("srcPriceCts", srcPriceCts);
+            .addValue("creation", creation)
+            .addValue("categoryId", tc.map(TicketCategory::getId).orElse(null))
+            .addValue("eventId", eventId)
+            .addValue("status", ticketStatus.name())
+            .addValue("srcPriceCts", srcPriceCts);
     }
 
     public static int evaluatePrice(int price, boolean freeOfCharge) {
         return freeOfCharge ? 0 : price;
     }
 
-    public static int determineAvailableSeats(TicketCategoryWithStatistic tc, EventWithStatistics e) {
-        return tc.isBounded() ? tc.getNotSoldTickets() : e.getDynamicAllocation();
+    public static int determineAvailableSeats(TicketCategoryStatisticView tc, EventStatisticView e) {
+        return tc.isBounded() ? tc.getNotSoldTicketsCount() : e.getDynamicAllocation();
+    }
+
+    public static Optional<byte[]> getIcalForEvent(Event event, TicketCategory ticketCategory, String description) {
+        ICalendar ical = new ICalendar();
+        VEvent vEvent = new VEvent();
+        vEvent.setSummary(event.getDisplayName());
+        vEvent.setDescription(description);
+        vEvent.setLocation(StringUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
+        ZonedDateTime begin = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
+        ZonedDateTime end = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());
+        vEvent.setDateStart(Date.from(begin.toInstant()));
+        vEvent.setDateEnd(Date.from(end.toInstant()));
+        vEvent.setUrl(event.getWebsiteUrl());
+        ical.addEvent(vEvent);
+        StringWriter strWriter = new StringWriter();
+        try (ICalWriter writer = new ICalWriter(strWriter, ICalVersion.V2_0)) {
+            writer.write(ical);
+            return Optional.of(strWriter.toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            log.warn("was not able to generate iCal for event " + event.getShortName(), e);
+            return Optional.empty();
+        }
+    }
+
+    public static String getGoogleCalendarURL(Event event, TicketCategory category, String description) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyMMdd'T'HHmmss");
+        ZonedDateTime validityStart = Optional.ofNullable(category).map(TicketCategory::getTicketValidityStart).map(d -> d.withZoneSameInstant(event.getZoneId())).orElse(event.getBegin());
+        ZonedDateTime validityEnd = Optional.ofNullable(category).map(TicketCategory::getTicketValidityEnd).map(d -> d.withZoneSameInstant(event.getZoneId())).orElse(event.getEnd());
+        return UriComponentsBuilder.fromUriString("https://www.google.com/calendar/event")
+            .queryParam("action", "TEMPLATE")
+            .queryParam("dates", validityStart.format(formatter) + "/" + validityEnd.format(formatter))
+            .queryParam("ctz", event.getTimeZone())
+            .queryParam("text", event.getDisplayName())
+            .queryParam("location", event.getLocation())
+            .queryParam("detail", description)
+            .toUriString();
     }
 
 

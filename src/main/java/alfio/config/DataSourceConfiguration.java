@@ -70,7 +70,7 @@ import java.util.Set;
 @EnableTransactionManagement
 @EnableScheduling
 @EnableAsync
-@ComponentScan(basePackages = {"alfio.manager"})
+@ComponentScan(basePackages = {"alfio.manager", "alfio.extension"})
 @Log4j2
 public class DataSourceConfiguration implements ResourceLoaderAware {
 
@@ -260,10 +260,12 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
             buildTrigger(SendOfflinePaymentReminder.class, "SendOfflinePaymentReminder", SendOfflinePaymentReminder.INTERVAL),
             buildTrigger(SendTicketAssignmentReminder.class, "SendTicketAssignmentReminder", SendTicketAssignmentReminder.INTERVAL),
             buildTrigger(GenerateSpecialPriceCodes.class, "GenerateSpecialPriceCodes", GenerateSpecialPriceCodes.INTERVAL),
+            buildTrigger(ProcessReservationRequests.class, "ProcessReservationRequests", ProcessReservationRequests.INTERVAL),
             buildTrigger(SendEmails.class, "SendEmails", SendEmails.INTERVAL),
             buildTrigger(ProcessReleasedTickets.class, "ProcessReleasedTickets", ProcessReleasedTickets.INTERVAL),
             buildTrigger(CleanupUnreferencedBlobFiles.class, "CleanupUnreferencedBlobFiles", CleanupUnreferencedBlobFiles.INTERVAL),
-            buildCron(SendOfflinePaymentReminderToEventOrganizers.class, "SendOfflinePaymentReminderToEventOrganizers", SendOfflinePaymentReminderToEventOrganizers.CRON_EXPRESSION)
+            buildCron(SendOfflinePaymentReminderToEventOrganizers.class, "SendOfflinePaymentReminderToEventOrganizers", SendOfflinePaymentReminderToEventOrganizers.CRON_EXPRESSION),
+            buildCron(CleanupForDemoMode.class, "CleanupForDemoMode", CleanupForDemoMode.CRON_EXPRESSION)
         };
     }
 

@@ -24,8 +24,10 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
+import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.WaitingQueueRepository;
@@ -52,7 +54,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 
+import static alfio.model.modification.DateTimeModification.fromZonedDateTime;
 import static alfio.test.util.IntegrationTestUtil.*;
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -91,9 +95,10 @@ public class WaitingQueueProcessorIntegrationTest {
     private ConfigurationManager configurationManager;
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
-
     @Autowired
     private ConfigurationRepository configurationRepository;
+    @Autowired
+    private EventRepository eventRepository;
 
     @Before
     public void setup() {
@@ -109,8 +114,8 @@ public class WaitingQueueProcessorIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                         new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
-        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event), "peppino@garibaldi.com", null, Locale.ENGLISH);
         waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event), "bixio@mille.org", null, Locale.ITALIAN);
@@ -122,7 +127,7 @@ public class WaitingQueueProcessorIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true);
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null);
         eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -136,31 +141,102 @@ public class WaitingQueueProcessorIntegrationTest {
 
     @Test
     public void testSoldOut() throws InterruptedException {
-        List<TicketCategoryModification> categories = Arrays.asList(
-            new TicketCategoryModification(null, "default", AVAILABLE_SEATS -1,
-                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ZERO, false, "", true),
-            new TicketCategoryModification(null, "unbounded", 0,
-                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
-                new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ZERO, false, "", false));
+        Pair<String, Event> pair = initSoldOutEvent(true);
+        Event event = pair.getRight();
+        String reservationId = pair.getLeft();
+        Ticket firstTicket = ticketRepository.findTicketsInReservation(reservationId).get(0);
+        ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), event.getId(), firstTicket.getId());
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
+        List<WaitingQueueSubscription> subscriptions =  waitingQueueRepository.loadAll(event.getId());
+        assertEquals(1, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
+        Optional<WaitingQueueSubscription> first = subscriptions.stream().filter(w -> w.getStatus().equals(WaitingQueueSubscription.Status.PENDING)).findFirst();
+        assertTrue(first.isPresent());
+        assertEquals("Giuseppe Garibaldi", first.get().getFullName());
+    }
 
-        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager);
+    @Test
+    public void testAddSeatsAfterSoldOut() throws InterruptedException {
+        Pair<String, Event> pair = initSoldOutEvent(true);
+        Event event = pair.getRight();
+        EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
+            event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
+            event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
+            event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
+            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
+        eventManager.updateEventPrices(event, eventModification, "admin");
+        //that should create an additional "RELEASED" ticket
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
+        List<WaitingQueueSubscription> subscriptions =  waitingQueueRepository.loadAll(event.getId());
+        assertEquals(1, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
+        Optional<WaitingQueueSubscription> first = subscriptions.stream().filter(w -> w.getStatus().equals(WaitingQueueSubscription.Status.PENDING)).findFirst();
+        assertTrue(first.isPresent());
+        assertEquals("Giuseppe Garibaldi", first.get().getFullName());
+    }
+
+    @Test
+    public void testAddSeatsAfterSoldOutWithoutUnbounded() throws InterruptedException {
+        Pair<String, Event> pair = initSoldOutEvent(false);
+        Event event = pair.getRight();
+        EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
+            event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
+            event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
+            event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
+            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
+        eventManager.updateEventPrices(event, eventModification, "admin");
+        //that should create an additional "RELEASED" ticket, but it won't be linked to any category, so the following call won't have any effect
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
+        List<WaitingQueueSubscription> subscriptions =  waitingQueueRepository.loadAll(event.getId());
+        assertEquals(0, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
+
+        //explicitly expand the category
+        TicketCategory category = eventManager.loadTicketCategories(event).get(0);
+        eventManager.updateCategory(category.getId(), event.getId(), new TicketCategoryModification(category.getId(), category.getName(), category.getMaxTickets() + 1,
+            fromZonedDateTime(category.getInception(event.getZoneId())), fromZonedDateTime(category.getExpiration(event.getZoneId())), emptyMap(), category.getPrice(),
+            category.isAccessRestricted(), "", category.isBounded(), null, null, null, null, null), "admin");
+
+        //now the waiting queue processor should create the reservation for the first in line
+        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
+        subscriptions =  waitingQueueRepository.loadAll(event.getId());
+        assertEquals(1, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
+        Optional<WaitingQueueSubscription> first = subscriptions.stream().filter(w -> w.getStatus().equals(WaitingQueueSubscription.Status.PENDING)).findFirst();
+        assertTrue(first.isPresent());
+        assertEquals("Giuseppe Garibaldi", first.get().getFullName());
+    }
+
+    private Pair<String, Event> initSoldOutEvent(boolean withUnboundedCategory) throws InterruptedException {
+        int boundedCategorySize = AVAILABLE_SEATS - (withUnboundedCategory ? 1 : 0);
+        List<TicketCategoryModification> categories = new ArrayList<>();
+        categories.add(
+            new TicketCategoryModification(null, "default", boundedCategorySize,
+                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
+                DESCRIPTION, BigDecimal.ZERO, false, "", true, null, null, null, null, null));
+
+        if(withUnboundedCategory) {
+             categories.add(new TicketCategoryModification(null, "unbounded", 0,
+                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
+                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
+                 DESCRIPTION, BigDecimal.ZERO, false, "", false, null, null, null, null, null));
+        }
+
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
         TicketCategory bounded = ticketCategories.stream().filter(t->t.getName().equals("default")).findFirst().orElseThrow(IllegalStateException::new);
-        TicketCategory unbounded = ticketCategories.stream().filter(t->t.getName().equals("unbounded")).findFirst().orElseThrow(IllegalStateException::new);
         List<Integer> boundedReserved = ticketRepository.selectFreeTicketsForPreReservation(event.getId(), 20, bounded.getId());
-        assertEquals(19, boundedReserved.size());
-        List<Integer> unboundedReserved = ticketRepository.selectNotAllocatedFreeTicketsForPreReservation(event.getId(), 20);
-        assertEquals(1, unboundedReserved.size());
+        assertEquals(boundedCategorySize, boundedReserved.size());
         List<Integer> reserved = new ArrayList<>(boundedReserved);
-        reserved.addAll(unboundedReserved);
         String reservationId = UUID.randomUUID().toString();
-        ticketReservationRepository.createNewReservation(reservationId, DateUtils.addHours(new Date(), 1), null, Locale.ITALIAN.getLanguage(), event.getId());
-        ticketRepository.reserveTickets(reservationId, reserved.subList(0, 19), bounded.getId(), Locale.ITALIAN.getLanguage(), 0);
-        ticketRepository.reserveTickets(reservationId, reserved.subList(19, 20), unbounded.getId(), Locale.ITALIAN.getLanguage(), 0);
+        ticketReservationRepository.createNewReservation(reservationId, DateUtils.addHours(new Date(), 1), null, Locale.ITALIAN.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded());
+        List<Integer> reservedForUpdate = withUnboundedCategory ? reserved.subList(0, 19) : reserved;
+        ticketRepository.reserveTickets(reservationId, reservedForUpdate, bounded.getId(), Locale.ITALIAN.getLanguage(), 0);
+        if(withUnboundedCategory) {
+            TicketCategory unbounded = ticketCategories.stream().filter(t->t.getName().equals("unbounded")).findFirst().orElseThrow(IllegalStateException::new);
+            List<Integer> unboundedReserved = ticketRepository.selectNotAllocatedFreeTicketsForPreReservation(event.getId(), 20);
+            assertEquals(1, unboundedReserved.size());
+            reserved.addAll(unboundedReserved);
+            ticketRepository.reserveTickets(reservationId, reserved.subList(19, 20), unbounded.getId(), Locale.ITALIAN.getLanguage(), 0);
+        }
         ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
 
         //sold-out
@@ -174,18 +250,6 @@ public class WaitingQueueProcessorIntegrationTest {
         //the following call shouldn't have any effect
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
-
-        Ticket firstTicket = ticketRepository.findTicketsInReservation(reservationId).get(0);
-
-        ticketRepository.releaseTicket(reservationId, event.getId(), firstTicket.getId());
-
-        waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
-
-        subscriptions = waitingQueueRepository.loadAll(event.getId());
-        assertEquals(1, subscriptions.stream().filter(w -> StringUtils.isNotBlank(w.getReservationId())).count());
-        Optional<WaitingQueueSubscription> first = subscriptions.stream().filter(w -> w.getStatus().equals(WaitingQueueSubscription.Status.PENDING)).findFirst();
-        assertTrue(first.isPresent());
-        assertEquals("Giuseppe Garibaldi", first.get().getFullName());
-
+        return Pair.of(reservationId, event);
     }
 }

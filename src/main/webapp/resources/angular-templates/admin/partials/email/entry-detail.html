@@ -12,7 +12,8 @@
         <dt>Status</dt>
         <dd>{{detailCtrl.message.status}}</dd>
         <dt>Checksum</dt>
-        <dd>{{detailCtrl.message.checksum}}</dd>
+        <dd class="hidden-sm hidden-xs">{{detailCtrl.message.checksum}}</dd>
+        <dd class="visible-sm visible-xs">{{detailCtrl.message.checksum | truncateString:35}}</dd>
         <dt>Requested</dt>
         <dd>{{detailCtrl.message.requestTimestamp}}</dd>
         <dt>Sent</dt>

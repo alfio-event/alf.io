@@ -10,27 +10,6 @@
 
     var directives = angular.module('adminDirectives', ['ui.bootstrap', 'adminServices']);
 
-    directives.directive('eventsList', function() {
-        return {
-            scope: true,
-            templateUrl: '/resources/angular-templates/admin/partials/main/events.html',
-            controller: function($scope, EventService) {
-
-                $scope.loading = true;
-
-                EventService.getAllActiveEvents().success(function(data) {
-                    $scope.events = data;
-                    $scope.loading = false;
-                });
-
-                $scope.supportsOfflinePayments = function(event) {
-                    return _.contains(event.allowedPaymentProxies, 'OFFLINE');
-                };
-            },
-            link: angular.noop
-        };
-    });
-
     directives.directive('dateRange', function() {
         return {
             restrict: 'A',
@@ -145,7 +124,8 @@
                 maxDate: '=',
                 startDate: '=',
                 startModelObj: '=startModel',
-                watchObj: '='
+                watchObj: '=',
+                noInitDate: '='
             },
             require: '^ngModel',
             link: function(scope, element, attrs, ctrl) {
@@ -162,7 +142,7 @@
                 };
 
                 var initDateUsingNow = function(modelObj) {
-                    if(!angular.isDefined(modelObj) || !angular.isDefined(modelObj.date) || !angular.isDefined(modelObj.time)) {
+                    if(!(modelObj && modelObj.date && modelObj.time)) {
                         return getNowAtStartOfHour();
                     }
                     var date = moment(modelObj.date + 'T' + modelObj.time);
@@ -173,8 +153,12 @@
                 var startDate = initDateUsingNow(scope.startModelObj);
 
                 var result = startDate.format(dateFormat);
-                ctrl.$setViewValue(result);
-                element.val(result);
+
+                if(!scope.noInitDate || (scope.startModelObj && scope.startModelObj.date && scope.startModelObj.time)) {
+                    ctrl.$setViewValue(result);
+                    element.val(result);
+                }
+
 
                 var minDate = scope.minDate || getNowAtStartOfHour();
 
@@ -190,9 +174,10 @@
                     singleDatePicker: true
                 });
 
-                scope.startModelObj['date'] = startDate.format('YYYY-MM-DD');
-                scope.startModelObj['time'] = startDate.format('HH:mm');
-
+                if(!scope.noInitDate) {
+                    scope.startModelObj['date'] = startDate.format('YYYY-MM-DD');
+                    scope.startModelObj['time'] = startDate.format('HH:mm');
+                }
 
                 function updateDates(picker, override) {
                     if(angular.isDefined(picker)) {
@@ -203,7 +188,17 @@
                 }
 
                 function updateInDigest(picker, override) {
+
+                    if(picker.element.val() == "") {
+                        scope.startModelObj = null;
+                        ctrl.$setViewValue(element.val());
+                        return;
+                    }
+
                     var start = picker.startDate;
+
+                    scope.startModelObj = scope.startModelObj || {};
+
                     scope.startModelObj['date'] = start.format('YYYY-MM-DD');
                     scope.startModelObj['time'] = start.format('HH:mm');
                     if (override) {
@@ -340,6 +335,10 @@
                     };
                 }
 
+                LocationService.getTimezones().then(function(res) {
+                    $scope.timezones = res.data;
+                });
+
                 $scope.selectedLanguages = {};
 
                 EventService.getSupportedLanguages().success(function(result) {
@@ -351,6 +350,19 @@
                         return r.value;
                     });
                 });
+
+                $scope.isLanguageSelected = function(lang) {
+                    return lang && $scope.selectedLanguages.langs && $scope.selectedLanguages.langs.indexOf(lang.value) > -1;
+                };
+
+                $scope.toggleLanguageSelection = function(lang) {
+                    if($scope.isLanguageSelected(lang)) {
+                        _.remove($scope.selectedLanguages.langs, function(l) { return l === lang.value });
+                    } else {
+                        $scope.selectedLanguages.langs.push(lang.value);
+                    }
+                    $scope.updateLocales();
+                };
 
 
                 $scope.updateLocales = function() {
@@ -378,11 +390,11 @@
                         return;
                     }
                     $scope.loadingMap = true;
-                    LocationService.geolocate(location).success(function(result) {
+                    LocationService.clientGeolocate(location).then(function(result) {
                         delete $scope['mapError'];
                         $scope.obj['geolocation'] = result;
                         $scope.loadingMap = false;
-                    }).error(function(e) {
+                    }, function(e) {
                         $scope.mapError = e;
                         delete $scope.obj['geolocation'];
                         $scope.loadingMap = false;
@@ -458,7 +470,7 @@
         }
     });
 
-    directives.directive('editPrices', ['UtilsService', function(UtilsService) {
+    directives.directive('editPrices', ['UtilsService', '$filter', function(UtilsService, $filter) {
         return {
             scope: {
                 obj: '=targetObj',
@@ -481,9 +493,31 @@
                     return PriceCalculator.calculateTotalPrice(event, false);
                 };
 
+                var initPaymentProxies = function() {
+                    $scope.paymentProxies = _.map($filter('paymentMethodFilter')($scope.allowedPaymentProxies,  false, $scope.obj.currency), function(it) {
+                        return {
+                            proxy: it,
+                            selected: _.findIndex($scope.obj.allowedPaymentProxies, function(pp) { return pp === it.id; }) > -1
+                        }
+                    });
+                };
+
+                initPaymentProxies();
+
+                $scope.updatePaymentProxies = function() {
+                    $scope.obj.allowedPaymentProxies = _.chain($scope.paymentProxies)
+                        .filter(function(it) { return it.selected; })
+                        .map(function(it) { return it.proxy.id; })
+                        .value();
+                };
+
                 UtilsService.getAvailableCurrencies().then(function(result) {
                     $scope.currencies = result.data;
                 });
+
+                $scope.$watch("allowedPaymentProxies", function() {
+                    initPaymentProxies();
+                }, true);
 
             }
         }
@@ -509,37 +543,59 @@
             controller: function($scope) {
                 $scope.buildPrefix = function(index, name) {
                     return angular.isDefined(index) ? index + "-" + name : name;
-                }
+                };
+
+                $scope.baseUrl = window.location.origin;
 
                 $scope.isLanguagePresent = function(locales, value) {
                     return (locales & value) === value;
-                }
+                };
+
+                $scope.helpAllocationStrategyCollapse = true;
+                $scope.toggleAllocationStrategyCollapse = function() {
+                    $scope.helpCategoryVisibilityCollapse = true;
+                    $scope.helpAllocationStrategyCollapse = !$scope.helpAllocationStrategyCollapse;
+                };
+
+                $scope.helpCategoryVisibilityCollapse = true;
+                $scope.toggleCategoryVisibilityCollapse = function() {
+                    $scope.helpAllocationStrategyCollapse = true;
+                    $scope.helpCategoryVisibilityCollapse = !$scope.helpCategoryVisibilityCollapse;
+                };
+
+                $scope.helpAccessCodeCollapse = true;
+                $scope.toggleAccessCodeCollapse = function() {
+                    $scope.helpAccessCodeCollapse = !$scope.helpAccessCodeCollapse;
+                };
+
+                $scope.customCheckInCollapsed = true;
+                $scope.customValidityCollapsed = true;
             }
         };
     });
 
     directives.directive('pendingPaymentsLink', ['$rootScope', '$interval', 'EventService', function($rootScope, $interval, EventService) {
         return {
-            restrict: 'E',
+            restrict: 'AE',
             scope: {
-                event: '=',
+                eventName: '=',
                 styleClass: '@'
             },
             bindToController: true,
             controllerAs: 'ctrl',
-            template: '<a ng-class="ctrl.styleClass" data-ui-sref="events.single.pending-payments({eventName: ctrl.event.shortName})"><i class="fa fa-dollar"></i> Pending Payments <pending-payments-badge event-name="{{ctrl.event.shortName}}"></pending-payments-badge></a>',
+            template: '<a ng-class="ctrl.styleClass" data-ui-sref="events.single.pending-payments({eventName: ctrl.eventName})"><i class="fa fa-dollar"></i> Pending Payments <pending-payments-badge event-name="{{ctrl.eventName}}"></pending-payments-badge></a>',
             controller: ['$scope', function($scope) {
                 var ctrl = this;
-                var eventName = ctrl.event.shortName;
                 ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
                 var getPendingPayments = function() {
-                    EventService.getPendingPayments(eventName).success(function(data) {
-                        ctrl.pendingReservations = data.length;
-                        $rootScope.$broadcast('PendingReservationsFound', data);
-                    });
+                    if(ctrl.eventName != null && ctrl.eventName.length > 0) {
+                        EventService.getPendingPaymentsCount(ctrl.eventName).then(function(count) {
+                            $rootScope.$broadcast('PendingReservationsFound', count);
+                        });
+                    }
                 };
                 getPendingPayments();
-                var promise = $interval(getPendingPayments, 1000);
+                var promise = $interval(getPendingPayments, 10000);
 
                 $scope.$on('$destroy', function() {
                     $interval.cancel(promise);
@@ -550,28 +606,32 @@
 
     directives.directive('pendingPaymentsBadge', function($rootScope, $interval, EventService) {
         return {
-            restrict: 'E',
+            restrict: 'AE',
             scope: false,
-            template: '<span class="badge">{{pendingReservations}}</span>',
+            template: '<span ng-class="styleClass">{{pendingReservationsCount}}</span>',
             link: function(scope, element, attrs) {
                 var eventName = attrs.eventName;
-                scope.pendingReservations = 0;
-                if(angular.isDefined(eventName)) {
+                scope.pendingReservationsCount = 0;
+                scope.styleClass = attrs.styleClass || "badge";
+                if(angular.isDefined(eventName) && eventName != null && eventName.length > 0) {
                     var getPendingPayments = function() {
-                        EventService.getPendingPayments(eventName).success(function(data) {
-                            scope.pendingReservations = data.length;
-                            $rootScope.$broadcast('PendingReservationsFound', data);
+                        EventService.getPendingPaymentsCount(eventName).then(function(count) {
+                            scope.pendingReservationsCount = count;
+                            $rootScope.$broadcast('PendingReservationsFound', count);
                         });
                     };
                     getPendingPayments();
                     var promise = $interval(getPendingPayments, 10000);
 
-                    element.on('$destroy', function() {
+                    scope.$on('$destroy', function() {
                         $interval.cancel(promise);
                     });
                 } else {
-                    $rootScope.$on('PendingReservationsFound', function(data) {
-                        scope.pendingReservations = data.length;
+                    var listener = $rootScope.$on('PendingReservationsFound', function(data) {
+                        scope.pendingReservationsCount = data;
+                    });
+                    scope.$on('$destroy', function() {
+                        listener();
                     });
                 }
             }
@@ -641,7 +701,8 @@
                 setting: '=obj',
                 displayDeleteIfNeeded: '=',
                 deleteHandler: '&',
-                listValues: '='
+                listValues: '=',
+                updateHandler: '&'
             },
             templateUrl:'/resources/angular-templates/admin/partials/configuration/setting.html',
             link: angular.noop,
@@ -651,6 +712,15 @@
                     $scope.loading = true;
                     $scope.deleteHandler({config: config}).then(function() {$rootScope.$broadcast('ReloadSettings');});
                 };
+                $scope.getLabelValue = function(setting) {
+                    return (setting && setting.configurationPathLevel) ? setting.configurationPathLevel.toLowerCase().replace('_', ' ') : "";
+                };
+                $scope.showDeleteBtn = $scope.displayDelete && $scope.setting.id > -1 && $scope.setting.componentType !== 'BOOLEAN';
+                if(angular.isFunction($scope.updateHandler)) {
+                    $scope.onValueChange = function(newVal) {
+                        $scope.updateHandler({config: newVal})
+                    };
+                }
             }
         }
     });
@@ -676,21 +746,46 @@
 
     directives.directive('waitingQueueDisplayCounter', function() {
         return {
-            restrict: 'E',
+            restrict: 'AE',
             bindToController: true,
             scope: {
-                event: '=',
-                styleClass: '@'
+                eventName: '=',
+                styleClass: '@',
+                justCount: '='
             },
             controllerAs: 'ctrl',
             controller: function(WaitingQueueService) {
                 var ctrl = this;
-                WaitingQueueService.countSubscribers(this.event).success(function(result) {
+                WaitingQueueService.countSubscribers(ctrl.eventName).success(function(result) {
                     ctrl.count = result;
                 });
                 ctrl.styleClass = ctrl.styleClass || 'btn btn-warning';
             },
-            template: '<a data-ng-class="ctrl.styleClass" data-ui-sref="events.single.show-waiting-queue({eventName: ctrl.event.shortName})"><i class="fa fa-group"></i> Waiting queue <span class="badge">{{ctrl.count}}</span></a>'
+            template: '<a data-ng-class="ctrl.styleClass" data-ui-sref="events.single.show-waiting-queue({eventName: ctrl.eventName})"><i class="fa fa-group" ng-if="!ctrl.justCount"></i> <span ng-class="{\'sr-only\': ctrl.justCount}">Waiting queue</span> <span ng-class="{\'badge\': !ctrl.justCount}">{{ctrl.count}}</span></a>'
+        }
+    });
+
+    directives.directive('waitingQueueStatus', function() {
+        return {
+            restrict: 'E',
+            bindToController: true,
+            scope: {
+                eventName: '='
+            },
+            controllerAs: 'ctrl',
+            controller: ['WaitingQueueService', function(WaitingQueueService) {
+                var ctrl = this;
+                var storeStatus = function (result) {
+                    var status = result.data;
+                    ctrl.active = status.active;
+                    ctrl.paused = status.paused;
+                };
+                WaitingQueueService.getWaitingQueueStatus(ctrl.eventName).then(storeStatus);
+                ctrl.togglePaused = function() {
+                    WaitingQueueService.setPaused(ctrl.eventName, !ctrl.paused).then(storeStatus);
+                }
+            }],
+            templateUrl: '/resources/angular-templates/admin/partials/waiting-queue/status.html'
         }
     });
 
@@ -766,7 +861,7 @@
             scope: {},
             controllerAs: 'ctrl',
             templateUrl: '/resources/angular-templates/admin/partials/main/sidebar.html',
-            controller: ['$location', '$anchorScroll', '$scope', function($location, $anchorScroll, $scope) {
+            controller: ['$location', '$anchorScroll', '$scope', 'NotificationHandler', function($location, $anchorScroll, $scope, NotificationHandler) {
                 var ctrl = this;
                 var toUnbind = [];
                 var detectCurrentView = function(state) {
@@ -780,6 +875,7 @@
                         EventService.getEvent($state.params.eventName).success(function(event) {
                             ctrl.event = event.event;
                             ctrl.internal = (ctrl.event.type === 'INTERNAL');
+                            ctrl.owner = ctrl.event.visibleForCurrentUser;
                             ctrl.openDeleteWarning = function() {
                                 EventService.deleteEvent(ctrl.event).then(function(result) {
                                     $state.go('index');
@@ -797,7 +893,14 @@
                                 $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
                             };
                             ctrl.downloadInvoices = function() {
-                                $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/all-invoices");
+                                EventService.countInvoices(ctrl.event.shortName).then(function (res) {
+                                    var count = res.data;
+                                    if(count > 0) {
+                                        $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/all-invoices");
+                                    } else {
+                                        NotificationHandler.showInfo("No invoices have been found.");
+                                    }
+                                });
                             };
                             ctrl.goToCategory = function(category) {
                                 ctrl.navigateTo('ticket-category-'+category.id);
@@ -825,6 +928,7 @@
 
                 ctrl.currentView = detectCurrentView($state.current);
                 ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
+                ctrl.displayEventData = $state.current.data && $state.current.data.displayEventData;
                 loadEventData();
                 toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
                     ctrl.currentView = detectCurrentView(toState);
@@ -900,6 +1004,18 @@
             scope: {},
             template: '<div class="markdown-help text-right"><img class="markdown-logo" src="../resources/images/markdown-logo.svg" /> <a href="http://commonmark.org/help/" target="_blank">Markdown (CommonMark) supported</a></div> '
         };
-    })
+    });
+
+    directives.directive('containerFluidResponsive', ['$window', function($window) {
+        return {
+            restrict: 'A',
+            scope: false,
+            link: function(scope, element, attrs) {
+                if($window.matchMedia('screen and (max-width: 991px)').matches) {
+                    element.removeClass('container');
+                }
+            }
+        };
+    }])
     
 })();

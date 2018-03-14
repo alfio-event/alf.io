@@ -19,6 +19,8 @@ package alfio.controller.api;
 import alfio.manager.AttendeeManager;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.model.Ticket;
+import alfio.model.result.Result;
 import alfio.repository.SponsorScanRepository;
 import alfio.util.EventUtil;
 import alfio.util.Wrappers;
@@ -87,6 +89,27 @@ public class AttendeeApiController {
             .flatMap(d -> Wrappers.safeSupplier(() -> ZonedDateTime.of(LocalDateTime.from(d), ZoneOffset.UTC)))
             .orElse(SponsorScanRepository.DEFAULT_TIMESTAMP);
         return attendeeManager.retrieveScannedAttendees(eventShortName, principal.getName(), start).map(ResponseEntity::ok).orElse(notFound());
+    }
+
+    /**
+     * API for external apps that load the ticket using its UUID. It is possible to retrieve a ticket only if <b>all</b> the following conditions are met:
+     *
+     * <ul>
+     *     <li>An event with key {@code eventKey} exists</li>
+     *     <li>The user and the event belong to the same organization</li>
+     *     <li>A ticket with UUID {@code UUID} exists</li>
+     * </ul>
+     *
+     * otherwise, an error is returned.
+     *
+     * @param eventShortName
+     * @param uuid
+     * @param principal
+     * @return
+     */
+    @GetMapping("/{eventKey}/ticket/{UUID}")
+    public Result<Ticket> getTicketDetails(@PathVariable("eventKey") String eventShortName, @PathVariable("UUID") String uuid, Principal principal) {
+        return attendeeManager.retrieveTicket(eventShortName, uuid, principal.getName());
     }
 
     private static <T> ResponseEntity<T> notFound() {

@@ -19,10 +19,11 @@ package alfio.model.modification;
 import alfio.model.AdditionalService;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
-public class AdditionalServiceReservationModification {
+public class AdditionalServiceReservationModification implements Serializable {
     private Integer additionalServiceId;
     private BigDecimal amount;
     private Integer quantity = 1;

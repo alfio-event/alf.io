@@ -43,6 +43,12 @@
                     Mailjet.com
                 </label>
             </div>
+            <div class="radio-inline">
+                <label>
+                    <input type="radio" name="mailer.type" data-ng-model="ctrl.mail.type.value" data-ng-value="'disabled'">
+                    Disabled
+                </label>
+            </div>
             <div data-ng-repeat="setting in ctrl.mail.settings | mailSettingsFilter:ctrl.mail.type.value">
                 <setting data-obj="setting" data-display-delete-if-needed="false"></setting>
             </div>
@@ -51,6 +57,35 @@
             </div>
             <div>
                 <setting obj="ctrl.mail.mailReplyTo" data-display-delete-if-needed="false"></setting>
+            </div>
+        </div>
+
+
+        <div class="page-header">
+            <h2>Map</h2>
+            <span>Map settings</span>
+        </div>
+        <div>
+            <p class="radio-inline">
+                <label>
+                    <input type="radio" name="map.mapsProvider" data-ng-model="ctrl.map['MAPS_PROVIDER'].value" data-ng-value="'GOOGLE'">
+                    Google maps
+                </label>
+            </p>
+            <p class="radio-inline">
+                <label>
+                    <input type="radio" name="map.mapsProvider" data-ng-model="ctrl.map['MAPS_PROVIDER'].value" data-ng-value="'HERE'">
+                    Here maps
+                </label>
+            </p>
+            <div>
+                <setting data-obj="ctrl.map['MAPS_CLIENT_API_KEY']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+            </div>
+            <div>
+                <setting data-obj="ctrl.map['MAPS_HERE_APP_ID']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+            </div>
+            <div>
+                <setting data-obj="ctrl.map['MAPS_HERE_APP_CODE']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
             </div>
         </div>
 

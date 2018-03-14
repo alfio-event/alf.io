@@ -23,13 +23,17 @@ import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.QueryType;
 
 import java.time.ZonedDateTime;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @QueryRepository
 public interface SpecialPriceRepository {
 
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId")
     List<SpecialPrice> findAllByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
+
+    @Query("select * from special_price where ticket_category_id in (:ticketCategoryIds)")
+    List<SpecialPrice> findAllByCategoriesIds(@Bind("ticketCategoryIds") Collection<Integer> ticketCategoryIds);
 
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId and status = 'FREE'")
     List<SpecialPrice> findActiveByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
@@ -44,7 +48,7 @@ public interface SpecialPriceRepository {
     int clearRecipientData(@Bind("id") int id, @Bind("ticketCategoryId") int ticketCategoryId);
 
     @Query("select * from special_price where code = :code")
-    SpecialPrice getByCode(@Bind("code") String code);
+    Optional<SpecialPrice> getByCode(@Bind("code") String code);
 
     @Query("select count(*) from special_price where code = :code")
     Integer countByCode(@Bind("code") String code);
@@ -61,19 +65,25 @@ public interface SpecialPriceRepository {
     @Query("update special_price set status = :status where id in (select special_price_id_fk from ticket where tickets_reservation_id in (:reservationIds) and special_price_id_fk is not null)")
     int updateStatusForReservation(@Bind("reservationIds") List<String> reservationIds, @Bind("status") String status);
 
-    @Query("update special_price set code = :code, status = 'FREE' where id = :id")
+    @Query("update special_price set status = 'FREE', session_id = null, sent_ts = null, recipient_name = null, recipient_email = null where id in (select special_price_id_fk from ticket where tickets_reservation_id in (:reservationIds) and special_price_id_fk is not null)")
+    int resetToFreeAndCleanupForReservation(@Bind("reservationIds") List<String> reservationIds);
+
+    @Query("update special_price set code = :code, status = 'FREE', sent_ts = null where id = :id")
     int updateCode(@Bind("code") String code, @Bind("id") int id);
 
-    @Query(type = QueryType.TEMPLATE, value = "insert into special_price (code, price_cts, ticket_category_id, status) " +
-            "values(:code, :priceInCents, :ticketCategoryId, :status)")
+    @Query(type = QueryType.TEMPLATE, value = "insert into special_price (code, price_cts, ticket_category_id, status, sent_ts) " +
+            "values(:code, :priceInCents, :ticketCategoryId, :status, null)")
     String bulkInsert();
 
 
     @Query("update special_price set status = 'CANCELLED' where ticket_category_id = :categoryId and status in ('FREE', 'WAITING')")
     int cancelExpiredTokens(@Bind("categoryId") int categoryId);
 
-    @Query("select id from special_price where ticket_category_id = :categoryId and status in ('FREE', 'WAITING') limit :limit for update")
-    List<Integer> lockTokens(@Bind("categoryId") int categoryId, @Bind("limit") int limit);
+    @Query("select id from special_price where ticket_category_id = :categoryId and status in ('FREE', 'WAITING') and sent_ts is null limit :limit for update")
+    List<Integer> lockNotSentTokens(@Bind("categoryId") int categoryId, @Bind("limit") int limit);
+
+    @Query("select count(id) from special_price where ticket_category_id = :categoryId and status in ('FREE', 'WAITING') and sent_ts is null")
+    Integer countNotSentToken(@Bind("categoryId") int categoryId);
 
     @Query("update special_price set status = 'CANCELLED' where id in (:ids)")
     int cancelTokens(@Bind("ids") List<Integer> ids);
@@ -83,4 +93,12 @@ public interface SpecialPriceRepository {
 
     @Query("select * from special_price where status = 'WAITING' and ticket_category_id = :categoryId for update")
     List<SpecialPrice> findWaitingElementsForCategory(@Bind("categoryId") int categoryId);
+
+
+    default Map<Integer,List<SpecialPrice>> findAllByCategoriesIdsMapped(Collection<Integer> ticketCategoriesIds) {
+        if(ticketCategoriesIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        return findAllByCategoriesIds(ticketCategoriesIds).stream().collect(Collectors.groupingBy(SpecialPrice::getTicketCategoryId));
+    }
 }

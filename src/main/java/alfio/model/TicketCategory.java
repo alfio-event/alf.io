@@ -46,6 +46,12 @@ public class TicketCategory {
     private final int eventId;
     private final boolean bounded;
     private final int srcPriceCts;
+    private final String code;
+    private final ZonedDateTime validCheckInFrom;
+    private final ZonedDateTime validCheckInTo;
+    private final ZonedDateTime ticketValidityStart;
+    private final ZonedDateTime ticketValidityEnd;
+
 
     public TicketCategory(@JsonProperty("id") @Column("id") int id,
                           @JsonProperty("utcInception") @Column("inception") ZonedDateTime utcInception,
@@ -56,7 +62,12 @@ public class TicketCategory {
                           @JsonProperty("status") @Column("tc_status") Status status,
                           @JsonProperty("eventId") @Column("event_id") int eventId,
                           @JsonProperty("bounded") @Column("bounded") boolean bounded,
-                          @JsonProperty("srcPriceCts") @Column("src_price_cts") int srcPriceCts) {
+                          @JsonProperty("srcPriceCts") @Column("src_price_cts") int srcPriceCts,
+                          @JsonProperty("code") @Column("category_code") String code,
+                          @JsonProperty("validCheckInFrom") @Column("valid_checkin_from") ZonedDateTime validCheckInFrom,
+                          @JsonProperty("validCheckInTo") @Column("valid_checkin_to") ZonedDateTime validCheckInTo,
+                          @JsonProperty("ticketValidityStart") @Column("ticket_validity_start") ZonedDateTime ticketValidityStart,
+                          @JsonProperty("ticketValidityEnd") @Column("ticket_validity_end") ZonedDateTime ticketValidityEnd) {
         this.id = id;
         this.utcInception = utcInception;
         this.utcExpiration = utcExpiration;
@@ -67,6 +78,11 @@ public class TicketCategory {
         this.eventId = eventId;
         this.bounded = bounded;
         this.srcPriceCts = srcPriceCts;
+        this.code = code;
+        this.validCheckInFrom = validCheckInFrom;
+        this.validCheckInTo = validCheckInTo;
+        this.ticketValidityStart = ticketValidityStart;
+        this.ticketValidityEnd = ticketValidityEnd;
     }
 
     public BigDecimal getPrice() {
@@ -84,5 +100,27 @@ public class TicketCategory {
 
     public ZonedDateTime getExpiration(ZoneId zoneId) {
         return utcExpiration.withZoneSameInstant(zoneId);
+    }
+
+    public ZonedDateTime getValidCheckInFrom(ZoneId zoneId) {
+        return validCheckInFrom == null ? null : validCheckInFrom.withZoneSameInstant(zoneId);
+    }
+
+    public ZonedDateTime getValidCheckInTo(ZoneId zoneId) {
+        return validCheckInTo == null ? null : validCheckInTo.withZoneSameInstant(zoneId);
+    }
+
+    public ZonedDateTime getTicketValidityStart(ZoneId zoneId) {
+        return ticketValidityStart == null ? null : ticketValidityStart.withZoneSameInstant(zoneId);
+    }
+
+    public ZonedDateTime getTicketValidityEnd(ZoneId zoneId) {
+        return ticketValidityEnd == null ? null : ticketValidityEnd.withZoneSameInstant(zoneId);
+    }
+
+    public boolean hasValidCheckIn(ZonedDateTime now, ZoneId eventZoneId) {
+        // check from boundary -> from cannot be after now
+        // check to boundary -> to cannot be before now
+        return (validCheckInFrom == null || !getValidCheckInFrom(eventZoneId).isAfter(now)) && (validCheckInTo == null || !getValidCheckInTo(eventZoneId).isBefore(now));
     }
 }

@@ -20,13 +20,10 @@ import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import org.apache.commons.codec.digest.HmacAlgorithms;
+import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.EnumSet;
@@ -60,6 +57,7 @@ public class Ticket {
     private final int finalPriceCts;
     private final int vatCts;
     private final int discountCts;
+    private final String extReference;
 
     public Ticket(@JsonProperty("id") @Column("id") int id,
                   @JsonProperty("uuid") @Column("uuid") String uuid,
@@ -77,7 +75,8 @@ public class Ticket {
                   @JsonProperty("srcPriceCts") @Column("src_price_cts") int srcPriceCts,
                   @JsonProperty("finalPriceCts") @Column("final_price_cts") int finalPriceCts,
                   @JsonProperty("vatCts") @Column("vat_cts") int vatCts,
-                  @JsonProperty("discountCts") @Column("discount_cts") int discountCts) {
+                  @JsonProperty("discountCts") @Column("discount_cts") int discountCts,
+                  @JsonProperty("extReference") @Column("ext_reference") String extReference) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
@@ -96,6 +95,7 @@ public class Ticket {
         this.finalPriceCts = finalPriceCts;
         this.vatCts = vatCts;
         this.discountCts = discountCts;
+        this.extReference = extReference;
     }
     
     public boolean getAssigned() {
@@ -131,13 +131,7 @@ public class Ticket {
     }
 
     private static String hmacSHA256Base64(String key, String code) {
-        try {
-            Mac hmac = Mac.getInstance("HmacSHA256");
-            hmac.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            return Base64.getEncoder().encodeToString(hmac.doFinal(code.getBytes(StandardCharsets.UTF_8)));
-        } catch(InvalidKeyException | NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
+        return Base64.getEncoder().encodeToString(new HmacUtils(HmacAlgorithms.HMAC_SHA_256, key).hmac(code));
     }
 
     public String getFullName() {

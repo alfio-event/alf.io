@@ -16,19 +16,19 @@
  */
 package alfio.model;
 
-import alfio.model.modification.EventWithStatistics;
 import alfio.model.modification.StatisticsContainer;
 import alfio.model.transaction.PaymentProxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 
 public class EventStatistic implements StatisticsContainer, Comparable<EventStatistic> {
+
+    public static final DateTimeFormatter JSON_DATE_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm");
 
 
     @JsonIgnore
@@ -36,10 +36,13 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
 
     @JsonIgnore
     private final EventStatisticView eventStatisticView;
+    @JsonIgnore
+    private final boolean statisticsEnabled;
 
-    public EventStatistic(Event event, EventStatisticView eventStatisticView) {
+    public EventStatistic(Event event, EventStatisticView eventStatisticView, boolean statisticsEnabled) {
         this.event = event;
         this.eventStatisticView = eventStatisticView;
+        this.statisticsEnabled = statisticsEnabled;
     }
 
     public List<PaymentProxy> getAllowedPaymentProxies() {
@@ -51,15 +54,15 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
     }
 
     public int getAvailableSeats() {
-        return event.getAvailableSeats();
+        return eventStatisticView.getAvailableSeats();
     }
 
     public String getFormattedBegin() {
-        return event.getBegin().format(EventWithStatistics.JSON_DATE_FORMATTER);
+        return event.getBegin().format(JSON_DATE_FORMATTER);
     }
 
     public String getFormattedEnd() {
-        return event.getEnd().format(EventWithStatistics.JSON_DATE_FORMATTER);
+        return event.getEnd().format(JSON_DATE_FORMATTER);
     }
 
     public boolean isExpired() {
@@ -114,6 +117,16 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
 
     public Event.Status getStatus() {
         return event.getStatus();
+    }
+
+    public String getFileBlobId() {
+        return event.getFileBlobId();
+    }
+
+    public boolean isVisibleForCurrentUser() { return eventStatisticView.isLiveData(); }
+
+    public boolean isDisplayStatistics() {
+        return isVisibleForCurrentUser() && statisticsEnabled;
     }
 
     @Override

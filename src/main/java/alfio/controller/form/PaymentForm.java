@@ -27,15 +27,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.io.Serializable;
+import java.util.*;
 
 // step 2 : payment/claim tickets
 //
 @Data
-public class PaymentForm {
+public class PaymentForm implements Serializable {
     private String stripeToken;
     private String paypalPaymentId;
     private String paypalPayerID;
@@ -53,7 +51,7 @@ public class PaymentForm {
     private String vatCountryCode;
     private String vatNr;
     private boolean invoiceRequested = false;
-    private Map<String, UpdateTicketOwnerForm> tickets;
+    private Map<String, UpdateTicketOwnerForm> tickets = new HashMap<>();
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
             String value, int maxLength) {

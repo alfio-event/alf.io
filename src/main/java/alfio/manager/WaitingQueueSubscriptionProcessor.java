@@ -25,10 +25,16 @@ import alfio.model.user.Organization;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.sql.Date;
 import java.time.ZonedDateTime;
@@ -40,6 +46,8 @@ import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
 
 @Component
 @Transactional
+@RequiredArgsConstructor
+@Log4j2
 public class WaitingQueueSubscriptionProcessor {
 
     private final EventManager eventManager;
@@ -50,30 +58,24 @@ public class WaitingQueueSubscriptionProcessor {
     private final WaitingQueueRepository waitingQueueRepository;
     private final MessageSource messageSource;
     private final TemplateManager templateManager;
-
-    @Autowired
-    public WaitingQueueSubscriptionProcessor(EventManager eventManager,
-                                             TicketReservationManager ticketReservationManager,
-                                             ConfigurationManager configurationManager,
-                                             WaitingQueueManager waitingQueueManager,
-                                             NotificationManager notificationManager,
-                                             WaitingQueueRepository waitingQueueRepository,
-                                             MessageSource messageSource,
-                                             TemplateManager templateManager) {
-        this.eventManager = eventManager;
-        this.ticketReservationManager = ticketReservationManager;
-        this.configurationManager = configurationManager;
-        this.waitingQueueManager = waitingQueueManager;
-        this.notificationManager = notificationManager;
-        this.waitingQueueRepository = waitingQueueRepository;
-        this.messageSource = messageSource;
-        this.templateManager = templateManager;
-    }
+    private final PlatformTransactionManager transactionManager;
 
     void handleWaitingTickets() {
         Map<Boolean, List<Event>> activeEvents = eventManager.getActiveEvents().stream()
             .collect(Collectors.partitioningBy(this::isWaitingListFormEnabled));
-        activeEvents.get(true).forEach(this::distributeAvailableSeats);
+        activeEvents.get(true).forEach(event -> {
+            TransactionStatus transaction = transactionManager.getTransaction(new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+            try {
+                ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId());
+                distributeAvailableSeats(event);
+                transactionManager.commit(transaction);
+            } catch(Exception ex) {
+                if(!(ex instanceof TransactionException)) {
+                    transactionManager.rollback(transaction);
+                }
+                log.error("cannot process waiting queue for event {}", event.getShortName(), ex);
+            }
+        });
         activeEvents.get(false).forEach(eventManager::resetReleasedTickets);
     }
 

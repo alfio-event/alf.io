@@ -16,7 +16,6 @@
  */
 package alfio.model.modification;
 
-import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.modification.support.LocationDescriptor;
@@ -46,6 +45,9 @@ public class EventModification {
     private final String displayName;
     private final int organizationId;
     private final String location;
+    private final String latitude;
+    private final String longitude;
+    private final String zoneId;
     private final Map<String, String> description;
     private final DateTimeModification begin;
     private final DateTimeModification end;
@@ -75,6 +77,9 @@ public class EventModification {
                              @JsonProperty("displayName") String displayName,
                              @JsonProperty("organizationId") int organizationId,
                              @JsonProperty("location") String location,
+                             @JsonProperty("latitude") String latitude,
+                             @JsonProperty("longitude") String longitude,
+                             @JsonProperty("zoneId") String zoneId,
                              @JsonProperty("description") Map<String, String> description,
                              @JsonProperty("begin") DateTimeModification begin,
                              @JsonProperty("end") DateTimeModification end,
@@ -101,6 +106,9 @@ public class EventModification {
         this.displayName = displayName;
         this.organizationId = organizationId;
         this.location = location;
+        this.latitude= latitude;
+        this.longitude = longitude;
+        this.zoneId = zoneId;
         this.description = description;
         this.begin = begin;
         this.end = end;
@@ -138,8 +146,14 @@ public class EventModification {
     }
 
 
+    public interface WithRestrictedValues {
+
+        List<String> getRestrictedValuesAsString();
+        String getType();
+    }
+
     @Getter
-    public static class AdditionalField {
+    public static class AdditionalField implements WithRestrictedValues {
         private final int order;
         private final String name;
         private final String type;
@@ -174,7 +188,37 @@ public class EventModification {
             this.description = description;
             this.linkedAdditionalService = linkedAdditionalService;
         }
+
+        @Override
+        public List<String> getRestrictedValuesAsString() {
+            return restrictedValues == null ? null : restrictedValues.stream().map(RestrictedValue::getValue).collect(Collectors.toList());
+        }
     }
+
+    @Getter
+    public static class UpdateAdditionalField implements WithRestrictedValues {
+        private final String type;
+        private final boolean required;
+        private final List<String> restrictedValues;
+        private final Map<String, TicketFieldDescriptionModification> description;
+
+        @JsonCreator
+        public UpdateAdditionalField(@JsonProperty("type") String type,
+                                     @JsonProperty("required") boolean required,
+                                     @JsonProperty("restrictedValues") List<String> restrictedValues,
+                                     @JsonProperty("description") Map<String, TicketFieldDescriptionModification> description) {
+            this.type = type;
+            this.required = required;
+            this.restrictedValues = restrictedValues;
+            this.description = description;
+        }
+
+        @Override
+        public List<String> getRestrictedValuesAsString() {
+            return restrictedValues;
+        }
+    }
+
 
     @Getter
     public static class Description {

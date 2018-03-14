@@ -23,13 +23,20 @@ import alfio.config.RepositoryConfiguration;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
-import alfio.model.modification.*;
+import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.TicketReservationModification;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -65,8 +72,7 @@ public class TicketReservationManagerIntegrationTest {
 
     @Autowired
     private EventManager eventManager;
-    @Autowired
-    private EventStatisticsManager eventStatisticsManager;
+
     @Autowired
     private OrganizationRepository organizationRepository;
     @Autowired
@@ -74,12 +80,20 @@ public class TicketReservationManagerIntegrationTest {
     @Autowired
     private TicketRepository ticketRepository;
     @Autowired
+    private TicketCategoryRepository ticketCategoryRepository;
+    @Autowired
     private TicketReservationManager ticketReservationManager;
+    @Autowired
+    private TicketReservationRepository ticketReservationRepository;
+    @Autowired
+    private EventStatisticsManager eventStatisticsManager;
 
     @Autowired
     private ConfigurationRepository configurationRepository;
     @Autowired
     private WaitingQueueManager waitingQueueManager;
+    @Autowired
+    private EventRepository eventRepository;
 
     @Before
     public void ensureConfiguration() {
@@ -92,15 +106,16 @@ public class TicketReservationManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false));
-        EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null,
+                    null, null, null, null));
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(2);
-        TicketCategoryWithStatistic category = event.getTicketCategories().get(0);
+        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
         tr.setTicketCategoryId(category.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
-        ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         List<Ticket> pendingTickets = ticketRepository.findPendingTicketsInCategories(Collections.singletonList(category.getId()));
         assertEquals(2, pendingTickets.size());
         pendingTickets.forEach(t -> assertEquals(1000, t.getFinalPriceCts()));
@@ -115,15 +130,20 @@ public class TicketReservationManagerIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false),
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null),
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true));
-        EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventAndUsername.getKey();
 
-        TicketCategoryWithStatistic bounded = event.getTicketCategories().stream().filter(TicketCategoryWithStatistic::isBounded).findFirst().orElseThrow(IllegalStateException::new);
-        TicketCategoryWithStatistic unbounded = event.getTicketCategories().stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+
+        assertEquals(0, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId(), 0, null).size());
+        assertEquals(Integer.valueOf(0), eventStatisticsManager.countModifiedTicket(event.getId(), bounded.getId(), null));
+        assertEquals(0, eventStatisticsManager.loadModifiedTickets(event.getId(), unbounded.getId(), 0, null).size());
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(10);
@@ -135,9 +155,9 @@ public class TicketReservationManagerIntegrationTest {
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         TicketReservationWithOptionalCodeModification mod2 = new TicketReservationWithOptionalCodeModification(tr2, Optional.empty());
-        String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Arrays.asList(mod, mod2), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        String reservationId = ticketReservationManager.createTicketReservation(event, Arrays.asList(mod, mod2), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
-        List<TicketReservation> reservations = ticketReservationManager.findAllReservationsInEvent(event.getId());
+        List<TicketReservation> reservations = ticketReservationManager.findAllReservationsInEvent(event.getId(), 0, null, null).getKey();
         assertTrue(reservations.size() == 1);
         assertEquals(reservationId, reservations.get(0).getId());
 
@@ -153,7 +173,7 @@ public class TicketReservationManagerIntegrationTest {
 
         assertEquals(0, ticketReservationManager.getPendingPayments(event).size());
 
-        PaymentResult confirm = ticketReservationManager.confirm(null, null, event.getEvent(), reservationId, "email@example.com", new CustomerName("full name", "full", "name", event.getEvent()), Locale.ENGLISH, "billing address",
+        PaymentResult confirm = ticketReservationManager.confirm(null, null, event, reservationId, "email@example.com", new CustomerName("full name", "full", "name", event), Locale.ENGLISH, "billing address",
             totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
 
 
@@ -163,7 +183,19 @@ public class TicketReservationManagerIntegrationTest {
 
         assertEquals(1, ticketReservationManager.getPendingPayments(event).size());
 
-        ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event.getEvent(), new BigDecimal("190.00"));
+        Date now = new Date();
+        Date from = DateUtils.addDays(now, -1);
+        Date to = DateUtils.addDays(now, 1);
+
+        assertTrue(ticketReservationRepository.getSoldStatistic(event.getId(), from, to).isEmpty()); // -> no reservations
+        ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event, new BigDecimal("190.00"), eventAndUsername.getValue());
+
+        assertEquals(19, ticketReservationRepository.getSoldStatistic(event.getId(), from, to).get(0).getTicketSoldCount()); // -> 19 tickets reserved
+
+        assertEquals(10, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId(), 0, null).size());
+        assertEquals(Integer.valueOf(10), eventStatisticsManager.countModifiedTicket(event.getId(), bounded.getId(), null));
+        assertEquals(9, eventStatisticsManager.loadModifiedTickets(event.getId(), unbounded.getId(), 0, null).size());
+        assertEquals(Integer.valueOf(9), eventStatisticsManager.countModifiedTicket(event.getId(), unbounded.getId(), null));
 
         assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, ticketReservationManager.findById(reservationId).get().getStatus());
 
@@ -174,17 +206,16 @@ public class TicketReservationManagerIntegrationTest {
         trForDelete.setAmount(1);
         trForDelete.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification modForDelete = new TicketReservationWithOptionalCodeModification(trForDelete, Optional.empty());
-        String reservationId2 = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(modForDelete), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        String reservationId2 = ticketReservationManager.createTicketReservation(event, Collections.singletonList(modForDelete), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
-        ticketReservationManager.confirm(null, null, event.getEvent(), reservationId2, "email@example.com", new CustomerName("full name", "full", "name", event.getEvent()), Locale.ENGLISH, "billing address",
+        ticketReservationManager.confirm(null, null, event, reservationId2, "email@example.com", new CustomerName("full name", "full", "name", event), Locale.ENGLISH, "billing address",
             totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
 
         assertTrue(ticketReservationManager.findById(reservationId2).isPresent());
 
-        ticketReservationManager.deleteOfflinePayment(event.getEvent(), reservationId2, false);
+        ticketReservationManager.deleteOfflinePayment(event, reservationId2, false);
 
         Assert.assertFalse(ticketReservationManager.findById(reservationId2).isPresent());
-
     }
 
     @Test
@@ -193,10 +224,10 @@ public class TicketReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
-        EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategoryWithStatistic unbounded = event.getTicketCategories().stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         //promo code at event level
         eventManager.addPromoCode("MYPROMOCODE", event.getId(), null, event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null);
@@ -209,7 +240,7 @@ public class TicketReservationManagerIntegrationTest {
         tr.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
-        String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.of("MYPROMOCODE"), Locale.ENGLISH, false);
+        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.of("MYPROMOCODE"), Locale.ENGLISH, false);
 
         TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
 
@@ -219,7 +250,7 @@ public class TicketReservationManagerIntegrationTest {
         Assert.assertEquals(-300, totalPrice.getDiscount());
         Assert.assertEquals(1, totalPrice.getDiscountAppliedCount());
 
-        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event.getEvent(), Locale.ENGLISH);
+        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, Locale.ENGLISH);
         Assert.assertEquals("27.00", orderSummary.getTotalPrice());
         Assert.assertEquals("0.27", orderSummary.getTotalVAT());
         Assert.assertEquals(3, orderSummary.getTicketAmount());
@@ -230,7 +261,7 @@ public class TicketReservationManagerIntegrationTest {
         trFixed.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification modFixed = new TicketReservationWithOptionalCodeModification(trFixed, Optional.empty());
 
-        String reservationIdFixed = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(modFixed), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.of("MYFIXEDPROMO"), Locale.ENGLISH, false);
+        String reservationIdFixed = ticketReservationManager.createTicketReservation(event, Collections.singletonList(modFixed), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.of("MYFIXEDPROMO"), Locale.ENGLISH, false);
 
         TotalPrice totalPriceFixed = ticketReservationManager.totalReservationCostWithVAT(reservationIdFixed);
 
@@ -240,7 +271,7 @@ public class TicketReservationManagerIntegrationTest {
         Assert.assertEquals(-15, totalPriceFixed.getDiscount());
         Assert.assertEquals(3, totalPriceFixed.getDiscountAppliedCount());
 
-        OrderSummary orderSummaryFixed = ticketReservationManager.orderSummaryForReservationId(reservationIdFixed, event.getEvent(), Locale.ENGLISH);
+        OrderSummary orderSummaryFixed = ticketReservationManager.orderSummaryForReservationId(reservationIdFixed, event, Locale.ENGLISH);
         Assert.assertEquals("29.85", orderSummaryFixed.getTotalPrice());
         Assert.assertEquals("0.30", orderSummaryFixed.getTotalVAT());
         Assert.assertEquals(3, orderSummaryFixed.getTicketAmount());
@@ -253,17 +284,17 @@ public class TicketReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
-        EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategoryWithStatistic unbounded = event.getTicketCategories().stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS + 1);
         tr.setTicketCategoryId(unbounded.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
 
-        ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
     }
 
     @Test
@@ -272,27 +303,27 @@ public class TicketReservationManagerIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false));
-        EventWithStatistics event = eventStatisticsManager.fillWithStatistics(initEvent(categories, organizationRepository, userManager, eventManager).getKey());
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategoryWithStatistic unbounded = event.getTicketCategories().get(0);
+        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS / 2 + 1);
         tr.setTicketCategoryId(unbounded.getId());
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
-        String reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentResult result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event.getEvent()), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
+        PaymentResult result = ticketReservationManager.confirm("", null, event, reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
         assertTrue(result.isSuccessful());
-        ticketReservationManager.deleteOfflinePayment(event.getEvent(), reservationId, false);
-        waitingQueueManager.distributeSeats(event.getEvent());
+        ticketReservationManager.deleteOfflinePayment(event, reservationId, false);
+        waitingQueueManager.distributeSeats(event);
 
         mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
-        reservationId = ticketReservationManager.createTicketReservation(event.getEvent(), Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        result = ticketReservationManager.confirm("", null, event.getEvent(), reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event.getEvent()), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
+        result = ticketReservationManager.confirm("", null, event, reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
         assertTrue(result.isSuccessful());
     }
 }

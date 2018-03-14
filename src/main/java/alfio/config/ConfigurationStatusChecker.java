@@ -22,6 +22,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
+import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.PasswordGenerator;
@@ -67,7 +68,7 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
         boolean initCompleted = configurationManager.getBooleanConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.INIT_COMPLETED), false);
         if (!initCompleted) {
             String adminPassword = PasswordGenerator.generateRandomPassword();
-            userRepository.create(UserManager.ADMIN_USERNAME, passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true);
+            userRepository.create(UserManager.ADMIN_USERNAME, passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true, User.Type.INTERNAL);
             authorityRepository.create(UserManager.ADMIN_USERNAME, Role.ADMIN.getRoleName());
             log.info("*******************************************************");
             log.info("   This is the first time you're running alf.io");
@@ -76,9 +77,10 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
             log.info("*******************************************************");
 
             configurationManager.saveSystemConfiguration(INIT_COMPLETED, "true");
-            
-            ofNullable(System.getProperty("maps.serverApiKey")).ifPresent((serverApiKey) -> configurationManager.saveSystemConfiguration(MAPS_SERVER_API_KEY, serverApiKey));
+
             ofNullable(System.getProperty("maps.clientApiKey")).ifPresent((clientApiKey) -> configurationManager.saveSystemConfiguration(MAPS_CLIENT_API_KEY, clientApiKey));
+            ofNullable(System.getProperty("recaptcha.apiKey")).ifPresent((clientApiKey) -> configurationManager.saveSystemConfiguration(RECAPTCHA_API_KEY, clientApiKey));
+            ofNullable(System.getProperty("recaptcha.secret")).ifPresent((clientApiKey) -> configurationManager.saveSystemConfiguration(RECAPTCHA_SECRET, clientApiKey));
 
         }
         log.info("performing migration from previous version, if any");

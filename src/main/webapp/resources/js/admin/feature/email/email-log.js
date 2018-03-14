@@ -29,29 +29,35 @@
         });
 
 
-    function EmailLogController(EmailService, $filter, $scope, getEvent) {
+    function EmailLogController(EmailService, $location, getEvent) {
         var ctrl = this;
+
+        var currentSearch = $location.search();
+        ctrl.currentPage = currentSearch.page || 1;
+        ctrl.toSearch = currentSearch.search || '';
+
         ctrl.emailMessages = [];
         ctrl.eventName = getEvent.data.event.shortName;
-        var evaluateResultsLength = function(results) {
-            ctrl.emailMessages = results;
-            ctrl.filteredResults = $filter('filter')(results, ctrl.searchFilter);
-            ctrl.tooManyResults = (ctrl.filteredResults.length > 50);
-        };
-        EmailService.loadEmailLog(ctrl.eventName).success(function(results) {
-            evaluateResultsLength(results);
-        });
+        ctrl.itemsPerPage = 50;
+        ctrl.loadData = loadData();
+        ctrl.updateFilteredData = function() {
+            loadData();
+        }
 
-        $scope.$watch(function() {
-            return ctrl.searchFilter;
-        }, function(val) {
-            if(angular.isDefined(val)) {
-                evaluateResultsLength(ctrl.emailMessages);
-            }
-        });
+        loadData();
+
+        function loadData() {
+            $location.search({page: ctrl.currentPage, search: ctrl.toSearch});
+            EmailService.loadEmailLog(ctrl.eventName, ctrl.currentPage - 1, ctrl.toSearch).success(function(results) {
+                ctrl.emailMessages = results.left;
+                ctrl.totalItems = results.right;
+            });
+        }
+
+
     }
 
-    EmailLogController.prototype.$inject = ['EmailService', '$filter', '$scope', 'EventService', '$stateParams'];
+    EmailLogController.prototype.$inject = ['EmailService', '$location', 'EventService'];
 
     function EmailDetailController(EmailService, $stateParams, getEvent) {
         var self = this;
@@ -66,8 +72,8 @@
 
     function EmailService($http, HttpErrorHandler) {
 
-        this.loadEmailLog = function(eventName) {
-            return $http.get('/admin/api/events/'+eventName+'/email/').error(HttpErrorHandler.handle);
+        this.loadEmailLog = function(eventName, page, search) {
+            return $http.get('/admin/api/events/'+eventName+'/email/', {params: {page: page, search: search}}).error(HttpErrorHandler.handle);
         };
 
         this.loadEmailDetail = function(eventName, messageId) {

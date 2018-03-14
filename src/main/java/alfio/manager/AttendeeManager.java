@@ -20,14 +20,17 @@ import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.DefaultCheckInResult;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.result.ErrorCode;
+import alfio.model.result.Result;
 import alfio.repository.EventRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.EventUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -35,26 +38,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static alfio.util.OptionalWrapper.optionally;
-
 @Component
+@AllArgsConstructor
 public class AttendeeManager {
 
     private final SponsorScanRepository sponsorScanRepository;
     private final EventRepository eventRepository;
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
-
-    @Autowired
-    public AttendeeManager(SponsorScanRepository sponsorScanRepository,
-                           EventRepository eventRepository,
-                           TicketRepository ticketRepository,
-                           UserRepository userRepository) {
-        this.sponsorScanRepository = sponsorScanRepository;
-        this.eventRepository = eventRepository;
-        this.ticketRepository = ticketRepository;
-        this.userRepository = userRepository;
-    }
+    private final UserManager userManager;
 
     public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String username) {
         int userId = userRepository.getByUsername(username).getId();
@@ -63,7 +55,7 @@ public class AttendeeManager {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found"));
         }
         Event event = maybeEvent.get();
-        Optional<Ticket> maybeTicket = optionally(() -> ticketRepository.findByUUID(ticketUid));
+        Optional<Ticket> maybeTicket = ticketRepository.findOptionalByUUID(ticketUid);
         if(!maybeTicket.isPresent()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.TICKET_NOT_FOUND, "ticket not found"));
         }
@@ -76,6 +68,22 @@ public class AttendeeManager {
             sponsorScanRepository.insert(userId, ZonedDateTime.now(event.getZoneId()), event.getId(), ticket.getId());
         }
         return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
+    }
+
+    public Result<Ticket> retrieveTicket(String eventShortName, String ticketUid, String username) {
+        Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventShortName)
+            .filter(e -> userManager.findUserOrganizations(username).stream().anyMatch(o -> o.getId() == e.getOrganizationId()));
+
+        if(!maybeEvent.isPresent()) {
+            return Result.error(ErrorCode.EventError.NOT_FOUND);
+        }
+
+        Event event = maybeEvent.get();
+        Optional<Ticket> maybeTicket = ticketRepository.findOptionalByUUID(ticketUid).filter(t -> t.getEventId() == event.getId());
+
+        return new Result.Builder<Ticket>()
+            .checkPrecondition(maybeTicket::isPresent, ErrorCode.custom("ticket_not_found", "ticket not found"))
+            .build(maybeTicket::get);
     }
 
     public Optional<List<SponsorAttendeeData>> retrieveScannedAttendees(String eventShortName, String username, ZonedDateTime start) {

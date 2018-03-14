@@ -22,13 +22,19 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @QueryRepository
 public interface EventDescriptionRepository {
 
     @Query("select * from event_description_text where event_id_fk = :eventId")
     List<EventDescription> findByEventId(@Bind("eventId") int eventId);
+
+    default Map<String, String> findByEventIdAsMap(int eventId) {
+        return findByEventId(eventId).stream().collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription));
+    }
 
     @Query("select description from event_description_text where event_id_fk = :eventId and type = :type and locale = :locale")
     Optional<String> findDescriptionByEventIdTypeAndLocale(@Bind("eventId") int eventId, @Bind("type") EventDescription.EventDescriptionType type, @Bind("locale") String locale);

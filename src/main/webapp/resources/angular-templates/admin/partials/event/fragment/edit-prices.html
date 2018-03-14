@@ -32,7 +32,7 @@
         <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
             <div class="form-group" bs-form-error="editEvent.currency">
                 <label for="currency">Currency <i class="fa fa-info-circle" data-uib-tooltip="Some payment options don't support all currencies. Please double check that before activate them"></i></label>
-                <input type="text" data-ng-model="obj.currency" name="currency" id="currency" class="form-control" uib-typeahead="currency.code as currency.name for currency in currencies | filter:$viewValue | limitTo:8" required pattern="[A-Z]{3}"/>
+                <input type="text" autocomplete="off" data-ng-model="obj.currency" name="currency" id="currency" class="form-control" uib-typeahead="currency.code as currency.name for currency in currencies | filter:$viewValue | limitTo:8" required pattern="[A-Z]{3}"/>
                 <field-error data-form-obj="editEvent" data-field-obj="editEvent.currency" data-required-pattern="'Three capital letters'"></field-error>
             </div>
         </div>
@@ -55,10 +55,12 @@
             </div>
         </div>
     </div>
-    <div class="form-group" data-ng-if="!obj.freeOfCharge" data-ng-class="{'has-warning': (!angular.isDefined(obj.allowedPaymentProxies) || obj.allowedPaymentProxies.length == 0) && (obj.organizationId === null || !angular.isDefined(obj.organizationId))}" bs-form-error="editEvent.allowedPaymentProxies">
-        <label for="allowedPaymentProxies">Accepted payment methods</label>
-        <select data-ng-model="obj.allowedPaymentProxies" multiple name="allowedPaymentProxies" id="allowedPaymentProxies" class="form-control" required data-ng-options="proxy.id as proxy.description for proxy in allowedPaymentProxies | paymentMethodFilter"></select>
-        <span class="help-block" data-ng-if="(allowedPaymentProxies | paymentMethodFilter:true).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter:true">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check the <a data-ui-sref="configuration.organization({organizationId: obj.organizationId})">configuration</a>.</span>
+    <div data-ng-if="!obj.freeOfCharge">
+        <label>Accepted payment methods</label>
+        <div class="checkbox" ng-repeat="p in paymentProxies">
+            <label><input type="checkbox" ng-model="p.selected" ng-click="updatePaymentProxies()"> {{p.proxy.description}}</label>
+        </div>
+        <span class="help-block" data-ng-if="(allowedPaymentProxies | paymentMethodFilter:true: obj.currency).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter:true: obj.currency">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check that the provider support the selected currency or the <a data-ui-sref="configuration.organization({organizationId: obj.organizationId})">configuration</a>.</span>
         <span class="help-block" data-ng-if="(obj.allowedPaymentProxies === undefined || obj.allowedPaymentProxies.length == 0) && (obj.organizationId === null || obj.organizationId === undefined)"><i class="fa fa-warning"></i> Please select an organization in order to load the payment methods</span>
         <field-error data-form-obj="editEvent" data-field-obj="editEvent.allowedPaymentProxies"></field-error>
     </div>

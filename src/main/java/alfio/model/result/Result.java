@@ -19,6 +19,7 @@ package alfio.model.result;
 import alfio.model.result.ValidationResult.ErrorDescriptor;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.validation.ObjectError;
 
@@ -76,24 +77,29 @@ public class Result<T> {
         return Result.error(this.errors);
     }
 
+    public ErrorCode getFirstErrorOrNull() {
+        if(isSuccess() || CollectionUtils.size(errors) == 0) {
+            return null;
+        }
+        return errors.get(0);
+    }
+
     public enum ResultStatus {
         OK, VALIDATION_ERROR, ERROR
     }
 
     public static final class Builder<T> {
         private final List<Pair<ConditionValidator, ErrorCode>> validators = new ArrayList<>();
-        private final Supplier<T> valueSupplier;
 
-        public Builder(Supplier<T> valueSupplier) {
-            this.valueSupplier = valueSupplier;
+        public Builder() {
         }
 
-        public Builder<T> addValidation(ConditionValidator validator, ErrorCode error) {
+        public Builder<T> checkPrecondition(ConditionValidator validator, ErrorCode error) {
             this.validators.add(Pair.of(validator, error));
             return this;
         }
 
-        public Result<T> build() {
+        public Result<T> build(Supplier<T> valueSupplier) {
             Optional<Pair<ConditionValidator, ErrorCode>> validationError = this.validators.stream()
                 .filter(p -> !p.getLeft().isValid())
                 .findFirst();
@@ -101,6 +107,13 @@ public class Result<T> {
                 .orElseGet(() -> Result.success(valueSupplier.get()));
         }
 
+    }
+
+    public static <T> Result<T> fromNullable(T nullable, ErrorCode justInCase) {
+        if(nullable == null) {
+            return Result.error(justInCase);
+        }
+        return Result.success(nullable);
     }
 
     @FunctionalInterface

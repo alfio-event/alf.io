@@ -19,11 +19,11 @@ package alfio.repository;
 import alfio.model.Event;
 import alfio.model.EventStatisticView;
 import alfio.model.PriceContainer;
-import alfio.util.OptionalWrapper;
 import ch.digitalfondue.npjt.*;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -33,6 +33,9 @@ public interface EventRepository {
 
     @Query("select * from event where id = :eventId")
     Event findById(@Bind("eventId") int eventId);
+
+    @Query("select * from event where id = :eventId")
+    Optional<Event> findOptionalById(@Bind("eventId") int eventId);
     
     @Query("select org_id from event where id = :eventId")
     int findOrganizationIdByEventId(@Bind("eventId") int eventId);
@@ -46,8 +49,8 @@ public interface EventRepository {
     @Query("select * from event order by start_ts asc")
     List<Event> findAll();
 
-    @Query("select * from event where org_id = :organizationId")
-    List<Event> findByOrganizationId(@Bind("organizationId") int organizationId);
+    @Query("select * from event where org_id in (:organizationIds)")
+    List<Event> findByOrganizationIds(@Bind("organizationIds") Collection<Integer> organizationIds);
 
     @Query("insert into event(short_name, type, display_name, website_url, external_url, website_t_c_url, image_url, file_blob_id, location, latitude, longitude, start_ts, end_ts, time_zone, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies, private_key, org_id, locales, vat_status, src_price_cts, version, status) " +
             "values(:shortName, :type, :displayName, :websiteUrl, :externalUrl, :termsUrl, :imageUrl, :fileBlobId, :location, :latitude, :longitude, :start_ts, :end_ts, :time_zone, 0, :currency, :available_seats, :vat_included, :vat, :paymentProxies, :privateKey, :organizationId, :locales, :vatStatus, :srcPriceCts, :version, :status)")
@@ -106,4 +109,16 @@ public interface EventRepository {
 
     @Query("select * from events_statistics where id in (:ids)")
     List<EventStatisticView> findStatisticsFor(@Bind("ids") Set<Integer> integers);
+
+    @Query("select * from events_statistics where id = :eventId")
+    EventStatisticView findStatisticsFor(@Bind("eventId") int eventId);
+
+    @Query("select available_seats from events_statistics where id = :eventId")
+    Integer countExistingTickets(@Bind("eventId") int eventId);
+
+    @Query("update event set status = 'DISABLED' where org_id in (select org_id from j_user_organization where user_id in (:userIds))")
+    int disableEventsForUsers(@Bind("userIds") List<Integer> userIds);
+
+    @Query("select coalesce(sum(final_price_cts),0) from ticket where event_id = :eventId and status in("+TicketRepository.CONFIRMED+")")
+    long getGrossIncome(@Bind("eventId") int eventId);
 }

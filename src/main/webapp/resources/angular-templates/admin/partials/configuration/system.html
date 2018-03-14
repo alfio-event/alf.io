@@ -18,9 +18,13 @@
 
     <form name="settingsForm" novalidate data-ng-submit="systemConf.saveSettings(settingsForm)">
         <div data-ng-if="systemConf.general">
-            <div>
-                <label for="languages">Supported translations</label>
-                <select id="languages" class="form-control" multiple data-ng-model="systemConf.general.selectedLanguages" data-ng-options="lang.value as lang.displayLanguage for lang in systemConf.allLanguages" data-ng-change="systemConf.updateLocales()"></select>
+            <div class="form-group">
+                <label>Supported translations</label>
+                <div class="checkbox" ng-repeat="lang in systemConf.allLanguages">
+                    <label>
+                        <input type="checkbox" ng-checked="systemConf.isLanguageSelected(lang)" name="lang.value" ng-click="systemConf.toggleLanguageSelection(lang)"> <img ng-src="../resources/images/flags/{{lang.flag}}.gif" class="img-center"> <span ng-class="{'text-muted': !systemConf.isLanguageSelected(lang)}">{{lang.displayLanguage}}</span>
+                    </label>
+                </div>
             </div>
             <div data-ng-repeat="setting in systemConf.general.settings">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="systemConf.globalSettings" data-delete-handler="systemConf.delete(config)"></setting>
@@ -52,6 +56,12 @@
                         Mailjet.com
                     </label>
                 </div>
+                <div class="radio-inline">
+                    <label>
+                        <input type="radio" name="mailer.type" data-ng-model="systemConf.mail.type.value" data-ng-value="'disabled'">
+                        Disable
+                    </label>
+                </div>
                 <div data-ng-repeat="setting in systemConf.mail.settings | mailSettingsFilter:systemConf.mail.type.value">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
                 </div>
@@ -73,13 +83,41 @@
             </div>
         </div>
 
+        <div class="page-header">
+            <h2>Map</h2>
+            <span>Map settings</span>
+        </div>
+        <div>
+            <p class="radio-inline">
+                <label>
+                    <input type="radio" name="map.mapsProvider" data-ng-model="systemConf.map['MAPS_PROVIDER'].value" data-ng-value="'GOOGLE'">
+                    Google maps
+                </label>
+            </p>
+            <p class="radio-inline">
+                <label>
+                    <input type="radio" name="map.mapsProvider" data-ng-model="systemConf.map['MAPS_PROVIDER'].value" data-ng-value="'HERE'">
+                    Here maps
+                </label>
+            </p>
+            <div>
+                <setting data-obj="systemConf.map['MAPS_CLIENT_API_KEY']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+            </div>
+            <div>
+                <setting data-obj="systemConf.map['MAPS_HERE_APP_ID']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+            </div>
+            <div>
+                <setting data-obj="systemConf.map['MAPS_HERE_APP_CODE']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+            </div>
+        </div>
+
 
         <div class="page-header">
             <h2>Invoice settings</h2>
         </div>
         <div>
             <div data-ng-repeat="setting in systemConf.settings.INVOICE">
-                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
             </div>
         </div>
         <div class="panel panel-default">
@@ -89,15 +127,26 @@
             <div class="panel-body">
                 <div class="alert alert-info"><i class="fa fa-info-circle"></i> You'll need to build and deploy the <a href="https://github.com/stephanj/ServerlessEUVATChecker" target="_blank">ServerlessEUVATChecker</a> Lambda Function on AWS.</div>
                 <div data-ng-repeat="setting in systemConf.invoiceEu.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)" data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}" list-values="setting.listValues"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)" list-values="setting.listValues"></setting>
                 </div>
             </div>
         </div>
 
 
-        <div class="page-header" data-ng-if="systemConf.paymentPaypal || systemConf.paymentStripe || systemConf.paymentOffline">
+        <div class="page-header" data-ng-if="systemConf.payment || systemConf.paymentPaypal || systemConf.paymentStripe || systemConf.paymentMollie || systemConf.paymentOffline">
             <h2>Payment</h2>
             <span>Payment provider settings</span>
+        </div>
+
+        <div data-ng-if="systemConf.payment" class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"><i class="fa fa-dollar"></i> General</div>
+            </div>
+            <div class="panel-body">
+                <div data-ng-repeat="setting in systemConf.payment.settings">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+                </div>
+            </div>
         </div>
 
         <div data-ng-if="systemConf.paymentStripe" class="panel panel-default">
@@ -107,7 +156,7 @@
             <div class="panel-body">
                 <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
                 <div data-ng-repeat="setting in systemConf.paymentStripe.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
                 </div>
             </div>
         </div>
@@ -120,12 +169,28 @@
                 <div class="alert alert-info">
                     <p><i class="fa fa-info-circle"></i> in order to accept payments through PayPal, you must create and enable a new <strong>REST API app</strong>, as explained <a href="https://developer.paypal.com/docs/integration/admin/manage-apps/" target="_blank">here</a></p>
                     <p>Once you have created your app and tested the integration, you can enable live payments by inserting the <strong>Live</strong> Client ID and Secret, and enabling the "live mode" below.</p>
+                    <p><strong>IMPORTANT:</strong> if you are going to accept payments in a currency you don't hold, please make sure to enable automatic currency conversion. </p>
+                    <p>To do that, go to <a href="https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref">PayPal dashboard</a> and select <code>Profile</code> -> <code>Profile and Settings</code> -> <code>My Selling Tools</code> -> <code>Block Payments</code></p>
                 </div>
                 <div data-ng-repeat="setting in systemConf.paymentPaypal.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
                 </div>
             </div>
         </div>
+
+        <!--<div data-ng-if="systemConf.paymentMollie" class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"> Mollie configuration</div>
+            </div>
+            <div class="panel-body">
+                <div class="alert alert-info">
+                    <p><i class="fa fa-info-circle"></i> in order to accept payments through Mollie, you must have Live API key.</p>
+                </div>
+                <div data-ng-repeat="setting in systemConf.paymentMollie.settings">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+                </div>
+            </div>
+        </div>-->
 
         <div data-ng-if="systemConf.paymentOffline" class="panel panel-default">
             <div class="panel-heading">
@@ -136,14 +201,41 @@
                     <p><i class="fa fa-info-circle"></i> In order to be able to accept offline payments, you must fill your <strong>Bank Account</strong> data.</p>
                 </div>
                 <div data-ng-repeat="setting in systemConf.paymentOffline.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  data-ng-class="{'system-setting': setting.configurationPathLevel === 'SYSTEM'}"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
                 </div>
             </div>
         </div>
 
-        <div class="pull-right wMarginBottom wMarginTop">
-            <button type="submit" class="btn btn-success" data-ng-disabled="systemConf.loading">save</button>
-            <a class="btn btn-default" data-ui-sref="index">cancel</a>
+        <div data-ng-if="systemConf.alfioPi" class="panel panel-default">
+            <div class="panel-heading">
+                <div class="panel-title"><i class="fa fa-check"></i> Alf.io-PI integration for offline check-in and label printing</div>
+            </div>
+            <div class="panel-body">
+                <div class="alert alert-info">
+                    <p><i class="fa fa-info-circle"></i> See <a href="https://github.com/exteso/alf.io-PI">Alf.io-PI repository</a> for more information.</p>
+                </div>
+                <div data-ng-repeat="setting in systemConf.alfioPiOptions">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                </div>
+            </div>
         </div>
+
+        <div class="page-header" data-ng-if="systemConf.extensionSettings">
+            <h2>Extension settings</h2>
+        </div>
+        <div class="panel panel-default" data-ng-repeat="settingId in systemConf.extensionSettings | keys">
+            <div class="panel-heading">
+                <div class="panel-title">Extension: {{systemConf.extensionSettings[settingId][0].extensionName}}</div>
+            </div>
+            <div class="panel-body">
+                <div>
+                    <div data-ng-repeat="setting in systemConf.extensionSettings[settingId]">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.deleteExtensionSetting(setting)"></setting>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <control-buttons data-form-obj="systemConf" data-success-text="Save" data-cancel-handler="Cancel"></control-buttons>
     </form>
 </div>

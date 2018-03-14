@@ -21,6 +21,7 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 
+import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
@@ -49,6 +50,7 @@ public class TicketCSVInfo {
                          @Column("t_email_address") String email,
                          @Column("t_locked_assignment") boolean lockedAssignment,
                          @Column("t_user_language") String userLanguage,
+                         @Column("t_ext_reference") String extReference,
                          //
                          @Column("tr_id") String trId,
                          @Column("tr_validity") Date trValidity,
@@ -71,11 +73,14 @@ public class TicketCSVInfo {
                          @Column("tr_vat_status") PriceContainer.VatStatus reservationVatStatus,
                          @Column("tr_vat_nr") String vatNr,
                          @Column("tr_vat_country") String vatCountry,
-                         @Column("tr_invoice_requested") boolean invoiceRequested) {
+                         @Column("tr_invoice_requested") boolean invoiceRequested,
+                         @Column("tr_used_vat_percent") BigDecimal usedVatPercent,
+                         @Column("tr_vat_included") Boolean vatIncluded) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
-            lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts);
+            lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
-            trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested);
+            trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage, directAssignment,
+            invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent, vatIncluded);
     }
 }

@@ -4,7 +4,7 @@
 <div class="alert alert-warning" data-ng-if="categoryConf.noResults">
     <h1>You are not authorized to see Category configuration.</h1>
 </div>
-<div data-ng-if="categoryConf.hasResults">
+<div data-ng-if="categoryConf.hasResults" class="category-conf">
 
     <div>
         <h3>Configuration for {{categoryConf.category.name}}</h3>
@@ -47,6 +47,12 @@
                         Mailjet.com
                     </label>
                 </div>
+                <div class="radio-inline">
+                    <label>
+                        <input type="radio" name="mailer.type" data-ng-model="categoryConf.mail.type.value" data-ng-value="'disabled'">
+                        Disable
+                    </label>
+                </div>
                 <div data-ng-repeat="setting in categoryConf.mail.settings | mailSettingsFilter:categoryConf.mail.type.value">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)"></setting>
                 </div>
@@ -72,10 +78,7 @@
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)"></setting>
             </div>
         </div>
-
-        <div class="pull-right wMarginBottom wMarginTop">
-            <button type="submit" class="btn btn-success" data-ng-disabled="categoryConf.loading">save</button>
-            <a class="btn btn-default" data-ng-click="categoryConf.closeModal()">close</a>
-        </div>
+        <hr />
+        <control-buttons data-success-text="Save" data-cancel-handler="categoryConf.closeModal"></control-buttons>
     </form>
 </div>

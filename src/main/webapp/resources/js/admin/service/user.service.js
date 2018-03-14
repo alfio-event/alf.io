@@ -13,7 +13,7 @@
                 return $http.get('/admin/api/users.json').error(HttpErrorHandler.handle);
             },
             editUser : function(user) {
-                var url = angular.isDefined(user.id) ? '/admin/api/users/edit' : '/admin/api/users/new';
+                var url = angular.isDefined(user.id) ? '/admin/api/users/edit' : ('/admin/api/users/new?baseUrl='+window.encodeURIComponent($window.location.origin));
                 return $http['post'](url, user).error(HttpErrorHandler.handle);
             },
             enable : function(user, status) {
@@ -35,7 +35,7 @@
                 return $http['delete']('/admin/api/users/'+user.id).error(HttpErrorHandler.handle);
             },
             resetPassword: function(user) {
-                return $http['put']('/admin/api/users/'+user.id+'/reset-password').error(HttpErrorHandler.handle);
+                return $http['put']('/admin/api/users/'+user.id+'/reset-password?baseUrl='+window.encodeURIComponent($window.location.origin)).error(HttpErrorHandler.handle);
             },
 
             showUserData: function(user) {

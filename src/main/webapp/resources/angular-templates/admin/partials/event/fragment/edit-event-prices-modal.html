@@ -7,8 +7,7 @@
             <edit-prices data-show-price-warning="true" data-event-obj="event" data-show-existing-errors="true" data-target-obj="eventPrices" data-allowed-payment-proxies="allowedPaymentProxies"></edit-prices>
         </div>
         <div class="modal-footer">
-            <button class="btn btn-success" type="submit" data-ng-disabled="pricesForm.$waiting">save</button>
-            <button class="btn btn-default" type="button" data-ng-disabled="pricesForm.$waiting" data-ng-click="cancel()">cancel</button>
+            <control-buttons data-form-obj="pricesForm" data-success-text="Save" data-cancel-handler="cancel"></control-buttons>
         </div>
     </form>
 </div>

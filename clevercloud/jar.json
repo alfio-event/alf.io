@@ -1,0 +1,9 @@
+{
+    "build": {
+        "type": "gradle",
+        "goal": "clever -x test"
+    },
+    "deploy": {
+        "jarName": "build/clevercloud/alfio-boot.war"
+    }
+}
