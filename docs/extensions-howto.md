@@ -21,6 +21,8 @@ Each extension consists of a JavaScript script, you can find a sample below:
  */
 function getScriptMetadata() {
     return {
+        id: 'myExtensionIdentifier', // optional: id and version will be used later as a mechanism for checking if the script has a newer version
+        version: 0, // optional
         async: false,
         events: [
             //supported values:
@@ -36,6 +38,8 @@ function getScriptMetadata() {
             //'EVENT_STATUS_CHANGE', //fired when an event status has changed (normally, from DRAFT to PUBLIC). Return boolean for synchronous variant, no results expected for the asynchronous one.
             'INVOICE_GENERATION' //fired on invoice generation. Returns the invoice model.
         ]
+        //,
+        //parameters: {fields: [{name:'name',description:'description',type:'TEXT',required:true}], configurationLevels: ['SYSTEM', 'ORGANIZATION', 'EVENT']} //parameters
     };
 }
 
@@ -46,9 +50,10 @@ function getScriptMetadata() {
  */
 function executeScript(scriptEvent) {
     log.warn('hello from script with event: ' + scriptEvent);
+    log.warn('extension parameters are: ' + extensionParameters);
     //this sample calls the https://csrng.net/ website and generates a random invoice number
     var randomNumber = restTemplate.getForObject('https://csrng.net/csrng/csrng.php?min=0&max=100', Java.type('java.util.ArrayList').class)[0].random;
-    log.warn('the invoice number will be ' + randomNumber)
+    log.warn('the invoice number will be: ' + randomNumber);
     return {
         invoiceNumber: randomNumber
     };
@@ -66,6 +71,7 @@ alf.io provides some objects and properties to the script in the script scope:
 * **restTemplate** Spring Framework's [RestTemplate](https://docs.spring.io/spring/docs/4.3.13.RELEASE/javadoc-api/org/springframework/web/client/RestTemplate.html)
 * **GSON** Google's [JSON parser/generator](http://static.javadoc.io/com.google.code.gson/gson/2.8.2/com/google/gson/Gson.html)
 * **returnClass** `java.lang.Class<?>` the expected result type
+* **extensionParameters** a map containing the parameters of an extension
 
 other event-related variables are also injected in the scope
 

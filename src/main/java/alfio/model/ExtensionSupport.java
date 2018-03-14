@@ -116,4 +116,17 @@ public class ExtensionSupport {
         private final int id;
         private final String value;
     }
+
+
+    @Getter
+    public static class NameAndValue {
+        private final String name;
+        private final String value;
+
+        public NameAndValue(@Column("ecm_name") String name,
+                            @Column("conf_value") String value) {
+            this.name = name;
+            this.value = value;
+        }
+    }
 }
