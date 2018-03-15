@@ -78,6 +78,7 @@ public class CheckInManager {
     private final OrganizationRepository organizationRepository;
     private final UserRepository userRepository;
     private final TicketReservationManager ticketReservationManager;
+    private final ExtensionManager extensionManager;
 
 
     private void checkIn(String uuid) {
@@ -85,6 +86,7 @@ public class CheckInManager {
         Validate.isTrue(ticket.getStatus() == TicketStatus.ACQUIRED);
         ticketRepository.updateTicketStatusWithUUID(uuid, TicketStatus.CHECKED_IN.toString());
         ticketRepository.toggleTicketLocking(ticket.getId(), ticket.getCategoryId(), true);
+        extensionManager.handleTicketCheckedIn(ticketRepository.findByUUID(uuid));
     }
 
     private void acquire(String uuid) {
@@ -148,6 +150,7 @@ public class CheckInManager {
                 ticketRepository.updateTicketStatusWithUUID(ticketIdentifier, revertedStatus.toString());
                 scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, OK_READY_TO_BE_CHECKED_IN, ScanAudit.Operation.REVERT);
                 auditingRepository.insert(t.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.REVERT_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
+                extensionManager.handleTicketRevertCheckedIn(ticketRepository.findByUUID(ticketIdentifier));
                 return true;
             }
             return false;

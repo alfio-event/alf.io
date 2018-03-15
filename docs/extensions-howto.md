@@ -31,6 +31,8 @@ function getScriptMetadata() {
             //'RESERVATION_CANCELLED', //fired when reservation(s) are cancelled
             //'TICKET_CANCELLED', //fired when ticket(s) (but not the entire reservation) are cancelled
             //'TICKET_ASSIGNED', //fired on ticket assignment. No results expected.
+            //'TICKET_CHECKED_IN', //fired when a ticket has been checked in. No results expected.
+            //'TICKET_REVERT_CHECKED_IN', //fired when a ticket has been reverted from the checked in status. No results expected.
             //'WAITING_QUEUE_SUBSCRIPTION', //fired on waiting queue subscription. No results expected.
             //'STUCK_RESERVATIONS', //fired when the system has detected stuck reservations. No results expected.
             //'OFFLINE_RESERVATIONS_WILL_EXPIRE', //fired when an offline reservation will expire. No results expected.
@@ -81,7 +83,7 @@ other event-related variables are also injected in the scope
 
 extensions will be invoked **asynchronously** once a reservation has been confirmed.
 
-##### params
+##### additional global variables
 
 * **reservation**: [TicketReservation](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)
 
@@ -90,7 +92,7 @@ extensions will be invoked **asynchronously** once a reservation has been confir
 
 extensions will be invoked **synchronously** once one or more reservations have expired.
 
-##### params
+##### additional global variables
 * **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **reservationIds**: String[] - the reservation IDs
 
@@ -101,7 +103,7 @@ boolean
 
 extensions will be invoked **synchronously** once one or more reservations have been cancelled.
 
-##### params
+##### additional global variables
 * **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **reservationIds**: String[] - the reservation IDs
 
@@ -112,7 +114,7 @@ boolean
 
 extension will be invoked **synchronously** once one or more tickets (but not the entire reservation at once) have been cancelled
 
-##### params
+##### additional global variables
 * **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **ticketUUIDs**: String[] - the cencelled tickets UUIDs. **Please note** that once a ticket has been cancelled, its UUID is reset.
 
@@ -120,15 +122,35 @@ extension will be invoked **synchronously** once one or more tickets (but not th
 
 extensions will be invoked **asynchronously** once a ticket has been assigned.
 
-##### params
+##### additional global variables
 
 * **ticket**: [Ticket](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)
+
+#### TICKET_CHECKED_IN
+
+extensions will be invoked **asynchronously** once a ticket has been checked in.
+
+##### additional global variables
+
+* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+* **ticket**: [Ticket](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)
+
+
+#### TICKET_REVERT_CHECKED_IN
+
+extensions will be invoked **asynchronously** once a ticket has been reverted from the checked in status.
+
+##### additional global variables
+
+* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+* **ticket**: [Ticket](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)
+
 
 #### WAITING_QUEUE_SUBSCRIBED
 
 extensions will be invoked **asynchronously** once someone subscribes to the waiting queue.
 
-##### params
+##### additional global variables
 
 * **waitingQueueSubscription**: [WaitingQueueSubscription](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/WaitingQueueSubscription.java)
 
@@ -136,7 +158,7 @@ extensions will be invoked **asynchronously** once someone subscribes to the wai
 
 extensions will be invoked **synchronously** while generating an invoice.
 
-##### params
+##### additional global variables
 * **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **reservationId**: String - the reservation ID
 * **email**: String - contact email
@@ -158,7 +180,7 @@ extensions will be invoked **synchronously** while generating an invoice.
 
 extensions will be invoked **asynchronously** when the system will detect a stuck reservation.
 
-##### params
+##### additional global variables
 * **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **reservations**: [TicketReservationInfo](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservationInfo.java)
 
@@ -166,7 +188,7 @@ extensions will be invoked **asynchronously** when the system will detect a stuc
 
 extensions will be invoked **asynchronously**
 
-##### params
+##### additional global variables
 * **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **reservationIds** List of String - list of reservation ids
 
@@ -174,14 +196,14 @@ extensions will be invoked **asynchronously**
 
 extensions will be invoked **asynchronously** and **synchronously** when an event has been created.
 
-##### params
+##### additional global variables
 * **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 
 #### EVENT_STATUS_CHANGE
 
 extensions will be invoked **asynchronously** and **synchronously** when an event status change.
 
-##### params
+##### additional global variables
 * **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **status**: String - possible values: 'DRAFT', 'PUBLIC', 'DISABLED'
 
@@ -198,4 +220,5 @@ It **must** return a JSON object with the following properties:
 
 #### executeScript
 
-the actual event handling. Parameters and return types are event-dependent.
+The actual event handling. Return types are event-dependent. Will always receive a single parameter (scriptEvent) 
+which is the event that triggered the script.
