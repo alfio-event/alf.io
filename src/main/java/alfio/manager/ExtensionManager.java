@@ -20,6 +20,7 @@ package alfio.manager;
 import alfio.extension.ExtensionService;
 import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
+import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
@@ -35,7 +36,6 @@ public class ExtensionManager {
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
 
-
     public enum ExtensionEvent {
         RESERVATION_CONFIRMED,
         RESERVATION_CANCELLED,
@@ -49,7 +49,9 @@ public class ExtensionManager {
         OFFLINE_RESERVATIONS_WILL_EXPIRE,
         EVENT_CREATED,
         EVENT_STATUS_CHANGE,
-        WEB_API_HOOK
+        WEB_API_HOOK,
+        TICKET_CHECKED_IN,
+        TICKET_REVERT_CHECKED_IN
     }
 
     public void handleEventCreation(Event event) {
@@ -158,6 +160,23 @@ public class ExtensionManager {
 
         return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, event.getId(), event.getOrganizationId(), payload, InvoiceGeneration.class));
     }
+
+    public void handleTicketCheckedIn(Ticket ticket) {
+        Map<String, Object> payload = new HashMap<>();
+        Event event = eventRepository.findById(ticket.getEventId());
+        payload.put("ticket", ticket);
+        payload.put("event", event);
+        asyncCall(ExtensionEvent.TICKET_CHECKED_IN, ticket.getEventId(), event.getOrganizationId(), payload);
+    }
+
+    public void handleTicketRevertCheckedIn(Ticket ticket) {
+        Map<String, Object> payload = new HashMap<>();
+        Event event = eventRepository.findById(ticket.getEventId());
+        payload.put("ticket", ticket);
+        payload.put("event", event);
+        asyncCall(ExtensionEvent.TICKET_REVERT_CHECKED_IN, ticket.getEventId(), event.getOrganizationId(), payload);
+    }
+
 
     private void asyncCall(ExtensionEvent event, int eventId, int organizationId, Map<String, Object> payload) {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
