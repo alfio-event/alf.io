@@ -101,6 +101,7 @@ public class ReservationController {
                                   @RequestParam(value = "billingAddress", required = false) String billingAddress,
                                   @RequestParam(value = "hmac", required = false) String hmac,
                                   @RequestParam(value = "postponeAssignment", required = false) Boolean postponeAssignment,
+                                  @RequestParam(value = "invoiceRequested", required = false) Boolean invoiceRequested,
                                   Model model,
                                   Locale locale) {
 
@@ -124,6 +125,7 @@ public class ReservationController {
                             .addAttribute("billingAddress", billingAddress)
                             .addAttribute("hmac", hmac)
                             .addAttribute("postponeAssignment", Boolean.TRUE.equals(postponeAssignment))
+                            .addAttribute("invoiceRequested", Boolean.TRUE.equals(invoiceRequested))
                             .addAttribute("showPostpone", Boolean.TRUE.equals(postponeAssignment));
                     } else {
                         model.addAttribute("paypalCheckoutConfirmation", false)
@@ -435,8 +437,9 @@ public class ReservationController {
         if(paymentForm.getPaymentMethod() == PaymentProxy.PAYPAL && !paymentForm.hasPaypalTokens()) {
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
             try {
-                String checkoutUrl = paymentManager.createPaypalCheckoutRequest(event, reservationId, orderSummary, customerName,
-                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment());
+                String checkoutUrl = paymentManager.createPayPalCheckoutRequest(event, reservationId, orderSummary, customerName,
+                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment(),
+                    paymentForm.isInvoiceRequested());
                 assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
                 return "redirect:" + checkoutUrl;
             } catch (Exception e) {
