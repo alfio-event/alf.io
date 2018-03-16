@@ -1054,6 +1054,7 @@ public class TicketReservationManager {
             ticketReservationRepository.updateAssignee(reservation.getId(), username);
         }
         pluginManager.handleTicketAssignment(newTicket);
+        extensionManager.handleTicketAssignment(newTicket);
 
 
 
