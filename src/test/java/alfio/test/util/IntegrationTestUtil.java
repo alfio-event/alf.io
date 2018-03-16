@@ -93,6 +93,15 @@ public class IntegrationTestUtil {
                                                 UserManager userManager,
                                                 EventManager eventManager,
                                                 EventRepository eventRepository) {
+        return initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, null);
+    }
+
+    public static Pair<Event, String> initEvent(List<TicketCategoryModification> categories,
+                                                OrganizationRepository organizationRepository,
+                                                UserManager userManager,
+                                                EventManager eventManager,
+                                                EventRepository eventRepository,
+                                                List<EventModification.AdditionalService> additionalServices) {
 
         String organizationName = UUID.randomUUID().toString();
         String username = UUID.randomUUID().toString();
@@ -115,7 +124,7 @@ public class IntegrationTestUtil {
                 "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
-                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, null);
+                BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, additionalServices);
         eventManager.createEvent(em);
         Event event = eventManager.getSingleEvent(eventName, username);
         Assert.assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());

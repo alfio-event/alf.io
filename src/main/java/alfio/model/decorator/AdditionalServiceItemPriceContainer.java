@@ -25,7 +25,7 @@ import java.math.BigDecimal;
 import java.util.Optional;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class AdditionalServiceItemPriceContainer implements PriceContainer {
+public class AdditionalServiceItemPriceContainer implements SummaryPriceContainer {
     @Delegate(excludes = PriceContainer.class)
     private final AdditionalServiceItem additionalServiceItem;
     private final AdditionalService additionalService;
