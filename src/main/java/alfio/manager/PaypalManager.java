@@ -126,8 +126,9 @@ public class PaypalManager {
         return transactions;
     }
 
-    public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName,
-                                        String email, String billingAddress, Locale locale, boolean postponeAssignment) throws Exception {
+    public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary,
+                                        CustomerName customerName, String email, String billingAddress,
+                                        Locale locale, boolean postponeAssignment, boolean invoiceRequested) throws Exception {
 
 
         APIContext apiContext = getApiContext(event);
@@ -156,6 +157,7 @@ public class PaypalManager {
             .queryParam("email", email)
             .queryParam("billingAddress", billingAddress)
             .queryParam("postponeAssignment", postponeAssignment)
+            .queryParam("invoiceRequested", invoiceRequested)
             .queryParam("hmac", computeHMAC(customerName, email, billingAddress, event));
         String finalUrl = bookUrlBuilder.toUriString();
 
