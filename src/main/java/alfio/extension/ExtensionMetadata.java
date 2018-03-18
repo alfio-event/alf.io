@@ -26,6 +26,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ExtensionMetadata {
     String id;
+    String displayName;
     Integer version;
     boolean async;
     List<String> events;

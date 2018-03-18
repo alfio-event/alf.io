@@ -20,7 +20,10 @@ package alfio.extension;
 import alfio.model.Event;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
-import alfio.model.ExtensionSupport.*;
+import alfio.model.ExtensionSupport.ExtensionMetadataValue;
+import alfio.model.ExtensionSupport.ExtensionParameterMetadataAndValue;
+import alfio.model.ExtensionSupport.NameAndValue;
+import alfio.model.ExtensionSupport.ScriptPathNameHash;
 import alfio.model.user.Organization;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
@@ -110,13 +113,15 @@ public class ExtensionService {
         String hash = DigestUtils.sha256Hex(script.getScript());
         ExtensionMetadata extensionMetadata = getMetadata(script.getName(), script.getScript());
 
+        Validate.notBlank(extensionMetadata.displayName, "Display Name is mandatory");
+
         extensionRepository.deleteEventsForPath(previousPath, previousName);
 
         if (!Objects.equals(previousPath, script.getPath()) || !Objects.equals(previousName, script.getName())) {
             extensionRepository.deleteScriptForPath(previousPath, previousName);
-            extensionRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
+            extensionRepository.insert(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript());
         } else {
-            extensionRepository.update(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
+            extensionRepository.update(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript());
             //TODO: load all saved parameters value, then delete the register extension parameter
         }
 
