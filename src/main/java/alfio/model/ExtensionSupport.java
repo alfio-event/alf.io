@@ -65,6 +65,7 @@ public class ExtensionSupport {
     public static class ExtensionParameterMetadataAndValue {
         private final int id;
         private final String name;
+        private final String extensionDisplayName;
         private final String configurationLevel;
         private final String description;
         private final String type;
@@ -85,6 +86,7 @@ public class ExtensionSupport {
                                                   @Column("path") String path,
                                                   @Column("es_id") int extensionId,
                                                   @Column("name") String extensionName,
+                                                  @Column("display_name") String extensionDisplayName,
                                                   @Column("conf_path") String configurationPath,
                                                   @Column("conf_value") String configurationValue) {
             this.id = id;
@@ -96,6 +98,7 @@ public class ExtensionSupport {
             this.path = path;
             this.extensionId = extensionId;
             this.extensionName = extensionName;
+            this.extensionDisplayName = extensionDisplayName;
             this.configurationPath = configurationPath;
             this.configurationValue = configurationValue;
         }

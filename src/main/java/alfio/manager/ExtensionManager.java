@@ -20,9 +20,7 @@ package alfio.manager;
 import alfio.extension.ExtensionService;
 import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
-import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
-import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -34,7 +32,6 @@ public class ExtensionManager {
 
     private final ExtensionService extensionService;
     private final EventRepository eventRepository;
-    private final TicketReservationRepository ticketReservationRepository;
 
     public enum ExtensionEvent {
         RESERVATION_CONFIRMED,

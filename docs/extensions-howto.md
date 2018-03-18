@@ -22,6 +22,7 @@ Each extension consists of a JavaScript script, you can find a sample below:
 function getScriptMetadata() {
     return {
         id: 'myExtensionIdentifier', // optional: id and version will be used later as a mechanism for checking if the script has a newer version
+        displayName: 'My Extension', //mandatory: the name displayed in the configuration page
         version: 0, // optional
         async: false,
         events: [

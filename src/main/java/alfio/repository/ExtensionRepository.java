@@ -18,7 +18,9 @@
 package alfio.repository;
 
 import alfio.model.ExtensionSupport;
-import ch.digitalfondue.npjt.*;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
+import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,18 +29,20 @@ import java.util.Set;
 @QueryRepository
 public interface ExtensionRepository {
 
-    @Query("insert into extension_support(path, name, hash, enabled, async, script) values " +
-        " (:path, :name, :hash, :enabled, :async, :script)")
+    @Query("insert into extension_support(path, name, display_name, hash, enabled, async, script) values " +
+        " (:path, :name, :displayName, :hash, :enabled, :async, :script)")
     int insert(@Bind("path") String path,
                @Bind("name") String name,
+               @Bind("displayName") String displayName,
                @Bind("hash") String hash,
                @Bind("enabled") boolean enabled,
                @Bind("async") boolean async,
                @Bind("script") String script);
 
-    @Query("update extension_support set hash = :hash, enabled = :enabled, async = :async, script = :script where path = :path and name = :name")
+    @Query("update extension_support set display_name = :displayName, hash = :hash, enabled = :enabled, async = :async, script = :script where path = :path and name = :name")
     int update(@Bind("path") String path,
                @Bind("name") String name,
+               @Bind("displayName") String displayName,
                @Bind("hash") String hash,
                @Bind("enabled") boolean enabled,
                @Bind("async") boolean async,
@@ -96,7 +100,7 @@ public interface ExtensionRepository {
                                                @Bind("mandatory") boolean mandatory);
 
 
-    @Query("select ecm_id, ecm_name, ecm_configuration_level, ecm_description, ecm_type, ecm_mandatory, path, es_id, name, conf_path, conf_value"+
+    @Query("select ecm_id, ecm_name, ecm_configuration_level, ecm_description, ecm_type, ecm_mandatory, path, es_id, name, display_name, conf_path, conf_value"+
         " from extension_configuration_metadata " +
         " inner join extension_support on es_id = ecm_es_id_fk " +
         " left outer join extension_configuration_metadata_value on ecm_id = fk_ecm_id and (conf_path is null or (conf_path in (:possiblePaths))) " +
