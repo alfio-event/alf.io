@@ -637,3 +637,7 @@ only screen and (min-device-pixel-ratio: 1.5) {
 span.path {
     margin-right: 5px;
 }
+
+.form-group-inline {
+    vertical-align: top !important;
+}

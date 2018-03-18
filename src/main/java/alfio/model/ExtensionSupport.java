@@ -108,6 +108,10 @@ public class ExtensionSupport {
         public String getValue() {
             return configurationValue;
         }
+
+        public String getConfigurationPathLevel() {
+            return configurationLevel;
+        }
     }
 
     @AllArgsConstructor
