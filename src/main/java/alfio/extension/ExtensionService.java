@@ -20,10 +20,7 @@ package alfio.extension;
 import alfio.model.Event;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
-import alfio.model.ExtensionSupport.ExtensionMetadataValue;
-import alfio.model.ExtensionSupport.ExtensionParameterMetadataAndValue;
-import alfio.model.ExtensionSupport.NameAndValue;
-import alfio.model.ExtensionSupport.ScriptPathNameHash;
+import alfio.model.ExtensionSupport.*;
 import alfio.model.user.Organization;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
@@ -122,7 +119,6 @@ public class ExtensionService {
             extensionRepository.insert(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript());
         } else {
             extensionRepository.update(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript());
-            //TODO: load all saved parameters value, then delete the register extension parameter
         }
 
         int extensionId = extensionRepository.getExtensionIdFor(script.getPath(), script.getName());
@@ -135,12 +131,16 @@ public class ExtensionService {
         //
         ExtensionMetadata.Parameters parameters = extensionMetadata.getParameters();
         if (parameters != null) {
+            List<ExtensionParameterKeyValue> extensionParameterKeyValue = extensionRepository.findExtensionParameterKeyValue(extensionId);
             extensionRepository.deleteExtensionParameter(extensionId);
-            //TODO: handle if already present, cleanup key that are no more present
             for (ExtensionMetadata.Field field : parameters.getFields()) {
                 for (String level : parameters.getConfigurationLevels()) {
-                    extensionRepository.registerExtensionConfigurationMetadata(extensionId, field.getName(), field.getDescription(), field.getType(), level, field.isRequired());
-                    //if for this key,level is present a value -> save
+                    int confFieldId = extensionRepository.registerExtensionConfigurationMetadata(extensionId, field.getName(), field.getDescription(), field.getType(), level, field.isRequired()).getKey();
+                    List<ExtensionParameterKeyValue> filteredParam = extensionParameterKeyValue.stream().filter(kv -> field.getName().equals(kv.getName()) && level.equals(kv.getConfigurationLevel())).collect(Collectors.toList());
+                    for(ExtensionParameterKeyValue kv : filteredParam) {
+                        //TODO: can be optimized with a bulk insert...
+                        extensionRepository.insertSettingValue(confFieldId, kv.getConfigurationPath(), kv.getConfigurationValue());
+                    }
                 }
             }
         }

@@ -62,6 +62,24 @@ public class ExtensionSupport {
     }
 
     @Getter
+    public static class ExtensionParameterKeyValue {
+        private final String name;
+        private final String configurationLevel;
+        private final String configurationPath;
+        private final String configurationValue;
+
+        public ExtensionParameterKeyValue(@Column("ecm_name") String name,
+                                          @Column("ecm_configuration_level") String configurationLevel,
+                                          @Column("conf_path") String configurationPath,
+                                          @Column("conf_value") String configurationValue) {
+            this.name = name;
+            this.configurationLevel = configurationLevel;
+            this.configurationPath = configurationPath;
+            this.configurationValue = configurationValue;
+        }
+    }
+
+    @Getter
     public static class ExtensionParameterMetadataAndValue {
         private final int id;
         private final String name;
