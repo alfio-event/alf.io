@@ -22,6 +22,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import lombok.extern.log4j.Log4j2;
+import okhttp3.OkHttpClient;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -45,6 +46,9 @@ import java.util.function.Supplier;
 @Service
 @Log4j2
 public class ScriptingExecutionService {
+
+    private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
+    private static final RestTemplate REST_TEMPLATE = new RestTemplate();
 
     private final static Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
     private final Cache<String, CompiledScript> compiledScriptCache = Caffeine.newBuilder()
@@ -101,7 +105,8 @@ public class ScriptingExecutionService {
             engineScope.put("log", log);
             engineScope.put("extensionLogger", extensionLogger);
             engineScope.put("GSON", Json.GSON);
-            engineScope.put("restTemplate", new RestTemplate());
+            engineScope.put("restTemplate", REST_TEMPLATE);
+            engineScope.put("httpClient", HTTP_CLIENT);
             engineScope.put("returnClass", clazz);
             engineScope.putAll(params);
             T res = (T) script.eval(newContext);
