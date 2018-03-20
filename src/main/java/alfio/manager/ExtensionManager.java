@@ -173,7 +173,7 @@ public class ExtensionManager {
         payloadCopy.put("organizationId", organizationId);
 
         extensionService.executeScriptAsync(extensionEvent.name(),
-            toPath(organizationId, event.getId()), payload);
+            toPath(organizationId, event.getId()), payloadCopy);
     }
 
     private <T> T syncCall(ExtensionEvent extensionEvent, Event event, int organizationId, Map<String, Object> payload, Class<T> clazz) {
@@ -181,7 +181,7 @@ public class ExtensionManager {
         payloadCopy.put("event", event);
         payloadCopy.put("eventId", event.getId());
         payloadCopy.put("organizationId", organizationId);
-        return extensionService.executeScriptsForEvent(extensionEvent.name(), toPath(event.getId(), organizationId), payload, clazz);
+        return extensionService.executeScriptsForEvent(extensionEvent.name(), toPath(event.getId(), organizationId), payloadCopy, clazz);
     }
 
 
