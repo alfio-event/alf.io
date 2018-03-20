@@ -72,6 +72,7 @@ alf.io provides some objects and properties to the script in the script scope:
 * **log** Log4j logger
 * **extensionLogger** a logger that write in the extension_log table. It implement the [ExtensionLogger](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionLogger.java) interface.
 * **restTemplate** Spring Framework's [RestTemplate](https://docs.spring.io/spring/docs/4.3.13.RELEASE/javadoc-api/org/springframework/web/client/RestTemplate.html)
+* **httpClient** instance of a [OkHttpClient](http://square.github.io/okhttp/)
 * **GSON** Google's [JSON parser/generator](http://static.javadoc.io/com.google.code.gson/gson/2.8.2/com/google/gson/Gson.html)
 * **returnClass** `java.lang.Class<?>` the expected result type
 * **extensionParameters** a map containing the parameters of an extension
