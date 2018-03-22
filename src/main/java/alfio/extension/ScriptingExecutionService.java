@@ -49,6 +49,7 @@ public class ScriptingExecutionService {
 
     private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
     private static final RestTemplate REST_TEMPLATE = new RestTemplate();
+    private static final SimpleHttpClient SIMPLE_HTTP_CLIENT = new SimpleHttpClient(HTTP_CLIENT);
 
     private final static Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
     private final Cache<String, CompiledScript> compiledScriptCache = Caffeine.newBuilder()
@@ -67,7 +68,7 @@ public class ScriptingExecutionService {
         CompiledScript compiledScript = compiledScriptCache.get(hash, (key) -> {
             try {
                 return engine.compile(scriptFetcher.get());
-            } catch (ScriptException se) {
+            } catch (Throwable se) {
                 log.warn("Was not able to compile script " + name, se);
                 extensionLogger.logError("Was not able to compile script: " + se.getMessage());
                 throw new IllegalStateException(se);
@@ -107,12 +108,13 @@ public class ScriptingExecutionService {
             engineScope.put("GSON", Json.GSON);
             engineScope.put("restTemplate", REST_TEMPLATE);
             engineScope.put("httpClient", HTTP_CLIENT);
+            engineScope.put("simpleHttpClient", SIMPLE_HTTP_CLIENT);
             engineScope.put("returnClass", clazz);
             engineScope.putAll(params);
             T res = (T) script.eval(newContext);
             extensionLogger.logSuccess("Script executed successfully");
             return res;
-        } catch (ScriptException ex) {
+        } catch (Throwable ex) { //
             log.warn("Error while executing script " + name + ":", ex);
             extensionLogger.logError("Error while executing script: " + ex.getMessage());
             throw new IllegalStateException(ex);
