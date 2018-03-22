@@ -24,7 +24,6 @@ import com.github.benmanes.caffeine.cache.RemovalListener;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.OkHttpClient;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import javax.script.*;
 import java.util.Collections;
