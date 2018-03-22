@@ -54,6 +54,9 @@ public class ExtensionService {
 
     private final PlatformTransactionManager platformTransactionManager;
 
+    private final static String PRELOAD_SCRIPT = "\nvar HashMap = Java.type('java.util.HashMap');\n" +
+        "var ExtensionUtils = Java.type('alfio.extension.ExtensionUtils');\n";
+
 
     @AllArgsConstructor
     private static final class ExtensionLoggerImpl implements ExtensionLogger {
@@ -98,7 +101,7 @@ public class ExtensionService {
     private static ExtensionMetadata getMetadata(String name, String script) {
         return ScriptingExecutionService.executeScript(
             name,
-            script + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
+            PRELOAD_SCRIPT + script + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
             Collections.emptyMap(),
             ExtensionMetadata.class, new NoopExtensionLogger());
     }
@@ -218,7 +221,7 @@ public class ExtensionService {
 
             if(params.getLeft().isEmpty()) {
                 res = scriptingExecutionService.executeScript(name, activePath.getHash(),
-                    () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz, extLogger);
+                    () -> PRELOAD_SCRIPT + getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz, extLogger);
                 input.put("output", res);
             } else {
                 extLogger.logInfo("script not run, missing parameters: " + params.getLeft());
@@ -239,7 +242,7 @@ public class ExtensionService {
             ExtensionLogger extLogger = new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name);
 
             if(params.getLeft().isEmpty()) {
-                scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(extensionEvent);", input, extLogger);
+                scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> PRELOAD_SCRIPT + getScript(path, name)+"\n;executeScript(extensionEvent);", input, extLogger);
             } else {
                 extLogger.logInfo("script not run, missing parameters: " + params.getLeft());
             }

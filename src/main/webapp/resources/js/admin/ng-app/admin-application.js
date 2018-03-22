@@ -318,26 +318,26 @@
         });
     });
 
-    var validationResultHandler = function(form, deferred) {
+    var validationResultHandler = function(form, deferred, $scope) {
         return function(validationResult) {
             if(validationResult.errorCount > 0) {
                 angular.forEach(validationResult.validationErrors, function(error) {
-                    var match = error.fieldName.match(/ticketCategories\[([0-9]+)\]\.dateString/);
+                    var match = error.fieldName.match(/ticketCategories\[([0-9]+)\]/);
                     if(match) {
                         //HACK
-                        $("[data-ng-model=ticketCategory\\.dateString][name="+match[1]+"-dateString]").addClass('ng-invalid');
-                        //
+                        var categoryPos = parseInt(match[1]);
+                        $scope.event.ticketCategories[categoryPos].error = error.code;
                     }
                     if(angular.isFunction(form.$setError)) {
-                        form.$setError(error.fieldName, error.message);
+                        form.$setError(error.fieldName, error.code);
                     }
                 });
                 setTimeout(function() {
                     var firstInvalidElem = $("input.ng-invalid:first, textarea.input.ng-invalid:first, select.ng-invalid:first");
                     if(firstInvalidElem.length > 0) {
                         $('html, body').animate({scrollTop: firstInvalidElem.offset().top - 80},500,function() {
-                        firstInvalidElem.focus()
-                        })
+                            firstInvalidElem.focus()
+                        });
                     }
 
                 }, 0);
@@ -347,9 +347,9 @@
         };
     };
 
-    var validationPerformer = function($q, validator, data, form) {
+    var validationPerformer = function($q, validator, data, form, $scope) {
         var deferred = $q.defer();
-        validator(data).success(validationResultHandler(form, deferred)).error(function(error) {
+        validator(data).success(validationResultHandler(form, deferred, $scope)).error(function(error) {
             deferred.reject(error);
         });
         return deferred.promise;
@@ -414,10 +414,6 @@
             bounded: false
         };
 
-    };
-
-    var createAndPushCategory = function(sticky, $scope) {
-        $scope.event.ticketCategories.push(createCategoryValidUntil(sticky, $scope.event.begin));
     };
 
     var initScopeForEventEditing = function ($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS) {
@@ -536,7 +532,7 @@
 
     admin.controller('CreateEventController', function($scope, $state, $rootScope,
                                                        $q, OrganizationService, PaymentProxyService,
-                                                       EventService, LocationService, PAYMENT_PROXY_DESCRIPTIONS) {
+                                                       EventService, LocationService, PAYMENT_PROXY_DESCRIPTIONS, TicketCategoryEditorService) {
 
         var eventType = $state.$current.data.eventType;
 
@@ -548,9 +544,6 @@
                 $scope.event.additionalServices = [];
             }
 
-            if(eventType === 'INTERNAL' && $scope.event.ticketCategories.length === 0) {
-                createAndPushCategory(true, $scope);
-            }
         }
 
         if(window.sessionStorage && window.sessionStorage.new_event) {
@@ -589,27 +582,36 @@
             };
             initTicketCategoriesAndAdditionalServices();
             initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
-        }
+        };
 
 
         $scope.allocationStrategyRadioClass = 'radio-inline';
         initScopeForEventEditing($scope, OrganizationService, PaymentProxyService, LocationService, EventService, $state, PAYMENT_PROXY_DESCRIPTIONS);
+        var editCategory = function(category) {
+            return TicketCategoryEditorService.openCategoryDialog($scope, category, $scope.event, null, null);
+        };
         $scope.addCategory = function() {
-            createAndPushCategory(false, $scope);
+            var category = createCategoryValidUntil(true, $scope.event.begin);
+            editCategory(category).then(function(res) {
+                $scope.event.ticketCategories.push(category);
+            });
         };
 
         $scope.setAdditionalServices = function(event, additionalServices) {
             event.additionalServices = additionalServices;
         };
 
+        $scope.editCategory = function(category) {
+            editCategory(category);
+        };
 
+        $scope.removeCategory = function(category) {
+            var categories = $scope.event.ticketCategories;
+            $scope.event.ticketCategories = _.filter(categories, function(cat) { return cat !== category; });
+        };
 
         $scope.save = function(form, event) {
-            /*if(!form.$valid) {
-                return;
-            }*/
-
-            validationPerformer($q, EventService.checkEvent, event, form).then(function() {
+            validationPerformer($q, EventService.checkEvent, event, form, $scope).then(function() {
                 EventService.createEvent(event).success(function() {
                     if(window.sessionStorage) {
                         delete window.sessionStorage.new_event;
@@ -657,7 +659,8 @@
                                                         PAYMENT_PROXY_DESCRIPTIONS,
                                                         UtilsService,
                                                         NotificationHandler,
-                                                        $timeout) {
+                                                        $timeout,
+                                                        TicketCategoryEditorService) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -905,41 +908,9 @@
 
         var parentScope = $scope;
 
-        var openCategoryDialog = function(category, event) {
-            var editCategory = $uibModal.open({
-                size:'lg',
-                templateUrl:BASE_STATIC_URL + '/event/fragment/edit-category-modal.html',
-                backdrop: 'static',
-                controller: function($scope) {
-                    $scope.allLanguagesMapping = parentScope.allLanguagesMapping;
-                    var original = angular.extend({}, category);
-                    $scope.ticketCategory = category;
-                    $scope.event = event;
-                    $scope.editMode = true;
-                    $scope.cancel = function() {
-                        $scope.$dismiss('canceled');
-                    };
-                    $scope.update = function(form, category, event) {
-                        if(!form.$valid) {
-                            return;
-                        }
-                        EventService.saveTicketCategory(event, category).then(function(result) {
-                            validationErrorHandler(result, form, form).then(function() {
-                                reloadIfSeatsModification(!original || (original.bounded ^ category.bounded || original.maxTickets !== category.maxTickets))
-                                    .then(function() {
-                                        $scope.$close(true);
-                                    });
-                            });
-                        });
-                    };
-                }
-            });
-            return editCategory.result;
-        };
-
         $scope.addCategory = function(event) {
             var eventBegin = moment(event.begin);
-            openCategoryDialog(createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}), event);
+            TicketCategoryEditorService.openCategoryDialog($scope, createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}), event, validationErrorHandler, reloadIfSeatsModification);
         };
 
         $scope.openConfiguration = function(event, category) {
@@ -977,9 +948,9 @@
             function prepareValidDate(date) {
                 if(date) {
                     var m = moment(date);
-                    return {date: m.format('YYYY-MM-DD'), time: m.format('HH:mm')}
+                    return {date: m.format('YYYY-MM-DD'), time: m.format('HH:mm')};
                 } else {
-                    return null
+                    return null;
                 }
             }
 
@@ -1012,7 +983,7 @@
                 sticky: false
             };
 
-            openCategoryDialog(categoryObj, event).then(function() {
+            TicketCategoryEditorService.openCategoryDialog($scope, categoryObj, event, validationErrorHandler, reloadIfSeatsModification).then(function() {
                 loadData();
             });
         };

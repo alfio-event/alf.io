@@ -257,7 +257,106 @@ public class AdminReservationManagerIntegrationTest {
         ticketCategoryRepository.findByEventId(triple.getRight().getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.TAKEN)));
         assertFalse(ticketRepository.findAllReservationsConfirmedButNotAssigned(triple.getRight().getId()).contains(triple.getLeft().getId()));
     }
-
+    //
+    @Test
+    public void testUpdateReservation() throws Exception {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+                new TicketCategoryModification(null, "default", 1,
+                    new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                    new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                    DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, 
+        		Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
+        assertNotNull(testResult);
+        DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
+        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "en");
+        int attendees = AVAILABLE_SEATS;
+        Category category = new Category(null, "name", new BigDecimal("100.00"));
+        List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true, false));
+        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false, null);
+        Result<Boolean> result = adminReservationManager.updateReservation(testResult.getLeft().getShortName(), 
+        		testResult.getRight().getId(), modification, testResult.getMiddle());
+        assertTrue(result.isSuccess()); 
+    }
+    //
+    @Test
+    public void testNotify() throws Exception {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+                new TicketCategoryModification(null, "default", 1,
+                    new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                    new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                    DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, 
+        		Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
+        assertNotNull(testResult);
+        DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
+        CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "en");
+        int attendees = AVAILABLE_SEATS;
+        Category category = new Category(null, "name", new BigDecimal("100.00"));
+        List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true, false));
+        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", 
+        		false, new AdminReservationModification.Notification(true, true));
+        Result<Boolean> result = adminReservationManager.notify(testResult.getLeft().getShortName(), testResult.getRight().getId(), 
+        		modification, testResult.getMiddle());
+        assertTrue(result.isSuccess()); 
+    }
+    //
+    @Test
+    public void testRemoveTickets() {        
+        List<TicketCategoryModification> categories = Collections.singletonList(
+                new TicketCategoryModification(null, "default", 1,
+                    new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                    new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                    DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, 
+        		Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
+        assertNotNull(testResult);
+        Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.confirmReservation(testResult.getLeft().getShortName(),
+        		testResult.getRight().getId(), testResult.getMiddle());
+        assertTrue(result.isSuccess());
+        Triple<TicketReservation, List<Ticket>, Event> triple = result.getData();
+        List<Integer> ticketsId = new ArrayList<Integer>();
+        for(Ticket t: triple.getMiddle()) {
+        	ticketsId.add(t.getId());
+        }
+        adminReservationManager.removeTickets(triple.getRight().getShortName(), triple.getLeft().getId(), ticketsId, ticketsId, 
+        		true, testResult.getMiddle());
+    }
+//
+    @Test
+    public void testRemoveReservation() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+                new TicketCategoryModification(null, "default", 1,
+                    new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                    new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                    DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
+        assertNotNull(testResult);
+        
+        adminReservationManager.removeReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), true, true, testResult.getMiddle());
+    }
+    //
+    @Test
+    public void testRefund() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+                new TicketCategoryModification(null, "default", 1,
+                    new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                    new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                    DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
+        assertNotNull(testResult);
+        Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.confirmReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), testResult.getMiddle());
+        assertTrue(result.isSuccess());
+        Triple<TicketReservation, List<Ticket>, Event> triple = result.getData();
+        int sum = 0;
+        for(Ticket t: triple.getMiddle()) {
+        	sum += t.getId();
+        }
+        BigDecimal bd = new BigDecimal(sum);
+        Result<Boolean> bool_result = adminReservationManager.refund(testResult.getLeft().getShortName(), testResult.getRight().getId(), bd, testResult.getMiddle());
+        assertTrue(bool_result.isSuccess()); 
+    }
+    
     private Triple<Event, String, TicketReservation> performExistingCategoryTest(List<TicketCategoryModification> categories, boolean bounded,
                                                                                  List<Integer> attendeesNr, boolean addSeatsIfNotAvailable, boolean expectSuccess,
                                                                                  int reservedTickets, int expectedEventSeats) {

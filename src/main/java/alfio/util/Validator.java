@@ -26,6 +26,7 @@ import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.ValidationResult;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -66,6 +67,14 @@ public final class Validator {
                 errors.rejectValue("imageUrl", "error.imageurl");
             }
         }
+
+        return evaluateValidationResult(errors);
+    }
+
+    public static ValidationResult validateTicketCategories(EventModification ev, Errors errors) {
+        if(CollectionUtils.isEmpty(ev.getTicketCategories())) {
+            errors.rejectValue("ticketCategories", "error.ticketCategories");
+        }
         return evaluateValidationResult(errors);
     }
 
@@ -87,7 +96,7 @@ public final class Validator {
                 errors.rejectValue("regularPrice", "error.regularprice");
             }
             if(ev.getVatPercentage() == null || BigDecimal.ZERO.compareTo(ev.getVatPercentage()) > 0) {
-                errors.rejectValue("vat", "error.vat");
+                errors.rejectValue("vatPercentage", "error.vat");
             }
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "currency", "error.currency");
         }
@@ -97,7 +106,7 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors, String prefix) {
+    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors, String prefix, EventModification eventModification) {
         if(StringUtils.isBlank(category.getName())) {
             errors.rejectValue(prefix + "name", "error.category.name");
         }
@@ -107,11 +116,14 @@ public final class Validator {
         if(!category.getInception().isBefore(category.getExpiration())) {
             errors.rejectValue(prefix + "dateString", "error.date");
         }
+        if(eventModification != null && category.getExpiration().isAfter(eventModification.getEnd())) {
+            errors.rejectValue(prefix + "expiration", "error.date.overflow");
+        }
         return evaluateValidationResult(errors);
     }
 
     public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors) {
-        return validateCategory(category, errors, "");
+        return validateCategory(category, errors, "", null);
     }
 
     private static boolean isCollectionEmpty(Collection<?> collection) {

@@ -54,7 +54,9 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.EventUtil;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.insightfullogic.lambdabehave.expectations.Expect;
 import com.opencsv.CSVReader;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -209,7 +211,7 @@ public class ReservationFlowIntegrationTest {
      * Test a complete offline payment flow.
      * Will not check in detail...
      */
-    @Test
+    @Test(expected = JsonProcessingException.class)
     public void reservationFlowTest() throws Exception{
 
         String eventName = event.getShortName();

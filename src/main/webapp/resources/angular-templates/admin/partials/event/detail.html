@@ -90,42 +90,9 @@
                             </div>
                         </div>
 
-                        <dl class="dl-horizontal">
-                            <dt>Max tickets</dt>
-                            <dd ng-switch="ticketCategory.bounded">
-                                <span ng-switch-when="true">{{::ticketCategory.maxTickets}}</span>
-                                <span ng-switch-when="false">dynamic</span>
-                            </dd>
-
-                            <dt>Initial sale date</dt>
-                            <dd>{{::ticketCategory.formattedInception | formatDate}}</dd>
-
-                            <dt>End sale date</dt>
-                            <dd>{{::ticketCategory.formattedExpiration | formatDate}}</dd>
-
-                            <dt data-ng-if="!event.freeOfCharge">Price before tax</dt>
-                            <dd data-ng-if="!event.freeOfCharge">{{::ticketCategory.price | currency : (event.currency || "")}}</dd>
-
-                            <dt data-ng-if="!event.freeOfCharge">Price after tax</dt>
-                            <dd data-ng-if="!event.freeOfCharge">{{::ticketCategory.actualPrice | currency : (event.currency || "")}}</dd>
-
-                            <dt ng-if="ticketCategory.code && ticketCategory.code.length > 0">Diret Access Code</dt>
-                            <dd ng-if="ticketCategory.code && ticketCategory.code.length > 0">{{::ticketCategory.code}}</dd>
-
-                            <dt ng-if="ticketCategory.code && ticketCategory.code.length > 0">Direct Access URL</dt>
-                            <dd ng-if="ticketCategory.code && ticketCategory.code.length > 0">{{::baseUrl}}/event/{{::event.shortName}}/code/{{::ticketCategory.code}}</dd>
-
-                            <dt ng-if="ticketCategory.formattedValidCheckInFrom">Valid check-in from</dt>
-                            <dd ng-if="ticketCategory.formattedValidCheckInFrom">{{::ticketCategory.formattedValidCheckInFrom | formatDate}}</dd>
-
-                            <dt ng-if="ticketCategory.formattedValidCheckInTo">Valid check-in to</dt>
-                            <dd ng-if="ticketCategory.formattedValidCheckInTo">{{::ticketCategory.formattedValidCheckInTo | formatDate}}</dd>
-
-                        </dl>
-                        <div class="row hidden-xs hidden-sm" ng-if="categoryHasDescriptions(ticketCategory)">
-                            <hr />
-                            <div class="col-md-12 hidden-xs hidden-sm"><p class="text-muted" data-ng-repeat="(lang, desc) in ticketCategory.description" title="{{lang}}"><display-commonmark-preview text="desc"></display-commonmark-preview> {{desc}}</p></div>
-                        </div>
+                        <ticket-category-detail data-event="event"
+                                                data-ticket-category="ticketCategory"
+                                                data-panel-mode-enabled="false"></ticket-category-detail>
                         <div data-ng-if="ticketCategory.accessRestricted" class="wMarginBottom" data-uib-collapse="isTokenViewCollapsed(ticketCategory)">
                             <hr>
                             <button class="close" aria-label="Close" data-ng-click="toggleTokenViewCollapse(ticketCategory)"><i class="fa fa-close"></i></button>
