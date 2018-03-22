@@ -48,7 +48,6 @@ import java.util.function.Supplier;
 public class ScriptingExecutionService {
 
     private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
-    private static final RestTemplate REST_TEMPLATE = new RestTemplate();
     private static final SimpleHttpClient SIMPLE_HTTP_CLIENT = new SimpleHttpClient(HTTP_CLIENT);
 
     private final static Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
@@ -106,7 +105,6 @@ public class ScriptingExecutionService {
             engineScope.put("log", log);
             engineScope.put("extensionLogger", extensionLogger);
             engineScope.put("GSON", Json.GSON);
-            engineScope.put("restTemplate", REST_TEMPLATE);
             engineScope.put("httpClient", HTTP_CLIENT);
             engineScope.put("simpleHttpClient", SIMPLE_HTTP_CLIENT);
             engineScope.put("returnClass", clazz);

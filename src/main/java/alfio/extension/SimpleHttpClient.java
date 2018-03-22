@@ -89,7 +89,7 @@ public class SimpleHttpClient {
     }
 
     public HttpClientResponse put(String url, Map<String, String> headers, Object body) throws IOException {
-        return doRequest(url, headers, "POST", body);
+        return doRequest(url, headers, "PUT", body);
     }
 
 
