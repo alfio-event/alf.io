@@ -79,6 +79,7 @@ alf.io provides some objects and properties to the script in the script scope:
 * **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **eventId**: event id
 * **organizationId**: organization id
+* **Utils**: various utilities, see [ExtensionUtils](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionUtils.java)
 
 other event-related variables are also injected in the scope
 
