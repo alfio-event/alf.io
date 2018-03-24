@@ -641,3 +641,36 @@ span.path {
 .form-group-inline {
     vertical-align: top !important;
 }
+
+.ml-1 {
+    margin-left: 15px;
+}
+
+.fa-1_5x {
+    font-size: 1.2em !important;
+}
+
+.category-detail {}
+
+.category-detail h3 {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.category-detail .list-unstyled {
+    margin-top: 5px;
+}
+
+.category-detail .list-unstyled > li {
+    margin-bottom: 5px;
+}
+
+.category-description {
+    border-bottom: 1px solid #eee;
+    margin-bottom: 5px;
+    padding: 2px 0;
+}
+
+.category-description:last-child {
+    border-bottom: 0;
+}
