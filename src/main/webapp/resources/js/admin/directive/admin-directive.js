@@ -1016,6 +1016,19 @@
                 }
             }
         };
-    }])
+    }]);
+
+    directives.directive('languageFlag', function() {
+        return {
+            restrict: 'E',
+            scope: {
+                lang: '@'
+            },
+            controller: function($scope) {
+                $scope.flag = $scope.lang === 'en' ? 'gb' : $scope.lang;
+            },
+            template: '<img class="img-center" ng-src="../resources/images/flags/{{flag}}.gif">'
+        };
+    })
     
 })();

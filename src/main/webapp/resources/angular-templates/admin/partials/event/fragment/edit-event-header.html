@@ -61,7 +61,7 @@
                     <label>Languages</label>
                     <div class="checkbox" ng-repeat="lang in allLanguages">
                         <label>
-                            <input type="checkbox" ng-checked="isLanguageSelected(lang)" name="lang.value" ng-click="toggleLanguageSelection(lang)"> <img ng-src="../resources/images/flags/{{lang.flag}}.gif" class="img-center"> <span ng-class="{'text-muted': !isLanguageSelected(lang)}">{{lang.displayLanguage}}</span>
+                            <input type="checkbox" ng-checked="isLanguageSelected(lang)" name="lang.value" ng-click="toggleLanguageSelection(lang)"> <language-flag lang="{{lang.flag}}"></language-flag> <span ng-class="{'text-muted': !isLanguageSelected(lang)}">{{lang.displayLanguage}}</span>
                         </label>
                     </div>
                 </div>

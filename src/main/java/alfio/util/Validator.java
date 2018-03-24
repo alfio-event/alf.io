@@ -26,6 +26,7 @@ import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.ValidationResult;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
@@ -66,6 +67,10 @@ public final class Validator {
                 errors.rejectValue("imageUrl", "error.imageurl");
             }
         }
+
+        if(CollectionUtils.isEmpty(ev.getTicketCategories())) {
+            errors.rejectValue("ticketCategories", "error.ticketCategories");
+        }
         return evaluateValidationResult(errors);
     }
 
@@ -87,7 +92,7 @@ public final class Validator {
                 errors.rejectValue("regularPrice", "error.regularprice");
             }
             if(ev.getVatPercentage() == null || BigDecimal.ZERO.compareTo(ev.getVatPercentage()) > 0) {
-                errors.rejectValue("vat", "error.vat");
+                errors.rejectValue("vatPercentage", "error.vat");
             }
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "currency", "error.currency");
         }
