@@ -5,12 +5,10 @@
         bindings: {
             event: '<',
             ticketCategory: '<',
-            validCategories: '<',
-            moveOrphans: '<',
-            unbindTickets: '<',
             editHandler: '<',
             removeHandler: '<',
-            boxClass: '<'
+            boxClass: '<',
+            panelModeEnabled: '<'
         },
         controller: [TicketCategoryDetailCtrl],
         templateUrl: '../resources/js/admin/feature/ticket-category/ticket-category-detail.html'
@@ -18,6 +16,8 @@
 
     function TicketCategoryDetailCtrl() {
         var ctrl = this;
+
+        ctrl.baseUrl = window.location.origin;
 
         ctrl.categoryHasDescriptions = function(category) {
             return category && category.description ? Object.keys(category.description).length > 0 : false;
