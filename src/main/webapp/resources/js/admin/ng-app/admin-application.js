@@ -318,26 +318,26 @@
         });
     });
 
-    var validationResultHandler = function(form, deferred) {
+    var validationResultHandler = function(form, deferred, $scope) {
         return function(validationResult) {
             if(validationResult.errorCount > 0) {
                 angular.forEach(validationResult.validationErrors, function(error) {
-                    var match = error.fieldName.match(/ticketCategories\[([0-9]+)\]\.dateString/);
+                    var match = error.fieldName.match(/ticketCategories\[([0-9]+)\]/);
                     if(match) {
                         //HACK
-                        $("[data-ng-model=ticketCategory\\.dateString][name="+match[1]+"-dateString]").addClass('ng-invalid');
-                        //
+                        var categoryPos = parseInt(match[1]);
+                        $scope.event.ticketCategories[categoryPos].error = error.code;
                     }
                     if(angular.isFunction(form.$setError)) {
-                        form.$setError(error.fieldName, error.message);
+                        form.$setError(error.fieldName, error.code);
                     }
                 });
                 setTimeout(function() {
                     var firstInvalidElem = $("input.ng-invalid:first, textarea.input.ng-invalid:first, select.ng-invalid:first");
                     if(firstInvalidElem.length > 0) {
                         $('html, body').animate({scrollTop: firstInvalidElem.offset().top - 80},500,function() {
-                        firstInvalidElem.focus()
-                        })
+                            firstInvalidElem.focus()
+                        });
                     }
 
                 }, 0);
@@ -347,9 +347,9 @@
         };
     };
 
-    var validationPerformer = function($q, validator, data, form) {
+    var validationPerformer = function($q, validator, data, form, $scope) {
         var deferred = $q.defer();
-        validator(data).success(validationResultHandler(form, deferred)).error(function(error) {
+        validator(data).success(validationResultHandler(form, deferred, $scope)).error(function(error) {
             deferred.reject(error);
         });
         return deferred.promise;
@@ -611,11 +611,7 @@
         };
 
         $scope.save = function(form, event) {
-            /*if(!form.$valid) {
-                return;
-            }*/
-
-            validationPerformer($q, EventService.checkEvent, event, form).then(function() {
+            validationPerformer($q, EventService.checkEvent, event, form, $scope).then(function() {
                 EventService.createEvent(event).success(function() {
                     if(window.sessionStorage) {
                         delete window.sessionStorage.new_event;

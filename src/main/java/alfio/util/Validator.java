@@ -102,7 +102,7 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors, String prefix) {
+    public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors, String prefix, EventModification eventModification) {
         if(StringUtils.isBlank(category.getName())) {
             errors.rejectValue(prefix + "name", "error.category.name");
         }
@@ -112,11 +112,14 @@ public final class Validator {
         if(!category.getInception().isBefore(category.getExpiration())) {
             errors.rejectValue(prefix + "dateString", "error.date");
         }
+        if(eventModification != null && category.getExpiration().isAfter(eventModification.getEnd())) {
+            errors.rejectValue(prefix + "expiration", "error.date.overflow");
+        }
         return evaluateValidationResult(errors);
     }
 
     public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors) {
-        return validateCategory(category, errors, "");
+        return validateCategory(category, errors, "", null);
     }
 
     private static boolean isCollectionEmpty(Collection<?> collection) {
