@@ -68,6 +68,10 @@ public final class Validator {
             }
         }
 
+        return evaluateValidationResult(errors);
+    }
+
+    public static ValidationResult validateTicketCategories(EventModification ev, Errors errors) {
         if(CollectionUtils.isEmpty(ev.getTicketCategories())) {
             errors.rejectValue("ticketCategories", "error.ticketCategories");
         }
