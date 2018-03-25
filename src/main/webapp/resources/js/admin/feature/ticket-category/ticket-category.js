@@ -100,12 +100,12 @@
                                 validationErrorHandler(result, form, form).then(function() {
                                     reloadIfSeatsModification(!original || (original.bounded ^ category.bounded || original.maxTickets !== category.maxTickets))
                                         .then(function() {
-                                            $scope.$close(true);
+                                            $scope.$close(category);
                                         });
                                 });
                             });
                         } else {
-                            $scope.$close(true);
+                            $scope.$close(category);
                         }
                     };
                 }
