@@ -37,6 +37,8 @@
         ctrl.getCheckInFrom = function() {
             if(ctrl.ticketCategory.formattedValidCheckInFrom || ctrl.ticketCategory.validCheckInFrom) {
                 return ctrl.ticketCategory.formattedValidCheckInFrom ? ctrl.ticketCategory.formattedValidCheckInFrom : ctrl.formatDateTimeModification(ctrl.ticketCategory.validCheckInFrom);
+            } else if(ctrl.event.formattedBegin) {
+                return ctrl.event.formattedBegin;
             } else {
                 return ctrl.formatDateTimeModification(ctrl.event.begin);
             }
@@ -45,6 +47,8 @@
         ctrl.getCheckInTo = function() {
             if(ctrl.ticketCategory.formattedValidCheckInTo || ctrl.ticketCategory.validCheckInTo) {
                 return ctrl.ticketCategory.formattedValidCheckInTo ? ctrl.ticketCategory.formattedValidCheckInTo : ctrl.formatDateTimeModification(ctrl.ticketCategory.validCheckInTo);
+            } else if(ctrl.event.formattedEnd) {
+                return ctrl.event.formattedEnd;
             } else {
                 return ctrl.formatDateTimeModification(ctrl.event.end);
             }
@@ -58,16 +62,20 @@
         };
 
         ctrl.getTicketValidityFrom = function() {
-            if(ctrl.ticketCategory.formattedValidityStart || ctrl.ticketCategory.ticketValidityStart) {
-                return ctrl.ticketCategory.formattedValidCheckInFrom ? ctrl.ticketCategory.formattedValidCheckInFrom : ctrl.formatDateTimeModification(ctrl.ticketCategory.ticketValidityStart);
+            if(ctrl.ticketCategory.formattedTicketValidityStart || ctrl.ticketCategory.ticketValidityStart) {
+                return ctrl.ticketCategory.formattedTicketValidityStart ? ctrl.ticketCategory.formattedTicketValidityStart : ctrl.formatDateTimeModification(ctrl.ticketCategory.ticketValidityStart);
+            } else if(ctrl.event.formattedBegin) {
+                return ctrl.event.formattedBegin;
             } else {
                 return ctrl.formatDateTimeModification(ctrl.event.begin);
             }
         };
 
         ctrl.getTicketValidityTo = function() {
-            if(ctrl.ticketCategory.formattedValidityEnd || ctrl.ticketCategory.ticketValidityEnd) {
-                return ctrl.ticketCategory.formattedValidityEnd ? ctrl.ticketCategory.formattedValidityEnd : ctrl.formatDateTimeModification(ctrl.ticketCategory.ticketValidityEnd);
+            if(ctrl.ticketCategory.formattedTicketValidityEnd || ctrl.ticketCategory.ticketValidityEnd) {
+                return ctrl.ticketCategory.formattedTicketValidityEnd ? ctrl.ticketCategory.formattedTicketValidityEnd : ctrl.formatDateTimeModification(ctrl.ticketCategory.ticketValidityEnd);
+            } else if(ctrl.event.formattedEnd) {
+                return ctrl.event.formattedEnd;
             } else {
                 return ctrl.formatDateTimeModification(ctrl.event.end);
             }

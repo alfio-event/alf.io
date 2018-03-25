@@ -568,8 +568,21 @@
                     $scope.helpAccessCodeCollapse = !$scope.helpAccessCodeCollapse;
                 };
 
-                $scope.customCheckInCollapsed = true;
-                $scope.customValidityCollapsed = true;
+                var hasCustomCheckIn = function(ticketCategory) {
+                    return ticketCategory.formattedValidCheckInFrom ||
+                        ticketCategory.validCheckInFrom ||
+                        ticketCategory.formattedValidCheckInTo ||
+                        ticketCategory.validCheckInTo;
+                };
+
+                var hasCustomTicketValidity = function(ticketCategory) {
+                    return ticketCategory.formattedValidityStart||
+                        ticketCategory.ticketValidityStart ||
+                        ticketCategory.formattedValidityEnd ||
+                        ticketCategory.ticketValidityEnd;
+                };
+
+                $scope.advancedOptionsCollapsed = !hasCustomCheckIn($scope.ticketCategory) && !hasCustomTicketValidity($scope.ticketCategory);
             }
         };
     });
