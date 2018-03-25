@@ -594,7 +594,7 @@
             var category = createCategoryValidUntil(true, $scope.event.begin);
             editCategory(category).then(function(res) {
                 $scope.event.ticketCategories.push(category);
-            })
+            });
         };
 
         $scope.setAdditionalServices = function(event, additionalServices) {
@@ -663,7 +663,8 @@
                                                         PAYMENT_PROXY_DESCRIPTIONS,
                                                         UtilsService,
                                                         NotificationHandler,
-                                                        $timeout) {
+                                                        $timeout,
+                                                        TicketCategoryEditorService) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -913,7 +914,7 @@
 
         $scope.addCategory = function(event) {
             var eventBegin = moment(event.begin);
-            openCategoryDialog($scope, createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}), event, validationErrorHandler, reloadIfSeatsModification);
+            TicketCategoryEditorService.openCategoryDialog($scope, createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}), event, validationErrorHandler, reloadIfSeatsModification);
         };
 
         $scope.openConfiguration = function(event, category) {
@@ -951,9 +952,9 @@
             function prepareValidDate(date) {
                 if(date) {
                     var m = moment(date);
-                    return {date: m.format('YYYY-MM-DD'), time: m.format('HH:mm')}
+                    return {date: m.format('YYYY-MM-DD'), time: m.format('HH:mm')};
                 } else {
-                    return null
+                    return null;
                 }
             }
 
@@ -986,7 +987,7 @@
                 sticky: false
             };
 
-            openCategoryDialog($scope, categoryObj, event, validationErrorHandler, reloadIfSeatsModification).then(function() {
+            TicketCategoryEditorService.openCategoryDialog($scope, categoryObj, event, validationErrorHandler, reloadIfSeatsModification).then(function() {
                 loadData();
             });
         };
