@@ -1,6 +1,6 @@
-<div class="panel panel-default" ng-class="$ctrl.boxClass">
-    <div class="panel-body category-detail">
-        <div class="row">
+<div ng-class="[$ctrl.boxClass, { 'panel panel-default': $ctrl.panelModeEnabled }]">
+    <div class="category-detail" ng-class="{ 'panel-body': $ctrl.panelModeEnabled }">
+        <div class="row" ng-if="$ctrl.panelModeEnabled">
             <div class="col-xs-8">
                 <h3>{{$ctrl.ticketCategory.name}}</h3>
             </div>
@@ -11,7 +11,7 @@
                 </div>
             </div>
         </div>
-        <hr />
+        <hr ng-if="$ctrl.panelModeEnabled" />
         <div class="alert alert-danger" ng-if="$ctrl.ticketCategory.error" ng-switch="$ctrl.ticketCategory.error">
             <i class="fa fa-exclamation"></i>
             <span ng-switch-when="error.date.overflow" class="ml-1">Expiration Date cannot be after Event's End Date</span>
@@ -48,7 +48,7 @@
                 </h5>
                 <h5 ng-if="$ctrl.ticketCategory.code">
                     <i class="fa fa-link fa-1_5x"></i><span class="sr-only">Access Code</span>
-                    <span class="text-muted">{{$ctrl.ticketCategory.code}}</span>
+                    <span class="text-muted"><span ng-if="$ctrl.event.id">{{$ctrl.baseUrl}}/event/{{$ctrl.event.shortName}}/code/{{ticketCategory.code}}</span>{{$ctrl.ticketCategory.code}}</span>
                 </h5>
             </div>
             <div class="col-xs-7 category-detail">

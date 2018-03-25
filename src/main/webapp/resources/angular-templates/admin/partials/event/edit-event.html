@@ -36,11 +36,9 @@
                 <ticket-category-detail data-box-class="'category-' + evaluateBarType($index)"
                                         data-event="event"
                                         data-ticket-category="ticketCategory"
-                                        data-valid-categories="validCategories"
-                                        data-move-orphans="moveOrphans"
-                                        data-unbind-tickets="unbindTickets"
                                         data-edit-handler="editCategory"
-                                        data-remove-handler="removeCategory"></ticket-category-detail>
+                                        data-remove-handler="removeCategory"
+                                        data-panel-mode-enabled="true"></ticket-category-detail>
             </div>
 
             <div class="alert alert-danger" ng-if="event.ticketCategories.length === 0">
