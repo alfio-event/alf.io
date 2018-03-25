@@ -25,7 +25,7 @@ import java.security.NoSuchAlgorithmException;
 public class ExtensionUtils {
 
     public static String format(String str, String... params) {
-        return String.format(str, params);
+        return String.format(str, (Object[]) params);
     }
 
     public static String md5(String str) {
