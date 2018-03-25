@@ -6,23 +6,17 @@
             </div>
             <div class="col-xs-4">
                 <div class="pull-right">
-                    <a class="btn btn-sm btn-default" ng-click="$ctrl.editHandler($ctrl.ticketCategory)"><i class="fa fa-edit"></i> edit</a>
+                    <a class="btn btn-sm btn-default" ng-click="$ctrl.ticketCategory.error = null; $ctrl.editHandler($ctrl.ticketCategory)"><i class="fa fa-edit"></i> edit</a>
                     <a class="btn btn-sm btn-danger" ng-click="$ctrl.removeHandler($ctrl.ticketCategory)"><i class="fa fa-trash"></i> delete</a>
-
-                    <!--<a class="btn btn-sm btn-default" ui-sref="events.single.ticketsList({eventName: event.shortName, categoryId: ticketCategory.id})">-->
-                        <!--<i class="fa fa-ticket"></i> tickets-->
-                    <!--</a>-->
-                    <!--<a class="btn btn-sm btn-default" data-ng-click="toggleTokenViewCollapse(ticketCategory)" data-ng-if="ticketCategory.accessRestricted">-->
-                        <!--<i class="fa fa-qrcode"></i> tokens-->
-                    <!--</a>-->
-                    <!--<a class="btn btn-sm btn-default" data-ui-sref="events.single.sendInvitations({eventName: event.shortName, categoryId: ticketCategory.id})" data-ng-if="ticketCategory.accessRestricted && !ticketCategory.expired">-->
-                        <!--<i class="fa fa-envelope-o"></i> send invitations-->
-                    <!--</a>-->
-                    <!--<a class="btn btn-sm btn-default" data-ng-click="openConfiguration(event, ticketCategory)"><i class="fa fa-wrench"></i> options</a>-->
                 </div>
             </div>
         </div>
         <hr />
+        <div class="alert alert-danger" ng-if="$ctrl.ticketCategory.error" ng-switch="$ctrl.ticketCategory.error">
+            <i class="fa fa-exclamation"></i>
+            <span ng-switch-when="error.date.overflow" class="ml-1">Expiration Date cannot be after Event's End Date</span>
+            <span ng-switch-when="error.date" class="ml-1">Wrong Validity Range</span>
+        </div>
         <div class="row">
             <div class="col-xs-5">
                 <h5><i class="fa fa-calendar-check-o fa-1_5x"></i> <span class="sr-only">Ticket Sale period</span>

@@ -32,8 +32,15 @@
                     </uib-progress>
                 </div>
             </div>
-            <div data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy:['inception.date','inception.time']">
-                <ticket-category-detail data-box-class="'category-' + evaluateBarType($index)" data-event="event" data-ticket-category="ticketCategory" data-valid-categories="validCategories" data-move-orphans="moveOrphans" data-unbind-tickets="unbindTickets" data-edit-handler="editCategory" data-remove-handler="removeCategory"></ticket-category-detail>
+            <div data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy:['inception.date','inception.time']" ng-class="'category-'+$index">
+                <ticket-category-detail data-box-class="'category-' + evaluateBarType($index)"
+                                        data-event="event"
+                                        data-ticket-category="ticketCategory"
+                                        data-valid-categories="validCategories"
+                                        data-move-orphans="moveOrphans"
+                                        data-unbind-tickets="unbindTickets"
+                                        data-edit-handler="editCategory"
+                                        data-remove-handler="removeCategory"></ticket-category-detail>
             </div>
 
             <div class="alert alert-danger" ng-if="event.ticketCategories.length === 0">
