@@ -75,7 +75,7 @@ public class Event implements EventHiddenFieldContainer {
     private final PriceContainer.VatStatus vatStatus;
     private final String version;
     private final Status status;
-
+    private final HELLo;
 
 
     public Event(@Column("id") int id,
