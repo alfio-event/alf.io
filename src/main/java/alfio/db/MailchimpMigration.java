@@ -19,6 +19,7 @@ package alfio.db;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import alfio.extension.ScriptingExecutionService;
+import alfio.model.Event;
 import alfio.repository.EventRepository;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
@@ -37,6 +38,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 public class MailchimpMigration extends BaseSpringJdbcMigration {
 
@@ -71,8 +73,12 @@ public class MailchimpMigration extends BaseSpringJdbcMigration {
 
         for (ConfValue cv : confValues) {
             if(cv.value != null) {
-                int orgId = eventRepository.findOrganizationIdByEventId(cv.eventId);
-                extensionRepository.insertSettingValue("apiKey".equals(cv.name) ? apiKeyId : listIdId, "-" + orgId + "-" + cv.eventId, cv.value);
+                Optional<Event> ev = eventRepository.findOptionalById(cv.eventId);
+                ev.ifPresent(event -> {
+                    int orgId = event.getOrganizationId();
+                    extensionRepository.insertSettingValue("apiKey".equals(cv.name) ? apiKeyId : listIdId, "-" + orgId + "-" + cv.eventId, cv.value);
+                });
+
             }
         }
     }
