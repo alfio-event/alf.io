@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PartialTicketTextGenerator;
@@ -112,7 +111,6 @@ public class TicketReservationManager {
     private final TemplateManager templateManager;
     private final TransactionTemplate requiresNewTransactionTemplate;
     private final WaitingQueueManager waitingQueueManager;
-    private final PluginManager pluginManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
@@ -153,7 +151,6 @@ public class TicketReservationManager {
                                     TemplateManager templateManager,
                                     PlatformTransactionManager transactionManager,
                                     WaitingQueueManager waitingQueueManager,
-                                    PluginManager pluginManager,
                                     TicketFieldRepository ticketFieldRepository,
                                     AdditionalServiceRepository additionalServiceRepository,
                                     AdditionalServiceItemRepository additionalServiceItemRepository,
@@ -177,7 +174,6 @@ public class TicketReservationManager {
         this.messageSource = messageSource;
         this.templateManager = templateManager;
         this.waitingQueueManager = waitingQueueManager;
-        this.pluginManager = pluginManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         this.ticketFieldRepository = ticketFieldRepository;
         this.additionalServiceRepository = additionalServiceRepository;
@@ -451,7 +447,6 @@ public class TicketReservationManager {
         sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
 
         final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
-        pluginManager.handleReservationConfirmation(finalReservation, event.getId());
         extensionManager.handleReservationConfirmation(finalReservation, event.getId());
     }
 
@@ -630,7 +625,6 @@ public class TicketReservationManager {
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
             acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, email, customerName, userLanguage.getLanguage(), billingAddress, eventId);
             final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-            pluginManager.handleReservationConfirmation(reservation, eventId);
             extensionManager.handleReservationConfirmation(reservation, eventId);
             //cleanup unused special price codes...
             specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
@@ -667,7 +661,6 @@ public class TicketReservationManager {
                     if(paymentProxy == PaymentProxy.PAYPAL) {
                         sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                     }
-                    pluginManager.handleTicketAssignment(ticket);
                     extensionManager.handleTicketAssignment(ticket);
                 });
 
@@ -1053,7 +1046,6 @@ public class TicketReservationManager {
             log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
             ticketReservationRepository.updateAssignee(reservation.getId(), username);
         }
-        pluginManager.handleTicketAssignment(newTicket);
         extensionManager.handleTicketAssignment(newTicket);
 
 

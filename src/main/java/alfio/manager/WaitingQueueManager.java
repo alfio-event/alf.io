@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.manager.plugin.PluginManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.TicketReservationModification;
@@ -67,7 +66,6 @@ public class WaitingQueueManager {
     private final TemplateManager templateManager;
     private final MessageSource messageSource;
     private final OrganizationRepository organizationRepository;
-    private final PluginManager pluginManager;
     private final EventRepository eventRepository;
     private final ExtensionManager extensionManager;
 
@@ -82,7 +80,6 @@ public class WaitingQueueManager {
             validateSelectedCategoryId(event.getId(), selectedCategoryId);
             AffectedRowCountAndKey<Integer> key = waitingQueueRepository.insert(event.getId(), customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), email, ZonedDateTime.now(event.getZoneId()), userLanguage.getLanguage(), subscriptionType, selectedCategoryId);
             notifySubscription(event, customerName, email, userLanguage, subscriptionType);
-            pluginManager.handleWaitingQueueSubscription(waitingQueueRepository.loadById(key.getKey()));
             extensionManager.handleWaitingQueueSubscription(waitingQueueRepository.loadById(key.getKey()));
             return true;
         } catch(DuplicateKeyException e) {

@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.config.Initializer;
-import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -95,7 +94,6 @@ public class EventManager {
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final NamedParameterJdbcTemplate jdbc;
     private final ConfigurationManager configurationManager;
-    private final PluginManager pluginManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final EventDeleterRepository eventDeleterRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
@@ -163,7 +161,6 @@ public class EventManager {
         createAdditionalFields(event, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(event, em);
-        initPlugins(event);
         extensionManager.handleEventCreation(event);
     }
 
@@ -201,10 +198,6 @@ public class EventManager {
 
     private Consumer<EventModification.AdditionalServiceText> insertAdditionalServiceDescription(int serviceId) {
         return t -> additionalServiceTextRepository.insert(serviceId, t.getLocale(), t.getType(), t.getValue());
-    }
-
-    private void initPlugins(Event event) {
-        pluginManager.installPlugins(event);
     }
 
     private void createOrUpdateEventDescription(int eventId, EventModification em) {

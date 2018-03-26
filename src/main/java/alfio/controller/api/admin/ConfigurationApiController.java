@@ -17,11 +17,8 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.api.support.TicketHelper;
-import alfio.manager.plugin.PluginManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.modification.ConfigurationModification;
-import alfio.model.modification.PluginConfigOptionModification;
-import alfio.model.plugin.PluginConfigOption;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -49,12 +46,10 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 public class ConfigurationApiController {
 
     private final ConfigurationManager configurationManager;
-    private final PluginManager pluginManager;
 
     @Autowired
-    public ConfigurationApiController(ConfigurationManager configurationManager, PluginManager pluginManager) {
+    public ConfigurationApiController(ConfigurationManager configurationManager) {
         this.configurationManager = configurationManager;
-        this.pluginManager = pluginManager;
     }
 
     @RequestMapping(value = "/configuration/load", method = GET)
@@ -109,17 +104,6 @@ public class ConfigurationApiController {
     @RequestMapping(value = "/configuration/events/{eventId}/categories/{categoryId}/load", method = GET)
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfiguration(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, Principal principal) {
         return configurationManager.loadCategoryConfig(eventId, categoryId, principal.getName());
-    }
-
-    @RequestMapping(value = "/configuration/events/{eventId}/plugin/load", method = GET)
-    public List<PluginConfigOption> loadPluginConfiguration(@PathVariable("eventId") int eventId, Principal principal) {
-        return pluginManager.loadAllConfigOptions(eventId, principal.getName());
-    }
-
-    @RequestMapping(value = "/configuration/events/{eventId}/plugin/update-bulk", method = POST)
-    public boolean updatePluginConfiguration(@PathVariable int eventId, @RequestBody List<PluginConfigOptionModification> input, Principal principal) {
-        pluginManager.saveAllConfigOptions(eventId, Objects.requireNonNull(input), principal.getName());
-        return true;
     }
 
     @RequestMapping(value = "/configuration/organization/{organizationId}/key/{key}", method = DELETE)

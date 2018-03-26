@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.manager.plugin.PluginManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
@@ -62,7 +61,6 @@ public class WaitingQueueManagerTest {
     private TemplateManager templateManager;
     private MessageSource messageSource;
     private OrganizationRepository organizationRepository;
-    private PluginManager pluginManager;
     private EventRepository eventRepository;
     private ExtensionManager extensionManager;
     private Event event;
@@ -83,12 +81,11 @@ public class WaitingQueueManagerTest {
         templateManager = mock(TemplateManager.class);
         messageSource = mock(MessageSource.class);
         organizationRepository = mock(OrganizationRepository.class);
-        pluginManager = mock(PluginManager.class);
         eventRepository = mock(EventRepository.class);
         extensionManager = mock(ExtensionManager.class);
         event = mock(Event.class);
         when(event.getId()).thenReturn(eventId);
-        manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, jdbc, notificationManager, templateManager, messageSource, organizationRepository, pluginManager, eventRepository, extensionManager);
+        manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, jdbc, notificationManager, templateManager, messageSource, organizationRepository, eventRepository, extensionManager);
     }
 
     @AfterEach

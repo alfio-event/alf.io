@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.manager.plugin.PluginManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
@@ -44,7 +43,6 @@ import static org.mockito.Mockito.*;
 
 @DisplayName("EventManager: handle Ticket modifications")
 public class EventManagerHandleTicketModificationTest {
-    private PluginManager pluginManager;
     private Event event;
     private TicketCategory original;
     private TicketCategory updated;
@@ -58,14 +56,13 @@ public class EventManagerHandleTicketModificationTest {
 
     @BeforeEach
     void init() {
-        pluginManager = mock(PluginManager.class);
         event = mock(Event.class);
         original = mock(TicketCategory.class);
         updated = mock(TicketCategory.class);
         ticketRepository = mock(TicketRepository.class);
         jdbc = mock(NamedParameterJdbcTemplate.class);
         when(event.getId()).thenReturn(eventId);
-        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, jdbc, null, pluginManager, null, null, null, null, null, null, null, null, null);
+        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, jdbc, null, null, null, null, null, null, null, null, null, null);
         when(original.getId()).thenReturn(originalCategoryId);
         when(updated.getId()).thenReturn(updatedCategoryId);
         when(original.getSrcPriceCts()).thenReturn(1000);

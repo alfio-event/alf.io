@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.manager.plugin.PluginManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
@@ -55,10 +54,9 @@ public class EventManagerCategoriesTest {
         ticketCategoryRepository = mock(TicketCategoryRepository.class);
         TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository = mock(TicketCategoryDescriptionRepository.class);
         EventRepository eventRepository = mock(EventRepository.class);
-        PluginManager pluginManager = mock(PluginManager.class);
         event = mock(Event.class);
         when(event.getId()).thenReturn(eventId);
-        eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, pluginManager, null, null, null, null, null, null, null, null, null);
+        eventManager = new EventManager(null, eventRepository, null, ticketCategoryRepository, ticketCategoryDescriptionRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         when(eventRepository.countExistingTickets(0)).thenReturn(availableSeats);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
     }

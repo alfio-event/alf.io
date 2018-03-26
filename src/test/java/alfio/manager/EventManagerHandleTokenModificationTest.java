@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.manager.plugin.PluginManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
 import alfio.repository.SpecialPriceRepository;
@@ -54,12 +53,11 @@ class EventManagerHandleTokenModificationTest {
         updated = mock(TicketCategory.class);
         jdbc = mock(NamedParameterJdbcTemplate.class);
         specialPriceRepository = mock(SpecialPriceRepository.class);
-        PluginManager pluginManager = mock(PluginManager.class);
         Event event = mock(Event.class);
         TicketRepository ticketRepository = mock(TicketRepository.class);
         when(event.getId()).thenReturn(eventId);
         eventManager = new EventManager(null, null, null, null,
-            null, ticketRepository, specialPriceRepository, null, jdbc, null, pluginManager, null, null, null, null, null, null, null, null, null);
+            null, ticketRepository, specialPriceRepository, null, jdbc, null, null, null, null, null, null, null, null, null, null);
         when(original.getId()).thenReturn(20);
         when(updated.getId()).thenReturn(30);
         when(original.getSrcPriceCts()).thenReturn(1000);

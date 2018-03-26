@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.manager.plugin.PluginManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
@@ -58,7 +57,6 @@ public class EventManagerUnbindTicketsTest {
     private TicketCategory ticketCategory;
     private Organization organization;
     private OrganizationRepository organizationRepository;
-    private PluginManager pluginManager;
     private EventManager eventManager;
 
     @BeforeEach
@@ -74,7 +72,6 @@ public class EventManagerUnbindTicketsTest {
         ticketCategory = mock(TicketCategory.class);
         organization = mock(Organization.class);
         organizationRepository = mock(OrganizationRepository.class);
-        pluginManager = mock(PluginManager.class);
 
 
         when(specialPriceRepository.findAllByCategoryId(eq(categoryId))).thenReturn(Collections.emptyList());
@@ -88,7 +85,7 @@ public class EventManagerUnbindTicketsTest {
         eventManager = new EventManager(userManager, eventRepository,
             eventDescriptionRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
             ticketRepository, specialPriceRepository, null, null, null,
-            pluginManager, null, null, null,
+            null, null, null,
             null, null, null, organizationRepository,
             null, null);
     }
