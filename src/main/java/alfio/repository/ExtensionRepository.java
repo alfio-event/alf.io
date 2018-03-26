@@ -54,13 +54,10 @@ public interface ExtensionRepository {
     int insertEvent(@Bind("extensionId") int extensionId, @Bind("event") String event);
 
     @Query("select es_id from extension_support where path = :path and name = :name")
-    int getExtensionIdFor(@Bind("path") String name, @Bind("name") String path);
+    int getExtensionIdFor(@Bind("path") String path, @Bind("name") String name);
 
     @Query("select script from extension_support where path = :path and name = :name")
     String getScript(@Bind("path") String path, @Bind("name") String name);
-
-    @Query("select script from extension_support where path = :path and name = :name")
-    Optional<String> getMaybeScript(@Bind("path") String path, @Bind("name") String name);
 
     @Query("select * from extension_support where path = :path and name = :name")
     Optional<ExtensionSupport> getSingle(@Bind("path") String path, @Bind("name") String name);
