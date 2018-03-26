@@ -400,7 +400,6 @@
                     var location = view[0].Result[0].Location;
                     var pos = location.DisplayPosition;
                     var ret = {latitude: pos.Latitude, longitude: pos.Longitude};
-                    console.log(view);
 
                     $q.all([getMapUrl(ret.latitude, ret.longitude), locService.getTimezone(ret.latitude, ret.longitude)]).then(function(success) {
                         ret.mapUrl = success[0];

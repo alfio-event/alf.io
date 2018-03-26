@@ -202,7 +202,6 @@ public class WebSecurityConfig {
                 ADMIN_API + "/events/*/promo-code",
                 ADMIN_API + "/reservation/event/*/reservations/list",
                 ADMIN_API + "/events/*/email/",
-                ADMIN_API + "/events/*/plugin/log",
                 ADMIN_API + "/event/*/waiting-queue/load",
                 ADMIN_API + "/events/*/pending-payments",
                 ADMIN_API + "/events/*/export.csv",
