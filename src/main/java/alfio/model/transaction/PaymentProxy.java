@@ -16,21 +16,29 @@
  */
 package alfio.model.transaction;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 public enum PaymentProxy {
-    STRIPE("stripe.com", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_STRIPE), true, Collections.emptySet()),
-    ON_SITE("on-site payment", true, true, Collections.emptySet(), false, Collections.emptySet()),
-    OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE), false, Collections.emptySet()),
-    NONE("no payment required", false, false, Collections.emptySet(), false, Collections.emptySet()),
-    ADMIN("manual", false, false, Collections.emptySet(), false, Collections.emptySet()),
-    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true, Collections.emptySet()),
-    MOLLIE("mollie", false, false, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true, Collections.singleton("EUR"));//disabled MOLLIE
+
+    // TODO: remove this enum and move all his properties to the corresponding PaymentProvider implementations
+
+    STRIPE("stripe.com", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_STRIPE), true, Collections.emptySet(), PaymentMethod.CREDIT_CARD),
+    ON_SITE("on-site payment", true, true, Collections.emptySet(), false, Collections.emptySet(), PaymentMethod.ON_SITE),
+    OFFLINE("offline payment", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_OFFLINE), false, Collections.emptySet(), PaymentMethod.BANK_TRANSFER),
+    NONE("no payment required", false, false, Collections.emptySet(), false, Collections.emptySet(), PaymentMethod.NONE),
+    ADMIN("manual", false, false, Collections.emptySet(), false, Collections.emptySet(), PaymentMethod.NONE),
+    PAYPAL("paypal", false, true, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_PAYPAL), true, Collections.emptySet(), PaymentMethod.PAYPAL),
+    MOLLIE("mollie", false, false, EnumSet.of(ConfigurationKeys.SettingCategory.PAYMENT_MOLLIE), true, Collections.singleton("EUR"), PaymentMethod.CREDIT_CARD);//disabled MOLLIE
 
     private final String description;
     private final boolean deskPayment;
@@ -38,14 +46,16 @@ public enum PaymentProxy {
     private final Set<ConfigurationKeys.SettingCategory> settingCategories;
     private final boolean supportRefund;
     private final Set<String> onlyForCurrency;
+    private final PaymentMethod paymentMethod;
 
-    PaymentProxy(String description, boolean deskPayment, boolean visible, Set<ConfigurationKeys.SettingCategory> settingCategories, boolean supportRefund, Set<String> onlyForCurrency) {
+    PaymentProxy(String description, boolean deskPayment, boolean visible, Set<ConfigurationKeys.SettingCategory> settingCategories, boolean supportRefund, Set<String> onlyForCurrency, PaymentMethod paymentMethod) {
         this.description = description;
         this.deskPayment = deskPayment;
         this.visible = visible;
         this.settingCategories = settingCategories;
         this.supportRefund = supportRefund;
         this.onlyForCurrency = onlyForCurrency;
+        this.paymentMethod = paymentMethod;
     }
 
     public String getDescription() {
@@ -85,4 +95,7 @@ public enum PaymentProxy {
         return onlyForCurrency;
     }
 
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
 }

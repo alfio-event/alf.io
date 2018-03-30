@@ -16,9 +16,37 @@
  */
 package alfio.manager;
 
+import java.math.BigDecimal;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import alfio.manager.support.DuplicateReferenceException;
-import alfio.model.*;
+import alfio.model.AdditionalServiceItem;
+import alfio.model.Audit;
+import alfio.model.CustomerName;
+import alfio.model.Event;
+import alfio.model.OrderSummary;
+import alfio.model.SpecialPrice;
+import alfio.model.Ticket;
+import alfio.model.TicketCategory;
+import alfio.model.TicketReservation;
 import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.TransactionAndPaymentInfo;
 import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.AdminReservationModification.Attendee;
@@ -31,7 +59,14 @@ import alfio.model.result.Result;
 import alfio.model.result.Result.ResultStatus;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
-import alfio.repository.*;
+import alfio.repository.AdditionalServiceItemRepository;
+import alfio.repository.AuditingRepository;
+import alfio.repository.EventRepository;
+import alfio.repository.SpecialPriceRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketFieldRepository;
+import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
@@ -53,21 +88,16 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 
-import java.math.BigDecimal;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import static alfio.model.Audit.EntityType.TICKET;
 import static alfio.model.Audit.EventType.CANCEL_TICKET;
 import static alfio.model.modification.DateTimeModification.fromZonedDateTime;
 import static alfio.util.EventUtil.generateEmptyTickets;
 import static alfio.util.OptionalWrapper.optionally;
-import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
 @Component
@@ -237,8 +267,12 @@ public class AdminReservationManager {
 
     private Result<Triple<TicketReservation, List<Ticket>, Event>> performConfirmation(String reservationId, Event event, TicketReservation original) {
         try {
-            ticketReservationManager.completeReservation(event.getId(), reservationId, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event),
-                Locale.forLanguageTag(original.getUserLanguage()), original.getBillingAddress(), Optional.empty(), PaymentProxy.ADMIN);
+            PaymentSpecification spec = new PaymentSpecification( reservationId, null, 0,
+                event, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event),
+                original.getBillingAddress(), null, Locale.forLanguageTag(original.getUserLanguage()),
+                false, false, null, null, null, null );
+
+            ticketReservationManager.completeReservation(spec, Optional.empty(), PaymentProxy.ADMIN);
             return loadReservation(reservationId);
         } catch(Exception e) {
             return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);

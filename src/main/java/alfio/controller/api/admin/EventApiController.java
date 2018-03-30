@@ -123,7 +123,7 @@ public class EventApiController {
 
     @RequestMapping(value = "/paymentProxies/{organizationId}", method = GET)
     @ResponseStatus(HttpStatus.OK)
-    public List<PaymentManager.PaymentMethod> getPaymentProxies(@PathVariable("organizationId") int organizationId, Principal principal) {
+    public List<PaymentManager.PaymentMethodDTO> getPaymentProxies( @PathVariable("organizationId") int organizationId, Principal principal) {
         return userManager.findUserOrganizations(principal.getName())
             .stream()
             .filter(o -> o.getId() == organizationId)
