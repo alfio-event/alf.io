@@ -16,40 +16,72 @@
  */
 package alfio.manager.support;
 
-import lombok.EqualsAndHashCode;
-
 import java.util.Optional;
+
+import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode
 public final class PaymentResult {
 
-    private final boolean successful;
-    private final Optional<String> gatewayTransactionId;
-    private final Optional<String> errorCode;
+    public enum Type { SUCCESSFUL, PENDING, REDIRECT, FAILED };
 
-    private PaymentResult(boolean successful, Optional<String> gatewayTransactionId, Optional<String> errorCode) {
-        this.successful = successful;
-        this.gatewayTransactionId = gatewayTransactionId;
-        this.errorCode = errorCode;
+    private final Type type;
+    private Optional<String> gatewayTransactionId = Optional.empty();
+    private Optional<String> errorCode = Optional.empty();
+    private String redirectUrl;
+
+    private PaymentResult(Type type) {
+        this.type = type;
     }
 
     public boolean isSuccessful() {
-        return successful;
+        return type == Type.SUCCESSFUL;
+    }
+
+    public boolean isRedirect() {
+        return type == Type.REDIRECT;
     }
 
     public Optional<String> getErrorCode() {
         return errorCode;
     }
 
+    private PaymentResult setErrorCode( String errorCode ) {
+        this.errorCode = Optional.of(errorCode);
+        return this;
+    }
+
     public Optional<String> getGatewayTransactionId() {
         return gatewayTransactionId;
     }
 
-    public static PaymentResult successful(String gatewayTransactionId) {
-        return new PaymentResult(true, Optional.of(gatewayTransactionId), Optional.empty());
+    private PaymentResult setGatewayTransactionId( String gatewayTransactionId ) {
+        this.gatewayTransactionId = Optional.of(gatewayTransactionId);
+        return this;
     }
 
-    public static PaymentResult unsuccessful(String errorCode) {
-        return new PaymentResult(false, Optional.empty(), Optional.of(errorCode));
+    public String getRedirectUrl() {
+        return redirectUrl;
+    }
+
+    private PaymentResult setRedirectUrl( String redirectUrl ) {
+        this.redirectUrl = redirectUrl;
+        return this;
+    }
+
+    public static PaymentResult successful( String gatewayTransactionId) {
+        return new PaymentResult(Type.SUCCESSFUL).setGatewayTransactionId( gatewayTransactionId );
+    }
+
+    public static PaymentResult redirect(String redirectUrl) {
+        return new PaymentResult(Type.REDIRECT).setRedirectUrl( redirectUrl );
+    }
+
+    public static PaymentResult pending(String gatewayTransactionId) {
+        return new PaymentResult(Type.PENDING).setGatewayTransactionId( gatewayTransactionId );
+    }
+
+    public static PaymentResult failed( String errorCode) {
+        return new PaymentResult(Type.FAILED).setErrorCode( errorCode );
     }
 }

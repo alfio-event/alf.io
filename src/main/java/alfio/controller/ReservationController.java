@@ -16,16 +16,44 @@
  */
 package alfio.controller;
 
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.stream.Collectors;
+
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
-import alfio.manager.*;
+import alfio.manager.BankTransactionManager;
+import alfio.manager.EuVatChecker;
+import alfio.manager.EventManager;
+import alfio.manager.MollieCreditCardManager;
+import alfio.manager.NotificationManager;
+import alfio.manager.PaymentManager;
+import alfio.manager.PaymentSpecification;
+import alfio.manager.RecaptchaService;
+import alfio.manager.StripeCreditCardManager;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.*;
+import alfio.model.AdditionalService;
+import alfio.model.AdditionalServiceItem;
+import alfio.model.AdditionalServiceText;
+import alfio.model.CustomerName;
+import alfio.model.Event;
+import alfio.model.OrderSummary;
+import alfio.model.Ticket;
+import alfio.model.TicketCategory;
+import alfio.model.TicketReservation;
 import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.TotalPrice;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -38,6 +66,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import javax.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
@@ -55,14 +84,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import static java.util.stream.Collectors.toList;
 
 import static alfio.model.system.Configuration.getSystemConfiguration;
-import static alfio.model.system.ConfigurationKeys.*;
-import static java.util.stream.Collectors.toList;
+import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
+import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
 
 @Controller
 @Log4j2
@@ -83,7 +111,7 @@ public class ReservationController {
     private final PaymentManager paymentManager;
     private final TicketRepository ticketRepository;
     private final EuVatChecker vatChecker;
-    private final MollieManager mollieManager;
+    private final MollieCreditCardManager mollieCreditCardManager;
     private final RecaptchaService recaptchaService;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
@@ -133,20 +161,17 @@ public class ReservationController {
                              .addAttribute("showPostpone", ticketsInReservation.size() > 1);
                     }
 
-                    try {
-                        model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
-                    } catch (TicketReservationManager.OfflinePaymentException e) {
-                        if(event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
-                            log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName() , e);
-                        }
-                        model.addAttribute("delayForOfflinePayment", 0);
+                    OptionalInt delay = BankTransactionManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+                    model.addAttribute("delayForOfflinePayment", Math.min(1, delay.orElse( 0 )));
+                    if(!delay.isPresent() && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
+                        log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());
                     }
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
                     List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
                         .stream()
                         .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
-                        .map(PaymentManager.PaymentMethod::getPaymentProxy)
+                        .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)
                         .collect(toList());
 
                     if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
@@ -433,49 +458,23 @@ public class ReservationController {
 
         CustomerName customerName = new CustomerName(paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), event);
 
-        //handle paypal redirect!
-        if(paymentForm.getPaymentMethod() == PaymentProxy.PAYPAL && !paymentForm.hasPaypalTokens()) {
-            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
-            try {
-                String checkoutUrl = paymentManager.createPayPalCheckoutRequest(event, reservationId, orderSummary, customerName,
-                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment(),
-                    paymentForm.isInvoiceRequested());
-                assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
-                return "redirect:" + checkoutUrl;
-            } catch (Exception e) {
-                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
-                SessionUtil.addToFlash(bindingResult, redirectAttributes);
-                return redirectReservation(ticketReservation, eventName, reservationId);
-            }
-        }
+        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
 
-        //handle mollie redirect
-        if(paymentForm.getPaymentMethod() == PaymentProxy.MOLLIE) {
-            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
-            try {
-                String checkoutUrl = mollieManager.createCheckoutRequest(event, reservationId, orderSummary, customerName,
-                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale,
-                    paymentForm.isInvoiceRequested(),
-                    paymentForm.getVatCountryCode(),
-                    paymentForm.getVatNr(),
-                    ticketReservation.get().getVatStatus());
-                assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
-                return "redirect:" + checkoutUrl;
-            } catch (Exception e) {
-                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
-                SessionUtil.addToFlash(bindingResult, redirectAttributes);
-                return redirectReservation(ticketReservation, eventName, reservationId);
-            }
-        }
-        //
+        PaymentSpecification spec = new PaymentSpecification( reservationId, paymentForm.getToken(), reservationCost.getPriceWithVAT(),
+            event, paymentForm.getEmail(), customerName, paymentForm.getBillingAddress(), paymentForm.getPaypalPayerID(), locale,
+            paymentForm.isInvoiceRequested(), paymentForm.isPostponeAssignment(), orderSummary, paymentForm.getVatCountryCode(), paymentForm.getVatNr(), ticketReservation.get().getVatStatus() );
 
-        final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
-            customerName, locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
-                Optional.ofNullable(paymentForm.getPaymentMethod()), paymentForm.isInvoiceRequested(), paymentForm.getVatCountryCode(), paymentForm.getVatNr(), ticketReservation.get().getVatStatus());
+        final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
+                Optional.ofNullable(paymentForm.getPaymentMethod()));
+
+        if (status.isRedirect()) {
+            assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
+            return "redirect:" + status.getRedirectUrl();
+        }
 
         if(!status.isSuccessful()) {
             String errorMessageCode = status.getErrorCode().get();
-            MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeManager.STRIPE_UNEXPECTED});
+            MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
             bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
             return redirectReservation(ticketReservation, eventName, reservationId);
