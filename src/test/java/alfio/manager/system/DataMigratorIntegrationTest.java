@@ -30,7 +30,6 @@ import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.EventMigration;
-import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
@@ -283,7 +282,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
 	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
 	        Date expiration = DateUtils.addDays(new Date(), 1);
 	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-	        ticketReservationManager.confirm("TOKEN", null, event, reservationId, "email@email.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, null, null, new TotalPrice(1000, 10, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE), false, null, null, null, false, false);
+//	        ticketReservationManager.performPayment("TOKEN", null, event, reservationId, "email@email.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, null, null, new TotalPrice(1000, 10, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE), false, null, null, null, false, false);
 	        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
 	        UpdateTicketOwnerForm first = new UpdateTicketOwnerForm();
 	        first.setEmail("email@email.ch");

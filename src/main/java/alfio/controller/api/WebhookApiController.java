@@ -16,7 +16,7 @@
  */
 package alfio.controller.api;
 
-import alfio.manager.StripeManager;
+import alfio.manager.StripeCreditCardManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.pdfbox.io.IOUtils;
@@ -37,18 +37,18 @@ public class WebhookApiController {
 
     //private final MollieManager mollieManager;
     //private final TicketReservationManager ticketReservationManager;
-    private final StripeManager stripeManager;
+    private final StripeCreditCardManager stripeCreditCardManager;
 
     @RequestMapping(value = "/mollie/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
     public void handleMollie(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) throws Exception {
         // mollieManager.handleWebhook(eventName, reservationId, null);
-        // call ticketReservationManager.confirm... if handlewebhoook return status paid
+        // call ticketReservationManager.performPayment... if handlewebhoook return status paid
     }
 
     @RequestMapping(value = "/stripe/notification", method = RequestMethod.POST)
     public ResponseEntity<Boolean> handleStripeMessage(@RequestHeader(value = "Stripe-Signature", required = false) String stripeSignature, HttpServletRequest request) {
         return readRequest(request)
-            .flatMap(b -> stripeManager.processWebhookEvent(b, stripeSignature))
+            .flatMap(b -> stripeCreditCardManager.processWebhookEvent(b, stripeSignature))
             .filter(b -> b)
             .map(ResponseEntity::ok)
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.BAD_REQUEST));

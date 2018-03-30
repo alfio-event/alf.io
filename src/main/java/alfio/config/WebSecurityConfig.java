@@ -338,7 +338,7 @@ public class WebSecurityConfig {
                 .antMatchers(HttpMethod.GET, ownershipRequired).hasAnyRole(ADMIN, OWNER)
                 .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
                 .antMatchers(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new", ADMIN_API + "/reservation/event/*/*").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                .antMatchers(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify", ADMIN_API + "/reservation/event/*/*/confirm").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify", ADMIN_API + "/reservation/event/*/*/performPayment").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
                 .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)

@@ -135,10 +135,6 @@ public class TicketReservationManager {
 
     }
 
-    public static class OfflinePaymentException extends RuntimeException {
-        OfflinePaymentException(String message){ super(message); }
-    }
-
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
                                     TicketRepository ticketRepository,
@@ -342,78 +338,55 @@ public class TicketReservationManager {
         return specialPrice;
     }
 
-    public PaymentResult confirm(String gatewayToken, String payerId, Event event, String reservationId,
-                                 String email, CustomerName customerName, Locale userLanguage, String billingAddress, String customerReference,
-                                 TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method,
-                                 boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus,
-                                 boolean tcAccepted, boolean privacyPolicyAccepted) {
+    // FIXME String customerReference, boolean privacyPolicyAccepted
+    public PaymentResult performPayment( PaymentSpecification spec, TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
 
-        if(!acquireGroupMembers(reservationId, event)) {
+        if(!acquireGroupMembers(spec.getReservationId(), spec.getEvent())) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);
             return PaymentResult.unsuccessful("error.STEP2_WHITELIST");
         }
 
-        if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, customerName, userLanguage, billingAddress, customerReference)) {
-            return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
+        if(!initPaymentProcess(reservationCost, paymentProxy, spec)) {
+            return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
         try {
             PaymentResult paymentResult;
-            ticketReservationRepository.lockReservationForUpdate(reservationId);
+            ticketReservationRepository.lockReservationForUpdate(spec.getReservationId());
             if(reservationCost.getPriceWithVAT() > 0) {
-                if(invoiceRequested && configurationManager.hasAllConfigurationsForInvoice(event)) {
-                    int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(event.getOrganizationId());
-                    invoiceSequencesRepository.incrementSequenceFor(event.getOrganizationId());
-                    String pattern = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
-                    ticketReservationRepository.setInvoiceNumber(reservationId, String.format(pattern, invoiceSequence));
+                if(spec.isInvoiceRequested() && configurationManager.hasAllConfigurationsForInvoice(spec.getEvent())) {
+                    int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getEvent().getOrganizationId());
+                    invoiceSequencesRepository.incrementSequenceFor(spec.getEvent().getOrganizationId());
+                    String pattern = configurationManager.getStringConfigValue(Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
+                    ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), String.format(pattern, invoiceSequence));
                 }
-                ticketReservationRepository.updateBillingData(vatStatus, vatNr, vatCountryCode, invoiceRequested, reservationId);
+                ticketReservationRepository.updateBillingData(spec.getVatStatus(), spec.getVatNr(), spec.getVatCountryCode(), spec.isInvoiceRequested(), spec.getReservationId());
 
                 //
-                extensionManager.handleInvoiceGeneration(event, reservationId,
-                    email, customerName, userLanguage, billingAddress, customerReference,
-                    reservationCost, invoiceRequested, vatCountryCode, vatNr, vatStatus).ifPresent(invoiceGeneration -> {
+                extensionManager.handleInvoiceGeneration(spec, reservationCost)
+                    .ifPresent(invoiceGeneration -> {
                     if (invoiceGeneration.getInvoiceNumber() != null) {
-                        ticketReservationRepository.setInvoiceNumber(reservationId, invoiceGeneration.getInvoiceNumber());
+                        ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceGeneration.getInvoiceNumber());
                     }
                 });
 
-                //
-                switch(paymentProxy) {
-                    case STRIPE:
-                        paymentResult = paymentManager.processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
-                        if(!paymentResult.isSuccessful()) {
-                            reTransitionToPending(reservationId);
-                            return paymentResult;
-                        }
-                        break;
-                    case PAYPAL:
-                        paymentResult = paymentManager.processPayPalPayment(reservationId, gatewayToken, payerId, reservationCost.getPriceWithVAT(), event);
-                        if(!paymentResult.isSuccessful()) {
-                            reTransitionToPending(reservationId);
-                            return paymentResult;
-                        }
-                        break;
-                    case OFFLINE:
-                        transitionToOfflinePayment(event, reservationId, email, customerName, billingAddress, customerReference);
-                        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
-                        break;
-                    case ON_SITE:
-                        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Payment proxy "+paymentProxy+ " not recognized");
-                }
+                paymentResult = paymentManager.lookupProviderByMethod( paymentProxy.getPaymentMethod(), Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId()) )
+                    .map( paymentProvider -> paymentProvider.doPayment(spec) )
+                    .orElseGet( () -> PaymentResult.failed("error.STEP2_STRIPE_unexpected") );
+
             } else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
-            completeReservation(event, reservationId, email, customerName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy, customerReference, tcAccepted, privacyPolicyAccepted);
+            if (paymentResult.isSuccessful()) {
+                //FIXME customerReference
+                completeReservation( spec, specialPriceSessionId, paymentProxy );
+            }
             return paymentResult;
         } catch(Exception ex) {
             //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
             //thus it is safer to not rollback the reservation status
             log.error("unexpected error during payment confirmation", ex);
-            return PaymentResult.unsuccessful("error.STEP2_STRIPE_unexpected");
+            return PaymentResult.failed("error.STEP2_STRIPE_unexpected");
         }
 
     }
@@ -437,15 +410,14 @@ public class TicketReservationManager {
         return PaymentProxy.STRIPE;
     }
 
-    private boolean initPaymentProcess(TotalPrice reservationCost, PaymentProxy paymentProxy,
-                                       String reservationId, String email, CustomerName customerName,
-                                       Locale userLanguage, String billingAddress, String customerReference) {
+    //FIXME , String customerReference
+    private boolean initPaymentProcess(TotalPrice reservationCost, PaymentProxy paymentProxy, PaymentSpecification spec) {
         if(reservationCost.getPriceWithVAT() > 0 && paymentProxy == PaymentProxy.STRIPE) {
             try {
-                transitionToInPayment(reservationId, email, customerName, userLanguage, billingAddress, customerReference);
+                transitionToInPayment(spec);
             } catch (Exception e) {
                 //unable to do the transition. Exiting.
-                log.debug(String.format("unable to flag the reservation %s as IN_PAYMENT", reservationId), e);
+                log.debug(String.format("unable to flag the reservation %s as IN_PAYMENT", spec.getReservationId()), e);
                 return false;
             }
         }
@@ -580,72 +552,31 @@ public class TicketReservationManager {
         return prepareModelForReservationEmail(event, reservation, vat, summary);
     }
 
-    private void transitionToInPayment(String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress, String customerReference) {
+    //FIXME String customerReference
+    private void transitionToInPayment(PaymentSpecification spec) {
         requiresNewTransactionTemplate.execute(status -> {
-            int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email,
-                customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage.getLanguage(),
-                billingAddress, null, PaymentProxy.STRIPE.toString(), customerReference);
+            int updatedReservation = ticketReservationRepository.updateTicketReservation(spec.getReservationId(), IN_PAYMENT.toString(), spec.getEmail(),
+                spec.getCustomerName().getFullName(), spec.getCustomerName().getFirstName(), spec.getCustomerName().getLastName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), null, PaymentProxy.STRIPE.toString());
             Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
             return null;
         });
     }
 
-    private void transitionToOfflinePayment(Event event, String reservationId, String email, CustomerName customerName, String billingAddress, String customerReference) {
-        ZonedDateTime deadline = getOfflinePaymentDeadline(event, configurationManager);
-        int updatedReservation = ticketReservationRepository.postponePayment(reservationId, Date.from(deadline.toInstant()), email,
-            customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), billingAddress, customerReference);
-        Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
-    }
-
-    public static ZonedDateTime getOfflinePaymentDeadline(Event event, ConfigurationManager configurationManager) {
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        return getOfflinePaymentDeadline(now, event, configurationManager);
-    }
-
-    static ZonedDateTime getOfflinePaymentDeadline(ZonedDateTime now, Event event, ConfigurationManager configurationManager) {
-        int waitingPeriod = getOfflinePaymentWaitingPeriod(event, configurationManager, now);
-        if(waitingPeriod == 0) {
-            log.warn("accepting offline payments the same day is a very bad practice and should be avoided. Please set cash payment as payment method next time");
-            //if today is the event start date, then we add a couple of hours.
-            //TODO Maybe should we avoid this wrong behavior upfront, in the admin area?
-            return now.plusHours(2);
-        }
-        return now.plusDays(waitingPeriod).with(WorkingDaysAdjusters.workingDaysAtNoon()).truncatedTo(ChronoUnit.HOURS);
-    }
-
-    public static int getOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager) {
-        return getOfflinePaymentWaitingPeriod(event, configurationManager, ZonedDateTime.now(event.getZoneId()));
-    }
-
-    public static int getOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager, ZonedDateTime now) {
-        ZonedDateTime eventBegin = event.getBegin();
-        int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), eventBegin.toLocalDate());
-        if (daysToBegin < 0) {
-            throw new OfflinePaymentException("Cannot confirm an offline reservation after event start");
-        }
-        int waitingPeriod = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_PAYMENT_DAYS), 5);
-        return Math.min(daysToBegin, waitingPeriod);
-    }
-
     public static boolean hasValidOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager) {
-        try {
-            return getOfflinePaymentWaitingPeriod(event, configurationManager) >= 0;
-        } catch (OfflinePaymentException e) {
-            return false;
-        }
+        OptionalInt result = BankTransactionManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+        return result.isPresent() && result.getAsInt() >= 0;
     }
-
 
     /**
      * ValidPaymentMethod should be configured in organisation and event. And if even already started then event should not have PaymentProxy.OFFLINE as only payment method
      *
-     * @param paymentMethod
+     * @param paymentMethodDTO
      * @param event
      * @param configurationManager
      * @return
      */
-    public static boolean isValidPaymentMethod(PaymentManager.PaymentMethod paymentMethod, Event event, ConfigurationManager configurationManager) {
-        return paymentMethod.isActive() && event.getAllowedPaymentProxies().contains(paymentMethod.getPaymentProxy()) && (!paymentMethod.getPaymentProxy().equals(PaymentProxy.OFFLINE) || hasValidOfflinePaymentWaitingPeriod(event, configurationManager));
+    public static boolean isValidPaymentMethod( PaymentManager.PaymentMethodDTO paymentMethodDTO, Event event, ConfigurationManager configurationManager) {
+        return paymentMethodDTO.isActive() && event.getAllowedPaymentProxies().contains( paymentMethodDTO.getPaymentProxy()) && (!paymentMethodDTO.getPaymentProxy().equals(PaymentProxy.OFFLINE) || hasValidOfflinePaymentWaitingPeriod(event, configurationManager));
     }
 
     private void reTransitionToPending(String reservationId) {
@@ -675,28 +606,24 @@ public class TicketReservationManager {
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
      */
-    void completeReservation(Event event, String reservationId, String email, CustomerName customerName,
-                                     Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId,
-                                     PaymentProxy paymentProxy, String customerReference, boolean tcAccepted, boolean privacyAccepted) {
-        int eventId = event.getId();
+    //FIXME String customerReference
+    void completeReservation(PaymentSpecification spec, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
         if(paymentProxy != PaymentProxy.OFFLINE) {
             TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
-            acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, email, customerName, userLanguage.getLanguage(), billingAddress, customerReference, eventId);
-            final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-            extensionManager.handleReservationConfirmation(reservation, eventId);
+            acquireItems(ticketStatus, asStatus, paymentProxy, spec.getReservationId(), spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getEvent().getId());
+            final TicketReservation reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
+            extensionManager.handleReservationConfirmation(reservation, spec.getEvent().getId());
             //cleanup unused special price codes...
             specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
         }
 
-        Date timestamp = new Date();
-        auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, timestamp, Audit.EntityType.RESERVATION, reservationId);
-
-        if(tcAccepted) {
+        auditingRepository.insert(spec.getReservationId(), null, spec.getEvent().getId(), Audit.EventType.RESERVATION_COMPLETE, new Date(), Audit.EntityType.RESERVATION, spec.getReservationId());
+        if(spec.isTcAccepted()) {
             auditingRepository.insert(reservationId, null, eventId, Audit.EventType.TERMS_CONDITION_ACCEPTED, timestamp, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", event.getTermsAndConditionsUrl())));
         }
 
-        if(StringUtils.isNotBlank(event.getPrivacyPolicyLinkOrNull()) && privacyAccepted) {
+        if(StringUtils.isNotBlank(spec.getEvent().getPrivacyPolicyLinkOrNull()) && spec.isPrivacyAccepted()) {
             auditingRepository.insert(reservationId, null, eventId, Audit.EventType.PRIVACY_POLICY_ACCEPTED, timestamp, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", event.getPrivacyPolicyUrl())));
         }
     }

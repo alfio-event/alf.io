@@ -137,23 +137,25 @@ public class ExtensionManager {
         syncCall(extensionEvent, event, organizationId, payload, Boolean.class);
     }
 
-    public Optional<InvoiceGeneration> handleInvoiceGeneration(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage,
-                                                     String billingAddress, String customerReference, TotalPrice reservationCost, boolean invoiceRequested,
-                                                     String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
+    // FIXME old code
+    // public Optional<InvoiceGeneration> handleInvoiceGeneration(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage,
+    //                                                     String billingAddress, TotalPrice reservationCost, boolean invoiceRequested,
+    //                                                     String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
+    public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("reservationId", reservationId);
-        payload.put("email", email);
-        payload.put("customerName", customerName);
-        payload.put("userLanguage", userLanguage);
-        payload.put("billingAddress", billingAddress);
+        payload.put("reservationId", spec.getReservationId());
+        payload.put("email", spec.getEmail());
+        payload.put("customerName", spec.getCustomerName());
+        payload.put("userLanguage", spec.getLocale().getLanguage());
+        payload.put("billingAddress", spec.getBillingAddress());
         payload.put("customerReference", customerReference);
         payload.put("reservationCost", reservationCost);
-        payload.put("invoiceRequested", invoiceRequested);
-        payload.put("vatCountryCode", vatCountryCode);
-        payload.put("vatNr", vatNr);
-        payload.put("vatStatus", vatStatus);
+        payload.put("invoiceRequested", spec.isInvoiceRequested());
+        payload.put("vatCountryCode", spec.getVatCountryCode());
+        payload.put("vatNr", spec.getVatNr());
+        payload.put("vatStatus", spec.getVatStatus());
 
-        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, event, event.getOrganizationId(), payload, InvoiceGeneration.class));
+        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getEvent(), spec.getEvent().getOrganizationId(), payload, InvoiceGeneration.class));
     }
 
     public boolean handleTaxIdValidation(int eventId, String taxIdNumber, String countryCode) {
