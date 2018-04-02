@@ -257,7 +257,7 @@ public class AdminReservationManagerIntegrationTest {
         ticketCategoryRepository.findByEventId(triple.getRight().getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.TAKEN)));
         assertFalse(ticketRepository.findAllReservationsConfirmedButNotAssigned(triple.getRight().getId()).contains(triple.getLeft().getId()));
     }
-    
+    //
     @Test
     public void testUpdateReservation() throws Exception {
         List<TicketCategoryModification> categories = Collections.singletonList(
@@ -276,7 +276,7 @@ public class AdminReservationManagerIntegrationTest {
         Result<Boolean> result = adminReservationManager.updateReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), modification, testResult.getMiddle());
         assertTrue(result.isSuccess()); 
     }
-    
+    //
     @Test
     public void testNotify() throws Exception {
         List<TicketCategoryModification> categories = Collections.singletonList(
