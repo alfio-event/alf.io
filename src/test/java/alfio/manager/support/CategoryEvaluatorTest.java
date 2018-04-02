@@ -49,7 +49,11 @@ public class CategoryEvaluatorTest {
         when(ticket.getStatus()).thenReturn(Ticket.TicketStatus.ACQUIRED);
         when(tcr.getByIdAndActive(eq(categoryId), eq(eventId))).thenReturn(category);
     }
-
+    
+    @Test
+    public void constructorTest() {
+    	CategoryEvaluator categoryEvaluator = new CategoryEvaluator();
+    }
     @Test
     public void allowTicketCancellationIfItBelongsToAPublicCategory() {
         when(category.isAccessRestricted()).thenReturn(false);
