@@ -19,14 +19,16 @@ package alfio.util;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.Month;
 
 import static com.insightfullogic.lambdabehave.Suite.describe;
 
+
 @RunWith(JunitSuiteRunner.class)
-public class WorkingDaysAdjustersTest {{
+public class WorkingDaysAdjustersTest{{
     describe("Adjust to next week day", it -> {
 
         it.should("adjust date to next monday, same hour", expect -> {
@@ -88,6 +90,73 @@ public class WorkingDaysAdjustersTest {{
             expect.that(adjusted.getHour()).is(19);
             expect.that(adjusted.getMinute()).is(59);
         });
+        it.should("temp test1", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2018, Month.APRIL, 2, 22, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test2", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2018, Month.APRIL, 2, 7, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test3", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2018, Month.APRIL, 2, 12, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test4", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2014, Month.APRIL, 18, 8, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test5", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.APRIL, 18, 14, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test6", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.APRIL, 18, 19, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test7", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.APRIL, 18, 22, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test8", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.APRIL, 19, 8, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test9", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.APRIL, 19, 14, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test10", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.APRIL, 19, 19, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+
+        it.should("temp test11", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.APRIL, 19, 22, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test12", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.APRIL, 18, 7, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+        it.should("temp test13", expect -> {
+            LocalDateTime localDateTime = LocalDateTime.of(2015, Month.APRIL, 19, 7, 30);
+            LocalDateTime adjusted = localDateTime.with(WorkingDaysAdjusters.defaultWorkingDays());
+            expect.that(adjusted).isNotNull();
+        });
+
 
     });
 }}

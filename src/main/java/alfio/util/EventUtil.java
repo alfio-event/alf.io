@@ -45,7 +45,7 @@ import static java.time.temporal.ChronoField.*;
 
 @UtilityClass
 @Log4j2
-public class EventUtil {
+public class EventUtil{
 
     private static final DateTimeFormatter JSON_TIME_FORMATTER = new DateTimeFormatterBuilder()
         .appendValue(HOUR_OF_DAY, 2)
