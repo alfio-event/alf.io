@@ -631,16 +631,28 @@
             }
         }, true);
 
-        $scope.calcDynamicTickets = function(eventSeats, categories) {
+        var calcDynamicTickets = function(eventSeats, categories) {
             var value = 0;
             if(eventSeats) {
                 value = eventSeats - _.chain(categories).filter('bounded').reduce(function(sum, c) {
-                        return sum + (c.maxTickets || 0);
-                    }, 0).value();
-
+                    return sum + (c.maxTickets || 0);
+                }, 0).value();
             }
             return value;
-        }
+        };
+
+        $scope.calcDynamicTickets = calcDynamicTickets;
+
+        $scope.allDynamicCategories = function(eventSeats, categories) {
+            var dynamic = _.filter(categories, function(cat) { return !cat.bounded; });
+            if(dynamic.length > 1 && dynamic.length === categories.length) {
+                return "All Categories";
+            } else if(dynamic.length > 1 && (calcDynamicTickets(eventSeats, categories) / eventSeats * 100.0) < 25) {
+                return "Dynamic";
+            }
+            return _.map(dynamic, 'name').join(', ');
+        };
+
 
     });
 
