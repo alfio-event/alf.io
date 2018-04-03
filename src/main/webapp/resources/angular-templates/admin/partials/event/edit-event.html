@@ -27,8 +27,8 @@
                 <div class="col-sm-12">
                     Allocated Seats:
                     <uib-progress max="event.availableSeats || 0">
-                        <uib-bar data-ng-repeat="category in event.ticketCategories | boundedCategories | orderBy: ['inception', 'expiration']" value="calcBarValue(category)" type="{{evaluateBarType($index)}}">{{category.name}} ({{category.maxTickets}})</uib-bar>
-                        <uib-bar data-ng-if="(event.ticketCategories | boundedCategories:true).length > 0" value="calcDynamicTickets(event.availableSeats, event.ticketCategories)">Dynamic allocation ({{calcDynamicTickets(event.availableSeats, event.ticketCategories)}})</uib-bar>
+                        <uib-bar data-ng-repeat="category in event.ticketCategories | boundedCategories | orderBy: ['inception', 'expiration']" value="calcBarValue(category)" type="{{evaluateBarType($index)}}"><strong>{{category.name}}</strong> ({{category.maxTickets}})</uib-bar>
+                        <uib-bar data-ng-if="(event.ticketCategories | boundedCategories:true).length > 0" value="calcDynamicTickets(event.availableSeats, event.ticketCategories)"><strong>{{allDynamicCategories(event.availableSeats, event.ticketCategories)}}</strong> ({{calcDynamicTickets(event.availableSeats, event.ticketCategories)}})</uib-bar>
                     </uib-progress>
                 </div>
             </div>
