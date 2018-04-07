@@ -25,13 +25,11 @@ import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.repository.EventRepository;
-import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -39,7 +37,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequestMapping("/admin/api/reservation")
@@ -122,7 +119,7 @@ public class AdminReservationApiController {
             .map(Map.Entry::getKey)
             .collect(Collectors.toList());
 
-        adminReservationManager.removeTickets(eventName, reservationId, toRemove.getTicketIds(), toRefund, Optional.ofNullable(toRemove.getNotify()).orElse(false), principal.getName());
+        adminReservationManager.removeTickets(eventName, reservationId, toRemove.getTicketIds(), toRefund, toRemove.getNotify(), toRemove.getForceInvoiceUpdate(), principal.getName());
         return Result.success(true);
     }
 
@@ -166,6 +163,15 @@ public class AdminReservationApiController {
         private final List<Integer> ticketIds;
         private Map<Integer, Boolean> refundTo;
         private final Boolean notify;
+        private final Boolean forceInvoiceUpdate;
+
+        public Boolean getNotify() {
+            return notify != null ? notify : false;
+        }
+
+        public Boolean getForceInvoiceUpdate() {
+            return forceInvoiceUpdate != null ? forceInvoiceUpdate : false;
+        }
     }
 
     @RequiredArgsConstructor
