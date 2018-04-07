@@ -31,6 +31,7 @@ public class OrderSummary {
     private final boolean cashPayment;
     private final String vatPercentage;
     private final PriceContainer.VatStatus vatStatus;
+    private final String refundedAmount;
 
     /* lol jmustache */
     public boolean getFree() {
@@ -63,5 +64,9 @@ public class OrderSummary {
 
     public boolean isVatExempt() {
         return PriceContainer.VatStatus.isVatExempt(vatStatus);
+    }
+
+    public String getRefundedAmount() {
+        return refundedAmount;
     }
 }

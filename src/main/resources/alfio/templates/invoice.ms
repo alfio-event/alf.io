@@ -177,6 +177,9 @@
             <p class="strong">{{#i18n}}invoice.order-information{{/i18n}}</p>
             <p>{{ticketReservation.id}}</p>
             <p>{{#i18n}}invoice.buyer{{/i18n}} {{ticketReservation.fullName}} &lt;{{ticketReservation.email}}&gt;</p>
+            {{#hasRefund}}
+            <p class="strong">{{#i18n}}invoice.refund [{{event.currency}} {{orderSummary.refundedAmount}}]{{/i18n}}</p>
+            {{/hasRefund}}
         </div>
 
         {{#isOfflinePayment}}
