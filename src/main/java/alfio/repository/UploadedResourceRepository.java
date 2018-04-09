@@ -24,10 +24,10 @@ import java.util.List;
 @QueryRepository
 public interface UploadedResourceRepository {
 
-    String hasResouceGlobal = "select exists(select name from resource_global where name = :name) as res";
-    @Query(hasResouceGlobal)
+    String hasResourceGlobal = "select exists(select name from resource_global where name = :name) as res";
+    @Query(hasResourceGlobal)
     @QueriesOverride({
-        @QueryOverride(value = hasResouceGlobal + " from (values(0))", db = "HSQLDB")
+        @QueryOverride(value = hasResourceGlobal + " from (values(0))", db = "HSQLDB")
     })
     boolean hasResource(@Bind("name") String name);
 
