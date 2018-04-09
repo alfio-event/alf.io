@@ -104,11 +104,10 @@ public class ResourceController {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleSyntaxError(Exception ex) {
-        Optional<String> cause = Optional.ofNullable(ex.getCause()).filter(MustacheException.class::isInstance).map(Throwable::getMessage);
-        if(cause.isPresent()) {
-            return cause.get();
-        }
-        return "Something went wrong. Please check the syntax and retry";
+        Optional<String> cause = Optional.ofNullable(ex.getCause())
+            .filter(MustacheException.class::isInstance)
+            .map(Throwable::getMessage);
+        return cause.orElse("Something went wrong. Please check the syntax and retry");
     }
 
     @RequestMapping(value = "/overridable-template/", method = RequestMethod.GET)
