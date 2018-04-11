@@ -465,7 +465,7 @@ public class TicketReservationManagerTest {
     public void returnTheConfiguredWaitingTime() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
-        assertEquals(2, BankTransactionManager.getOfflinePaymentWaitingPeriod(event, configurationManager));
+        assertEquals(2, BankTransactionManager.getOfflinePaymentWaitingPeriod(event, configurationManager).getAsInt());
     }
 
     @Test
@@ -480,7 +480,7 @@ public class TicketReservationManagerTest {
     public void returnConfiguredWaitingTimeConsideringEventStart() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
-        assertEquals(1, BankTransactionManager.getOfflinePaymentWaitingPeriod(event, configurationManager));
+        assertEquals(1, BankTransactionManager.getOfflinePaymentWaitingPeriod(event, configurationManager).getAsInt());
     }
 
     @Test

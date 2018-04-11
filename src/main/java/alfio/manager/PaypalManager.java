@@ -99,7 +99,6 @@ public class PaypalManager implements PaymentProvider {
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketRepository ticketRepository;
     private final TransactionRepository transactionRepository;
-    private final TicketReservationManager ticketReservationManager;
 
     private APIContext getApiContext(Event event) {
         int orgId = event.getOrganizationId();
