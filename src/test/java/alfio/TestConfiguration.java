@@ -24,7 +24,6 @@ import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
 import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres;
 
@@ -69,7 +68,7 @@ public class TestConfiguration {
 
     @Bean
     @Profile("!travis")
-    public EmbeddedPostgres postgres(Environment environment) throws IOException {
+    public EmbeddedPostgres postgres() throws IOException {
         Path pgsqlPath = Paths.get(".", "alfio-itest");
         Path tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data");
         postgres = new EmbeddedPostgres(PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString());
