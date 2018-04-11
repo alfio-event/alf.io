@@ -51,6 +51,7 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.BaseIntegrationTest;
 import alfio.util.EventUtil;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
@@ -102,7 +103,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class ReservationFlowIntegrationTest {
+public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
     @Configuration

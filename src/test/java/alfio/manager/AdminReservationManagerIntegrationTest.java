@@ -30,6 +30,7 @@ import alfio.model.modification.AdminReservationModification.TicketsInfo;
 import alfio.model.result.Result;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.BaseIntegrationTest;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -56,7 +57,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class AdminReservationManagerIntegrationTest {
+public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private AdminReservationManager adminReservationManager;

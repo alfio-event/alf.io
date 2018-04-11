@@ -41,6 +41,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.BaseIntegrationTest;
 import alfio.util.TemplateManager;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -64,7 +65,7 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
-public class DataMigratorIntegrationTest {
+public class DataMigratorIntegrationTest extends BaseIntegrationTest {
 
     private static final int AVAILABLE_SEATS = 20;
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");

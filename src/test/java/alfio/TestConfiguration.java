@@ -24,6 +24,7 @@ import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ByteArrayResource;
 import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres;
 
@@ -43,6 +44,8 @@ import static ru.yandex.qatools.embed.postgresql.distribution.Version.Main.PRODU
 
 @Configuration
 public class TestConfiguration {
+
+    private EmbeddedPostgres postgres;
 
     @Bean
     @Profile("!travis")
@@ -66,10 +69,10 @@ public class TestConfiguration {
 
     @Bean
     @Profile("!travis")
-    public EmbeddedPostgres postgres() throws IOException {
+    public EmbeddedPostgres postgres(Environment environment) throws IOException {
         Path pgsqlPath = Paths.get(".", "alfio-itest");
         Path tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data");
-        EmbeddedPostgres postgres = new EmbeddedPostgres(PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString());
+        postgres = new EmbeddedPostgres(PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString());
         postgres.start(EmbeddedPostgres.cachedRuntimeConfig(pgsqlPath));
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
@@ -81,8 +84,10 @@ public class TestConfiguration {
     }
 
     @PreDestroy
-    public void shutdown(EmbeddedPostgres postgres) throws IOException {
-        postgres.stop();
+    public void shutdown() {
+        if (postgres != null) {
+            postgres.stop();
+        }
     }
 
 

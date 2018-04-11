@@ -24,6 +24,7 @@ import alfio.config.WebSecurityConfig;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.BaseIntegrationTest;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,7 +46,7 @@ import static org.junit.Assert.assertNotNull;
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class EventRepositoryTest {
+public class EventRepositoryTest extends BaseIntegrationTest {
 
     private static final String NEW_YORK_TZ = "America/New_York";
     private static final String ORG_NAME = "name";
