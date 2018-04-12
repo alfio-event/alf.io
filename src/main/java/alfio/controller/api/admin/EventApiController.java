@@ -187,7 +187,11 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/check", method = POST)
-    public ValidationResult validateEvent(@RequestBody EventModification eventModification, Errors errors) {
+    public ValidationResult validateEventRequest(@RequestBody EventModification eventModification, Errors errors) {
+        return validateEvent(eventModification,errors);
+    }
+
+    public static ValidationResult validateEvent(EventModification eventModification, Errors errors) {
         ValidationResult base = validateEventHeader(Optional.empty(), eventModification, errors)
             .or(validateEventPrices(Optional.empty(), eventModification, errors))
             .or(eventModification.getAdditionalServices().stream().map(as -> validateAdditionalService(as, eventModification, errors)).reduce(ValidationResult::or).orElse(ValidationResult.success()));
@@ -198,7 +202,8 @@ public class EventApiController {
             .orElse(ValidationResult.success())).or(validateAdditionalTicketFields(eventModification.getTicketFields(), errors));
     }
 
-    private ValidationResult validateAdditionalTicketFields(List<EventModification.AdditionalField> ticketFields, Errors errors) {
+
+    private static ValidationResult validateAdditionalTicketFields(List<EventModification.AdditionalField> ticketFields, Errors errors) {
         //meh
         AtomicInteger cnt = new AtomicInteger();
         return Optional.ofNullable(ticketFields).orElseGet(Collections::emptyList).stream().map(field -> {
