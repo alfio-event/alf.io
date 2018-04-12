@@ -22,8 +22,8 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalListener;
 import lombok.extern.log4j.Log4j2;
+import okhttp3.OkHttpClient;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import javax.script.*;
 import java.util.Collections;
@@ -46,6 +46,9 @@ import java.util.function.Supplier;
 @Log4j2
 public class ScriptingExecutionService {
 
+    private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
+    private static final SimpleHttpClient SIMPLE_HTTP_CLIENT = new SimpleHttpClient(HTTP_CLIENT);
+
     private final static Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
     private final Cache<String, CompiledScript> compiledScriptCache = Caffeine.newBuilder()
         .expireAfterAccess(12, TimeUnit.HOURS)
@@ -63,7 +66,7 @@ public class ScriptingExecutionService {
         CompiledScript compiledScript = compiledScriptCache.get(hash, (key) -> {
             try {
                 return engine.compile(scriptFetcher.get());
-            } catch (ScriptException se) {
+            } catch (Throwable se) {
                 log.warn("Was not able to compile script " + name, se);
                 extensionLogger.logError("Was not able to compile script: " + se.getMessage());
                 throw new IllegalStateException(se);
@@ -101,13 +104,14 @@ public class ScriptingExecutionService {
             engineScope.put("log", log);
             engineScope.put("extensionLogger", extensionLogger);
             engineScope.put("GSON", Json.GSON);
-            engineScope.put("restTemplate", new RestTemplate());
+            engineScope.put("httpClient", HTTP_CLIENT);
+            engineScope.put("simpleHttpClient", SIMPLE_HTTP_CLIENT);
             engineScope.put("returnClass", clazz);
             engineScope.putAll(params);
             T res = (T) script.eval(newContext);
             extensionLogger.logSuccess("Script executed successfully");
             return res;
-        } catch (ScriptException ex) {
+        } catch (Throwable ex) { //
             log.warn("Error while executing script " + name + ":", ex);
             extensionLogger.logError("Error while executing script: " + ex.getMessage());
             throw new IllegalStateException(ex);

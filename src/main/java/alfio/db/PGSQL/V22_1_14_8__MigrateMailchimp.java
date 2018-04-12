@@ -14,22 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.modification;
+package alfio.db.PGSQL;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Getter;
+import alfio.db.MailchimpMigration;
 
-@Getter
-public class PluginConfigOptionModification {
-    private final String pluginId;
-    private final String name;
-    private final String value;
+public class V22_1_14_8__MigrateMailchimp extends MailchimpMigration {
 
-    public PluginConfigOptionModification(@JsonProperty("pluginId") String pluginId,
-                                          @JsonProperty("optionName") String name,
-                                          @JsonProperty("optionValue") String value) {
-        this.pluginId = pluginId;
-        this.name = name;
-        this.value = value;
-    }
 }

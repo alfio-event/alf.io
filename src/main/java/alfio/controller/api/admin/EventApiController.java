@@ -193,13 +193,15 @@ public class EventApiController {
 
     public static ValidationResult validateEvent(EventModification eventModification, Errors errors) {
         ValidationResult base = validateEventHeader(Optional.empty(), eventModification, errors)
+            .or(validateTicketCategories(eventModification, errors))
             .or(validateEventPrices(Optional.empty(), eventModification, errors))
             .or(eventModification.getAdditionalServices().stream().map(as -> validateAdditionalService(as, eventModification, errors)).reduce(ValidationResult::or).orElse(ValidationResult.success()));
         AtomicInteger counter = new AtomicInteger();
         return base.or(eventModification.getTicketCategories().stream()
-            .map(c -> validateCategory(c, errors, "ticketCategories[" + counter.getAndIncrement() + "]."))
-            .reduce(ValidationResult::or)
-            .orElse(ValidationResult.success())).or(validateAdditionalTicketFields(eventModification.getTicketFields(), errors));
+                .map(c -> validateCategory(c, errors, "ticketCategories[" + counter.getAndIncrement() + "].", eventModification))
+                .reduce(ValidationResult::or)
+                .orElse(ValidationResult.success()))
+            .or(validateAdditionalTicketFields(eventModification.getTicketFields(), errors));
     }
 
 

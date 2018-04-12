@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PartialTicketTextGenerator;
@@ -112,7 +111,6 @@ public class TicketReservationManager {
     private final TemplateManager templateManager;
     private final TransactionTemplate requiresNewTransactionTemplate;
     private final WaitingQueueManager waitingQueueManager;
-    private final PluginManager pluginManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
@@ -153,7 +151,6 @@ public class TicketReservationManager {
                                     TemplateManager templateManager,
                                     PlatformTransactionManager transactionManager,
                                     WaitingQueueManager waitingQueueManager,
-                                    PluginManager pluginManager,
                                     TicketFieldRepository ticketFieldRepository,
                                     AdditionalServiceRepository additionalServiceRepository,
                                     AdditionalServiceItemRepository additionalServiceItemRepository,
@@ -177,7 +174,6 @@ public class TicketReservationManager {
         this.messageSource = messageSource;
         this.templateManager = templateManager;
         this.waitingQueueManager = waitingQueueManager;
-        this.pluginManager = pluginManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         this.ticketFieldRepository = ticketFieldRepository;
         this.additionalServiceRepository = additionalServiceRepository;
@@ -451,7 +447,6 @@ public class TicketReservationManager {
         sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
 
         final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
-        pluginManager.handleReservationConfirmation(finalReservation, event.getId());
         extensionManager.handleReservationConfirmation(finalReservation, event.getId());
     }
 
@@ -630,7 +625,6 @@ public class TicketReservationManager {
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
             acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, email, customerName, userLanguage.getLanguage(), billingAddress, eventId);
             final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-            pluginManager.handleReservationConfirmation(reservation, eventId);
             extensionManager.handleReservationConfirmation(reservation, eventId);
             //cleanup unused special price codes...
             specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
@@ -667,7 +661,6 @@ public class TicketReservationManager {
                     if(paymentProxy == PaymentProxy.PAYPAL) {
                         sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                     }
-                    pluginManager.handleTicketAssignment(ticket);
                     extensionManager.handleTicketAssignment(ticket);
                 });
 
@@ -827,12 +820,19 @@ public class TicketReservationManager {
         //
         boolean free = reservationCost.getPriceWithVAT() == 0;
         String vat = getVAT(event).orElse(null);
-        
+        String refundedAmount = null;
+
+        boolean hasRefund = auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.REFUND) > 0;
+
+        if(hasRefund) {
+            refundedAmount = paymentManager.getInfo(reservation, event).getPaymentInformation().getRefundedAmount();
+        }
+
         return new OrderSummary(reservationCost,
                 extractSummary(reservationId, reservation.getVatStatus(), event, locale, discount, reservationCost), free,
                 formatCents(reservationCost.getPriceWithVAT()), formatCents(reservationCost.getVAT()),
                 reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
-                reservation.getPaymentMethod() == PaymentProxy.ON_SITE, vat, reservation.getVatStatus());
+                reservation.getPaymentMethod() == PaymentProxy.ON_SITE, vat, reservation.getVatStatus(), refundedAmount);
     }
     
     List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
@@ -862,7 +862,8 @@ public class TicketReservationManager {
                 List<AdditionalServiceItemPriceContainer> prices = generateASIPriceContainers(event, null).apply(entry).collect(toList());
                 AdditionalServiceItemPriceContainer first = prices.get(0);
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
-                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts()), formatCents(first.getSrcPriceCts()), prices.size(), formatCents(subtotal), formatCents(subtotal), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE);
+                final int subtotalBeforeVat = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSummaryPriceBeforeVatCts).sum();
+                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts()), formatCents(first.getSummaryPriceBeforeVatCts()), prices.size(), formatCents(subtotal), formatCents(subtotalBeforeVat), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE);
             }).collect(Collectors.toList()));
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
@@ -1052,7 +1053,6 @@ public class TicketReservationManager {
             log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
             ticketReservationRepository.updateAssignee(reservation.getId(), username);
         }
-        pluginManager.handleTicketAssignment(newTicket);
         extensionManager.handleTicketAssignment(newTicket);
 
 

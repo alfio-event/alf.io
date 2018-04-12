@@ -131,12 +131,12 @@
                 </div>
             </div>
 
-            <div class="page-header" data-ng-if="eventConf.extensionSettings">
-                <h2>Extension settings</h2>
+            <div class="page-header" data-ng-if="eventConf.extensionSettings && (eventConf.extensionSettings | keys).length > 0">
+                <h2>Extensions</h2>
             </div>
             <div class="panel panel-default" data-ng-repeat="settingId in eventConf.extensionSettings | keys">
                 <div class="panel-heading">
-                    <div class="panel-title">Extension: {{eventConf.extensionSettings[settingId][0].extensionName}}</div>
+                    <div class="panel-title"><i class="fa fa-plug"></i> {{eventConf.extensionSettings[settingId][0].extensionDisplayName}}</div>
                 </div>
                 <div class="panel-body">
                     <div>

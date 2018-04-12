@@ -45,7 +45,9 @@ public class Audit {
         MANUAL_CHECK_IN,
         REVERT_CHECK_IN,
         UPDATE_TICKET,
-        UPDATE_TICKET_CATEGORY
+        UPDATE_TICKET_CATEGORY,
+        UPDATE_INVOICE,
+        FORCED_UPDATE_INVOICE
     }
 
     private final String reservationId;

@@ -22,6 +22,7 @@ Each extension consists of a JavaScript script, you can find a sample below:
 function getScriptMetadata() {
     return {
         id: 'myExtensionIdentifier', // optional: id and version will be used later as a mechanism for checking if the script has a newer version
+        displayName: 'My Extension', //mandatory: the name displayed in the configuration page
         version: 0, // optional
         async: false,
         events: [
@@ -54,7 +55,7 @@ function executeScript(scriptEvent) {
     log.warn('hello from script with event: ' + scriptEvent);
     log.warn('extension parameters are: ' + extensionParameters);
     //this sample calls the https://csrng.net/ website and generates a random invoice number
-    var randomNumber = restTemplate.getForObject('https://csrng.net/csrng/csrng.php?min=0&max=100', Java.type('java.util.ArrayList').class)[0].random;
+    var randomNumber = simpleHttpClient.get('https://csrng.net/csrng/csrng.php?min=0&max=100').getJsonBody()[0].random;
     log.warn('the invoice number will be: ' + randomNumber);
     return {
         invoiceNumber: randomNumber
@@ -70,10 +71,15 @@ alf.io provides some objects and properties to the script in the script scope:
 
 * **log** Log4j logger
 * **extensionLogger** a logger that write in the extension_log table. It implement the [ExtensionLogger](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionLogger.java) interface.
-* **restTemplate** Spring Framework's [RestTemplate](https://docs.spring.io/spring/docs/4.3.13.RELEASE/javadoc-api/org/springframework/web/client/RestTemplate.html)
+* **httpClient** instance of a [OkHttpClient](http://square.github.io/okhttp/)
+* **simpleHttpClient** instance of a [SimpleHttpClient](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/SimpleHttpClient.java)
 * **GSON** Google's [JSON parser/generator](http://static.javadoc.io/com.google.code.gson/gson/2.8.2/com/google/gson/Gson.html)
 * **returnClass** `java.lang.Class<?>` the expected result type
 * **extensionParameters** a map containing the parameters of an extension
+* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+* **eventId**: event id
+* **organizationId**: organization id
+* **Utils**: various utilities, see [ExtensionUtils](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/extension/ExtensionUtils.java)
 
 other event-related variables are also injected in the scope
 
@@ -87,13 +93,12 @@ extensions will be invoked **asynchronously** once a reservation has been confir
 
 * **reservation**: [TicketReservation](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservation.java)
 
-
 #### RESERVATION_EXPIRED
 
 extensions will be invoked **synchronously** once one or more reservations have expired.
 
 ##### additional global variables
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+
 * **reservationIds**: String[] - the reservation IDs
 
 ##### expected result type
@@ -104,7 +109,6 @@ boolean
 extensions will be invoked **synchronously** once one or more reservations have been cancelled.
 
 ##### additional global variables
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **reservationIds**: String[] - the reservation IDs
 
 ##### expected result type
@@ -115,7 +119,6 @@ boolean
 extension will be invoked **synchronously** once one or more tickets (but not the entire reservation at once) have been cancelled
 
 ##### additional global variables
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **ticketUUIDs**: String[] - the cencelled tickets UUIDs. **Please note** that once a ticket has been cancelled, its UUID is reset.
 
 #### TICKET_ASSIGNED
@@ -132,7 +135,6 @@ extensions will be invoked **asynchronously** once a ticket has been checked in.
 
 ##### additional global variables
 
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **ticket**: [Ticket](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)
 
 
@@ -142,7 +144,6 @@ extensions will be invoked **asynchronously** once a ticket has been reverted fr
 
 ##### additional global variables
 
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 * **ticket**: [Ticket](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Ticket.java)
 
 
@@ -159,7 +160,7 @@ extensions will be invoked **asynchronously** once someone subscribes to the wai
 extensions will be invoked **synchronously** while generating an invoice.
 
 ##### additional global variables
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+
 * **reservationId**: String - the reservation ID
 * **email**: String - contact email
 * **customerName**: String
@@ -181,7 +182,7 @@ extensions will be invoked **synchronously** while generating an invoice.
 extensions will be invoked **asynchronously** when the system will detect a stuck reservation.
 
 ##### additional global variables
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+
 * **reservations**: [TicketReservationInfo](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/TicketReservationInfo.java)
 
 #### OFFLINE_RESERVATIONS_WILL_EXPIRE
@@ -189,22 +190,20 @@ extensions will be invoked **asynchronously** when the system will detect a stuc
 extensions will be invoked **asynchronously**
 
 ##### additional global variables
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+
 * **reservationIds** List of String - list of reservation ids
 
 #### EVENT_CREATED
 
 extensions will be invoked **asynchronously** and **synchronously** when an event has been created.
 
-##### additional global variables
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
 
 #### EVENT_STATUS_CHANGE
 
 extensions will be invoked **asynchronously** and **synchronously** when an event status change.
 
 ##### additional global variables
-* **event**: [Event](https://github.com/alfio-event/alf.io/blob/master/src/main/java/alfio/model/Event.java)
+
 * **status**: String - possible values: 'DRAFT', 'PUBLIC', 'DISABLED'
 
 ## Methods

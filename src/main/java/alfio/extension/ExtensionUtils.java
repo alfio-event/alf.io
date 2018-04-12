@@ -14,18 +14,25 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.plugin;
+package alfio.extension;
 
-import alfio.model.WaitingQueueSubscription;
+import org.apache.commons.codec.binary.Hex;
 
-/**
- * A plugin that will be triggered once a user registered to the waiting queue.
- */
-public interface WaitingQueueSubscriptionPlugin extends Plugin {
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
-    /**
-     * This method is called immediately after a waiting queue subscription.
-     * @param waitingQueueSubscription the subscription
-     */
-    void onWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription);
+public class ExtensionUtils {
+
+    public static String format(String str, String... params) {
+        return String.format(str, (Object[]) params);
+    }
+
+    public static String md5(String str) {
+        try {
+            return Hex.encodeHexString(MessageDigest.getInstance("MD5").digest(str.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException nae) {
+            throw new IllegalStateException(nae);
+        }
+    }
 }

@@ -95,44 +95,46 @@
     <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.dateString" data-show-existing-errors="showExistingErrors"></field-error>
 </div>
 
-<div class="form-group">
-    <label class="control-label cursor-pointer" ng-click="customCheckInCollapsed = !customCheckInCollapsed"><i class="fa" ng-class="{'fa-angle-right': customCheckInCollapsed, 'fa-angle-down': !customCheckInCollapsed}"></i> Restrict check-in to a specific timeslot</label>
-</div>
-
-<div class="row" uib-collapse="customCheckInCollapsed">
-    <div class="col-xs-12 col-md-6">
-        <div class="form-group" bs-form-error="ticketCategory.validCheckInFromString">
-            <label for="{{buildPrefix($index, 'validCheckInFromString')}}">Check-in from</label>
-            <input ng-model="ticketCategory.validCheckInFromString" single-date no-init-date="true" start-model="ticketCategory.validCheckInFrom" id="{{buildPrefix($index, 'validCheckInFromString')}}" class="form-control">
-        </div>
-    </div>
-    <div class="col-xs-12 col-md-6">
-        <div class="form-group" bs-form-error="ticketCategory.validCheckInToString">
-            <label for="{{buildPrefix($index, 'validCheckInToString')}}">Check-in to</label>
-            <input ng-model="ticketCategory.validCheckInToString" single-date no-init-date="true" start-model="ticketCategory.validCheckInTo" id="{{buildPrefix($index, 'validCheckInToString')}}" class="form-control">
-        </div>
-    </div>
-</div>
 
 <div class="form-group">
-    <label class="control-label cursor-pointer" ng-click="customValidityCollapsed = !customValidityCollapsed"><i class="fa" ng-class="{'fa-angle-right': customValidityCollapsed, 'fa-angle-down': !customValidityCollapsed}"></i> Custom Tickets validity</label>
+    <label class="control-label cursor-pointer" ng-click="advancedOptionsCollapsed = !advancedOptionsCollapsed"><i class="fa" ng-class="{'fa-angle-right': advancedOptionsCollapsed, 'fa-angle-down': !advancedOptionsCollapsed}"></i> Advanced Options</label>
 </div>
 
-<div class="row" uib-collapse="customValidityCollapsed">
-    <div class="col-xs-12 col-md-6">
-        <div class="form-group" bs-form-error="ticketCategory.customValidityStartFromString">
-            <label for="{{buildPrefix($index, 'customValidityStartToString')}}">Valid from</label>
-            <input ng-model="ticketCategory.customValidityStartToString" single-date no-init-date="true" start-model="ticketCategory.ticketValidityStart" id="{{buildPrefix($index, 'customValidityStartToString')}}" class="form-control">
+<div uib-collapse="advancedOptionsCollapsed">
+    <h5><strong>Restrict check-in to a specific timeslot</strong></h5>
+
+    <div class="row">
+        <div class="col-xs-12 col-md-6">
+            <div class="form-group" bs-form-error="ticketCategory.validCheckInFromString">
+                <label for="{{buildPrefix($index, 'validCheckInFromString')}}">from</label>
+                <input ng-model="ticketCategory.validCheckInFromString" single-date no-init-date="true" start-model="ticketCategory.validCheckInFrom" id="{{buildPrefix($index, 'validCheckInFromString')}}" class="form-control">
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-6">
+            <div class="form-group" bs-form-error="ticketCategory.validCheckInToString">
+                <label for="{{buildPrefix($index, 'validCheckInToString')}}">to</label>
+                <input ng-model="ticketCategory.validCheckInToString" single-date no-init-date="true" start-model="ticketCategory.validCheckInTo" id="{{buildPrefix($index, 'validCheckInToString')}}" class="form-control">
+            </div>
         </div>
     </div>
-    <div class="col-xs-12 col-md-6">
-        <div class="form-group" bs-form-error="ticketCategory.customValidityEndToString">
-            <label for="{{buildPrefix($index, 'customValidityEndToString')}}">Valid to</label>
-            <input ng-model="ticketCategory.customValidityEndToString" single-date no-init-date="true" start-model="ticketCategory.ticketValidityEnd" id="{{buildPrefix($index, 'customValidityEndToString')}}" class="form-control">
+
+    <h5><strong>Custom ticket validity</strong> <small>(will be displayed in ticket PDF, email and calendar invitation)</small></h5>
+
+    <div class="row">
+        <div class="col-xs-12 col-md-6">
+            <div class="form-group" bs-form-error="ticketCategory.customValidityStartFromString">
+                <label for="{{buildPrefix($index, 'customValidityStartToString')}}">from</label>
+                <input ng-model="ticketCategory.customValidityStartToString" single-date no-init-date="true" start-model="ticketCategory.ticketValidityStart" id="{{buildPrefix($index, 'customValidityStartToString')}}" class="form-control">
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-6">
+            <div class="form-group" bs-form-error="ticketCategory.customValidityEndToString">
+                <label for="{{buildPrefix($index, 'customValidityEndToString')}}">to</label>
+                <input ng-model="ticketCategory.customValidityEndToString" single-date no-init-date="true" start-model="ticketCategory.ticketValidityEnd" id="{{buildPrefix($index, 'customValidityEndToString')}}" class="form-control">
+            </div>
         </div>
     </div>
 </div>
-
 
 <div class="form-group" bs-form-error="ticketCategory.price" ng-if="!event.freeOfCharge">
     <label for="{{buildPrefix($index, 'price')}}">Price <span data-ng-if="ticketCategory.price">({{calcCategoryPricePercent(ticketCategory, event, editMode)}}%)</span></label>

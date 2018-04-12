@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.TextTemplateGenerator;
@@ -90,8 +89,6 @@ public class TicketReservationManagerTest {
     private MessageSource messageSource;
     @Mock
     private TicketReservationRepository ticketReservationRepository;
-    @Mock
-    private PluginManager pluginManager;
     @Mock
     private TicketFieldRepository ticketFieldRepository;
     @Mock
@@ -169,7 +166,6 @@ public class TicketReservationManagerTest {
             templateManager,
             transactionManager,
             waitingQueueManager,
-            pluginManager,
             ticketFieldRepository,
             additionalServiceRepository,
             additionalServiceItemRepository,
@@ -703,7 +699,6 @@ public class TicketReservationManagerTest {
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(),anyString(), anyString(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()));
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
-        verify(pluginManager).handleReservationConfirmation(ticketReservation, EVENT_ID);
         verify(ticketReservationRepository).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(any(), anyString(), anyString(), anyBoolean(), anyString());
@@ -744,7 +739,6 @@ public class TicketReservationManagerTest {
         verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()));
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
-        verify(pluginManager).handleReservationConfirmation(ticketReservation, EVENT_ID);
         verify(ticketReservationRepository).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(any(), anyString(), anyString(), anyBoolean(), anyString());

@@ -17,8 +17,8 @@
 package alfio.model.decorator;
 
 import alfio.model.Event;
-import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
+import alfio.model.SummaryPriceContainer;
 import alfio.model.Ticket;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,13 +27,12 @@ import lombok.experimental.Delegate;
 import java.math.BigDecimal;
 import java.util.Optional;
 
-import static alfio.util.MonetaryUtil.centsToUnit;
 import static alfio.util.MonetaryUtil.unitToCents;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class TicketPriceContainer implements PriceContainer {
+public class TicketPriceContainer implements SummaryPriceContainer {
 
-    @Delegate
+    @Delegate(excludes = OverridePriceContainer.class)
     private final Ticket ticket;
     private final PromoCodeDiscount promoCodeDiscount;
     private final String currencyCode;
@@ -68,18 +67,23 @@ public class TicketPriceContainer implements PriceContainer {
         return getSrcPriceCts();
     }
 
-    public int getSummaryPriceBeforeVatCts() {
-        VatStatus vatStatus = getVatStatus();
-        if(vatStatus == VatStatus.NOT_INCLUDED_EXEMPT) {
-            return getSrcPriceCts();
-        } else if(vatStatus == VatStatus.INCLUDED_EXEMPT) {
-            return getSrcPriceCts() + unitToCents(vatStatus.extractVat(centsToUnit(getSrcPriceCts()), getVatPercentageOrZero()));
-        }
-        return getFinalPriceCts() - getVatCts();
-    }
-
     public static TicketPriceContainer from(Ticket t, VatStatus reservationVatStatus, Event e, PromoCodeDiscount discount) {
         VatStatus vatStatus = Optional.ofNullable(reservationVatStatus).filter(s -> s == VatStatus.INCLUDED_EXEMPT || s == VatStatus.NOT_INCLUDED_EXEMPT).orElseGet(e::getVatStatus);
         return new TicketPriceContainer(t, discount, e.getCurrency(), e.getVat(), vatStatus);
+    }
+
+    @Override
+    public Integer getVatCts() {
+        return ticket.getVatCts();
+    }
+
+    @Override
+    public Integer getFinalPriceCts() {
+        return ticket.getFinalPriceCts();
+    }
+
+    private interface OverridePriceContainer {
+        int getVatCts();
+        int getFinalPriceCts();
     }
 }

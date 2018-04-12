@@ -119,6 +119,7 @@
         <input type="hidden" name="paypalPaymentId" value="{{paypalPaymentId}}">
         <input type="hidden" name="paypalPayerID" value="{{paypalPayerID}}">
         <input type="hidden" name="termAndConditionsAccepted" value="true">
+        <input type="hidden" name="invoiceRequested" value="{{invoiceRequested}}">
     <div class="alert alert-success">
         <h3><i class="fa fa-check"></i> {{#i18n}}reservation-page.paypal.confirm{{/i18n}}</h3>
     </div>

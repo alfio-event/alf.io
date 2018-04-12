@@ -313,8 +313,8 @@
                 return promise;
             },
 
-            removeTickets: function(eventName, reservationId, ticketIds, ticketIdsToRefund, notify) {
-                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/remove-tickets', {ticketIds: ticketIds, refundTo: ticketIdsToRefund, notify : notify});
+            removeTickets: function(eventName, reservationId, ticketIds, ticketIdsToRefund, notify, updateInvoice) {
+                return $http.post('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/remove-tickets', {ticketIds: ticketIds, refundTo: ticketIdsToRefund, notify : notify, forceInvoiceUpdate: updateInvoice});
             },
 
             cancelReservation: function(eventName, reservationId, refund, notify) {
@@ -400,7 +400,6 @@
                     var location = view[0].Result[0].Location;
                     var pos = location.DisplayPosition;
                     var ret = {latitude: pos.Latitude, longitude: pos.Longitude};
-                    console.log(view);
 
                     $q.all([getMapUrl(ret.latitude, ret.longitude), locService.getTimezone(ret.latitude, ret.longitude)]).then(function(success) {
                         ret.mapUrl = success[0];

@@ -61,8 +61,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EntityType.TICKET;
-import static alfio.model.Audit.EventType.CANCEL_TICKET;
+import static alfio.model.Audit.EventType.*;
 import static alfio.model.modification.DateTimeModification.fromZonedDateTime;
 import static alfio.util.EventUtil.generateEmptyTickets;
 import static alfio.util.OptionalWrapper.optionally;
@@ -75,6 +76,7 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 @RequiredArgsConstructor
 public class AdminReservationManager {
 
+    private static final EnumSet<TicketReservationStatus> UPDATE_INVOICE_STATUSES = EnumSet.of(TicketReservationStatus.OFFLINE_PAYMENT, TicketReservationStatus.PENDING);
     private final EventManager eventManager;
     private final TicketReservationManager ticketReservationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
@@ -305,11 +307,15 @@ public class AdminReservationManager {
                 .reduce(this::reduceReservationResults)
                 .orElseGet(() -> Result.error(ErrorCode.custom("", "unknown error")));
 
-            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, Locale.forLanguageTag(arm.getLanguage()));
-            ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
+            updateInvoiceReceiptModel(event, arm.getLanguage(), reservationId);
 
             return result.map(list -> Pair.of(ticketReservationRepository.findReservationById(reservationId), list));
         });
+    }
+
+    private void updateInvoiceReceiptModel(Event event, String language, String reservationId) {
+        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, Locale.forLanguageTag(language));
+        ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
     }
 
     private Result<List<Ticket>> reserveForTicketsInfo(Event event, AdminReservationModification arm, String reservationId, String specialPriceSessionId, Pair<TicketCategory, TicketsInfo> pair) {
@@ -483,7 +489,7 @@ public class AdminReservationManager {
     }
 
     @Transactional
-    public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, String username) {
+    public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, boolean forceInvoiceReceiptUpdate, String username) {
         loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
@@ -495,7 +501,7 @@ public class AdminReservationManager {
             Assert.isTrue(ticketIdsInReservation.containsAll(toRefund), "Some ticket ids to refund are not contained in the reservation");
             //
 
-            removeTicketsFromReservation(reservationId, e, ticketIds, notify, username, false);
+            removeTicketsFromReservation(reservation, e, ticketIds, notify, username, false, forceInvoiceReceiptUpdate);
             //
 
             handleTicketsRefund(toRefund, e, reservation, ticketsById, username);
@@ -525,7 +531,7 @@ public class AdminReservationManager {
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
 
-            removeTicketsFromReservation(reservationId, e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, true);
+            removeTicketsFromReservation(reservation, e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, true, false);
 
             additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
 
@@ -549,7 +555,8 @@ public class AdminReservationManager {
         });
     }
 
-    private void removeTicketsFromReservation(String reservationId, Event event, List<Integer> ticketIds, boolean notify, String username, boolean removeReservation) {
+    private void removeTicketsFromReservation(TicketReservation reservation, Event event, List<Integer> ticketIds, boolean notify, String username, boolean removeReservation, boolean forceInvoiceReceiptUpdate) {
+        String reservationId = reservation.getId();
         if(notify && !ticketIds.isEmpty()) {
             Organization o = eventManager.loadOrganizer(event, username);
             ticketRepository.findByIds(ticketIds).forEach(t -> {
@@ -573,6 +580,12 @@ public class AdminReservationManager {
         ).toArray(MapSqlParameterSource[]::new);
         jdbc.batchUpdate(ticketRepository.batchReleaseTickets(), args);
         if(!removeReservation) {
+            //#407 update invoice/receipt model only if the reservation is still "PENDING", otherwise we could lead to accountancy problems
+            if(UPDATE_INVOICE_STATUSES.contains(reservation.getStatus()) || forceInvoiceReceiptUpdate) {
+                Audit.EventType eventType = forceInvoiceReceiptUpdate ? FORCED_UPDATE_INVOICE : UPDATE_INVOICE;
+                auditingRepository.insert(reservationId, userId, event.getId(), eventType, date, RESERVATION, reservationId);
+                updateInvoiceReceiptModel(event, reservation.getUserLanguage(), reservationId);
+            }
             extensionManager.handleTicketCancelledForEvent(event, ticketRepository.findUUIDs(ticketIds));
         } else {
             extensionManager.handleReservationsCancelledForEvent(event, ticketRepository.findReservationIds(ticketIds));

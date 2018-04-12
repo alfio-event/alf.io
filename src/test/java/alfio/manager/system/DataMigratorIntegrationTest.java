@@ -39,7 +39,6 @@ import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
-import alfio.repository.plugin.PluginConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -94,8 +93,6 @@ public class DataMigratorIntegrationTest {
     private TemplateManager templateManager;
     @Autowired
     private FileUploadManager fileUploadManager;
-    @Autowired
-    private PluginConfigurationRepository pluginConfigurationRepository;
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
     @Value("${alfio.version}")

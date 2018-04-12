@@ -156,8 +156,11 @@ public class PaymentManager {
         return stripeManager.getPublicKey(event);
     }
 
-    public String createPaypalCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary, CustomerName customerName, String email, String billingAddress, Locale locale, boolean postponeAssignment) throws Exception {
-        return paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName, email, billingAddress, locale, postponeAssignment);
+    public String createPayPalCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary,
+                                              CustomerName customerName, String email, String billingAddress,
+                                              Locale locale, boolean postponeAssignment, boolean invoiceRequested) throws Exception {
+        return paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName, email,
+                                                   billingAddress, locale, postponeAssignment, invoiceRequested);
     }
 
     public boolean refund(TicketReservation reservation, Event event, Optional<Integer> amount, String username) {

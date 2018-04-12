@@ -14,11 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.plugin;
+package alfio.db.MYSQL;
 
-/**
- * Base Exception for describing exceptional conditions happened during the execution of a {@link Plugin}.
- * A Plugin should never block the normal execution, it should instead notify the owner organization in case of error.
- */
-public class PluginException extends RuntimeException {
+import alfio.db.MailchimpMigration;
+
+public class V22_1_14_8__MigrateMailchimp extends MailchimpMigration {
+
 }

@@ -14,17 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.plugin.mailchimp;
+package alfio.db.HSQLDB;
 
-import org.junit.Test;
+import alfio.db.MailchimpMigration;
 
-import static org.junit.Assert.assertEquals;
-
-public class MailChimpPluginTest {
-    @Test
-    public void getMd5Email() throws Exception {
-        assertEquals("20dbbf20d91106a9377bb671ba83f381", MailChimpPlugin.getMd5Email("urist.mcvankab+8@freddiesjokes.com"));
-        assertEquals("20dbbf20d91106a9377bb671ba83f381", MailChimpPlugin.getMd5Email(" urist.mcvankab+8@freddiesjokes.com"));
-    }
+public class V22_1_14_8__MigrateMailchimp extends MailchimpMigration {
 
 }

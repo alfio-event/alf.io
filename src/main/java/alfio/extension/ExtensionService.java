@@ -54,6 +54,9 @@ public class ExtensionService {
 
     private final PlatformTransactionManager platformTransactionManager;
 
+    private final static String PRELOAD_SCRIPT = "\nvar HashMap = Java.type('java.util.HashMap');\n" +
+        "var ExtensionUtils = Java.type('alfio.extension.ExtensionUtils');\n";
+
 
     @AllArgsConstructor
     private static final class ExtensionLoggerImpl implements ExtensionLogger {
@@ -98,7 +101,7 @@ public class ExtensionService {
     private static ExtensionMetadata getMetadata(String name, String script) {
         return ScriptingExecutionService.executeScript(
             name,
-            script + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
+            PRELOAD_SCRIPT + script + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
             Collections.emptyMap(),
             ExtensionMetadata.class, new NoopExtensionLogger());
     }
@@ -110,14 +113,15 @@ public class ExtensionService {
         String hash = DigestUtils.sha256Hex(script.getScript());
         ExtensionMetadata extensionMetadata = getMetadata(script.getName(), script.getScript());
 
+        Validate.notBlank(extensionMetadata.displayName, "Display Name is mandatory");
+
         extensionRepository.deleteEventsForPath(previousPath, previousName);
 
         if (!Objects.equals(previousPath, script.getPath()) || !Objects.equals(previousName, script.getName())) {
             extensionRepository.deleteScriptForPath(previousPath, previousName);
-            extensionRepository.insert(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
+            extensionRepository.insert(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript());
         } else {
-            extensionRepository.update(script.getPath(), script.getName(), hash, script.isEnabled(), extensionMetadata.async, script.getScript());
-            //TODO: load all saved parameters value, then delete the register extension parameter
+            extensionRepository.update(script.getPath(), script.getName(), extensionMetadata.displayName, hash, script.isEnabled(), extensionMetadata.async, script.getScript());
         }
 
         int extensionId = extensionRepository.getExtensionIdFor(script.getPath(), script.getName());
@@ -130,12 +134,16 @@ public class ExtensionService {
         //
         ExtensionMetadata.Parameters parameters = extensionMetadata.getParameters();
         if (parameters != null) {
+            List<ExtensionParameterKeyValue> extensionParameterKeyValue = extensionRepository.findExtensionParameterKeyValue(extensionId);
             extensionRepository.deleteExtensionParameter(extensionId);
-            //TODO: handle if already present, cleanup key that are no more present
             for (ExtensionMetadata.Field field : parameters.getFields()) {
                 for (String level : parameters.getConfigurationLevels()) {
-                    extensionRepository.registerExtensionConfigurationMetadata(extensionId, field.getName(), field.getDescription(), field.getType(), level, field.isRequired());
-                    //if for this key,level is present a value -> save
+                    int confFieldId = extensionRepository.registerExtensionConfigurationMetadata(extensionId, field.getName(), field.getDescription(), field.getType(), level, field.isRequired()).getKey();
+                    List<ExtensionParameterKeyValue> filteredParam = extensionParameterKeyValue.stream().filter(kv -> field.getName().equals(kv.getName()) && level.equals(kv.getConfigurationLevel())).collect(Collectors.toList());
+                    for(ExtensionParameterKeyValue kv : filteredParam) {
+                        //TODO: can be optimized with a bulk insert...
+                        extensionRepository.insertSettingValue(confFieldId, kv.getConfigurationPath(), kv.getConfigurationValue());
+                    }
                 }
             }
         }
@@ -213,7 +221,7 @@ public class ExtensionService {
 
             if(params.getLeft().isEmpty()) {
                 res = scriptingExecutionService.executeScript(name, activePath.getHash(),
-                    () -> getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz, extLogger);
+                    () -> PRELOAD_SCRIPT + getScript(path, name)+"\n;GSON.fromJson(JSON.stringify(executeScript(extensionEvent)), returnClass);", input, clazz, extLogger);
                 input.put("output", res);
             } else {
                 extLogger.logInfo("script not run, missing parameters: " + params.getLeft());
@@ -234,7 +242,7 @@ public class ExtensionService {
             ExtensionLogger extLogger = new ExtensionLoggerImpl(extensionLogRepository, platformTransactionManager, basePath, path, name);
 
             if(params.getLeft().isEmpty()) {
-                scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> getScript(path, name)+"\n;executeScript(extensionEvent);", input, extLogger);
+                scriptingExecutionService.executeScriptAsync(path, name, activePath.getHash(), () -> PRELOAD_SCRIPT + getScript(path, name)+"\n;executeScript(extensionEvent);", input, extLogger);
             } else {
                 extLogger.logInfo("script not run, missing parameters: " + params.getLeft());
             }

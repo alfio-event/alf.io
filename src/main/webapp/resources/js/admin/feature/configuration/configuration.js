@@ -90,14 +90,8 @@
             removeCategoryConfig: function(conf, eventId, categoryId) {
                 return $http['delete']('/admin/api/configuration/event/'+eventId+'/category/'+categoryId+'/key/' + conf.configurationKey).error(HttpErrorHandler.handle);
             },
-            loadPluginsConfig: function(eventId) {
-                return $http.get('/admin/api/configuration/events/'+eventId+'/plugin/load').error(HttpErrorHandler.handle);
-            },
             getPlatformModeStatus: function(orgId) {
                 return $http.get('/admin/api/configuration/platform-mode/status/'+orgId).error(HttpErrorHandler.handle);
-            },
-            bulkUpdatePlugins: function(eventId, pluginConfigOptions) {
-                return $http.post('/admin/api/configuration/events/'+eventId+'/plugin/update-bulk', pluginConfigOptions).error(HttpErrorHandler.handle);
             },
             transformConfigurationObject: function(original) {
                 var transformed = {};
@@ -309,7 +303,7 @@
                     var event = result.data.event;
                     eventConf.eventName = event.shortName;
                     eventConf.eventId = event.id;
-                    $q.all([ConfigurationService.loadEventConfig(eventConf.eventId), ConfigurationService.loadPluginsConfig(eventConf.eventId), ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)]).then(function(result) {
+                    $q.all([ConfigurationService.loadEventConfig(eventConf.eventId), ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)]).then(function(result) {
                         deferred.resolve([{data:event}].concat(result));
                     }, function(e) {
                         deferred.reject(e);
@@ -321,7 +315,7 @@
             } else {
                 eventConf.eventId = $stateParams.eventId;
                 eventConf.organizationId = $stateParams.organizationId;
-                return $q.all([EventService.getEventById($stateParams.eventId), ConfigurationService.loadEventConfig($stateParams.eventId), ConfigurationService.loadPluginsConfig($stateParams.eventId), ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)])
+                return $q.all([EventService.getEventById($stateParams.eventId), ConfigurationService.loadEventConfig($stateParams.eventId), ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)])
             }
         };
 
@@ -330,13 +324,12 @@
             getData().then(function(result) {
                     eventConf.event = result[0].data;
                     loadSettings(eventConf, result[1].data, ConfigurationService);
-                    eventConf.pluginSettings = result[2].data;
-                    eventConf.pluginSettingsByPluginId = _.groupBy(result[2].data, 'pluginId');
+
                     if(eventConf.alfioPi) {
                         eventConf.alfioPiOptions = _.filter(eventConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
                         eventConf.labelLayout = _.find(eventConf.alfioPi.settings, function(pi) { return pi.key === 'LABEL_LAYOUT'});
                     }
-                    eventConf.extensionSettings = result[3].data;
+                    eventConf.extensionSettings = result[2].data;
                     eventConf.loading = false;
                 }, function() {
                     eventConf.loading = false;
@@ -354,7 +347,6 @@
             }
             eventConf.loading = true;
             $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings),
-                ConfigurationService.bulkUpdatePlugins(eventConf.eventId, eventConf.pluginSettings),
                 ExtensionService.saveBulkEventSetting(eventConf.organizationId, eventConf.eventId, eventConf.extensionSettings)]).then(function() {
                 load();
                 NotificationHandler.showSuccess("Configurations have been saved successfully");
@@ -483,15 +475,12 @@
                                 MAPS_HERE_APP_CODE: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_CODE';})
                             };
                         });
-                        ctrl.saveSettings = function(frm, settings, pluginSettings) {
+                        ctrl.saveSettings = function(frm, settings) {
                             if(!frm.$valid) {
                                 return;
                             }
                             ctrl.loading = true;
                             var promises = [ConfigurationService.bulkUpdate(settings)];
-                            if(angular.isDefined(pluginSettings)) {
-                                promises.push(ConfigurationService.bulkUpdatePlugins(pluginSettings));
-                            }
                             $q.all(promises).then(function() {
                                 ctrl.loading = false;
                                 $scope.$close(true);

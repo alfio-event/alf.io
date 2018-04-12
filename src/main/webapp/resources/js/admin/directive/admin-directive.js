@@ -568,8 +568,21 @@
                     $scope.helpAccessCodeCollapse = !$scope.helpAccessCodeCollapse;
                 };
 
-                $scope.customCheckInCollapsed = true;
-                $scope.customValidityCollapsed = true;
+                var hasCustomCheckIn = function(ticketCategory) {
+                    return ticketCategory.formattedValidCheckInFrom ||
+                        ticketCategory.validCheckInFrom ||
+                        ticketCategory.formattedValidCheckInTo ||
+                        ticketCategory.validCheckInTo;
+                };
+
+                var hasCustomTicketValidity = function(ticketCategory) {
+                    return ticketCategory.formattedValidityStart||
+                        ticketCategory.ticketValidityStart ||
+                        ticketCategory.formattedValidityEnd ||
+                        ticketCategory.ticketValidityEnd;
+                };
+
+                $scope.advancedOptionsCollapsed = !hasCustomCheckIn($scope.ticketCategory) && !hasCustomTicketValidity($scope.ticketCategory);
             }
         };
     });
@@ -1016,6 +1029,19 @@
                 }
             }
         };
-    }])
+    }]);
+
+    directives.directive('languageFlag', function() {
+        return {
+            restrict: 'E',
+            scope: {
+                lang: '@'
+            },
+            controller: function($scope) {
+                $scope.flag = $scope.lang === 'en' ? 'gb' : $scope.lang;
+            },
+            template: '<img class="img-center" ng-src="../resources/images/flags/{{flag}}.gif">'
+        };
+    })
     
 })();
