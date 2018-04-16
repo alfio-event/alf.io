@@ -16,31 +16,6 @@
  */
 package alfio.manager;
 
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.time.Clock;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
-
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.support.FeeCalculator;
@@ -48,29 +23,12 @@ import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
-import alfio.model.AdditionalService;
-import alfio.model.AdditionalServiceItem;
+import alfio.model.*;
 import alfio.model.AdditionalServiceItem.AdditionalServiceItemStatus;
-import alfio.model.AdditionalServiceText;
-import alfio.model.Audit;
-import alfio.model.CustomerName;
-import alfio.model.Event;
-import alfio.model.OrderSummary;
-import alfio.model.PriceContainer;
-import alfio.model.PromoCodeDiscount;
 import alfio.model.PromoCodeDiscount.DiscountType;
-import alfio.model.ReservationIdAndEventId;
-import alfio.model.SpecialPrice;
 import alfio.model.SpecialPrice.Status;
-import alfio.model.SummaryRow;
-import alfio.model.Ticket;
 import alfio.model.Ticket.TicketStatus;
-import alfio.model.TicketCategory;
-import alfio.model.TicketFieldValue;
-import alfio.model.TicketReservation;
 import alfio.model.TicketReservation.TicketReservationStatus;
-import alfio.model.TicketReservationInfo;
-import alfio.model.TotalPrice;
 import alfio.model.decorator.AdditionalServiceItemPriceContainer;
 import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
@@ -82,28 +40,10 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
-import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.AdditionalServiceRepository;
-import alfio.repository.AdditionalServiceTextRepository;
-import alfio.repository.AuditingRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.InvoiceSequencesRepository;
-import alfio.repository.PromoCodeDiscountRepository;
-import alfio.repository.SpecialPriceRepository;
-import alfio.repository.TicketCategoryDescriptionRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketFieldRepository;
-import alfio.repository.TicketRepository;
-import alfio.repository.TicketReservationRepository;
-import alfio.repository.TransactionRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
-import alfio.util.EventUtil;
-import alfio.util.Json;
-import alfio.util.MonetaryUtil;
-import alfio.util.TemplateManager;
-import alfio.util.TemplateResource;
-import alfio.util.Wrappers;
+import alfio.util.*;
 import de.danielbechler.diff.ObjectDifferBuilder;
 import de.danielbechler.diff.node.DiffNode;
 import de.danielbechler.diff.node.Visit;
@@ -121,21 +61,28 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
-import static alfio.model.system.ConfigurationKeys.BASE_URL;
-import static alfio.model.system.ConfigurationKeys.OFFLINE_REMINDER_HOURS;
-import static alfio.model.system.ConfigurationKeys.OPTIONAL_DATA_REMINDER_ENABLED;
-import static alfio.model.system.ConfigurationKeys.RESERVATION_TIMEOUT;
+import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.formatCents;
 import static alfio.util.MonetaryUtil.unitToCents;
 import static alfio.util.OptionalWrapper.optionally;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
 
@@ -403,10 +350,10 @@ public class TicketReservationManager {
                 //
                 extensionManager.handleInvoiceGeneration(spec, reservationCost)
                     .ifPresent(invoiceGeneration -> {
-                    if (invoiceGeneration.getInvoiceNumber() != null) {
-                        ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceGeneration.getInvoiceNumber());
-                    }
-                });
+                        if (invoiceGeneration.getInvoiceNumber() != null) {
+                            ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceGeneration.getInvoiceNumber());
+                        }
+                    });
 
                 paymentResult = paymentManager.lookupProviderByMethod( paymentProxy.getPaymentMethod(), Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId()) )
                     .map( paymentProvider -> paymentProvider.doPayment(spec) )
@@ -417,6 +364,8 @@ public class TicketReservationManager {
             }
             if (paymentResult.isSuccessful()) {
                 completeReservation( spec, specialPriceSessionId, paymentProxy );
+            } else {
+                reTransitionToPending(spec.getReservationId());
             }
             return paymentResult;
         } catch(Exception ex) {
@@ -565,7 +514,7 @@ public class TicketReservationManager {
     }
 
     public static boolean hasValidOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager) {
-        OptionalInt result = BankTransactionManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+        OptionalInt result = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
         return result.isPresent() && result.getAsInt() >= 0;
     }
 

@@ -166,7 +166,7 @@ dependencies {
     compile 'de.danielbechler:java-object-diff:0.95'
     compile 'com.github.scribejava:scribejava-core:5.3.0'
 
-    testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.8"
+    testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.9"
 
     compileOnly "javax.servlet:javax.servlet-api:4.0.0"
     testCompile "javax.servlet:javax.servlet-api:4.0.0"

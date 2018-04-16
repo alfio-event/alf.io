@@ -16,44 +16,16 @@
  */
 package alfio.controller;
 
-import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.stream.Collectors;
-
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
-import alfio.manager.BankTransactionManager;
-import alfio.manager.EuVatChecker;
-import alfio.manager.EventManager;
-import alfio.manager.MollieCreditCardManager;
-import alfio.manager.NotificationManager;
-import alfio.manager.PaymentManager;
-import alfio.manager.PaymentSpecification;
-import alfio.manager.RecaptchaService;
-import alfio.manager.StripeCreditCardManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.*;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.AdditionalService;
-import alfio.model.AdditionalServiceItem;
-import alfio.model.AdditionalServiceText;
-import alfio.model.CustomerName;
-import alfio.model.Event;
-import alfio.model.OrderSummary;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
-import alfio.model.TotalPrice;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -66,7 +38,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
-import javax.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
@@ -84,13 +55,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
-import static java.util.stream.Collectors.toList;
+import javax.servlet.http.HttpServletRequest;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static alfio.model.system.Configuration.getSystemConfiguration;
-import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
-import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
-import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
-import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
+import static alfio.model.system.ConfigurationKeys.*;
+import static java.util.stream.Collectors.toList;
 
 @Controller
 @Log4j2
@@ -161,7 +133,7 @@ public class ReservationController {
                              .addAttribute("showPostpone", ticketsInReservation.size() > 1);
                     }
 
-                    OptionalInt delay = BankTransactionManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+                    OptionalInt delay = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
                     model.addAttribute("delayForOfflinePayment", Math.min(1, delay.orElse( 0 )));
                     if(!delay.isPresent() && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
                         log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());
