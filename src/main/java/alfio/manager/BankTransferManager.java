@@ -24,6 +24,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.repository.TicketReservationRepository;
+import alfio.util.WorkingDaysAdjusters;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
@@ -42,7 +43,7 @@ import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
 @Component
 @Log4j2
 @AllArgsConstructor
-public class BankTransactionManager implements PaymentProvider {
+public class BankTransferManager implements PaymentProvider {
 
     private final ConfigurationManager configurationManager;
     private final TicketReservationRepository ticketReservationRepository;
@@ -70,7 +71,7 @@ public class BankTransactionManager implements PaymentProvider {
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
     }
 
-    public static ZonedDateTime getOfflinePaymentDeadline(Event event, ConfigurationManager configurationManager) {
+    static ZonedDateTime getOfflinePaymentDeadline(Event event, ConfigurationManager configurationManager) {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         int waitingPeriod = getOfflinePaymentWaitingPeriod(event, configurationManager).orElse( 0 );
         if(waitingPeriod == 0) {
@@ -79,7 +80,7 @@ public class BankTransactionManager implements PaymentProvider {
             //TODO Maybe should we avoid this wrong behavior upfront, in the admin area?
             return now.plusHours(2);
         }
-        return now.plusDays(waitingPeriod).truncatedTo(ChronoUnit.HALF_DAYS);
+        return now.plusDays(waitingPeriod).truncatedTo(ChronoUnit.HALF_DAYS).with(WorkingDaysAdjusters.defaultWorkingDays());
     }
 
     public static OptionalInt getOfflinePaymentWaitingPeriod( Event event, ConfigurationManager configurationManager) {

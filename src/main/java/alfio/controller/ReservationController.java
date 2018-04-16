@@ -23,7 +23,6 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.*;
-import alfio.manager.EuVatChecker.SameCountryValidator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -121,7 +120,7 @@ public class ReservationController {
                          .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1 && ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId()));
 
 
-                    OptionalInt delay = BankTransactionManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+                    OptionalInt delay = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
                     model.addAttribute("delayForOfflinePayment", Math.min(1, delay.orElse( 0 )));
                     if(!delay.isPresent() && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
                         log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());

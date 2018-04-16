@@ -83,7 +83,6 @@ import static alfio.util.MonetaryUtil.unitToCents;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
@@ -365,10 +364,10 @@ public class TicketReservationManager {
                 //
                 extensionManager.handleInvoiceGeneration(spec, reservationCost)
                     .ifPresent(invoiceGeneration -> {
-                    if (invoiceGeneration.getInvoiceNumber() != null) {
-                        ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceGeneration.getInvoiceNumber());
-                    }
-                });
+                        if (invoiceGeneration.getInvoiceNumber() != null) {
+                            ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceGeneration.getInvoiceNumber());
+                        }
+                    });
 
                 paymentResult = paymentManager.lookupProviderByMethod( paymentProxy.getPaymentMethod(), Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId()) )
                     .map( paymentProvider -> paymentProvider.doPayment(spec) )
@@ -380,6 +379,8 @@ public class TicketReservationManager {
             if (paymentResult.isSuccessful()) {
                 //FIXME customerReference
                 completeReservation( spec, specialPriceSessionId, paymentProxy );
+            } else {
+                reTransitionToPending(spec.getReservationId());
             }
             return paymentResult;
         } catch(Exception ex) {
@@ -563,7 +564,7 @@ public class TicketReservationManager {
     }
 
     public static boolean hasValidOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager) {
-        OptionalInt result = BankTransactionManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+        OptionalInt result = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
         return result.isPresent() && result.getAsInt() >= 0;
     }
 
