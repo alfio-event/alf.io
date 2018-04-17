@@ -72,7 +72,7 @@ public class TestConfiguration {
         Path pgsqlPath = Paths.get(".", "alfio-itest");
         Path tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data");
         postgres = new EmbeddedPostgres(PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString());
-        postgres.start(EmbeddedPostgres.cachedRuntimeConfig(pgsqlPath));
+        postgres.start(EmbeddedPostgres.cachedRuntimeConfig(Paths.get(System.getProperty("java.io.tmpdir"), "pgembed")));
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
                 FileUtils.deleteDirectory(tmpDataDir.normalize().toAbsolutePath().toFile());

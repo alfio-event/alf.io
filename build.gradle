@@ -1,5 +1,7 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.Year
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -22,6 +24,7 @@ buildscript {
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
         classpath 'com.benjaminsproule:swagger-gradle-plugin:+'
+        classpath 'ru.yandex.qatools.embed:postgresql-embedded:+'
     }
     group='alfio'
     version='2.0-SNAPSHOT'
@@ -337,6 +340,23 @@ task clever(type: Copy) {
     })
     into "${project.buildDir}/clevercloud"
     dependsOn build
+}
+
+import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres
+
+task launchEmbeddedPgSQL {
+    doLast {
+        final pgsqlPath = Paths.get(".", "alfio-itest");
+        final tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data");
+        final postgres = new EmbeddedPostgres(ru.yandex.qatools.embed.postgresql.distribution.Version.Main.PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString())
+        postgres.start(EmbeddedPostgres.cachedRuntimeConfig(Paths.get(System.getProperty("java.io.tmpdir"), "pgembed")))
+    }
+}
+
+task stopEmbeddedPgSQL {
+    doLast {
+        //TODO
+    }
 }
 
 release {
