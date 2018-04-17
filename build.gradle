@@ -345,13 +345,13 @@ task clever(type: Copy) {
 import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres
 import ru.yandex.qatools.embed.postgresql.distribution.Version.Main
 
-task launchEmbeddedPgSQL {
+task startEmbeddedPgSQL {
     doLast {
         final pgsqlPath = Paths.get(".", "alfio-itest")
         final tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data")
         final postgres = new EmbeddedPostgres(Main.PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString())
         postgres.start(EmbeddedPostgres.cachedRuntimeConfig(Paths.get(System.getProperty("java.io.tmpdir"), "pgembed")),
-            "localhost", 5432, "alfio", "postgres", "postgres", Arrays.asList("-E", "SQL_ASCII", "--locale=C", "--lc-collate=C", "--lc-ctype=C"))
+            "localhost", 5432, "alfio", "postgres", "password", Arrays.asList("-E", "SQL_ASCII", "--locale=C", "--lc-collate=C", "--lc-ctype=C"))
 
         postgres.getProcess().ifPresent({
             final pid = it.getProcessId()
