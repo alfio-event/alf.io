@@ -344,6 +344,7 @@ task clever(type: Copy) {
 
 import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres
 import ru.yandex.qatools.embed.postgresql.distribution.Version.Main
+import org.apache.commons.io.FileUtils
 
 task startEmbeddedPgSQL {
     doLast {
@@ -355,18 +356,24 @@ task startEmbeddedPgSQL {
 
         postgres.getProcess().ifPresent({
             final pid = it.getProcessId()
-            Files.write(Paths.get(".", "alfio-itest", "pgsql-pid"), Arrays.asList(Long.toString(pid)))
-            System.out.println("Launched pgsql with pid " + pid)
+            Files.write(Paths.get(".", "alfio-itest", "pgsql-pid-and-tmp-dir"), Arrays.asList(Long.toString(pid), tmpDataDir.toAbsolutePath().toString()))
+            System.out.println("Launched pgsql with pid " + pid + " with tmp dir " + tmpDataDir.toAbsolutePath().toString())
         })
     }
 }
 
 task stopEmbeddedPgSQL {
     doLast {
-        final pidFile = Paths.get(".", "alfio-itest", "pgsql-pid");
+        final pidFile = Paths.get(".", "alfio-itest", "pgsql-pid-and-tmp-dir")
+        if(!pidFile.toFile().exists()) {
+            System.out.println("pid file don't exists")
+            return
+        }
         final pid = Files.readAllLines(pidFile).get(0)
+        final tmpDataDir = Files.readAllLines(pidFile).get(1)
         Files.deleteIfExists(pidFile)
         Runtime.runtime.exec("kill -9 " + pid)
+        FileUtils.deleteDirectory(new File(tmpDataDir))
         System.out.println("Killed pgsql with pid " + pid)
     }
 }
