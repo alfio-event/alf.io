@@ -17,8 +17,7 @@
 
 -- new model, wip
 
--- for the range constraint
-create extension btree_gist;
+-- TODO: add v2_reservation_request_queue
 
 create table v2_event (
     id bigserial not null primary key,
@@ -64,20 +63,12 @@ alter table v2_ticket_category add constraint "v2_ticket_category_event_resource
 create table v2_slot (
     id bigserial not null primary key,
     event_resource_id_fk bigint,
-    exclusive_use boolean,
     start_time timestamp,
     end_time timestamp,
     ticket_id_fk bigint
 );
 alter table v2_slot add constraint "v2_slot_event_resource_id_fk" foreign key(event_resource_id_fk) references v2_event_resource(id);
 
--- https://stackoverflow.com/questions/26735955/postgres-constraint-for-unique-datetime-range
--- TODO: check that setting exclusive use to null OR start_time/end_time to null will deactivate this constraint :D
-alter table v2_slot add constraint "v2_slot_unique_overlapping_time" exclude using gist (
-    event_resource_id_fk WITH =,
-    (exclusive_use::int) WITH =, -- <- boolean is not supported
-    tsrange(start_time, end_time) WITH &&
-);
 
 create table v2_reservation (
     id bigserial not null primary key,
