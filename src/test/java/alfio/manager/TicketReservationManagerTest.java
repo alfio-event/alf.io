@@ -35,6 +35,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.TemplateManager;
+import alfio.util.WorkingDaysAdjusters;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
@@ -44,10 +45,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -407,7 +407,7 @@ class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(2L, ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()));
+        assertEquals(LocalDateTime.now().plusDays(2).with(WorkingDaysAdjusters.defaultWorkingDays()).toLocalDate(), offlinePaymentDeadline.toLocalDate());
     }
 
     @Test
@@ -422,7 +422,7 @@ class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(1L, ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()));
+        assertEquals(LocalDateTime.now().plusDays(1).with(WorkingDaysAdjusters.defaultWorkingDays()).toLocalDate(), offlinePaymentDeadline.toLocalDate());
     }
 
     @Test
@@ -437,7 +437,7 @@ class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now());
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(true, offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
+        assertTrue(offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
     }
 
 //    FIXME implement test
