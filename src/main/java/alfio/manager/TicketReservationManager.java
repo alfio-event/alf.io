@@ -555,7 +555,7 @@ public class TicketReservationManager {
             //TODO Maybe should we avoid this wrong behavior upfront, in the admin area?
             return now.plusHours(2);
         }
-        return now.plusDays(waitingPeriod).truncatedTo(ChronoUnit.HALF_DAYS);
+        return now.plusDays(waitingPeriod).truncatedTo(ChronoUnit.HALF_DAYS).with(WorkingDaysAdjusters.defaultWorkingDays());
     }
 
     public static int getOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager) {
