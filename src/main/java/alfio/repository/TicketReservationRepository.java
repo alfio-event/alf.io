@@ -174,4 +174,7 @@ public interface TicketReservationRepository {
 
     @Query("select id, event_id_fk from tickets_reservation where id in (:ids)")
     List<ReservationIdAndEventId> getReservationIdAndEventId(@Bind("ids") Collection<String> ids);
+
+    @Query("select * from tickets_reservation where id in (:ids)")
+    List<TicketReservation> findByIds(@Bind("ids") Collection<String> ids);
 }
