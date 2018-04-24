@@ -39,12 +39,12 @@ public interface ExtensionLogRepository {
     @Query("select count(*) from (" + FIND_EXTENSION_LOG + ") as el_tbl")
     int countPages(@Bind("path") String path,
                    @Bind("name") String name,
-                   @Bind("type") ExtensionLog.Type type);
+                   @Bind("type") String type);
 
     @Query("select * from (" + FIND_EXTENSION_LOG + " limit :pageSize offset :offset) as el_tbl")
     List<ExtensionLog> getPage(@Bind("path") String path,
                                @Bind("name") String name,
-                               @Bind("type") ExtensionLog.Type type,
+                               @Bind("type") String type,
                                @Bind("pageSize") int pageSize,
                                @Bind("offset") int offset);
 }
