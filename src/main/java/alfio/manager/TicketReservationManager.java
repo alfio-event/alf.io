@@ -509,7 +509,6 @@ public class TicketReservationManager {
         notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject,
             () ->  templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
         );
-        extensionManager.handleReservationsCancelledForEvent(event, Collections.singletonList(reservationId));
     }
 
     @Transactional(readOnly = true)
