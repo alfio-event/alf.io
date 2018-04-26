@@ -127,7 +127,8 @@ public class TicketReservationManagerTest {
     private InvoiceSequencesRepository invoiceSequencesRepository;
     @Mock
     private AuditingRepository auditingRepository;
-
+    @Mock
+    private TicketSearchRepository ticketSearchRepository;
 
     @Mock
     private Event event;
@@ -173,7 +174,7 @@ public class TicketReservationManagerTest {
             invoiceSequencesRepository,
             auditingRepository,
             userRepository,
-            extensionManager);
+            extensionManager, ticketSearchRepository);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);

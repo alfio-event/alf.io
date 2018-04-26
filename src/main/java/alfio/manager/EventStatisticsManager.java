@@ -48,6 +48,7 @@ public class EventStatisticsManager {
     private final EventRepository eventRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketRepository ticketRepository;
+    private final TicketSearchRepository ticketSearchRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final TicketReservationRepository ticketReservationRepository;
@@ -128,7 +129,7 @@ public class EventStatisticsManager {
         Event event = eventRepository.findById(eventId);
         String toSearch = prepareSearchTerm(search);
         final int pageSize = 30;
-        return ticketRepository.findAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId, page * pageSize, pageSize, toSearch).stream()
+        return ticketSearchRepository.findAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId, page * pageSize, pageSize, toSearch).stream()
             .map(t -> new TicketWithStatistic(t.getTicket(), event, t.getTicketReservation(), event.getZoneId(), t.getTransaction()))
             .sorted()
             .collect(Collectors.toList());
@@ -136,7 +137,7 @@ public class EventStatisticsManager {
 
     public Integer countModifiedTicket(int eventId, int categoryId, String search) {
         String toSearch = prepareSearchTerm(search);
-        return ticketRepository.countAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId, toSearch);
+        return ticketSearchRepository.countAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId, toSearch);
     }
 
     public Predicate<Event> noSeatsAvailable() {

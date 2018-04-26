@@ -35,26 +35,26 @@ public class TicketWithReservationAndTransaction {
     private final Optional<Transaction> transaction;
 
 
-    public TicketWithReservationAndTransaction(@Column("t_id") int id,
+    public TicketWithReservationAndTransaction(@Column("t_id") Integer id,
                                                @Column("t_uuid") String uuid,
                                                @Column("t_creation") ZonedDateTime creation,
                                                @Column("t_category_id") Integer categoryId,
                                                @Column("t_status") String status,
-                                               @Column("t_event_id") int eventId,
                                                @Column("t_tickets_reservation_id") String ticketsReservationId,
                                                @Column("t_full_name") String fullName,
                                                @Column("t_first_name") String firstName,
                                                @Column("t_last_name") String lastName,
                                                @Column("t_email_address") String email,
-                                               @Column("t_locked_assignment") boolean lockedAssignment,
+                                               @Column("t_locked_assignment") Boolean lockedAssignment,
                                                @Column("t_user_language") String userLanguage,
-                                               @Column("t_src_price_cts") int srcPriceCts,
-                                               @Column("t_final_price_cts") int finalPriceCts,
-                                               @Column("t_vat_cts") int vatCts,
-                                               @Column("t_discount_cts") int discountCts,
+                                               @Column("t_src_price_cts") Integer srcPriceCts,
+                                               @Column("t_final_price_cts") Integer finalPriceCts,
+                                               @Column("t_vat_cts") Integer vatCts,
+                                               @Column("t_discount_cts") Integer discountCts,
                                                @Column("t_ext_reference") String extReference,
                                                //
                                                @Column("tr_id") String trId,
+                                               @Column("tr_event_id") int eventId,
                                                @Column("tr_validity") Date validity,
                                                @Column("tr_status") TicketReservation.TicketReservationStatus trStatus,
                                                @Column("tr_full_name") String trFullName,
@@ -91,9 +91,10 @@ public class TicketWithReservationAndTransaction {
                                                @Column("bt_plat_fee") Long platformFee,
                                                @Column("bt_gtw_fee") Long gatewayFee
                                                ) {
-        this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
+
+        this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
             fullName, firstName, lastName, email, lockedAssignment, userLanguage,
-            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference);
+            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference) : null;
 
 
         this.ticketReservation = new TicketReservation(trId, validity, trStatus,
