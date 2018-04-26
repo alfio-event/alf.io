@@ -16,12 +16,10 @@
  */
 package alfio.repository;
 
+import alfio.config.support.PlatformProvider;
 import alfio.model.TicketReservation;
 import alfio.model.TicketWithReservationAndTransaction;
-import ch.digitalfondue.npjt.Bind;
-import ch.digitalfondue.npjt.Query;
-import ch.digitalfondue.npjt.QueryOverride;
-import ch.digitalfondue.npjt.QueryRepository;
+import ch.digitalfondue.npjt.*;
 
 import java.util.List;
 
@@ -54,7 +52,9 @@ public interface TicketSearchRepository {
                                                                  @Bind("search") String search);
 
     @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + " limit :pageSize offset :page) as d_tbl order by tr_confirmation_ts desc nulls last, tr_validity")
-    @QueryOverride(db = "MYSQL", value = "select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + " limit :pageSize offset :page) as d_tbl order by IF(ISNULL(tr_confirmation_ts),1,0), tr_confirmation_ts desc, tr_validity")
+    @QueriesOverride({
+        @QueryOverride(db = PlatformProvider.MYSQL, value = "select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + " limit :pageSize offset :page) as d_tbl order by IF(ISNULL(tr_confirmation_ts),1,0), tr_confirmation_ts desc, tr_validity")
+    })
     List<TicketReservation> findReservationsForEvent(@Bind("eventId") int eventId,
                                                      @Bind("page") int page,
                                                      @Bind("pageSize") int pageSize,
