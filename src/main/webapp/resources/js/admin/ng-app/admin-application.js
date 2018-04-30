@@ -321,7 +321,7 @@
     var validationResultHandler = function(form, deferred, $scope, NotificationHandler) {
         return function(validationResult) {
             if(validationResult.errorCount > 0) {
-                var showDateWarning = false;
+                var errorText;
                 angular.forEach(validationResult.validationErrors, function(error) {
                     var match = error.fieldName.match(/ticketCategories\[([0-9]+)\]/);
                     if(match) {
@@ -333,11 +333,14 @@
                         form.$setError(error.fieldName, error.code);
                     }
                     if(error.fieldName === 'begin' || error.fieldName === 'end') {
-                        showDateWarning = true;
+                        errorText = "Please check Event's start/end date.";
+                    }
+                    if(error.fieldName === 'allowedPaymentProxies') {
+                        errorText = "Please select a payment method."
                     }
                 });
-                if(showDateWarning) {
-                    NotificationHandler.showError("Please check Event's start/end date.");
+                if(errorText) {
+                    NotificationHandler.showError(errorText);
                 }
                 setTimeout(function() {
                     var firstInvalidElem = $("input.ng-invalid:first, textarea.input.ng-invalid:first, select.ng-invalid:first");
