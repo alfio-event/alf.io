@@ -189,6 +189,7 @@ public class EventApiController {
     @RequestMapping(value = "/events/check", method = POST)
     public ValidationResult validateEvent(@RequestBody EventModification eventModification, Errors errors) {
         ValidationResult base = validateEventHeader(Optional.empty(), eventModification, errors)
+            .or(validateEventDates(eventModification, errors))
             .or(validateTicketCategories(eventModification, errors))
             .or(validateEventPrices(Optional.empty(), eventModification, errors))
             .or(eventModification.getAdditionalServices().stream().map(as -> validateAdditionalService(as, eventModification, errors)).reduce(ValidationResult::or).orElse(ValidationResult.success()));

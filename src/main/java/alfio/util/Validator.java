@@ -78,6 +78,19 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
+    public static ValidationResult validateEventDates(EventModification ev, Errors errors) {
+        if(ev.getBegin() == null || ev.getBegin().getDate() == null || ev.getBegin().getTime() == null) {
+            errors.rejectValue("begin", "error.beginDate");
+        }
+        if(ev.getEnd() == null || ev.getEnd().getDate() == null || ev.getEnd().getTime() == null) {
+            errors.rejectValue("end", "error.endDate");
+        }
+        if(!errors.hasErrors() && !ev.getEnd().isAfter(ev.getBegin())) {
+            errors.rejectValue("end", "error.endDate");
+        }
+        return evaluateValidationResult(errors);
+    }
+
     private static boolean isInternal(Optional<Event> event, EventModification ev) {
         return event.map(Event::getType).orElse(ev.getEventType()) == Event.EventType.INTERNAL;
     }
@@ -116,10 +129,16 @@ public final class Validator {
         if(!category.getInception().isBefore(category.getExpiration())) {
             errors.rejectValue(prefix + "dateString", "error.date");
         }
-        if(eventModification != null && category.getExpiration().isAfter(eventModification.getEnd())) {
+        if(eventModification != null && isCategoryExpirationAfterEventEnd(category, eventModification)) {
             errors.rejectValue(prefix + "expiration", "error.date.overflow");
         }
         return evaluateValidationResult(errors);
+    }
+
+    private static boolean isCategoryExpirationAfterEventEnd(TicketCategoryModification category, EventModification eventModification) {
+        return eventModification.getEnd() == null
+            || eventModification.getEnd().getDate() == null
+            || category.getExpiration().isAfter(eventModification.getEnd());
     }
 
     public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors) {
