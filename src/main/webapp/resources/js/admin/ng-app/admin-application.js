@@ -319,6 +319,14 @@
     });
 
     var validationResultHandler = function(form, deferred, $scope, NotificationHandler) {
+
+        var errors = {
+            'error.coordinates': 'Event Geolocation is missing. Please check maps\' configuration.',
+            'error.beginDate': 'Please check Event\'s start/end date.',
+            'error.endDate': 'Please check Event\'s start/end date.',
+            'error.allowedpaymentproxies': 'Please select at least one payment method.'
+        };
+
         return function(validationResult) {
             if(validationResult.errorCount > 0) {
                 var errorText;
@@ -332,13 +340,11 @@
                     if(angular.isFunction(form.$setError)) {
                         form.$setError(error.fieldName, error.code);
                     }
-                    if(error.fieldName === 'begin' || error.fieldName === 'end') {
-                        errorText = "Please check Event's start/end date.";
-                    }
-                    if(error.fieldName === 'allowedPaymentProxies') {
-                        errorText = "Please select a payment method."
+                    if(errors[error.code]) {
+                        errorText = errors[error.code];
                     }
                 });
+
                 if(errorText) {
                     NotificationHandler.showError(errorText);
                 }

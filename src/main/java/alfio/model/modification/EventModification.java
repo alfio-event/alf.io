@@ -91,7 +91,7 @@ public class EventModification {
                              @JsonProperty("allowedPaymentProxies") List<PaymentProxy> allowedPaymentProxies,
                              @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories,
                              @JsonProperty("freeOfCharge") boolean freeOfCharge,
-                             @JsonProperty("geoLocation") LocationDescriptor locationDescriptor,
+                             @JsonProperty("geolocation") LocationDescriptor locationDescriptor,
                              @JsonProperty("locales") int locales,
                              @JsonProperty("ticketFields") List<AdditionalField> ticketFields,
                              @JsonProperty("additionalServices") List<AdditionalService> additionalServices) {

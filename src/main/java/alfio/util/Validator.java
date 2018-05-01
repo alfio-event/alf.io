@@ -24,6 +24,7 @@ import alfio.model.TicketFieldConfiguration;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.ValidationResult;
 import org.apache.commons.collections.CollectionUtils;
@@ -37,6 +38,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 
 public final class Validator {
 
@@ -54,6 +57,10 @@ public final class Validator {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "location", "error.location");
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "websiteUrl", "error.websiteurl");
 
+        if(isInternal(event, ev) && isLocationMissing(ev)) {
+            errors.rejectValue("locationDescriptor", "error.coordinates");
+        }
+
         if(isInternal(event, ev)) {
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "error.description");
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "termsAndConditionsUrl", "error.termsandconditionsurl");
@@ -69,6 +76,12 @@ public final class Validator {
         }
 
         return evaluateValidationResult(errors);
+    }
+
+    private static boolean isLocationMissing(EventModification em) {
+        LocationDescriptor descriptor = em.getLocationDescriptor();
+        return descriptor == null
+            || isAnyBlank(descriptor.getLatitude(), descriptor.getLongitude(), descriptor.getTimeZone());
     }
 
     public static ValidationResult validateTicketCategories(EventModification ev, Errors errors) {
