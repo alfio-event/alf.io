@@ -22,7 +22,7 @@ import alfio.repository.TicketCategoryRepository;
 import java.util.function.Function;
 
 public final class CategoryEvaluator {
-    private CategoryEvaluator() {
+    CategoryEvaluator() {
     }
 
     public static Function<Ticket, Boolean> ticketCancellationAvailabilityChecker(TicketCategoryRepository ticketCategoryRepository) {

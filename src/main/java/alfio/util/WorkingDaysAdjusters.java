@@ -38,7 +38,9 @@ public class WorkingDaysAdjusters {
         LocalTime localTime = LocalTime.from(in);
         boolean dayInRange = dayOfWeeks.contains(dayOfWeek);
         boolean hourInRange = hoursRanges.stream().anyMatch(hr -> hr.includes(localTime));
-        if(dayInRange && hourInRange) {
+        boolean hourInRange2 = hoursRanges.stream().anyMatch(hr -> hr.includes(localTime.getHour(),localTime.getMinute()));
+
+        if((dayInRange && hourInRange) || (dayInRange && hourInRange2)) {
             return in;
         }
         Temporal result = in;

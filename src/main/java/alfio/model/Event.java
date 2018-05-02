@@ -16,16 +16,6 @@
  */
 package alfio.model;
 
-import alfio.model.transaction.PaymentProxy;
-import alfio.util.MonetaryUtil;
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Getter;
-import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-import org.flywaydb.core.api.MigrationVersion;
-
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -35,6 +25,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.flywaydb.core.api.MigrationVersion;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import alfio.model.transaction.PaymentProxy;
+import alfio.util.MonetaryUtil;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 
 @Getter
 @Log4j2
@@ -75,7 +77,6 @@ public class Event implements EventHiddenFieldContainer {
     private final PriceContainer.VatStatus vatStatus;
     private final String version;
     private final Status status;
-
 
 
     public Event(@Column("id") int id,

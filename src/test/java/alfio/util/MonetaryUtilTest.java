@@ -21,6 +21,7 @@ import org.junit.Test;
 import java.math.BigDecimal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 public class MonetaryUtilTest {
 
@@ -52,5 +53,33 @@ public class MonetaryUtilTest {
         assertEquals(10001, MonetaryUtil.unitToCents(new BigDecimal("100.01")));
         assertEquals(10099, MonetaryUtil.unitToCents(new BigDecimal("100.99")));
         assertEquals(10100, MonetaryUtil.unitToCents(new BigDecimal("100.999")));
+    }
+
+    //ADD TESTS
+    
+    @Test
+    public void getExtractedVAT() throws Exception {
+        assertEquals(750, MonetaryUtil.extractVAT(10750, new BigDecimal("7.50")));
+        assertEquals(799, MonetaryUtil.extractVAT(10799, new BigDecimal("7.99")));
+    }
+    
+    @Test
+    public void calcVAT() throws Exception {
+        assertEquals(750, MonetaryUtil.calcPercentage(10000, new BigDecimal("7.50")));
+        assertEquals(110, MonetaryUtil.calcPercentage(10000, new BigDecimal("1.10")));
+        assertEquals(750, MonetaryUtil.calcVat(new BigDecimal("10000"), new BigDecimal("7.50")));
+        assertEquals(110, MonetaryUtil.calcVat(new BigDecimal("10000"), new BigDecimal("1.10")));
+    }
+    
+    @Test
+    public void formatCents() throws Exception {
+    	assertEquals("100.00", MonetaryUtil.formatCents(10000));
+    	assertEquals("100.00", MonetaryUtil.formatCents((long) 10000));
+    }
+    
+    @Test
+    public void make() throws Exception {
+    	MonetaryUtil MU = new MonetaryUtil();
+    	assertSame(new MonetaryUtil().getClass(), MU.getClass());
     }
 }
