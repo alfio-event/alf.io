@@ -347,17 +347,24 @@ public class AdminReservationManager {
     }
 
     private <T> Result<T> reduceResults(Result<T> r1, Result<T> r2, BiFunction<T, T, T> processData) {
-        boolean successful = r1.isSuccess() && r2.isSuccess();
-        ResultStatus global = r1.isSuccess() ? r2.getStatus() : r1.getStatus();
         List<ErrorCode> errors = new ArrayList<>();
-        if(!successful) {
+        if(!isResultSuccessful(r1.isSuccess(), r2.isSuccess())) {
             errors.addAll(r1.getErrors());
             errors.addAll(r2.getErrors());
-            return new Result<>(global, null, errors);
+            return new Result<>(getGolbalResultStatus(r1, r2), null, errors);
         } else {
-            return new Result<>(global, processData.apply(r1.getData(), r2.getData()), errors);
+            return new Result<>(getGolbalResultStatus(r1, r2), processData.apply(r1.getData(), r2.getData()), errors);
         }
     }
+
+    private boolean isResultSuccessful(final boolean r1, final boolean r2) {
+        return r1 && r2;
+    }
+
+    private <T> ResultStatus getGolbalResultStatus(Result<T> r1, Result<T> r2) {
+        return r1.isSuccess() ? r2.getStatus() : r1.getStatus();
+    }
+
 
     private Stream<Pair<TicketCategory, TicketsInfo>> flattenTicketsInfo(Event event, TicketsInfo empty, List<TicketsInfo> t) {
         return t.stream()
