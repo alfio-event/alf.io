@@ -86,6 +86,7 @@
             </div>
         {{/fields}}
     {{/ticketFieldConfiguration}}
+    {{#showAvailableLanguagesInPageTop}}
     <div class="form-group">
         <label class="col-sm-3 control-label" for="language-{{uuid}}">{{#i18n}}reservation-page-complete.language{{/i18n}}</label>
         <div class="col-sm-9">
@@ -97,4 +98,9 @@
             </select>
         </div>
     </div>
+    {{/showAvailableLanguagesInPageTop}}
+    {{^showAvailableLanguagesInPageTop}}
+        <div><input type="hidden" name="{{elementNamePrefix}}userLanguage" value="{{userLanguage}}"></div>
+    {{/showAvailableLanguagesInPageTop}}
+
 </div>
