@@ -265,7 +265,8 @@ public class AdminReservationManagerIntegrationTest {
                     new DateTimeModification(LocalDate.now(), LocalTime.now()),
                     new DateTimeModification(LocalDate.now(), LocalTime.now()),
                     DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
-        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
+        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, 
+        		Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
         assertNotNull(testResult);
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
         CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "en");
@@ -273,7 +274,8 @@ public class AdminReservationManagerIntegrationTest {
         Category category = new Category(null, "name", new BigDecimal("100.00"));
         List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true, false));
         AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false, null);
-        Result<Boolean> result = adminReservationManager.updateReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), modification, testResult.getMiddle());
+        Result<Boolean> result = adminReservationManager.updateReservation(testResult.getLeft().getShortName(), 
+        		testResult.getRight().getId(), modification, testResult.getMiddle());
         assertTrue(result.isSuccess()); 
     }
     //
@@ -284,18 +286,21 @@ public class AdminReservationManagerIntegrationTest {
                     new DateTimeModification(LocalDate.now(), LocalTime.now()),
                     new DateTimeModification(LocalDate.now(), LocalTime.now()),
                     DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
-        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
+        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, 
+        		Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
         assertNotNull(testResult);
         DateTimeModification expiration = DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1));
         CustomerData customerData = new CustomerData("Integration", "Test", "integration-test@test.ch", "Billing Address", "en");
         int attendees = AVAILABLE_SEATS;
         Category category = new Category(null, "name", new BigDecimal("100.00"));
         List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true, false));
-        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false, new AdminReservationModification.Notification(true, true));
-        Result<Boolean> result = adminReservationManager.notify(testResult.getLeft().getShortName(), testResult.getRight().getId(), modification, testResult.getMiddle());
+        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", 
+        		false, new AdminReservationModification.Notification(true, true));
+        Result<Boolean> result = adminReservationManager.notify(testResult.getLeft().getShortName(), testResult.getRight().getId(), 
+        		modification, testResult.getMiddle());
         assertTrue(result.isSuccess()); 
     }
-    
+    //
     @Test
     public void testRemoveTickets() {        
         List<TicketCategoryModification> categories = Collections.singletonList(
@@ -303,18 +308,21 @@ public class AdminReservationManagerIntegrationTest {
                     new DateTimeModification(LocalDate.now(), LocalTime.now()),
                     new DateTimeModification(LocalDate.now(), LocalTime.now()),
                     DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
-        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
+        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, 
+        		Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
         assertNotNull(testResult);
-        Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.confirmReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), testResult.getMiddle());
+        Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.confirmReservation(testResult.getLeft().getShortName(),
+        		testResult.getRight().getId(), testResult.getMiddle());
         assertTrue(result.isSuccess());
         Triple<TicketReservation, List<Ticket>, Event> triple = result.getData();
         List<Integer> ticketsId = new ArrayList<Integer>();
         for(Ticket t: triple.getMiddle()) {
         	ticketsId.add(t.getId());
         }
-        adminReservationManager.removeTickets(triple.getRight().getShortName(), triple.getLeft().getId(), ticketsId, ticketsId, true, testResult.getMiddle());
+        adminReservationManager.removeTickets(triple.getRight().getShortName(), triple.getLeft().getId(), ticketsId, ticketsId, 
+        		true, testResult.getMiddle());
     }
-
+//
     @Test
     public void testRemoveReservation() {
         List<TicketCategoryModification> categories = Collections.singletonList(
@@ -327,7 +335,7 @@ public class AdminReservationManagerIntegrationTest {
         
         adminReservationManager.removeReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), true, true, testResult.getMiddle());
     }
-    
+    //
     @Test
     public void testRefund() {
         List<TicketCategoryModification> categories = Collections.singletonList(
