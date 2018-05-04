@@ -17,8 +17,6 @@
 
 -- new model, wip
 
--- TODO: add v2_reservation_request_queue
-
 create table v2_event (
     id bigserial not null primary key,
     short_name varchar(128) not null,
@@ -47,8 +45,9 @@ alter table v2_event_resource add constraint "v2_event_resource_event_id_fk" for
 alter table v2_event_resource add constraint "v2_event_resource_resource_id_fk" foreign key(resource_id_fk) references v2_resource(id);
 
 create type slot_creation_strategy_t as enum ('EAGER', 'LAZY');
+create type resource_type_t as enum ('TICKET', 'MERCH', 'DONATION');
 
-create table v2_ticket_category (
+create table v2_resource_category (
     id bigserial not null primary key,
     event_resource_id_fk bigint not null,
     start_time timestamp,
@@ -56,18 +55,26 @@ create table v2_ticket_category (
     max_tickets int,
     name varchar(256) not null,
     src_price_cts int,
-    slot_creation_strategy slot_creation_strategy_t
+    slot_creation_strategy slot_creation_strategy_t,
+    resource_type resource_type_t
 );
-alter table v2_ticket_category add constraint "v2_ticket_category_event_resource_id_fk" foreign key(event_resource_id_fk) references v2_event_resource(id);
+alter table v2_resource_category add constraint "v2_resource_category_event_resource_id_fk" foreign key(event_resource_id_fk) references v2_event_resource(id);
 
 create table v2_slot (
     id bigserial not null primary key,
-    event_resource_id_fk bigint,
+    resource_category_id_fk bigint,
     start_time timestamp,
     end_time timestamp,
     ticket_id_fk bigint
 );
-alter table v2_slot add constraint "v2_slot_event_resource_id_fk" foreign key(event_resource_id_fk) references v2_event_resource(id);
+alter table v2_slot add constraint "v2_slot_resource_category_id_fk" foreign key(resource_category_id_fk) references v2_resource_category(id);
+
+create table v2_resource_category_event_resource (
+    event_resource_id_fk bigint not null,
+    resource_category_id_fk bigint not null
+);
+alter table v2_resource_category_event_resource add constraint "v2_resource_category_event_resource_event_resource_id_fk" foreign key(event_resource_id_fk) references v2_event_resource(id);
+alter table v2_resource_category_event_resource add constraint "v2_resource_category_event_resource_resource_category_id_fk" foreign key(resource_category_id_fk) references v2_resource_category(id);
 
 
 create table v2_reservation (
@@ -81,9 +88,26 @@ create table v2_ticket (
     id bigserial not null primary key,
     uuid uuid,
     creation_time timestamp,
-    ticket_category_id_fk bigint,
+    resource_category_id_fk bigint,
     reservation_id_fk bigint
 );
-alter table v2_ticket add constraint "v2_ticket_ticket_category_id_fk" foreign key(ticket_category_id_fk) references v2_ticket_category(id);
+alter table v2_ticket add constraint "v2_ticket_resource_category_id_fk" foreign key(resource_category_id_fk) references v2_resource_category(id);
 alter table v2_ticket add constraint "v2_ticket_reservation_id_fk" foreign key(reservation_id_fk) references v2_reservation(id);
 
+create table v2_reservation_request (
+    id bigserial not null primary key,
+    event_id_fk bigint
+);
+alter table v2_reservation_request add constraint "v2_reservation_request_event_id_fk" foreign key(event_id_fk) references v2_event(id);
+
+
+create type reservation_request_item_status_t as enum ('FULFILLED', 'FAILED', 'WAITING');
+
+create table v2_reservation_request_item (
+    id bigserial not null primary key,
+    reservation_request_id_fk bigint not null,
+    resource_category_id_fk bigint not null,
+    status reservation_request_item_status_t not null
+);
+alter table v2_reservation_request_item add constraint "v2_reservation_request_item_reservation_request_id_fk" foreign key(reservation_request_id_fk) references v2_reservation_request(id);
+alter table v2_reservation_request_item add constraint "v2_reservation_request_item_resource_category_id_fk" foreign key(resource_category_id_fk) references v2_resource_category(id);
