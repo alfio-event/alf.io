@@ -55,6 +55,7 @@ public class Event implements EventHiddenFieldContainer {
     private final String websiteUrl;
     private final String externalUrl;
     private final String termsAndConditionsUrl;
+    private final String privacyPolicyUrl;
     private final String imageUrl;
     private final String fileBlobId;
     private final String location;
@@ -92,6 +93,7 @@ public class Event implements EventHiddenFieldContainer {
                  @Column("external_url") String externalUrl,
                  @Column("file_blob_id") String fileBlobId,
                  @Column("website_t_c_url") String termsAndConditionsUrl,
+                 @Column("website_p_p_url") String privacyPolicyUrl,
                  @Column("image_url") String imageUrl,
                  @Column("currency") String currency,
                  @Column("vat") BigDecimal vat,
@@ -109,6 +111,7 @@ public class Event implements EventHiddenFieldContainer {
         this.websiteUrl = websiteUrl;
         this.externalUrl = externalUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
+        this.privacyPolicyUrl = privacyPolicyUrl;
         this.imageUrl = imageUrl;
         this.fileBlobId = fileBlobId;
 
@@ -244,5 +247,9 @@ public class Event implements EventHiddenFieldContainer {
 
     public boolean expiredSince(int days) {
         return ZonedDateTime.now(getZoneId()).truncatedTo(ChronoUnit.DAYS).minusDays(days).isAfter(getEnd().truncatedTo(ChronoUnit.DAYS));
+    }
+
+    public String getPrivacyPolicyLinkOrNull() {
+        return StringUtils.trimToNull(privacyPolicyUrl);
     }
 }

@@ -271,7 +271,7 @@ public class EventManager {
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
         final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
         eventRepository.updateHeader(eventId, em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.getTermsAndConditionsUrl(),
-            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(),
+            em.getPrivacyPolicyUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(),
             begin, end, em.getZoneId(), em.getOrganizationId(), em.getLocales());
 
         createOrUpdateEventDescription(eventId, em);
@@ -714,7 +714,7 @@ public class EventManager {
         ZoneId zoneId = ZoneId.of(em.getZoneId());
         String currentVersion = flyway.info().current().getVersion().getVersion();
         return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.isInternal() ? em.getTermsAndConditionsUrl() : "",
-            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(), em.getBegin().toZonedDateTime(zoneId),
+            em.getPrivacyPolicyUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(), em.getBegin().toZonedDateTime(zoneId),
             em.getEnd().toZonedDateTime(zoneId), em.getZoneId(), em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
             vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion, Event.Status.DRAFT).getKey();
     }

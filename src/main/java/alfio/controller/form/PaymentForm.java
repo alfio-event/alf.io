@@ -45,6 +45,7 @@ public class PaymentForm implements Serializable {
     private String hmac;
     private Boolean cancelReservation;
     private Boolean termAndConditionsAccepted;
+    private Boolean privacyPolicyAccepted;
     private PaymentProxy paymentMethod;
     private Boolean expressCheckoutRequested;
     private boolean postponeAssignment = false;
@@ -89,7 +90,8 @@ public class PaymentForm implements Serializable {
             bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
         }
 
-        if(Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted) {
+        if(Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted
+            || (StringUtils.isNotEmpty(event.getPrivacyPolicyUrl()) && (Objects.isNull(privacyPolicyAccepted) || !privacyPolicyAccepted)) ) {
             bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
         }
         

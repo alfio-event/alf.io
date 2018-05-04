@@ -242,7 +242,11 @@ public final class Validator {
 
     public static ValidationResult validateWaitingQueueSubscription(WaitingQueueSubscriptionForm form, Errors errors, Event event) {
         if(!form.isTermAndConditionsAccepted()) {
-            errors.rejectValue("termAndConditionsAccepted", "error.termAndConditionsAccepted");
+            errors.rejectValue("termAndConditionsAccepted", ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
+        }
+
+        if(StringUtils.isNotEmpty(event.getPrivacyPolicyUrl()) && !form.isPrivacyPolicyAccepted()) {
+            errors.rejectValue("privacyPolicyAccepted", ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
         }
 
         if(event.mustUseFirstAndLastName()) {

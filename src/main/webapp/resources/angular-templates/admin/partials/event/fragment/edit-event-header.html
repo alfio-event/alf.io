@@ -79,14 +79,14 @@
 
     </div>
     <div class="row">
-        <div class="col-xs-6">
+        <div class="col-xs-12 col-md-4">
             <div class="form-group" bs-form-error="editEventHeader.websiteUrl">
                 <label for="websiteUrl">Website URL</label>
                 <input type="url" data-ng-model="obj.websiteUrl" name="websiteUrl" id="websiteUrl" required class="form-control" />
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.websiteUrl" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
-        <div class="col-xs-6">
+        <div class="col-xs-12 col-md-4">
             <div data-ng-if="obj.type !== 'INTERNAL'" class="form-group" bs-form-error="editEventHeader.externalUrl">
                 <label for="externalUrl">External ticket reservation URL</label>
                 <input type="url" data-ng-model="obj.externalUrl" name="externalUrl" id="externalUrl" required class="form-control" />
@@ -97,6 +97,14 @@
                 <label for="termsAndConditionsUrl">Terms and Conditions URL</label>
                 <input type="url" data-ng-model="obj.termsAndConditionsUrl" name="termsAndConditionsUrl" id="termsAndConditionsUrl" required class="form-control" />
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.termsAndConditionsUrl" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-4" data-ng-if="obj.type === 'INTERNAL'">
+            <div class="form-group" bs-form-error="editEventHeader.privacyPolicyUrl">
+                <label for="privacyPolicyUrl">Privacy policy URL</label>
+                <input type="url" data-ng-model="obj.privacyPolicyUrl" name="privacyPolicyUrl" id="privacyPolicyUrl" class="form-control" aria-describedby="privacyHelp"/>
+                <span id="privacyHelp" ng-if="isObjectEmpty(editEventHeader.privacyPolicyUrl.$error)" class="help-block">Privacy policy link is optional. However, it is good practice to have one.</span>
+                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.privacyPolicyUrl" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
     </div>
