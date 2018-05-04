@@ -50,6 +50,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -417,7 +418,7 @@ public class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
         ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(LocalDateTime.now().plusDays(2).with(WorkingDaysAdjusters.defaultWorkingDays()).toLocalDate(), offlinePaymentDeadline.toLocalDate());
+        assertEquals(LocalDateTime.now().plusDays(2).with(WorkingDaysAdjusters.workingDaysAtNoon()).truncatedTo(ChronoUnit.HOURS).toLocalDate(), offlinePaymentDeadline.toLocalDate());
     }
 
     @Test
@@ -428,11 +429,11 @@ public class TicketReservationManagerTest {
     }
 
     @Test
-    public void considerEventBeginDateWhileCalculatinExpDate() {
+    public void considerEventBeginDateWhileCalculatingExpDate() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
         ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(LocalDateTime.now().plusDays(1).with(WorkingDaysAdjusters.defaultWorkingDays()).toLocalDate(), offlinePaymentDeadline.toLocalDate());
+        assertEquals(LocalDateTime.now().plusDays(1).with(WorkingDaysAdjusters.workingDaysAtNoon()).truncatedTo(ChronoUnit.HOURS).toLocalDate(), offlinePaymentDeadline.toLocalDate());
     }
 
     @Test
@@ -447,7 +448,7 @@ public class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now());
         ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(true, offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
+        assertTrue(offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
     }
 
     @Test(expected = TicketReservationManager.OfflinePaymentException.class)
