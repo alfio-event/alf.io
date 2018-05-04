@@ -16,6 +16,24 @@
 --
 
 drop view if exists events_statistics;
+drop view if exists events_statistics_aggregation_view;
+
+create view events_statistics_aggregation_view as (
+select
+	sum(sold_tickets_count) as sold_tickets_count,
+	sum(checked_in_count) as checked_in_count,
+	sum(pending_count) as pending_count,
+	sum(case (bounded) when true then checked_in_count else 0 end) as checked_in_count_bounded,
+	sum(case (bounded = false) when true then checked_in_count else 0 end) as checked_in_count_unbounded,
+	sum(case (bounded) when true then max_tickets else 0 end) as allocated_count,
+	sum(case (bounded) when true then sold_tickets_count else 0 end) as sold_tickets_count_bounded,
+	sum(case (bounded = false) when true then sold_tickets_count else 0 end) as sold_tickets_count_unbounded,
+	sum(case (bounded = false) when true then pending_count else 0 end) as pending_count_unbounded,
+	sum(case (bounded) when false then 1 else 0 end) > 0 contains_unbounded_categories,
+	sum(case (is_containing_orphan_tickets) when true then 1 else 0 end) is_containing_orphan_tickets_count,
+    sum(case (is_containing_stuck_tickets) when true then 1 else 0 end) is_containing_stuck_tickets_count,
+	event_id from ticket_category_statistics group by event_id
+);
 
 create view events_statistics as (select
       event.id,
@@ -41,19 +59,5 @@ create view events_statistics as (select
       is_containing_stuck_tickets_count > 0 as is_containing_stuck_tickets_count
 
 
-from
-(select
-	sum(sold_tickets_count) as sold_tickets_count,
-	sum(checked_in_count) as checked_in_count,
-	sum(pending_count) as pending_count,
-	sum(case (bounded) when true then checked_in_count else 0 end) as checked_in_count_bounded,
-	sum(case (bounded = false) when true then checked_in_count else 0 end) as checked_in_count_unbounded,
-	sum(case (bounded) when true then max_tickets else 0 end) as allocated_count,
-	sum(case (bounded) when true then sold_tickets_count else 0 end) as sold_tickets_count_bounded,
-	sum(case (bounded = false) when true then sold_tickets_count else 0 end) as sold_tickets_count_unbounded,
-	sum(case (bounded = false) when true then pending_count else 0 end) as pending_count_unbounded,
-	sum(case (bounded) when false then 1 else 0 end) > 0 contains_unbounded_categories,
-	sum(case (is_containing_orphan_tickets) when true then 1 else 0 end) is_containing_orphan_tickets_count,
-    sum(case (is_containing_stuck_tickets) when true then 1 else 0 end) is_containing_stuck_tickets_count,
-	event_id from ticket_category_statistics group by event_id) as stats
+from events_statistics_aggregation_view as stats
 inner join event on event_id = event.id);
