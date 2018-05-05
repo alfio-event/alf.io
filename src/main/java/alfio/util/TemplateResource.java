@@ -22,6 +22,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.experimental.Delegate;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -294,7 +295,7 @@ public enum TemplateResource {
     public static Map<String, Object> prepareModelForOfflineReservationExpiringEmailForOrganizer(Event event, List<TicketReservationInfo> reservations, String baseUrl) {
         Map<String, Object> model = new HashMap<>();
         model.put("eventName", event.getDisplayName());
-        model.put("ticketReservations", reservations);
+        model.put("ticketReservations", reservations.stream().map(r -> new TicketReservationWithZonedExpiringDate(r, event)).collect(Collectors.toList()));
         model.put("baseUrl", baseUrl);
         model.put("eventShortName", event.getShortName());
         return model;
@@ -303,7 +304,7 @@ public enum TemplateResource {
     public static Map<String, Object> prepareSampleModelForOfflineReservationExpiringEmailForOrganizer(Event event) {
         Map<String, Object> model = new HashMap<>();
         model.put("eventName", event.getDisplayName());
-        model.put("ticketReservations", Collections.singletonList(new TicketReservationInfo("id", null, "Firstname", "Lastname", "email@email.email", 42)));
+        model.put("ticketReservations", Collections.singletonList(new TicketReservationInfo("id", null, "Firstname", "Lastname", "email@email.email", 42, new Date())));
         model.put("baseUrl", "http://base-url/");
         model.put("eventShortName", event.getShortName());
         return model;
@@ -474,5 +475,17 @@ public enum TemplateResource {
         private final String eventImage;
         private final Integer imageWidth;
         private final Integer imageHeight;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class TicketReservationWithZonedExpiringDate {
+        @Delegate
+        private final TicketReservationInfo reservation;
+        private final Event event;
+
+        public ZonedDateTime getZonedExpiration() {
+            return reservation.getValidity().toInstant().atZone(event.getZoneId());
+        }
     }
 }

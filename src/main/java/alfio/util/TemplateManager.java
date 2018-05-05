@@ -47,7 +47,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * For hiding the uglyness :)
+ * For hiding the ugliness :)
  * */
 public class TemplateManager {
 
@@ -330,14 +330,11 @@ public class TemplateManager {
 
         ParserState state = ParserState.START;
         int idx = 0;
-        while (true) {
+        do {
             Pair<ParserState, Integer> stateAndIdx = state.next(template, idx, ast);
             state = stateAndIdx.getKey();
             idx = stateAndIdx.getValue();
-            if (state == ParserState.END) {
-                break;
-            }
-        }
+        } while (state != ParserState.END);
 
         ast.visit(sb, locale, messageSource);
 
