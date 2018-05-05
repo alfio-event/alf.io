@@ -57,8 +57,8 @@
                 attendeeStrategy: 'fullData'
             };
             ticketInfo.parseFileContent = angular.bind(ticketInfo, internalParseFileContent);
-            ctrl.reservation.ticketsInfo.push(ticketInfo);
             ctrl.addAttendee(ticketInfo);
+            ctrl.reservation.ticketsInfo.push(ticketInfo);
         };
 
         ctrl.updateAttendeesSize = function(ticketInfo) {

@@ -324,7 +324,7 @@ public class AdminReservationManager {
         int categoryId = category.getId();
         List<Attendee> attendees = ticketsInfo.getAttendees();
         List<Integer> reservedForUpdate = ticketReservationManager.reserveTickets(event.getId(), categoryId, attendees.size(), singletonList(Ticket.TicketStatus.FREE));
-        if (reservedForUpdate.size() != attendees.size()) {
+        if (reservedForUpdate.size() == 0 || reservedForUpdate.size() != attendees.size()) {
             return Result.error(ErrorCode.CategoryError.NOT_ENOUGH_SEATS);
         }
         ticketRepository.reserveTickets(reservationId, reservedForUpdate, categoryId, arm.getLanguage(), category.getSrcPriceCts());
