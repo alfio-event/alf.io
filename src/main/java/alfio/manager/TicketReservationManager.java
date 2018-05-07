@@ -400,30 +400,11 @@ public class TicketReservationManager {
                 });
 
                 //
-                switch(paymentProxy) {
-                    case STRIPE:
-                        paymentResult = getPaymentManager().processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
-                        if(!paymentResult.isSuccessful()) {
-                            reTransitionToPending(reservationId);
-                            return paymentResult;
-                        }
-                        break;
-                    case PAYPAL:
-                        paymentResult = getPaymentManager().processPayPalPayment(reservationId, gatewayToken, payerId, reservationCost.getPriceWithVAT(), event);
-                        if(!paymentResult.isSuccessful()) {
-                            reTransitionToPending(reservationId);
-                            return paymentResult;
-                        }
-                        break;
-                    case OFFLINE:
-                        transitionToOfflinePayment(event, reservationId, email, customerName, billingAddress);
-                        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
-                        break;
-                    case ON_SITE:
-                        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Payment proxy "+paymentProxy+ " not recognized");
+                paymentResult = resultFor(gatewayToken, payerId, event, reservationId, email, customerName,
+						billingAddress, reservationCost, paymentProxy);
+                
+                if (paymentProxy == PaymentProxy.STRIPE || paymentProxy == PaymentProxy.PAYPAL) {
+                	return paymentResult;
                 }
 
             } else {
@@ -439,6 +420,36 @@ public class TicketReservationManager {
         }
 
     }
+
+	private PaymentResult resultFor(String gatewayToken, String payerId, Event event, String reservationId,
+			String email, CustomerName customerName, String billingAddress, TotalPrice reservationCost,
+			PaymentProxy paymentProxy) {
+		PaymentResult paymentResult;
+		switch(paymentProxy) {
+		    case STRIPE:
+		        paymentResult = getPaymentManager().processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
+		        if(!paymentResult.isSuccessful()) {
+		            reTransitionToPending(reservationId);
+		        }
+		        break;
+		    case PAYPAL:
+		        paymentResult = getPaymentManager().processPayPalPayment(reservationId, gatewayToken, payerId, reservationCost.getPriceWithVAT(), event);
+		        if(!paymentResult.isSuccessful()) {
+		            reTransitionToPending(reservationId);
+		        }
+		        break;
+		    case OFFLINE:
+		        transitionToOfflinePayment(event, reservationId, email, customerName, billingAddress);
+		        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
+		        break;
+		    case ON_SITE:
+		        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
+		        break;
+		    default:
+		        throw new IllegalArgumentException("Payment proxy "+paymentProxy+ " not recognized");
+		}
+		return paymentResult;
+	}
 
 	private void updateInvoice(Event event, String reservationId, boolean invoiceRequested) {
 		if(invoiceRequested && getConfigurationManager().hasAllConfigurationsForInvoice(event)) {
@@ -1139,23 +1150,9 @@ public class TicketReservationManager {
 
         boolean admin = isAdmin(userDetails);
 
-        if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
-            Locale oldUserLocale = Locale.forLanguageTag(ticket.getUserLanguage());
-            String subject = getMessageSource().getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
-            getNotificationManager().sendSimpleEmail(event, ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
-            if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
-                Organization organization = getOrganizationRepository().getById(event.getOrganizationId());
-                getNotificationManager().sendSimpleEmail(event, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
-            }
-        }
+        notAdminUpdateTicketOwner(ticket, event, ownerChangeTextBuilder, newEmail, newTicket, admin);
 
-        if(admin) {
-            TicketReservation reservation = findById(ticket.getTicketsReservationId()).orElseThrow(IllegalStateException::new);
-            //if the current user is admin, then it would be good to update also the name of the Reservation Owner
-            String username = userDetails.get().getUsername();
-            log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
-            getTicketReservationRepository().updateAssignee(reservation.getId(), username);
-        }
+        adminUpdateTicketOwner(ticket, userDetails, admin);
         getPluginManager().handleTicketAssignment(newTicket);
         getExtensionManager().handleTicketAssignment(newTicket);
 
@@ -1166,6 +1163,29 @@ public class TicketReservationManager {
 
         auditUpdateTicket(preUpdateTicket, preUpdateTicketFields, postUpdateTicket, postUpdateTicketFields, event.getId());
     }
+
+	private void adminUpdateTicketOwner(Ticket ticket, Optional<UserDetails> userDetails, boolean admin) {
+		if(admin) {
+            TicketReservation reservation = findById(ticket.getTicketsReservationId()).orElseThrow(IllegalStateException::new);
+            //if the current user is admin, then it would be good to update also the name of the Reservation Owner
+            String username = userDetails.get().getUsername();
+            log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
+            getTicketReservationRepository().updateAssignee(reservation.getId(), username);
+        }
+	}
+
+	private void notAdminUpdateTicketOwner(Ticket ticket, Event event, PartialTicketTextGenerator ownerChangeTextBuilder,
+			String newEmail, Ticket newTicket, boolean admin) {
+		if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
+            Locale oldUserLocale = Locale.forLanguageTag(ticket.getUserLanguage());
+            String subject = getMessageSource().getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
+            getNotificationManager().sendSimpleEmail(event, ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
+            if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
+                Organization organization = getOrganizationRepository().getById(event.getOrganizationId());
+                getNotificationManager().sendSimpleEmail(event, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
+            }
+        }
+	}
 
     private void auditUpdateTicket(Ticket preUpdateTicket, Map<String, String> preUpdateTicketFields, Ticket postUpdateTicket, Map<String, String> postUpdateTicketFields, int eventId) {
         DiffNode diffTicket = ObjectDifferBuilder.buildDefault().compare(postUpdateTicket, preUpdateTicket);
