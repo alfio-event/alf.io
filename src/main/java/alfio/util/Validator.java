@@ -139,8 +139,7 @@ public final class Validator {
         return ValidationResult.success();
     }
 
-    public void detectEmailError(UpdateTicketOwnerForm form, Optional<Errors> errorsOptional) {
-    	Errors errors = errorsOptional.get();
+    public void detectEmailError(UpdateTicketOwnerForm form, Optional<Errors> errorsOptional, Errors errors) {
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "error.email");
         String email = form.getEmail();
         
@@ -148,15 +147,10 @@ public final class Validator {
             errors.rejectValue("email", "error.email");
         }
     }
+    //Extract Implementation from validateTicketAssignment to here.
     
-    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional, Event event) {
-        if(!errorsOptional.isPresent()) {
-            return ValidationResult.success();//already validated
-        }
-
-        detectEmailError(form, errorsOptional)
-        
-        if(event.mustUseFirstAndLastName()) {
+    public void validateNameForm(UpdateTicketOwnerForm form, Event event, Errors errors) {
+    	if(event.mustUseFirstAndLastName()) {
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
             validateMaxLength(form.getFirstName(), "firstName", ErrorsCode.STEP_2_MAX_LENGTH_FIRSTNAME, 255, errors);
 
@@ -166,9 +160,19 @@ public final class Validator {
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
             validateMaxLength(form.getFullName(), "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME, 255, errors);
         }
+    }
+    
+    
+    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional, Event event) {
+        if(!errorsOptional.isPresent()) {
+            return ValidationResult.success();//already validated
+        }
+        
+        Errors errors = errorsOptional.get();
 
+        detectEmailError(form, errorsOptional, errors);
+        validateNameForm(form, event, errors);;;;;;;
 
-        //
         for(TicketFieldConfiguration fieldConf : additionalFieldsForEvent) {
 
             boolean isField = form.getAdditional() !=null && form.getAdditional().containsKey(fieldConf.getName());
