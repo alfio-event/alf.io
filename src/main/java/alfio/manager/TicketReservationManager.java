@@ -970,12 +970,12 @@ public class TicketReservationManager {
 	}
 
 	private Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> collectAdditionalServiceItems(String reservationId, Event event) {
-        return additionalServiceItemRepository.findByReservationUuid(reservationId)
+        return getAdditionalServiceItemRepository().findByReservationUuid(reservationId)
             .stream()
             .collect(Collectors.groupingBy(AdditionalServiceItem::getAdditionalServiceId))
             .entrySet()
             .stream()
-            .map(entry -> Pair.of(additionalServiceRepository.getById(entry.getKey(), event.getId()), entry.getValue()));
+            .map(entry -> Pair.of(getAdditionalServiceRepository().getById(entry.getKey(), event.getId()), entry.getValue()));
     }
 
     String reservationUrl(String reservationId) {
