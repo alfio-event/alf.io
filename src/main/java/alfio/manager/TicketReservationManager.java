@@ -1206,9 +1206,9 @@ public class TicketReservationManager {
 
     void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
         try {
-            TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
-            TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-            notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory);
+            TicketReservation reservation = getTicketReservationRepository().findReservationById(ticket.getTicketsReservationId());
+            TicketCategory ticketCategory = getTicketCategoryRepository().getByIdAndActive(ticket.getCategoryId(), event.getId());
+            getNotificationManager().sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
