@@ -277,23 +277,35 @@ public class TicketReservationManager {
             throw new NotEnoughTicketsException();
         }
 
-        TicketCategory category = ticketCategoryRepository.getByIdAndActive(ticketReservation.getTicketCategoryId(), event.getId());
+        TicketCategory category = getTicketCategoryRepository().getByIdAndActive(ticketReservation.getTicketCategoryId(), event.getId());
         if (specialPrice.isPresent()) {
             if(reservedForUpdate.size() != 1) {
                 throw new NotEnoughTicketsException();
             }
             SpecialPrice sp = specialPrice.get();
-            ticketRepository.reserveTicket(transactionId, reservedForUpdate.stream().findFirst().orElseThrow(IllegalStateException::new),sp.getId(), locale.getLanguage(), category.getSrcPriceCts());
-            specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), sp.getSessionIdentifier());
+            getTicketRepository().reserveTicket(transactionId, reservedForUpdate.stream().findFirst().orElseThrow(IllegalStateException::new),sp.getId(), locale.getLanguage(), category.getSrcPriceCts());
+            getSpecialPriceRepository().updateStatus(sp.getId(), Status.PENDING.toString(), sp.getSessionIdentifier());
         } else {
-            ticketRepository.reserveTickets(transactionId, reservedForUpdate, ticketReservation.getTicketCategoryId(), locale.getLanguage(), category.getSrcPriceCts());
+            getTicketRepository().reserveTickets(transactionId, reservedForUpdate, ticketReservation.getTicketCategoryId(), locale.getLanguage(), category.getSrcPriceCts());
         }
-        Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), category.getId());
+        Ticket ticket = getTicketRepository().findById(reservedForUpdate.get(0), category.getId());
         TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event, discount);
-        ticketRepository.updateTicketPrice(reservedForUpdate, category.getId(), event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
+        getTicketRepository().updateTicketPrice(reservedForUpdate, category.getId(), event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
     }
 
-    private void reserveAdditionalServicesForReservation(int eventId, String transactionId, ASReservationWithOptionalCodeModification additionalServiceReservation, PromoCodeDiscount discount) {
+    private SpecialPriceRepository getSpecialPriceRepository() {
+		return specialPriceRepository;
+	}
+
+	private TicketRepository getTicketRepository() {
+		return ticketRepository;
+	}
+
+	private TicketCategoryRepository getTicketCategoryRepository() {
+		return ticketCategoryRepository;
+	}
+
+	private void reserveAdditionalServicesForReservation(int eventId, String transactionId, ASReservationWithOptionalCodeModification additionalServiceReservation, PromoCodeDiscount discount) {
         Optional.ofNullable(additionalServiceReservation.getAdditionalServiceId())
             .flatMap(id -> optionally(() -> additionalServiceRepository.getById(id, eventId)))
             .filter(as -> additionalServiceReservation.getQuantity() > 0 && (as.isFixPrice() || Optional.ofNullable(additionalServiceReservation.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))
