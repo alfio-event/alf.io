@@ -1379,46 +1379,50 @@ public class TicketReservationManager {
     }
 
     public void releaseTicket(Event event, TicketReservation ticketReservation, final Ticket ticket) {
-        TicketCategory category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-        if(!CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket)) {
+        TicketCategory category = getTicketCategoryRepository().getByIdAndActive(ticket.getCategoryId(), event.getId());
+        if(!CategoryEvaluator.isTicketCancellationAvailable(getTicketCategoryRepository(), ticket)) {
             throw new IllegalStateException("Cannot release reserved tickets");
         }
         String reservationId = ticketReservation.getId();
         //#365 - reset UUID when releasing a ticket
-        int result = ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), event.getId(), ticket.getId());
+        int result = getTicketRepository().releaseTicket(reservationId, UUID.randomUUID().toString(), event.getId(), ticket.getId());
         Validate.isTrue(result == 1, String.format("Expected 1 row to be updated, got %d", result));
         if(category.isAccessRestricted() || !category.isBounded()) {
-            ticketRepository.unbindTicketsFromCategory(event.getId(), category.getId(), singletonList(ticket.getId()));
+            getTicketRepository().unbindTicketsFromCategory(event.getId(), category.getId(), singletonList(ticket.getId()));
         }
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
+        Organization organization = getOrganizationRepository().getById(event.getOrganizationId());
         Map<String, Object> model = TemplateResource.buildModelForTicketHasBeenCancelled(organization, event, ticket);
         Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
-        notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
+        getNotificationManager().sendSimpleEmail(event, ticket.getEmail(), getMessageSource().getMessage("email-ticket-released.subject",
                 new Object[]{event.getDisplayName()}, locale),
-                () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
+                () -> getTemplateManager().renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
 
-        String ticketCategoryDescription = ticketCategoryDescriptionRepository.findByTicketCategoryIdAndLocale(category.getId(), ticket.getUserLanguage()).orElse("");
+        String ticketCategoryDescription = getTicketCategoryDescriptionRepository().findByTicketCategoryIdAndLocale(category.getId(), ticket.getUserLanguage()).orElse("");
 
-        List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);
+        List<AdditionalServiceItem> additionalServiceItems = getAdditionalServiceItemRepository().findByReservationUuid(reservationId);
         Map<String, Object> adminModel = TemplateResource.buildModelForTicketHasBeenCancelledAdmin(organization, event, ticket,
-            ticketCategoryDescription, additionalServiceItems, asi -> additionalServiceTextRepository.findByLocaleAndType(asi.getAdditionalServiceId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE));
-        notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getDisplayName()}, locale),
-            () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED_ADMIN, adminModel, locale));
+            ticketCategoryDescription, additionalServiceItems, asi -> getAdditionalServiceTextRepository().findByLocaleAndType(asi.getAdditionalServiceId(), locale.getLanguage(), AdditionalServiceText.TextType.TITLE));
+        getNotificationManager().sendSimpleEmail(event, organization.getEmail(), getMessageSource().getMessage("email-ticket-released.admin.subject", new Object[]{ticket.getId(), event.getDisplayName()}, locale),
+            () -> getTemplateManager().renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED_ADMIN, adminModel, locale));
 
-        int deletedValues = ticketFieldRepository.deleteAllValuesForTicket(ticket.getId());
+        int deletedValues = getTicketFieldRepository().deleteAllValuesForTicket(ticket.getId());
         log.debug("deleting {} field values for ticket {}", deletedValues, ticket.getId());
 
-        auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
+        getAuditingRepository().insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
 
-        if(ticketRepository.countTicketsInReservation(reservationId) == 0 && !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
+        if(getTicketRepository().countTicketsInReservation(reservationId) == 0 && !getTransactionRepository().loadOptionalByReservationId(reservationId).isPresent()) {
             deleteReservation(event, reservationId, false);
-            auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
+            getAuditingRepository().insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
         } else {
-            extensionManager.handleTicketCancelledForEvent(event, Collections.singletonList(ticket.getUuid()));
+            getExtensionManager().handleTicketCancelledForEvent(event, Collections.singletonList(ticket.getUuid()));
         }
     }
 
-    public int getReservationTimeout(Event event) {
+    private TicketCategoryDescriptionRepository getTicketCategoryDescriptionRepository() {
+		return ticketCategoryDescriptionRepository;
+	}
+
+	public int getReservationTimeout(Event event) {
         return configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), RESERVATION_TIMEOUT), 25);
     }
 
