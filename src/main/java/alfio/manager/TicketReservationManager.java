@@ -1040,15 +1040,15 @@ public class TicketReservationManager {
     private void deleteReservation(Event event, String reservationIdToRemove, boolean expired) {
         //handle removal of ticket
         List<String> wrappedReservationIdToRemove = Collections.singletonList(reservationIdToRemove);
-        waitingQueueManager.cleanExpiredReservations(wrappedReservationIdToRemove);
+        getWaitingQueueManager().cleanExpiredReservations(wrappedReservationIdToRemove);
         //
         if(expired) {
-            extensionManager.handleReservationsExpiredForEvent(event, wrappedReservationIdToRemove);
+            getExtensionManager().handleReservationsExpiredForEvent(event, wrappedReservationIdToRemove);
         } else {
-            extensionManager.handleReservationsCancelledForEvent(event, wrappedReservationIdToRemove);
+            getExtensionManager().handleReservationsCancelledForEvent(event, wrappedReservationIdToRemove);
         }
         //
-        int removedReservation = ticketReservationRepository.remove(wrappedReservationIdToRemove);
+        int removedReservation = getTicketReservationRepository().remove(wrappedReservationIdToRemove);
         Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
     }
 
