@@ -804,7 +804,7 @@ public class TicketReservationManager {
 	}
 
 	void cleanupExpiredOfflineReservations(Date expirationDate) {
-        ticketReservationRepository.findExpiredOfflineReservations(expirationDate).forEach(this::cleanupOfflinePayment);
+        getTicketReservationRepository().findExpiredOfflineReservations(expirationDate).forEach(this::cleanupOfflinePayment);
     }
 
     private void cleanupOfflinePayment(String reservationId) {
