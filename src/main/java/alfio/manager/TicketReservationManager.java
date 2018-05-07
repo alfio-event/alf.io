@@ -1139,23 +1139,9 @@ public class TicketReservationManager {
 
         boolean admin = isAdmin(userDetails);
 
-        if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
-            Locale oldUserLocale = Locale.forLanguageTag(ticket.getUserLanguage());
-            String subject = getMessageSource().getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
-            getNotificationManager().sendSimpleEmail(event, ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
-            if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
-                Organization organization = getOrganizationRepository().getById(event.getOrganizationId());
-                getNotificationManager().sendSimpleEmail(event, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
-            }
-        }
+        notAdminUpdateTicketOwner(ticket, event, ownerChangeTextBuilder, newEmail, newTicket, admin);
 
-        if(admin) {
-            TicketReservation reservation = findById(ticket.getTicketsReservationId()).orElseThrow(IllegalStateException::new);
-            //if the current user is admin, then it would be good to update also the name of the Reservation Owner
-            String username = userDetails.get().getUsername();
-            log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
-            getTicketReservationRepository().updateAssignee(reservation.getId(), username);
-        }
+        adminUpdateTicketOwner(ticket, userDetails, admin);
         getPluginManager().handleTicketAssignment(newTicket);
         getExtensionManager().handleTicketAssignment(newTicket);
 
@@ -1166,6 +1152,29 @@ public class TicketReservationManager {
 
         auditUpdateTicket(preUpdateTicket, preUpdateTicketFields, postUpdateTicket, postUpdateTicketFields, event.getId());
     }
+
+	private void adminUpdateTicketOwner(Ticket ticket, Optional<UserDetails> userDetails, boolean admin) {
+		if(admin) {
+            TicketReservation reservation = findById(ticket.getTicketsReservationId()).orElseThrow(IllegalStateException::new);
+            //if the current user is admin, then it would be good to update also the name of the Reservation Owner
+            String username = userDetails.get().getUsername();
+            log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
+            getTicketReservationRepository().updateAssignee(reservation.getId(), username);
+        }
+	}
+
+	private void notAdminUpdateTicketOwner(Ticket ticket, Event event, PartialTicketTextGenerator ownerChangeTextBuilder,
+			String newEmail, Ticket newTicket, boolean admin) {
+		if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
+            Locale oldUserLocale = Locale.forLanguageTag(ticket.getUserLanguage());
+            String subject = getMessageSource().getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
+            getNotificationManager().sendSimpleEmail(event, ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
+            if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
+                Organization organization = getOrganizationRepository().getById(event.getOrganizationId());
+                getNotificationManager().sendSimpleEmail(event, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
+            }
+        }
+	}
 
     private void auditUpdateTicket(Ticket preUpdateTicket, Map<String, String> preUpdateTicketFields, Ticket postUpdateTicket, Map<String, String> postUpdateTicketFields, int eventId) {
         DiffNode diffTicket = ObjectDifferBuilder.buildDefault().compare(postUpdateTicket, preUpdateTicket);
