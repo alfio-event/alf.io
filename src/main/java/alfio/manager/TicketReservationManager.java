@@ -555,12 +555,24 @@ public class TicketReservationManager {
 
         }
 
-        notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
+        getNotificationManager().sendSimpleEmail(event, ticketReservation.getEmail(), getMessageSource().getMessage("reservation-email-subject",
                 new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, language),
-            () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language), attachments);
+            () -> getTemplateManager().renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language), attachments);
     }
 
-    private Locale findReservationLanguage(String reservationId) {
+    private TemplateManager getTemplateManager() {
+		return templateManager;
+	}
+
+	private MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	private NotificationManager getNotificationManager() {
+		return notificationManager;
+	}
+
+	private Locale findReservationLanguage(String reservationId) {
         return ticketReservationRepository.findOptionalReservationById(reservationId).map(TicketReservation::getUserLanguage).map(Locale::forLanguageTag).orElse(Locale.ENGLISH);
     }
 
