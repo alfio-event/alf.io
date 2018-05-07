@@ -581,10 +581,10 @@ public class TicketReservationManager {
         Validate.isTrue(reservation.getStatus() == OFFLINE_PAYMENT, "Invalid reservation status");
         Map<String, Object> emailModel = prepareModelForReservationEmail(event, reservation);
         Locale reservationLanguage = findReservationLanguage(reservationId);
-        String subject = messageSource.getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, reservationLanguage);
+        String subject = getMessageSource().getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, reservationLanguage);
         cancelReservation(reservationId, expired);
-        notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject,
-            () ->  templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
+        getNotificationManager().sendSimpleEmail(event, reservation.getEmail(), subject,
+            () ->  getTemplateManager().renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
         );
     }
 
