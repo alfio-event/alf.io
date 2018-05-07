@@ -879,12 +879,12 @@ public class TicketReservationManager {
      * @return
      */
     public TotalPrice totalReservationCostWithVAT(String reservationId) {
-        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        TicketReservation reservation = getTicketReservationRepository().findReservationById(reservationId);
         
-        Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
+        Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(getPromoCodeDiscountRepository()::findById);
         
-        Event event = eventRepository.findByReservationId(reservationId);
-        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+        Event event = getEventRepository().findByReservationId(reservationId);
+        List<Ticket> tickets = getTicketRepository().findTicketsInReservation(reservationId);
 
         return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation.getVatStatus(), tickets, collectAdditionalServiceItems(reservationId, event));
     }
