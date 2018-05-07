@@ -983,8 +983,8 @@ public class TicketReservationManager {
     }
 
     public String reservationUrl(String reservationId, Event event) {
-        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
+        TicketReservation reservation = getTicketReservationRepository().findReservationById(reservationId);
+        return StringUtils.removeEnd(getConfigurationManager().getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
                 + "/event/" + event.getShortName() + "/reservation/" + reservationId + "?lang="+reservation.getUserLanguage();
     }
 
