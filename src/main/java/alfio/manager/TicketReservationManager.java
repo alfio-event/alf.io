@@ -1096,7 +1096,7 @@ public class TicketReservationManager {
     }
 
     public Optional<String> getVAT(Event event) {
-        return configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.VAT_NR));
+        return getConfigurationManager().getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.VAT_NR));
     }
 
     public void updateTicketOwner(Ticket ticket,
