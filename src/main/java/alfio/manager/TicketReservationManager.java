@@ -926,7 +926,7 @@ public class TicketReservationManager {
     List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
                                     Event event, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
         List<SummaryRow> summary = new ArrayList<>();
-        List<TicketPriceContainer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream()
+        List<TicketPriceContainer> tickets = getTicketRepository().findTicketsInReservation(reservationId).stream()
             .map(t -> TicketPriceContainer.from(t, reservationVatStatus, event, promoCodeDiscount)).collect(toList());
         tickets.stream()
             .collect(Collectors.groupingBy(TicketPriceContainer::getCategoryId))
@@ -936,14 +936,14 @@ public class TicketReservationManager {
                 TicketPriceContainer firstTicket = ticketsByCategory.get(0);
                 final int ticketPriceCts = firstTicket.getSummarySrcPriceCts();
                 final int priceBeforeVat = firstTicket.getSummaryPriceBeforeVatCts();
-                String categoryName = ticketCategoryRepository.getByIdAndActive(categoryId, event.getId()).getName();
+                String categoryName = getTicketCategoryRepository().getByIdAndActive(categoryId, event.getId()).getName();
                 summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts), formatCents(priceBeforeVat), ticketsByCategory.size(), formatCents(subTotal), formatCents(subTotalBeforeVat), subTotal, SummaryRow.SummaryType.TICKET));
             });
 
         summary.addAll(collectAdditionalServiceItems(reservationId, event)
             .map(entry -> {
                 String language = locale.getLanguage();
-                AdditionalServiceText title = additionalServiceTextRepository.findBestMatchByLocaleAndType(entry.getKey().getId(), language, AdditionalServiceText.TextType.TITLE);
+                AdditionalServiceText title = getAdditionalServiceTextRepository().findBestMatchByLocaleAndType(entry.getKey().getId(), language, AdditionalServiceText.TextType.TITLE);
                 if(!title.getLocale().equals(language) || title.getId() == -1) {
                     log.debug("additional service {}: title not found for locale {}", title.getAdditionalServiceId(), language);
                 }
@@ -956,7 +956,7 @@ public class TicketReservationManager {
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
             String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
-            summary.add(new SummaryRow(formatPromoCode(promo, ticketRepository.findTicketsInReservation(reservationId)),
+            summary.add(new SummaryRow(formatPromoCode(promo, getTicketRepository().findTicketsInReservation(reservationId)),
                 formattedSingleAmount,
                 formattedSingleAmount,
                 reservationCost.getDiscountAppliedCount(),
@@ -965,7 +965,11 @@ public class TicketReservationManager {
         return summary;
     }
 
-    private Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> collectAdditionalServiceItems(String reservationId, Event event) {
+    private AdditionalServiceTextRepository getAdditionalServiceTextRepository() {
+		return additionalServiceTextRepository;
+	}
+
+	private Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> collectAdditionalServiceItems(String reservationId, Event event) {
         return additionalServiceItemRepository.findByReservationUuid(reservationId)
             .stream()
             .collect(Collectors.groupingBy(AdditionalServiceItem::getAdditionalServiceId))
