@@ -175,27 +175,30 @@ public final class Validator {
         
         for(TicketFieldConfiguration fieldConf : additionalFieldsForEvent) {
 
-            boolean isField = form.getAdditional() !=null && form.getAdditional().containsKey(fieldConf.getName());
+        	boolean	isFormAdditionalNull = form.getAdditional() !=null;
+        	boolean isFormAdditionalContainsKey = form.getAdditional().containsKey(fieldConf.getName());
+        	boolean isfieldConfMaxLDefined = fieldConf.isMaxLengthDefined();
+        	boolean isfiledConfRestrictedValueEmpty = fieldConf.getRestrictedValues().isEmpty();
+        	boolean isfieldConfRequired = fieldConf.isRequired();
+        	boolean isformValueBlank = StringUtils.isBlank(formValue);
+        	
+            boolean isField = isFormAdditionalNull && isFormAdditionalContainsKey;
 
-            if(!isField) {
-                continue;
-            }
-
+            if(!isField) continue;
+            
             form.getAdditional().get(fieldConf.getName()).forEach(formValue -> {
-                if(fieldConf.isMaxLengthDefined()) {
+                if(isfieldConfMaxLDefined) {
                     validateMaxLength(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
                 }
 
-                if(!fieldConf.getRestrictedValues().isEmpty()) {
+                if(!isfiledConfRestrictedValueEmpty) {
                     validateRestrictedValue(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
                 }
 
-                if(fieldConf.isRequired() && StringUtils.isBlank(formValue)){
+                if(isfieldConfRequired && isformValueBlank){
                     errors.rejectValue("additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
                 }
             });
-
-
             //TODO: complete checks: min length
         }
 
