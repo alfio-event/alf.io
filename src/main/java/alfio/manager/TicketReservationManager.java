@@ -1107,20 +1107,20 @@ public class TicketReservationManager {
                                   PartialTicketTextGenerator ownerChangeTextBuilder,
                                   Optional<UserDetails> userDetails) {
 
-        Ticket preUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
-        Map<String, String> preUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
+        Ticket preUpdateTicket = getTicketRepository().findByUUID(ticket.getUuid());
+        Map<String, String> preUpdateTicketFields = getTicketFieldRepository().findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
 
         String newEmail = updateTicketOwner.getEmail().trim();
         CustomerName customerName = new CustomerName(updateTicketOwner.getFullName(), updateTicketOwner.getFirstName(), updateTicketOwner.getLastName(), event);
-        ticketRepository.updateTicketOwner(ticket.getUuid(), newEmail, customerName.getFullName(), customerName.getFirstName(), customerName.getLastName());
+        getTicketRepository().updateTicketOwner(ticket.getUuid(), newEmail, customerName.getFullName(), customerName.getFirstName(), customerName.getLastName());
 
         //
         Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(Locale::forLanguageTag).orElse(locale);
 
-        ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), userLocale.getLanguage());
-        ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId());
+        getTicketRepository().updateOptionalTicketInfo(ticket.getUuid(), userLocale.getLanguage());
+        getTicketFieldRepository().updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId());
 
-        Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
+        Ticket newTicket = getTicketRepository().findByUUID(ticket.getUuid());
         if (newTicket.getStatus() == TicketStatus.ACQUIRED
             && (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(customerName.getFullName(), ticket.getFullName()))) {
             sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder);
@@ -1130,11 +1130,11 @@ public class TicketReservationManager {
 
         if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
             Locale oldUserLocale = Locale.forLanguageTag(ticket.getUserLanguage());
-            String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
-            notificationManager.sendSimpleEmail(event, ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
+            String subject = getMessageSource().getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
+            getNotificationManager().sendSimpleEmail(event, ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
             if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
-                Organization organization = organizationRepository.getById(event.getOrganizationId());
-                notificationManager.sendSimpleEmail(event, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
+                Organization organization = getOrganizationRepository().getById(event.getOrganizationId());
+                getNotificationManager().sendSimpleEmail(event, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
             }
         }
 
@@ -1143,15 +1143,15 @@ public class TicketReservationManager {
             //if the current user is admin, then it would be good to update also the name of the Reservation Owner
             String username = userDetails.get().getUsername();
             log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
-            ticketReservationRepository.updateAssignee(reservation.getId(), username);
+            getTicketReservationRepository().updateAssignee(reservation.getId(), username);
         }
-        pluginManager.handleTicketAssignment(newTicket);
-        extensionManager.handleTicketAssignment(newTicket);
+        getPluginManager().handleTicketAssignment(newTicket);
+        getExtensionManager().handleTicketAssignment(newTicket);
 
 
 
-        Ticket postUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
-        Map<String, String> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
+        Ticket postUpdateTicket = getTicketRepository().findByUUID(ticket.getUuid());
+        Map<String, String> postUpdateTicketFields = getTicketFieldRepository().findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
 
         auditUpdateTicket(preUpdateTicket, preUpdateTicketFields, postUpdateTicket, postUpdateTicketFields, event.getId());
     }
