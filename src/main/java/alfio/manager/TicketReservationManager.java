@@ -709,14 +709,14 @@ public class TicketReservationManager {
             TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
             acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, email, customerName, userLanguage.getLanguage(), billingAddress, eventId);
-            final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-            pluginManager.handleReservationConfirmation(reservation, eventId);
-            extensionManager.handleReservationConfirmation(reservation, eventId);
+            final TicketReservation reservation = getTicketReservationRepository().findReservationById(reservationId);
+            getPluginManager().handleReservationConfirmation(reservation, eventId);
+            getExtensionManager().handleReservationConfirmation(reservation, eventId);
             //cleanup unused special price codes...
-            specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
+            specialPriceSessionId.ifPresent(getSpecialPriceRepository()::unbindFromSession);
         }
 
-        auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, new Date(), Audit.EntityType.RESERVATION, reservationId);
+        getAuditingRepository().insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
 
     private void acquireItems(TicketStatus ticketStatus, AdditionalServiceItemStatus asStatus, PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName, String userLanguage, String billingAddress, int eventId) {
