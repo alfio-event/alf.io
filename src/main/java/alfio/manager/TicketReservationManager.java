@@ -989,23 +989,23 @@ public class TicketReservationManager {
     }
 
     String ticketUrl(Event event, String ticketId) {
-        Ticket ticket = ticketRepository.findByUUID(ticketId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
+        Ticket ticket = getTicketRepository().findByUUID(ticketId);
+        return StringUtils.removeEnd(getConfigurationManager().getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
                 + "/event/" + event.getShortName() + "/ticket/" + ticketId + "?lang=" + ticket.getUserLanguage();
     }
 
     public String ticketUpdateUrl(Event event, String ticketId) {
-        Ticket ticket = ticketRepository.findByUUID(ticketId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
+        Ticket ticket = getTicketRepository().findByUUID(ticketId);
+        return StringUtils.removeEnd(getConfigurationManager().getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
             + "/event/" + event.getShortName() + "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
     }
 
     public int maxAmountOfTicketsForCategory(int organizationId, int eventId, int ticketCategoryId) {
-        return configurationManager.getIntConfigValue(Configuration.from(organizationId, eventId, ticketCategoryId, ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5);
+        return getConfigurationManager().getIntConfigValue(Configuration.from(organizationId, eventId, ticketCategoryId, ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5);
     }
     
     public Optional<TicketReservation> findById(String reservationId) {
-        return ticketReservationRepository.findOptionalReservationById(reservationId);
+        return getTicketReservationRepository().findOptionalReservationById(reservationId);
     }
 
     private Optional<TicketReservation> findByIdForNotification(String reservationId, ZoneId eventZoneId, int quietPeriod) {
