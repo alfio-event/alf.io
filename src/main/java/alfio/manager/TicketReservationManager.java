@@ -809,7 +809,7 @@ public class TicketReservationManager {
 
     private void cleanupOfflinePayment(String reservationId) {
         try {
-            requiresNewTransactionTemplate.execute((tc) -> {
+            getRequiresNewTransactionTemplate().execute((tc) -> {
                 deleteOfflinePayment(eventRepository.findByReservationId(reservationId), reservationId, true);
                 return null;
             });
