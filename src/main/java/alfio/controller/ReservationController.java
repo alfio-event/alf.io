@@ -114,33 +114,31 @@ public class ReservationController {
                     }
 
                     List<Ticket> ticketsInReservation = ticketReservationManager.findTicketsInReservation(reservationId);
-                    if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null) {
-                        model.addAttribute("paypalPaymentId", paypalPaymentId)
-                            .addAttribute("paypalPayerID", paypalPayerID)
-                            .addAttribute("paypalCheckoutConfirmation", true)
-                            .addAttribute("fullName", fullName)
-                            .addAttribute("firstName", firstName)
-                            .addAttribute("lastName", lastName)
-                            .addAttribute("email", email)
-                            .addAttribute("billingAddress", billingAddress)
-                            .addAttribute("hmac", hmac)
-                            .addAttribute("postponeAssignment", Boolean.TRUE.equals(postponeAssignment))
-                            .addAttribute("invoiceRequested", Boolean.TRUE.equals(invoiceRequested))
-                            .addAttribute("showPostpone", Boolean.TRUE.equals(postponeAssignment));
+                    if (isPaypalSuccess(isPaypalSuccess, paypalPayerID, paypalPaymentId)) {
+                        addAttributePayPal(
+                            model,
+                            paypalPaymentId,
+                            paypalPayerID,
+                            true,
+                            fullName,
+                            firstName,
+                            lastName,
+                            email,
+                            billingAddress,
+                            hmac,
+                            postponeAssignment,
+                            invoiceRequested,
+                            postponeAssignment);
                     } else {
-                        model.addAttribute("paypalCheckoutConfirmation", false)
-                             .addAttribute("postponeAssignment", false)
-                             .addAttribute("showPostpone", ticketsInReservation.size() > 1);
+                        addAttributeNoPaypal(
+                            model,
+                            false,
+                            false,
+                            ticketsInReservation.size()
+                        );
                     }
 
-                    try {
-                        model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
-                    } catch (TicketReservationManager.OfflinePaymentException e) {
-                        if(event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
-                            log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName() , e);
-                        }
-                        model.addAttribute("delayForOfflinePayment", 0);
-                    }
+                    addAttributeDelayForOfflinePayment(model, event);
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
                     List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
@@ -149,38 +147,12 @@ public class ReservationController {
                         .map(PaymentManager.PaymentMethod::getPaymentProxy)
                         .collect(toList());
 
-                    if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
-                        boolean captchaForOfflinePaymentEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
-                        model.addAttribute("captchaRequestedForOffline", captchaForOfflinePaymentEnabled)
-                            .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null))
-                            .addAttribute("captchaRequestedFreeOfCharge", orderSummary.getFree() && captchaForOfflinePaymentEnabled);
-                    }
+                    addAttributeCaptcha(model, orderSummary, activePaymentMethods, event);
+                    addAttributeInvoice(model, orderSummary, activePaymentMethods, reservation, event, reservationId, locale);
+                    addAttributeStripe(model, orderSummary.getFree(), activePaymentMethods.contains(PaymentProxy.STRIPE), event);
 
-                    boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
-                    PaymentForm paymentForm = PaymentForm.fromExistingReservation(reservation);
-                    model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 )
-                        .addAttribute("orderSummary", orderSummary)
-                        .addAttribute("reservationId", reservationId)
-                        .addAttribute("reservation", reservation)
-                        .addAttribute("pageTitle", "reservation-page.header.title")
-                        .addAttribute("event", event)
-                        .addAttribute("activePaymentMethods", activePaymentMethods)
-                        .addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary))
-                        .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
-                        .addAttribute("countries", TicketHelper.getLocalizedCountries(locale))
-                        .addAttribute("euCountries", TicketHelper.getLocalizedEUCountries(locale, configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST))))
-                        .addAttribute("euVatCheckingEnabled", vatChecker.isVatCheckingEnabledFor(event.getOrganizationId()))
-                        .addAttribute("invoiceIsAllowed", invoiceAllowed)
-                        .addAttribute("vatNrIsLinked", orderSummary.isVatExempt() || paymentForm.getHasVatCountryCode())
-                        .addAttribute("billingAddressLabel", invoiceAllowed ? "reservation-page.billing-address" : "reservation-page.receipt-address");
-
-                    boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
-                    model.addAttribute("includeStripe", includeStripe);
-                    if (includeStripe) {
-                        model.addAttribute("stripe_p_key", paymentManager.getStripePublicKey(event));
-                    }
                     Map<String, Object> modelMap = model.asMap();
-                    modelMap.putIfAbsent("paymentForm", paymentForm);
+                    modelMap.putIfAbsent("paymentForm", PaymentForm.fromExistingReservation(reservation));
                     modelMap.putIfAbsent("hasErrors", false);
 
                     boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(reservationId);
@@ -202,6 +174,78 @@ public class ReservationController {
             .orElse("redirect:/");
     }
 
+    private void addAttributeStripe(Model model, boolean isOrderSummaryFree, boolean isActivePaymentMethodsContainStripe, Event event) {
+        boolean includeStripe = !isOrderSummaryFree && isActivePaymentMethodsContainStripe;
+        model.addAttribute("includeStripe", includeStripe);
+        if (includeStripe) {
+            model.addAttribute("stripe_p_key", paymentManager.getStripePublicKey(event));
+        }
+    }
+
+    private void addAttributeInvoice(Model model, OrderSummary orderSummary, List<PaymentProxy> activePaymentMethods, TicketReservation reservation, Event event, String reservationId, Locale locale) {
+        boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
+        PaymentForm paymentForm = PaymentForm.fromExistingReservation(reservation);
+        model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 )
+            .addAttribute("orderSummary", orderSummary)
+            .addAttribute("reservationId", reservationId)
+            .addAttribute("reservation", reservation)
+            .addAttribute("pageTitle", "reservation-page.header.title")
+            .addAttribute("event", event)
+            .addAttribute("activePaymentMethods", activePaymentMethods)
+            .addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary))
+            .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
+            .addAttribute("countries", TicketHelper.getLocalizedCountries(locale))
+            .addAttribute("euCountries", TicketHelper.getLocalizedEUCountries(locale, configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST))))
+            .addAttribute("euVatCheckingEnabled", vatChecker.isVatCheckingEnabledFor(event.getOrganizationId()))
+            .addAttribute("invoiceIsAllowed", invoiceAllowed)
+            .addAttribute("vatNrIsLinked", orderSummary.isVatExempt() || paymentForm.getHasVatCountryCode())
+            .addAttribute("billingAddressLabel", invoiceAllowed ? "reservation-page.billing-address" : "reservation-page.receipt-address");
+    }
+
+    private void addAttributeCaptcha(Model model, OrderSummary orderSummary, List<PaymentProxy> activePaymentMethods, Event event)  {
+        if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
+            boolean captchaForOfflinePaymentEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
+            model.addAttribute("captchaRequestedForOffline", captchaForOfflinePaymentEnabled)
+                .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null))
+                .addAttribute("captchaRequestedFreeOfCharge", orderSummary.getFree() && captchaForOfflinePaymentEnabled);
+        }
+    }
+
+    private void addAttributePayPal(Model model, String paypalPaymentId, String paypalPayerID, boolean isPaypalCheckoutConfirmed, String fullName, String firstName, String lastName, String email, String billingAddress, String hmac, boolean isPostponeAssignment, boolean isInvoiceRequested, boolean isShowPostpone) {
+        model.addAttribute("paypalPaymentId", paypalPaymentId)
+            .addAttribute("paypalPayerID", paypalPayerID)
+            .addAttribute("paypalCheckoutConfirmation", isPaypalCheckoutConfirmed)
+            .addAttribute("fullName", fullName)
+            .addAttribute("firstName", firstName)
+            .addAttribute("lastName", lastName)
+            .addAttribute("email", email)
+            .addAttribute("billingAddress", billingAddress)
+            .addAttribute("hmac", hmac)
+            .addAttribute("postponeAssignment", Boolean.TRUE.equals(isPostponeAssignment))
+            .addAttribute("invoiceRequested", Boolean.TRUE.equals(isInvoiceRequested))
+            .addAttribute("showPostpone", Boolean.TRUE.equals(isPostponeAssignment));
+    }
+
+    private void addAttributeNoPaypal(Model model, boolean isPaypalCheckoutConfirmed, boolean isPostponeAssignment, int ticketsInReservationSize)  {
+        model.addAttribute("paypalCheckoutConfirmation", isPaypalCheckoutConfirmed)
+            .addAttribute("postponeAssignment", isPostponeAssignment)
+            .addAttribute("showPostpone",   ticketsInReservationSize > 1);
+    }
+
+    private boolean isPaypalSuccess(boolean isPaypalSuccess, String paypalPayerID, String paypalPaymentId) {
+       return (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null);
+    }
+
+    private void addAttributeDelayForOfflinePayment(Model model, Event event) {
+        try {
+            model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
+        } catch (TicketReservationManager.OfflinePaymentException e) {
+            if(event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
+                log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName() , e);
+            }
+            model.addAttribute("delayForOfflinePayment", 0);
+        }
+    }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/success", method = RequestMethod.GET)
     public String showConfirmationPage(@PathVariable("eventName") String eventName,
