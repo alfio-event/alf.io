@@ -1436,8 +1436,8 @@ public class TicketReservationManager {
     }
 
     private List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(int eventId, Event event, Locale locale) {
-        return ticketReservationRepository.findAllReservationsWaitingForPaymentInEventId(eventId).stream()
-            .map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event, locale)))
+        return getTicketReservationRepository().findAllReservationsWaitingForPaymentInEventId(eventId).stream()
+            .map(id -> Pair.of(getTicketReservationRepository().findReservationById(id), orderSummaryForReservationId(id, event, locale)))
             .collect(Collectors.toList());
     }
 
