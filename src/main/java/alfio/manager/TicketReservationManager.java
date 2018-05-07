@@ -384,36 +384,36 @@ public class TicketReservationManager {
         }
         try {
             PaymentResult paymentResult;
-            ticketReservationRepository.lockReservationForUpdate(reservationId);
+            getTicketReservationRepository().lockReservationForUpdate(reservationId);
             if(reservationCost.getPriceWithVAT() > 0) {
-                if(invoiceRequested && configurationManager.hasAllConfigurationsForInvoice(event)) {
-                    int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(event.getOrganizationId());
-                    invoiceSequencesRepository.incrementSequenceFor(event.getOrganizationId());
-                    String pattern = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
-                    ticketReservationRepository.setInvoiceNumber(reservationId, String.format(pattern, invoiceSequence));
+                if(invoiceRequested && getConfigurationManager().hasAllConfigurationsForInvoice(event)) {
+                    int invoiceSequence = getInvoiceSequencesRepository().lockReservationForUpdate(event.getOrganizationId());
+                    getInvoiceSequencesRepository().incrementSequenceFor(event.getOrganizationId());
+                    String pattern = getConfigurationManager().getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
+                    getTicketReservationRepository().setInvoiceNumber(reservationId, String.format(pattern, invoiceSequence));
                 }
-                ticketReservationRepository.updateBillingData(vatStatus, vatNr, vatCountryCode, invoiceRequested, reservationId);
+                getTicketReservationRepository().updateBillingData(vatStatus, vatNr, vatCountryCode, invoiceRequested, reservationId);
 
                 //
-                extensionManager.handleInvoiceGeneration(event, reservationId,
+                getExtensionManager().handleInvoiceGeneration(event, reservationId,
                     email, customerName, userLanguage, billingAddress,
                     reservationCost, invoiceRequested, vatCountryCode, vatNr, vatStatus).ifPresent(invoiceGeneration -> {
                     if (invoiceGeneration.getInvoiceNumber() != null) {
-                        ticketReservationRepository.setInvoiceNumber(reservationId, invoiceGeneration.getInvoiceNumber());
+                    	getTicketReservationRepository().setInvoiceNumber(reservationId, invoiceGeneration.getInvoiceNumber());
                     }
                 });
 
                 //
                 switch(paymentProxy) {
                     case STRIPE:
-                        paymentResult = paymentManager.processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
+                        paymentResult = getPaymentManager().processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
                         if(!paymentResult.isSuccessful()) {
                             reTransitionToPending(reservationId);
                             return paymentResult;
                         }
                         break;
                     case PAYPAL:
-                        paymentResult = paymentManager.processPayPalPayment(reservationId, gatewayToken, payerId, reservationCost.getPriceWithVAT(), event);
+                        paymentResult = getPaymentManager().processPayPalPayment(reservationId, gatewayToken, payerId, reservationCost.getPriceWithVAT(), event);
                         if(!paymentResult.isSuccessful()) {
                             reTransitionToPending(reservationId);
                             return paymentResult;
@@ -443,7 +443,23 @@ public class TicketReservationManager {
 
     }
 
-    private PaymentProxy evaluatePaymentProxy(Optional<PaymentProxy> method, TotalPrice reservationCost) {
+    private PaymentManager getPaymentManager() {
+		return paymentManager;
+	}
+
+	private ExtensionManager getExtensionManager() {
+		return extensionManager;
+	}
+
+	private InvoiceSequencesRepository getInvoiceSequencesRepository() {
+		return invoiceSequencesRepository;
+	}
+
+	private ConfigurationManager getConfigurationManager() {
+		return configurationManager;
+	}
+
+	private PaymentProxy evaluatePaymentProxy(Optional<PaymentProxy> method, TotalPrice reservationCost) {
         if(method.isPresent()) {
             return method.get();
         }
