@@ -336,12 +336,12 @@ public class TicketReservationManager {
     }
 
     List<Integer> reserveTickets(int eventId , int categoryId, int qty, List<TicketStatus> requiredStatuses) {
-        TicketCategory category = ticketCategoryRepository.getByIdAndActive(categoryId, eventId);
+        TicketCategory category = getTicketCategoryRepository().getByIdAndActive(categoryId, eventId);
         List<String> statusesAsString = requiredStatuses.stream().map(TicketStatus::name).collect(toList());
         if(category.isBounded()) {
-            return ticketRepository.selectTicketInCategoryForUpdate(eventId, categoryId, qty, statusesAsString);
+            return getTicketRepository().selectTicketInCategoryForUpdate(eventId, categoryId, qty, statusesAsString);
         }
-        return ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, qty, statusesAsString);
+        return getTicketRepository().selectNotAllocatedTicketsForUpdate(eventId, qty, statusesAsString);
     }
 
     Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, Optional<String> specialPriceSessionId, TicketReservationWithOptionalCodeModification ticketReservation) {
