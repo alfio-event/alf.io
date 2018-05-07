@@ -35,4 +35,9 @@ public class AdditionalServiceReservationModification implements Serializable {
             return true;
         }
     }
+    
+    public boolean isValidPrice(AdditionalService as, int selectionCount) {
+    	return getQuantity() >= 0 && ((as.isFixPrice() && isQuantityValid(as, selectionCount)) || 
+                		(!as.isFixPrice() && getAmount() != null && getAmount().compareTo(BigDecimal.ZERO) >= 0));
+    }
 }

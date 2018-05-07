@@ -18,6 +18,7 @@ package alfio.controller;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.PaymentForm;
+import alfio.controller.form.ValidatePaymentForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
@@ -424,21 +425,25 @@ public class ReservationController {
             if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
                 bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
             }
-            paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()));
+            
+            // modifyed by hhkim 05/07
+            ValidatePaymentForm pVaildate = new ValidatePaymentForm(paymentForm);
+            pVaildate.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()));
             if (bindingResult.hasErrors()) {
                 SessionUtil.addToFlash(bindingResult, redirectAttributes);
                 return redirectReservation(ticketReservation, eventName, reservationId);
             }
         }
 
-        CustomerName customerName = new CustomerName(paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), event);
+        CustomerName customerName = new CustomerName(paymentForm.getCustomerInformation(), event);
 
         //handle paypal redirect!
         if(paymentForm.getPaymentMethod() == PaymentProxy.PAYPAL && !paymentForm.hasPaypalTokens()) {
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
             try {
-                String checkoutUrl = paymentManager.createPayPalCheckoutRequest(event, reservationId, orderSummary, customerName,
-                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment(),
+                String checkoutUrl = paymentManager.createPayPalCheckoutRequest(event, reservationId, orderSummary, 
+                		customerName, paymentForm.getEmail(), paymentForm.getCustomerInformation().getBillingAddress(),
+                		locale, paymentForm.isPostponeAssignment(),
                     paymentForm.isInvoiceRequested());
                 assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
                 return "redirect:" + checkoutUrl;
@@ -453,11 +458,9 @@ public class ReservationController {
         if(paymentForm.getPaymentMethod() == PaymentProxy.MOLLIE) {
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
             try {
-                String checkoutUrl = mollieManager.createCheckoutRequest(event, reservationId, orderSummary, customerName,
-                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale,
-                    paymentForm.isInvoiceRequested(),
-                    paymentForm.getVatCountryCode(),
-                    paymentForm.getVatNr(),
+                String checkoutUrl = mollieManager.createCheckoutRequest(event, reservationId, orderSummary, 
+                	paymentForm.getCustomerInformation(), locale, paymentForm.isInvoiceRequested(),
+                	paymentForm.getPaymentMethodContent().getVatNr(), paymentForm.getPaymentMethodContent().getVatCountryCode(),
                     ticketReservation.get().getVatStatus());
                 assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
                 return "redirect:" + checkoutUrl;
@@ -469,9 +472,11 @@ public class ReservationController {
         }
         //
 
-        final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
-            customerName, locale, paymentForm.getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
-                Optional.ofNullable(paymentForm.getPaymentMethod()), paymentForm.isInvoiceRequested(), paymentForm.getVatCountryCode(), paymentForm.getVatNr(), ticketReservation.get().getVatStatus());
+        final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaymentMethodContent().getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
+            customerName, locale, paymentForm.getCustomerInformation().getBillingAddress(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
+                Optional.ofNullable(paymentForm.getPaymentMethod()), paymentForm.isInvoiceRequested(), 
+                paymentForm.getPaymentMethodContent().getVatCountryCode(), paymentForm.getPaymentMethodContent().getVatNr(), 
+                ticketReservation.get().getVatStatus());
 
         if(!status.isSuccessful()) {
             String errorMessageCode = status.getErrorCode().get();

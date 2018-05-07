@@ -504,11 +504,11 @@ public class ReservationFlowIntegrationTest {
 
     private String payOffline(String eventName, String reservationIdentifier) {
         PaymentForm paymentForm = new PaymentForm();
-        paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
-        paymentForm.setEmail("test@test.com");
-        paymentForm.setBillingAddress("my billing address");
-        paymentForm.setFirstName("full");
-        paymentForm.setLastName("name");
+        paymentForm.getPaymentMethodContent().setPaymentMethod(PaymentProxy.OFFLINE);
+        paymentForm.getCustomerInformation().setEmail("test@test.com");
+        paymentForm.getCustomerInformation().setBillingAddress("my billing address");
+        paymentForm.getCustomerInformation().setFirstName("full");
+        paymentForm.getCustomerInformation().setLastName("name");
         paymentForm.setTermAndConditionsAccepted(true);
         paymentForm.setPostponeAssignment(true);
         BindingResult bindingResult = new BeanPropertyBindingResult(paymentForm, "paymentForm");

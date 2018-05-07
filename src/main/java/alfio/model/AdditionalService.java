@@ -120,6 +120,11 @@ public class AdditionalService {
         ZonedDateTime now = ZonedDateTime.now(Clock.systemUTC());
         return getUtcInception().isBefore(now) && getUtcExpiration().isAfter(now);
     }
+    
+    // Added
+    public boolean isValidTime(ZonedDateTime now, Event event) {
+    	return getInception(event.getZoneId()).isBefore(now) && getExpiration(event.getZoneId()).isAfter(now);
+    }
 
     public String getChecksum() {
         try {

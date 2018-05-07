@@ -21,6 +21,7 @@ import alfio.controller.api.support.EventListItem;
 import alfio.controller.api.support.PublicCategory;
 import alfio.controller.api.support.PublicEvent;
 import alfio.controller.form.ReservationForm;
+import alfio.controller.form.ValidateReservationForm;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.ConfigurationManager;
@@ -120,7 +121,7 @@ public class RestEventApiController {
     @RequestMapping(value = "events/{shortName}/reserve-tickets", method = RequestMethod.POST)
     public ResponseEntity<Result<String>> reserveTickets(@PathVariable("shortName") String shortName, @RequestBody ReservationForm reservation, BindingResult bindingResult, Locale locale) {
         return eventRepository.findOptionalByShortName(shortName).map(event -> {
-            Optional<String> reservationUrl = reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event).flatMap(selected -> {
+            Optional<String> reservationUrl = new ValidateReservationForm(reservation).validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event).flatMap(selected -> {
                 Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
                 try {
                     String reservationId = ticketReservationManager.createTicketReservation(event,
