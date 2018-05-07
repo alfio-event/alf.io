@@ -1292,7 +1292,7 @@ public class TicketReservationManager {
 
     void sendReminderForTicketAssignment() {
         getNotifiableEventsStream()
-                .map(e -> Pair.of(e, ticketRepository.findAllReservationsConfirmedButNotAssigned(e.getId())))
+                .map(e -> Pair.of(e, getTicketRepository().findAllReservationsConfirmedButNotAssigned(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
                 .forEach(p -> Wrappers.voidTransactionWrapper(this::sendAssignmentReminder, p));
     }
