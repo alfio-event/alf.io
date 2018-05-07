@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.controller.form.CustomerInformation;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.plugin.PluginManager;
 import alfio.manager.support.CategoryEvaluator;

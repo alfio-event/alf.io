@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.controller.form.CustomerInformation;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
