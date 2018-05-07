@@ -1368,7 +1368,7 @@ public class TicketReservationManager {
     }
 
     public String getShortReservationID(Event event, String reservationId) {
-        return configurationManager.getShortReservationID(event, reservationId);
+        return getConfigurationManager().getShortReservationID(event, reservationId);
     }
 
     public int countAvailableTickets(Event event, TicketCategory category) {
