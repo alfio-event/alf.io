@@ -171,7 +171,7 @@ public final class Validator {
         Errors errors = errorsOptional.get();
 
         detectEmailError(form, errorsOptional, errors);
-        validateNameForm(form, event, errors);;;;;;;
+        validateNameForm(form, event, errors);sfdsf
 
         for(TicketFieldConfiguration fieldConf : additionalFieldsForEvent) {
 
