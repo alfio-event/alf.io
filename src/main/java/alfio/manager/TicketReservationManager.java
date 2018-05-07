@@ -307,23 +307,31 @@ public class TicketReservationManager {
 
 	private void reserveAdditionalServicesForReservation(int eventId, String transactionId, ASReservationWithOptionalCodeModification additionalServiceReservation, PromoCodeDiscount discount) {
         Optional.ofNullable(additionalServiceReservation.getAdditionalServiceId())
-            .flatMap(id -> optionally(() -> additionalServiceRepository.getById(id, eventId)))
+            .flatMap(id -> optionally(() -> getAdditionalServiceRepository().getById(id, eventId)))
             .filter(as -> additionalServiceReservation.getQuantity() > 0 && (as.isFixPrice() || Optional.ofNullable(additionalServiceReservation.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))
-            .map(as -> Pair.of(eventRepository.findById(eventId), as))
+            .map(as -> Pair.of(getEventRepository().findById(eventId), as))
             .ifPresent(pair -> {
                 Event e = pair.getKey();
                 AdditionalService as = pair.getValue();
                 IntStream.range(0, additionalServiceReservation.getQuantity())
                     .forEach(i -> {
                         AdditionalServicePriceContainer pc = AdditionalServicePriceContainer.from(additionalServiceReservation.getAmount(), as, e, discount);
-                        additionalServiceItemRepository.insert(UUID.randomUUID().toString(), ZonedDateTime.now(Clock.systemUTC()), transactionId,
+                        getAdditionalServiceItemRepository().insert(UUID.randomUUID().toString(), ZonedDateTime.now(Clock.systemUTC()), transactionId,
                             as.getId(), AdditionalServiceItemStatus.PENDING, eventId, pc.getSrcPriceCts(), unitToCents(pc.getFinalPrice()), unitToCents(pc.getVAT()), unitToCents(pc.getAppliedDiscount()));
                     });
             });
 
     }
 
-    List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation, List<TicketStatus> requiredStatuses) {
+    private AdditionalServiceItemRepository getAdditionalServiceItemRepository() {
+		return additionalServiceItemRepository;
+	}
+
+	private EventRepository getEventRepository() {
+		return eventRepository;
+	}
+
+	List<Integer> reserveTickets(int eventId, TicketReservationWithOptionalCodeModification ticketReservation, List<TicketStatus> requiredStatuses) {
         return reserveTickets(eventId, ticketReservation.getTicketCategoryId(), ticketReservation.getAmount(), requiredStatuses);
     }
 
