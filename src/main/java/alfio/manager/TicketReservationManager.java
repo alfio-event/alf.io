@@ -513,15 +513,15 @@ public class TicketReservationManager {
 
 	void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
         int priceWithVAT = totalReservationCostWithVAT(reservationId).getPriceWithVAT();
-        Long platformFee = FeeCalculator.getCalculator(event, configurationManager)
-            .apply(ticketRepository.countTicketsInReservation(reservationId), (long) priceWithVAT)
+        Long platformFee = FeeCalculator.getCalculator(event, getConfigurationManager())
+            .apply(getTicketRepository().countTicketsInReservation(reservationId), (long) priceWithVAT)
             .orElse(0L);
 
         //FIXME we must support multiple transactions for a reservation, otherwise we can't handle properly the case of ON_SITE payments
 
-        if(paymentProxy != PaymentProxy.ON_SITE || !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
+        if(paymentProxy != PaymentProxy.ON_SITE || !getTransactionRepository().loadOptionalByReservationId(reservationId).isPresent()) {
             String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
-            transactionRepository.insert(transactionId, null, reservationId, ZonedDateTime.now(event.getZoneId()),
+            getTransactionRepository().insert(transactionId, null, reservationId, ZonedDateTime.now(event.getZoneId()),
                 priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(), platformFee, 0L);
         } else {
             log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", reservationId);
@@ -530,7 +530,11 @@ public class TicketReservationManager {
     }
 
 
-    public void sendConfirmationEmail(Event event, TicketReservation ticketReservation, Locale language) {
+    private TransactionRepository getTransactionRepository() {
+		return transactionRepository;
+	}
+
+	public void sendConfirmationEmail(Event event, TicketReservation ticketReservation, Locale language) {
         String reservationId = ticketReservation.getId();
 
         OrderSummary summary = orderSummaryForReservationId(reservationId, event, language);
