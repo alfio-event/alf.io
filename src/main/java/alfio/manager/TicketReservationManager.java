@@ -1167,7 +1167,7 @@ public class TicketReservationManager {
         List<Map<String, Object>> changes = new ArrayList<>(diffTicketVisitor.changes);
         changes.addAll(diffTicketFieldsVisitor.changes);
 
-        auditingRepository.insert(preUpdateTicket.getTicketsReservationId(), null, eventId,
+        getAuditingRepository().insert(preUpdateTicket.getTicketsReservationId(), null, eventId,
             Audit.EventType.UPDATE_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(preUpdateTicket.getId()), changes);
     }
 
