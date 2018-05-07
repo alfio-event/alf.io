@@ -209,9 +209,9 @@ public class TicketReservationManager {
                                           boolean forWaitingQueue) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
         String reservationId = UUID.randomUUID().toString();
         
-        Optional<PromoCodeDiscount> discount = promotionCodeDiscount.flatMap((promoCodeDiscount) -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
+        Optional<PromoCodeDiscount> discount = promotionCodeDiscount.flatMap((promoCodeDiscount) -> getPromoCodeDiscountRepository().findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
         
-        ticketReservationRepository.createNewReservation(reservationId, reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null), locale.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded());
+        getTicketReservationRepository().createNewReservation(reservationId, reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null), locale.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded());
         list.forEach(t -> reserveTicketsForCategory(event, specialPriceSessionId, reservationId, t, locale, forWaitingQueue, discount.orElse(null)));
 
         int ticketCount = list
@@ -220,7 +220,7 @@ public class TicketReservationManager {
             .mapToInt(Integer::intValue).sum();
 
         // apply valid additional service with supplement policy mandatory one for ticket
-        additionalServiceRepository.findAllInEventWithPolicy(event.getId(), AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET)
+        getAdditionalServiceRepository().findAllInEventWithPolicy(event.getId(), AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET)
             .stream()
             .filter(AdditionalService::getSaleable)
             .forEach(as -> {
@@ -232,17 +232,33 @@ public class TicketReservationManager {
 
         additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, discount.orElse(null)));
 
-        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        TicketReservation reservation = getTicketReservationRepository().findReservationById(reservationId);
 
         OrderSummary orderSummary = orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
-        ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
+        getTicketReservationRepository().addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
 
-        auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
+        getAuditingRepository().insert(reservationId, null, event.getId(), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
 
         return reservationId;
     }
 
-    public Pair<List<TicketReservation>, Integer> findAllReservationsInEvent(int eventId, Integer page, String search, List<TicketReservationStatus> status) {
+    private AuditingRepository getAuditingRepository() {
+		return auditingRepository;
+	}
+
+    private AdditionalServiceRepository getAdditionalServiceRepository() {
+		return additionalServiceRepository;
+	}
+
+	private PromoCodeDiscountRepository getPromoCodeDiscountRepository() {
+		return promoCodeDiscountRepository;
+	}
+
+	private TicketReservationRepository getTicketReservationRepository() {
+		return ticketReservationRepository;
+	}
+
+	public Pair<List<TicketReservation>, Integer> findAllReservationsInEvent(int eventId, Integer page, String search, List<TicketReservationStatus> status) {
         final int pageSize = 50;
         int offset = page == null ? 0 : page * pageSize;
         String toSearch = StringUtils.trimToNull(search);
