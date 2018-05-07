@@ -775,31 +775,35 @@ public class TicketReservationManager {
 
     @Transactional
     void cleanupExpiredReservations(Date expirationDate) {
-        List<String> expiredReservationIds = ticketReservationRepository.findExpiredReservation(expirationDate);
+        List<String> expiredReservationIds = getTicketReservationRepository().findExpiredReservation(expirationDate);
         if(expiredReservationIds.isEmpty()) {
             return;
         }
         
-        specialPriceRepository.resetToFreeAndCleanupForReservation(expiredReservationIds);
-        ticketRepository.resetCategoryIdForUnboundedCategories(expiredReservationIds);
-        ticketFieldRepository.deleteAllValuesForReservations(expiredReservationIds);
-        ticketRepository.freeFromReservation(expiredReservationIds);
-        waitingQueueManager.cleanExpiredReservations(expiredReservationIds);
+        getSpecialPriceRepository().resetToFreeAndCleanupForReservation(expiredReservationIds);
+        getTicketRepository().resetCategoryIdForUnboundedCategories(expiredReservationIds);
+        getTicketFieldRepository().deleteAllValuesForReservations(expiredReservationIds);
+        getTicketRepository().freeFromReservation(expiredReservationIds);
+        getWaitingQueueManager().cleanExpiredReservations(expiredReservationIds);
 
         //
-        Map<Integer, List<ReservationIdAndEventId>> reservationIdsByEvent = ticketReservationRepository
+        Map<Integer, List<ReservationIdAndEventId>> reservationIdsByEvent = getTicketReservationRepository()
             .getReservationIdAndEventId(expiredReservationIds)
             .stream()
             .collect(Collectors.groupingBy(ReservationIdAndEventId::getEventId));
         reservationIdsByEvent.forEach((eventId, reservations) -> {
-            Event event = eventRepository.findById(eventId);
-            extensionManager.handleReservationsExpiredForEvent(event, reservations.stream().map(ReservationIdAndEventId::getId).collect(Collectors.toList()));
+            Event event = getEventRepository().findById(eventId);
+            getExtensionManager().handleReservationsExpiredForEvent(event, reservations.stream().map(ReservationIdAndEventId::getId).collect(Collectors.toList()));
         });
         //
-        ticketReservationRepository.remove(expiredReservationIds);
+        getTicketReservationRepository().remove(expiredReservationIds);
     }
 
-    void cleanupExpiredOfflineReservations(Date expirationDate) {
+    private TicketFieldRepository getTicketFieldRepository() {
+		return ticketFieldRepository;
+	}
+
+	void cleanupExpiredOfflineReservations(Date expirationDate) {
         ticketReservationRepository.findExpiredOfflineReservations(expirationDate).forEach(this::cleanupOfflinePayment);
     }
 
