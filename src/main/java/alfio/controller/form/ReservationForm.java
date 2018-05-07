@@ -56,7 +56,7 @@ public class ReservationForm implements Serializable {
     private List<AdditionalServiceReservationModification> additionalService;
 
     public List<TicketReservationModification> selected() {
-        return ofNullable(reservation)
+        return ofNullable(getReservation())
                 .orElse(emptyList())
                 .stream()
                 .filter((e) -> e != null && e.getAmount() != null && e.getTicketCategoryId() != null
@@ -64,7 +64,7 @@ public class ReservationForm implements Serializable {
     }
 
     public List<AdditionalServiceReservationModification> selectedAdditionalServices() {
-        return ofNullable(additionalService)
+        return ofNullable(getAdditionalService())
             .orElse(emptyList())
             .stream()
             .filter(e -> e != null && e.getQuantity() != null && e.getAdditionalServiceId() != null && e.getQuantity() > 0)
