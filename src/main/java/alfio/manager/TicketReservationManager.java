@@ -761,15 +761,15 @@ public class TicketReservationManager {
 	PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation reservation, Locale locale) {
         return (t) -> {
             Map<String, Object> model = new HashMap<>();
-            model.put("organization", organizationRepository.getById(event.getOrganizationId()));
+            model.put("organization", getOrganizationRepository().getById(event.getOrganizationId()));
             model.put("event", event);
             model.put("ticketReservation", reservation);
             model.put("ticketUrl", ticketUpdateUrl(event, t.getUuid()));
             model.put("ticket", t);
-            TicketCategory category = ticketCategoryRepository.getById(t.getCategoryId());
+            TicketCategory category = getTicketCategoryRepository().getById(t.getCategoryId());
             TemplateResource.fillTicketValidity(event, category, model);
             model.put("googleCalendarUrl", EventUtil.getGoogleCalendarURL(event, category, null));
-            return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, locale);
+            return getTemplateManager().renderTemplate(event, TemplateResource.TICKET_EMAIL, model, locale);
         };
     }
 
