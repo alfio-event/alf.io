@@ -1244,18 +1244,18 @@ public class TicketReservationManager {
     }
 
     void sendReminderForOfflinePayments() {
-        Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE);
-        ticketReservationRepository.findAllOfflinePaymentReservationForNotification(expiration).stream()
+        Date expiration = truncate(addHours(new Date(), getConfigurationManager().getIntConfigValue(Configuration.getSystemConfiguration(OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE);
+        getTicketReservationRepository().findAllOfflinePaymentReservationForNotification(expiration).stream()
                 .map(reservation -> {
-                    Optional<Ticket> ticket = ticketRepository.findFirstTicketInReservation(reservation.getId());
-                    Optional<Event> event = ticket.map(t -> eventRepository.findById(t.getEventId()));
+                    Optional<Ticket> ticket = getTicketRepository().findFirstTicketInReservation(reservation.getId());
+                    Optional<Event> event = ticket.map(t -> getEventRepository().findById(t.getEventId()));
                     Optional<Locale> locale = ticket.map(t -> Locale.forLanguageTag(t.getUserLanguage()));
                     return Triple.of(reservation, event, locale);
                 })
                 .filter(p -> p.getMiddle().isPresent())
                 .filter(p -> {
                     Event event = p.getMiddle().get();
-                    return truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE).compareTo(p.getLeft().getValidity()) >= 0;
+                    return truncate(addHours(new Date(), getConfigurationManager().getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE).compareTo(p.getLeft().getValidity()) >= 0;
                 })
                 .map(p -> Triple.of(p.getLeft(), p.getMiddle().get(), p.getRight().get()))
                 .forEach(p -> {
@@ -1263,8 +1263,8 @@ public class TicketReservationManager {
                     Event event = p.getMiddle();
                     Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
                     Locale locale = p.getRight();
-                    ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
-                    notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(event, reservation.getId())}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
+                    getTicketReservationRepository().flagAsOfflinePaymentReminderSent(reservation.getId());
+                    getNotificationManager().sendSimpleEmail(event, reservation.getEmail(), getMessageSource().getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(event, reservation.getId())}, locale), () -> getTemplateManager().renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
                 });
     }
 
