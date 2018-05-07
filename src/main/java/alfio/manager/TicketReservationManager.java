@@ -979,7 +979,7 @@ public class TicketReservationManager {
     }
 
     String reservationUrl(String reservationId) {
-        return reservationUrl(reservationId, eventRepository.findByReservationId(reservationId));
+        return reservationUrl(reservationId, getEventRepository().findByReservationId(reservationId));
     }
 
     public String reservationUrl(String reservationId, Event event) {
