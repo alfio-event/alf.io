@@ -1270,22 +1270,22 @@ public class TicketReservationManager {
 
     //called each hour
     void sendReminderForOfflinePaymentsToEventManagers() {
-        eventRepository.findAllActives(ZonedDateTime.now(Clock.systemUTC())).stream().filter(event -> {
+        getEventRepository().findAllActives(ZonedDateTime.now(Clock.systemUTC())).stream().filter(event -> {
             ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId());
             return dateTimeForEvent.truncatedTo(ChronoUnit.HOURS).getHour() == 5; //only for the events at 5:00 local time
         }).forEachOrdered(event -> {
             ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).plusDays(1);
-            List<TicketReservationInfo> reservations = ticketReservationRepository.findAllOfflinePaymentReservationWithExpirationBefore(dateTimeForEvent, event.getId());
+            List<TicketReservationInfo> reservations = getTicketReservationRepository().findAllOfflinePaymentReservationWithExpirationBefore(dateTimeForEvent, event.getId());
             log.info("for event {} there are {} pending offline payments to handle", event.getId(), reservations.size());
             if(!reservations.isEmpty()) {
-                Organization organization = organizationRepository.getById(event.getOrganizationId());
-                List<String> cc = notificationManager.getCCForEventOrganizer(event);
+                Organization organization = getOrganizationRepository().getById(event.getOrganizationId());
+                List<String> cc = getNotificationManager().getCCForEventOrganizer(event);
                 String subject = String.format("There are %d pending offline payments that will expire in event: %s", reservations.size(), event.getDisplayName());
-                String baseUrl = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), BASE_URL));
+                String baseUrl = getConfigurationManager().getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), BASE_URL));
                 Map<String, Object> model = TemplateResource.prepareModelForOfflineReservationExpiringEmailForOrganizer(event, reservations, baseUrl);
-                notificationManager.sendSimpleEmail(event, organization.getEmail(), cc, subject, () ->
-                    templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER, model, Locale.ENGLISH));
-                extensionManager.handleOfflineReservationsWillExpire(event, reservations);
+                getNotificationManager().sendSimpleEmail(event, organization.getEmail(), cc, subject, () ->
+                    getTemplateManager().renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER, model, Locale.ENGLISH));
+                getExtensionManager().handleOfflineReservationsWillExpire(event, reservations);
             }
         });
     }
