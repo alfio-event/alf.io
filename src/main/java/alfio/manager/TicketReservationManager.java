@@ -400,30 +400,11 @@ public class TicketReservationManager {
                 });
 
                 //
-                switch(paymentProxy) {
-                    case STRIPE:
-                        paymentResult = getPaymentManager().processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
-                        if(!paymentResult.isSuccessful()) {
-                            reTransitionToPending(reservationId);
-                            return paymentResult;
-                        }
-                        break;
-                    case PAYPAL:
-                        paymentResult = getPaymentManager().processPayPalPayment(reservationId, gatewayToken, payerId, reservationCost.getPriceWithVAT(), event);
-                        if(!paymentResult.isSuccessful()) {
-                            reTransitionToPending(reservationId);
-                            return paymentResult;
-                        }
-                        break;
-                    case OFFLINE:
-                        transitionToOfflinePayment(event, reservationId, email, customerName, billingAddress);
-                        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
-                        break;
-                    case ON_SITE:
-                        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Payment proxy "+paymentProxy+ " not recognized");
+                paymentResult = resultFor(gatewayToken, payerId, event, reservationId, email, customerName,
+						billingAddress, reservationCost, paymentProxy);
+                
+                if (paymentProxy == PaymentProxy.STRIPE || paymentProxy == PaymentProxy.PAYPAL) {
+                	return paymentResult;
                 }
 
             } else {
@@ -439,6 +420,36 @@ public class TicketReservationManager {
         }
 
     }
+
+	private PaymentResult resultFor(String gatewayToken, String payerId, Event event, String reservationId,
+			String email, CustomerName customerName, String billingAddress, TotalPrice reservationCost,
+			PaymentProxy paymentProxy) {
+		PaymentResult paymentResult;
+		switch(paymentProxy) {
+		    case STRIPE:
+		        paymentResult = getPaymentManager().processStripePayment(reservationId, gatewayToken, reservationCost.getPriceWithVAT(), event, email, customerName, billingAddress);
+		        if(!paymentResult.isSuccessful()) {
+		            reTransitionToPending(reservationId);
+		        }
+		        break;
+		    case PAYPAL:
+		        paymentResult = getPaymentManager().processPayPalPayment(reservationId, gatewayToken, payerId, reservationCost.getPriceWithVAT(), event);
+		        if(!paymentResult.isSuccessful()) {
+		            reTransitionToPending(reservationId);
+		        }
+		        break;
+		    case OFFLINE:
+		        transitionToOfflinePayment(event, reservationId, email, customerName, billingAddress);
+		        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
+		        break;
+		    case ON_SITE:
+		        paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
+		        break;
+		    default:
+		        throw new IllegalArgumentException("Payment proxy "+paymentProxy+ " not recognized");
+		}
+		return paymentResult;
+	}
 
 	private void updateInvoice(Event event, String reservationId, boolean invoiceRequested) {
 		if(invoiceRequested && getConfigurationManager().hasAllConfigurationsForInvoice(event)) {
