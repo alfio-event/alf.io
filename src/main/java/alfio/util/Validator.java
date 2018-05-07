@@ -139,17 +139,23 @@ public final class Validator {
         return ValidationResult.success();
     }
 
+    public void detectEmailError(UpdateTicketOwnerForm form, Optional<Errors> errorsOptional) {
+    	Errors errors = errorsOptional.get();
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "error.email");
+        String email = form.getEmail();
+        
+        if(!isEmailValid(email)) {
+            errors.rejectValue("email", "error.email");
+        }
+    }
+    
     public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional, Event event) {
         if(!errorsOptional.isPresent()) {
             return ValidationResult.success();//already validated
         }
-        Errors errors = errorsOptional.get();
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "error.email");
-        String email = form.getEmail();
-        if(!isEmailValid(email)) {
-            errors.rejectValue("email", "error.email");
-        }
 
+        detectEmailError(form, errorsOptional)
+        
         if(event.mustUseFirstAndLastName()) {
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
             validateMaxLength(form.getFirstName(), "firstName", ErrorsCode.STEP_2_MAX_LENGTH_FIRSTNAME, 255, errors);
