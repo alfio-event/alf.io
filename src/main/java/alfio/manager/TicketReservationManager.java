@@ -1299,9 +1299,9 @@ public class TicketReservationManager {
 
     void sendReminderForOptionalData() {
         getNotifiableEventsStream()
-                .filter(e -> configurationManager.getBooleanConfigValue(Configuration.from(e.getOrganizationId(), e.getId(), OPTIONAL_DATA_REMINDER_ENABLED), true))
-                .filter(e -> ticketFieldRepository.countAdditionalFieldsForEvent(e.getId()) > 0)
-                .map(e -> Pair.of(e, ticketRepository.findAllAssignedButNotYetNotified(e.getId())))
+                .filter(e -> getConfigurationManager().getBooleanConfigValue(Configuration.from(e.getOrganizationId(), e.getId(), OPTIONAL_DATA_REMINDER_ENABLED), true))
+                .filter(e -> getTicketFieldRepository().countAdditionalFieldsForEvent(e.getId()) > 0)
+                .map(e -> Pair.of(e, getTicketRepository().findAllAssignedButNotYetNotified(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
                 .forEach(p -> Wrappers.voidTransactionWrapper(this::sendOptionalDataReminder, p));
     }
