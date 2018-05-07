@@ -109,12 +109,13 @@ public class ReservationApiController {
                                                    Locale locale,
                                                    HttpServletRequest request) {
 
-        String country = paymentForm.getVatCountryCode();
+        String country = paymentForm.getPaymentMethodContent().getVatCountryCode();
         Optional<Triple<Event, TicketReservation, VatDetail>> vatDetail = eventRepository.findOptionalByShortName(eventName)
             .flatMap(e -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r)))
             .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(e.getKey().getVatStatus()))
             .filter(e -> vatChecker.isVatCheckingEnabledFor(e.getKey().getOrganizationId()))
-            .flatMap(e -> vatChecker.checkVat(paymentForm.getVatNr(), country, e.getKey().getOrganizationId()).map(vd -> Triple.of(e.getLeft(), e.getRight(), vd)));
+            .flatMap(e -> vatChecker.checkVat(paymentForm.getPaymentMethodContent().getVatNr(), 
+            		country, e.getKey().getOrganizationId()).map(vd -> Triple.of(e.getLeft(), e.getRight(), vd)));
 
         vatDetail
             .filter(t -> t.getRight().isValid())
@@ -125,8 +126,10 @@ public class ReservationApiController {
                 ticketReservationRepository.updateBillingData(vatStatus, vd.getVatNr(), country, paymentForm.isInvoiceRequested(), reservationId);
                 OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, t.getLeft(), Locale.forLanguageTag(t.getMiddle().getUserLanguage()));
                 ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
+                // Modified 05-07
                 ticketReservationRepository.updateTicketReservation(reservationId, t.getMiddle().getStatus().name(), paymentForm.getEmail(),
-                    paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), locale.getLanguage(), billingAddress, null,
+                    paymentForm.getCustomerInformation().getFullName(), paymentForm.getCustomerInformation().getFirstName(), 
+                    paymentForm.getCustomerInformation().getLastName(), locale.getLanguage(), billingAddress, null,
                     Optional.ofNullable(paymentForm.getPaymentMethod()).map(PaymentProxy::name).orElse(null));
                 paymentForm.getTickets().forEach((ticketId, owner) -> {
                     if(isNotEmpty(owner.getEmail()) && ((isNotEmpty(owner.getFirstName()) && isNotEmpty(owner.getLastName())) || isNotEmpty(owner.getFullName()))) {

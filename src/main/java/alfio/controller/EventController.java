@@ -21,6 +21,7 @@ import alfio.controller.decorator.EventDescriptor;
 import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
+import alfio.controller.form.ValidateReservationForm;
 import alfio.controller.support.SessionUtil;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
@@ -362,7 +363,8 @@ public class EventController {
 
     private String validateAndReserve(String eventName, ReservationForm reservation, BindingResult bindingResult, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, Event event) {
         final String redirectToEvent = "redirect:/event/" + eventName + "/";
-        return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event)
+        return new ValidateReservationForm(reservation).validate(bindingResult, 
+        		ticketReservationManager, additionalServiceRepository, eventManager, event)
             .map(selected -> {
 
                 Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));

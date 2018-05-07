@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.controller.form.CustomerInformation;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -186,9 +187,22 @@ public class PaypalManager {
     private static String computeHMAC(CustomerName customerName, String email, String billingAddress, Event event) {
         return new HmacUtils(HmacAlgorithms.HMAC_SHA_256, event.getPrivateKey()).hmacHex(StringUtils.trimToEmpty(customerName.getFullName()) + StringUtils.trimToEmpty(email) + StringUtils.trimToEmpty(billingAddress));
     }
+    
+    // added 05-07 by hhkim
+    private static String computeHMAC(CustomerInformation information, Event event) {
+        return new HmacUtils(HmacAlgorithms.HMAC_SHA_256, event.getPrivateKey()).hmacHex(StringUtils.trimToEmpty(information.getFullName())
+        		+ StringUtils.trimToEmpty(information.getEmail()) + StringUtils.trimToEmpty(information.getBillingAddress()));
+    }
+
 
     public static boolean isValidHMAC(CustomerName customerName, String email, String billingAddress, String hmac, Event event) {
         String computedHmac = computeHMAC(customerName, email, billingAddress, event);
+        return MessageDigest.isEqual(hmac.getBytes(StandardCharsets.UTF_8), computedHmac.getBytes(StandardCharsets.UTF_8));
+    }
+    
+    // added 05-07 by hhkim
+    public static boolean isValidHMAC(CustomerInformation information, String hmac, Event event) {
+        String computedHmac = computeHMAC(information, event);
         return MessageDigest.isEqual(hmac.getBytes(StandardCharsets.UTF_8), computedHmac.getBytes(StandardCharsets.UTF_8));
     }
 

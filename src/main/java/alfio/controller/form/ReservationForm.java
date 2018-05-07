@@ -55,23 +55,23 @@ public class ReservationForm implements Serializable {
     private List<TicketReservationModification> reservation;
     private List<AdditionalServiceReservationModification> additionalService;
 
-    private List<TicketReservationModification> selected() {
-        return ofNullable(reservation)
+    public List<TicketReservationModification> selected() {
+        return ofNullable(getReservation())
                 .orElse(emptyList())
                 .stream()
                 .filter((e) -> e != null && e.getAmount() != null && e.getTicketCategoryId() != null
                         && e.getAmount() > 0).collect(toList());
     }
 
-    private List<AdditionalServiceReservationModification> selectedAdditionalServices() {
-        return ofNullable(additionalService)
+    public List<AdditionalServiceReservationModification> selectedAdditionalServices() {
+        return ofNullable(getAdditionalService())
             .orElse(emptyList())
             .stream()
             .filter(e -> e != null && e.getQuantity() != null && e.getAdditionalServiceId() != null && e.getQuantity() > 0)
             .collect(toList());
     }
 
-    private int ticketSelectionCount() {
+    public int ticketSelectionCount() {
         return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
     }
 
@@ -79,77 +79,5 @@ public class ReservationForm implements Serializable {
         return (int) selectedAdditionalServices().stream()
             .filter(as -> as.getAdditionalServiceId() != null && (additionalServiceRepository.getById(as.getAdditionalServiceId(), eventId).isFixPrice() || Optional.ofNullable(as.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))
             .count();
-    }
-
-    public Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validate(Errors bindingResult,
-                                                                                                                                         TicketReservationManager tickReservationManager,
-                                                                                                                                         AdditionalServiceRepository additionalServiceRepository,
-                                                                                                                                         EventManager eventManager,
-                                                                                                                                         Event event) {
-        int selectionCount = ticketSelectionCount();
-
-        if (selectionCount <= 0) {
-            bindingResult.reject(ErrorsCode.STEP_1_SELECT_AT_LEAST_ONE);
-            return Optional.empty();
-        }
-
-        List<Pair<TicketReservationModification, Integer>> maxTicketsByTicketReservation = selected().stream()
-            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event.getOrganizationId(), event.getId(), r.getTicketCategoryId())))
-            .collect(toList());
-        Optional<Pair<TicketReservationModification, Integer>> error = maxTicketsByTicketReservation.stream()
-            .filter(p -> p.getKey().getAmount() > p.getValue())
-            .findAny();
-
-        if(error.isPresent()) {
-            bindingResult.reject(ErrorsCode.STEP_1_OVER_MAXIMUM, new Object[] { error.get().getValue() }, null);
-            return Optional.empty();
-        }
-
-        final List<TicketReservationModification> categories = selected();
-        final List<AdditionalServiceReservationModification> additionalServices = selectedAdditionalServices();
-
-        final boolean validCategorySelection = categories.stream().allMatch(c -> {
-            TicketCategory tc = eventManager.getTicketCategoryById(c.getTicketCategoryId(), event.getId());
-            return OptionalWrapper.optionally(() -> eventManager.findEventByTicketCategory(tc)).isPresent();
-        });
-
-
-        final boolean validAdditionalServiceSelected = additionalServices.stream().allMatch(asm -> {
-            AdditionalService as = eventManager.getAdditionalServiceById(asm.getAdditionalServiceId(), event.getId());
-            ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-            return as.getInception(event.getZoneId()).isBefore(now) &&
-                as.getExpiration(event.getZoneId()).isAfter(now) &&
-                asm.getQuantity() >= 0 &&
-                ((as.isFixPrice() && asm.isQuantityValid(as, selectionCount)) || (!as.isFixPrice() && asm.getAmount() != null && asm.getAmount().compareTo(BigDecimal.ZERO) >= 0)) &&
-                OptionalWrapper.optionally(() -> eventManager.findEventByAdditionalService(as)).isPresent();
-        });
-
-        if(!validCategorySelection || !validAdditionalServiceSelected) {
-            bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);
-            return Optional.empty();
-        }
-
-        List<TicketReservationWithOptionalCodeModification> res = new ArrayList<>();
-        //
-        Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode)).flatMap(
-                (trimmedCode) -> tickReservationManager.getSpecialPriceByCode(trimmedCode));
-        //
-        final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        maxTicketsByTicketReservation.forEach((pair) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));
-        return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).collect(Collectors.toList())));
-    }
-
-    private static void validateCategory(Errors bindingResult, TicketReservationManager tickReservationManager, EventManager eventManager,
-                                         Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res,
-                                         Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r) {
-        TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
-        SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, "", now, event, tickReservationManager.countAvailableTickets(event, tc), maxAmountOfTicket, null);
-
-        if (!ticketCategory.getSaleable()) {
-            bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);
-            return;
-        }
-
-        res.add(new TicketReservationWithOptionalCodeModification(r, ticketCategory.isAccessRestricted() ? specialCode : Optional.empty()));
     }
 }

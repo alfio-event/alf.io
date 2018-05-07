@@ -20,6 +20,8 @@ import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 
+import alfio.controller.form.CustomerInformation;
+
 @Getter
 public class CustomerName {
     private final String fullName;
@@ -34,6 +36,23 @@ public class CustomerName {
         this.lastName = StringUtils.trimToNull(lastName);
         hasFirstAndLastName = event.mustUseFirstAndLastName();
         fullName = StringUtils.trimToNull(fullName);
+        if(hasFirstAndLastName) {
+            Validate.isTrue(this.firstName != null, "firstName must not be null");
+            Validate.isTrue(this.lastName != null, "lastName must not be null");
+            this.fullName = firstName + " " + lastName;
+        } else {
+            Validate.isTrue(fullName != null, "fullName must not be null");
+            this.fullName = fullName;
+        }
+    }
+    
+    // added 5.07
+    public CustomerName(CustomerInformation information, Event event) {
+
+        this.firstName = StringUtils.trimToNull(information.getFirstName());
+        this.lastName = StringUtils.trimToNull(information.getLastName());
+        hasFirstAndLastName = event.mustUseFirstAndLastName();
+        String fullName = StringUtils.trimToNull(information.getFullName());
         if(hasFirstAndLastName) {
             Validate.isTrue(this.firstName != null, "firstName must not be null");
             Validate.isTrue(this.lastName != null, "lastName must not be null");
