@@ -1086,7 +1086,7 @@ public class TicketReservationManager {
     }
 
     public List<Ticket> findTicketsInReservation(String reservationId) {
-        return ticketRepository.findTicketsInReservation(reservationId);
+        return getTicketRepository().findTicketsInReservation(reservationId);
     }
 
     public List<Triple<AdditionalService, List<AdditionalServiceText>, AdditionalServiceItem>> findAdditionalServicesInReservation(String reservationId) {
