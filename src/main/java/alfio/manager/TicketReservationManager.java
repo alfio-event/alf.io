@@ -1090,8 +1090,8 @@ public class TicketReservationManager {
     }
 
     public List<Triple<AdditionalService, List<AdditionalServiceText>, AdditionalServiceItem>> findAdditionalServicesInReservation(String reservationId) {
-        return additionalServiceItemRepository.findByReservationUuid(reservationId).stream()
-            .map(asi -> Triple.of(additionalServiceRepository.getById(asi.getAdditionalServiceId(), asi.getEventId()), additionalServiceTextRepository.findAllByAdditionalServiceId(asi.getAdditionalServiceId()), asi))
+        return getAdditionalServiceItemRepository().findByReservationUuid(reservationId).stream()
+            .map(asi -> Triple.of(getAdditionalServiceRepository().getById(asi.getAdditionalServiceId(), asi.getEventId()), getAdditionalServiceTextRepository().findAllByAdditionalServiceId(asi.getAdditionalServiceId()), asi))
             .collect(Collectors.toList());
     }
 
