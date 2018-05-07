@@ -1337,19 +1337,19 @@ public class TicketReservationManager {
 
     private void sendAssignmentReminder(Pair<Event, List<String>> p) {
         try {
-            requiresNewTransactionTemplate.execute(status -> {
+            getRequiresNewTransactionTemplate().execute(status -> {
                 Event event = p.getLeft();
                 ZoneId eventZoneId = event.getZoneId();
-                int quietPeriod = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL), 3);
+                int quietPeriod = getConfigurationManager().getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL), 3);
                 p.getRight().stream()
                         .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
                         .filter(Optional::isPresent)
                         .map(Optional::get)
                         .forEach(reservation -> {
                             Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
-                            ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
+                            getTicketReservationRepository().updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
                             Locale locale = findReservationLanguage(reservation.getId());
-                            notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
+                            getNotificationManager().sendSimpleEmail(event, reservation.getEmail(), getMessageSource().getMessage("reminder.ticket-not-assigned.subject", new Object[]{event.getDisplayName()}, locale), () -> getTemplateManager().renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
                         });
                 return null;
             });
