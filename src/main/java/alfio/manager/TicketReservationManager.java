@@ -810,7 +810,7 @@ public class TicketReservationManager {
     private void cleanupOfflinePayment(String reservationId) {
         try {
             getRequiresNewTransactionTemplate().execute((tc) -> {
-                deleteOfflinePayment(eventRepository.findByReservationId(reservationId), reservationId, true);
+                deleteOfflinePayment(getEventRepository().findByReservationId(reservationId), reservationId, true);
                 return null;
             });
         } catch (Exception e) {
