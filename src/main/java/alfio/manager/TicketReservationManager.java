@@ -1326,7 +1326,7 @@ public class TicketReservationManager {
     }
 
     Stream<Event> getNotifiableEventsStream() {
-        return eventRepository.findAll().stream()
+        return getEventRepository().findAll().stream()
                 .filter(e -> {
                     int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(e.getOrganizationId(), e.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
                     //we don't want to define events SO far away, don't we?
