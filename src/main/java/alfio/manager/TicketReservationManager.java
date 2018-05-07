@@ -901,7 +901,7 @@ public class TicketReservationManager {
             .map(Ticket::getCategoryId)
             .collect(toSet())
             .stream()
-            .map(categoryId -> ticketCategoryRepository.getByIdAndActive(categoryId, promoCodeDiscount.getEventId()).getName())
+            .map(categoryId -> getTicketCategoryRepository().getByIdAndActive(categoryId, promoCodeDiscount.getEventId()).getName())
             .collect(Collectors.joining(", ", "(", ")"));
 
 
