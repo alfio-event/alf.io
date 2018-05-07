@@ -1307,19 +1307,19 @@ public class TicketReservationManager {
     }
 
     private void sendOptionalDataReminder(Pair<Event, List<Ticket>> eventAndTickets) {
-        requiresNewTransactionTemplate.execute(ts -> {
+        getRequiresNewTransactionTemplate().execute(ts -> {
             Event event = eventAndTickets.getLeft();
-            int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
-            List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
+            int daysBeforeStart = getConfigurationManager().getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
+            List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !getTicketFieldRepository().hasOptionalData(t.getId())).collect(toList());
             Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
             tickets.stream()
                     .filter(t -> notYetNotifiedReservations.contains(t.getTicketsReservationId()))
                     .forEach(t -> {
-                        int result = ticketRepository.flagTicketAsReminderSent(t.getId());
+                        int result = getTicketRepository().flagTicketAsReminderSent(t.getId());
                         Validate.isTrue(result == 1);
-                        Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ticketUpdateUrl(event, t.getUuid()));
+                        Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(getOrganizationRepository().getById(event.getOrganizationId()), event, t, ticketUpdateUrl(event, t.getUuid()));
                         Locale locale = Optional.ofNullable(t.getUserLanguage()).map(Locale::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
-                        notificationManager.sendSimpleEmail(event, t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
+                        getNotificationManager().sendSimpleEmail(event, t.getEmail(), getMessageSource().getMessage("reminder.ticket-additional-info.subject", new Object[]{event.getDisplayName()}, locale), () -> getTemplateManager().renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
                     });
             return null;
         });
