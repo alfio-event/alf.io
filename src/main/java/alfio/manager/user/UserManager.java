@@ -156,7 +156,7 @@ public class UserManager {
     }
 
     public ValidationResult validateOrganization(Integer id, String name, String email, String description) {
-        if(organizationRepository.findByName(name).isPresent()) {
+        if(id == null && organizationRepository.findByName(name).isPresent()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("name", "There is already another organization with the same name."));
         }
         Validate.notBlank(name, "name can't be empty");
