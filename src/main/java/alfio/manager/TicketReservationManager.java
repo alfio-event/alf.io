@@ -909,9 +909,9 @@ public class TicketReservationManager {
     }
 
     public OrderSummary orderSummaryForReservationId(String reservationId, Event event, Locale locale) {
-        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        TicketReservation reservation = getTicketReservationRepository().findReservationById(reservationId);
         TotalPrice reservationCost = totalReservationCostWithVAT(reservationId);
-        PromoCodeDiscount discount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById).orElse(null);
+        PromoCodeDiscount discount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(getPromoCodeDiscountRepository()::findById).orElse(null);
         //
         boolean free = reservationCost.getPriceWithVAT() == 0;
         String vat = getVAT(event).orElse(null);
