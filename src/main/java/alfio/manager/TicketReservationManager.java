@@ -378,6 +378,7 @@ public class TicketReservationManager {
                                  String email, CustomerName customerName, Locale userLanguage, String billingAddress,
                                  TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method,
                                  boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
+    	
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
         if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, customerName, userLanguage, billingAddress)) {
             return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
@@ -386,12 +387,8 @@ public class TicketReservationManager {
             PaymentResult paymentResult;
             getTicketReservationRepository().lockReservationForUpdate(reservationId);
             if(reservationCost.getPriceWithVAT() > 0) {
-                if(invoiceRequested && getConfigurationManager().hasAllConfigurationsForInvoice(event)) {
-                    int invoiceSequence = getInvoiceSequencesRepository().lockReservationForUpdate(event.getOrganizationId());
-                    getInvoiceSequencesRepository().incrementSequenceFor(event.getOrganizationId());
-                    String pattern = getConfigurationManager().getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
-                    getTicketReservationRepository().setInvoiceNumber(reservationId, String.format(pattern, invoiceSequence));
-                }
+            	
+                updateInvoice(event, reservationId, invoiceRequested);
                 getTicketReservationRepository().updateBillingData(vatStatus, vatNr, vatCountryCode, invoiceRequested, reservationId);
 
                 //
@@ -442,6 +439,15 @@ public class TicketReservationManager {
         }
 
     }
+
+	private void updateInvoice(Event event, String reservationId, boolean invoiceRequested) {
+		if(invoiceRequested && getConfigurationManager().hasAllConfigurationsForInvoice(event)) {
+		    int invoiceSequence = getInvoiceSequencesRepository().lockReservationForUpdate(event.getOrganizationId());
+		    getInvoiceSequencesRepository().incrementSequenceFor(event.getOrganizationId());
+		    String pattern = getConfigurationManager().getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
+		    getTicketReservationRepository().setInvoiceNumber(reservationId, String.format(pattern, invoiceSequence));
+		}
+	}
 
     private PaymentManager getPaymentManager() {
 		return paymentManager;
