@@ -1215,7 +1215,7 @@ public class TicketReservationManager {
     }
 
     public Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, String ticketIdentifier) {
-        return ticketRepository.findOptionalByUUID(ticketIdentifier)
+        return getTicketRepository().findOptionalByUUID(ticketIdentifier)
             .flatMap(ticket -> from(eventName, ticket.getTicketsReservationId(), ticketIdentifier)
                 .flatMap((triple) -> {
                     if(triple.getMiddle().getStatus() == TicketReservationStatus.COMPLETE) {
