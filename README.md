@@ -76,10 +76,10 @@ Importing the Gradle project into Intellij and Eclipse both work.
 Alf.io is also offered as a 3 tier application using 3 docker images:
 
  * `postgres` --> docker official image for PostgreSQL database
- * `exteso/alfio-web`--> application runtime. Docker image is generated from this project (see below).
+ * `alfio/alf.io`--> application runtime. Dockerfile is generated from this project (see below).
  * `tutum/haproxy` --> front layer proxy, force redirect to https and support load-balancing if multiple alfio-web instances are running
 
-### Generate a new version of the exteso/alfio-web docker image
+### Generate a new version of the alfio/alf.io docker image
  * Build application and Dockerfile:
  ```
  ./gradlew distribution
@@ -92,10 +92,10 @@ Alf.io is also offered as a 3 tier application using 3 docker images:
 
  * Create docker image:
  ```
- docker build -t exteso/alfio-web .
+ docker build -t alfio/alf.io .
  ```
 
-### Publish a new version of the exteso/alfio-web on docker hub
+### Publish a new version of the alfio/alf.io on docker hub
 TODO
 
 ### Launch alf.io container instances
@@ -111,16 +111,17 @@ TODO
 
  * Launch the alf.io server
  ```
- docker run --name alfio-web --link alfio-db:db -v /path/to/logs:/alfio/logs -d exteso/alfio-web
+ docker run --name alfio --link alfio-db:postgres -d alfio/alf.io
  ```
-
+ Please note that at the moment, the only alias supported for the DB link is *postgres*
+ 
  * Launch the proxy
  ```
  docker run --name alfio-proxy --link alfio-web:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy
  ```
 
 ### Test alf.io application
- * See alfio-web logs: `docker logs alfio-web` or `less /path/to/logs/alfio.log`
+ * Check alfio-web logs: `docker logs alfio-web`
  * Copy admin password in a secure place
  * Get IP of your docker container: (only on Mac/Windows, on linux the proxy will bind directly on your public IP)
     * `boot2docker ip` on Mac/Windows

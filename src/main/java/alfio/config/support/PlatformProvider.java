@@ -216,7 +216,7 @@ public enum PlatformProvider {
 
     },
 
-    DOCKER {
+    DOCKER { // we assume that the db container has been linked using the `postgres` alias (e.g. --link alfio-db:postgres)
 
         @Override
         public String getUrl(Environment env) {
