@@ -378,7 +378,6 @@ public class TicketReservationManager {
                                  String email, CustomerName customerName, Locale userLanguage, String billingAddress,
                                  TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method,
                                  boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
-    	
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
         if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, customerName, userLanguage, billingAddress)) {
             return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
@@ -426,6 +425,7 @@ public class TicketReservationManager {
                     default:
                         throw new IllegalArgumentException("Payment proxy "+paymentProxy+ " not recognized");
                 }
+
             } else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
@@ -553,11 +553,7 @@ public class TicketReservationManager {
             model.put("eventId", Integer.toString(event.getId()));
             model.put("language", Json.toJson(language));
             model.put("reservationEmailModel", Json.toJson(reservationEmailModel));
-            if(ticketReservation.getHasInvoiceNumber()) {
-                attachments.add(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
-            } else {
-                attachments.add(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
-            }
+            attachMailInvoiceOrReceipt(ticketReservation, attachments, model);
 
         }
 
@@ -565,6 +561,15 @@ public class TicketReservationManager {
                 new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, language),
             () -> getTemplateManager().renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language), attachments);
     }
+
+	private void attachMailInvoiceOrReceipt(TicketReservation ticketReservation, List<Mailer.Attachment> attachments,
+			Map<String, String> model) {
+		if(ticketReservation.getHasInvoiceNumber()) {
+		    attachments.add(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
+		} else {
+		    attachments.add(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+		}
+	}
 
     private TemplateManager getTemplateManager() {
 		return templateManager;
