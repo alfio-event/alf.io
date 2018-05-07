@@ -1019,7 +1019,7 @@ public class TicketReservationManager {
     }
 
     public void cancelPendingReservation(String reservationId, boolean expired) {
-        Validate.isTrue(ticketReservationRepository.findReservationById(reservationId).getStatus() == TicketReservationStatus.PENDING, "status is not PENDING");
+        Validate.isTrue(getTicketReservationRepository().findReservationById(reservationId).getStatus() == TicketReservationStatus.PENDING, "status is not PENDING");
         cancelReservation(reservationId, expired);
     }
 
