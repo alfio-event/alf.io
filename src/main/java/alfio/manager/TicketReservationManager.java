@@ -1446,29 +1446,29 @@ public class TicketReservationManager {
     }
 
     public Integer getPendingPaymentsCount(int eventId) {
-        return ticketReservationRepository.findAllReservationsWaitingForPaymentCountInEventId(eventId);
+        return getTicketReservationRepository().findAllReservationsWaitingForPaymentCountInEventId(eventId);
     }
 
     public List<TicketReservation> findAllInvoices(int eventId) {
-        return ticketReservationRepository.findAllReservationsWithInvoices(eventId);
+        return getTicketReservationRepository().findAllReservationsWithInvoices(eventId);
     }
 
     public Integer countInvoices(int eventId) {
-        return ticketReservationRepository.countInvoices(eventId);
+        return getTicketReservationRepository().countInvoices(eventId);
     }
 
 
     public boolean hasPaidSupplements(String reservationId) {
-        return additionalServiceItemRepository.hasPaidSupplements(reservationId);
+        return getAdditionalServiceItemRepository().hasPaidSupplements(reservationId);
     }
 
     void revertTicketsToFreeIfAccessRestricted(int eventId) {
-        List<Integer> restrictedCategories = ticketCategoryRepository.findByEventId(eventId).stream()
+        List<Integer> restrictedCategories = getTicketCategoryRepository().findByEventId(eventId).stream()
             .filter(TicketCategory::isAccessRestricted)
             .map(TicketCategory::getId)
             .collect(toList());
         if(!restrictedCategories.isEmpty()) {
-            int count = ticketRepository.revertToFreeForRestrictedCategories(eventId, restrictedCategories);
+            int count = getTicketRepository().revertToFreeForRestrictedCategories(eventId, restrictedCategories);
             if(count > 0) {
                 log.debug("reverted {} tickets for categories {}", count, restrictedCategories);
             }
