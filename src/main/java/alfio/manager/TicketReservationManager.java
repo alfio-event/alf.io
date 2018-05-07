@@ -682,9 +682,9 @@ public class TicketReservationManager {
     
     //check internal consistency between the 3 values
     public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
-        return optionally(() -> Triple.of(eventRepository.findByShortName(eventName), 
-                ticketReservationRepository.findReservationById(reservationId), 
-                ticketRepository.findByUUID(ticketIdentifier))).flatMap((x) -> {
+        return optionally(() -> Triple.of(getEventRepository().findByShortName(eventName), 
+                getTicketReservationRepository().findReservationById(reservationId), 
+                getTicketRepository().findByUUID(ticketIdentifier))).flatMap((x) -> {
                     
                     Ticket t = x.getRight();
                     Event e = x.getLeft();
