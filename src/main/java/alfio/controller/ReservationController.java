@@ -148,7 +148,7 @@ public class ReservationController {
                         .collect(toList());
 
                     addAttributeCaptcha(model, orderSummary, activePaymentMethods, event);
-                    addAttributeOrderSummary(model, orderSummary, activePaymentMethods, reservation, event, reservationId, locale);
+                    addAttributeInvoice(model, orderSummary, activePaymentMethods, reservation, event, reservationId, locale);
                     addAttributeStripe(model, orderSummary.getFree(), activePaymentMethods.contains(PaymentProxy.STRIPE), event);
 
                     Map<String, Object> modelMap = model.asMap();
@@ -246,11 +246,6 @@ public class ReservationController {
             model.addAttribute("delayForOfflinePayment", 0);
         }
     }
-
-    private void addAttributeOrderSummary(Model model, OrderSummary orderSummary, List<PaymentProxy> activePaymentMethods, TicketReservation reservation, Event event, String reservationId, Locale locale) {
-
-    }
-
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/success", method = RequestMethod.GET)
     public String showConfirmationPage(@PathVariable("eventName") String eventName,
