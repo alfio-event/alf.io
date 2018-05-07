@@ -625,8 +625,8 @@ public class TicketReservationManager {
 	}
 
 	private void transitionToOfflinePayment(Event event, String reservationId, String email, CustomerName customerName, String billingAddress) {
-        ZonedDateTime deadline = getOfflinePaymentDeadline(event, configurationManager);
-        int updatedReservation = ticketReservationRepository.postponePayment(reservationId, Date.from(deadline.toInstant()), email,
+        ZonedDateTime deadline = getOfflinePaymentDeadline(event, getConfigurationManager());
+        int updatedReservation = getTicketReservationRepository().postponePayment(reservationId, Date.from(deadline.toInstant()), email,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), billingAddress);
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
     }
