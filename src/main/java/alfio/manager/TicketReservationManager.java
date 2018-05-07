@@ -612,15 +612,19 @@ public class TicketReservationManager {
     }
 
     private void transitionToInPayment(String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress) {
-        requiresNewTransactionTemplate.execute(status -> {
-            int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, IN_PAYMENT.toString(), email,
+        getRequiresNewTransactionTemplate().execute(status -> {
+            int updatedReservation = getTicketReservationRepository().updateTicketReservation(reservationId, IN_PAYMENT.toString(), email,
                 customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage.getLanguage(), billingAddress, null, PaymentProxy.STRIPE.toString());
             Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
             return null;
         });
     }
 
-    private void transitionToOfflinePayment(Event event, String reservationId, String email, CustomerName customerName, String billingAddress) {
+    private TransactionTemplate getRequiresNewTransactionTemplate() {
+		return requiresNewTransactionTemplate;
+	}
+
+	private void transitionToOfflinePayment(Event event, String reservationId, String email, CustomerName customerName, String billingAddress) {
         ZonedDateTime deadline = getOfflinePaymentDeadline(event, configurationManager);
         int updatedReservation = ticketReservationRepository.postponePayment(reservationId, Date.from(deadline.toInstant()), email,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), billingAddress);
