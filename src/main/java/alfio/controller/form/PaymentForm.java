@@ -52,27 +52,29 @@ public class PaymentForm implements Serializable {
         }
     }
     
+    // Hide Delegate 
     public String getEmail() {
-    	return this.customerInformation.getEmail();
+    	return this.getCustomerInformation().getEmail();
     }
     
+    // Hide Delegate
     public PaymentProxy getPaymentMethod() {
     	return this.getPaymentMethodContent().getPaymentMethod();
     }
     
-    
+    // Hide Delegate
 	public boolean hasPaypalTokens() {
 		return this.getPaymentMethodContent().hasPaypalTokens();
 	}
 
     public Boolean shouldCancelReservation() {
-        return Optional.ofNullable(cancelReservation).orElse(false);
+        return Optional.ofNullable(getCancelReservation()).orElse(false);
     }
 
     public static PaymentForm fromExistingReservation(TicketReservation reservation) {
         PaymentForm form = new PaymentForm();
-        form.customerInformation.setInformationByTicketReservation(reservation);
-        form.paymentMethodContent.setVatInformationByTicketReservation(reservation);
+        form.getCustomerInformation().setInformationByTicketReservation(reservation);
+        form.getPaymentMethodContent().setVatInformationByTicketReservation(reservation);
         form.setInvoiceRequested(reservation.isInvoiceRequested());
         return form;
     }

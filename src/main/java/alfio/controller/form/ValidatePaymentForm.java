@@ -45,23 +45,23 @@ public class ValidatePaymentForm {
 	private boolean isMissingStripeToken(TotalPrice reservationCost, PaymentProxy paymentProxy) {
 		boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
 		return priceGreaterThanZero && 
-				(paymentProxy == PaymentProxy.STRIPE && StringUtils.isBlank(form.getPaymentMethodContent().getStripeToken()));
+				(paymentProxy == PaymentProxy.STRIPE && StringUtils.isBlank(getForm().getPaymentMethodContent().getStripeToken()));
 	}
 
 	private boolean isTermAndConditionAcceptedMissing() {
-		return(Objects.isNull(form.getTermAndConditionsAccepted()) ||
-				!form.getTermAndConditionsAccepted());
+		return(Objects.isNull(getForm().getTermAndConditionsAccepted()) ||
+				!getForm().getTermAndConditionsAccepted());
 	}
 
 	private boolean isInvaildEmail(BindingResult bindingResult) {
-		return form.getEmail() != null && !form.getEmail().contains("@") && !bindingResult.hasFieldErrors("email");
+		return getForm().getEmail() != null && !getForm().getEmail().contains("@") && !bindingResult.hasFieldErrors("email");
 	}
 
 	public void validate(BindingResult bindingResult, TotalPrice reservationCost, Event event,
 			List<TicketFieldConfiguration> fieldConf) {
 
 		List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
-		Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(form.getPaymentMethod());
+		Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(getForm().getPaymentMethod());
 		PaymentProxy paymentProxy = paymentProxyOptional.filter(allowedPaymentMethods::contains).orElse(PaymentProxy.STRIPE);
 
 		if (isMissingPaymentMethod(reservationCost, allowedPaymentMethods, paymentProxyOptional)) {
@@ -74,39 +74,39 @@ public class ValidatePaymentForm {
 			bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
 
 		//trim payment information
-		form.getCustomerInformation().trimInformation();;
+		getForm().getCustomerInformation().trimInformation();;
 
 		ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "email", ErrorsCode.STEP_2_EMPTY_EMAIL);
-		rejectIfOverLength(bindingResult, "email", ErrorsCode.STEP_2_MAX_LENGTH_EMAIL, form.getEmail(), 255);
+		rejectIfOverLength(bindingResult, "email", ErrorsCode.STEP_2_MAX_LENGTH_EMAIL, getForm().getEmail(), 255);
 
 		if(event.mustUseFirstAndLastName()) {
 			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
 			rejectIfOverLength(bindingResult, "firstName", ErrorsCode.STEP_2_MAX_LENGTH_FIRSTNAME,
-					form.getCustomerInformation().getFullName(), 255);
+					getForm().getCustomerInformation().getFullName(), 255);
 			
 			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
 			rejectIfOverLength(bindingResult, "lastName", ErrorsCode.STEP_2_MAX_LENGTH_LASTNAME, 
-					form.getCustomerInformation().getFullName(), 255);
+					getForm().getCustomerInformation().getFullName(), 255);
 		} else {
 			ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
 			rejectIfOverLength(bindingResult, "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME,
-					form.getCustomerInformation().getFullName(), 255);
+					getForm().getCustomerInformation().getFullName(), 255);
 		}
 
 		rejectIfOverLength(bindingResult, "billingAddress", ErrorsCode.STEP_2_MAX_LENGTH_BILLING_ADDRESS,
-				form.getCustomerInformation().getBillingAddress(), 450);
+				getForm().getCustomerInformation().getBillingAddress(), 450);
 
 		if (isInvaildEmail(bindingResult)) {
 			bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL);
 		}
 
-		if (form.hasPaypalTokens() && !PaypalManager.isValidHMAC(form.getCustomerInformation(),
-				form.getPaymentMethodContent().getHmac(), event)) {
+		if (getForm().hasPaypalTokens() && !PaypalManager.isValidHMAC(getForm().getCustomerInformation(),
+				getForm().getPaymentMethodContent().getHmac(), event)) {
 			bindingResult.reject(ErrorsCode.STEP_2_INVALID_HMAC);
 		}
 
-		if(!form.isPostponeAssignment()) {
-			boolean success = Optional.ofNullable(form.getTickets())
+		if(!getForm().isPostponeAssignment()) {
+			boolean success = Optional.ofNullable(getForm().getTickets())
 					.filter(m -> !m.isEmpty())
 					.map(m -> m.entrySet().stream().map(e -> Validator.validateTicketAssignment(e.getValue(), fieldConf, Optional.empty(), event)))
 					.filter(s -> s.allMatch(ValidationResult::isSuccess))
