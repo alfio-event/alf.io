@@ -1053,7 +1053,7 @@ public class TicketReservationManager {
     }
 
     public Optional<SpecialPrice> getSpecialPriceByCode(String code) {
-        return specialPriceRepository.getByCode(code);
+        return getSpecialPriceRepository().getByCode(code);
     }
 
     public Optional<SpecialPrice> renewSpecialPrice(Optional<SpecialPrice> specialPrice, Optional<String> specialPriceSessionId) {
@@ -1072,7 +1072,7 @@ public class TicketReservationManager {
         }
 
         if(price.getStatus() == Status.FREE) {
-            specialPriceRepository.bindToSession(price.getId(), specialPriceSessionId.get());
+            getSpecialPriceRepository().bindToSession(price.getId(), specialPriceSessionId.get());
             return getSpecialPriceByCode(price.getCode());
         } else if(price.getStatus() == Status.PENDING) {
             Optional<Ticket> optionalTicket = ticketRepository.findBySpecialPriceId(price.getId());
