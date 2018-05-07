@@ -720,25 +720,25 @@ public class TicketReservationManager {
     }
 
     private void acquireItems(TicketStatus ticketStatus, AdditionalServiceItemStatus asStatus, PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName, String userLanguage, String billingAddress, int eventId) {
-        Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
-        int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
-        Map<Integer, Ticket> postUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
+        Map<Integer, Ticket> preUpdateTicket = getTicketRepository().findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
+        int updatedTickets = getTicketRepository().updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
+        Map<Integer, Ticket> postUpdateTicket = getTicketRepository().findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
 
         postUpdateTicket.forEach((id, ticket) -> {
             auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), eventId);
         });
 
-        int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
+        int updatedAS = getAdditionalServiceItemRepository().updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
-        specialPriceRepository.updateStatusForReservation(singletonList(reservationId), Status.TAKEN.toString());
+        getSpecialPriceRepository().updateStatusForReservation(singletonList(reservationId), Status.TAKEN.toString());
         ZonedDateTime timestamp = ZonedDateTime.now(ZoneId.of("UTC"));
-        int updatedReservation = ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email,
+        int updatedReservation = getTicketReservationRepository().updateTicketReservation(reservationId, TicketReservationStatus.COMPLETE.toString(), email,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString());
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
-        waitingQueueManager.fireReservationConfirmed(reservationId);
+        getWaitingQueueManager().fireReservationConfirmed(reservationId);
         if(paymentProxy == PaymentProxy.PAYPAL || paymentProxy == PaymentProxy.ADMIN) {
             //we must notify the plugins about ticket assignment and send them by email
-            Event event = eventRepository.findByReservationId(reservationId);
+            Event event = getEventRepository().findByReservationId(reservationId);
             TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
             findTicketsInReservation(reservationId).stream()
                 .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
@@ -747,14 +747,18 @@ public class TicketReservationManager {
                     if(paymentProxy == PaymentProxy.PAYPAL) {
                         sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                     }
-                    pluginManager.handleTicketAssignment(ticket);
-                    extensionManager.handleTicketAssignment(ticket);
+                    getPluginManager().handleTicketAssignment(ticket);
+                    getExtensionManager().handleTicketAssignment(ticket);
                 });
 
         }
     }
 
-    PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation reservation, Locale locale) {
+    private WaitingQueueManager getWaitingQueueManager() {
+		return waitingQueueManager;
+	}
+
+	PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation reservation, Locale locale) {
         return (t) -> {
             Map<String, Object> model = new HashMap<>();
             model.put("organization", organizationRepository.getById(event.getOrganizationId()));
