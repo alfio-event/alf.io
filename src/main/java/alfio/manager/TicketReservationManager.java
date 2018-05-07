@@ -825,22 +825,22 @@ public class TicketReservationManager {
      * @param expirationDate expiration date
      */
     public void markExpiredInPaymentReservationAsStuck(Date expirationDate) {
-        List<String> stuckReservations = ticketReservationRepository.findStuckReservations(expirationDate);
+        List<String> stuckReservations = getTicketReservationRepository().findStuckReservations(expirationDate);
         if(!stuckReservations.isEmpty()) {
-            ticketReservationRepository.updateReservationsStatus(stuckReservations, TicketReservationStatus.STUCK.name());
+            getTicketReservationRepository().updateReservationsStatus(stuckReservations, TicketReservationStatus.STUCK.name());
 
-            Map<Integer, List<ReservationIdAndEventId>> reservationsGroupedByEvent = ticketReservationRepository
+            Map<Integer, List<ReservationIdAndEventId>> reservationsGroupedByEvent = getTicketReservationRepository()
                 .getReservationIdAndEventId(stuckReservations)
                 .stream()
                 .collect(Collectors.groupingBy(ReservationIdAndEventId::getEventId));
 
             reservationsGroupedByEvent.forEach((eventId, reservationIds) -> {
-                Event event = eventRepository.findById(eventId);
-                Organization organization = organizationRepository.getById(event.getOrganizationId());
-                notificationManager.sendSimpleEmail(event, organization.getEmail(),
+                Event event = getEventRepository().findById(eventId);
+                Organization organization = getOrganizationRepository().getById(event.getOrganizationId());
+                getNotificationManager().sendSimpleEmail(event, organization.getEmail(),
                     STUCK_TICKETS_SUBJECT,  () -> String.format(STUCK_TICKETS_MSG, event.getShortName()));
 
-                extensionManager.handleStuckReservations(event, reservationIds.stream().map(ReservationIdAndEventId::getId).collect(toList()));
+                getExtensionManager().handleStuckReservations(event, reservationIds.stream().map(ReservationIdAndEventId::getId).collect(toList()));
             });
         }
     }
