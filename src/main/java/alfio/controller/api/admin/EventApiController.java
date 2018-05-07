@@ -105,6 +105,26 @@ public class EventApiController {
     private final FileUploadManager fileUploadManager;
 
 
+    private static final String ID = "ID";
+    private static final String CREATION = "Creation";
+    private static final String CATEGORY = "Category";
+    private static final String EVENT = "Event";
+    private static final String STATUS = "Status";
+    private static final String ORIGINAL_PRICE = "OriginalPrice";
+    private static final String PAID_PRICE = "PaidPrice";
+    private static final String DISCOUNT = "Discount";
+    private static final String VAT = "VAT";
+    private static final String RESERVATION_ID = "ReservationID";
+    private static final String FULL_NAME = "Full Name";
+    private static final String FIRST_NAME = "First Name";
+    private static final String LAST_NAME = "Last Name";
+    private static final String E_MAIL = "E-Mail";
+    private static final String LOCKED = "Locked";
+    private static final String LANGUAGE = "Language";
+    private static final String CONFIRMATION = "Confirmation";
+    private static final String BILLING_ADDRESS = "Billing Address";
+
+
     @ExceptionHandler(DataAccessException.class)
     public String exception(DataAccessException e) {
         log.warn("unhandled exception", e);
@@ -261,7 +281,7 @@ public class EventApiController {
         return OK;
     }
 
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address");
+    private static final List<String> FIXED_FIELDS = Arrays.asList(ID, CREATION, CATEGORY, EVENT, STATUS, ORIGINAL_PRICE, PAID_PRICE, DISCOUNT, VAT, RESERVATION_ID, FULL_NAME, FIRST_NAME, LAST_NAME, E_MAIL, LOCKED, LANGUAGE, CONFIRMATION, BILLING_ADDRESS);
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
     @RequestMapping("/events/{eventName}/export.csv")
@@ -291,24 +311,24 @@ public class EventApiController {
 
             eventManager.findAllConfirmedTicketsForCSV(eventName, principal.getName()).stream().map(t -> {
                 List<String> line = new ArrayList<>();
-                if(fields.contains("ID")) {line.add(t.getUuid());}
-                if(fields.contains("Creation")) {line.add(t.getCreation().withZoneSameInstant(eventZoneId).toString());}
-                if(fields.contains("Category")) {line.add(categoriesMap.get(t.getCategoryId()).getName());}
-                if(fields.contains("Event")) {line.add(eventName);}
-                if(fields.contains("Status")) {line.add(t.getStatus().toString());}
-                if(fields.contains("OriginalPrice")) {line.add(MonetaryUtil.centsToUnit(t.getSrcPriceCts()).toString());}
-                if(fields.contains("PaidPrice")) {line.add(MonetaryUtil.centsToUnit(t.getFinalPriceCts()).toString());}
-                if(fields.contains("Discount")) {line.add(MonetaryUtil.centsToUnit(t.getDiscountCts()).toString());}
-                if(fields.contains("VAT")) {line.add(MonetaryUtil.centsToUnit(t.getVatCts()).toString());}
-                if(fields.contains("ReservationID")) {line.add(t.getTicketsReservationId());}
-                if(fields.contains("Full Name")) {line.add(t.getFullName());}
-                if(fields.contains("First Name")) {line.add(t.getFirstName());}
-                if(fields.contains("Last Name")) {line.add(t.getLastName());}
-                if(fields.contains("E-Mail")) {line.add(t.getEmail());}
-                if(fields.contains("Locked")) {line.add(String.valueOf(t.getLockedAssignment()));}
-                if(fields.contains("Language")) {line.add(String.valueOf(t.getUserLanguage()));}
-                if(fields.contains("Confirmation")) {line.add(t.getTicketReservation().getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
-                if(fields.contains("Billing Address")) {line.add(t.getTicketReservation().getBillingAddress());}
+                if(fields.contains(ID)) {line.add(t.getUuid());}
+                if(fields.contains(CREATION)) {line.add(t.getCreation().withZoneSameInstant(eventZoneId).toString());}
+                if(fields.contains(CREATION)) {line.add(categoriesMap.get(t.getCategoryId()).getName());}
+                if(fields.contains(EVENT)) {line.add(eventName);}
+                if(fields.contains(STATUS)) {line.add(t.getStatus().toString());}
+                if(fields.contains(ORIGINAL_PRICE)) {line.add(MonetaryUtil.centsToUnit(t.getSrcPriceCts()).toString());}
+                if(fields.contains(PAID_PRICE)) {line.add(MonetaryUtil.centsToUnit(t.getFinalPriceCts()).toString());}
+                if(fields.contains(DISCOUNT)) {line.add(MonetaryUtil.centsToUnit(t.getDiscountCts()).toString());}
+                if(fields.contains(VAT)) {line.add(MonetaryUtil.centsToUnit(t.getVatCts()).toString());}
+                if(fields.contains(RESERVATION_ID)) {line.add(t.getTicketsReservationId());}
+                if(fields.contains(FULL_NAME)) {line.add(t.getFullName());}
+                if(fields.contains(FIRST_NAME)) {line.add(t.getFirstName());}
+                if(fields.contains(LAST_NAME)) {line.add(t.getLastName());}
+                if(fields.contains(E_MAIL)) {line.add(t.getEmail());}
+                if(fields.contains(LOCKED)) {line.add(String.valueOf(t.getLockedAssignment()));}
+                if(fields.contains(LANGUAGE)) {line.add(String.valueOf(t.getUserLanguage()));}
+                if(fields.contains(CONFIRMATION)) {line.add(t.getTicketReservation().getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
+                if(fields.contains(BILLING_ADDRESS)) {line.add(t.getTicketReservation().getBillingAddress());}
 
                 //obviously not optimized
                 Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
@@ -556,5 +576,4 @@ public class EventApiController {
         Validate.isTrue(singleEvent.isPresent(), "event not found");
         return singleEvent.get();
     }
-
 }

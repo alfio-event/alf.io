@@ -124,7 +124,8 @@ public class AdminReservationManager {
         });
     }
 
-    public Result<Boolean> updateReservation(String eventName, String reservationId, AdminReservationModification adminReservationModification, String username) {
+    public Result<Boolean> updateReservation(String eventName, String reservationId, 
+    		AdminReservationModification adminReservationModification, String username) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
         TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
         return template.execute(status -> {
@@ -138,12 +139,15 @@ public class AdminReservationManager {
                         .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
                     ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
                 if(!result.isSuccess()) {
-                    log.debug("Application error detected eventName: {} reservationId: {}, username: {}, reservation: {}", eventName, reservationId, username, AdminReservationModification.summary(adminReservationModification));
+                    log.debug("Application error detected eventName: {} reservationId: {}, username: {}, reservation: {}", 
+                    		eventName, reservationId, username, 
+                    		AdminReservationModification.summary(adminReservationModification));
                     status.setRollbackOnly();
                 }
                 return result;
             } catch (Exception e) {
-                log.error("Error during update of reservation eventName: {} reservationId: {}, username: {}, reservation: {}", eventName, reservationId, username, AdminReservationModification.summary(adminReservationModification));
+                log.error("Error during update of reservation eventName: {} reservationId: {}, username: {}, reservation: {}",
+                		eventName, reservationId, username, AdminReservationModification.summary(adminReservationModification));
                 status.setRollbackOnly();
                 return Result.error(singletonList(ErrorCode.custom("", e.getMessage())));
             }
@@ -186,7 +190,8 @@ public class AdminReservationManager {
                 Event event = pair.getLeft();
                 TicketReservation reservation = pair.getRight();
                 if(notification.isCustomer()){
-                    ticketReservationManager.sendConfirmationEmail(event, reservation, Locale.forLanguageTag(reservation.getUserLanguage()));
+                    ticketReservationManager.sendConfirmationEmail(event, reservation, 
+                    		Locale.forLanguageTag(reservation.getUserLanguage()));
                 }
                 if(notification.isAttendees()) {
                     ticketRepository.findTicketsInReservation(reservationId)
@@ -194,7 +199,8 @@ public class AdminReservationManager {
                         .filter(Ticket::getAssigned)
                         .forEach(t -> {
                             Locale locale = Locale.forLanguageTag(t.getUserLanguage());
-                            ticketReservationManager.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale));
+                            ticketReservationManager.sendTicketByEmail(t, locale, event, 
+                            		ticketReservationManager.getTicketEmailGenerator(event, reservation, locale));
                         });
                 }
                 return Result.success(true);
@@ -347,17 +353,24 @@ public class AdminReservationManager {
     }
 
     private <T> Result<T> reduceResults(Result<T> r1, Result<T> r2, BiFunction<T, T, T> processData) {
-        boolean successful = r1.isSuccess() && r2.isSuccess();
-        ResultStatus global = r1.isSuccess() ? r2.getStatus() : r1.getStatus();
         List<ErrorCode> errors = new ArrayList<>();
-        if(!successful) {
+        if(!isResultSuccessful(r1.isSuccess(), r2.isSuccess())) {
             errors.addAll(r1.getErrors());
             errors.addAll(r2.getErrors());
-            return new Result<>(global, null, errors);
+            return new Result<>(getGolbalResultStatus(r1, r2), null, errors);
         } else {
-            return new Result<>(global, processData.apply(r1.getData(), r2.getData()), errors);
+            return new Result<>(getGolbalResultStatus(r1, r2), processData.apply(r1.getData(), r2.getData()), errors);
         }
     }
+
+    private boolean isResultSuccessful(final boolean r1, final boolean r2) {
+        return r1 && r2;
+    }
+
+    private <T> ResultStatus getGolbalResultStatus(Result<T> r1, Result<T> r2) {
+        return r1.isSuccess() ? r2.getStatus() : r1.getStatus();
+    }
+
 
     private Stream<Pair<TicketCategory, TicketsInfo>> flattenTicketsInfo(Event event, TicketsInfo empty, List<TicketsInfo> t) {
         return t.stream()
@@ -488,7 +501,8 @@ public class AdminReservationManager {
     }
 
     @Transactional
-    public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, String username) {
+    public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, 
+    		List<Integer> toRefund, boolean notify, String username) {
         loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
@@ -507,7 +521,8 @@ public class AdminReservationManager {
 
             if(tickets.size() - ticketIds.size() <= 0) {
                 markAsCancelled(reservation);
-                additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
+                additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), 
+                		AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
             }
         });
     }

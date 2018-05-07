@@ -36,10 +36,15 @@ public class HoursRange {
         return includes(LocalTime.of(hours, minutes));
     }
 
+    /* getDistanceInHours
+        This method is come through WorkingDaysAdjusters
+        and, It's checked first that localTime is correctly from start to end using includes(LocalTime localTime)
+        so 'if(includes(localTime))' isn't need.
+     */
     public int getDistanceInHours(LocalTime localTime) {
-        if(includes(localTime)) {
-            return 0;
-        }
+//        if(includes(localTime)) {
+//            return 0;
+//        }
         Duration distanceFromStart = Duration.between(localTime, start);
         if(distanceFromStart.isNegative()) {
             return 24 + (int) distanceFromStart.toHours();

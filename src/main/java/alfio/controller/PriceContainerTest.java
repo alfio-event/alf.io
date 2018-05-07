@@ -14,8 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model;
+package alfio.controller;
 
+import alfio.model.PriceContainer;
+import alfio.model.PromoCodeDiscount;
+import alfio.model.PriceContainer.VatStatus;
+import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.test.util.PriceContainerImpl;
 import alfio.util.MonetaryUtil;
 import org.apache.commons.lang3.tuple.Pair;
@@ -24,6 +28,7 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -45,7 +50,9 @@ public class PriceContainerTest {
                 when(promoCodeDiscount.getDiscountAmount()).thenReturn(100, 10);
                 when(promoCodeDiscount.getFixedAmount()).thenReturn(true, false);
                 when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT, PromoCodeDiscount.DiscountType.PERCENTAGE);
-
+                //ADD TEST
+ 
+                //
                 vs = new PriceContainerImpl(1100, "CHF", new BigDecimal("30.00"), vatStatus, promoCodeDiscount);
                 assertEquals(String.format("vatStatus: %s", vatStatus.name()), new BigDecimal("10.00"), vs.getFinalPrice());
 
@@ -108,10 +115,10 @@ public class PriceContainerTest {
     @Test
     public void getFinalPriceInputVatNotIncluded() throws Exception {
         generateTestStream(PriceContainer.VatStatus.NOT_INCLUDED)
-            .forEach(p -> {
-                PriceContainer priceContainer = p.getRight();
+            .forEach(P -> {
+                PriceContainer priceContainer = P.getRight();
                 BigDecimal finalPrice = priceContainer.getFinalPrice();
-                Integer price = p.getLeft();
+                Integer price = P.getLeft();
                 BigDecimal netPrice = MonetaryUtil.centsToUnit(price);
                 BigDecimal vatAmount = finalPrice.subtract(netPrice);
                 int result = MonetaryUtil.unitToCents(vatAmount.subtract(MonetaryUtil.calcVat(netPrice, priceContainer.getVatPercentageOrZero())).abs());
@@ -122,7 +129,29 @@ public class PriceContainerTest {
             });
     }
 
-
+//ADD
+   @Test
+   public void getPromocodeDiscount() throws Exception {
+	   generateTestStream(PriceContainer.VatStatus.NOT_INCLUDED)
+       .forEach(H -> {
+           PriceContainer priceContainer = H.getRight();
+           BigDecimal finalPrice = priceContainer.getFinalPrice();
+           Integer price = H.getLeft();
+           BigDecimal netPrice = MonetaryUtil.centsToUnit(price);
+           BigDecimal vatAmount = finalPrice.subtract(netPrice);
+           int result = MonetaryUtil.unitToCents(vatAmount.subtract(MonetaryUtil.calcVat(netPrice, priceContainer.getVatPercentageOrZero())).abs());
+           Optional<PromoCodeDiscount> op = priceContainer.getDiscount();
+           PromoCodeDiscount promoCodeDiscount = op.get();
+           System.out.println(promoCodeDiscount.getDiscountAmount());
+           if(result >= 2) {
+               BigDecimal calcVatPerc = vatAmount.divide(finalPrice, 5, RoundingMode.HALF_UP).multiply(new BigDecimal("100.00")).setScale(2, RoundingMode.HALF_UP);
+               fail(String.format("Expected percentage: %s, got %s, vat %s v. %s", calcVatPerc, priceContainer.getOptionalVatPercentage(), vatAmount, MonetaryUtil.calcVat(netPrice, priceContainer.getVatPercentageOrZero())));
+           }
+       });  
+   }
+//
+    
+    
     private Stream<Pair<Integer, PriceContainer>> generateTestStream(PriceContainer.VatStatus vatStatus) {
         List<BigDecimal> vatPercentages = IntStream.range(100, 3000)
             .mapToObj(vatCts -> new BigDecimal(vatCts).divide(new BigDecimal("100.00"), 2, RoundingMode.UNNECESSARY))

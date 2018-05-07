@@ -21,8 +21,10 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
