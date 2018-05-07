@@ -484,16 +484,16 @@ public class TicketReservationManager {
 
     public void confirmOfflinePayment(Event event, String reservationId, String username) {
         TicketReservation ticketReservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
-        ticketReservationRepository.lockReservationForUpdate(reservationId);
+        getTicketReservationRepository().lockReservationForUpdate(reservationId);
         Validate.isTrue(ticketReservation.getPaymentMethod() == PaymentProxy.OFFLINE, "invalid payment method");
         Validate.isTrue(ticketReservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT, "invalid status");
 
 
-        ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), ZonedDateTime.now(event.getZoneId()));
+        getTicketReservationRepository().confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), ZonedDateTime.now(event.getZoneId()));
 
         registerAlfioTransaction(event, reservationId, PaymentProxy.OFFLINE);
 
-        auditingRepository.insert(reservationId, userRepository.findIdByUserName(username).orElse(null), event.getId(), Audit.EventType.RESERVATION_OFFLINE_PAYMENT_CONFIRMED, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
+        getAuditingRepository().insert(reservationId, userRepository.findIdByUserName(username).orElse(null), event.getId(), Audit.EventType.RESERVATION_OFFLINE_PAYMENT_CONFIRMED, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
 
         CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event);
         acquireItems(TicketStatus.ACQUIRED, AdditionalServiceItemStatus.ACQUIRED, PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), customerName, ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress(), event.getId());
@@ -502,12 +502,16 @@ public class TicketReservationManager {
 
         sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
 
-        final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
-        pluginManager.handleReservationConfirmation(finalReservation, event.getId());
-        extensionManager.handleReservationConfirmation(finalReservation, event.getId());
+        final TicketReservation finalReservation = getTicketReservationRepository().findReservationById(reservationId);
+        getPluginManager().handleReservationConfirmation(finalReservation, event.getId());
+        getExtensionManager().handleReservationConfirmation(finalReservation, event.getId());
     }
 
-    void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
+    private PluginManager getPluginManager() {
+		return pluginManager;
+	}
+
+	void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
         int priceWithVAT = totalReservationCostWithVAT(reservationId).getPriceWithVAT();
         Long platformFee = FeeCalculator.getCalculator(event, configurationManager)
             .apply(ticketRepository.countTicketsInReservation(reservationId), (long) priceWithVAT)
