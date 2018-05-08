@@ -1,5 +1,27 @@
 # Change Log
 
+## [1.14.1](https://github.com/alfio-event/alf.io/tree/1.14.1) (2018-05-07)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14...1.14.1)
+
+**Implemented enhancements:**
+
+- Improve docker support [\#422](https://github.com/alfio-event/alf.io/issues/422)
+- Add more information in expiring payments notification email [\#420](https://github.com/alfio-event/alf.io/issues/420)
+- Introduce GDPR Privacy Policy link [\#419](https://github.com/alfio-event/alf.io/issues/419)
+- His Language if it only has one option [\#417](https://github.com/alfio-event/alf.io/issues/417)
+- Search by attendee in reservation list [\#414](https://github.com/alfio-event/alf.io/issues/414)
+- add TicketReservation object to extension scope on RESERVATION\_CANCELLED [\#412](https://github.com/alfio-event/alf.io/issues/412)
+
+**Fixed bugs:**
+
+- Cannot create custom reservation with 1 empty seat [\#421](https://github.com/alfio-event/alf.io/issues/421)
+- Error while creating a new event [\#416](https://github.com/alfio-event/alf.io/issues/416)
+- RESERVATION\_CANCELLED not fired when deleting a pending payment [\#413](https://github.com/alfio-event/alf.io/issues/413)
+
+**Closed issues:**
+
+- VAT Checker not working [\#418](https://github.com/alfio-event/alf.io/issues/418)
+
 ## [1.14](https://github.com/alfio-event/alf.io/tree/1.14) (2018-04-10)
 [Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14-RC2...1.14)
 
