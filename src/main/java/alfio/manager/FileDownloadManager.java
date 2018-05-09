@@ -4,10 +4,12 @@ import alfio.model.modification.UploadBase64FileModification;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StreamUtils;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,43 +17,34 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+
+@Log4j2
 @Component
 public class FileDownloadManager {
 
     private final OkHttpClient client = new OkHttpClient();
 
-    public DownloadedFile downloadFile(String url) throws IOException {
+    public DownloadedFile downloadFile(String url) {
         Request request = new Request.Builder().url(url).build();
-        Response response = client.newCall(request).execute();
 
-        InputStream is = response.body().byteStream();
+        try(Response response = client.newCall(request).execute()) {
+            if(response.isSuccessful()) {
+                String[] parts = url.split("/");
+                String name = parts[parts.length - 1];
 
-        BufferedInputStream input = new BufferedInputStream(is);
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-        byte[] data = new byte[1024];
-
-        long total = 0;
-
-        int count = input.read(data);
-        while (count != -1) {
-            total += count;
-            output.write(data, 0, count);
-            count = input.read(data);
+                return new DownloadedFile(
+                    response.body().bytes(),
+                    name,
+                    response.header("Content-Type", "application/octet-stream")
+                );
+            } else {
+                log.warn("downloading file not successful:" + response);
+                return null;
+            }
+        } catch(IOException e) {
+            log.warn("error while downloading file");
+            return null;
         }
-
-        output.flush();
-        output.close();
-        input.close();
-
-        String[] parts = url.split("/");
-        String name = parts[parts.length -1];
-
-        return new DownloadedFile(
-            output.toByteArray(),
-            name,
-            response.header("Content-Type","application/octet-stream")
-        );
     }
 
     @Getter
