@@ -53,7 +53,7 @@ public class EventModification {
     private final DateTimeModification end;
     private final BigDecimal regularPrice;
     private final String currency;
-    private final int availableSeats;
+    private final Integer availableSeats;
     private final BigDecimal vatPercentage;
     private final boolean vatIncluded;
     private final List<PaymentProxy> allowedPaymentProxies;
@@ -85,7 +85,7 @@ public class EventModification {
                              @JsonProperty("end") DateTimeModification end,
                              @JsonProperty("regularPrice") BigDecimal regularPrice,
                              @JsonProperty("currency") String currency,
-                             @JsonProperty("availableSeats") int availableSeats,
+                             @JsonProperty("availableSeats") Integer availableSeats,
                              @JsonProperty("vatPercentage") BigDecimal vatPercentage,
                              @JsonProperty("vatIncluded") boolean vatIncluded,
                              @JsonProperty("allowedPaymentProxies") List<PaymentProxy> allowedPaymentProxies,

@@ -75,20 +75,35 @@ public class EventApiV1IntegrationTest {
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
 
+
+    private String organizationName;
+    private String username;
+    private Organization organization;
+    private Principal mockPrincipal;
+
+    private String shortName = "test";
+
     @Before
     public void ensureConfiguration() {
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
+
+        this.organizationName = UUID.randomUUID().toString();
+        this.username = UUID.randomUUID().toString();
+
+        userManager.createOrganization(organizationName, "org", "email@example.com");
+        this.organization = organizationRepository.findByName(organizationName).get();
+        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL);
+
+        this.mockPrincipal = Mockito.mock(Principal.class);
+        Mockito.when(mockPrincipal.getName()).thenReturn(username);
+
     }
 
 
-
-
-
-    @Test
-    public void createTest() throws URISyntaxException, IOException {
-        EventCreationRequest eventCreationRequest = new EventCreationRequest(
+    private EventCreationRequest creationRequest() {
+        return new EventCreationRequest(
             "Title",
-            "title",
+            this.shortName,
             Arrays.asList(new EventCreationRequest.DescriptionRequest("en","desc")),
             new EventCreationRequest.LocationRequest(
                 "Pollegio 6742 Switzerland",
@@ -124,17 +139,16 @@ public class EventApiV1IntegrationTest {
             )
         );
 
-        String organizationName = UUID.randomUUID().toString();
-        String username = UUID.randomUUID().toString();
+    }
 
-        userManager.createOrganization(organizationName, "org", "email@example.com");
-        Organization organization = organizationRepository.findByName(organizationName).get();
-        userManager.insertUser(organization.getId(), username, "test", "test", "test@example.com", Role.API_CONSUMER, User.Type.INTERNAL);
 
-        Principal mockPrincipal = Mockito.mock(Principal.class);
-        Mockito.when(mockPrincipal.getName()).thenReturn(username);
+
+    @Test
+    public void createTest() throws URISyntaxException, IOException {
+
+        EventCreationRequest eventCreationRequest = creationRequest();
+
         String shortName = controller.create(eventCreationRequest,mockPrincipal).getBody();
-
         Event event = eventManager.getSingleEvent(shortName,username);
         List<TicketCategory> tickets = ticketCategoryRepository.findByEventId(event.getId());
 
@@ -157,6 +171,19 @@ public class EventApiV1IntegrationTest {
                 );
             }
         );
+
+    }
+
+    @Test
+    public void updateTest() {
+        controller.create(creationRequest(),mockPrincipal);
+
+
+        String newTitle = "new title";
+        EventCreationRequest updateRequest = new EventCreationRequest(newTitle,null,null,null,null,null,null,null,null,null,null);
+        controller.update(shortName,updateRequest,mockPrincipal);
+        Event event = eventManager.getSingleEvent(shortName,username);
+        assertEquals(newTitle,event.getDisplayName());
 
     }
 

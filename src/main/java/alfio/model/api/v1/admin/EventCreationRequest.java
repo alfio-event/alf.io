@@ -3,6 +3,7 @@ package alfio.model.api.v1.admin;
 import alfio.controller.api.v1.admin.EventApiV1Controller;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
+import alfio.model.EventWithAdditionalInfo;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
@@ -73,6 +74,61 @@ public class EventCreationRequest{
             tickets.paymentsMethods,
             tickets.categories.stream().map(CategoryRequest::toTicketCategoryModification).collect(Collectors.toList()),
             tickets.freeOfCharge,
+            null,
+            locales,
+            Collections.emptyList(), // TODO improve API
+            Collections.emptyList()  // TODO improve API
+        );
+    }
+
+    private static <T> T first(T value,T other) {
+        return Optional.ofNullable(value).orElse(other);
+    }
+
+
+    public EventModification toEventModificationUpdate(EventWithAdditionalInfo original, Organization organization, String imageRef) {
+
+        int locales = original.getLocales();
+        if(description != null){
+            locales = description.stream()
+                .map((x) -> ContentLanguage.ALL_LANGUAGES.stream().filter((l) -> l.getFlag().equals(x.lang)).findFirst())
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .mapToInt(ContentLanguage::getValue).reduce(0, (x, y) -> x | y);
+        }
+
+
+        System.out.println("available seats" + original);
+        System.out.println("available seats" + original.getAvailableSeats());
+        System.out.println("available seats" + original.getShortName());
+        System.out.println("available seats" + original.getNotAllocatedTickets());
+
+        return new EventModification(
+            null,
+            Event.EventType.INTERNAL,
+            first(websiteUrl,original.getWebsiteUrl()),
+            null,
+            first(termsAndConditionsUrl,original.getWebsiteUrl()),
+            null,
+            first(imageRef,original.getFileBlobId()),
+            null,
+            first(title,original.getDisplayName()),
+            organization.getId(),
+            location != null ? first(location.getFullAddress(),original.getLocation()) : original.getLocation(),
+            location != null ? location.getCoordinate().getLatitude() : original.getLatitude(),
+            location != null ? location.getCoordinate().getLongitude() : original.getLongitude(),
+            first(timezone,original.getTimeZone()),
+            description != null ? description.stream().collect(Collectors.toMap(DescriptionRequest::getLang,DescriptionRequest::getBody)) : null,
+            startDate != null ? new DateTimeModification(startDate.toLocalDate(),startDate.toLocalTime()) : null,
+            endDate != null ? new DateTimeModification(endDate.toLocalDate(),endDate.toLocalTime()) : null,
+            tickets != null ? tickets.categories.stream().map((x) -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ZERO) : original.getRegularPrice(),
+            tickets != null ? tickets.currency : original.getCurrency(),
+            tickets != null ? tickets.max : original.getAvailableSeats(),
+            tickets != null ? tickets.VAT : original.getVat(),
+            tickets != null ? tickets.VATIncluded : original.isVatIncluded(),
+            tickets != null ? tickets.paymentsMethods : original.getAllowedPaymentProxies(),
+            tickets != null ? tickets.categories.stream().map(CategoryRequest::toTicketCategoryModification).collect(Collectors.toList()) : null,
+            tickets != null ? tickets.freeOfCharge : original.isFreeOfCharge(),
             null,
             locales,
             Collections.emptyList(), // TODO improve API
