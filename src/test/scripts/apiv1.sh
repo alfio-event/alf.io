@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # To use this script the server should be listening at localhost:8080 with an API enabled user
 # username: api
@@ -75,7 +76,7 @@ stats=`curl --silent  -X GET http://localhost:8080/api/v1/admin/event/titolo/sta
 
 #
 # Check the result
-if [[ $stats = *"Titolo2"* ]]; then
+if [[ $stats = *"Titolo2"* && $stats = *"2018-01-15T15:24:22"* ]]; then
     echo -e "[ ${GREEN}OK${NC} ] Event updated"
 else
     echo -e "[ ${RED}ERROR${NC} ] Event NOT updated, check that the server is listening on port 8080 and it has the API enabled user, username: 'api' password:'abcd'"
