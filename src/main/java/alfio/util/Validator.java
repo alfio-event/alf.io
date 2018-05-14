@@ -126,7 +126,7 @@ public final class Validator {
             }
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "currency", "error.currency");
         }
-        if(ev.getAvailableSeats() < 1) {
+        if(ev.getAvailableSeats() == null || ev.getAvailableSeats() < 1) {
             errors.rejectValue("availableSeats", "error.availableseats");
         }
         return evaluateValidationResult(errors);

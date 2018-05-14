@@ -283,6 +283,7 @@ public class EventManager {
     }
 
     public void updateEventPrices(Event original, EventModification em, String username) {
+        Validate.notNull(em.getAvailableSeats(), "Available Seats cannot be null");
         checkOwnership(original, username, em.getOrganizationId());
         int eventId = original.getId();
         int seatsDifference = em.getAvailableSeats() - eventRepository.countExistingTickets(original.getId());
@@ -503,6 +504,7 @@ public class EventManager {
                 .filter(TicketCategoryModification::isBounded)
                 .mapToInt(TicketCategoryModification::getMaxTickets)
                 .sum();
+        Validate.notNull(em.getAvailableSeats(), "Available Seats cannot be null");
         int notAssignedTickets = em.getAvailableSeats() - requestedSeats;
         Validate.isTrue(notAssignedTickets >= 0, "Total categories' seats cannot be more than the actual event seats");
         Validate.isTrue(notAssignedTickets > 0 || em.getTicketCategories().stream().allMatch(TicketCategoryModification::isBounded), "Cannot add an unbounded category if there aren't any free tickets");
@@ -703,11 +705,13 @@ public class EventManager {
     }
 
     private void createAllTicketsForEvent(Event event, EventModification em) {
+        Validate.notNull(em.getAvailableSeats());
         final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(event.getZoneId()), event, em.getAvailableSeats(), TicketStatus.FREE);
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 
     private int insertEvent(EventModification em) {
+        Validate.notNull(em.getAvailableSeats());
         String paymentProxies = collectPaymentProxies(em);
         BigDecimal vat = !em.isInternal() || em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
         String privateKey = UUID.randomUUID().toString();

@@ -54,7 +54,7 @@ public class EventModification {
     private final DateTimeModification end;
     private final BigDecimal regularPrice;
     private final String currency;
-    private final int availableSeats;
+    private final Integer availableSeats;
     private final BigDecimal vatPercentage;
     private final boolean vatIncluded;
     private final List<PaymentProxy> allowedPaymentProxies;
