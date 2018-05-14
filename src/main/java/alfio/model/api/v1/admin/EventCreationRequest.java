@@ -55,6 +55,7 @@ public class EventCreationRequest{
             null,
             termsAndConditionsUrl,
             null,
+            null,
             imageRef,
             slug,
             title,
@@ -98,37 +99,39 @@ public class EventCreationRequest{
         }
 
 
-        System.out.println("available seats" + original);
-        System.out.println("available seats" + original.getAvailableSeats());
-        System.out.println("available seats" + original.getShortName());
-        System.out.println("available seats" + original.getNotAllocatedTickets());
+
+        //TODO merge ticket categories
+        original.getTicketCategories();
+
+
 
         return new EventModification(
-            null,
+            original.getId(),
             Event.EventType.INTERNAL,
             first(websiteUrl,original.getWebsiteUrl()),
             null,
             first(termsAndConditionsUrl,original.getWebsiteUrl()),
             null,
-            first(imageRef,original.getFileBlobId()),
             null,
+            first(imageRef,original.getFileBlobId()),
+            original.getShortName(),
             first(title,original.getDisplayName()),
             organization.getId(),
             location != null ? first(location.getFullAddress(),original.getLocation()) : original.getLocation(),
-            location != null ? location.getCoordinate().getLatitude() : original.getLatitude(),
-            location != null ? location.getCoordinate().getLongitude() : original.getLongitude(),
+            location != null && location.getCoordinate() != null ? location.getCoordinate().getLatitude() : original.getLatitude(),
+            location != null && location.getCoordinate() != null ? location.getCoordinate().getLongitude() : original.getLongitude(),
             first(timezone,original.getTimeZone()),
             description != null ? description.stream().collect(Collectors.toMap(DescriptionRequest::getLang,DescriptionRequest::getBody)) : null,
-            startDate != null ? new DateTimeModification(startDate.toLocalDate(),startDate.toLocalTime()) : null,
-            endDate != null ? new DateTimeModification(endDate.toLocalDate(),endDate.toLocalTime()) : null,
-            tickets != null ? tickets.categories.stream().map((x) -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ZERO) : original.getRegularPrice(),
-            tickets != null ? tickets.currency : original.getCurrency(),
+            startDate != null ? new DateTimeModification(startDate.toLocalDate(),startDate.toLocalTime()) : new DateTimeModification(original.getBegin().toLocalDate(),original.getEnd().toLocalTime()),
+            endDate != null ? new DateTimeModification(endDate.toLocalDate(),endDate.toLocalTime()) : new DateTimeModification(original.getEnd().toLocalDate(),original.getEnd().toLocalTime()),
+            tickets != null && tickets.categories != null ? tickets.categories.stream().map((x) -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ZERO).max(original.getRegularPrice()) : original.getRegularPrice(),
+            tickets != null ? first(tickets.currency,original.getCurrency()) : original.getCurrency(),
             tickets != null ? tickets.max : original.getAvailableSeats(),
-            tickets != null ? tickets.VAT : original.getVat(),
-            tickets != null ? tickets.VATIncluded : original.isVatIncluded(),
-            tickets != null ? tickets.paymentsMethods : original.getAllowedPaymentProxies(),
-            tickets != null ? tickets.categories.stream().map(CategoryRequest::toTicketCategoryModification).collect(Collectors.toList()) : null,
-            tickets != null ? tickets.freeOfCharge : original.isFreeOfCharge(),
+            tickets != null ? first(tickets.VAT,original.getVat()) : original.getVat(),
+            tickets != null ? first(tickets.VATIncluded,original.isVatIncluded()) : original.isVatIncluded(),
+            tickets != null ? first(tickets.paymentsMethods,original.getAllowedPaymentProxies()) : original.getAllowedPaymentProxies(),
+            tickets != null && tickets.categories != null ? tickets.categories.stream().map(CategoryRequest::toTicketCategoryModification).collect(Collectors.toList()) : null, // should use the merged version
+            tickets != null ? first(tickets.freeOfCharge,original.isFreeOfCharge()) : original.isFreeOfCharge(),
             null,
             locales,
             Collections.emptyList(), // TODO improve API
@@ -154,11 +157,11 @@ public class EventCreationRequest{
     @Getter
     @AllArgsConstructor
     public static class TicketRequest{
-        private boolean freeOfCharge;
-        private int max;
+        private Boolean freeOfCharge;
+        private Integer max;
         private String currency;
         private BigDecimal VAT;
-        private boolean VATIncluded;
+        private Boolean VATIncluded;
         private List<PaymentProxy> paymentsMethods;
         private List<CategoryRequest> categories;
         private List<PromoCodeRequest> promoCodes;
