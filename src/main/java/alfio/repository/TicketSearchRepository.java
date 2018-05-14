@@ -51,9 +51,9 @@ public interface TicketSearchRepository {
                                                                  @Bind("categoryId") int categoryId,
                                                                  @Bind("search") String search);
 
-    @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + " limit :pageSize offset :page) as d_tbl order by tr_confirmation_ts desc nulls last, tr_validity")
+    @Query("select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + ") as d_tbl order by tr_confirmation_ts desc nulls last, tr_validity limit :pageSize offset :page")
     @QueriesOverride({
-        @QueryOverride(db = PlatformProvider.MYSQL, value = "select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + " limit :pageSize offset :page) as d_tbl order by IF(ISNULL(tr_confirmation_ts),1,0), tr_confirmation_ts desc, tr_validity")
+        @QueryOverride(db = PlatformProvider.MYSQL, value = "select distinct "+RESERVATION_FIELDS+" from (" + FIND_ALL_TICKETS_INCLUDING_NEW + ") as d_tbl order by IF(ISNULL(tr_confirmation_ts),1,0), tr_confirmation_ts desc, tr_validity limit :pageSize offset :page")
     })
     List<TicketReservation> findReservationsForEvent(@Bind("eventId") int eventId,
                                                      @Bind("page") int page,
