@@ -112,12 +112,11 @@ public class EventApiV1Controller {
 
         EventModification em = request.toEventModificationUpdate(original,organization,imageRef);
 
-        eventManager.updateEventPrices(event, em, user.getName());
         eventManager.updateEventHeader(event, em, user.getName());
         eventManager.updateEventPrices(event, em, user.getName());
 
 
-        if (em.getTicketCategories().size() > 0) {
+        if (em.getTicketCategories() != null && em.getTicketCategories().size() > 0) {
             em.getTicketCategories().forEach(c ->
                 findCategoryByName(event, c.getName()).ifPresent(originalCategory ->
                     eventManager.updateCategory(originalCategory.getId(), event.getId(), c, user.getName())
