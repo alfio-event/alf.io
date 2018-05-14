@@ -228,6 +228,10 @@ td.cell-wrap {
         padding-left: 85px;
     }
 
+    .setting select { /* Enable Padding on Select on OSX */
+        -webkit-appearance: none;
+    }
+
     .settings-label {
         position: absolute;
         left: 20px;

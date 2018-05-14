@@ -34,6 +34,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.TemplateManager;
+import alfio.util.WorkingDaysAdjusters;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,7 +47,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -127,7 +128,8 @@ public class TicketReservationManagerTest {
     private InvoiceSequencesRepository invoiceSequencesRepository;
     @Mock
     private AuditingRepository auditingRepository;
-
+    @Mock
+    private TicketSearchRepository ticketSearchRepository;
 
     @Mock
     private Event event;
@@ -173,7 +175,7 @@ public class TicketReservationManagerTest {
             invoiceSequencesRepository,
             auditingRepository,
             userRepository,
-            extensionManager);
+            extensionManager, ticketSearchRepository);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -416,7 +418,7 @@ public class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
         ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(2L, ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()));
+        assertEquals(LocalDateTime.now().plusDays(2).with(WorkingDaysAdjusters.workingDaysAtNoon()).truncatedTo(ChronoUnit.HOURS).toLocalDate(), offlinePaymentDeadline.toLocalDate());
     }
 
     @Test
@@ -427,11 +429,11 @@ public class TicketReservationManagerTest {
     }
 
     @Test
-    public void considerEventBeginDateWhileCalculatinExpDate() {
+    public void considerEventBeginDateWhileCalculatingExpDate() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
         ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(1L, ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()));
+        assertEquals(LocalDateTime.now().plusDays(1).with(WorkingDaysAdjusters.workingDaysAtNoon()).truncatedTo(ChronoUnit.HOURS).toLocalDate(), offlinePaymentDeadline.toLocalDate());
     }
 
     @Test
@@ -446,7 +448,7 @@ public class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now());
         ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(true, offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
+        assertTrue(offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
     }
 
     @Test(expected = TicketReservationManager.OfflinePaymentException.class)

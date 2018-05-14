@@ -271,7 +271,7 @@ public class EventManager {
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
         final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
         eventRepository.updateHeader(eventId, em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.getTermsAndConditionsUrl(),
-            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(),
+            em.getPrivacyPolicyUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(),
             begin, end, em.getZoneId(), em.getOrganizationId(), em.getLocales());
 
         createOrUpdateEventDescription(eventId, em);
@@ -283,6 +283,7 @@ public class EventManager {
     }
 
     public void updateEventPrices(Event original, EventModification em, String username) {
+        Validate.notNull(em.getAvailableSeats(), "Available Seats cannot be null");
         checkOwnership(original, username, em.getOrganizationId());
         int eventId = original.getId();
         int seatsDifference = em.getAvailableSeats() - eventRepository.countExistingTickets(original.getId());
@@ -503,6 +504,7 @@ public class EventManager {
                 .filter(TicketCategoryModification::isBounded)
                 .mapToInt(TicketCategoryModification::getMaxTickets)
                 .sum();
+        Validate.notNull(em.getAvailableSeats(), "Available Seats cannot be null");
         int notAssignedTickets = em.getAvailableSeats() - requestedSeats;
         Validate.isTrue(notAssignedTickets >= 0, "Total categories' seats cannot be more than the actual event seats");
         Validate.isTrue(notAssignedTickets > 0 || em.getTicketCategories().stream().allMatch(TicketCategoryModification::isBounded), "Cannot add an unbounded category if there aren't any free tickets");
@@ -703,18 +705,20 @@ public class EventManager {
     }
 
     private void createAllTicketsForEvent(Event event, EventModification em) {
+        Validate.notNull(em.getAvailableSeats());
         final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(event.getZoneId()), event, em.getAvailableSeats(), TicketStatus.FREE);
         jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
     }
 
     private int insertEvent(EventModification em) {
+        Validate.notNull(em.getAvailableSeats());
         String paymentProxies = collectPaymentProxies(em);
         BigDecimal vat = !em.isInternal() || em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
         String privateKey = UUID.randomUUID().toString();
         ZoneId zoneId = ZoneId.of(em.getZoneId());
         String currentVersion = flyway.info().current().getVersion().getVersion();
         return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.isInternal() ? em.getTermsAndConditionsUrl() : "",
-            em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(), em.getBegin().toZonedDateTime(zoneId),
+            em.getPrivacyPolicyUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(), em.getBegin().toZonedDateTime(zoneId),
             em.getEnd().toZonedDateTime(zoneId), em.getZoneId(), em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
             vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion, Event.Status.DRAFT).getKey();
     }

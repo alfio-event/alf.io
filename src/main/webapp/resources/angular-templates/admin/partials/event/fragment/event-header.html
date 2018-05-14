@@ -42,6 +42,8 @@
                     <dd data-ng-if="!isInternal(event)"><a href="{{event.externalUrl}}" target="_blank">{{event.externalUrl}}</a></dd>
                     <dt data-ng-if="isInternal(event)">T&C URL</dt>
                     <dd data-ng-if="isInternal(event)"><a href="{{event.termsAndConditionsUrl}}" target="_blank">{{event.termsAndConditionsUrl}}</a></dd>
+                    <dt data-ng-if="isInternal(event) && event.privacyPolicyUrl">Privacy Policy URL</dt>
+                    <dd data-ng-if="isInternal(event) && event.privacyPolicyUrl"><a href="{{event.privacyPolicyUrl}}" target="_blank">{{event.privacyPolicyUrl}}</a></dd>
                     <dt>Location</dt>
                     <dd><a ng-href="{{event.geolocation.mapUrl}}" target="_blank">{{event.location}}</a></dd>
                     <dt data-ng-if="isInternal(event)">Languages</dt>

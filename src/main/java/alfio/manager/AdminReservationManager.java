@@ -324,7 +324,7 @@ public class AdminReservationManager {
         int categoryId = category.getId();
         List<Attendee> attendees = ticketsInfo.getAttendees();
         List<Integer> reservedForUpdate = ticketReservationManager.reserveTickets(event.getId(), categoryId, attendees.size(), singletonList(Ticket.TicketStatus.FREE));
-        if (reservedForUpdate.size() != attendees.size()) {
+        if (reservedForUpdate.size() == 0 || reservedForUpdate.size() != attendees.size()) {
             return Result.error(ErrorCode.CategoryError.NOT_ENOUGH_SEATS);
         }
         ticketRepository.reserveTickets(reservationId, reservedForUpdate, categoryId, arm.getLanguage(), category.getSrcPriceCts());
@@ -578,6 +578,8 @@ public class AdminReservationManager {
             .addValue("eventId", event.getId())
             .addValue("newUuid", UUID.randomUUID().toString())
         ).toArray(MapSqlParameterSource[]::new);
+        List<String> reservationIds = ticketRepository.findReservationIds(ticketIds);
+        List<String> ticketUUIDs = ticketRepository.findUUIDs(ticketIds);
         jdbc.batchUpdate(ticketRepository.batchReleaseTickets(), args);
         if(!removeReservation) {
             //#407 update invoice/receipt model only if the reservation is still "PENDING", otherwise we could lead to accountancy problems
@@ -586,9 +588,9 @@ public class AdminReservationManager {
                 auditingRepository.insert(reservationId, userId, event.getId(), eventType, date, RESERVATION, reservationId);
                 updateInvoiceReceiptModel(event, reservation.getUserLanguage(), reservationId);
             }
-            extensionManager.handleTicketCancelledForEvent(event, ticketRepository.findUUIDs(ticketIds));
+            extensionManager.handleTicketCancelledForEvent(event, ticketUUIDs);
         } else {
-            extensionManager.handleReservationsCancelledForEvent(event, ticketRepository.findReservationIds(ticketIds));
+            extensionManager.handleReservationsCancelledForEvent(event, reservationIds);
         }
     }
 

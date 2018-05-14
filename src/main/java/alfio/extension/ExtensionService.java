@@ -303,8 +303,9 @@ public class ExtensionService {
 
     @Transactional(readOnly = true)
     public Pair<List<ExtensionLog>, Integer> getLog(String path, String name, ExtensionLog.Type type, int pageSize, int offset) {
-        int count = extensionLogRepository.countPages(path, name, type);
-        List<ExtensionLog> logs = extensionLogRepository.getPage(path, name, type, pageSize, offset);
+        String typeAsString = type != null ? type.name() : null;
+        int count = extensionLogRepository.countPages(path, name, typeAsString);
+        List<ExtensionLog> logs = extensionLogRepository.getPage(path, name, typeAsString, pageSize, offset);
         return Pair.of(logs, count);
     }
 }

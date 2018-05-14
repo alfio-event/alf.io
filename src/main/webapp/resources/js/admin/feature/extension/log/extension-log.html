@@ -5,7 +5,6 @@
     <table class="table table-striped">
         <thead>
         <tr>
-            <th>effective path</th>
             <th>path</th>
             <th>name</th>
             <th>type</th>
@@ -16,7 +15,6 @@
         <tbody>
             <tr ng-repeat="l in $ctrl.logs">
                 <td ng-bind="l.effectivePath"></td>
-                <td ng-bind="l.path"></td>
                 <td ng-bind="l.name"></td>
                 <td ng-bind="l.type"></td>
                 <td ng-bind="l.description"></td>

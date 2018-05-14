@@ -39,6 +39,7 @@ public class EventModification {
     private final String websiteUrl;
     private final String externalUrl;
     private final String termsAndConditionsUrl;
+    private final String privacyPolicyUrl;
     private final String imageUrl;
     private final String fileBlobId;
     private final String shortName;
@@ -71,6 +72,7 @@ public class EventModification {
                              @JsonProperty("websiteUrl") String websiteUrl,
                              @JsonProperty("external") String externalUrl,
                              @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
+                             @JsonProperty("privacyPolicyUrl") String privacyPolicyUrl,
                              @JsonProperty("imageUrl") String imageUrl,
                              @JsonProperty("fileBlobId") String fileBlobId,
                              @JsonProperty("shortName") String shortName,
@@ -91,7 +93,7 @@ public class EventModification {
                              @JsonProperty("allowedPaymentProxies") List<PaymentProxy> allowedPaymentProxies,
                              @JsonProperty("ticketCategories") List<TicketCategoryModification> ticketCategories,
                              @JsonProperty("freeOfCharge") boolean freeOfCharge,
-                             @JsonProperty("geoLocation") LocationDescriptor locationDescriptor,
+                             @JsonProperty("geolocation") LocationDescriptor locationDescriptor,
                              @JsonProperty("locales") int locales,
                              @JsonProperty("ticketFields") List<AdditionalField> ticketFields,
                              @JsonProperty("additionalServices") List<AdditionalService> additionalServices) {
@@ -100,6 +102,7 @@ public class EventModification {
         this.websiteUrl = websiteUrl;
         this.externalUrl = externalUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
+        this.privacyPolicyUrl = privacyPolicyUrl;
         this.imageUrl = imageUrl;
         this.fileBlobId = fileBlobId;
         this.shortName = shortName;

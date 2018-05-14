@@ -193,6 +193,7 @@ public class EventApiController {
 
     public static ValidationResult validateEvent(EventModification eventModification, Errors errors) {
         ValidationResult base = validateEventHeader(Optional.empty(), eventModification, errors)
+            .or(validateEventDates(eventModification, errors))
             .or(validateTicketCategories(eventModification, errors))
             .or(validateEventPrices(Optional.empty(), eventModification, errors))
             .or(eventModification.getAdditionalServices().stream().map(as -> validateAdditionalService(as, eventModification, errors)).reduce(ValidationResult::or).orElse(ValidationResult.success()));
@@ -436,9 +437,9 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/pending-payments-count")
     public Integer getPendingPaymentsCount(@PathVariable("eventName") String eventName, Principal principal) {
-        if(Optional.ofNullable(principal).map(Principal::getName).map(userManager::findUserByUsername).map(userManager::isOwner).orElse(false)) {
-            Event event = eventManager.getSingleEvent(eventName, principal.getName());
-            return ticketReservationManager.getPendingPaymentsCount(event.getId());
+        Optional<Event> maybeEvent = eventManager.getOptionalByName(eventName, principal.getName());
+        if(maybeEvent.isPresent()) {
+            return ticketReservationManager.getPendingPaymentsCount(maybeEvent.get().getId());
         } else {
             return 0;
         }

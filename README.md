@@ -73,13 +73,52 @@ Importing the Gradle project into Intellij and Eclipse both work.
 `./gradlew dependencyUpdates`
 
 ## Docker images
-Alf.io is also offered as a 3 tier application using 3 docker images:
+
+### Pull the latest stable version from Docker Hub 
+
+ ```
+ docker pull alfio/alf.io
+ ```
+
+Here's an example of deployment as a 3 tier application using the following images:
 
  * `postgres` --> docker official image for PostgreSQL database
- * `exteso/alfio-web`--> application runtime. Docker image is generated from this project (see below).
- * `tutum/haproxy` --> front layer proxy, force redirect to https and support load-balancing if multiple alfio-web instances are running
+ * `alfio/alf.io`--> application runtime.
+ * `tutum/haproxy` --> front layer proxy, force redirect to https and support load-balancing if multiple alf.io instances are running
 
-### Generate a new version of the exteso/alfio-web docker image
+
+### Launch alf.io container instances
+
+ * Define local directory for database data (on docker host, for data to survive postgres image restarts):  `/path/to/local/data = /data/postgres/alfio`
+ 
+ * Launch the Postgres instance
+ 
+ ```
+ docker run --name alfio-db -e POSTGRES_DB=postgres -e POSTGRES_USERNAME=postgres -e POSTGRES_PASSWORD=alfiopassword --restart=always -d -v /path/to/local/data:/var/lib/postgresql/data postgres
+ ```
+    * Note: on Mac volumes don't work (see https://jhipster.github.io/installation.html for a possible workaround), launch the above command without the `-v` parameter (data are lost at every restart)
+
+ * Launch the alf.io server
+ ```
+ docker run --name alfio --link alfio-db:postgres -d alfio/alf.io
+ ```
+    Please note that at the moment, the only alias supported for the DB link is *postgres*
+ 
+ * Launch the proxy
+ ```
+ docker run --name alfio-proxy --link alfio-web:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy
+ ```
+
+### Test alf.io application
+ * Check alfio-web logs: `docker logs alfio-web`
+ * Copy admin password in a secure place
+ * Get IP of your docker container: (only on Mac/Windows, on linux the proxy will bind directly on your public IP)
+    * `boot2docker ip` on Mac/Windows
+ * Open browser at: `https://DOCKER_IP/admin`
+ * Insert user admin and the password you just copied
+
+### Generate a new version of the alfio/alf.io docker image
+
  * Build application and Dockerfile:
  ```
  ./gradlew distribution
@@ -92,40 +131,8 @@ Alf.io is also offered as a 3 tier application using 3 docker images:
 
  * Create docker image:
  ```
- docker build -t exteso/alfio-web .
+ docker build -t alfio/alf.io .
  ```
-
-### Publish a new version of the exteso/alfio-web on docker hub
-TODO
-
-### Launch alf.io container instances
- * Define local directory for database data (on docker host, for data to survive postgres image restarts):  `/path/to/local/data = /data/postgres/alfio`
-
- * Define a local directory for logs: `/path/to/logs = /home/alfio/logs`
-
- * Launch the Postgres instance
- ```
- docker run --name alfio-db -e POSTGRES_DB=postgres -e POSTGRES_USERNAME=postgres -e POSTGRES_PASSWORD=alfiopassword --restart=always -d -v /path/to/local/data:/var/lib/postgresql/data postgres
- ```
-    * Note: on Mac volumes don't work (see https://jhipster.github.io/installation.html for a possible workaround), launch the above command without the `-v` parameter (data are lost at every restart)
-
- * Launch the alf.io server
- ```
- docker run --name alfio-web --link alfio-db:db -v /path/to/logs:/alfio/logs -d exteso/alfio-web
- ```
-
- * Launch the proxy
- ```
- docker run --name alfio-proxy --link alfio-web:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy
- ```
-
-### Test alf.io application
- * See alfio-web logs: `docker logs alfio-web` or `less /path/to/logs/alfio.log`
- * Copy admin password in a secure place
- * Get IP of your docker container: (only on Mac/Windows, on linux the proxy will bind directly on your public IP)
-    * `boot2docker ip` on Mac/Windows
- * Open browser at: `https://DOCKER_IP/admin`
- * Insert user admin and the password you just copied
 
 ### About the included AppleWWDRCA.cer
 

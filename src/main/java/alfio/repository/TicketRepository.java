@@ -19,7 +19,6 @@ package alfio.repository;
 import alfio.model.FullTicketInfo;
 import alfio.model.Ticket;
 import alfio.model.TicketCSVInfo;
-import alfio.model.TicketWithReservationAndTransaction;
 import ch.digitalfondue.npjt.*;
 
 import java.util.Date;
@@ -55,23 +54,6 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status in ("+CONFIRMED+") and category_id = :categoryId and event_id = :eventId and full_name is not null and email_address is not null")
     Integer countAssignedTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);
 
-
-    String FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION = "select * from ticket_and_reservation_and_tx where t_status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and t_category_id = :categoryId and t_event_id = :eventId and " +
-        " (:search is null or (lower(t_uuid) like lower(:search) or lower(t_full_name) like lower(:search) or lower(t_first_name) like lower(:search) or lower(t_last_name) like lower(:search) or lower(t_email_address) like lower(:search) or " +
-        "  lower(tr_full_name) like lower(:search) or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search))) " +
-        " order by tr_confirmation_ts asc, tr_id, t_uuid";
-
-    @Query("select * from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION + " limit :pageSize offset :page) as d_tbl")
-    List<TicketWithReservationAndTransaction> findAllModifiedTicketsWithReservationAndTransaction(@Bind("eventId") int eventId,
-                                                                                                  @Bind("categoryId") int categoryId,
-                                                                                                  @Bind("page") int page,
-                                                                                                  @Bind("pageSize") int pageSize,
-                                                                                                  @Bind("search") String search);
-
-    @Query("select count(*) from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION +" ) as d_tbl")
-    Integer countAllModifiedTicketsWithReservationAndTransaction(@Bind("eventId") int eventId,
-                                                                 @Bind("categoryId") int categoryId,
-                                                                 @Bind("search") String search);
 
     @Query("select count(*) from ticket where status in ("+CONFIRMED+", 'PENDING') and category_id = :categoryId and event_id = :eventId")
     Integer countConfirmedAndPendingTickets(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId);

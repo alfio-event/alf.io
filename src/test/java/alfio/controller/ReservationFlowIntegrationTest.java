@@ -510,6 +510,7 @@ public class ReservationFlowIntegrationTest {
         paymentForm.setFirstName("full");
         paymentForm.setLastName("name");
         paymentForm.setTermAndConditionsAccepted(true);
+        paymentForm.setPrivacyPolicyAccepted(true);
         paymentForm.setPostponeAssignment(true);
         BindingResult bindingResult = new BeanPropertyBindingResult(paymentForm, "paymentForm");
         Model model = new BindingAwareModelMap();

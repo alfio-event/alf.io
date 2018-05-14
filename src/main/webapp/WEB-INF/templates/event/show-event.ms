@@ -75,6 +75,14 @@
                         <option value="{{language}}">{{displayLanguage}}</option>
                     {{/availableLanguages}}
                 </select>
+                {{#event.privacyPolicyLinkOrNull}}
+                <div class="checkbox wMarginTop wMarginBottom">
+                    <label>
+                        <input type="checkbox" required name="privacyPolicyAccepted" value="true">
+                        {{#i18n}}reservation-page.privacy.prefix{{/i18n}} <a href="{{event.privacyPolicyLinkOrNull}}" target="_blank">{{#i18n}}reservation-page.privacy.link.text{{/i18n}}</a>{{#i18n}}reservation-page.privacy.suffix{{/i18n}}
+                    </label>
+                </div>
+                {{/event.privacyPolicyLinkOrNull}}
                 <div class="checkbox">
                     <label>
                         <input type="checkbox" required name="termAndConditionsAccepted" aria-required="true">

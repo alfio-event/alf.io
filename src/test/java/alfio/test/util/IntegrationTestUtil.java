@@ -119,7 +119,7 @@ public class IntegrationTestUtil {
         desc.put("it", "muh description");
         desc.put("de", "muh description");
 
-        EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", "url", null,
+        EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", "privacy","url", null,
                 eventName, "event display name", organization.getId(),
                 "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),

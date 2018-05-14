@@ -318,9 +318,18 @@
         });
     });
 
-    var validationResultHandler = function(form, deferred, $scope) {
+    var validationResultHandler = function(form, deferred, $scope, NotificationHandler) {
+
+        var errors = {
+            'error.coordinates': 'Event Geolocation is missing. Please check maps\' configuration.',
+            'error.beginDate': 'Please check Event\'s start/end date.',
+            'error.endDate': 'Please check Event\'s start/end date.',
+            'error.allowedpaymentproxies': 'Please select at least one payment method.'
+        };
+
         return function(validationResult) {
             if(validationResult.errorCount > 0) {
+                var errorText;
                 angular.forEach(validationResult.validationErrors, function(error) {
                     var match = error.fieldName.match(/ticketCategories\[([0-9]+)\]/);
                     if(match) {
@@ -331,7 +340,14 @@
                     if(angular.isFunction(form.$setError)) {
                         form.$setError(error.fieldName, error.code);
                     }
+                    if(errors[error.code]) {
+                        errorText = errors[error.code];
+                    }
                 });
+
+                if(errorText) {
+                    NotificationHandler.showError(errorText);
+                }
                 setTimeout(function() {
                     var firstInvalidElem = $("input.ng-invalid:first, textarea.input.ng-invalid:first, select.ng-invalid:first");
                     if(firstInvalidElem.length > 0) {
@@ -347,9 +363,9 @@
         };
     };
 
-    var validationPerformer = function($q, validator, data, form, $scope) {
+    var validationPerformer = function($q, validator, data, form, $scope, NotificationHandler) {
         var deferred = $q.defer();
-        validator(data).success(validationResultHandler(form, deferred, $scope)).error(function(error) {
+        validator(data).success(validationResultHandler(form, deferred, $scope, NotificationHandler)).error(function(error) {
             deferred.reject(error);
         });
         return deferred.promise;
@@ -532,7 +548,8 @@
 
     admin.controller('CreateEventController', function($scope, $state, $rootScope,
                                                        $q, OrganizationService, PaymentProxyService,
-                                                       EventService, LocationService, PAYMENT_PROXY_DESCRIPTIONS, TicketCategoryEditorService) {
+                                                       EventService, LocationService, PAYMENT_PROXY_DESCRIPTIONS, TicketCategoryEditorService,
+                                                       NotificationHandler) {
 
         var eventType = $state.$current.data.eventType;
 
@@ -611,7 +628,7 @@
         };
 
         $scope.save = function(form, event) {
-            validationPerformer($q, EventService.checkEvent, event, form, $scope).then(function() {
+            validationPerformer($q, EventService.checkEvent, event, form, $scope, NotificationHandler).then(function() {
                 EventService.createEvent(event).success(function() {
                     if(window.sessionStorage) {
                         delete window.sessionStorage.new_event;

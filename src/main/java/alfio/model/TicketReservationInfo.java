@@ -19,6 +19,8 @@ package alfio.model;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
+import java.util.Date;
+
 @Getter
 public class TicketReservationInfo {
 
@@ -28,19 +30,22 @@ public class TicketReservationInfo {
     private final String lastName;
     private final String email;
     private final int eventId;
+    private final Date validity;
 
     public TicketReservationInfo(@Column("id") String id,
                                  @Column("full_name") String fullName,
                                  @Column("first_name") String firstName,
                                  @Column("last_name") String lastName,
                                  @Column("email_address") String email,
-                                 @Column("event_id_fk") int eventId) {
+                                 @Column("event_id_fk") int eventId,
+                                 @Column("validity") Date validity) {
         this.id = id;
         this.fullName = fullName;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.eventId = eventId;
+        this.validity = validity;
     }
 
     public String getFullName() {

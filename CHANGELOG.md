@@ -1,14 +1,62 @@
 # Change Log
 
+## [1.14.1](https://github.com/alfio-event/alf.io/tree/1.14.1) (2018-05-07)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14...1.14.1)
+
+**Implemented enhancements:**
+
+- Improve docker support [\#422](https://github.com/alfio-event/alf.io/issues/422)
+- Add more information in expiring payments notification email [\#420](https://github.com/alfio-event/alf.io/issues/420)
+- Introduce GDPR Privacy Policy link [\#419](https://github.com/alfio-event/alf.io/issues/419)
+- His Language if it only has one option [\#417](https://github.com/alfio-event/alf.io/issues/417)
+- Search by attendee in reservation list [\#414](https://github.com/alfio-event/alf.io/issues/414)
+- add TicketReservation object to extension scope on RESERVATION\_CANCELLED [\#412](https://github.com/alfio-event/alf.io/issues/412)
+
+**Fixed bugs:**
+
+- Cannot create custom reservation with 1 empty seat [\#421](https://github.com/alfio-event/alf.io/issues/421)
+- Error while creating a new event [\#416](https://github.com/alfio-event/alf.io/issues/416)
+- RESERVATION\_CANCELLED not fired when deleting a pending payment [\#413](https://github.com/alfio-event/alf.io/issues/413)
+
+**Closed issues:**
+
+- VAT Checker not working [\#418](https://github.com/alfio-event/alf.io/issues/418)
+
+## [1.14](https://github.com/alfio-event/alf.io/tree/1.14) (2018-04-10)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14-RC2...1.14)
+
+**Implemented enhancements:**
+
+- add support for here map [\#366](https://github.com/alfio-event/alf.io/issues/366)
+- add internal hook points support  with scripting capabilities [\#349](https://github.com/alfio-event/alf.io/issues/349)
+
+**Fixed bugs:**
+
+- Cannot set custom template if the same template name exists for another event [\#411](https://github.com/alfio-event/alf.io/issues/411)
+- Remove Ticket doesn't work for "pending payment" reservations [\#407](https://github.com/alfio-event/alf.io/issues/407)
+- Invoice with VAT included VS additional option [\#405](https://github.com/alfio-event/alf.io/issues/405)
+- No invoice for Paypal payments? [\#404](https://github.com/alfio-event/alf.io/issues/404)
+- Stripe payments not working - Mandatory configuration key STRIPE\_CONNECTED\_ID not present [\#392](https://github.com/alfio-event/alf.io/issues/392)
+
+**Closed issues:**
+
+- Removing attendees from a reservation doesn't update the invoice [\#410](https://github.com/alfio-event/alf.io/issues/410)
+- Add support for Clever Cloud [\#385](https://github.com/alfio-event/alf.io/issues/385)
+
+**Merged pull requests:**
+
+- \#323 Refactoring of Payment methods - TODO fix tests [\#408](https://github.com/alfio-event/alf.io/pull/408) ([mariofusco](https://github.com/mariofusco))
+- implement \#366, add here maps support [\#367](https://github.com/alfio-event/alf.io/pull/367) ([syjer](https://github.com/syjer))
+
+## [1.14-RC2](https://github.com/alfio-event/alf.io/tree/1.14-RC2) (2018-03-28)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14-RC1...1.14-RC2)
+
 ## [1.14-RC1](https://github.com/alfio-event/alf.io/tree/1.14-RC1) (2018-03-19)
 [Full Changelog](https://github.com/alfio-event/alf.io/compare/1.13.3...1.14-RC1)
 
 **Fixed bugs:**
 
-- Invoice with VAT included VS additional option [\#405](https://github.com/alfio-event/alf.io/issues/405)
-- No invoice for Paypal payments? [\#404](https://github.com/alfio-event/alf.io/issues/404)
 - Paypal payments not working - INVALID\_EXPERIENCE\_PROFILE\_ID [\#393](https://github.com/alfio-event/alf.io/issues/393)
-- Stripe payments not working - Mandatory configuration key STRIPE\_CONNECTED\_ID not present [\#392](https://github.com/alfio-event/alf.io/issues/392)
 
 **Merged pull requests:**
 
@@ -52,17 +100,9 @@
 ## [1.13.1](https://github.com/alfio-event/alf.io/tree/1.13.1) (2017-12-11)
 [Full Changelog](https://github.com/alfio-event/alf.io/compare/1.13...1.13.1)
 
-**Implemented enhancements:**
-
-- add support for here map [\#366](https://github.com/alfio-event/alf.io/issues/366)
-
 **Fixed bugs:**
 
 - Update category price on a dynamic category resets prices of existing \(confirmed\) tickets [\#369](https://github.com/alfio-event/alf.io/issues/369)
-
-**Merged pull requests:**
-
-- implement \#366, add here maps support [\#367](https://github.com/alfio-event/alf.io/pull/367) ([syjer](https://github.com/syjer))
 
 ## [1.13](https://github.com/alfio-event/alf.io/tree/1.13) (2017-11-23)
 [Full Changelog](https://github.com/alfio-event/alf.io/compare/1.13-RC3...1.13)

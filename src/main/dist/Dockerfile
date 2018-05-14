@@ -5,15 +5,16 @@
 # Pull base image.
 FROM @BASE_IMAGE@
 
-COPY ./@APP_NAME@-@APP_VERSION@-boot.war /alf.io/
+RUN adduser -S alfio
+USER alfio
+COPY ./@APP_NAME@-@APP_VERSION@-boot.war /home/alfio/alfio-boot.war
 
 # Define working directory.
-WORKDIR /alf.io
-RUN mkdir /alf.io/logs
+WORKDIR /home/alfio
+RUN mkdir /home/alfio/logs
 ENV ALFIO_LOG_STDOUT_ONLY=true
+ENV JAVA_OPTS="-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:+UseConcMarkSweepGC"
 
-VOLUME ["/alf.io/logs"]
-
-ENTRYPOINT ["java", "-jar", "/alf.io/@APP_NAME@-@APP_VERSION@-boot.war"]
+CMD java $JAVA_OPTS -jar /home/alfio/alfio-boot.war
 
 EXPOSE @PORT@

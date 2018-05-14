@@ -59,7 +59,6 @@ import java.util.stream.Collectors;
 
 import static alfio.manager.support.CheckInStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.util.OptionalWrapper.optionally;
 
 @Component
 @Transactional
@@ -284,14 +283,14 @@ public class CheckInManager {
     }
 
     public List<Integer> getAttendeesIdentifiers(int eventId, Date changedSince, String username) {
-        return optionally(() -> eventRepository.findById(eventId))
+        return eventRepository.findOptionalById(eventId)
             .filter(EventManager.checkOwnership(username, organizationRepository))
             .map(event -> ticketRepository.findAllAssignedByEventId(event.getId(), changedSince))
             .orElse(Collections.emptyList());
     }
 
     public List<FullTicketInfo> getAttendeesInformation(int eventId, List<Integer> ids, String username) {
-        return optionally(() -> eventRepository.findById(eventId))
+        return eventRepository.findOptionalById(eventId)
             .filter(EventManager.checkOwnership(username, organizationRepository))
             .map(event -> ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), ids))
             .orElse(Collections.emptyList());

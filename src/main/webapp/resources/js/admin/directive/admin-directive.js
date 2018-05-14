@@ -466,6 +466,10 @@
 	                	reader.readAsDataURL(files[0]);
 	                }
                 };
+
+                $scope.isObjectEmpty = function(obj) {
+                    return !obj || Object.keys(obj).length === 0;
+                }
             }
         }
     });

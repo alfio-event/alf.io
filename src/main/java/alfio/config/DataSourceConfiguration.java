@@ -81,7 +81,16 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
                                     .filter(p -> p.isHosting(environment))
                                     .findFirst()
                                     .orElse(PlatformProvider.DEFAULT);
-        log.info("Detected cloud provider: {}, database: {}", current, current.getDialect(environment));
+        String dialect = current.getDialect(environment);
+        log.info("Detected cloud provider: {}, database: {}", current, dialect);
+        if(PlatformProvider.MYSQL.equals(dialect)) {
+            log.warn("********************** WARNING! WARNING! WARNING!****************************");
+            log.warn("**                                                                         **");
+            log.warn("**         MYSQL SUPPORT WILL BE DROPPED IN ALF.IO V2 (exp. Q4 2018)       **");
+            log.warn("**                 Please consider switching to PostgreSql                 **");
+            log.warn("**                                                                         **");
+            log.warn("*****************************************************************************");
+        }
         return current;
     }
 

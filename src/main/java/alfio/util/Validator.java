@@ -24,6 +24,7 @@ import alfio.model.TicketFieldConfiguration;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.ValidationResult;
 import org.apache.commons.collections.CollectionUtils;
@@ -37,6 +38,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 
 public final class Validator {
 
@@ -53,6 +56,10 @@ public final class Validator {
         }
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "location", "error.location");
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "websiteUrl", "error.websiteurl");
+
+        if(isInternal(event, ev) && isLocationMissing(ev)) {
+            errors.rejectValue("locationDescriptor", "error.coordinates");
+        }
 
         if(isInternal(event, ev)) {
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "error.description");
@@ -71,9 +78,28 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
+    private static boolean isLocationMissing(EventModification em) {
+        LocationDescriptor descriptor = em.getLocationDescriptor();
+        return descriptor == null
+            || isAnyBlank(descriptor.getLatitude(), descriptor.getLongitude(), descriptor.getTimeZone());
+    }
+
     public static ValidationResult validateTicketCategories(EventModification ev, Errors errors) {
         if(CollectionUtils.isEmpty(ev.getTicketCategories())) {
             errors.rejectValue("ticketCategories", "error.ticketCategories");
+        }
+        return evaluateValidationResult(errors);
+    }
+
+    public static ValidationResult validateEventDates(EventModification ev, Errors errors) {
+        if(ev.getBegin() == null || ev.getBegin().getDate() == null || ev.getBegin().getTime() == null) {
+            errors.rejectValue("begin", "error.beginDate");
+        }
+        if(ev.getEnd() == null || ev.getEnd().getDate() == null || ev.getEnd().getTime() == null) {
+            errors.rejectValue("end", "error.endDate");
+        }
+        if(!errors.hasErrors() && !ev.getEnd().isAfter(ev.getBegin())) {
+            errors.rejectValue("end", "error.endDate");
         }
         return evaluateValidationResult(errors);
     }
@@ -100,7 +126,7 @@ public final class Validator {
             }
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "currency", "error.currency");
         }
-        if(ev.getAvailableSeats() < 1) {
+        if(ev.getAvailableSeats() == null || ev.getAvailableSeats() < 1) {
             errors.rejectValue("availableSeats", "error.availableseats");
         }
         return evaluateValidationResult(errors);
@@ -116,10 +142,16 @@ public final class Validator {
         if(!category.getInception().isBefore(category.getExpiration())) {
             errors.rejectValue(prefix + "dateString", "error.date");
         }
-        if(eventModification != null && category.getExpiration().isAfter(eventModification.getEnd())) {
+        if(eventModification != null && isCategoryExpirationAfterEventEnd(category, eventModification)) {
             errors.rejectValue(prefix + "expiration", "error.date.overflow");
         }
         return evaluateValidationResult(errors);
+    }
+
+    private static boolean isCategoryExpirationAfterEventEnd(TicketCategoryModification category, EventModification eventModification) {
+        return eventModification.getEnd() == null
+            || eventModification.getEnd().getDate() == null
+            || category.getExpiration().isAfter(eventModification.getEnd());
     }
 
     public static ValidationResult validateCategory(TicketCategoryModification category, Errors errors) {
@@ -210,7 +242,11 @@ public final class Validator {
 
     public static ValidationResult validateWaitingQueueSubscription(WaitingQueueSubscriptionForm form, Errors errors, Event event) {
         if(!form.isTermAndConditionsAccepted()) {
-            errors.rejectValue("termAndConditionsAccepted", "error.termAndConditionsAccepted");
+            errors.rejectValue("termAndConditionsAccepted", ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
+        }
+
+        if(StringUtils.isNotEmpty(event.getPrivacyPolicyUrl()) && !form.isPrivacyPolicyAccepted()) {
+            errors.rejectValue("privacyPolicyAccepted", ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
         }
 
         if(event.mustUseFirstAndLastName()) {

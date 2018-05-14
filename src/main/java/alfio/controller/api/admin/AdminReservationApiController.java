@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -66,10 +67,11 @@ public class AdminReservationApiController {
                                                           @RequestParam(value = "search", required = false) String search,
                                                           @RequestParam(value = "status", required = false) List<TicketReservation.TicketReservationStatus> status,
                                                           Principal principal) {
-        Event event = eventRepository.findByShortName(eventName);
-        eventManager.checkOwnership(event, principal.getName(), event.getOrganizationId());
-        Pair<List<TicketReservation>, Integer> res = ticketReservationManager.findAllReservationsInEvent(event.getId(), page, search, status);
-        return new PageAndContent<>(res.getLeft(), res.getRight());
+        return eventManager.getOptionalByName(eventName, principal.getName())
+            .map(event -> {
+                Pair<List<TicketReservation>, Integer> res = ticketReservationManager.findAllReservationsInEvent(event.getId(), page, search, status);
+                return new PageAndContent<>(res.getLeft(), res.getRight());
+            }).orElseGet(() -> new PageAndContent<>(Collections.emptyList(), 0));
     }
 
     @RequestMapping(value = "/event/{eventName}/{reservationId}/confirm", method = RequestMethod.PUT)
