@@ -21,11 +21,19 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.config.RepositoryConfiguration;
 import alfio.config.WebSecurityConfig;
-import alfio.model.Event;
-import alfio.model.PriceContainer;
+import alfio.manager.EventManager;
+import alfio.manager.EventStatisticsManager;
+import alfio.manager.support.CheckInStatistics;
+import alfio.manager.user.UserManager;
+import alfio.model.*;
+import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.TicketCategoryModification;
+import alfio.model.result.Result;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -37,11 +45,17 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static alfio.test.util.IntegrationTestUtil.DESCRIPTION;
+import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
@@ -61,6 +75,16 @@ public class EventRepositoryTest {
     private EventRepository eventRepository;
     @Autowired
     private OrganizationRepository organizationRepository;
+    @Autowired
+    private EventManager eventManager;
+    @Autowired
+    private UserManager userManager;
+    @Autowired
+    private EventStatisticsManager eventStatisticsManager;
+    @Autowired
+    private TicketRepository ticketRepository;
+    @Autowired
+    private TicketReservationRepository ticketReservationRepository;
 
     @Before
     public void setUp() throws Exception {
@@ -90,5 +114,49 @@ public class EventRepositoryTest {
         //since when debugging the toString method is used .... and it rely on the system TimeZone, we test it too
         System.out.println(e.getBegin().toString());
         System.out.println(e.getEnd().toString());
+    }
+
+    @Test
+    public void testCheckInStatistics() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 0,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = pair.getKey();
+        TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
+            new DateTimeModification(LocalDate.now(), LocalTime.now()),
+            new DateTimeModification(LocalDate.now(), LocalTime.now()),
+            DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null);
+        Result<Integer> result = eventManager.insertCategory(event, tcm, pair.getValue());
+        assertTrue(result.isSuccess());
+
+        //initial state
+        CheckInStatistics checkInStatistics = eventRepository.retrieveCheckInStatisticsForEvent(event.getId());
+        assertEquals(0, checkInStatistics.getCheckedIn());
+        assertEquals(0, checkInStatistics.getTotalAttendees());
+
+        EventWithAdditionalInfo eventWithAdditionalInfo = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), pair.getRight());
+        TicketCategoryWithAdditionalInfo firstCategory = eventWithAdditionalInfo.getTicketCategories().get(0);
+        List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), 5, Collections.singletonList(TicketRepository.FREE));
+        String reservationId = "12345678";
+        ticketReservationRepository.createNewReservation(reservationId, DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded());
+        int reserved = ticketRepository.reserveTickets(reservationId, ids, firstCategory.getId(), "it", 100);
+        assertEquals(5, reserved);
+
+        ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
+        checkInStatistics = eventRepository.retrieveCheckInStatisticsForEvent(event.getId());
+        //after buying 5 tickets we expect to have them in the total attendees
+        assertEquals(0, checkInStatistics.getCheckedIn());
+        assertEquals(5, checkInStatistics.getTotalAttendees());
+
+
+        List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
+        ticketRepository.updateTicketStatusWithUUID(ticketsInReservation.get(0).getUuid(), Ticket.TicketStatus.CHECKED_IN.name());
+        checkInStatistics = eventRepository.retrieveCheckInStatisticsForEvent(event.getId());
+        //checked in ticket must be taken into account
+        assertEquals(1, checkInStatistics.getCheckedIn());
+        assertEquals(5, checkInStatistics.getTotalAttendees());
     }
 }

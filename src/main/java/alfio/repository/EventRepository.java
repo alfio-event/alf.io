@@ -16,6 +16,7 @@
  */
 package alfio.repository;
 
+import alfio.manager.support.CheckInStatistics;
 import alfio.model.Event;
 import alfio.model.EventStatisticView;
 import alfio.model.PriceContainer;
@@ -148,4 +149,9 @@ public interface EventRepository {
 
     @Query("select coalesce(sum(final_price_cts),0) from ticket where event_id = :eventId and status in("+TicketRepository.CONFIRMED+")")
     long getGrossIncome(@Bind("eventId") int eventId);
+
+    @Query("select count(*) as total_attendees, COALESCE(SUM(CASE WHEN t.status = 'CHECKED_IN' THEN 1 ELSE 0 END), 0) as checked_in, CURRENT_TIMESTAMP as last_update from ticket t where event_id = :eventId and status in("+TicketRepository.CONFIRMED+")")
+    CheckInStatistics retrieveCheckInStatisticsForEvent(@Bind("eventId") int eventId);
+
+
 }

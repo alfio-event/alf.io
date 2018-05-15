@@ -18,6 +18,7 @@ package alfio.controller.api.admin;
 
 import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
+import alfio.manager.support.CheckInStatistics;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
@@ -86,8 +87,9 @@ public class CheckInApiController {
                                           @RequestBody TicketCode ticketCode,
                                           @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                           Principal principal) {
-        String user = StringUtils.defaultIfBlank(offlineUser, principal.getName());
-        return checkInManager.checkIn(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), user);
+        String username = principal.getName();
+        String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
+        return checkInManager.checkIn(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), username, auditUser);
     }
 
     @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/manual-check-in", method = POST)
@@ -112,8 +114,14 @@ public class CheckInApiController {
                                                        @RequestBody TicketCode ticketCode,
                                                        @RequestParam(value = "offlineUser", required = false) String offlineUser,
                                                        Principal principal) {
-        String user = StringUtils.defaultIfBlank(offlineUser, principal.getName());
-        return checkInManager.confirmOnSitePayment(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), user);
+        String username = principal.getName();
+        String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
+        return checkInManager.confirmOnSitePayment(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), username, auditUser);
+    }
+
+    @RequestMapping(value = "/check-in/event/{eventName}/statistics", method = GET)
+    public CheckInStatistics getStatistics(@PathVariable("eventName") String eventName, Principal principal) {
+        return checkInManager.getStatistics(eventName, principal.getName());
     }
     
     @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)
@@ -122,7 +130,7 @@ public class CheckInApiController {
             .map(s -> new OnSitePaymentConfirmation(true, "ok"))
             .orElseGet(() -> new OnSitePaymentConfirmation(false, "Ticket with uuid " + ticketIdentifier + " not found"));
     }
-    
+
     @RequestMapping(value = "/check-in/{eventId}/ticket-identifiers", method = GET)
     public List<Integer> findAllIdentifiersForAdminCheckIn(@PathVariable("eventId") int eventId,
                                                @RequestParam(value = "changedSince", required = false) Long changedSince,

@@ -16,10 +16,7 @@
  */
 package alfio.manager;
 
-import alfio.manager.support.CheckInStatus;
-import alfio.manager.support.DefaultCheckInResult;
-import alfio.manager.support.OnSitePaymentResult;
-import alfio.manager.support.TicketAndCheckInResult;
+import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
@@ -95,10 +92,11 @@ public class CheckInManager {
         ticketReservationManager.registerAlfioTransaction(eventRepository.findById(ticket.getEventId()), ticket.getTicketsReservationId(), PaymentProxy.ON_SITE);
     }
 
-    public TicketAndCheckInResult confirmOnSitePayment(String eventName, String ticketIdentifier, Optional<String> ticketCode, String user) {
+    public TicketAndCheckInResult confirmOnSitePayment(String eventName, String ticketIdentifier, Optional<String> ticketCode, String username, String auditUser) {
         return eventRepository.findOptionalByShortName(eventName)
+            .filter(EventManager.checkOwnership(username, organizationRepository))
             .flatMap(e -> confirmOnSitePayment(ticketIdentifier).map((String s) -> Pair.of(s, e)))
-            .map(p -> checkIn(p.getRight().getId(), ticketIdentifier, ticketCode, user))
+            .map(p -> checkIn(p.getRight().getId(), ticketIdentifier, ticketCode, auditUser))
             .orElseGet(() -> new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.TICKET_NOT_FOUND, "")));
     }
 
@@ -111,8 +109,11 @@ public class CheckInManager {
         return uuid;
     }
 
-    public TicketAndCheckInResult checkIn(String shortName, String ticketIdentifier, Optional<String> ticketCode, String user) {
-        return eventRepository.findOptionalByShortName(shortName).map(e -> checkIn(e.getId(), ticketIdentifier, ticketCode, user)).orElseGet(() -> new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found")));
+    public TicketAndCheckInResult checkIn(String shortName, String ticketIdentifier, Optional<String> ticketCode, String username, String auditUser) {
+        return eventRepository.findOptionalByShortName(shortName)
+            .filter(EventManager.checkOwnership(username, organizationRepository))
+            .map(e -> checkIn(e.getId(), ticketIdentifier, ticketCode, auditUser))
+            .orElseGet(() -> new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found")));
     }
 
     public TicketAndCheckInResult checkIn(int eventId, String ticketIdentifier, Optional<String> ticketCode, String user) {
@@ -263,9 +264,9 @@ public class CheckInManager {
         try {
             Pair<Cipher, SecretKeySpec> cipherAndSecret = getCypher(key);
             Cipher cipher = cipherAndSecret.getKey();
-            String[] splitted = payload.split(Pattern.quote("|"));
-            byte[] iv = Base64.decodeBase64(splitted[0]);
-            byte[] body = Base64.decodeBase64(splitted[1]);
+            String[] split = payload.split(Pattern.quote("|"));
+            byte[] iv = Base64.decodeBase64(split[0]);
+            byte[] body = Base64.decodeBase64(split[1]);
             cipher.init(Cipher.DECRYPT_MODE, cipherAndSecret.getRight(), new IvParameterSpec(iv));
             byte[] decrypted = cipher.doFinal(body);
             return new String(decrypted, StandardCharsets.UTF_8);
@@ -344,5 +345,12 @@ public class CheckInManager {
                 .collect(Collectors.toMap(hashedHMAC, encryptedBody));
 
         }).orElseGet(Collections::emptyMap);
+    }
+
+    public CheckInStatistics getStatistics(String eventName, String username) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .filter(EventManager.checkOwnership(username, organizationRepository))
+            .map(event -> eventRepository.retrieveCheckInStatisticsForEvent(event.getId()))
+            .orElse(null);
     }
 }
