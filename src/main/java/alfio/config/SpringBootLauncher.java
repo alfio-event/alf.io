@@ -51,7 +51,7 @@ public class SpringBootLauncher {
         if("true".equals(System.getenv("ALFIO_JDBC_SESSION_ENABLED"))) {
             additionalProfiles.add(Initializer.PROFILE_JDBC_SESSION);
         }
-        application.setAdditionalProfiles(additionalProfiles.toArray(new String[additionalProfiles.size()]));
+        application.setAdditionalProfiles(additionalProfiles.toArray(new String[0]));
         ConfigurableApplicationContext applicationContext = application.run(args);
         ConfigurableEnvironment environment = applicationContext.getEnvironment();
         log.info("profiles: requested {}, active {}", profiles, String.join(", ", (CharSequence[]) environment.getActiveProfiles()));
