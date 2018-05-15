@@ -1,5 +1,13 @@
 # Change Log
 
+## [1.14.2](https://github.com/alfio-event/alf.io/tree/1.14.2) (2018-05-14)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14.1...1.14.2)
+
+**Fixed bugs:**
+
+- Slash in organization name makes requests fail [\#424](https://github.com/alfio-event/alf.io/issues/424)
+- Reservation list is not ordered [\#423](https://github.com/alfio-event/alf.io/issues/423)
+
 ## [1.14.1](https://github.com/alfio-event/alf.io/tree/1.14.1) (2018-05-07)
 [Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14...1.14.1)
 
