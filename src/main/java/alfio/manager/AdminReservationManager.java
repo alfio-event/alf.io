@@ -40,6 +40,7 @@ import alfio.util.TemplateResource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.context.MessageSource;
@@ -580,7 +581,8 @@ public class AdminReservationManager {
         ).toArray(MapSqlParameterSource[]::new);
         List<String> reservationIds = ticketRepository.findReservationIds(ticketIds);
         List<String> ticketUUIDs = ticketRepository.findUUIDs(ticketIds);
-        jdbc.batchUpdate(ticketRepository.batchReleaseTickets(), args);
+        int[] results = jdbc.batchUpdate(ticketRepository.batchReleaseTickets(), args);
+        Validate.isTrue(Arrays.stream(results).sum() == args.length, "Failed to update tickets");
         if(!removeReservation) {
             //#407 update invoice/receipt model only if the reservation is still "PENDING", otherwise we could lead to accountancy problems
             if(UPDATE_INVOICE_STATUSES.contains(reservation.getStatus()) || forceInvoiceReceiptUpdate) {
