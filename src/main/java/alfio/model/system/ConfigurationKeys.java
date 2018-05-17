@@ -153,9 +153,14 @@ public enum ConfigurationKeys {
     ALFIO_PI_INTEGRATION_ENABLED("Enable Alf.io-PI integration", false, SettingCategory.ALFIO_PI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM), false),
     OFFLINE_CHECKIN_ENABLED("Offline Check-in enabled", false, SettingCategory.ALFIO_PI, ComponentType.BOOLEAN, false, EnumSet.of(EVENT), false),
     LABEL_PRINTING_ENABLED("Label Printing enabled", false, SettingCategory.ALFIO_PI, ComponentType.BOOLEAN, false, EnumSet.of(EVENT), false),
-    LABEL_LAYOUT("Label layout", false, SettingCategory.ALFIO_PI, ComponentType.TEXTAREA, false, EnumSet.of(EVENT), false);
+    LABEL_LAYOUT("Label layout", false, SettingCategory.ALFIO_PI, ComponentType.TEXTAREA, false, EnumSet.of(EVENT), false),
 
-
+    //
+    TRANSLATION_OVERRIDE_VAT_EN("Override the default tax term (VAT)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), false),
+    TRANSLATION_OVERRIDE_VAT_DE("Override the default tax term (Mehrwertsteuer)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), false),
+    TRANSLATION_OVERRIDE_VAT_FR("Override the default tax term (TVA)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), false),
+    TRANSLATION_OVERRIDE_VAT_IT("Override the default tax term (IVA)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), false),
+    TRANSLATION_OVERRIDE_VAT_NL("Override the default tax term (BTW)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT), false);
 
     @Getter
     public enum SettingCategory {
