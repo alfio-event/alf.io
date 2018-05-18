@@ -41,7 +41,7 @@
                                 {{formattedFinalPrice}} {{currencyCode}}
                             {{/supportsDiscount}}
                             {{#vatApplies}}
-                            <i class="fa fa-info-circle text-info tooltip-handler" title="{{#vatIncluded}}{{#i18n}}show-event.incVat [{{vatPercentage}}]{{/i18n}}{{/vatIncluded}}{{^vatIncluded}}{{#i18n}}show-event.excVat [{{vatPercentage}}]{{/i18n}}{{/vatIncluded}}"></i>
+                            <i class="fa fa-info-circle text-info tooltip-handler" title="{{#vatIncluded}}{{#i18n}}show-event.incVat [{{vatPercentage}}] [{{vatTranslation}}]{{/i18n}}{{/vatIncluded}}{{^vatIncluded}}{{#i18n}}show-event.excVat [{{vatPercentage}}] [{{vatTranslation}}]{{/i18n}}{{/vatIncluded}}"></i>
                             {{/vatApplies}}
                         {{/userDefinedPrice}}
                     {{/expired}}

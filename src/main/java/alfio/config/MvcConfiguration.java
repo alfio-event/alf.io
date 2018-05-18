@@ -22,6 +22,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.system.Configuration.ConfigurationPathKey;
+import alfio.model.system.ConfigurationKeys;
 import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -203,9 +204,21 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                             modelMap.putIfAbsent("paypalTestUsername", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_USERNAME), "<missing>"));
                             modelMap.putIfAbsent("paypalTestPassword", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_PASSWORD), "<missing>"));
                         }
+
+                        //
+                        String locale = translate("locale", request);
+                        String translatedVat = translate("common.vat", request);
+                        ConfigurationKeys vatKey = ConfigurationKeys.valueOf("TRANSLATION_OVERRIDE_VAT_"+locale.toUpperCase(Locale.ENGLISH));
+                        ConfigurationPathKey vatPathKey = Optional.ofNullable(event).map(e -> alfio.model.system.Configuration.from(e.getOrganizationId(), e.getId(), vatKey))
+                            .orElseGet(() -> alfio.model.system.Configuration.getSystemConfiguration(vatKey));
+                        modelMap.putIfAbsent("vatTranslation", configurationManager.getStringConfigValue(vatPathKey, translatedVat));
                 });
             }
         };
+    }
+
+    private String translate(String key, HttpServletRequest request) {
+        return messageSource.getMessage(key, null, RequestContextUtils.getLocaleResolver(request).resolveLocale(request));
     }
 
     @Bean
