@@ -16,7 +16,7 @@
 
 {{#orderSummary.notYetPaid}}{{#i18n}}reservation.not-yet-paid [{{orderSummary.totalPrice}} {{event.currency}}]{{/i18n}}{{/orderSummary.notYetPaid}}
 
-{{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatNr}}]{{/i18n}}{{/hasVat}}
+{{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatNr}}] [{{vatTranslation}}]{{/i18n}}{{/hasVat}}
 
 {{#i18n}}email-confirmation.order-information [{{ticketReservation.id}}]{{/i18n}}
 

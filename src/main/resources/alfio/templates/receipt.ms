@@ -92,7 +92,7 @@
         {{/orderSummary.free}}
     </tfoot>
 </table>
-<p>{{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatNr}}]{{/i18n}}{{/hasVat}}</p>
+<p>{{#hasVat}}{{#i18n}}email-confirmation.vatNr [{{vatNr}}] [{{vatTranslation}}]{{/i18n}}{{/hasVat}}</p>
 
 
     </body>
