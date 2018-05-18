@@ -64,7 +64,7 @@
         {{^orderSummary.free}}
             {{#orderSummary.displayVat}}
                 {{^event.vatIncluded}}
-                    <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+                    <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}] [{{vatTranslation}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
                 {{/event.vatIncluded}}
             {{/orderSummary.displayVat}}
         {{/orderSummary.free}}
@@ -73,7 +73,7 @@
         {{^orderSummary.free}}
             {{#orderSummary.displayVat}}
                 {{#event.vatIncluded}}
-                    <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+                    <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}] [{{vatTranslation}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
                 {{/event.vatIncluded}}
             {{/orderSummary.displayVat}}
             {{^orderSummary.displayVat}}

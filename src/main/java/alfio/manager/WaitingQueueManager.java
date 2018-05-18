@@ -104,7 +104,7 @@ public class WaitingQueueManager {
                     new Object[] {subscriptionType, event.getDisplayName()}, Locale.ENGLISH);
             notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-waiting-queue.subscribed.admin.subject",
                             new Object[]{event.getDisplayName()}, Locale.ENGLISH),
-                    () -> templateManager.renderString(adminTemplate, model, Locale.ENGLISH, TemplateManager.TemplateOutput.TEXT));
+                    () -> templateManager.renderString(event, adminTemplate, model, Locale.ENGLISH, TemplateManager.TemplateOutput.TEXT));
         }
 
     }
