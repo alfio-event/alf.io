@@ -185,6 +185,20 @@
                     </div>
                 </div>
 
+                <div class="page-header">
+                    <h2>Internationalization</h2>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-language"></i> Translations override</div>
+                    </div>
+                    <div class="panel-body">
+                        <div data-ng-repeat="setting in organizationConf.translations.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="page-header" data-ng-if="organizationConf.extensionSettings && (organizationConf.extensionSettings | keys).length > 0">
                     <h2>Extensions</h2>
                 </div>

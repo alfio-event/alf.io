@@ -19,6 +19,7 @@ package alfio.config;
 import alfio.config.support.PlatformProvider;
 import alfio.manager.Jobs.*;
 import alfio.manager.UploadedResourceManager;
+import alfio.manager.system.ConfigurationManager;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.QueryFactory;
 import ch.digitalfondue.npjt.mapper.ZonedDateTimeMapper;
@@ -164,8 +165,8 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     }
 
     @Bean
-    public TemplateManager getTemplateManager(UploadedResourceManager uploadedResourceManager) {
-        return new TemplateManager(getTemplateLoader(), messageSource(), uploadedResourceManager);
+    public TemplateManager getTemplateManager(UploadedResourceManager uploadedResourceManager, ConfigurationManager configurationManager) {
+        return new TemplateManager(getTemplateLoader(), messageSource(), uploadedResourceManager, configurationManager);
     }
 
     @Bean

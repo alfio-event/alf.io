@@ -66,7 +66,7 @@ public class DynamicResourcesController {
             Map<String, Object> model = new HashMap<>();
             model.put("clientId", trackingId);
             model.put("account", id.get());
-            script = templateManager.renderTemplate(TemplateResource.GOOGLE_ANALYTICS, model, Locale.ENGLISH);
+            script = templateManager.renderTemplate(ev, TemplateResource.GOOGLE_ANALYTICS, model, Locale.ENGLISH);
         } else {
             script = id.map(x -> String.format(GOOGLE_ANALYTICS_SCRIPT, x)).orElse(EMPTY);
         }
