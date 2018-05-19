@@ -270,11 +270,11 @@
                     <div class="col-xs-12 col-sm-4">
                         <div class="form-group">
                             <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
-                            <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control">
-                                <option value="">{{#i18n}}reservation-page.country.outside-eu{{/i18n}}</option>
-                                {{#euCountries}}
+                            <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control field-required">
+                                <option value="">{{#i18n}}reservation-page.country.select{{/i18n}}</option>
+                                {{#countries}}
                                     <option value="{{left}}">{{right}}</option>
-                                {{/euCountries}}
+                                {{/countries}}
                             </select>
                         </div>
                     </div>
