@@ -272,9 +272,16 @@
                             <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
                             <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control field-required">
                                 <option value="">{{#i18n}}reservation-page.country.select{{/i18n}}</option>
-                                {{#countries}}
-                                    <option value="{{left}}">{{right}}</option>
-                                {{/countries}}
+                                <optgroup label="{{#i18n}}reservation-page.eu-countries{{/i18n}}">
+                                {{#euCountriesForVat}}
+                                    <option value="{{left}}">{{left}} - {{right}}</option>
+                                {{/euCountriesForVat}}
+                                </optgroup>
+                                <optgroup label="{{#i18n}}reservation-page.all-countries{{/i18n}}">
+                                {{#countriesForVat}}
+                                    <option value="{{left}}">{{left}} - {{right}}</option>
+                                {{/countriesForVat}}
+                                </optgroup>
                             </select>
                         </div>
                     </div>
