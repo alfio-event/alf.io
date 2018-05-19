@@ -31,8 +31,11 @@ import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EuVatCheckerTest {
@@ -48,8 +51,9 @@ public class EuVatCheckerTest {
     private ConfigurationManager configurationManager;
 
     @Before
-    public void init() throws IOException {
+    public void init() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(1, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE)), anyBoolean())).thenReturn(true);
+        when(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST))).thenReturn("IE");
         when(configurationManager.getStringConfigValue(eq(Configuration.from(1, ConfigurationKeys.COUNTRY_OF_BUSINESS)), anyString())).thenReturn("IT");
         when(configurationManager.getStringConfigValue(eq(Configuration.getSystemConfiguration(ConfigurationKeys.EU_VAT_API_ADDRESS)), anyString())).thenReturn("http://localhost:8080");
         when(client.newCall(any())).thenReturn(call);
@@ -88,6 +92,32 @@ public class EuVatCheckerTest {
         initResponse(404, "");
         Optional<VatDetail> result = EuVatChecker.performCheck("1234", "IE", 1).apply(configurationManager, client);
         assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void testForeignBusinessVATApplied() {
+        when(configurationManager.getBooleanConfigValue(Configuration.from(1, ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS), true)).thenReturn(true);
+        Optional<VatDetail> result = EuVatChecker.performCheck("1234", "UK", 1).apply(configurationManager, client);
+        assertTrue(result.isPresent());
+        VatDetail vatDetail = result.get();
+        assertTrue(vatDetail.isValid());
+        assertFalse(vatDetail.isVatExempt());
+        assertEquals("1234", vatDetail.getVatNr());
+        assertEquals("UK", vatDetail.getCountry());
+        verify(client, never()).newCall(any());
+    }
+
+    @Test
+    public void testForeignBusinessVATNotApplied() {
+        when(configurationManager.getBooleanConfigValue(Configuration.from(1, ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS), true)).thenReturn(false);
+        Optional<VatDetail> result = EuVatChecker.performCheck("1234", "UK", 1).apply(configurationManager, client);
+        assertTrue(result.isPresent());
+        VatDetail vatDetail = result.get();
+        assertTrue(vatDetail.isValid());
+        assertTrue(vatDetail.isVatExempt());
+        assertEquals("1234", vatDetail.getVatNr());
+        assertEquals("UK", vatDetail.getCountry());
+        verify(client, never()).newCall(any());
     }
 
     private void initResponse(int status, String body) throws IOException {

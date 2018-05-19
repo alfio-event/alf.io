@@ -28,7 +28,6 @@ import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
@@ -60,7 +59,6 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
 
@@ -168,7 +166,6 @@ public class ReservationController {
                         .addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary))
                         .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
                         .addAttribute("countries", TicketHelper.getLocalizedCountries(locale))
-                        .addAttribute("euCountries", TicketHelper.getLocalizedEUCountries(locale, configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST))))
                         .addAttribute("euVatCheckingEnabled", vatChecker.isVatCheckingEnabledFor(event.getOrganizationId()))
                         .addAttribute("invoiceIsAllowed", invoiceAllowed)
                         .addAttribute("vatNrIsLinked", orderSummary.isVatExempt() || paymentForm.getHasVatCountryCode())

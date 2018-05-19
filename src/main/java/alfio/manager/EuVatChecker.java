@@ -22,6 +22,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
 import com.fasterxml.jackson.core.type.TypeReference;
+import lombok.extern.log4j.Log4j2;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -33,8 +34,13 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
+
+import static alfio.model.system.Configuration.getSystemConfiguration;
+import static alfio.model.system.ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS;
 
 @Component
+@Log4j2
 public class EuVatChecker {
 
     private final ConfigurationManager configurationManager;
@@ -54,7 +60,16 @@ public class EuVatChecker {
 
     static BiFunction<ConfigurationManager, OkHttpClient, Optional<VatDetail>> performCheck(String vatNr, String countryCode, int organizationId) {
         return (configurationManager, client) -> {
-            if(StringUtils.isNotEmpty(vatNr) && StringUtils.length(countryCode) == 2 && checkingEnabled(configurationManager, organizationId)) {
+            boolean vatNrNotEmpty = StringUtils.isNotEmpty(vatNr);
+            boolean validCountryCode = StringUtils.length(StringUtils.trimToNull(countryCode)) == 2;
+
+            if(!vatNrNotEmpty || !validCountryCode) {
+                return Optional.empty();
+            }
+
+            boolean euCountryCode = configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)).contains(countryCode);
+
+            if(euCountryCode && checkingEnabled(configurationManager, organizationId)) {
                 Request request = new Request.Builder()
                     .url(apiAddress(configurationManager) + "?country="+countryCode.toUpperCase()+"&number="+vatNr)
                     .get()
@@ -66,10 +81,14 @@ public class EuVatChecker {
                         return Optional.empty();
                     }
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    log.warn("Error while calling VAT NR check.", e);
+                    return Optional.empty();
                 }
+            } else {
+                String organizerCountry = organizerCountry(configurationManager, organizationId);
+                Supplier<Boolean> applyVatToForeignBusiness = () -> configurationManager.getBooleanConfigValue(Configuration.from(organizationId, APPLY_VAT_FOREIGN_BUSINESS), true);
+                return Optional.of(new VatDetail(vatNr, countryCode, true, "", "", !organizerCountry.equals(countryCode) && !applyVatToForeignBusiness.get()));
             }
-            return Optional.empty();
         };
     }
 
@@ -82,7 +101,7 @@ public class EuVatChecker {
     }
 
     private static String apiAddress(ConfigurationManager configurationManager) {
-        return configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.EU_VAT_API_ADDRESS), null);
+        return configurationManager.getStringConfigValue(getSystemConfiguration(ConfigurationKeys.EU_VAT_API_ADDRESS), null);
     }
 
     private static String organizerCountry(ConfigurationManager configurationManager, int organizationId) {
