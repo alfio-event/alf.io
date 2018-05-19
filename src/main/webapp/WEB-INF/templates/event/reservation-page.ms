@@ -286,7 +286,7 @@
                                     <div class="input-group">
                                         <input id="vatNr" type="text" required name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
                                         <div class="input-group-btn">
-                                            <button type="button" class="btn btn-warning btn-block" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT" data-text="{{#i18n}}invoice.validate.vat{{/i18n}}">{{#i18n}}invoice.validate.vat [{{vatTranslation}}]{{/i18n}}</button>
+                                            <button type="button" class="btn btn-warning btn-block" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT" data-text="{{#i18n}}invoice.validate.vat [{{vatTranslation}}]{{/i18n}}">{{#i18n}}invoice.validate.vat [{{vatTranslation}}]{{/i18n}}</button>
                                         </div>
                                     </div>
                                 </div>
