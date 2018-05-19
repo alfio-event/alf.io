@@ -109,8 +109,8 @@ public class CustomMessageManager {
                     Ticket ticket = triple.getLeft();
                     MessageModification m = Optional.ofNullable(byLanguage.get(ticket.getUserLanguage())).orElseGet(() -> byLanguage.get(byLanguage.keySet().stream().findFirst().orElseThrow(IllegalStateException::new))).get(0);
                     Model model = triple.getRight();
-                    String subject = renderResource(m.getSubject(), model, m.getLocale(), templateManager);
-                    String text = renderResource(m.getText(), model, m.getLocale(), templateManager);
+                    String subject = renderResource(m.getSubject(), event, model, m.getLocale(), templateManager);
+                    String text = renderResource(m.getText(), event, model, m.getLocale(), templateManager);
                     List<Mailer.Attachment> attachments = new ArrayList<>();
                     if(m.isAttachTicket()) {
                         ticketReservationManager.findById(ticket.getTicketsReservationId()).ifPresent(reservation -> {
@@ -137,7 +137,8 @@ public class CustomMessageManager {
         model.addAttribute("ticketURL", "https://this-is-the-ticket-url");
         model.addAttribute("reservationID", "RESID");
         return input.stream()
-                .map(m -> MessageModification.preview(m, renderResource(m.getSubject(), model, m.getLocale(), templateManager), renderResource(m.getText(), model, m.getLocale(), templateManager), m.isAttachTicket()))
+                .map(m -> MessageModification.preview(m, renderResource(m.getSubject(), event, model, m.getLocale(), templateManager),
+                    renderResource(m.getText(), event, model, m.getLocale(), templateManager), m.isAttachTicket()))
                 .collect(Collectors.toList());
     }
 
@@ -150,7 +151,7 @@ public class CustomMessageManager {
         return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
     }
 
-    private static String renderResource(String template, Model model, Locale locale, TemplateManager templateManager) {
-        return templateManager.renderString(template, model.asMap(), locale, TemplateManager.TemplateOutput.TEXT);
+    private static String renderResource(String template, Event event, Model model, Locale locale, TemplateManager templateManager) {
+        return templateManager.renderString(event, template, model.asMap(), locale, TemplateManager.TemplateOutput.TEXT);
     }
 }

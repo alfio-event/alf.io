@@ -95,7 +95,9 @@ public class ReservationApiController {
 
         Optional<ValidationResult> validationResult = assignmentResult.map(Triple::getLeft);
         if(validationResult.isPresent() && validationResult.get().isSuccess()) {
-            result.put("partial", templateManager.renderServletContextResource("/WEB-INF/templates/event/assign-ticket-result.ms", model.asMap(), request, TemplateManager.TemplateOutput.HTML));
+            result.put("partial", templateManager.renderServletContextResource("/WEB-INF/templates/event/assign-ticket-result.ms",
+                assignmentResult.get().getMiddle(),//<- ugly, but will be removed
+                model.asMap(), request, TemplateManager.TemplateOutput.HTML));
         }
         result.put("validationResult", validationResult.orElse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("fullName", "error.fullname"))));
         return result;

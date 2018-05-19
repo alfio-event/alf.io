@@ -39,7 +39,7 @@
                         {{^supportsDiscount}}
                             {{formattedFinalPrice}} {{currencyCode}}
                         {{/supportsDiscount}}
-                        <i class="fa fa-info-circle text-info tooltip-handler" title="{{#event.vatIncluded}}{{#i18n}}show-event.incVat [{{event.vat}}]{{/i18n}}{{/event.vatIncluded}}{{^event.vatIncluded}}{{#i18n}}show-event.excVat [{{event.vat}}]{{/i18n}}{{/event.vatIncluded}}"></i>
+                        <i class="fa fa-info-circle text-info tooltip-handler" title="{{#event.vatIncluded}}{{#i18n}}show-event.incVat [{{event.vat}}] [{{vatTranslation}}]{{/i18n}}{{/event.vatIncluded}}{{^event.vatIncluded}}{{#i18n}}show-event.excVat [{{event.vat}}] [{{vatTranslation}}]{{/i18n}}{{/event.vatIncluded}}"></i>
                     {{/expired}}
                 {{/free}}
             </label>

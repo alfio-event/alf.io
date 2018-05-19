@@ -23,6 +23,7 @@ import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.system.Configuration.ConfigurationPathKey;
 import alfio.util.MustacheCustomTagInterceptor;
+import alfio.util.TemplateManager;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -203,6 +204,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                             modelMap.putIfAbsent("paypalTestUsername", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_USERNAME), "<missing>"));
                             modelMap.putIfAbsent("paypalTestPassword", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_PASSWORD), "<missing>"));
                         }
+
+                        modelMap.putIfAbsent(TemplateManager.VAT_TRANSLATION_TEMPLATE_KEY, TemplateManager.getVATString(event, messageSource, RequestContextUtils.getLocaleResolver(request).resolveLocale(request), configurationManager));
                 });
             }
         };
