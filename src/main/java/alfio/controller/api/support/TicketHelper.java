@@ -206,9 +206,24 @@ public class TicketHelper {
         return mapISOCountries(Stream.of(Locale.getISOCountries()), locale);
     }
 
-    public static List<Pair<String, String>> getLocalizedEUCountries(Locale locale, String euCountries) {
-        return mapISOCountries(Stream.of(Locale.getISOCountries()).filter(isoCode -> StringUtils.contains(euCountries, isoCode)), locale);
+    public static List<Pair<String, String>> getLocalizedEUCountriesForVat(Locale locale, String euCountries) {
+        return fixVAT(mapISOCountries(Stream.of(Locale.getISOCountries())
+            .filter(isoCode -> StringUtils.contains(euCountries, isoCode) || "GR".equals(isoCode)), locale));
     }
+
+    public static List<Pair<String, String>> getLocalizedCountriesForVat(Locale locale) {
+        return fixVAT(mapISOCountries(Stream.of(Locale.getISOCountries()), locale));
+    }
+
+    private static List<Pair<String, String>> fixVAT(List<Pair<String, String>> countries) {
+        return countries.stream()
+            .map(kv -> Pair.of(FIX_ISO_CODE_FOR_VAT.getOrDefault(kv.getKey(), kv.getKey()), kv.getValue()))
+            .collect(Collectors.toList());
+    }
+
+
+    //
+    public static final Map<String, String> FIX_ISO_CODE_FOR_VAT = Collections.singletonMap("GR", "EL");
 
     private static List<Pair<String, String>> mapISOCountries(Stream<String> isoCountries, Locale locale) {
         return isoCountries
