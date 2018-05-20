@@ -131,7 +131,7 @@ public interface TicketReservationRepository {
                           @Bind("invoiceRequested") boolean invoiceRequested,
                           @Bind("reservationId") String reservationId);
 
-    @Query("update tickets_reservation set  vat_status = null, vat_nr = null, vat_country = null, invoice_requested = false, billing_address = null where id = :reservationId")
+    @Query("update tickets_reservation set  invoice_requested = false, vat_status = null, vat_nr = null, vat_country = null, billing_address = null where id = :reservationId")
     int resetBillingData(@Bind("reservationId") String reservationId);
 
 
