@@ -24,7 +24,7 @@
                         <div class="input-group-addon">
                             <i class="fa fa-search"></i>
                         </div>
-                        <input class="form-control input-sm" ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData()" placeholder="Filter Tickets">
+                        <input class="form-control input-sm" ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData()" ng-model-options="{ debounce: 1000 }" placeholder="Filter Tickets">
                     </div>
                 </label>
             </div>
