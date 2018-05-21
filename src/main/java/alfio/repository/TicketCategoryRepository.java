@@ -21,6 +21,7 @@ import alfio.model.TicketCategoryStatisticView;
 import ch.digitalfondue.npjt.*;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,6 +56,9 @@ public interface TicketCategoryRepository {
 
     @Query("select * from ticket_category where id = :id")
     TicketCategory getById(@Bind("id") int id);
+
+    @Query("select * from ticket_category where id in(:ids)")
+    List<TicketCategory> findByIds(@Bind("ids") Collection<Integer> ids);
 
     @Query("select * from ticket_category where event_id = :eventId and category_code = :code and tc_status = 'ACTIVE'")
     Optional<TicketCategory> findCodeInEvent(@Bind("eventId") int eventId, @Bind("code") String code);
