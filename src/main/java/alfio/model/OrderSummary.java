@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.util.MonetaryUtil;
 import lombok.Data;
 
 import java.util.List;
@@ -68,5 +69,12 @@ public class OrderSummary {
 
     public String getRefundedAmount() {
         return refundedAmount;
+    }
+
+    public String getTotalNetPrice() {
+        if(free) {
+            return null;
+        }
+        return MonetaryUtil.formatCents(originalTotalPrice.getPriceWithVAT() - originalTotalPrice.getVAT());
     }
 }
