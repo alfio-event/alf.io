@@ -339,7 +339,7 @@
                 </div>
             </div>
             {{#euVatCheckingEnabled}}{{#vatNrIsLinked}}
-            <div class="col-md-4 col-md-push-8 col-xs-12">
+            <div class="col-md-6 col-md-push-6 col-xs-12">
                 <div class="form-group">
                     <button type="button" id="reset-billing-information" class="btn btn-warning btn-block"
                         data-reset-billing-information-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/reset-billing-info">
