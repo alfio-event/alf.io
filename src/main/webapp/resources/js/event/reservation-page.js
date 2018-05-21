@@ -363,6 +363,7 @@
             var resultContainer = $('#validation-result');
             if(vatNr !== '' && country !== '') {
                 var btn = $(this);
+                var previousText = btn.text();
                 btn.html('<i class="fa fa-circle-o-notch fa-spin"></i>');
                 $('#continue-button').attr('disabled', true);
                 jQuery.ajax({
@@ -382,7 +383,7 @@
                         }
                     },
                     complete: function(xhr) {
-                        btn.html(btn.attr('data-text'));
+                        btn.text(previousText);
                         $('#continue-button').attr('disabled', false);
                     }
 
