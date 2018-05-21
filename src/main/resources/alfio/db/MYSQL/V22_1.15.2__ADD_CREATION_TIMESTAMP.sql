@@ -15,6 +15,6 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table tickets_reservation add column creation_ts timestamp default current_timestamp;
+alter table tickets_reservation add column creation_ts timestamp null;
 
 update tickets_reservation set creation_ts = coalesce(confirmation_ts, (select event_time from auditing where reservation_id = id and event_type = 'RESERVATION_CREATE'))
