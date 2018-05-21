@@ -308,7 +308,7 @@
                 element.removeClass('hidden');
                 euBillingCountry.change();
                 if(euBillingCountry.length === 0) {
-                    $('#billing-address-container').removeClass(hiddenClasses);
+                    //$('#billing-address-container').removeClass(hiddenClasses);
                     $('#billing-address').attr('required', true).removeAttr('disabled');
                 }
             } else {
@@ -320,12 +320,17 @@
         });
 
 
+        $(function() {
+            if($("#invoice[data-eu-vat-checking-enabled=true]").length === 1 && $("input[type=hidden][name=vatNr]").length === 0) {
+                $("#billing-address-container").addClass(hiddenClasses);
+            }
+        })
 
 
         var euBillingCountry = $('#vatCountry');
         euBillingCountry.change(function() {
             if($(this).val() === '') {
-                $('#billing-address-container').removeClass(hiddenClasses);
+                //$('#billing-address-container').removeClass(hiddenClasses);
                 $('#billing-address').attr('required', true).removeAttr('disabled');
                 $('#validation-result-container, #vat-number-container, #validateVAT').addClass(hiddenClasses);
                 $('#vatNr').attr('required', false).attr('disabled', '');
@@ -336,6 +341,14 @@
                 $('#billing-address').attr('required', false).attr('disabled');
                 $('#vatNr').attr('required', true).removeAttr('disabled');
                 $("#vatCountryCode").attr('required', true).removeAttr('disabled', '');
+
+                var countryCode = $(this).val();
+                var validateVATButton = $("#validateVAT");
+                if($("#optgroup-eu-countries-list option[value="+countryCode+"]").length === 1) {
+                    validateVATButton.text(validateVATButton.attr('data-text'));
+                } else {
+                    validateVATButton.text(validateVATButton.attr('data-text-non-eu'));
+                }
             }
         });
 
@@ -350,6 +363,7 @@
             var resultContainer = $('#validation-result');
             if(vatNr !== '' && country !== '') {
                 var btn = $(this);
+                var previousText = btn.text();
                 btn.html('<i class="fa fa-circle-o-notch fa-spin"></i>');
                 $('#continue-button').attr('disabled', true);
                 jQuery.ajax({
@@ -369,13 +383,27 @@
                         }
                     },
                     complete: function(xhr) {
-                        btn.html(btn.attr('data-text'));
+                        btn.text(previousText);
                         $('#continue-button').attr('disabled', false);
                     }
 
                 });
             }
         })
+
+        $('#reset-billing-information').click(function() {
+            var action = $(this).attr('data-reset-billing-information-url');
+            var frm = $(this.form);
+            jQuery.ajax({
+                url: action,
+                type:'POST',
+                success: function() {
+                    window.location.reload();
+                },
+                data:frm.serialize()
+            });
+        });
+
     });
 
     window.recaptchaLoadCallback = function() {

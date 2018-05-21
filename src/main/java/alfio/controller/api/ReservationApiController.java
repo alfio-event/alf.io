@@ -103,6 +103,27 @@ public class ReservationApiController {
         return result;
     }
 
+    @PostMapping("/event/{eventName}/reservation/{reservationId}/reset-billing-info")
+    @Transactional
+    public ResponseEntity<Boolean> resetVat(@PathVariable("eventName") String eventName,
+                                            @PathVariable("reservationId") String reservationId) {
+        boolean res = eventRepository
+            .findOptionalByShortName(eventName)
+            .flatMap(e -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r)))
+            .filter(eventAndReservation -> eventAndReservation.getRight().getStatus() == TicketReservation.TicketReservationStatus.PENDING)
+            .map(eventAndReservation -> {
+                Event event = eventAndReservation.getLeft();
+                TicketReservation tr = eventAndReservation.getRight();
+                ticketReservationRepository.resetBillingData(tr.getId());
+
+                OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, Locale.forLanguageTag(tr.getUserLanguage()));
+                ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
+                return true;
+            }).orElse(false);
+
+        return new ResponseEntity<>(res, res ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
+    }
+
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/vat-validation", method = RequestMethod.POST)
     @Transactional
     public ResponseEntity<VatDetail> validateEUVat(@PathVariable("eventName") String eventName,
