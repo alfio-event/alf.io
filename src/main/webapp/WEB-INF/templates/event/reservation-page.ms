@@ -263,7 +263,7 @@
         {{/vatNrIsLinked}}
     {{/invoiceIsAllowed}}
 
-    <div id="invoice" class="wMarginTop {{#invoiceIsAllowed}}{{^paymentForm.invoiceRequested}}hidden{{/paymentForm.invoiceRequested}}{{/invoiceIsAllowed}}">
+    <div id="invoice" class="wMarginTop {{#invoiceIsAllowed}}{{^paymentForm.invoiceRequested}}hidden{{/paymentForm.invoiceRequested}}{{/invoiceIsAllowed}}" {{#euVatCheckingEnabled}}data-eu-vat-checking-enabled="true"{{/euVatCheckingEnabled}}>
         {{#euVatCheckingEnabled}}
             {{^vatNrIsLinked}}
                 <div class="row">
@@ -272,7 +272,7 @@
                             <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
                             <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control field-required">
                                 <option value="">{{#i18n}}reservation-page.country.select{{/i18n}}</option>
-                                <optgroup label="{{#i18n}}reservation-page.eu-countries{{/i18n}}">
+                                <optgroup label="{{#i18n}}reservation-page.eu-countries{{/i18n}}" id="optgroup-eu-countries-list">
                                 {{#euCountriesForVat}}
                                     <option value="{{left}}">{{left}} - {{right}}</option>
                                 {{/euCountriesForVat}}
@@ -293,7 +293,9 @@
                                     <div class="input-group">
                                         <input id="vatNr" type="text" required name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
                                         <div class="input-group-btn">
-                                            <button type="button" class="btn btn-warning btn-block" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT" data-text="{{#i18n}}invoice.validate.vat [{{vatTranslation}}]{{/i18n}}">{{#i18n}}invoice.validate.vat [{{vatTranslation}}]{{/i18n}}</button>
+                                            <button type="button" class="btn btn-warning btn-block" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT"
+                                                data-text="{{#i18n}}invoice.validate.vat [{{vatTranslation}}]{{/i18n}}"
+                                                data-text-non-eu="{{#i18n}}common.apply{{/i18n}}">{{#i18n}}invoice.validate.vat [{{vatTranslation}}]{{/i18n}}</button>
                                         </div>
                                     </div>
                                 </div>
@@ -336,6 +338,17 @@
                     {{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
                 </div>
             </div>
+            {{#euVatCheckingEnabled}}{{#vatNrIsLinked}}
+            <div class="col-md-6 col-md-push-6 col-xs-12">
+                <div class="form-group">
+                    <button type="button" id="reset-billing-information" class="btn btn-warning btn-block"
+                        data-reset-billing-information-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/reset-billing-info">
+                        {{#i18n}}reservation-page.reset-billing-informations{{/i18n}}
+                    </button>
+                </div>
+            </div>
+            {{/vatNrIsLinked}}{{/euVatCheckingEnabled}}
+
         </div>
     </div>
     {{/orderSummary.free}}
