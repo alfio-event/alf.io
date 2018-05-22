@@ -23,6 +23,7 @@ import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -267,7 +268,7 @@ public enum TemplateResource {
 
         model.put("hasRefund", StringUtils.isNotEmpty(orderSummary.getRefundedAmount()));
 
-        ZonedDateTime creationTimestamp = Optional.ofNullable(reservation.getCreationTimestamp()).orElseGet(ZonedDateTime::now);
+        ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getCreationTimestamp(), reservation.getConfirmationTimestamp(), ZonedDateTime.now());
         model.put("confirmationDate", creationTimestamp.withZoneSameInstant(event.getZoneId()));
 
         if (reservation.getValidity() != null) {
