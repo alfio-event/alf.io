@@ -92,7 +92,7 @@ public class InvoiceReceiptController {
                                      @PathVariable("reservationId") String reservationId,
                                      HttpServletResponse response) {
         return handleReservationWith(eventName, reservationId, (event, reservation) -> {
-            if(reservation.getInvoiceNumber() != null || !reservation.getHasInvoiceOrReceiptDocument()) {
+            if(reservation.getInvoiceNumber() != null || !reservation.getHasInvoiceOrReceiptDocument() || reservation.isCancelled()) {
                 return ResponseEntity.notFound().build();
             }
 
@@ -107,7 +107,7 @@ public class InvoiceReceiptController {
                            @PathVariable("reservationId") String reservationId,
                            HttpServletResponse response) {
         handleReservationWith(eventName, reservationId, (event, reservation) -> {
-            if(reservation.getInvoiceNumber() == null || !reservation.getHasInvoiceOrReceiptDocument()) {
+            if(reservation.getInvoiceNumber() == null || !reservation.getHasInvoiceOrReceiptDocument() || reservation.isCancelled()) {
                 return ResponseEntity.notFound().build();
             }
 
