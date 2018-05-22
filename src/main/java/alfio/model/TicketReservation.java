@@ -157,6 +157,10 @@ public class TicketReservation {
         return Arrays.asList(StringUtils.split(billingAddress, '\n'));
     }
 
+    public boolean isCancelled() {
+        return status == TicketReservationStatus.CANCELLED;
+    }
+
     @JsonIgnore
     public String getPaidAmount() {
         //this is a hack, for the payment cases where we don't have a remote call like paypal/stripe
