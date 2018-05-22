@@ -37,7 +37,7 @@ public interface TicketSearchRepository {
         "tr_offline_payment_reminder_sent offline_payment_reminder_sent, tr_promo_code_id_fk promo_code_id_fk, tr_automatic automatic," +
         "tr_user_language user_language, tr_direct_assignment direct_assignment, tr_invoice_number invoice_number, tr_invoice_model invoice_model," +
         "tr_vat_status vat_status, tr_vat_nr vat_nr, tr_vat_country vat_country, tr_invoice_requested invoice_requested, tr_used_vat_percent used_vat_percent," +
-        "tr_vat_included vat_included";
+        "tr_vat_included vat_included, tr_creation_ts creation_ts";
 
     @Query("select * from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION + " limit :pageSize offset :page) as d_tbl order by tr_confirmation_ts asc, tr_id, t_uuid")
     List<TicketWithReservationAndTransaction> findAllModifiedTicketsWithReservationAndTransaction(@Bind("eventId") int eventId,

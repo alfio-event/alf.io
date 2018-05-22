@@ -23,6 +23,7 @@ import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -205,6 +206,11 @@ public enum TemplateResource {
         return sampleTicket("Firstname", "Lastname", "email@email.tld");
     }
 
+    private static TicketCategory sampleCategory() {
+        return new TicketCategory(0, ZonedDateTime.now().minusDays(1), ZonedDateTime.now().plusDays(1), 100, "test category", false, TicketCategory.Status.ACTIVE,
+            0, true, 100, null, null, null, null, null);
+    }
+
     private static Ticket sampleTicket(String firstName, String lastName, String email) {
         return new Ticket(0, "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", ZonedDateTime.now(), 0, "ACQUIRED", 0,
             "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", firstName + " " + lastName, firstName, lastName, email, false, "en",
@@ -214,13 +220,15 @@ public enum TemplateResource {
     private static TicketReservation sampleTicketReservation() {
         return new TicketReservation("597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", new Date(), TicketReservation.TicketReservationStatus.COMPLETE,
             "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
-            PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456", "CH", false, new BigDecimal("8.00"), true);
+            PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456",
+            "CH", false, new BigDecimal("8.00"), true,
+            ZonedDateTime.now().minusMinutes(1));
     }
 
     private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
         TicketReservation reservation = sampleTicketReservation();
         Optional<String> vat = Optional.of("VAT-NR");
-        List<Ticket> tickets = Collections.singletonList(sampleTicket());
+        List<TicketWithCategory> tickets = Collections.singletonList(new TicketWithCategory(sampleTicket(), sampleCategory()));
         OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0),
             Collections.singletonList(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, "8", PriceContainer.VatStatus.INCLUDED, "1.00");
         String reservationUrl = "http://your-domain.tld/reservation-url/";
@@ -240,7 +248,7 @@ public enum TemplateResource {
                                                                        Event event,
                                                                        TicketReservation reservation,
                                                                        Optional<String> vat,
-                                                                       List<Ticket> tickets,
+                                                                       List<TicketWithCategory> tickets,
                                                                        OrderSummary orderSummary,
                                                                        String reservationUrl,
                                                                        String reservationShortID,
@@ -260,8 +268,8 @@ public enum TemplateResource {
 
         model.put("hasRefund", StringUtils.isNotEmpty(orderSummary.getRefundedAmount()));
 
-        ZonedDateTime confirmationTimestamp = Optional.ofNullable(reservation.getConfirmationTimestamp()).orElseGet(ZonedDateTime::now);
-        model.put("confirmationDate", confirmationTimestamp.withZoneSameInstant(event.getZoneId()));
+        ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getCreationTimestamp(), reservation.getConfirmationTimestamp(), ZonedDateTime.now());
+        model.put("confirmationDate", creationTimestamp.withZoneSameInstant(event.getZoneId()));
 
         if (reservation.getValidity() != null) {
             model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));

@@ -43,6 +43,7 @@ create view reservation_and_ticket_and_tx as (select
     tickets_reservation.used_vat_percent tr_used_vat_percent,
     tickets_reservation.vat_included tr_vat_included,
     tickets_reservation.event_id_fk tr_event_id,
+    tickets_reservation.creation_ts tr_creation_ts,
 
     ticket.id t_id,
     ticket.uuid t_uuid,
