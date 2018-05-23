@@ -16,12 +16,25 @@
  */
 package alfio.model;
 
-import lombok.Data;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 
-@Data
+@Getter
 public class TotalPrice {
     private final int priceWithVAT;
     private final int VAT;
     private final int discount;
     private final int discountAppliedCount;
+
+    @JsonCreator
+    public TotalPrice(@JsonProperty("priceWithVAT") int priceWithVAT,
+                      @JsonProperty("vat") int vat,
+                      @JsonProperty("discount") int discount,
+                      @JsonProperty("discountAppliedCount") int discountAppliedCount) {
+        this.priceWithVAT = priceWithVAT;
+        this.VAT = vat;
+        this.discount = discount;
+        this.discountAppliedCount = discountAppliedCount;
+    }
 }
