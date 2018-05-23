@@ -80,7 +80,7 @@
     <tfoot>
         {{^orderSummary.free}}
         {{^ticketReservation.vatIncluded}}
-            <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}] [{{vatTranslations}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+            <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
         {{/ticketReservation.vatIncluded}}
         {{/orderSummary.free}}
         <tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td class="text-right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
