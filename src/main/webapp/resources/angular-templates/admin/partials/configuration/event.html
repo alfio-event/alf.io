@@ -99,6 +99,20 @@
                 </div>
             </div>
 
+            <div data-ng-if="eventConf.paymentOffline" class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title"><i class="fa fa-exchange"></i> Offline payment configuration</div>
+                </div>
+                <div class="panel-body">
+                    <div class="alert alert-info">
+                        <p><i class="fa fa-info-circle"></i> In order to be able to accept offline payments, you must fill your <strong>Bank Account</strong> data.</p>
+                    </div>
+                    <div data-ng-repeat="setting in eventConf.paymentOffline.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  ></setting>
+                    </div>
+                </div>
+            </div>
+
 
             <div class="page-header">
                 <h2>Internationalization</h2>
