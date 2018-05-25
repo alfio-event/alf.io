@@ -726,7 +726,7 @@ public class TicketReservationManager {
             requiresNewTransactionTemplate.execute((tc) -> {
                 Event event = eventRepository.findByReservationId(reservationId);
                 boolean enabled = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT), true);
-                if(!enabled) {
+                if(enabled) {
                     deleteOfflinePayment(event, reservationId, true);
                 } else {
                     log.debug("Will not cleanup reservation with id {} because the automatic removal has been disabled", reservationId);
