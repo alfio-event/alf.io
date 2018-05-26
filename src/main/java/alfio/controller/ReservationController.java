@@ -113,6 +113,9 @@ public class ReservationController {
                         return redirectReservation(Optional.of(reservation), eventName, reservationId);
                     }
 
+                    Configuration.ConfigurationPathKey forceAssignmentKey = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
+                    boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
+
                     List<Ticket> ticketsInReservation = ticketReservationManager.findTicketsInReservation(reservationId);
                     if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null) {
                         model.addAttribute("paypalPaymentId", paypalPaymentId)
@@ -126,11 +129,11 @@ public class ReservationController {
                             .addAttribute("hmac", hmac)
                             .addAttribute("postponeAssignment", Boolean.TRUE.equals(postponeAssignment))
                             .addAttribute("invoiceRequested", Boolean.TRUE.equals(invoiceRequested))
-                            .addAttribute("showPostpone", Boolean.TRUE.equals(postponeAssignment));
+                            .addAttribute("showPostpone", !forceAssignment && Boolean.TRUE.equals(postponeAssignment));
                     } else {
                         model.addAttribute("paypalCheckoutConfirmation", false)
                              .addAttribute("postponeAssignment", false)
-                             .addAttribute("showPostpone", ticketsInReservation.size() > 1);
+                             .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1);
                     }
 
                     try {
