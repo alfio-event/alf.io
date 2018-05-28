@@ -249,12 +249,25 @@
 
     {{#invoiceIsAllowed}}
         {{^vatNrIsLinked}}
-            <div class="checkbox wMarginTop">
-                <label>
-                    <input type="checkbox" name="invoiceRequested" id="invoice-requested" value="true" {{#paymentForm.invoiceRequested}}checked{{/paymentForm.invoiceRequested}}>
-                    {{#i18n}}reservation-page.i-need-an-invoice{{/i18n}}
-                </label>
-            </div>
+            {{#onlyInvoice}}
+                <input type="hidden" name="invoiceRequested" id="invoice-requested" value="true">
+                {{#euVatCheckingEnabled}}
+                    <div class="checkbox wMarginTop">
+                        <label>
+                            <input type="checkbox" name="addCompanyBillingDetails" id="add-company-billing-details" value="true">
+                            {{#i18n}}reservation.add-company-billing-details [{{vatTranslation}}]{{/i18n}}
+                        </label>
+                    </div>
+                {{/euVatCheckingEnabled}}
+            {{/onlyInvoice}}
+            {{^onlyInvoice}}
+                <div class="checkbox wMarginTop">
+                    <label>
+                        <input type="checkbox" name="invoiceRequested" id="invoice-requested" value="true" {{#paymentForm.invoiceRequested}}checked{{/paymentForm.invoiceRequested}}>
+                        {{#i18n}}reservation-page.i-need-an-invoice{{/i18n}}
+                    </label>
+                </div>
+            {{/onlyInvoice}}
         {{/vatNrIsLinked}}
         {{#vatNrIsLinked}}
             <div class="page-header wMarginTop">
@@ -266,7 +279,7 @@
     <div id="invoice" class="wMarginTop {{#invoiceIsAllowed}}{{^paymentForm.invoiceRequested}}hidden{{/paymentForm.invoiceRequested}}{{/invoiceIsAllowed}}" {{#euVatCheckingEnabled}}data-eu-vat-checking-enabled="true"{{/euVatCheckingEnabled}}>
         {{#euVatCheckingEnabled}}
             {{^vatNrIsLinked}}
-                <div class="row">
+                <div class="row" id="eu-vat-check-countries">
                     <div class="col-xs-12 col-sm-4">
                         <div class="form-group">
                             <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
