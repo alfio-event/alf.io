@@ -300,7 +300,6 @@
         disableBillingFields();
 
 
-
         $('#invoice-requested').change(function() {
             var element = $('#invoice');
             if($(this).is(':checked')) {
@@ -318,14 +317,6 @@
                 disableBillingFields();
             }
         });
-
-
-        $(function() {
-            if($("#invoice[data-eu-vat-checking-enabled=true]").length === 1 && $("input[type=hidden][name=vatNr]").length === 0) {
-                $("#billing-address-container").addClass(hiddenClasses);
-            }
-        })
-
 
         var euBillingCountry = $('#vatCountry');
         euBillingCountry.change(function() {
@@ -351,6 +342,39 @@
                 }
             }
         });
+
+        var invoiceOnlyMode = $('#invoice-requested[type=hidden]') && $('#invoice-requested[type=hidden]').val() == 'true';
+
+        var euVATCheckingEnabled = $("#invoice[data-eu-vat-checking-enabled=true]").length === 1;
+
+        if(!invoiceOnlyMode && euVATCheckingEnabled && $("input[type=hidden][name=vatNr]").length === 0) {
+            $("#billing-address-container").addClass(hiddenClasses);
+        }
+
+        // invoice only mode
+        if(invoiceOnlyMode) {
+            $('#billing-address').attr('required', true).removeAttr('disabled');
+            $('#billing-address-container').removeClass(hiddenClasses);
+            $('#invoice').removeClass('hidden');
+            $("#eu-vat-check-countries").addClass(hiddenClasses);
+        }
+
+        $("#add-company-billing-details").change(function() {
+            if($(this).is(':checked')) {
+                $('#billing-address').attr('required', false).attr('disabled');
+                $('#billing-address-container').addClass(hiddenClasses);
+                $("#eu-vat-check-countries").removeClass(hiddenClasses);
+                if(euVATCheckingEnabled) {
+                    $("#vatCountry").attr('required', true).removeAttr('disabled', '');
+                }
+            } else {
+                $('#billing-address').attr('required', true).removeAttr('disabled');
+                $('#billing-address-container').removeClass(hiddenClasses);
+                $("#eu-vat-check-countries").addClass(hiddenClasses);
+                $("#vatCountry").removeAttr('required').removeAttr('disabled', '');
+            }
+        });
+        //
 
         $('#validateVAT').click(function() {
             var frm = $(this.form);
