@@ -74,7 +74,7 @@ public enum PaymentProxy {
     }
 
     public static Optional<PaymentProxy> safeValueOf(String name) {
-        return Arrays.stream(values()).filter(p -> StringUtils.equals(p.name(), name)).findFirst();
+        return Arrays.stream(values()).filter(p -> StringUtils.equals(p.name(), StringUtils.trim(name))).findFirst();
     }
 
     public static List<PaymentProxy> availableProxies() {

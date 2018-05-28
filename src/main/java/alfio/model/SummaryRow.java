@@ -30,6 +30,6 @@ public class SummaryRow {
     private final SummaryType type;
 
     public enum SummaryType {
-        TICKET, PROMOTION_CODE, ADDITIONAL_SERVICE
+        TICKET, PROMOTION_CODE, ADDITIONAL_SERVICE, PROCESSING_FEE
     }
 }

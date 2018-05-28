@@ -16,16 +16,19 @@
  */
 package alfio.model;
 
+import alfio.util.Json;
+import alfio.util.MonetaryUtil;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.google.gson.reflect.TypeToken;
+import lombok.Getter;
+
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
-
-import alfio.util.Json;
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import alfio.util.MonetaryUtil;
-import com.google.gson.reflect.TypeToken;
-import lombok.Getter;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 @Getter
 public class PromoCodeDiscount {
@@ -62,7 +65,7 @@ public class PromoCodeDiscount {
         this.discountAmount = discountAmount;
         this.discountType = discountType;
         if(categories != null) {
-            List<Integer> categoriesId = Json.GSON.<List<Integer>>fromJson(categories, new TypeToken<List<Integer>>(){}.getType());
+            List<Integer> categoriesId = Json.GSON.fromJson(categories, new TypeToken<List<Integer>>(){}.getType());
             this.categories = categoriesId == null ? Collections.emptySet() : new TreeSet<>(categoriesId);
         } else {
             this.categories = Collections.emptySet();
