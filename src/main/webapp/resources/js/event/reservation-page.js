@@ -345,7 +345,9 @@
 
         var invoiceOnlyMode = $('#invoice-requested[type=hidden]') && $('#invoice-requested[type=hidden]').val() == 'true';
 
-        if(!invoiceOnlyMode && $("#invoice[data-eu-vat-checking-enabled=true]").length === 1 && $("input[type=hidden][name=vatNr]").length === 0) {
+        var euVATCheckingEnabled = $("#invoice[data-eu-vat-checking-enabled=true]").length === 1;
+
+        if(!invoiceOnlyMode && euVATCheckingEnabled && $("input[type=hidden][name=vatNr]").length === 0) {
             $("#billing-address-container").addClass(hiddenClasses);
         }
 
@@ -362,10 +364,14 @@
                 $('#billing-address').attr('required', false).attr('disabled');
                 $('#billing-address-container').addClass(hiddenClasses);
                 $("#eu-vat-check-countries").removeClass(hiddenClasses);
+                if(euVATCheckingEnabled) {
+                    $("#vatCountry").attr('required', true).removeAttr('disabled', '');
+                }
             } else {
                 $('#billing-address').attr('required', true).removeAttr('disabled');
                 $('#billing-address-container').removeClass(hiddenClasses);
                 $("#eu-vat-check-countries").addClass(hiddenClasses);
+                $("#vatCountry").removeAttr('required').removeAttr('disabled', '');
             }
         });
         //

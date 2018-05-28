@@ -119,6 +119,9 @@ public class PaymentForm implements Serializable {
 
         rejectIfOverLength(bindingResult, "billingAddress", ErrorsCode.STEP_2_MAX_LENGTH_BILLING_ADDRESS,
                 billingAddress, 450);
+        if(invoiceRequested) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddress", ErrorsCode.STEP_2_EMPTY_BILLING_ADDRESS);
+        }
 
         if (email != null && !email.contains("@") && !bindingResult.hasFieldErrors("email")) {
             bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL);
