@@ -65,18 +65,21 @@ public class AdminReservationModification implements Serializable {
         private final String emailAddress;
         private final String billingAddress;
         private final String userLanguage;
+        private final String customerReference;
 
         @JsonCreator
         public CustomerData(@JsonProperty("firstName") String firstName,
                             @JsonProperty("lastName") String lastName,
                             @JsonProperty("emailAddress") String emailAddress,
                             @JsonProperty("billingAddress") String billingAddress,
-                            @JsonProperty("userLanguage") String userLanguage) {
+                            @JsonProperty("userLanguage") String userLanguage,
+                            @JsonProperty("customerReference") String customerReference) {
             this.firstName = firstName;
             this.lastName = lastName;
             this.emailAddress = emailAddress;
             this.billingAddress = billingAddress;
             this.userLanguage = userLanguage;
+            this.customerReference = customerReference;
         }
 
         public String getFullName() {
@@ -207,7 +210,8 @@ public class AdminReservationModification implements Serializable {
                 placeholderIfNotEmpty(in.lastName),
                 placeholderIfNotEmpty(in.emailAddress),
                 placeholderIfNotEmpty(in.billingAddress),
-                placeholderIfNotEmpty(in.userLanguage));
+                placeholderIfNotEmpty(in.userLanguage),
+                placeholderIfNotEmpty(in.customerReference));
         }
         else return null;
     }
