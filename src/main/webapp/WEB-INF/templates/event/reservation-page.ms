@@ -120,6 +120,7 @@
         <input type="hidden" name="paypalPayerID" value="{{paypalPayerID}}">
         <input type="hidden" name="termAndConditionsAccepted" value="true">
         <input type="hidden" name="invoiceRequested" value="{{invoiceRequested}}">
+        <input type="hidden" name="customerReference" value="{{customerReference}}">
     <div class="alert alert-success">
         <h3><i class="fa fa-check"></i> {{#i18n}}reservation-page.paypal.confirm{{/i18n}}</h3>
     </div>
@@ -155,6 +156,8 @@
             {{#field-has-error}}[fullName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}fullName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
         </div>
         {{/useFirstAndLastName}}
+
+
         <div class="row">
             <div class="col-xs-12 {{#captchaRequestedFreeOfCharge}}col-md-6{{/captchaRequestedFreeOfCharge}}">
                 <div class="form-group {{#field-has-error}}[email] has-error{{/field-has-error}}">
@@ -170,8 +173,13 @@
             {{/captchaRequestedFreeOfCharge}}
         </div>
 
-
-
+    {{#customerReferenceEnabled}}
+        <div class="form-group {{#field-has-error}}[customerReference] has-error{{/field-has-error}}">
+            <label for="customerReference" class="control-label">{{#i18n}}common.customer-reference{{/i18n}}</label>
+            <input type="text" name="customerReference" id="customerReference" class="form-control" maxlength="255" value="{{paymentForm.customerReference}}">
+            {{#field-has-error}}[customerReference]<span class="help-block text-danger">{{#i18n}}{{#field-error}}customerReference{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+        </div>
+    {{/customerReferenceEnabled}}
 
     <div class="page-header">
         <h2>{{#i18n}}reservation-page.attendees{{/i18n}}</h2>

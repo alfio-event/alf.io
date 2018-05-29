@@ -116,6 +116,7 @@
                     <p>{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}} {{vatNr}}</p>
                     <p class="strong">{{#i18n}}invoice.number{{/i18n}} {{ticketReservation.invoiceNumber}}</p>
                     <p>{{#i18n}}invoice.date{{/i18n}} {{#format-date}}{{confirmationDate}} dd/MM/yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</p>
+                    {{#hasCustomerReference}}<p><strong>{{#i18n}}common.customer-reference{{/i18n}}</strong>: {{ticketReservation.customerReference}}</p>{{/hasCustomerReference}}
                     {{#isOfflinePayment}}<p class="strong">{{#i18n}}reservation-page-waiting.title [{{#format-date}}{{expirationDate}} {{#i18n}}datetime.pattern{{/i18n}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</p>{{/isOfflinePayment}}
                 </td>
             </tr>

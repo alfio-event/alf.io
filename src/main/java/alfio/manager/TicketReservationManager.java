@@ -359,7 +359,7 @@ public class TicketReservationManager {
 
                 //
                 extensionManager.handleInvoiceGeneration(event, reservationId,
-                    email, customerName, userLanguage, billingAddress,
+                    email, customerName, userLanguage, billingAddress, customerReference,
                     reservationCost, invoiceRequested, vatCountryCode, vatNr, vatStatus).ifPresent(invoiceGeneration -> {
                     if (invoiceGeneration.getInvoiceNumber() != null) {
                         ticketReservationRepository.setInvoiceNumber(reservationId, invoiceGeneration.getInvoiceNumber());
@@ -383,7 +383,7 @@ public class TicketReservationManager {
                         }
                         break;
                     case OFFLINE:
-                        transitionToOfflinePayment(event, reservationId, email, customerName, billingAddress);
+                        transitionToOfflinePayment(event, reservationId, email, customerName, billingAddress, customerReference);
                         paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
                         break;
                     case ON_SITE:
@@ -554,10 +554,10 @@ public class TicketReservationManager {
         });
     }
 
-    private void transitionToOfflinePayment(Event event, String reservationId, String email, CustomerName customerName, String billingAddress) {
+    private void transitionToOfflinePayment(Event event, String reservationId, String email, CustomerName customerName, String billingAddress, String customerReference) {
         ZonedDateTime deadline = getOfflinePaymentDeadline(event, configurationManager);
         int updatedReservation = ticketReservationRepository.postponePayment(reservationId, Date.from(deadline.toInstant()), email,
-            customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), billingAddress);
+            customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), billingAddress, customerReference);
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
     }
 

@@ -99,6 +99,7 @@ public class ReservationController {
                                   @RequestParam(value = "lastName", required = false) String lastName,
                                   @RequestParam(value = "email", required = false) String email,
                                   @RequestParam(value = "billingAddress", required = false) String billingAddress,
+                                  @RequestParam(value = "customerReference", required = false) String customerReference,
                                   @RequestParam(value = "hmac", required = false) String hmac,
                                   @RequestParam(value = "postponeAssignment", required = false) Boolean postponeAssignment,
                                   @RequestParam(value = "invoiceRequested", required = false) Boolean invoiceRequested,
@@ -129,6 +130,7 @@ public class ReservationController {
                             .addAttribute("hmac", hmac)
                             .addAttribute("postponeAssignment", Boolean.TRUE.equals(postponeAssignment))
                             .addAttribute("invoiceRequested", Boolean.TRUE.equals(invoiceRequested))
+                            .addAttribute("customerReference", customerReference)
                             .addAttribute("showPostpone", !forceAssignment && Boolean.TRUE.equals(postponeAssignment));
                     } else {
                         model.addAttribute("paypalCheckoutConfirmation", false)
@@ -178,7 +180,8 @@ public class ReservationController {
                         .addAttribute("invoiceIsAllowed", invoiceAllowed)
                         .addAttribute("onlyInvoice", onlyInvoice)
                         .addAttribute("vatNrIsLinked", orderSummary.isVatExempt() || paymentForm.getHasVatCountryCode())
-                        .addAttribute("billingAddressLabel", invoiceAllowed ? "reservation-page.billing-address" : "reservation-page.receipt-address");
+                        .addAttribute("billingAddressLabel", invoiceAllowed ? "reservation-page.billing-address" : "reservation-page.receipt-address")
+                        .addAttribute("customerReferenceEnabled", configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_CUSTOMER_REFERENCE), false));
 
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
                     model.addAttribute("includeStripe", includeStripe);
@@ -456,7 +459,7 @@ public class ReservationController {
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
             try {
                 String checkoutUrl = paymentManager.createPayPalCheckoutRequest(event, reservationId, orderSummary, customerName,
-                    paymentForm.getEmail(), paymentForm.getBillingAddress(), locale, paymentForm.isPostponeAssignment(),
+                    paymentForm.getEmail(), paymentForm.getBillingAddress(), paymentForm.getCustomerReference(), locale, paymentForm.isPostponeAssignment(),
                     paymentForm.isInvoiceRequested());
                 assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
                 return "redirect:" + checkoutUrl;
