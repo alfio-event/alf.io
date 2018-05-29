@@ -479,7 +479,7 @@ public class TicketReservationManager {
 
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
         List<Mailer.Attachment> attachments = new ArrayList<>(1);
-        if(!summary.getNotYetPaid() && !summary.getFree()) {
+        if(!summary.getCashPayment() && !summary.getFree()) { //#459 - include PDF invoice in reservation email
             Map<String, String> model = new HashMap<>();
             model.put("reservationId", reservationId);
             model.put("eventId", Integer.toString(event.getId()));
