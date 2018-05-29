@@ -191,7 +191,7 @@
             {{#ticketsByCategory}}
                 {{#value}}
                     <li class="list-group-item">
-                        <h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr{{/i18n}}<span class="ticket-counter"></span> - <small>{{key.name}}</small></h3>
+                        <h3><i class="fa fa-ticket"></i> {{#i18n}}reservation-page-complete.ticket-nr{{/i18n}}<span class="ticket-counter"></span> - <small>{{key.name}}</small> {{#-first}}<button type="button" id="copy-from-contact-data" class="btn btn-xs btn-default"><i class="fa fa-clone"></i> {{#i18n}}reservation-page.copy-attendee{{/i18n}}</button>{{/-first}}</h3>
                         <div class="form-horizontal">
                             <div data-collapse-enabled="true" class="collapsible-container">
                                 {{> /event/attendee-fields }}
