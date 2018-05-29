@@ -158,6 +158,7 @@ public class PaymentForm implements Serializable {
         form.setVatCountryCode(reservation.getVatCountryCode());
         form.setVatNr(reservation.getVatNr());
         form.setInvoiceRequested(reservation.isInvoiceRequested());
+        form.setCustomerReference(reservation.getCustomerReference());
         return form;
     }
 

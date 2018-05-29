@@ -127,7 +127,7 @@ public class PaypalManager {
     }
 
     public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary,
-                                        CustomerName customerName, String email, String billingAddress,
+                                        CustomerName customerName, String email, String billingAddress, String customerReference,
                                         Locale locale, boolean postponeAssignment, boolean invoiceRequested) throws Exception {
 
 
@@ -156,6 +156,7 @@ public class PaypalManager {
             .queryParam("lastName", customerName.getLastName())
             .queryParam("email", email)
             .queryParam("billingAddress", billingAddress)
+            .queryParam("customerReference", customerReference)
             .queryParam("postponeAssignment", postponeAssignment)
             .queryParam("invoiceRequested", invoiceRequested)
             .queryParam("hmac", computeHMAC(customerName, email, billingAddress, event));
