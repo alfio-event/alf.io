@@ -243,20 +243,11 @@
             });
         }
 
-        $('#first-name, #last-name').change(function() {
-            fillAttendeeData($('#first-name').val(), $('#last-name').val());
+        $('#copy-from-contact-data').click(function() {
+            var firstOrFullName = $('#first-name').val() || $('#full-name').val();
+            fillAttendeeData(firstOrFullName, $('#last-name').val());
+            $('#attendeesData').find('.attendee-email').first().val($('#email').val());
         });
-        $('#full-name').change(function() {
-            fillAttendeeData($(this).val());
-        });
-        $('#email').change(function() {
-            updateIfNotTouched($('#attendeesData').find('.attendee-email').first(), $(this).val());
-        });
-
-        $('#attendeesData').find('.attendee-full-name,.attendee-first-name,.attendee-last-name,.attendee-email').first()
-            .change(function() {
-                $(this).removeClass('untouched');
-            });
 
         var postponeAssignment = $('#postpone-assignment');
 
@@ -276,7 +267,7 @@
         }
 
         function fillAttendeeData(firstOrFullName, lastName) {
-            var useFullName = (typeof lastName == "undefined");
+            var useFullName = (typeof lastName === "undefined");
             var element = $('#attendeesData');
             if(useFullName) {
                 updateIfNotTouched(element.find('.attendee-full-name').first(), firstOrFullName);
