@@ -58,6 +58,7 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.Configuration.getSystemConfiguration;
@@ -114,7 +115,9 @@ public class ReservationController {
                         return redirectReservation(Optional.of(reservation), eventName, reservationId);
                     }
 
-                    Configuration.ConfigurationPathKey forceAssignmentKey = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
+                    Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partialConfig = Configuration.from(event.getOrganizationId(), event.getId());
+
+                    Configuration.ConfigurationPathKey forceAssignmentKey = partialConfig.apply(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
                     boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
 
                     List<Ticket> ticketsInReservation = ticketReservationManager.findTicketsInReservation(reservationId);
@@ -162,7 +165,7 @@ public class ReservationController {
                     }
 
                     boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
-                    boolean onlyInvoice = invoiceAllowed && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.GENERATE_ONLY_INVOICE), false);
+                    boolean onlyInvoice = invoiceAllowed && configurationManager.getBooleanConfigValue(partialConfig.apply(ConfigurationKeys.GENERATE_ONLY_INVOICE), false);
                     PaymentForm paymentForm = PaymentForm.fromExistingReservation(reservation);
                     model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 )
                         .addAttribute("orderSummary", orderSummary)
@@ -180,8 +183,9 @@ public class ReservationController {
                         .addAttribute("invoiceIsAllowed", invoiceAllowed)
                         .addAttribute("onlyInvoice", onlyInvoice)
                         .addAttribute("vatNrIsLinked", orderSummary.isVatExempt() || paymentForm.getHasVatCountryCode())
+                        .addAttribute("attendeeAutocompleteEnabled", ticketsInReservation.size() == 1 && configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ATTENDEE_AUTOCOMPLETE), true))
                         .addAttribute("billingAddressLabel", invoiceAllowed ? "reservation-page.billing-address" : "reservation-page.receipt-address")
-                        .addAttribute("customerReferenceEnabled", configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_CUSTOMER_REFERENCE), false));
+                        .addAttribute("customerReferenceEnabled", configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_CUSTOMER_REFERENCE), false));
 
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
                     model.addAttribute("includeStripe", includeStripe);
