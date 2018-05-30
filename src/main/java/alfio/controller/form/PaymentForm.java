@@ -42,6 +42,7 @@ public class PaymentForm implements Serializable {
     private String firstName;
     private String lastName;
     private String billingAddress;
+    private String customerReference;
     private String hmac;
     private Boolean cancelReservation;
     private Boolean termAndConditionsAccepted;
@@ -157,6 +158,7 @@ public class PaymentForm implements Serializable {
         form.setVatCountryCode(reservation.getVatCountryCode());
         form.setVatNr(reservation.getVatNr());
         form.setInvoiceRequested(reservation.isInvoiceRequested());
+        form.setCustomerReference(reservation.getCustomerReference());
         return form;
     }
 

@@ -32,6 +32,16 @@
         </div>
 
         <div class="page-header">
+            <h2>Reservation Process</h2>
+            <span>Customizations for the public-facing reservation process</span>
+        </div>
+        <div>
+            <div data-ng-repeat="setting in systemConf.reservationUi.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+            </div>
+        </div>
+
+        <div class="page-header">
             <h2>E-Mail</h2>
             <span>E-Mail settings</span>
         </div>

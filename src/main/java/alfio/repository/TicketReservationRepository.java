@@ -29,7 +29,8 @@ import java.util.Optional;
 @QueryRepository
 public interface TicketReservationRepository {
 
-    @Query("insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included) values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :eventVat, :vatIncluded)")
+    @Query("insert into tickets_reservation(id, creation_ts, validity, promo_code_id_fk, status, user_language, event_id_fk, used_vat_percent, vat_included)" +
+        " values (:id, :creationTimestamp, :validity, :promotionCodeDiscountId, 'PENDING', :userLanguage, :eventId, :eventVat, :vatIncluded)")
     int createNewReservation(@Bind("id") String id,
                              @Bind("creationTimestamp") ZonedDateTime creationTimestamp,
                              @Bind("validity") Date validity,
@@ -38,17 +39,26 @@ public interface TicketReservationRepository {
                              @Bind("eventVat") BigDecimal eventVat,
                              @Bind("vatIncluded") Boolean vatIncluded);
 
-    @Query("update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email, user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod where id = :reservationId")
-    int updateTicketReservation(@Bind("reservationId") String reservationId, @Bind("status") String status,
-            @Bind("email") String email,
-            @Bind("fullName") String fullName, @Bind("firstName") String firstName, @Bind("lastName") String lastName,
-            @Bind("userLanguage") String userLanguage,
-            @Bind("billingAddress") String billingAddress, @Bind("timestamp") ZonedDateTime timestamp, @Bind("paymentMethod") String paymentMethod);
+    @Query("update tickets_reservation set status = :status, full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email," +
+        " user_language = :userLanguage, billing_address = :billingAddress, confirmation_ts = :timestamp, payment_method = :paymentMethod, customer_reference = :customerReference where id = :reservationId")
+    int updateTicketReservation(@Bind("reservationId") String reservationId,
+                                @Bind("status") String status,
+                                @Bind("email") String email,
+                                @Bind("fullName") String fullName,
+                                @Bind("firstName") String firstName,
+                                @Bind("lastName") String lastName,
+                                @Bind("userLanguage") String userLanguage,
+                                @Bind("billingAddress") String billingAddress,
+                                @Bind("timestamp") ZonedDateTime timestamp,
+                                @Bind("paymentMethod") String paymentMethod,
+                                @Bind("customerReference") String customerReference);
 
-    @Query("update tickets_reservation set validity = :validity, status = 'OFFLINE_PAYMENT', payment_method = 'OFFLINE', full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email, billing_address = :billingAddress where id = :reservationId")
+    @Query("update tickets_reservation set validity = :validity, status = 'OFFLINE_PAYMENT', payment_method = 'OFFLINE', full_name = :fullName, first_name = :firstName," +
+        " last_name = :lastName, email_address = :email, billing_address = :billingAddress, customer_reference = :customerReference where id = :reservationId")
     int postponePayment(@Bind("reservationId") String reservationId, @Bind("validity") Date validity, @Bind("email") String email,
                         @Bind("fullName") String fullName, @Bind("firstName") String firstName, @Bind("lastName") String lastName,
-                        @Bind("billingAddress") String billingAddress);
+                        @Bind("billingAddress") String billingAddress,
+                        @Bind("customerReference") String customerReference);
 
     @Query("update tickets_reservation set status = :status, confirmation_ts = :timestamp where id = :reservationId")
     int confirmOfflinePayment(@Bind("reservationId") String reservationId, @Bind("status") String status, @Bind("timestamp") ZonedDateTime timestamp);

@@ -137,7 +137,7 @@ public class ExtensionManager {
     }
 
     public Optional<InvoiceGeneration> handleInvoiceGeneration(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage,
-                                                     String billingAddress, TotalPrice reservationCost, boolean invoiceRequested,
+                                                     String billingAddress, String customerReference, TotalPrice reservationCost, boolean invoiceRequested,
                                                      String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservationId", reservationId);
@@ -145,6 +145,7 @@ public class ExtensionManager {
         payload.put("customerName", customerName);
         payload.put("userLanguage", userLanguage);
         payload.put("billingAddress", billingAddress);
+        payload.put("customerReference", customerReference);
         payload.put("reservationCost", reservationCost);
         payload.put("invoiceRequested", invoiceRequested);
         payload.put("vatCountryCode", vatCountryCode);

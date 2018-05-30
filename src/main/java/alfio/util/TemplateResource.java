@@ -222,7 +222,7 @@ public enum TemplateResource {
             "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
             PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456",
             "CH", false, new BigDecimal("8.00"), true,
-            ZonedDateTime.now().minusMinutes(1));
+            ZonedDateTime.now().minusMinutes(1), "PO-1234");
     }
 
     private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
@@ -289,6 +289,7 @@ public enum TemplateResource {
         });
 
         model.put("isOfflinePayment", reservation.getStatus() == TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
+        model.put("hasCustomerReference", StringUtils.isNotBlank(reservation.getCustomerReference()));
         model.put("paymentReason", event.getShortName() + " " + reservationShortID);
         model.put("hasBankAccountOnwer", bankAccountOwner.isPresent());
         bankAccountOwner.ifPresent(owner -> {

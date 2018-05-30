@@ -57,6 +57,11 @@
 {{ticketReservation.email}}
 </pre>
 
+{{#hasCustomerReference}}
+<div>{{#i18n}}common.customer-reference{{/i18n}}</div>
+<pre>{{ticketReservation.customerReference}}</pre>
+{{/hasCustomerReference}}
+
 <h3>{{#i18n}}email-confirmation.reservation-summary{{/i18n}}</h3>
 <table style="width:100%">
     <thead>

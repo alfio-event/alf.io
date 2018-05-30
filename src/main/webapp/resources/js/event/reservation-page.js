@@ -243,13 +243,13 @@
             });
         }
 
-        $('#first-name, #last-name').change(function() {
+        $('#first-name.autocomplete-src, #last-name.autocomplete-src').change(function() {
             fillAttendeeData($('#first-name').val(), $('#last-name').val());
         });
-        $('#full-name').change(function() {
+        $('#full-name.autocomplete-src').change(function() {
             fillAttendeeData($(this).val());
         });
-        $('#email').change(function() {
+        $('#email.autocomplete-src').change(function() {
             updateIfNotTouched($('#attendeesData').find('.attendee-email').first(), $(this).val());
         });
 
@@ -257,6 +257,12 @@
             .change(function() {
                 $(this).removeClass('untouched');
             });
+
+        $('#copy-from-contact-data').click(function() {
+            var firstOrFullName = $('#first-name').val() || $('#full-name').val();
+            fillAttendeeData(firstOrFullName, $('#last-name').val());
+            $('#attendeesData').find('.attendee-email').first().val($('#email').val());
+        });
 
         var postponeAssignment = $('#postpone-assignment');
 
@@ -276,7 +282,7 @@
         }
 
         function fillAttendeeData(firstOrFullName, lastName) {
-            var useFullName = (typeof lastName == "undefined");
+            var useFullName = (typeof lastName === "undefined");
             var element = $('#attendeesData');
             if(useFullName) {
                 updateIfNotTouched(element.find('.attendee-full-name').first(), firstOrFullName);

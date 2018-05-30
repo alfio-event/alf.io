@@ -26,7 +26,7 @@ import java.util.List;
 @QueryRepository
 public interface TicketSearchRepository {
     String APPLY_FILTER = " (:search is null or (lower(t_uuid) like lower(:search) or lower(t_full_name) like lower(:search) or lower(t_first_name) like lower(:search) or lower(t_last_name) like lower(:search) or lower(t_email_address) like lower(:search) or " +
-        "  lower(tr_full_name) like lower(:search) or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search))) ";
+        "  lower(tr_full_name) like lower(:search) or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search) or lower(tr_customer_reference) like lower(:search))) ";
 
     String FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION = "select * from reservation_and_ticket_and_tx where t_id is not null and t_status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and t_category_id = :categoryId and t_event_id = :eventId and " + APPLY_FILTER;
 
@@ -37,7 +37,7 @@ public interface TicketSearchRepository {
         "tr_offline_payment_reminder_sent offline_payment_reminder_sent, tr_promo_code_id_fk promo_code_id_fk, tr_automatic automatic," +
         "tr_user_language user_language, tr_direct_assignment direct_assignment, tr_invoice_number invoice_number, tr_invoice_model invoice_model," +
         "tr_vat_status vat_status, tr_vat_nr vat_nr, tr_vat_country vat_country, tr_invoice_requested invoice_requested, tr_used_vat_percent used_vat_percent," +
-        "tr_vat_included vat_included, tr_creation_ts creation_ts";
+        "tr_vat_included vat_included, tr_creation_ts creation_ts, tr_customer_reference customer_reference";
 
     @Query("select * from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION + " limit :pageSize offset :page) as d_tbl order by tr_confirmation_ts asc, tr_id, t_uuid")
     List<TicketWithReservationAndTransaction> findAllModifiedTicketsWithReservationAndTransaction(@Bind("eventId") int eventId,
