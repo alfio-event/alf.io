@@ -243,6 +243,21 @@
             });
         }
 
+        $('#first-name.autocomplete-src, #last-name.autocomplete-src').change(function() {
+            fillAttendeeData($('#first-name').val(), $('#last-name').val());
+        });
+        $('#full-name.autocomplete-src').change(function() {
+            fillAttendeeData($(this).val());
+        });
+        $('#email.autocomplete-src').change(function() {
+            updateIfNotTouched($('#attendeesData').find('.attendee-email').first(), $(this).val());
+        });
+
+        $('#attendeesData').find('.attendee-full-name,.attendee-first-name,.attendee-last-name,.attendee-email').first()
+            .change(function() {
+                $(this).removeClass('untouched');
+            });
+
         $('#copy-from-contact-data').click(function() {
             var firstOrFullName = $('#first-name').val() || $('#full-name').val();
             fillAttendeeData(firstOrFullName, $('#last-name').val());

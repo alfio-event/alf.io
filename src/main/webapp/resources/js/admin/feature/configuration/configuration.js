@@ -120,7 +120,7 @@
                     }
                 }
 
-                _.forEach(['PAYMENT', 'PAYMENT_STRIPE', 'PAYMENT_PAYPAL', /*'PAYMENT_MOLLIE',*/ 'PAYMENT_OFFLINE', 'INVOICE_EU', 'TRANSLATIONS', 'ALFIO_PI'], function(group) {
+                _.forEach(['PAYMENT', 'PAYMENT_STRIPE', 'PAYMENT_PAYPAL', /*'PAYMENT_MOLLIE',*/ 'PAYMENT_OFFLINE', 'INVOICE_EU', 'TRANSLATIONS', 'RESERVATION_UI', 'ALFIO_PI'], function(group) {
                     if(angular.isDefined(original[group]) && original[group].length > 0) {
                         transformed[_.camelCase(group)] = {
                             settings: original[group]
