@@ -25,14 +25,14 @@ create table processing_fee (
   fee_type varchar(16) not null,
   categories varchar(2048)
 );
-alter table processing_fee add constraint "check_fee_type" check (fee_type = 'FIXED_AMOUNT' OR fee_type = 'PERCENTAGE');
-alter table processing_fee add constraint "check_discount_amount" check (
+alter table processing_fee add constraint "processing_fee_check_fee_type" check (fee_type = 'FIXED_AMOUNT' OR fee_type = 'PERCENTAGE');
+alter table processing_fee add constraint "processing_fee_check_discount_amount" check (
 CASE
 	WHEN fee_type = 'FIXED_AMOUNT' THEN amount >= 0
 	WHEN fee_type = 'PERCENTAGE' THEN amount >= 0 and amount <= 100
 END);
-alter table processing_fee add foreign key(event_id_fk) references event(id);
-alter table processing_fee add foreign key(organization_id_fk) references organization(id);
+alter table processing_fee add constraint "processing_fee_event_id_fk" foreign key(event_id_fk) references event(id);
+alter table processing_fee add constraint "processing_fee_organization_id_fk" foreign key(organization_id_fk) references organization(id);
 
 CREATE INDEX "processing_fee_event_id_fk_idx" ON processing_fee(event_id_fk);
 
@@ -41,5 +41,5 @@ create table processing_fee_link (
     payment_method varchar(255) not null
 );
 
-alter table processing_fee_link add foreign key(fee_id_fk) references processing_fee(id);
-alter table processing_fee_link add constraint "unique_fee_link" unique(fee_id_fk, payment_method);
+alter table processing_fee_link ADD CONSTRAINT "processing_fee_link_fee_id_fk" foreign key(fee_id_fk) references processing_fee(id);
+alter table processing_fee_link add constraint "processing_fee_link_unique_fee_link" unique(fee_id_fk, payment_method);
