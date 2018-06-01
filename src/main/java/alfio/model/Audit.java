@@ -47,7 +47,9 @@ public class Audit {
         UPDATE_TICKET,
         UPDATE_TICKET_CATEGORY,
         UPDATE_INVOICE,
-        FORCED_UPDATE_INVOICE
+        FORCED_UPDATE_INVOICE,
+        TERMS_CONDITION_ACCEPTED,
+        PRIVACY_POLICY_ACCEPTED
     }
 
     private final String reservationId;
