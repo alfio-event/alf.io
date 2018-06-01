@@ -49,6 +49,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static alfio.util.MustacheCustomTagInterceptor.COUNTRY_NAME;
+
 /**
  * For hiding the ugliness :)
  * */
@@ -141,6 +143,7 @@ public class TemplateManager {
         try {
             ModelAndView mv = new ModelAndView((String) null, model);
             mv.addObject("format-date", MustacheCustomTagInterceptor.FORMAT_DATE);
+            mv.addObject("country-name", COUNTRY_NAME);
             mv.addObject(MustacheLocalizationMessageInterceptor.DEFAULT_MODEL_KEY, new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
             return compile(resource, templateOutput).execute(mv.getModel());
         } catch (Exception e) {

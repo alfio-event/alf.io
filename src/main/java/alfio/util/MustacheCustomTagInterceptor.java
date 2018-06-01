@@ -16,6 +16,7 @@
  */
 package alfio.util;
 
+import alfio.controller.api.support.TicketHelper;
 import alfio.model.transaction.PaymentProxy;
 import com.samskivert.mustache.Mustache;
 import org.apache.commons.lang3.tuple.Pair;
@@ -38,6 +39,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.substring;
 
@@ -70,6 +72,22 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
             out.write(DateTimeFormatter.ofPattern(p.getLeft()).format(d));
         }
     };
+
+    public static final Mustache.Lambda COUNTRY_NAME = (frag, out) -> {
+        String execution = frag.execute().trim();
+        String code = substring(execution, 0, 2);
+        Pair<String, Optional<Locale>> p = parseParams(execution);
+        out.write(translateCountryCode(code, p.getRight().orElse(null)));
+    };
+
+    static String translateCountryCode(String code, Locale locale) {
+        Locale lang = locale != null ? locale : Locale.ENGLISH;
+        return Stream.concat(TicketHelper.getLocalizedCountries(lang).stream(), TicketHelper.getLocalizedCountriesForVat(lang).stream())
+            .filter(p -> p.getKey().equalsIgnoreCase(code))
+            .map(Pair::getValue)
+            .findFirst()
+            .orElse(code);
+    }
 
     private static Pair<String, Optional<Locale>> parseParams(String r) {
 
@@ -158,6 +176,7 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
             modelAndView.addObject("field-error", FIELD_ERROR.apply(modelAndView));
             modelAndView.addObject("is-payment-method", IS_PAYMENT_METHOD);
             modelAndView.addObject("commonmark", RENDER_TO_COMMON_MARK);
+            modelAndView.addObject("country-name", COUNTRY_NAME);
         }
 
         super.postHandle(request, response, handler, modelAndView);
