@@ -82,6 +82,7 @@ import static alfio.util.MonetaryUtil.unitToCents;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
@@ -340,7 +341,8 @@ public class TicketReservationManager {
     public PaymentResult confirm(String gatewayToken, String payerId, Event event, String reservationId,
                                  String email, CustomerName customerName, Locale userLanguage, String billingAddress, String customerReference,
                                  TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method,
-                                 boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
+                                 boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus,
+                                 boolean tcAccepted, boolean privacyPolicyAccepted) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
         if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, customerName, userLanguage, billingAddress, customerReference)) {
             return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
@@ -395,7 +397,7 @@ public class TicketReservationManager {
             } else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
-            completeReservation(event.getId(), reservationId, email, customerName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy, customerReference);
+            completeReservation(event, reservationId, email, customerName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy, customerReference, tcAccepted, privacyPolicyAccepted);
             return paymentResult;
         } catch(Exception ex) {
             //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
@@ -632,9 +634,10 @@ public class TicketReservationManager {
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
      */
-    void completeReservation(int eventId, String reservationId, String email, CustomerName customerName,
+    void completeReservation(Event event, String reservationId, String email, CustomerName customerName,
                                      Locale userLanguage, String billingAddress, Optional<String> specialPriceSessionId,
-                                     PaymentProxy paymentProxy, String customerReference) {
+                                     PaymentProxy paymentProxy, String customerReference, boolean tcAccepted, boolean privacyAccepted) {
+        int eventId = event.getId();
         if(paymentProxy != PaymentProxy.OFFLINE) {
             TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
@@ -645,7 +648,16 @@ public class TicketReservationManager {
             specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
         }
 
-        auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, new Date(), Audit.EntityType.RESERVATION, reservationId);
+        Date timestamp = new Date();
+        auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, timestamp, Audit.EntityType.RESERVATION, reservationId);
+
+        if(tcAccepted) {
+            auditingRepository.insert(reservationId, null, eventId, Audit.EventType.TERMS_CONDITION_ACCEPTED, timestamp, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", event.getTermsAndConditionsUrl())));
+        }
+
+        if(StringUtils.isNotBlank(event.getPrivacyPolicyLinkOrNull()) && privacyAccepted) {
+            auditingRepository.insert(reservationId, null, eventId, Audit.EventType.PRIVACY_POLICY_ACCEPTED, timestamp, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", event.getPrivacyPolicyUrl())));
+        }
     }
 
     private void acquireItems(TicketStatus ticketStatus, AdditionalServiceItemStatus asStatus, PaymentProxy paymentProxy,
