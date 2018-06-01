@@ -1,6 +1,6 @@
 (function() {
     'use strict';
     jQuery(function($) {
-        $('.tooltip-handler').tooltip();
+        $('i.tooltip-handler,button.tooltip-handler').tooltip();
     });
 })();
