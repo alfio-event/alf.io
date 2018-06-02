@@ -212,6 +212,11 @@ public class AdminReservationManager {
                 customerData.getFullName(), customerData.getFirstName(), customerData.getLastName(), customerData.getUserLanguage(),
                 customerData.getBillingAddress(), r.getConfirmationTimestamp(),
                 Optional.ofNullable(r.getPaymentMethod()).map(PaymentProxy::name).orElse(null), customerData.getCustomerReference());
+
+            if(StringUtils.isNotBlank(customerData.getVatNr()) || StringUtils.isNotBlank(customerData.getVatCountryCode())) {
+                ticketReservationRepository.updateBillingData(r.getVatStatus(), customerData.getVatNr(), customerData.getVatCountryCode(), r.isInvoiceRequested(), reservationId);
+            }
+
         }
         arm.getTicketsInfo().stream()
             .filter(TicketsInfo::isUpdateAttendees)

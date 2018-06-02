@@ -18,9 +18,11 @@ package alfio.controller.api.admin;
 
 import alfio.config.Initializer;
 import alfio.controller.api.support.CurrencyDescriptor;
+import alfio.controller.api.support.TicketHelper;
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTagInterceptor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -98,6 +100,13 @@ public class UtilsApiController {
             .filter(c -> c.getDefaultFractionDigits() == 2 && !CURRENCIES_BLACKLIST.contains(c.getCurrencyCode())) //currencies which don't support cents are filtered out. Support will be implemented in the next version
             .map(c -> new CurrencyDescriptor(c.getCurrencyCode(), c.getDisplayName(), c.getSymbol(), c.getDefaultFractionDigits()))
             .collect(Collectors.toList());
+    }
+
+    @RequestMapping(value = "/countriesForVat", method = GET)
+    public Map<String, String> getCountriesForVat() {
+        return TicketHelper.getLocalizedCountriesForVat(Locale.ENGLISH)
+            .stream()
+            .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     }
 
 }

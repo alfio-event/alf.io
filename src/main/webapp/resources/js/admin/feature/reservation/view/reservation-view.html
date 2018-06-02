@@ -147,19 +147,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row" ng-if="$ctrl.reservation.updateContactData || $ctrl.reservation.customerData.billingAddress">
-                        <div class="col-xs-12 col-sm-12">
-                            <div class="form-group">
-                                <label for="customerBillingAddress">Billing address</label>
-                                <pre class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.billingAddress}}</pre>
-                                <textarea class="form-control"
-                                          id="customerBillingAddress"
-                                          ng-if="$ctrl.reservation.updateContactData" name="customerBillingAddress"
-                                          ng-model="$ctrl.reservation.customerData.billingAddress">
-                                </textarea>
-                            </div>
-                        </div>
-                    </div>
                     <div class="row">
                         <div class="col-xs-12 col-sm-6">
                             <div class="form-group">
@@ -179,7 +166,38 @@
                             </div>
                         </div>
                     </div>
-
+                    <div class="row" ng-if="$ctrl.reservation.updateContactData || $ctrl.reservation.customerData.invoiceRequested">
+                        <div class="col-xs-12 col-sm-6">
+                            <div class="form-group">
+                                <label for="customerVat">Tax ID Number (VAT / GST)</label>
+                                <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.vatNr}}</div>
+                                <input type="text" class="form-control" id="customerVat" ng-if="$ctrl.reservation.updateContactData" name="vatNr" ng-model="$ctrl.reservation.customerData.vatNr">
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6" ng-if="$ctrl.reservation.customerData.vatCountryCode">
+                            <div class="form-group">
+                                <label for="customerVatCountry">Country</label>
+                                <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.vatCountryCode}} - <country-name code="$ctrl.reservation.customerData.vatCountryCode"></country-name></div>
+                                <select id="customerVatCountry"  class="form-control"
+                                        ng-if="$ctrl.reservation.updateContactData"
+                                        ng-model="$ctrl.reservation.customerData.vatCountryCode"
+                                        data-ng-options="key as key + ' - ' + value for (key , value) in $ctrl.countries"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" ng-if="$ctrl.reservation.updateContactData || $ctrl.reservation.customerData.billingAddress">
+                        <div class="col-xs-12">
+                            <div class="form-group">
+                                <label for="customerBillingAddress">Billing address</label>
+                                <pre class="form-control-static" ng-if="!$ctrl.reservation.updateContactData">{{$ctrl.reservation.customerData.billingAddress}}</pre>
+                                <textarea class="form-control"
+                                          id="customerBillingAddress"
+                                          ng-if="$ctrl.reservation.updateContactData" name="customerBillingAddress"
+                                          ng-model="$ctrl.reservation.customerData.billingAddress">
+                                </textarea>
+                            </div>
+                        </div>
+                    </div>
                     <hr>
                     <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
                         <div class="panel-heading">

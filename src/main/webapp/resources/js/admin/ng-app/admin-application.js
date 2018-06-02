@@ -1834,4 +1834,17 @@
         $rootScope.calculateTotalPrice = PriceCalculator.calculateTotalPrice;
     });
 
+    admin.component('countryName', {
+        bindings: {
+            code: '<'
+        },
+        controller: ['CountriesService', function (CountriesService) {
+            var ctrl = this;
+            CountriesService.getDescription(this.code).then(function (countryName) {
+                ctrl.countryName = countryName;
+            })
+        }],
+        template: '<span>{{$ctrl.countryName}}</span>'
+    })
+
 })();
