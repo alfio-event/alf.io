@@ -701,4 +701,22 @@
             }
         };
     }]);
+
+    baseServices.service('CountriesService', ['$http', 'HttpErrorHandler', '$q', function($http, HttpErrorHandler) {
+        var request = $http.get('/admin/api/utils/countriesForVat').then(function(res) {
+            return res.data;
+        }, HttpErrorHandler.handle);
+        return {
+            getCountries: function() {
+                return request;
+            },
+
+            getDescription: function(countryCode) {
+                return request.then(function(countries) {
+                    return countries[countryCode] || countryCode;
+                });
+            }
+
+        };
+    }])
 })();

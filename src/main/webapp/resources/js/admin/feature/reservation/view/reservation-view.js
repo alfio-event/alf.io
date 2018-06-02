@@ -9,12 +9,12 @@
             onClose: '<',
             onConfirm: '<'
         },
-        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', ReservationViewCtrl],
+        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', ReservationViewCtrl],
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler) {
+    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler, CountriesService) {
         var ctrl = this;
 
         ctrl.notification = {
@@ -59,7 +59,10 @@
                     lastName: src.lastName,
                     emailAddress: src.email,
                     billingAddress: src.billingAddress,
-                    userLanguage: src.userLanguage
+                    userLanguage: src.userLanguage,
+                    vatNr: src.vatNr,
+                    vatCountryCode: src.vatCountryCode,
+                    invoiceRequested: src.invoiceRequested
                 },
                 language: src.userLanguage
             };
@@ -80,6 +83,10 @@
                         };
                     })
                 }
+            });
+
+            CountriesService.getCountries().then(function(countries) {
+                ctrl.countries = countries;
             });
 
             loadPaymentInfo();
