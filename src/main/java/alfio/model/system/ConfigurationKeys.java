@@ -144,7 +144,7 @@ public enum ConfigurationKeys {
     COUNTRY_OF_BUSINESS("The Country where the organizer runs its Business (can differ from event location)", false, SettingCategory.INVOICE_EU, ComponentType.LIST, false, EnumSet.of(SYSTEM, ORGANIZATION), false),
     EU_COUNTRIES_LIST("EU Countries", true, SettingCategory.INVOICE_EU, ComponentType.LIST, false, EnumSet.of(SYSTEM), false),
     @Deprecated
-    EU_VAT_API_ADDRESS("EU VAT API address", false, SettingCategory.INVOICE_EU, ComponentType.TEXT, false, EnumSet.of(SYSTEM), false),
+    EU_VAT_API_ADDRESS("EU VAT API address", true, SettingCategory.INVOICE_EU, ComponentType.TEXT, false, EnumSet.of(SYSTEM), false),
 
     //
 
