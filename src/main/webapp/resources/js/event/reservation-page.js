@@ -315,12 +315,15 @@
                 if(euBillingCountry.length === 0) {
                     //$('#billing-address-container').removeClass(hiddenClasses);
                     $('#billing-address').attr('required', true).removeAttr('disabled');
+                } else {
+                    $('#continue-button').attr('disabled', true);
                 }
             } else {
                 element.find('.field-required').attr('required', false);
                 $('#billing-address').attr('required', false).attr('disabled');
                 element.addClass('hidden');
                 disableBillingFields();
+                $('#continue-button').removeAttr('disabled');
             }
         });
 
@@ -338,7 +341,6 @@
                 $('#billing-address').attr('required', false).attr('disabled');
                 $('#vatNr').attr('required', true).removeAttr('disabled');
                 $("#vatCountryCode").attr('required', true).removeAttr('disabled', '');
-
                 var countryCode = $(this).val();
                 var validateVATButton = $("#validateVAT");
                 if($("#optgroup-eu-countries-list option[value="+countryCode+"]").length === 1) {
@@ -370,10 +372,12 @@
                 $('#billing-address').attr('required', false).attr('disabled');
                 $('#billing-address-container').addClass(hiddenClasses);
                 $("#eu-vat-check-countries").removeClass(hiddenClasses);
+                $('#continue-button').attr('disabled', true);
                 if(euVATCheckingEnabled) {
                     $("#vatCountry").attr('required', true).removeAttr('disabled', '');
                 }
             } else {
+                $('#continue-button').attr('disabled', false);
                 $('#billing-address').attr('required', true).removeAttr('disabled');
                 $('#billing-address-container').removeClass(hiddenClasses);
                 $("#eu-vat-check-countries").addClass(hiddenClasses);
@@ -414,7 +418,12 @@
                     },
                     complete: function(xhr) {
                         btn.text(previousText);
-                        $('#continue-button').attr('disabled', false);
+                        var vatInput = $('#vatNr');
+                        if(vatInput.hasClass('has-error')) {
+                            $('#continue-button').attr('disabled', true);
+                        } else {
+                            $('#continue-button').attr('disabled', false);
+                        }
                     }
 
                 });
