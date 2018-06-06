@@ -169,6 +169,7 @@ public class EventModification {
         // locale -> description
         private final Map<String, Description> description;
         private final AdditionalService linkedAdditionalService;
+        private final List<Integer> linkedCategoryIds;
 
 
         @JsonCreator
@@ -180,7 +181,8 @@ public class EventModification {
                                @JsonProperty("maxLength") Integer maxLength,
                                @JsonProperty("restrictedValues") List<RestrictedValue> restrictedValues,
                                @JsonProperty("description") Map<String, Description> description,
-                               @JsonProperty("forAdditionalService") AdditionalService linkedAdditionalService) {
+                               @JsonProperty("forAdditionalService") AdditionalService linkedAdditionalService,
+                               @JsonProperty("forCategories") List<Integer> linkedCategories) {
             this.order = order;
             this.name = name;
             this.type = type;
@@ -190,6 +192,7 @@ public class EventModification {
             this.restrictedValues = restrictedValues;
             this.description = description;
             this.linkedAdditionalService = linkedAdditionalService;
+            this.linkedCategoryIds = linkedCategories;
         }
 
         @Override
