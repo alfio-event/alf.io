@@ -512,12 +512,13 @@ public class AdminReservationManager {
             Assert.isTrue(ticketIdsInReservation.containsAll(toRefund), "Some ticket ids to refund are not contained in the reservation");
             //
 
-            removeTicketsFromReservation(reservation, e, ticketIds, notify, username, false, forceInvoiceReceiptUpdate);
+            boolean removeReservation = tickets.size() - ticketIds.size() <= 0;
+            removeTicketsFromReservation(reservation, e, ticketIds, notify, username, removeReservation, forceInvoiceReceiptUpdate);
             //
 
             handleTicketsRefund(toRefund, e, reservation, ticketsById, username);
 
-            if(tickets.size() - ticketIds.size() <= 0) {
+            if(removeReservation) {
                 markAsCancelled(reservation);
                 additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
             }
