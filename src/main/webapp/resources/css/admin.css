@@ -678,3 +678,7 @@ span.path {
 .category-description:last-child {
     border-bottom: 0;
 }
+
+.mr-10 {
+    margin-right: 10px;
+}
