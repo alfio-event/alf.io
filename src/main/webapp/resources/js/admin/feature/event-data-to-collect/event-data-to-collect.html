@@ -29,7 +29,7 @@
                 </div>
                 <div class="row">
                     <div class="col-sm-4"><strong>Type</strong></div>
-                    <div class="col-sm-8">{{field.type}} </div>
+                    <div class="col-sm-8">{{field | fieldType}} </div>
                 </div>
                 <div class="row" data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
                     <div class="col-sm-4"><strong>Min length</strong></div>

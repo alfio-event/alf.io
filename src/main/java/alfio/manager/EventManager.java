@@ -228,6 +228,10 @@ public class EventManager {
         return "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
     }
 
+    private static String toSerializedDisabledValues(EventModification.WithRestrictedValues f) {
+        return "select".equals(f.getType()) && !f.getDisabledValuesAsString().isEmpty() ? Json.GSON.toJson(f.getDisabledValuesAsString()) : null;
+    }
+
 	private void insertAdditionalField(Event event, AdditionalField f, int order) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
         Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
@@ -241,7 +245,7 @@ public class EventManager {
 
     public void updateAdditionalField(int id, EventModification.UpdateAdditionalField f) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
-        ticketFieldRepository.updateRequiredAndRestrictedValues(id, f.isRequired(), serializedRestrictedValues);
+        ticketFieldRepository.updateRequiredAndRestrictedValues(id, f.isRequired(), serializedRestrictedValues, toSerializedDisabledValues(f));
         f.getDescription().forEach((locale, value) -> {
             String val = Json.GSON.toJson(value.getDescription());
             if(0 == ticketFieldRepository.updateDescription(id, locale, val)) {

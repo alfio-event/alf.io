@@ -152,6 +152,7 @@ public class EventModification {
     public interface WithRestrictedValues {
 
         List<String> getRestrictedValuesAsString();
+        List<String> getDisabledValuesAsString();
         String getType();
     }
 
@@ -197,7 +198,12 @@ public class EventModification {
 
         @Override
         public List<String> getRestrictedValuesAsString() {
-            return restrictedValues == null ? null : restrictedValues.stream().map(RestrictedValue::getValue).collect(Collectors.toList());
+            return restrictedValues == null ? Collections.emptyList() : restrictedValues.stream().map(RestrictedValue::getValue).collect(Collectors.toList());
+        }
+
+        @Override
+        public List<String> getDisabledValuesAsString() {
+            return Collections.emptyList();
         }
     }
 
@@ -207,21 +213,29 @@ public class EventModification {
         private final boolean required;
         private final List<String> restrictedValues;
         private final Map<String, TicketFieldDescriptionModification> description;
+        private final List<String> disabledValues;
 
         @JsonCreator
         public UpdateAdditionalField(@JsonProperty("type") String type,
                                      @JsonProperty("required") boolean required,
                                      @JsonProperty("restrictedValues") List<String> restrictedValues,
+                                     @JsonProperty("disabledValues") List<String> disabledValues,
                                      @JsonProperty("description") Map<String, TicketFieldDescriptionModification> description) {
             this.type = type;
             this.required = required;
             this.restrictedValues = restrictedValues;
+            this.disabledValues = disabledValues;
             this.description = description;
         }
 
         @Override
         public List<String> getRestrictedValuesAsString() {
-            return restrictedValues;
+            return restrictedValues == null ? Collections.emptyList() : restrictedValues;
+        }
+
+        @Override
+        public List<String> getDisabledValuesAsString() {
+            return disabledValues == null ? Collections.emptyList() : disabledValues;
         }
     }
 
@@ -247,9 +261,11 @@ public class EventModification {
     @Getter
     public static class RestrictedValue {
         private final String value;
+        private final boolean enabled;
         @JsonCreator
-        public RestrictedValue(@JsonProperty("value") String value) {
+        public RestrictedValue(@JsonProperty("value") String value, @JsonProperty("enabled") Boolean enabled) {
             this.value = value;
+            this.enabled = enabled != null ? enabled : true;
         }
     }
 

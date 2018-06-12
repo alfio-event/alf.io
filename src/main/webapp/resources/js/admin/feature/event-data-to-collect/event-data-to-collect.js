@@ -1,15 +1,28 @@
 (function() {
     'use strict';
 
+    var FIELD_TYPES = {
+        'input:text': 'Generic Text Input',
+        'input:tel': 'Phone Number',
+        'textarea': 'Multi-line Text',
+        'select': 'List Box',
+        'country': 'Country',
+        'vat:eu': 'EU VAT'
+    };
+
     angular.module('adminApplication').component('eventDataToCollect', {
         controller: ['$uibModal', '$q', 'EventService', 'AdditionalServiceManager', EventDataToCollectCtrl],
         templateUrl: '../resources/js/admin/feature/event-data-to-collect/event-data-to-collect.html',
         bindings: {
             event: '<'
         }
+    }).filter('fieldType', function() {
+        return function(field) {
+            return FIELD_TYPES[field.type] || field.type;
+        }
     });
 
-    var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
+
     var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
 
     function fillExistingTexts(texts) {
@@ -152,6 +165,22 @@
                         $scope.field.maxLength = template.maxLength;
                         $scope.field.minLength = template.minLength;
                         $scope.field.required = template.required;
+                        $scope.field.disabledValues = [];
+                    }
+
+                    $scope.isRestrictedValueEnabled = isRestrictedValueEnabled;
+                    $scope.toggleEnabled = toggleEnabled;
+
+                    function isRestrictedValueEnabled(restrictedValue, field) {
+                        return field.disabledValues.indexOf(restrictedValue) === -1;
+                    }
+
+                    function toggleEnabled(restrictedValue, field) {
+                        if(isRestrictedValueEnabled(restrictedValue, field)) {
+                            field.disabledValues.push(restrictedValue);
+                        } else {
+                            field.disabledValues.splice(field.disabledValues.indexOf(restrictedValue), 1);
+                        }
                     }
 
                     //

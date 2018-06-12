@@ -41,7 +41,9 @@ public class TicketFieldConfiguration {
     private final boolean required;
     private final List<String> restrictedValues;
     private final Context context;
-    private Integer additionalServiceId;
+    private final Integer additionalServiceId;
+    private final List<Integer> categoryIds;
+    private final List<String> disabledValues;
 
 
     public TicketFieldConfiguration(@Column("id") int id,
@@ -54,7 +56,9 @@ public class TicketFieldConfiguration {
                                     @Column("field_required") boolean required,
                                     @Column("field_restricted_values") String restrictedValues,
                                     @Column("context") Context context,
-                                    @Column("additional_service_id") Integer additionalServiceId) {
+                                    @Column("additional_service_id") Integer additionalServiceId,
+                                    @Column("ticket_category_ids") String ticketCategoryIds,
+                                    @Column("field_disabled_values") String disabledValues) {
         this.id = id;
         this.eventId = eventId;
         this.name = name;
@@ -64,8 +68,10 @@ public class TicketFieldConfiguration {
         this.minLength = minLength;
         this.required = required;
         this.restrictedValues = restrictedValues == null ? Collections.emptyList() : Json.GSON.fromJson(restrictedValues, new TypeToken<List<String>>(){}.getType());
+        this.disabledValues = disabledValues == null ? Collections.emptyList() : Json.GSON.fromJson(disabledValues, new TypeToken<List<String>>(){}.getType());
         this.context = context;
         this.additionalServiceId = additionalServiceId;
+        this.categoryIds = ticketCategoryIds == null ? Collections.emptyList() : Json.GSON.fromJson(restrictedValues, new TypeToken<List<Integer>>(){}.getType());
     }
 
     public boolean isInputField() {

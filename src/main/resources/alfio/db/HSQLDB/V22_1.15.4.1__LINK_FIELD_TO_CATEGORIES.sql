@@ -16,3 +16,4 @@
 --
 
 alter table ticket_field_configuration add column ticket_category_ids varchar(1024);
+alter table ticket_field_configuration add column field_disabled_values varchar(1024);

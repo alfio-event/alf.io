@@ -23,10 +23,10 @@
         <div class="form-group">
             <label class="col-xs-2 control-label">Type</label>
             <div class="col-xs-10">
-                <select ng-model="field.type" ng-options="option for option in fieldTypes" class="form-control" required data-ng-if="addNewField">
+                <select ng-model="field.type" ng-options="k as v for (k,v) in fieldTypes" class="form-control" required data-ng-if="addNewField">
                     <option></option>
                 </select>
-                <pre class="form-control-static" data-ng-if="!addNewField">{{field.type}}</pre>
+                <pre class="form-control-static" data-ng-if="!addNewField">{{field | fieldType}}</pre>
             </div>
         </div>
         <div class="form-group">
@@ -39,7 +39,14 @@
     </div>
     <div class="page-header" ng-if="field.type && field.type !== 'country'">
         <h3>Configuration</h3>
-        <small>Settings for type '{{field.type}}'</small>
+        <small>Settings for type '{{field | fieldType}}'</small>
+    </div>
+
+    <div class="alert alert-info" ng-if="field.type === 'vat:eu'">
+        <div class="row">
+            <div class="col-xs-1"><i class="fa fa-info-circle fa-2x"></i></div>
+            <div class="col-xs-11"><h5>The Provided Number must be a valid VAT Number for the organizer's country.</h5></div>
+        </div>
     </div>
 
 
@@ -52,16 +59,17 @@
                             <button class="btn btn-sm btn-default" type="button" ng-click="moveRestrictedValue($index, true)" ng-hide="$first"><i class="fa fa-arrow-up"></i> move up</button>
                             <button class="btn btn-sm btn-default" type="button" ng-click="moveRestrictedValue($index, false)"  ng-hide="$last"><i class="fa fa-arrow-down"></i> move down</button>
                             <button class="btn btn-sm btn-default" type="button" data-ng-if="(addNewField || restrictedValue.isNew) && field.restrictedValues.length > 0" ng-click="field.restrictedValues.splice(field.restrictedValues.indexOf(restrictedValue), 1)"><i class="fa fa-trash"></i> Remove</button>
+                            <button class="btn btn-sm btn-default" type="button" data-ng-if="!addNewField && !restrictedValue.isNew" ng-click="toggleEnabled(restrictedValue, field)"><i class="fa fa-eye-slash" ng-class="{'fa-eye': !isRestrictedValueEnabled(restrictedValue, field), 'fa-eye-slash': isRestrictedValueEnabled(restrictedValue, field)}"></i> <span ng-if="isRestrictedValueEnabled(restrictedValue, field)">Disable</span><span ng-if="!isRestrictedValueEnabled(restrictedValue, field)">Enable</span></button>
                         </div>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" ng-class="{'text-muted disabled-value': !isRestrictedValueEnabled(restrictedValue, field)}">
                         <label class="col-xs-2 control-label">Value</label>
                         <div class="col-xs-10">
                             <input ng-model="restrictedValue.value" class="form-control" required data-ng-if="addNewField || restrictedValue.isNew">
                             <pre class="form-control-static" data-ng-if="!addNewField && !restrictedValue.isNew">{{restrictedValue}}</pre>
                         </div>
                     </div>
-                    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)" class="form-group">
+                    <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)" class="form-group" ng-class="{'text-muted disabled-value': !isRestrictedValueEnabled(restrictedValue, field)}">
                         <label class="col-xs-2 control-label"><language-flag lang="{{lang.flag}}"></language-flag> Text</label>
                         <div class="col-xs-10">
                             <input ng-model="field.description[lang.locale].restrictedValues[restrictedValue.value]" class="form-control" required data-ng-if="addNewField">
@@ -76,7 +84,7 @@
                     </div>
                 </div>
             </div>
-            <div class="form-horizontal" data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
+            <div class="form-horizontal" data-ng-if="field.type === 'input:text' || field.type === 'input:tel' || field.type === 'textarea'">
                 <div class="form-group">
                     <label class="col-xs-2 control-label">Min length</label>
                     <div class="col-xs-10">
@@ -110,7 +118,7 @@
 
     <div class="page-header">
         <h3>Localized messages</h3>
-        <small>Configure how to display the field in the reservation page</small>
+        <small>Configure how to describe the field in the reservation page</small>
     </div>
 
     <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
