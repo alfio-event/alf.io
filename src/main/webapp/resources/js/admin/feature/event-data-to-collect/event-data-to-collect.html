@@ -65,11 +65,11 @@
         <div class="row" data-ng-if="field.type == 'select'">
             <div class="col-xs-1"><strong>Values</strong></div>
             <div class="col-xs-11">
-                <div data-ng-repeat="restrictedValue in field.restrictedValues">
+                <div data-ng-repeat="restrictedValue in field.restrictedValues" ng-class="{'text-muted': field.disabledValues && field.disabledValues.indexOf(restrictedValue) > -1 }">
                     <span><strong>{{restrictedValue}}</strong>: </span>
                     <span data-ng-repeat="lang in $ctrl.allLanguages | selectedLanguages:$ctrl.event.locales">
-                                        <span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.restrictedValues[restrictedValue]}}</span><span data-ng-if="!$last"> / </span>
-                                    </span>
+                        <span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.restrictedValues[restrictedValue]}}</span><span data-ng-if="!$last"> / </span>
+                    </span>
                 </div>
             </div>
         </div>
