@@ -20,6 +20,7 @@ import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -97,6 +98,10 @@ public class TicketFieldConfiguration {
 
     public boolean isMaxLengthDefined() {
         return maxLength != null;
+    }
+
+    public boolean hasDisabledValues() {
+        return CollectionUtils.isNotEmpty(disabledValues);
     }
 
     public boolean isMinLengthDefined() {

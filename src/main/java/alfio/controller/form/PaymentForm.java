@@ -135,7 +135,7 @@ public class PaymentForm implements Serializable {
         if(!postponeAssignment) {
             boolean success = Optional.ofNullable(tickets)
                 .filter(m -> !m.isEmpty())
-                .map(m -> m.entrySet().stream().map(e -> Validator.validateTicketAssignment(e.getValue(), fieldConf, Optional.empty(), event)))
+                .map(m -> m.entrySet().stream().map(e -> Validator.validateTicketAssignment(e.getValue(), fieldConf, Optional.of(bindingResult), event, "tickets["+e.getKey()+"]")))
                 .filter(s -> s.allMatch(ValidationResult::isSuccess))
                 .isPresent();
             if(!success) {

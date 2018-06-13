@@ -91,7 +91,7 @@ public class ReservationApiController {
             String uuid = t.getRight().getUuid();
             model.addAttribute("urlSuffix", singleTicket ? "ticket/"+uuid+"/view": uuid);
             model.addAttribute("elementNamePrefix", "");
-        }, userDetails);
+        }, userDetails, false);
         Map<String, Object> result = new HashMap<>();
 
         Optional<ValidationResult> validationResult = assignmentResult.map(Triple::getLeft);

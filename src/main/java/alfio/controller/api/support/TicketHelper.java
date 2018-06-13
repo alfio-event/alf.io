@@ -113,10 +113,11 @@ public class TicketHelper {
                                                                            Optional<Errors> bindingResult,
                                                                            HttpServletRequest request,
                                                                            Consumer<Triple<ValidationResult, Event, Ticket>> reservationConsumer,
-                                                                           Optional<UserDetails> userDetails) {
+                                                                           Optional<UserDetails> userDetails,
+                                                                           boolean addPrefix) {
 
         Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.fetchComplete(eventName, ticketIdentifier)
-                .map(result -> assignTicket(updateTicketOwner, bindingResult, request, userDetails, result));
+                .map(result -> assignTicket(updateTicketOwner, bindingResult, request, userDetails, result, addPrefix ? "tickets["+ticketIdentifier+"]" : ""));
         triple.ifPresent(reservationConsumer);
         return triple;
     }
@@ -125,7 +126,8 @@ public class TicketHelper {
                                                                  Optional<Errors> bindingResult,
                                                                  HttpServletRequest request,
                                                                  Optional<UserDetails> userDetails,
-                                                                 Triple<Event, TicketReservation, Ticket> result) {
+                                                                 Triple<Event, TicketReservation, Ticket> result,
+                                                                 String formPrefix) {
         Ticket t = result.getRight();
         final Event event = result.getLeft();
         if(t.getLockedAssignment()) {
@@ -138,7 +140,7 @@ public class TicketHelper {
 
         final TicketReservation ticketReservation = result.getMiddle();
         List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event)
+        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event, formPrefix)
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, request, t, event, ticketReservation, userDetails));
         return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
     }
@@ -157,7 +159,7 @@ public class TicketHelper {
 
         Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.from(eventName, reservationId, ticketIdentifier)
             .filter(temp -> PENDING_RESERVATION_STATUSES.contains(temp.getMiddle().getStatus()) && temp.getRight().getStatus() == Ticket.TicketStatus.PENDING)
-            .map(result -> assignTicket(updateTicketOwner, bindingResult, request, userDetails, result));
+            .map(result -> assignTicket(updateTicketOwner, bindingResult, request, userDetails, result, "tickets["+ticketIdentifier+"]"));
         triple.ifPresent(reservationConsumer);
         return triple;
     }
@@ -174,7 +176,7 @@ public class TicketHelper {
             model.addAttribute("validationResult", t.getLeft());
             model.addAttribute("countries", getLocalizedCountries(RequestContextUtils.getLocale(request)));
             model.addAttribute("event", t.getMiddle());
-        }, Optional.empty());
+        }, Optional.empty(), false);
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> directTicketAssignment(String eventName,

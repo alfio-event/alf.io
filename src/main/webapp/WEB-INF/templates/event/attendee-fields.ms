@@ -79,7 +79,7 @@
                     {{#selectField}}
                         <select name="{{elementNamePrefix}}additional['{{name}}'][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control" {{#isRequired}}required{{/isRequired}}>
                             <option value=""></option>
-                            {{#translatedRestrictedValue}}<option value="{{key}}">{{value}}</option>{{/translatedRestrictedValue}}
+                            {{#translatedRestrictedValue}}<option value="{{left}}" {{^right}}disabled{{/right}}>{{middle}}</option>{{/translatedRestrictedValue}}
                         </select>
                     {{/selectField}}
                 </div>

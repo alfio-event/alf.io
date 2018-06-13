@@ -534,7 +534,7 @@ public class ReservationController {
                     }, Optional.empty());
                 } else {
                     ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {
-                    }, Optional.empty());
+                    }, Optional.empty(), true);
                 }
             });
         }

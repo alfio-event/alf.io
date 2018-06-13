@@ -171,30 +171,38 @@ public final class Validator {
         return ValidationResult.success();
     }
 
-    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional, Event event) {
+    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional, Event event, String baseField) {
         if(!errorsOptional.isPresent()) {
             return ValidationResult.success();//already validated
         }
+
+        String prefix = StringUtils.trimToEmpty(baseField);
+
+        if(!prefix.isEmpty() && !prefix.endsWith(".")) {
+            prefix = prefix + ".";
+        }
+
         Errors errors = errorsOptional.get();
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "email", "error.email");
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, prefix + "email", "error.email");
         String email = form.getEmail();
         if(!isEmailValid(email)) {
-            errors.rejectValue("email", "error.email");
+            errors.rejectValue(prefix + "email", "error.email");
         }
 
         if(event.mustUseFirstAndLastName()) {
-            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
-            validateMaxLength(form.getFirstName(), "firstName", ErrorsCode.STEP_2_MAX_LENGTH_FIRSTNAME, 255, errors);
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, prefix + "firstName", ErrorsCode.STEP_2_EMPTY_FIRSTNAME);
+            validateMaxLength(form.getFirstName(), prefix + "firstName", ErrorsCode.STEP_2_MAX_LENGTH_FIRSTNAME, 255, errors);
 
-            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
-            validateMaxLength(form.getLastName(), "lastName", ErrorsCode.STEP_2_MAX_LENGTH_LASTNAME, 255, errors);
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, prefix + "lastName", ErrorsCode.STEP_2_EMPTY_LASTNAME);
+            validateMaxLength(form.getLastName(), prefix + "lastName", ErrorsCode.STEP_2_MAX_LENGTH_LASTNAME, 255, errors);
         } else {
-            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
-            validateMaxLength(form.getFullName(), "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME, 255, errors);
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, prefix + "fullName", ErrorsCode.STEP_2_EMPTY_FULLNAME);
+            validateMaxLength(form.getFullName(), prefix + "fullName", ErrorsCode.STEP_2_MAX_LENGTH_FULLNAME, 255, errors);
         }
 
 
         //
+        final String prefixForLambda = prefix;
         for(TicketFieldConfiguration fieldConf : additionalFieldsForEvent) {
 
             boolean isField = form.getAdditional() !=null && form.getAdditional().containsKey(fieldConf.getName());
@@ -205,20 +213,27 @@ public final class Validator {
 
             form.getAdditional().get(fieldConf.getName()).forEach(formValue -> {
                 if(fieldConf.isMaxLengthDefined()) {
-                    validateMaxLength(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
+                    validateMaxLength(formValue, prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
+                }
+
+                if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined() && StringUtils.length(formValue) < fieldConf.getMinLength()) {
+                    errors.rejectValue(prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
                 }
 
                 if(!fieldConf.getRestrictedValues().isEmpty()) {
-                    validateRestrictedValue(formValue, "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
+                    validateRestrictedValue(formValue, prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
                 }
 
                 if(fieldConf.isRequired() && StringUtils.isBlank(formValue)){
-                    errors.rejectValue("additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
+                }
+
+                if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
+                    errors.rejectValue(prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
                 }
             });
 
 
-            //TODO: complete checks: min length
         }
 
         return evaluateValidationResult(errors);
