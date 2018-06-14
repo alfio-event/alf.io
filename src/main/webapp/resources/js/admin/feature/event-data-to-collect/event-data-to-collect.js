@@ -96,6 +96,7 @@
         ctrl.deleteFieldModal = deleteFieldModal;
         ctrl.editField = editField;
         ctrl.additionalServiceDescription = additionalServiceDescription;
+        ctrl.getCategoryDescription = getCategoryDescription;
 
         function loadAll() {
             return EventService.getAdditionalFields(ctrl.event.shortName).then(function(result) {
@@ -103,6 +104,10 @@
             });
         }
 
+        function getCategoryDescription(categoryId) {
+            var category = _.find(ctrl.event.ticketCategories, function(c) { return c.id === categoryId; });
+            return category ? category.name : categoryId;
+        }
 
         function fieldUp(index) {
             var targetId = ctrl.additionalFields[index].id;
@@ -145,6 +150,9 @@
                     $scope.event = event;
                     $scope.addNewField = addNew;
                     $scope.field = addNew ? {} : angular.copy(field);
+                    if(!$scope.field.categoryIds) {
+                        $scope.field.categoryIds = [];
+                    }
                     $scope.fieldTypes = FIELD_TYPES;
                     $scope.joinTitle = function(titles) {
                         return titles.map(function(t) { return t.value;}).join(' / ')
@@ -166,13 +174,25 @@
                         $scope.field.minLength = template.minLength;
                         $scope.field.required = template.required;
                         $scope.field.disabledValues = [];
-                    }
+                        $scope.field.categoryIds = [];
+                    };
 
                     $scope.isRestrictedValueEnabled = isRestrictedValueEnabled;
                     $scope.toggleEnabled = toggleEnabled;
+                    $scope.toggleAllCategoriesSelected = toggleAllCategoriesSelected;
+                    $scope.isCategorySelected = isCategorySelected;
+
 
                     function isRestrictedValueEnabled(restrictedValue, field) {
                         return field.disabledValues.indexOf(restrictedValue) === -1;
+                    }
+
+                    function toggleAllCategoriesSelected() {
+                        $scope.field.categoryIds = [];
+                    }
+
+                    function isCategorySelected(category) {
+                        return field.categoryIds.indexOf(category.id) > -1;
                     }
 
                     function toggleEnabled(restrictedValue, field) {

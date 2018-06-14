@@ -30,9 +30,10 @@
             </div>
         </div>
         <div class="form-group">
-            <div class="col-xs-offset-2 col-xs-2">
+            <label class="col-xs-2 control-label">Required</label>
+            <div class="col-xs-2">
                 <div class="checkbox">
-                    <label><input type="checkbox" data-ng-model="field.required" name="fieldRequired" id="fieldRequired"> Required</label>
+                    <label><input type="checkbox" data-ng-model="field.required" name="fieldRequired" id="fieldRequired"></label>
                 </div>
             </div>
         </div>
@@ -46,6 +47,28 @@
         <div class="row">
             <div class="col-xs-1"><i class="fa fa-info-circle fa-2x"></i></div>
             <div class="col-xs-11"><h5>The Provided Number must be a valid VAT Number for the organizer's country.</h5></div>
+        </div>
+    </div>
+
+    <div class="form-horizontal" data-ng-if="event.ticketCategories.length > 0">
+        <div class="form-group">
+            <label class="col-xs-2 control-label">Collect for</label>
+            <div class="col-xs-10">
+                <div class="input-group">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="category-all" checklist-value="" ng-click="toggleAllCategoriesSelected()" ng-checked="field.categoryIds.length == 0"> All Ticket Categories
+                        </label>
+                    </div>
+                </div>
+                <div class="input-group" ng-repeat="category in event.ticketCategories">
+                    <div class="checkbox">
+                        <label>
+                            <input type="checkbox" name="category-{{category.id}}" checklist-model="field.categoryIds" checklist-value="category.id"> {{category.name}}
+                        </label>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

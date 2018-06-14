@@ -43,6 +43,7 @@ import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -55,7 +56,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
-import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -224,12 +224,15 @@ public class EventManager {
     }
 
     private static String toSerializedRestrictedValues(EventModification.WithRestrictedValues f) {
-        List<String> restrictedValues = Optional.ofNullable(f.getRestrictedValuesAsString()).orElseGet(Collections::emptyList);
-        return "select".equals(f.getType()) ? Json.GSON.toJson(restrictedValues) : null;
+        return "select".equals(f.getType()) ? generateJsonForList(f.getRestrictedValuesAsString()) : null;
     }
 
     private static String toSerializedDisabledValues(EventModification.WithRestrictedValues f) {
-        return "select".equals(f.getType()) && !f.getDisabledValuesAsString().isEmpty() ? Json.GSON.toJson(f.getDisabledValuesAsString()) : null;
+        return "select".equals(f.getType()) ? generateJsonForList(f.getDisabledValuesAsString()) : null;
+    }
+
+    private static String generateJsonForList(Collection<?> values) {
+        return CollectionUtils.isNotEmpty(values) ? Json.GSON.toJson(values) : null;
     }
 
 	private void insertAdditionalField(Event event, AdditionalField f, int order) {
@@ -237,15 +240,14 @@ public class EventManager {
         Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
         Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as))).orElse(-1);
         Context context = linkedAdditionalService.isPresent() ? Context.ADDITIONAL_SERVICE : Context.ATTENDEE;
-        String categoriesJson = Optional.ofNullable(f.getLinkedCategoryIds()).map(Json.GSON::toJson).orElse("[]");
         int configurationId = ticketFieldRepository.insertConfiguration(event.getId(), f.getName(), order, f.getType(), serializedRestrictedValues,
-            f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId, categoriesJson).getKey();
+            f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId, generateJsonForList(f.getLinkedCategoriesIds())).getKey();
 		f.getDescription().forEach((locale, value) -> ticketFieldRepository.insertDescription(configurationId, locale, Json.GSON.toJson(value)));
 	}
 
     public void updateAdditionalField(int id, EventModification.UpdateAdditionalField f) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
-        ticketFieldRepository.updateRequiredAndRestrictedValues(id, f.isRequired(), serializedRestrictedValues, toSerializedDisabledValues(f));
+        ticketFieldRepository.updateRequiredAndRestrictedValues(id, f.isRequired(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()));
         f.getDescription().forEach((locale, value) -> {
             String val = Json.GSON.toJson(value.getDescription());
             if(0 == ticketFieldRepository.updateDescription(id, locale, val)) {

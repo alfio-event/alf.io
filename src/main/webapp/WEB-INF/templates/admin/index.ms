@@ -95,6 +95,7 @@
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/angular-ui-ace/ui-ace.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/dexie/dist/dexie.min.js"></script>
     <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/papaparse/papaparse.min.js"></script>
+    <script type="text/javascript" src="{{request.contextPath}}/resources/bower_components/checklist-model/checklist-model.js"></script>
     <title>{{#i18n}}admin.title{{/i18n}}</title>
 </head>
 <body>

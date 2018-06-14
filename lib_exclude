@@ -55,3 +55,4 @@
 /dexie/dist/*.ts
 /dexie/dist/dexie.js*
 /dexie/dist/dexie.es6.js*
+/checklist-model/*.nuspec

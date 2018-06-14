@@ -77,6 +77,13 @@
         <div data-ng-if="field.context === 'ADDITIONAL_SERVICE'">
             <i class="fa fa-info-circle"></i> collected only if <i><a ui-sref="events.single.donations({eventName: $ctrl.event.shortName})">{{$ctrl.additionalServiceDescription($ctrl.event, field.additionalServiceId)}}</a></i> has been selected.
         </div>
+        <hr data-ng-if="field.categoryIds && field.categoryIds.length > 0" />
+        <div class="row" data-ng-if="field.categoryIds && field.categoryIds.length > 0">
+            <div class="col-sm-1"><strong>Categories</strong></div>
+            <div class="col-sm-11">
+                <span ng-repeat="cId in field.categoryIds">{{ $ctrl.getCategoryDescription(cId) }}<span ng-if="!$last" class="ml-1 mr-10 ">-</span></span>
+            </div>
+        </div>
     </div>
 </div>
 <div class="clearfix"></div>

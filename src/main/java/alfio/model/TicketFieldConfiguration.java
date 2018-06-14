@@ -72,7 +72,7 @@ public class TicketFieldConfiguration {
         this.disabledValues = disabledValues == null ? Collections.emptyList() : Json.GSON.fromJson(disabledValues, new TypeToken<List<String>>(){}.getType());
         this.context = context;
         this.additionalServiceId = additionalServiceId;
-        this.categoryIds = ticketCategoryIds == null ? Collections.emptyList() : Json.GSON.fromJson(restrictedValues, new TypeToken<List<Integer>>(){}.getType());
+        this.categoryIds = ticketCategoryIds == null ? Collections.emptyList() : Json.GSON.fromJson(ticketCategoryIds, new TypeToken<List<Integer>>(){}.getType());
     }
 
     public boolean isInputField() {

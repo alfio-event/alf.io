@@ -148,16 +148,22 @@ public class EventModification {
         return eventType == Event.EventType.INTERNAL;
     }
 
-
-    public interface WithRestrictedValues {
-
-        List<String> getRestrictedValuesAsString();
-        List<String> getDisabledValuesAsString();
+    public interface WithType {
         String getType();
     }
 
+    public interface WithRestrictedValues extends WithType {
+        List<String> getRestrictedValuesAsString();
+        List<String> getDisabledValuesAsString();
+    }
+
+
+    public interface WithLinkedCategories extends WithType {
+        List<Integer> getLinkedCategoriesIds();
+    }
+
     @Getter
-    public static class AdditionalField implements WithRestrictedValues {
+    public static class AdditionalField implements WithRestrictedValues, WithLinkedCategories {
         private final int order;
         private final String name;
         private final String type;
@@ -183,7 +189,7 @@ public class EventModification {
                                @JsonProperty("restrictedValues") List<RestrictedValue> restrictedValues,
                                @JsonProperty("description") Map<String, Description> description,
                                @JsonProperty("forAdditionalService") AdditionalService linkedAdditionalService,
-                               @JsonProperty("forCategories") List<Integer> linkedCategories) {
+                               @JsonProperty("categoryIds") List<Integer> linkedCategoryIds) {
             this.order = order;
             this.name = name;
             this.type = type;
@@ -193,7 +199,7 @@ public class EventModification {
             this.restrictedValues = restrictedValues;
             this.description = description;
             this.linkedAdditionalService = linkedAdditionalService;
-            this.linkedCategoryIds = linkedCategories;
+            this.linkedCategoryIds = linkedCategoryIds;
         }
 
         @Override
@@ -205,27 +211,35 @@ public class EventModification {
         public List<String> getDisabledValuesAsString() {
             return Collections.emptyList();
         }
+
+        @Override
+        public List<Integer> getLinkedCategoriesIds() {
+            return linkedCategoryIds == null ? Collections.emptyList() : linkedCategoryIds;
+        }
     }
 
     @Getter
-    public static class UpdateAdditionalField implements WithRestrictedValues {
+    public static class UpdateAdditionalField implements WithRestrictedValues, WithLinkedCategories {
         private final String type;
         private final boolean required;
         private final List<String> restrictedValues;
         private final Map<String, TicketFieldDescriptionModification> description;
         private final List<String> disabledValues;
+        private final List<Integer> linkedCategoriesIds;
 
         @JsonCreator
         public UpdateAdditionalField(@JsonProperty("type") String type,
                                      @JsonProperty("required") boolean required,
                                      @JsonProperty("restrictedValues") List<String> restrictedValues,
                                      @JsonProperty("disabledValues") List<String> disabledValues,
-                                     @JsonProperty("description") Map<String, TicketFieldDescriptionModification> description) {
+                                     @JsonProperty("description") Map<String, TicketFieldDescriptionModification> description,
+                                     @JsonProperty("categoryIds") List<Integer> linkedCategoriesIds) {
             this.type = type;
             this.required = required;
             this.restrictedValues = restrictedValues;
             this.disabledValues = disabledValues;
             this.description = description;
+            this.linkedCategoriesIds = linkedCategoriesIds;
         }
 
         @Override
@@ -236,6 +250,11 @@ public class EventModification {
         @Override
         public List<String> getDisabledValuesAsString() {
             return disabledValues == null ? Collections.emptyList() : disabledValues;
+        }
+
+        @Override
+        public List<Integer> getLinkedCategoriesIds() {
+            return linkedCategoriesIds == null ? Collections.emptyList() : linkedCategoriesIds;
         }
     }
 
