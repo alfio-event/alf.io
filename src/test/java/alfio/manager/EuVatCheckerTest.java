@@ -76,11 +76,11 @@ public class EuVatCheckerTest {
     @Test
     public void performCheckKO() throws IOException {
         initResponse(200, KO_RESPONSE);
-        Optional<VatDetail> result = EuVatChecker.performCheck("1234", "IE", 1).apply(configurationManager, client);
+        Optional<VatDetail> result = EuVatChecker.performCheck("12345", "IE", 1).apply(configurationManager, client);
         assertTrue(result.isPresent());
         VatDetail vatDetail = result.get();
         assertFalse(vatDetail.isValid());
-        assertEquals("1234", vatDetail.getVatNr());
+        assertEquals("12345", vatDetail.getVatNr());
         assertEquals("IE", vatDetail.getCountry());
         assertFalse(vatDetail.isVatExempt());
         assertEquals("------", vatDetail.getName());

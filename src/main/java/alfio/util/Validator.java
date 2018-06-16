@@ -18,6 +18,7 @@ package alfio.util;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
+import alfio.manager.EuVatChecker;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.TicketFieldConfiguration;
@@ -27,6 +28,7 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.ValidationResult;
+import lombok.Data;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.Errors;
@@ -36,6 +38,7 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -171,7 +174,12 @@ public final class Validator {
         return ValidationResult.success();
     }
 
-    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form, List<TicketFieldConfiguration> additionalFieldsForEvent, Optional<Errors> errorsOptional, Event event, String baseField) {
+    public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form,
+                                                            List<TicketFieldConfiguration> additionalFieldsForEvent,
+                                                            Optional<Errors> errorsOptional,
+                                                            Event event,
+                                                            String baseField,
+                                                            EuVatChecker.SameCountryValidator vatValidator) {
         if(!errorsOptional.isPresent()) {
             return ValidationResult.success();//already validated
         }
@@ -231,6 +239,11 @@ public final class Validator {
                 if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
                     errors.rejectValue(prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
                 }
+
+                if(fieldConf.isEuVat() && !vatValidator.test(formValue)) {
+                    errors.rejectValue(prefixForLambda + "additional['"+fieldConf.getName()+"']", ErrorsCode.STEP_2_INVALID_VAT);
+                }
+
             });
 
 

@@ -91,6 +91,10 @@ public class TicketFieldConfiguration {
         return "select".equals(type);
     }
 
+    public boolean isEuVat() {
+        return "vat:eu".equals(type);
+    }
+
     public String getInputType() {
         String[] splitted = type.split(":");
         return splitted.length == 2 ? splitted[1] : "text";

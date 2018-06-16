@@ -18,6 +18,8 @@ package alfio.controller.api.support;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.EuVatChecker;
+import alfio.manager.EuVatChecker.SameCountryValidator;
 import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketTextGenerator;
@@ -32,6 +34,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.Validator;
+import lombok.AllArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -53,6 +56,7 @@ import java.util.stream.Stream;
 import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
 
 @Component
+@AllArgsConstructor
 public class TicketHelper {
 
     private static Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
@@ -65,25 +69,8 @@ public class TicketHelper {
     private final FileUploadManager fileUploadManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
+    private final EuVatChecker vatChecker;
 
-    @Autowired
-    public TicketHelper(TicketReservationManager ticketReservationManager,
-                        OrganizationRepository organizationRepository,
-                        TicketCategoryRepository ticketCategoryRepository,
-                        TicketRepository ticketRepository,
-                        TemplateManager templateManager,
-                        FileUploadManager fileUploadManager,
-                        TicketFieldRepository ticketFieldRepository,
-                        AdditionalServiceItemRepository additionalServiceItemRepository) {
-        this.ticketReservationManager = ticketReservationManager;
-        this.organizationRepository = organizationRepository;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-        this.ticketRepository = ticketRepository;
-        this.templateManager = templateManager;
-        this.fileUploadManager = fileUploadManager;
-        this.ticketFieldRepository = ticketFieldRepository;
-        this.additionalServiceItemRepository = additionalServiceItemRepository;
-    }
 
     public List<TicketFieldConfigurationDescriptionAndValue> findTicketFieldConfigurationAndValue(int eventId, Ticket ticket, Locale locale) {
 
@@ -142,7 +129,7 @@ public class TicketHelper {
 
         final TicketReservation ticketReservation = result.getMiddle();
         List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event, formPrefix)
+        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event, formPrefix, new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), ticketReservation.getId()))
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, request, t, event, ticketReservation, userDetails));
         return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
     }

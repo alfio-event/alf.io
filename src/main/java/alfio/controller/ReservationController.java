@@ -22,6 +22,7 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.*;
+import alfio.manager.EuVatChecker.SameCountryValidator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -34,6 +35,7 @@ import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
@@ -48,6 +50,7 @@ import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -86,6 +89,7 @@ public class ReservationController {
     private final EuVatChecker vatChecker;
     private final MollieManager mollieManager;
     private final RecaptchaService recaptchaService;
+    private final TicketReservationRepository ticketReservationRepository;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
     public String showPaymentPage(@PathVariable("eventName") String eventName,
@@ -414,18 +418,20 @@ public class ReservationController {
             return "redirect:/";
         }
         Event event = eventOptional.get();
-        Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(reservationId);
-        if (!ticketReservation.isPresent()) {
-            return redirectReservation(ticketReservation, eventName, reservationId);
+        Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
+        if (!optionalReservation.isPresent()) {
+            return redirectReservation(optionalReservation, eventName, reservationId);
         }
         if (paymentForm.shouldCancelReservation()) {
             ticketReservationManager.cancelPendingReservation(reservationId, false);
             SessionUtil.removeSpecialPriceData(request);
             return "redirect:/event/" + eventName + "/";
         }
-        if (!ticketReservation.get().getValidity().after(new Date())) {
+        if (!optionalReservation.get().getValidity().after(new Date())) {
             bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
         }
+
+        final TicketReservation ticketReservation = optionalReservation.get();
 
         final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentMethod(), request, event)) {
@@ -449,10 +455,13 @@ public class ReservationController {
             if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
                 bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
             }
-            paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()));
+            paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()), new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId));
             if (bindingResult.hasErrors()) {
+                ticketReservationRepository.updateTicketReservation(reservationId, ticketReservation.getStatus().name(), paymentForm.getEmail(),
+                    paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), locale.getLanguage(), paymentForm.getBillingAddress(), null, null, paymentForm.getCustomerReference());
+                assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true, true);
                 SessionUtil.addToFlash(bindingResult, redirectAttributes);
-                return redirectReservation(ticketReservation, eventName, reservationId);
+                return redirectReservation(optionalReservation, eventName, reservationId);
             }
         }
 
@@ -465,12 +474,12 @@ public class ReservationController {
                 String checkoutUrl = paymentManager.createPayPalCheckoutRequest(event, reservationId, orderSummary, customerName,
                     paymentForm.getEmail(), paymentForm.getBillingAddress(), paymentForm.getCustomerReference(), locale, paymentForm.isPostponeAssignment(),
                     paymentForm.isInvoiceRequested());
-                assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
+                assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true, false);
                 return "redirect:" + checkoutUrl;
             } catch (Exception e) {
                 bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
                 SessionUtil.addToFlash(bindingResult, redirectAttributes);
-                return redirectReservation(ticketReservation, eventName, reservationId);
+                return redirectReservation(optionalReservation, eventName, reservationId);
             }
         }
 
@@ -483,13 +492,13 @@ public class ReservationController {
                     paymentForm.isInvoiceRequested(),
                     paymentForm.getVatCountryCode(),
                     paymentForm.getVatNr(),
-                    ticketReservation.get().getVatStatus());
-                assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true);
+                    optionalReservation.get().getVatStatus());
+                assignTickets(eventName, reservationId, paymentForm, bindingResult, request, true, false);
                 return "redirect:" + checkoutUrl;
             } catch (Exception e) {
                 bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
                 SessionUtil.addToFlash(bindingResult, redirectAttributes);
-                return redirectReservation(ticketReservation, eventName, reservationId);
+                return redirectReservation(optionalReservation, eventName, reservationId);
             }
         }
         //
@@ -497,14 +506,14 @@ public class ReservationController {
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
             customerName, locale, paymentForm.getBillingAddress(), paymentForm.getCustomerReference(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()), paymentForm.isInvoiceRequested(), paymentForm.getVatCountryCode(),
-                paymentForm.getVatNr(), ticketReservation.get().getVatStatus(), paymentForm.getTermAndConditionsAccepted(), Optional.ofNullable(paymentForm.getPrivacyPolicyAccepted()).orElse(false));
+                paymentForm.getVatNr(), optionalReservation.get().getVatStatus(), paymentForm.getTermAndConditionsAccepted(), Optional.ofNullable(paymentForm.getPrivacyPolicyAccepted()).orElse(false));
 
         if(!status.isSuccessful()) {
             String errorMessageCode = status.getErrorCode().get();
             MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeManager.STRIPE_UNEXPECTED});
             bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
-            return redirectReservation(ticketReservation, eventName, reservationId);
+            return redirectReservation(optionalReservation, eventName, reservationId);
         }
 
         //
@@ -514,7 +523,7 @@ public class ReservationController {
         //
 
         if(paymentForm.getPaymentMethod() != PaymentProxy.PAYPAL) {
-            assignTickets(eventName, reservationId, paymentForm, bindingResult, request, paymentForm.getPaymentMethod() == PaymentProxy.OFFLINE);
+            assignTickets(eventName, reservationId, paymentForm, bindingResult, request, paymentForm.getPaymentMethod() == PaymentProxy.OFFLINE, false);
         }
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
@@ -526,11 +535,12 @@ public class ReservationController {
                 && !recaptchaService.checkRecaptcha(request);
     }
 
-    private void assignTickets(String eventName, String reservationId, PaymentForm paymentForm, BindingResult bindingResult, HttpServletRequest request, boolean preAssign) {
+    private void assignTickets(String eventName, String reservationId, PaymentForm paymentForm, BindingResult bindingResult, HttpServletRequest request, boolean preAssign, boolean skipValidation) {
         if(!paymentForm.isPostponeAssignment()) {
             paymentForm.getTickets().forEach((ticketId, owner) -> {
                 if (preAssign) {
-                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {
+                    Optional<Errors> bindingResultOptional = skipValidation ? Optional.empty() : Optional.of(bindingResult);
+                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, request, (tr) -> {
                     }, Optional.empty());
                 } else {
                     ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {

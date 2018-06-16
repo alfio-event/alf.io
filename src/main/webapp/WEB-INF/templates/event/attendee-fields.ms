@@ -60,6 +60,14 @@
                             {{#isRequired}}required{{/isRequired}}
                         >
                     {{/inputField}}
+                    {{#euVat}}
+                        <input type="text" name="{{elementNamePrefix}}additional['{{name}}'][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control {{#isRequired}}field-required{{/isRequired}}"
+                               {{#placeholderDescriptionDefined}}placeholder="{{placeholderDescription}}"{{/placeholderDescriptionDefined}}
+                            {{#maxLengthDefined}}maxlength="{{maxLength}}"{{/maxLengthDefined}}
+                            {{#minLengthDefined}}minlength="{{minLength}}"{{/minLengthDefined}}
+                            {{#isRequired}}required{{/isRequired}}
+                        >
+                    {{/euVat}}
                     {{#textareaField}}
                         <textarea name="{{elementNamePrefix}}additional['{{name}}'][{{fieldIndex}}]" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control"
                                   {{#placeholderDescriptionDefined}}placeholder="{{placeholderDescription}}"{{/placeholderDescriptionDefined}}

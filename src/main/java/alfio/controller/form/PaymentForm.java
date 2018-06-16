@@ -16,6 +16,7 @@
  */
 package alfio.controller.form;
 
+import alfio.manager.EuVatChecker;
 import alfio.manager.PaypalManager;
 import alfio.model.*;
 import alfio.model.result.ValidationResult;
@@ -29,6 +30,10 @@ import org.springframework.validation.ValidationUtils;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static alfio.util.ErrorsCode.STEP_2_INVALID_VAT;
+import static alfio.util.ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA;
 
 // step 2 : payment/claim tickets
 //
@@ -77,7 +82,7 @@ public class PaymentForm implements Serializable {
     }
 
     public void validate(BindingResult bindingResult, TotalPrice reservationCost, Event event,
-                         List<TicketFieldConfiguration> fieldConf) {
+                         List<TicketFieldConfiguration> fieldConf, EuVatChecker.SameCountryValidator vatValidator) {
 
         List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
 
@@ -133,15 +138,24 @@ public class PaymentForm implements Serializable {
         }
 
         if(!postponeAssignment) {
-            boolean success = Optional.ofNullable(tickets)
+            Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                 .filter(m -> !m.isEmpty())
-                .map(m -> m.entrySet().stream().map(e -> Validator.validateTicketAssignment(e.getValue(), fieldConf, Optional.of(bindingResult), event, "tickets["+e.getKey()+"]")))
-                .filter(s -> s.allMatch(ValidationResult::isSuccess))
+                .map(m -> m.entrySet().stream().map(e -> Validator.validateTicketAssignment(e.getValue(),
+                    fieldConf, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator)))
+                .map(s -> s.collect(Collectors.toList()));
+
+            boolean success = validationResults
+                .filter(l -> l.stream().allMatch(ValidationResult::isSuccess))
                 .isPresent();
             if(!success) {
-                bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
+                String errorCode = validationResults.filter(this::containsVatValidationError).isPresent() ? STEP_2_INVALID_VAT : STEP_2_MISSING_ATTENDEE_DATA;
+                bindingResult.reject(errorCode);
             }
         }
+    }
+
+    private boolean containsVatValidationError(List<ValidationResult> l) {
+        return l.stream().anyMatch(v -> !v.isSuccess() && v.getErrorDescriptors().stream().anyMatch(ed -> ed.getCode().equals(STEP_2_INVALID_VAT)));
     }
 
     public Boolean shouldCancelReservation() {
