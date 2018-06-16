@@ -18,30 +18,45 @@
 
         ctrl.currentPagePending = currentSearch.pendingPage || 1;
         ctrl.currentPage = currentSearch.page || 1;
+        ctrl.currentPagePendingPayment = currentSearch.pendingPaymentPage || 1;
+        ctrl.currentPageCancelled = currentSearch.cancelledPage || 1;
         ctrl.toSearch = currentSearch.search || '';
+        ctrl.selectedTab = currentSearch.t || 1;
 
         ctrl.itemsPerPage = 50;
         ctrl.formatFullName = formatFullName;
         ctrl.updateFilteredData = loadData;
         ctrl.truncateReservationId = truncateReservationId;
+        ctrl.onTabSelected = onTabSelected;
 
         this.$onInit = function() {
-            EventService.getAllReservationStatus(ctrl.event.shortName).then(function(res) {
-                ctrl.otherStatuses = $filter('filter')(res.data, '!PENDING');
-                loadData()
-            });
+            loadData();
         };
 
         function loadData(loadPartially) {
 
-            loadPartially = loadPartially || {pending: true, completed: true};
+            loadPartially = loadPartially || {pending: true, completed: true, paymentPending: true, cancelled: true, stuck: true};
 
-            $location.search({pendingPage: ctrl.currentPagePending, page: ctrl.currentPage, search: ctrl.toSearch});
+            $location.search({
+                pendingPage: ctrl.currentPagePending,
+                pendingPaymentPage: ctrl.currentPagePendingPayment,
+                cancelledPage: ctrl.currentPageCancelled,
+                page: ctrl.currentPage,
+                search: ctrl.toSearch,
+                t: ctrl.selectedTab
+            });
 
             if(loadPartially.completed) {
-                EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPage - 1, ctrl.toSearch, ctrl.otherStatuses).then(function (res) {
+                EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPage - 1, ctrl.toSearch, ['COMPLETE']).then(function (res) {
                     ctrl.reservations = res.data.left;
                     ctrl.foundReservations = res.data.right;
+                });
+            }
+
+            if(loadPartially.paymentPending) {
+                EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPagePendingPayment - 1, ctrl.toSearch, ['IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT']).then(function (res) {
+                    ctrl.paymentPendingReservations = res.data.left;
+                    ctrl.paymentPendingFoundReservations = res.data.right;
                 });
             }
 
@@ -49,6 +64,20 @@
                 EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPagePending -1, ctrl.toSearch, ['PENDING']).then(function(res) {
                     ctrl.pendingReservations = res.data.left;
                     ctrl.foundPendingReservations = res.data.right;
+                });
+            }
+
+            if(loadPartially.cancelled) {
+                EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPageCancelled -1, ctrl.toSearch, ['CANCELLED']).then(function(res) {
+                    ctrl.cancelledReservations = res.data.left;
+                    ctrl.foundCancelledReservations = res.data.right;
+                });
+            }
+
+            if(loadPartially.stuck) {
+                EventService.findAllReservations(ctrl.event.shortName, 0, ctrl.toSearch, ['STUCK']).then(function(res) {
+                    ctrl.stuckReservations = res.data.left;
+                    ctrl.foundStuckReservations = res.data.right;
                 });
             }
         }
@@ -63,6 +92,10 @@
 
         function truncateReservationId(id) {
             return id.substring(0,8).toUpperCase();
+        }
+
+        function onTabSelected(n) {
+            ctrl.selectedTab = n;
         }
     }
 })();
