@@ -11,7 +11,10 @@
                     <div class="input-group-addon">
                         <i class="fa fa-search"></i>
                     </div>
-                    <input type="text" class="form-control" id="filter-reservations" ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData({pending:true, completed: true})" ng-model-options='{ debounce: 1000 }' placeholder="Filter Reservations">
+                    <input type="text" class="form-control" id="filter-reservations" ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData()" ng-model-options='{ debounce: 1000 }' placeholder="Filter Reservations">
+                    <div class="input-group-btn" ng-if="$ctrl.toSearch.length > 0">
+                        <button type="button" class="btn btn-default" ng-click="$ctrl.toSearch = ''; $ctrl.updateFilteredData()">Reset</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -88,10 +91,11 @@
                     <thead>
                     <tr>
                         <th width="10%">Id</th>
-                        <th width="30%">Customer's name</th>
-                        <th width="30%">Customer's email</th>
+                        <th width="20%">Customer's name</th>
+                        <th width="20%">Customer's email</th>
                         <th width="10%">Payment</th>
-                        <th width="20%">Confirmation</th>
+                        <th width="20%">Creation</th>
+                        <th width="20%">Expiration</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -100,7 +104,8 @@
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
-                        <td ng-bind="r.confirmationTimestamp | formatDate"></td>
+                        <td ng-bind="r.creationTimestamp | formatDate"></td>
+                        <td ng-bind="r.validity | formatDate"></td>
                     </tr>
                     </tbody>
                 </table>
