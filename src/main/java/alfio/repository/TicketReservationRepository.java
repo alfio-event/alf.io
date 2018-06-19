@@ -147,7 +147,7 @@ public interface TicketReservationRepository {
     int resetBillingData(@Bind("reservationId") String reservationId);
 
 
-    @Query("select count(ticket.id) ticket_sold, to_char(trunc(confirmation_ts), 'yyyy-MM-dd') as day from ticket " +
+    @Query("select count(ticket.id) ticket_count, to_char(trunc(confirmation_ts), 'yyyy-MM-dd') as day from ticket " +
         "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
         "ticket.event_id = :eventId and " +
         "confirmation_ts is not null and " +
@@ -155,19 +155,43 @@ public interface TicketReservationRepository {
         "confirmation_ts <= :to " +
         "group by day order by day asc")
     @QueriesOverride({
-        @QueryOverride(value = "select count(ticket.id) ticket_sold, to_char(date_trunc('day', confirmation_ts), 'YYYY-MM-DD') as day from ticket " +
+        @QueryOverride(value = "select count(ticket.id) ticket_count, to_char(date_trunc('day', confirmation_ts), 'YYYY-MM-DD') as day from ticket " +
             "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
             "ticket.event_id = :eventId and " +
             "confirmation_ts is not null and " +
             "confirmation_ts >= :from and " +
             "confirmation_ts <= :to  group by day order by day asc", db = "PGSQL"),
-        @QueryOverride(value = "select count(ticket.id) ticket_sold, date_format(date(confirmation_ts), '%Y-%m-%d') as day from ticket " +
+        @QueryOverride(value = "select count(ticket.id) ticket_count, date_format(date(confirmation_ts), '%Y-%m-%d') as day from ticket " +
             "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
             "ticket.event_id = :eventId and " +
             "confirmation_ts is not null and " +
             "confirmation_ts >= :from and " +
             "confirmation_ts <= :to group by day order by day asc", db = "MYSQL")})
-    List<TicketSoldStatistic> getSoldStatistic(@Bind("eventId") int eventId, @Bind("from") Date from, @Bind("to") Date to);
+    List<TicketsByDateStatistic> getSoldStatistic(@Bind("eventId") int eventId, @Bind("from") Date from, @Bind("to") Date to);
+
+    @Query("select count(ticket.id) ticket_count, to_char(trunc(tickets_reservation.creation_ts), 'yyyy-MM-dd') as day from ticket " +
+        "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
+        "ticket.event_id = :eventId and " +
+        "tickets_reservation.status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and " +
+        "tickets_reservation.creation_ts >= :from and " +
+        "tickets_reservation.creation_ts <= :to " +
+        "group by day order by day asc")
+    @QueriesOverride({
+        @QueryOverride(value = "select count(ticket.id) ticket_count, to_char(date_trunc('day', tickets_reservation.creation_ts), 'YYYY-MM-DD') as day from ticket " +
+            "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
+            "ticket.event_id = :eventId and " +
+            "tickets_reservation.status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and " +
+            "tickets_reservation.creation_ts >= :from and " +
+            "tickets_reservation.creation_ts <= :to " +
+            "group by day order by day asc", db = "PGSQL"),
+        @QueryOverride(value = "select count(ticket.id) ticket_count, date_format(date(tickets_reservation.creation_ts), '%Y-%m-%d') as day from ticket " +
+            "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
+            "ticket.event_id = :eventId and " +
+            "tickets_reservation.status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and " +
+            "tickets_reservation.creation_ts >= :from and " +
+            "tickets_reservation.creation_ts <= :to " +
+            "group by day order by day asc", db = "MYSQL")})
+    List<TicketsByDateStatistic> getReservedStatistic(@Bind("eventId") int eventId, @Bind("from") Date from, @Bind("to") Date to);
 
 
 

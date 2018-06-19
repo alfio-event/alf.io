@@ -114,7 +114,7 @@
                 }
             }
         }])
-        .directive("eventTwoWeeksBar", ['$filter', 'EventService', function($filter, EventService) {
+        .directive("eventTwoWeeksBar", ['$filter', 'EventService', 'SeriesSplitter', '$window', function($filter, EventService, SeriesSplitter, $window) {
             return {
                 scope: {
                     tickets: '=',
@@ -129,16 +129,17 @@
                     var twoWeeksAgo = moment().subtract(15, 'days').format('YYYY-MM-DD');
                     var now = moment().format('YYYY-MM-DD');
 
-                    EventService.getSoldStatistics(ctrl.event.shortName, twoWeeksAgo, now).then(function(res) {
+                    EventService.getTicketsStatistics(ctrl.event.shortName, twoWeeksAgo, now).then(function(res) {
+
+                        var split = SeriesSplitter.split(res.data);
+                        var labels = split.labels;
+                        var soldSeries = split.soldSeries;
+                        var reservedSeries = split.reservedSeries;
+                        var mobileView = $window.matchMedia('screen and (max-width: 991px)').matches;
+
                         new Chartist.Bar(element.find('.event-tw').get(0), {
-                            series: [_.map(res.data, function(l) {
-                                var mDate =  moment.utc(l.date);
-                                return {
-                                    value: l.ticketSoldCount,
-                                    name: mDate.format('MMM Do'),
-                                    meta: mDate.format('MMM Do')
-                                };
-                            })]
+                            labels: !mobileView ? _.map(labels, function(l) {return moment(l).format('MMM D')}) : [],
+                            series: [reservedSeries, soldSeries]
                         }, {
                             ignoreEmptyValues:true,
                             showLabels: false,
@@ -167,7 +168,7 @@
                 link: function () {}
             };
         }])
-        .directive("eventAllTicketsByDay", ['$filter', 'EventService', function($filter, EventService) {
+        .directive("eventAllTicketsByDay", ['$filter', 'EventService', 'SeriesSplitter', function($filter, EventService, SeriesSplitter) {
             return {
                 scope: {
                     tickets: '=',
@@ -178,32 +179,24 @@
                 controller: function($element) {
                     var element = $element;
                     var ctrl = this;
-                    EventService.getSoldStatistics(ctrl.event.shortName).then(function(res) {
-                        var statsByDay = res.data;
-                        var labels = [];
-                        var serie = [];
-                        for(var i = 0; i < statsByDay.length; i++) {
-                            labels.push(statsByDay[i].date);
 
-                            var mDate = moment.utc(statsByDay[i].date);
-                            var serieVal = {
-                                value: statsByDay[i].ticketSoldCount,
-                                name: mDate.format('MMM Do YYYY'),
-                                meta: mDate.format('MMM Do YYYY')
-                            }
-                            serie.push(serieVal);
-                        }
-                        var start = statsByDay.length > 0 ? moment.utc(statsByDay[0].date) : undefined;
+                    EventService.getTicketsStatistics(ctrl.event.shortName).then(function(res) {
+                        var split = SeriesSplitter.split(res.data);
+                        var labels = split.labels;
+                        var soldSeries = split.soldSeries;
+                        var reservedSeries = split.reservedSeries;
+                        var start = split.start;
                         var labelMutableStart = undefined;
 
 
                         new Chartist.Line(element.find('.event-tl').get(0), {
                             labels: labels,
-                            series: [serie]
+                            series: [reservedSeries, soldSeries]
                         }, {
                             ignoreEmptyValues:true,
                             showLabels: false,
                             fullWidth: true,
+                            showArea: false,
                             lineSmooth: Chartist.Interpolation.cardinal({
                                 fillHoles: true
                             }),
@@ -218,7 +211,7 @@
                                         labelMutableStart = moment.utc(start);
                                         return labelMutableStart.format('MMMM');
                                     }
-                                    if(labelMutableStart.month() != l.month()) {
+                                    if(labelMutableStart.month() !== l.month()) {
                                         var sameMonth = function(m) {
                                             return l.month() === moment.utc(m).month();
                                         };
@@ -233,9 +226,9 @@
                             },
                             plugins: [
                                 Chartist.plugins.ctAccessibility({
-                                    caption: 'Today',
-                                    seriesHeader: 'Hour',
-                                    summary: 'How many tickets have been confirmed today',
+                                    caption: 'So Far',
+                                    seriesHeader: 'Date',
+                                    summary: 'How many tickets have been reserved and confirmed so far',
                                     valueTransform: function(value) {
                                         return value + ' tickets';
                                     }
@@ -255,5 +248,42 @@
                 controllerAs: 'ctrl',
                 link: function () {}
             };
-        }]);
+        }])
+        .service('SeriesSplitter', function() {
+            return {
+                split: function(stats) {
+                    var soldByDay = stats.sold;
+                    var reservedByDay = stats.reserved;
+                    var labels = _.chain(soldByDay)
+                        .concat(reservedByDay)
+                        .map('date')
+                        .sortBy()
+                        .uniq(true)
+                        .value();
+
+                    function generateSeries(byDay, labels) {
+                        return _.map(labels, function(label) {
+                            var stat = _.find(byDay, function(d) { return d.date === label; });
+                            var count = 0;
+                            if(stat) {
+                                count = stat.count;
+                            }
+                            var mDate = moment.utc(label);
+                            return {
+                                value: count,
+                                name: mDate.format('MMM Do YYYY'),
+                                meta: mDate.format('MMM Do YYYY')
+                            };
+                        });
+                    }
+
+                    return {
+                        labels: labels,
+                        soldSeries: generateSeries(soldByDay, labels),
+                        reservedSeries: generateSeries(reservedByDay, labels),
+                        start: soldByDay.length > 0 ? moment.utc(soldByDay[0].date) : undefined
+                    };
+                }
+            }
+        });
 })();

@@ -40,6 +40,7 @@ import alfio.util.Validator;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -541,7 +542,7 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/ticket-sold-statistics", method = GET)
-    public List<TicketSoldStatistic> getTicketSoldStatistics(@PathVariable("eventName") String eventName, @RequestParam(value = "from", required = false) String f, @RequestParam(value = "to", required = false) String t, Principal principal) throws ParseException {
+    public TicketsStatistics getTicketsStatistics(@PathVariable("eventName") String eventName, @RequestParam(value = "from", required = false) String f, @RequestParam(value = "to", required = false) String t, Principal principal) throws ParseException {
         Event event = loadEvent(eventName, principal);
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         //TODO: cleanup
@@ -549,13 +550,20 @@ public class EventApiController {
         Date to = DateUtils.addMilliseconds(DateUtils.ceiling(t == null ? new Date() : format.parse(t), Calendar.DATE), -1);
         //
 
-        return eventStatisticsManager.getTicketSoldStatistics(event.getId(), from, to);
+        int eventId = event.getId();
+        return new TicketsStatistics(eventStatisticsManager.getTicketSoldStatistics(eventId, from, to), eventStatisticsManager.getTicketReservedStatistics(eventId, from, to));
     }
 
     private Event loadEvent(String eventName, Principal principal) {
         Optional<Event> singleEvent = optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()));
         Validate.isTrue(singleEvent.isPresent(), "event not found");
         return singleEvent.get();
+    }
+
+    @Data
+    static class TicketsStatistics {
+        private final List<TicketsByDateStatistic> sold;
+        private final List<TicketsByDateStatistic> reserved;
     }
 
 }

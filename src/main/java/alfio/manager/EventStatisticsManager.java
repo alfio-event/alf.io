@@ -151,8 +151,12 @@ public class EventStatisticsManager {
         };
     }
 
-    public List<TicketSoldStatistic> getTicketSoldStatistics(int eventId, Date from, Date to) {
+    public List<TicketsByDateStatistic> getTicketSoldStatistics(int eventId, Date from, Date to) {
         return ticketReservationRepository.getSoldStatistic(eventId, from, to);
+    }
+
+    public List<TicketsByDateStatistic> getTicketReservedStatistics(int eventId, Date from, Date to) {
+        return ticketReservationRepository.getReservedStatistic(eventId, from, to);
     }
 
 

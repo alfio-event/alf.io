@@ -383,8 +383,14 @@ a.emulate-nav-pills-link {
 }
 
 .event-tw .ct-series-a .ct-bar {
-    fill: #428bca;
-    stroke:#428bca;
+    fill: #3c763d;
+    stroke:#3c763d;
+    color:white;
+}
+
+.event-tw .ct-series-b .ct-bar {
+    fill: #f0ad4e;
+    stroke:#f0ad4e;
     color:white;
 }
 
@@ -402,7 +408,12 @@ a.emulate-nav-pills-link {
 }
 
 .event-tl .ct-series-a .ct-point, .event-tl .ct-series-a .ct-line {
-    stroke:#428bca;
+    stroke:#3c763d;
+    color:white;
+}
+
+.event-tl .ct-series-b .ct-point, .event-tl .ct-series-b .ct-line {
+    stroke:#f0ad4e;
     color:white;
 }
 

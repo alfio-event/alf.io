@@ -78,6 +78,18 @@
                 <div ng-if="ctrl.ticketsConfirmed > 0">
                     <event-two-weeks-bar ng-if="ctrl.isEven()" tickets="ctrl.confirmedTickets" event="ctrl.event"></event-two-weeks-bar>
                     <event-all-tickets-by-day ng-if="ctrl.isOdd()" tickets="ctrl.confirmedTickets" event="ctrl.event"></event-all-tickets-by-day>
+                    <div style="padding-left:30px">
+                        <ul class="list-unstyled">
+                            <li>
+                                <div class="tickets-pie-legend slice-success"></div>
+                                <div class="tickets-pie-legend-text">Created Reservations</div>
+                            </li>
+                            <li>
+                                <div class="tickets-pie-legend slice-warning"></div>
+                                <div class="tickets-pie-legend-text">Confirmed Reservations</div>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
                 <div ng-if="ctrl.ticketsConfirmed == 0">
                     <p class="text-warning text-center wMarginTop30px">Not enough data yet. Spread the word!</p>

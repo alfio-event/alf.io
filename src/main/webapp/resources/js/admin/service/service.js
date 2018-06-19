@@ -325,7 +325,7 @@
                 return $http.get('/admin/api/events/'+eventName+'/invoices/count').error(HttpErrorHandler.handle);
             },
 
-            getSoldStatistics: function(eventName, from, to) {
+            getTicketsStatistics: function(eventName, from, to) {
                 return $http.get('/admin/api/events/'+eventName+'/ticket-sold-statistics', {params: {from: from, to: to}});
             }
         };

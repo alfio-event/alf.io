@@ -20,13 +20,13 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
-public class TicketSoldStatistic {
-    private final long ticketSoldCount;
+public class TicketsByDateStatistic {
+    private final long count;
     private final String date;
 
-    public TicketSoldStatistic(@Column("ticket_sold") long ticketSoldCount,
-                               @Column("day") String date) {
-        this.ticketSoldCount = ticketSoldCount;
+    public TicketsByDateStatistic(@Column("ticket_count") long count,
+                                  @Column("day") String date) {
+        this.count = count;
         this.date = date;
     }
 }
