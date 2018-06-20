@@ -20,7 +20,8 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.VatDetail;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import okhttp3.*;
+import ch.digitalfondue.vatchecker.EUVatCheckResponse;
+import ch.digitalfondue.vatchecker.EUVatChecker;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,13 +41,8 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class EuVatCheckerTest {
 
-    private static final String OK_RESPONSE = "{\"isValid\": true,\"name\": \"Test Corp.\",\"address\": \"Address\"}";
-    private static final String KO_RESPONSE = "{\"isValid\": false,\"name\": \"------\",\"address\": \"------\"}";
-
     @Mock
-    private OkHttpClient client;
-    @Mock
-    private Call call;
+    private EUVatChecker client;
     @Mock
     private ConfigurationManager configurationManager;
 
@@ -55,13 +51,11 @@ public class EuVatCheckerTest {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(1, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE)), anyBoolean())).thenReturn(true);
         when(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST))).thenReturn("IE");
         when(configurationManager.getStringConfigValue(eq(Configuration.from(1, ConfigurationKeys.COUNTRY_OF_BUSINESS)), anyString())).thenReturn("IT");
-        when(configurationManager.getStringConfigValue(eq(Configuration.getSystemConfiguration(ConfigurationKeys.EU_VAT_API_ADDRESS)), anyString())).thenReturn("http://localhost:8080");
-        when(client.newCall(any())).thenReturn(call);
     }
 
     @Test
-    public void performCheckOK() throws IOException {
-        initResponse(200, OK_RESPONSE);
+    public void performCheckOK() {
+        initResponse(true, "Test Corp.", "Address");
         Optional<VatDetail> result = EuVatChecker.performCheck("1234", "IE", 1).apply(configurationManager, client);
         assertTrue(result.isPresent());
         VatDetail vatDetail = result.get();
@@ -74,8 +68,8 @@ public class EuVatCheckerTest {
     }
 
     @Test
-    public void performCheckKO() throws IOException {
-        initResponse(200, KO_RESPONSE);
+    public void performCheckKO() {
+        initResponse(false, "------", "------");
         Optional<VatDetail> result = EuVatChecker.performCheck("12345", "IE", 1).apply(configurationManager, client);
         assertTrue(result.isPresent());
         VatDetail vatDetail = result.get();
@@ -87,9 +81,9 @@ public class EuVatCheckerTest {
         assertEquals("------", vatDetail.getAddress());
     }
 
-    @Test
-    public void performCheckRequestFailed() throws IOException {
-        initResponse(404, "");
+    @Test(expected = IllegalStateException.class)
+    public void performCheckRequestFailed() {
+        when(client.check(any(String.class), any(String.class))).thenThrow(new IllegalStateException("from test!"));
         Optional<VatDetail> result = EuVatChecker.performCheck("1234", "IE", 1).apply(configurationManager, client);
         assertFalse(result.isPresent());
     }
@@ -104,7 +98,6 @@ public class EuVatCheckerTest {
         assertFalse(vatDetail.isVatExempt());
         assertEquals("1234", vatDetail.getVatNr());
         assertEquals("UK", vatDetail.getCountry());
-        verify(client, never()).newCall(any());
     }
 
     @Test
@@ -117,16 +110,13 @@ public class EuVatCheckerTest {
         assertTrue(vatDetail.isVatExempt());
         assertEquals("1234", vatDetail.getVatNr());
         assertEquals("UK", vatDetail.getCountry());
-        verify(client, never()).newCall(any());
     }
 
-    private void initResponse(int status, String body) throws IOException {
-        Request request = new Request.Builder().url("http://localhost:8080").get().build();
-        Response response = new Response.Builder().request(request).protocol(Protocol.HTTP_1_1)
-            .body(ResponseBody.create(MediaType.parse("application/json"), body))
-            .code(status)
-            .message("" + status)
-            .build();
-        when(call.execute()).thenReturn(response);
+    private void initResponse(boolean isValid, String name, String address) {
+        EUVatCheckResponse resp = mock(EUVatCheckResponse.class);
+        when(resp.isValid()).thenReturn(isValid);
+        when(resp.getName()).thenReturn(name);
+        when(resp.getAddress()).thenReturn(address);
+        when(client.check(any(String.class), any(String.class))).thenReturn(resp);
     }
 }
