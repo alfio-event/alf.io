@@ -7,11 +7,11 @@ import java.time.format.DateTimeFormatter
 import java.util.regex.Pattern
 
 buildscript {
-    dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.10.RELEASE")
-    }
     repositories {
         jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
 }
 
@@ -23,10 +23,13 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.17.0'
     id 'com.github.hierynomus.license' version '0.14.0'
     id 'net.researchgate.release' version '2.6.0'
+    id 'org.springframework.boot' version '2.0.3.RELEASE'
 }
 
 apply plugin: 'war'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
 
 task wrapper(type: Wrapper) {
     gradleVersion = '3.5'
@@ -142,9 +145,12 @@ dependencies {
     compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jacksonVersion"
     compile "com.fasterxml.jackson.core:jackson-core:$jacksonVersion"
     compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
+    compile "org.springframework.boot:spring-boot-properties-migrator", {
+        exclude module : 'spring-boot-starter-logging'
+    }
     compile "org.springframework.security:spring-security-web:$springSecurityConfigVersion"
     compile "org.springframework.security:spring-security-config:$springSecurityConfigVersion"
-    compile 'org.springframework.session:spring-session:1.3.2.RELEASE'
+    compile 'org.springframework.session:spring-session:1.3.3.RELEASE'
     compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.4"
     compile "com.samskivert:jmustache:1.14"
     compile "com.github.sps.mustache:mustache-spring-view:1.4"
@@ -191,23 +197,35 @@ dependencies {
 
     compileOnly "javax.servlet:javax.servlet-api:3.1.0"
     testCompile "javax.servlet:javax.servlet-api:3.1.0"
-    testCompile "org.springframework.boot:spring-boot-starter-test"
+    testCompile "org.springframework.boot:spring-boot-starter-test", {
+        exclude module : 'spring-boot-starter-logging'
+    }
     testCompile "net.sourceforge.htmlunit:htmlunit:2.29"
     runtime "org.hsqldb:hsqldb:2.4.0"
     runtime "commons-fileupload:commons-fileupload:1.3.3"
-    providedCompile "org.springframework.boot:spring-boot-starter-web@jar"
-    providedCompile "org.springframework.boot:spring-boot-starter@jar"
-    providedCompile "org.springframework.boot:spring-boot@jar"
-    providedCompile "org.springframework.boot:spring-boot-autoconfigure@jar"
+    providedCompile "org.springframework.boot:spring-boot-starter-web", {
+        exclude module : 'spring-boot-starter-logging'
+    }
+    providedCompile "org.springframework.boot:spring-boot-starter", {
+        exclude module : 'spring-boot-starter-logging'
+    }
+    providedCompile "org.springframework.boot:spring-boot@jar", {
+        exclude module : 'spring-boot-starter-logging'
+    }
+    providedCompile "org.springframework.boot:spring-boot-autoconfigure@jar", {
+        exclude module : 'spring-boot-starter-logging'
+    }
 
 
     providedCompile "org.springframework.boot:spring-boot-starter-jetty", {
         exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
+        exclude module : 'spring-boot-starter-logging'
     }
     providedRuntime "org.springframework.boot:spring-boot-starter-jetty", {
         exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
+        exclude module : 'spring-boot-starter-logging'
     }
 }
 
@@ -278,8 +296,8 @@ bootRun {
     jvmArgs = opts
 }
 
-bootRepackage {
-    mainClass = 'alfio.config.SpringBootLauncher'
+bootWar {
+    mainClassName = 'alfio.config.SpringBootLauncher'
     classifier = 'boot'
 }
 

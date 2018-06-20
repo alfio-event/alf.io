@@ -18,28 +18,25 @@ package alfio.config;
 
 import com.openhtmltopdf.util.XRLog;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.context.embedded.EmbeddedServletContainerCustomizer;
-import org.springframework.boot.context.embedded.MimeMappings;
-import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletContainerFactory;
-import org.springframework.boot.web.servlet.ErrorPage;
+import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
+import org.springframework.boot.web.server.ErrorPage;
+import org.springframework.boot.web.server.ErrorPageRegistrar;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
+import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 import javax.servlet.Filter;
 import javax.servlet.SessionCookieConfig;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.Objects;
 import java.util.logging.Level;
 
 import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
@@ -47,27 +44,30 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
         org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.web.ErrorMvcAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration.class,
         org.springframework.boot.autoconfigure.session.SessionAutoConfiguration.class})
 @Configuration
 @Profile(Initializer.PROFILE_SPRING_BOOT)
 @Log4j2
 public class SpringBootInitializer {
 
-    private static final ServletContextInitializer SERVLET_CONTEXT_INITIALIZER = servletContext -> {
-        WebApplicationContext ctx = getRequiredWebApplicationContext(servletContext);
-        ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
-        environment.addActiveProfile("spring-boot");
-        if(environment.acceptsProfiles(Initializer.PROFILE_DEV)) {
-            environment.addActiveProfile(Initializer.PROFILE_HTTP);
-        }
-        SessionCookieConfig config = servletContext.getSessionCookieConfig();
-        config.setHttpOnly(true);
-        config.setSecure(!environment.acceptsProfiles(Initializer.PROFILE_HTTP));
-        //force log initialization, then disable it
-        XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
-        XRLog.setLoggingEnabled(false);
-    };
+
+    @Bean
+    public ServletContextInitializer servletContextInitializer() {
+        return servletContext -> {
+            WebApplicationContext ctx = getRequiredWebApplicationContext(servletContext);
+            ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
+            if(environment.acceptsProfiles(Initializer.PROFILE_DEV)) {
+                environment.addActiveProfile(Initializer.PROFILE_HTTP);
+            }
+            SessionCookieConfig config = servletContext.getSessionCookieConfig();
+            config.setHttpOnly(true);
+            config.setSecure(!environment.acceptsProfiles(Initializer.PROFILE_HTTP));
+            //force log initialization, then disable it
+            XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
+            XRLog.setLoggingEnabled(false);
+        };
+    }
 
     @Bean
     public Filter characterEncodingFilter() {
@@ -78,32 +78,24 @@ public class SpringBootInitializer {
     }
 
     @Bean
-    public EmbeddedServletContainerCustomizer embeddedServletContainerCustomizer(Environment environment) {
-        return (container) -> {
-            container.addInitializers(SERVLET_CONTEXT_INITIALIZER);
-            //container.setRegisterJspServlet(false);
-            Map<String, String> mimeMappings = new HashMap<>();
-            mimeMappings.put("eot", "application/vnd.ms-fontobject");
-            mimeMappings.put("otf", "font/opentype");
-            mimeMappings.put("ttf", "application/x-font-ttf");
-            mimeMappings.put("woff", "application/x-font-woff");
-            mimeMappings.put("svg", "image/svg+xml");
-            container.setSessionTimeout(2, TimeUnit.HOURS);
-            container.setMimeMappings(new MimeMappings(mimeMappings));
-            if(!environment.acceptsProfiles("dev")) {
-                container.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404-not-found"), new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/500-internal-server-error"), new ErrorPage("/session-expired"));
-            }
+    @Profile(Initializer.PROFILE_USE_WORKER_NAME)
+    public ConfigurableServletWebServerFactory jettyCustomizer() {
+        JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
+        factory.addServerCustomizers(server -> {
+            String workerName = Objects.requireNonNull(StringUtils.trimToNull(System.getProperty("alfio.worker.name")), "Invalid value for 'alfio.worker.name'.");
+            log.info("Configuring session manager using worker name {}", workerName);
+            DefaultSessionIdManager sessionIdManager = new DefaultSessionIdManager(server);
+            sessionIdManager.setWorkerName(workerName);
+            server.setSessionIdManager(sessionIdManager);
+        });
+        return factory;
+    }
 
-            Optional.ofNullable(System.getProperty("alfio.worker.name")).ifPresent(workerName -> {
-                ((JettyEmbeddedServletContainerFactory)container).addServerCustomizers(server -> {
-                    log.info("Configuring session manager using worker name {}", workerName);
-                    DefaultSessionIdManager sessionIdManager = new DefaultSessionIdManager(server);
-                    sessionIdManager.setWorkerName(workerName);
-                    server.setSessionIdManager(sessionIdManager);
-                });
-            });
-
-
-        };
+    @Bean
+    @Profile("!"+Initializer.PROFILE_DEV)
+    public ErrorPageRegistrar errorPages() {
+        return registry -> registry.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404-not-found"),
+            new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/500-internal-server-error"),
+            new ErrorPage("/session-expired"));
     }
 }
