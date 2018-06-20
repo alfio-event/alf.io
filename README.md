@@ -27,6 +27,30 @@ You must specify a project property at the command line, such as
 ./gradlew -Pprofile=dev :bootRun
 ```
 
+Note: if you want to test without installing a pgsql instance, we have configured the following tasks:
+
+- startEmbeddedPgSQL
+- stopEmbeddedPgSQL
+
+So, in a terminal first launch pgsql:
+
+```
+./gradlew startEmbeddedPgSQL
+```
+
+In another one launch alf.io
+
+```
+./gradlew -Pprofile=dev :bootRun
+```
+
+When you are done, kill the pgsql instance with:
+
+```
+./gradlew stopEmbeddedPgSQL
+```
+
+
 The following profiles are supported
 
  * `dev`
