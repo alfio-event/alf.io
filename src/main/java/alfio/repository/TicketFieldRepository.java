@@ -57,10 +57,6 @@ public interface TicketFieldRepository extends FieldRepository {
     int deleteAllValuesForTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
 
     @Query("delete from ticket_field_value fv using ticket t where t.id = fv.ticket_id_fk and t.tickets_reservation_id in(:reservationIds)")
-    @QueriesOverride({
-        @QueryOverride(db = PlatformProvider.MYSQL, value = "delete tv.* from ticket_field_value tv inner join ticket t on t.id = tv.ticket_id_fk where t.tickets_reservation_id in(:reservationIds)"),
-        @QueryOverride(db = "HSQLDB", value = "delete from ticket_field_value where ticket_id_fk in (select id from ticket where tickets_reservation_id in(:reservationIds))")
-    })
     int deleteAllValuesForReservations(@Bind("reservationIds") List<String> reservationIds);
 
     @Query("select ticket_field_configuration_id_fk, field_locale, description from ticket_field_description  inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where field_locale = :locale and event_id_fk = :eventId")
