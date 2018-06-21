@@ -105,15 +105,9 @@ public interface TicketRepository {
     int freeFromReservation(@Bind("reservationIds") List<String> reservationIds);
 
     @Query("update ticket set category_id = null where tickets_reservation_id in (:reservationIds) and status in ('PENDING', 'OFFLINE_PAYMENT') and category_id in (select tc.id from ticket_category tc, ticket t where t.tickets_reservation_id in (:reservationIds) and t.category_id = tc.id and tc.bounded = false)")
-    @QueriesOverride({
-        @QueryOverride(db = "MYSQL", value = "update ticket set category_id = null where tickets_reservation_id in (:reservationIds) and status in ('PENDING', 'OFFLINE_PAYMENT') and category_id in (select * from (select tc.id from ticket_category tc, ticket t where t.tickets_reservation_id in (:reservationIds) and t.category_id = tc.id and tc.bounded = false) as sq)")
-    })
     int resetCategoryIdForUnboundedCategories(@Bind("reservationIds") List<String> reservationIds);
 
     @Query("update ticket set category_id = null where id in (:ticketIds) and category_id in (select tc.id from ticket_category tc, ticket t where t.id in (:ticketIds) and t.category_id = tc.id and tc.bounded = false)")
-    @QueriesOverride({
-        @QueryOverride(db = "MYSQL", value = "update ticket set category_id = null where id in (:ticketIds) and category_id in (select * from (select tc.id from ticket_category tc, ticket t where t.id in (:ticketIds) and t.category_id = tc.id and tc.bounded = false) as sq)")
-    })
     int resetCategoryIdForUnboundedCategoriesWithTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
 
     @Query("update ticket set category_id = null where event_id = :eventId and category_id = :categoryId and id in (:ticketIds)")

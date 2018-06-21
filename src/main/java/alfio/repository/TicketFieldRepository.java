@@ -17,14 +17,14 @@
 package alfio.repository;
 
 import alfio.config.support.PlatformProvider;
-import alfio.model.FieldNameAndValue;
-import alfio.model.TicketFieldConfiguration;
-import alfio.model.TicketFieldDescription;
-import alfio.model.TicketFieldValue;
+import alfio.model.*;
 import alfio.util.Json;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.*;
 import org.apache.commons.lang3.StringUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -57,10 +57,6 @@ public interface TicketFieldRepository extends FieldRepository {
     int deleteAllValuesForTicketIds(@Bind("ticketIds") List<Integer> ticketIds);
 
     @Query("delete from ticket_field_value fv using ticket t where t.id = fv.ticket_id_fk and t.tickets_reservation_id in(:reservationIds)")
-    @QueriesOverride({
-        @QueryOverride(db = PlatformProvider.MYSQL, value = "delete tv.* from ticket_field_value tv inner join ticket t on t.id = tv.ticket_id_fk where t.tickets_reservation_id in(:reservationIds)"),
-        @QueryOverride(db = "HSQLDB", value = "delete from ticket_field_value where ticket_id_fk in (select id from ticket where tickets_reservation_id in(:reservationIds))")
-    })
     int deleteAllValuesForReservations(@Bind("reservationIds") List<String> reservationIds);
 
     @Query("select ticket_field_configuration_id_fk, field_locale, description from ticket_field_description  inner join ticket_field_configuration on ticket_field_configuration_id_fk = id where field_locale = :locale and event_id_fk = :eventId")
@@ -152,4 +148,19 @@ public interface TicketFieldRepository extends FieldRepository {
 
     @Query("delete from ticket_field_configuration where id = :fieldConfigurationId")
 	int deleteField(@Bind("fieldConfigurationId") int ticketFieldConfigurationId);
+
+    @Query("select field_value as name, count(*) as count from ticket_field_value where ticket_field_configuration_id_fk = :configurationId group by field_value")
+    List<RestrictedValueStats.RestrictedValueCount> getValueStats(@Bind("configurationId") int configurationId);
+
+    default List<RestrictedValueStats> retrieveStats(int configurationId) {
+        TicketFieldConfiguration configuration = findById(configurationId);
+        Map<String, Integer> valueStats = getValueStats(configurationId).stream().collect(Collectors.toMap(RestrictedValueStats.RestrictedValueCount::getName, RestrictedValueStats.RestrictedValueCount::getCount));
+        int total = valueStats.values().stream().mapToInt(i -> i).sum();
+        return configuration.getRestrictedValues().stream()
+            .map(name -> {
+                int count = valueStats.getOrDefault(name, 0);
+                return new RestrictedValueStats(name, count, new BigDecimal(count).divide(new BigDecimal(total), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED).intValue());
+            }).collect(Collectors.toList());
+
+    }
 }

@@ -24,25 +24,13 @@ import java.util.List;
 @QueryRepository
 public interface UploadedResourceRepository {
 
-    String hasResourceGlobal = "select exists(select name from resource_global where name = :name) as res";
-    @Query(hasResourceGlobal)
-    @QueriesOverride({
-        @QueryOverride(value = hasResourceGlobal + " from (values(0))", db = "HSQLDB")
-    })
+    @Query("select exists(select name from resource_global where name = :name) as res")
     boolean hasResource(@Bind("name") String name);
 
-    String hasResourceOrganization = "select exists(select name from resource_organizer where name = :name and organization_id_fk = :organizationId) as res";
-    @Query(hasResourceOrganization)
-    @QueriesOverride({
-        @QueryOverride(value = hasResourceOrganization + " from (values(0))", db = "HSQLDB")
-    })
+    @Query("select exists(select name from resource_organizer where name = :name and organization_id_fk = :organizationId) as res")
     boolean hasResource(@Bind("organizationId") int organizationId, @Bind("name") String name);
 
-    String hasResourceEvent = "select exists(select name from resource_event where name = :name and organization_id_fk = :organizationId  and event_id_fk = :eventId) as res";
-    @Query(hasResourceEvent)
-    @QueriesOverride({
-        @QueryOverride(value = hasResourceEvent + " from (values(0))", db = "HSQLDB")
-    })
+    @Query("select exists(select name from resource_event where name = :name and organization_id_fk = :organizationId  and event_id_fk = :eventId) as res")
     boolean hasResource(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("name") String name);
 
 

@@ -64,7 +64,7 @@
         <hr data-ng-if="field.type == 'select'" />
         <div class="row" data-ng-if="field.type == 'select'">
             <div class="col-xs-1"><strong>Values</strong></div>
-            <div class="col-xs-11">
+            <div class="col-xs-10">
                 <div data-ng-repeat="restrictedValue in field.restrictedValues" ng-class="{'text-muted': field.disabledValues && field.disabledValues.indexOf(restrictedValue) > -1 }">
                     <span><strong>{{restrictedValue}}</strong>: </span>
                     <span data-ng-repeat="lang in $ctrl.allLanguages | selectedLanguages:$ctrl.event.locales">
@@ -72,6 +72,7 @@
                     </span>
                 </div>
             </div>
+            <div class="col-xs-1"><button class="btn btn-default btn-xs" type="button" ng-click="$ctrl.openStats(field)"><i class="fa fa-bar-chart-o"></i> Statistics</button></div>
         </div>
         <hr data-ng-if="field.context === 'ADDITIONAL_SERVICE'" />
         <div data-ng-if="field.context === 'ADDITIONAL_SERVICE'">

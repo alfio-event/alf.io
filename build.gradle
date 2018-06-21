@@ -1,5 +1,7 @@
 import org.apache.tools.ant.filters.ReplaceTokens
 
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.Year
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -7,6 +9,11 @@ import java.time.format.DateTimeFormatter
 import java.util.regex.Pattern
 
 buildscript {
+
+    dependencies {
+        classpath 'ru.yandex.qatools.embed:postgresql-embedded:+'
+    }
+    
     repositories {
         jcenter()
         maven {
@@ -79,12 +86,12 @@ ext {
     // default settings
     jettyPort = 8080
     jettyHost = '0.0.0.0'
-    datasourceDialect = 'HSQLDB'
-    datasourceDriver = 'org.hsqldb.jdbcDriver'
-    datasourceUrl = 'jdbc:hsqldb:mem:alfio'
-    datasourceUsername = 'sa'
-    datasourcePassword = ''
-    datasourceValidationQuery = 'SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS'
+    datasourceDialect = 'PGSQL'
+    datasourceDriver = 'org.postgresql.Driver'
+    datasourceUrl = 'jdbc:postgresql://localhost:5432/alfio'
+    datasourceUsername = 'postgres'
+    datasourcePassword = 'password'
+    datasourceValidationQuery = 'SELECT 1'
     //springProfilesActive = 'dev,debug-csp' //enable csp report. FIXME For some reasons it doesn't work on Chrome
     //springProfilesActive = 'dev,demo'
     //springProfilesActive = 'dev,demo,jdbc-session'
@@ -93,27 +100,7 @@ ext {
     port = "8080"
 
 
-    // dockerfile template attributes
-
-
-
     switch (profile) {
-        case 'dev-pgsql':
-            datasourceDialect = 'PGSQL'
-            datasourceDriver = 'org.postgresql.Driver'
-            datasourceUrl = 'jdbc:postgresql://localhost:5432/alfio'
-            datasourceUsername = 'postgres'
-            datasourcePassword = 'password'
-            datasourceValidationQuery = 'SELECT 1'
-            break
-        case 'dev-mysql':
-            datasourceDialect = 'MYSQL'
-            datasourceDriver = 'com.mysql.jdbc.Driver'
-            datasourceUrl = 'jdbc:mysql://localhost:3306/alfio'
-            datasourceUsername = 'root'
-            datasourcePassword = ''
-            datasourceValidationQuery = 'SELECT 1'
-            break
         case 'docker-test':
             datasourceDialect = 'PGSQL'
             datasourceDriver = 'org.postgresql.Driver'
@@ -121,6 +108,9 @@ ext {
             datasourceUsername = 'postgres'
             datasourcePassword = 'postgres'
             datasourceValidationQuery = 'SELECT 1'
+            break
+        case 'travis':
+            project.springProfilesActive = 'travis'
             break
     }
 }
@@ -169,7 +159,6 @@ dependencies {
     compile "com.google.zxing:javase:3.3.3"
     compile "org.flywaydb:flyway-core:4.2.0"
     compile "org.postgresql:postgresql:42.2.2"
-    compile 'mysql:mysql-connector-java:5.1.42'
     compile "com.zaxxer:HikariCP:2.7.7"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
     compile "org.apache.logging.log4j:log4j-core:$log4jVersion"
@@ -188,12 +177,14 @@ dependencies {
     compile 'com.github.ben-manes.caffeine:caffeine:2.6.2'
     compile 'de.danielbechler:java-object-diff:0.95'
     compile 'com.github.scribejava:scribejava-core:5.0.0'
+    compile 'ch.digitalfondue.vatchecker:vatchecker:1.1'
 
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "com.insightfullogic:lambda-behave:0.3"
 
     compileOnly "org.projectlombok:lombok:1.16.20"
     testCompile "org.projectlombok:lombok:1.16.20"
+    testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.8"
 
     compileOnly "javax.servlet:javax.servlet-api:3.1.0"
     testCompile "javax.servlet:javax.servlet-api:3.1.0"
@@ -201,7 +192,6 @@ dependencies {
         exclude module : 'spring-boot-starter-logging'
     }
     testCompile "net.sourceforge.htmlunit:htmlunit:2.29"
-    runtime "org.hsqldb:hsqldb:2.4.0"
     runtime "commons-fileupload:commons-fileupload:1.3.3"
     providedCompile "org.springframework.boot:spring-boot-starter-web", {
         exclude module : 'spring-boot-starter-logging'
@@ -272,7 +262,7 @@ compileJava {
 
 //propagate the system properties to the tests
 test {
-    systemProperties = System.getProperties()
+    systemProperties = System.properties
     testLogging {
         events "failed"
         exceptionFormat "full"
@@ -352,6 +342,36 @@ task clever(type: Copy) {
     })
     into "${project.buildDir}/clevercloud"
     dependsOn build
+}
+
+import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres
+import ru.yandex.qatools.embed.postgresql.distribution.Version.Main
+
+task startEmbeddedPgSQL {
+    doLast {
+        final pgsqlPath = Paths.get(".", "alfio-itest")
+        Files.createDirectories(pgsqlPath)
+        final tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data")
+        final postgres = new EmbeddedPostgres(Main.PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString())
+        postgres.start(EmbeddedPostgres.cachedRuntimeConfig(Paths.get(System.getProperty("java.io.tmpdir"), "pgembed")),
+            "localhost", 5432, "alfio", "postgres", "password", Arrays.asList("-E", "SQL_ASCII", "--locale=C", "--lc-collate=C", "--lc-ctype=C"))
+
+        postgres.getProcess().ifPresent({
+            final pid = it.getProcessId()
+            Files.write(Paths.get(".", "alfio-itest", "pgsql-pid"), Arrays.asList(Long.toString(pid)))
+            System.out.println("Launched pgsql with pid " + pid)
+        })
+    }
+}
+
+task stopEmbeddedPgSQL {
+    doLast {
+        final pidFile = Paths.get(".", "alfio-itest", "pgsql-pid");
+        final pid = Files.readAllLines(pidFile).get(0)
+        Files.deleteIfExists(pidFile)
+        Runtime.runtime.exec("kill -9 " + pid)
+        System.out.println("Killed pgsql with pid " + pid)
+    }
 }
 
 release {

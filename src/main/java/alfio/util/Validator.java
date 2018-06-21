@@ -240,8 +240,12 @@ public final class Validator {
                     errors.rejectValue(prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
                 }
 
-                if(fieldConf.isEuVat() && !vatValidator.test(formValue)) {
-                    errors.rejectValue(prefixForLambda + "additional['"+fieldConf.getName()+"']", ErrorsCode.STEP_2_INVALID_VAT);
+                try {
+                    if (fieldConf.isEuVat() && !vatValidator.test(formValue)) {
+                        errors.rejectValue(prefixForLambda + "additional['" + fieldConf.getName() + "']", ErrorsCode.STEP_2_INVALID_VAT);
+                    }
+                } catch (IllegalStateException e) {
+                    errors.rejectValue(prefixForLambda + "additional['" + fieldConf.getName() + "']", ErrorsCode.VIES_IS_DOWN);
                 }
 
             });

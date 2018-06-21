@@ -10,17 +10,26 @@
         'vat:eu': 'EU VAT'
     };
 
-    angular.module('adminApplication').component('eventDataToCollect', {
-        controller: ['$uibModal', '$q', 'EventService', 'AdditionalServiceManager', EventDataToCollectCtrl],
-        templateUrl: '../resources/js/admin/feature/event-data-to-collect/event-data-to-collect.html',
-        bindings: {
-            event: '<'
-        }
-    }).filter('fieldType', function() {
-        return function(field) {
-            return FIELD_TYPES[field.type] || field.type;
-        }
-    });
+    angular.module('adminApplication')
+        .component('eventDataToCollect', {
+            controller: ['$uibModal', '$q', 'EventService', 'AdditionalServiceManager', EventDataToCollectCtrl],
+            templateUrl: '../resources/js/admin/feature/event-data-to-collect/event-data-to-collect.html',
+            bindings: {
+                event: '<'
+            }
+        }).component('restrictedValuesStatistics', {
+            controller: ['EventService', RestrictedValuesStatisticsCtrl],
+            templateUrl: '../resources/js/admin/feature/event-data-to-collect/restricted-values-statistics.html',
+            bindings: {
+                field: '<',
+                closeWindow: '&',
+                eventName: '<'
+            }
+        }).filter('fieldType', function() {
+            return function(field) {
+                return FIELD_TYPES[field.type] || field.type;
+            }
+        });
 
 
     var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
@@ -97,6 +106,7 @@
         ctrl.editField = editField;
         ctrl.additionalServiceDescription = additionalServiceDescription;
         ctrl.getCategoryDescription = getCategoryDescription;
+        ctrl.openStats = openStats;
 
         function loadAll() {
             return EventService.getAdditionalFields(ctrl.event.shortName).then(function(result) {
@@ -138,6 +148,21 @@
                         });
                     }
                 }
+            });
+        }
+
+        function openStats(field) {
+            $uibModal.open({
+                size: 'md',
+                template: '<restricted-values-statistics field="field" close-window="closeFn()" event-name="eventName"></restricted-values-statistics>',
+                controller: function($scope) {
+                    $scope.field = field;
+                    $scope.eventName = ctrl.event.shortName;
+                    $scope.closeFn = function() {
+                        $scope.$close(true);
+                    };
+                },
+                controllerAs: '$ctrl'
             });
         }
 
@@ -292,5 +317,29 @@
             }
             return "#"+id;
         }
+    }
+
+    function RestrictedValuesStatisticsCtrl(EventService) {
+        var ctrl = this;
+
+        function getData() {
+            EventService.getRestrictedValuesStats(ctrl.eventName, ctrl.field.id)
+                .then(function (res) {
+                    ctrl.field.stats = res.data;
+                    ctrl.loading = false;
+                }, function () {
+                    ctrl.loading = false;
+                });
+        }
+
+        ctrl.$onInit = function() {
+            ctrl.loading = true;
+            getData();
+        };
+
+        ctrl.refresh = function() {
+            ctrl.loading = true;
+            getData();
+        };
     }
 })();
