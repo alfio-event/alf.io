@@ -17,7 +17,6 @@
 package alfio.controller.support;
 
 import alfio.manager.FileUploadManager;
-import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.Event;
 import alfio.model.Ticket;
@@ -131,18 +130,6 @@ public final class TemplateProcessor {
         } else {
             return Optional.empty();
         }
-    }
-
-    public static PartialTicketPDFGenerator buildPartialPDFTicket(Locale language,
-                                                                  Event event,
-                                                                  TicketReservation ticketReservation,
-                                                                  TicketCategory ticketCategory,
-                                                                  Organization organization,
-                                                                  TemplateManager templateManager,
-                                                                  FileUploadManager fileUploadManager,
-                                                                  String reservationID,
-                                                                  OutputStream os) {
-        return (ticket) -> renderPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager, reservationID, os);
     }
 
     private static Optional<byte[]> buildReceiptOrInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {

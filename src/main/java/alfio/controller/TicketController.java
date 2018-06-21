@@ -23,7 +23,6 @@ import alfio.manager.EventManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
-import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
@@ -192,11 +191,19 @@ public class TicketController {
         Triple<Event, TicketReservation, Ticket> data = oData.get();
         
         Ticket ticket = data.getRight();
+        Event event = data.getLeft();
+        TicketReservation ticketReservation = data.getMiddle();
         
         response.setContentType("application/pdf");
         response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
         try (OutputStream os = response.getOutputStream()) {
-            preparePdfTicket(request, data.getLeft(), data.getMiddle(), ticket, os).generate(ticket);
+            TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
+            Organization organization = organizationRepository.getById(event.getOrganizationId());
+            String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation.getId());
+            TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
+                ticket, ticketCategory, organization,
+                templateManager, fileUploadManager,
+                reservationID, os);
         }
     }
     
@@ -228,14 +235,6 @@ public class TicketController {
         Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         oData.ifPresent(triple -> ticketReservationManager.releaseTicket(triple.getLeft(), triple.getMiddle(), triple.getRight()));
         return "redirect:/event/" + eventName;
-    }
-
-    private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket, OutputStream os) {
-        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
-        String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation.getId());
-        return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
-            ticketCategory, organization, templateManager, fileUploadManager, reservationID, os);
     }
 
     private String internalShowTicket(String eventName, String ticketIdentifier, boolean ticketEmailSent, Model model, String backSuffix, Locale locale) {

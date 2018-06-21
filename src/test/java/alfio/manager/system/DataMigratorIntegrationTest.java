@@ -25,7 +25,6 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
-import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
@@ -53,6 +52,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -267,7 +267,7 @@ public class DataMigratorIntegrationTest {
     }
 
     @Test
-    public void testUpdateGender() {
+    public void testUpdateGender() throws IOException {
         List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
@@ -295,8 +295,8 @@ public class DataMigratorIntegrationTest {
 	        second.setEmail("email@email.ch");
 	        second.setFirstName("Full");
             second.setLastName("Name");
-	        TemplateProcessor.buildPartialPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(),
-                ticketCategoryRepository.getByIdAndActive(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()),
+	        TemplateProcessor.renderPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(),
+                tickets.get(0), ticketCategoryRepository.getByIdAndActive(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()),
                 templateManager, fileUploadManager, "", new ByteArrayOutputStream());
 	        ticketReservationManager.updateTicketOwner(tickets.get(0), Locale.ITALIAN, event, first, (t) -> "", (t) -> "", Optional.empty());
 	        ticketReservationManager.updateTicketOwner(tickets.get(1), Locale.ITALIAN, event, second, (t) -> "", (t) -> "", Optional.empty());
