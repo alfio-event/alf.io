@@ -18,7 +18,6 @@ package alfio.manager;
 
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.support.CustomMessageManager;
-import alfio.manager.support.PDFTemplateGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
@@ -120,9 +119,8 @@ public class NotificationManager {
                 TicketCategory ticketCategory = Json.fromJson(model.get("ticketCategory"), TicketCategory.class);
                 Event event = eventRepository.findById(ticket.getEventId());
                 Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
-                PDFTemplateGenerator pdfTemplateGenerator = TemplateProcessor.buildPDFTicket(Locale.forLanguageTag(ticket.getUserLanguage()), event, reservation,
-                    ticket, ticketCategory, organization, templateManager, fileUploadManager, configurationManager.getShortReservationID(event, ticket.getTicketsReservationId()));
-                pdfTemplateGenerator.generate().createPDF(baos);
+                TemplateProcessor.renderPDFTicket(Locale.forLanguageTag(ticket.getUserLanguage()), event, reservation,
+                    ticket, ticketCategory, organization, templateManager, fileUploadManager, configurationManager.getShortReservationID(event, ticket.getTicketsReservationId()), baos);
             } catch (IOException e) {
                 log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);
             }

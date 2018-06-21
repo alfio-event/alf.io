@@ -17,7 +17,6 @@
 package alfio.controller.support;
 
 import alfio.manager.FileUploadManager;
-import alfio.manager.support.PDFTemplateGenerator;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.Event;
@@ -39,6 +38,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -75,29 +75,27 @@ public final class TemplateProcessor {
         };
     }
 
-    public static PDFTemplateGenerator buildPDFTicket(Locale language,
-                                                      Event event,
-                                                      TicketReservation ticketReservation,
-                                                      Ticket ticket,
-                                                      TicketCategory ticketCategory,
-                                                      Organization organization,
-                                                      TemplateManager templateManager,
-                                                      FileUploadManager fileUploadManager,
-                                                      String reservationID) {
-        
-        return () -> {
-            Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
-            Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID);
+    public static void renderPDFTicket(Locale language,
+                                       Event event,
+                                       TicketReservation ticketReservation,
+                                       Ticket ticket,
+                                       TicketCategory ticketCategory,
+                                       Organization organization,
+                                       TemplateManager templateManager,
+                                       FileUploadManager fileUploadManager,
+                                       String reservationID,
+                                       OutputStream os) throws IOException {
+        Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
+        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID);
 
-            String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
-            return prepareItextRenderer(page);
-        };
+        String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
+        renderToPdf(page, os);
     }
 
-    public static PdfBoxRenderer prepareItextRenderer(String page) {
+    public static void renderToPdf(String page, OutputStream os) throws IOException {
 
         PdfRendererBuilder builder = new PdfRendererBuilder();
-
+        builder.toStream(os);
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(Jsoup.parse(page)), "");
         PdfBoxRenderer renderer = builder.buildPdfRenderer();
         try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
@@ -115,8 +113,12 @@ public final class TemplateProcessor {
         } catch(IOException e) {
             log.warn("error while loading DejaVuSansMono.ttf font", e);
         }
-        renderer.layout();
-        return renderer;
+        try {
+            renderer.layout();
+            renderer.createPDF();
+        } finally {
+            renderer.close();
+        }
     }
 
     public static Optional<TemplateResource.ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
@@ -138,8 +140,9 @@ public final class TemplateProcessor {
                                                                   Organization organization,
                                                                   TemplateManager templateManager,
                                                                   FileUploadManager fileUploadManager,
-                                                                  String reservationID) {
-        return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager, reservationID).generate();
+                                                                  String reservationID,
+                                                                  OutputStream os) {
+        return (ticket) -> renderPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager, reservationID, os);
     }
 
     private static Optional<byte[]> buildReceiptOrInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
@@ -152,7 +155,7 @@ public final class TemplateProcessor {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         String page = templateManager.renderTemplate(event, templateResource, model, language);
         try {
-            prepareItextRenderer(page).createPDF(baos);
+            renderToPdf(page, baos);
             return Optional.of(baos.toByteArray());
         } catch (IOException ioe) {
             return Optional.empty();
