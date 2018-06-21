@@ -412,6 +412,8 @@
                         vatInput.parent('div').addClass('has-error');
                         if(xhr.status === 400) {
                             resultContainer.html(resultContainer.attr('data-validation-error-msg'));
+                        } else if (xhr.status === 503) {
+                            resultContainer.html(resultContainer.attr('data-vies-down'));
                         } else {
                             resultContainer.html(resultContainer.attr('data-generic-error-msg'));
                         }

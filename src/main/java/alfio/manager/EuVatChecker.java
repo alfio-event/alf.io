@@ -21,21 +21,16 @@ import alfio.model.VatDetail;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.AuditingRepository;
-import alfio.util.Json;
-import com.fasterxml.jackson.core.type.TypeReference;
+import ch.digitalfondue.vatchecker.EUVatCheckResponse;
+import ch.digitalfondue.vatchecker.EUVatChecker;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -55,9 +50,9 @@ public class EuVatChecker {
 
     private final ConfigurationManager configurationManager;
     private final AuditingRepository auditingRepository;
-    private final OkHttpClient client = new OkHttpClient();
+    private final EUVatChecker client = new EUVatChecker();
 
-    private static final Cache<Pair<String, String>, Map<String, String>> validationCache = Caffeine.newBuilder()
+    private static final Cache<Pair<String, String>, EUVatCheckResponse> validationCache = Caffeine.newBuilder()
         .expireAfterWrite(15, TimeUnit.MINUTES)
         .build();
 
@@ -69,7 +64,7 @@ public class EuVatChecker {
         return performCheck(vatNr, countryCode, organizationId).apply(configurationManager, client);
     }
 
-    static BiFunction<ConfigurationManager, OkHttpClient, Optional<VatDetail>> performCheck(String vatNr, String countryCode, int organizationId) {
+    static BiFunction<ConfigurationManager, EUVatChecker, Optional<VatDetail>> performCheck(String vatNr, String countryCode, int organizationId) {
         return (configurationManager, client) -> {
             boolean vatNrNotEmpty = StringUtils.isNotEmpty(vatNr);
             boolean validCountryCode = StringUtils.length(StringUtils.trimToNull(countryCode)) == 2;
@@ -82,8 +77,7 @@ public class EuVatChecker {
             boolean euCountryCode = configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)).contains(countryCode);
 
             if(euCountryCode && validationEnabled(configurationManager, organizationId)) {
-                final Pair<String, String> cacheKey = Pair.of(vatNr, countryCode);
-                Map<String, String> validationResult = validateEUVat(vatNr, countryCode, configurationManager, client);
+                EUVatCheckResponse validationResult = validateEUVat(vatNr, countryCode, client);
                 return Optional.ofNullable(validationResult)
                     .map(r -> getVatDetail(reverseChargeEnabled(configurationManager, organizationId), r, vatNr, countryCode, organizerCountry(configurationManager, organizationId)));
             } else {
@@ -94,42 +88,18 @@ public class EuVatChecker {
         };
     }
 
-    private static Map<String, String> validateEUVat(String vat, String countryCode, ConfigurationManager configurationManager, OkHttpClient client) {
+    private static EUVatCheckResponse validateEUVat(String vat, String countryCode, EUVatChecker client) {
 
         if(StringUtils.isEmpty(vat) || StringUtils.length(countryCode) != 2) {
             return null;
         }
 
-        return validationCache.get(Pair.of(vat, countryCode), k -> {
-            Request request = new Request.Builder()
-                .url(apiAddress(configurationManager) + "?country=" + countryCode.toUpperCase() + "&number=" + vat)
-                .get()
-                .build();
-            try (Response resp = client.newCall(request).execute()) {
-                if (resp.isSuccessful()) {
-                    ResponseBody body = resp.body();
-                    return body != null ? Json.fromJson(body.string(), new TypeReference<Map<String, String>>() {}) : null;
-                } else {
-                    return null;
-                }
-            } catch (IOException e) {
-                log.warn("Error while calling VAT NR check.", e);
-                return null;
-            }
-        });
+        return validationCache.get(Pair.of(vat, countryCode), k -> client.check(countryCode.toUpperCase(), vat));
     }
 
-    private static VatDetail getVatDetail(boolean reverseChargeEnabled, Map<String, String> response, String vatNr, String countryCode, String organizerCountryCode) {
-        boolean isValid = isValid(response);
-        return new VatDetail(vatNr, countryCode, isValid, response.get("name"), response.get("address"), isValid && reverseChargeEnabled && !organizerCountryCode.equals(countryCode));
-    }
-
-    private static boolean isValid(Map<String, String> response) {
-        return Boolean.parseBoolean(response.get("isValid"));
-    }
-
-    private static String apiAddress(ConfigurationManager configurationManager) {
-        return configurationManager.getStringConfigValue(getSystemConfiguration(ConfigurationKeys.EU_VAT_API_ADDRESS), null);
+    private static VatDetail getVatDetail(boolean reverseChargeEnabled, EUVatCheckResponse response, String vatNr, String countryCode, String organizerCountryCode) {
+        boolean isValid = response.isValid();
+        return new VatDetail(vatNr, countryCode, isValid, response.getName(), response.getAddress(), isValid && reverseChargeEnabled && !organizerCountryCode.equals(countryCode));
     }
 
     private static String organizerCountry(ConfigurationManager configurationManager, int organizationId) {
@@ -141,7 +111,7 @@ public class EuVatChecker {
     }
 
     private static boolean validationEnabled(ConfigurationManager configurationManager, int organizationId) {
-        return StringUtils.isNotEmpty(apiAddress(configurationManager)) && StringUtils.isNotEmpty(organizerCountry(configurationManager, organizationId));
+        return StringUtils.isNotEmpty(organizerCountry(configurationManager, organizationId));
     }
 
     @RequiredArgsConstructor
@@ -166,8 +136,8 @@ public class EuVatChecker {
                 return false;
             }
 
-            Map<String, String> result = validateEUVat(vatNr, organizerCountry, checker.configurationManager, checker.client);
-            boolean valid = result != null && isValid(result);
+            EUVatCheckResponse result = validateEUVat(vatNr, organizerCountry, checker.client);
+            boolean valid = result != null && result.isValid();
             if(valid && StringUtils.isNotEmpty(ticketReservationId)) {
                 Map<String, Object> data = new HashMap<>();
                 data.put("vatNumber", vatNr);

@@ -327,6 +327,7 @@
                     <div class="col-xs-10 text-right">
                         <span id="validation-result" class="text-danger" data-validation-error-msg="{{#i18n}}reservation-page.vat-validation-error [{{vatTranslation}}]{{/i18n}}"
                               data-generic-error-msg="{{#i18n}}reservation-page.vat-error [{{vatTranslation}}]{{/i18n}}"
+                              data-vies-down="{{#i18n}}error.vatVIESDown{{/i18n}}"
                               data-validation-required-msg="{{#i18n}}reservation-page.vat-validation-required [{{vatTranslation}}]{{/i18n}}"></span>
                     </div>
                 </div>
