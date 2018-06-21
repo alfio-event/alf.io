@@ -1,10 +1,6 @@
 language: java
 before_script:
   - psql -c 'create database alfio;' -U postgres
-  - bash .travis.install-mysql-5.7.sh
-  - mysql -u root -e 'CREATE DATABASE alfio CHARACTER SET utf8 COLLATE utf8_bin;'
-  - mysql -u root -e 'select VERSION()'
-  - mysql -u root -e 'select @@sql_mode'
 dist: trusty
 sudo: required
 install:
@@ -12,57 +8,15 @@ install:
 matrix:
     include:
         - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=HSQLDB"
-          dist: precise
+          env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql9.5"
+          dist: trusty
           addons:
-              apt:
-                  packages:
-                      - mysql-server
-                      - mysql-client-core-5.5
-                      - mysql-client
+              postgresql: "9.5"
         - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=PGSQL-TRAVIS -Dpgsql9.1"
-          dist: precise
+          env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql9.6"
+          dist: trusty
           addons:
-              postgresql: "9.1"
-              apt:
-                  packages:
-                      - mysql-server
-                      - mysql-client-core-5.5
-                      - mysql-client
-        - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=PGSQL-TRAVIS -Dpgsql9.4"
-          dist: precise
-          addons:
-              postgresql: "9.4"
-              apt:
-                  packages:
-                      - mysql-server
-                      - mysql-client-core-5.5
-                      - mysql-client
-        - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=MYSQL -Dmysql5.5"
-          dist: precise
-          addons:
-              apt:
-                  packages:
-                      - mysql-server
-                      - mysql-client-core-5.5
-                      - mysql-client
-        - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=MYSQL -Dmysql5.6"
-          addons:
-              apt:
-                  packages:
-                      - mysql-server-5.6
-                      - mysql-client-core-5.6
-                      - mysql-client-5.6    
-        - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=MYSQL -Dmariadb10.1"
-          addons:
-              mariadb: 10.1
-        - jdk: oraclejdk8
-          env: PROFILE="-Ddbenv=MYSQL -Dmysql.5.7"
+              postgresql: "9.6"
 
 script:
     - TERM=dumb ./gradlew build jacocoTestReport $PROFILE

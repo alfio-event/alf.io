@@ -72,16 +72,10 @@ public interface TicketReservationRepository {
     @Query("select count(id) from tickets_reservation where status = 'OFFLINE_PAYMENT' and event_id_fk = :eventId")
     Integer findAllReservationsWaitingForPaymentCountInEventId(@Bind("eventId") int eventId);
 
-    @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and offline_payment_reminder_sent = false")
-    @QueriesOverride({
-        @QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false", db = "PGSQL"),
-        @QueryOverride(value = "select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date(validity) <= :expiration and offline_payment_reminder_sent = false", db = "MYSQL")})
+    @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false")
     List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
 
-    @Query("select id, full_name, first_name, last_name, email_address, event_id_fk, validity from tickets_reservation where status = 'OFFLINE_PAYMENT' and trunc(validity) <= :expiration and event_id_fk = :eventId")
-    @QueriesOverride({
-        @QueryOverride(value = "select id, full_name, first_name, last_name, email_address, event_id_fk, validity from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and event_id_fk = :eventId", db = "PGSQL"),
-        @QueryOverride(value = "select id, full_name, first_name, last_name, email_address, event_id_fk, validity from tickets_reservation where status = 'OFFLINE_PAYMENT' and date(validity) <= :expiration and event_id_fk = :eventId", db = "MYSQL")})
+    @Query("select id, full_name, first_name, last_name, email_address, event_id_fk, validity from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and event_id_fk = :eventId")
     List<TicketReservationInfo> findAllOfflinePaymentReservationWithExpirationBefore(@Bind("expiration") ZonedDateTime expiration, @Bind("eventId") int eventId);
 
     @Query("update tickets_reservation set offline_payment_reminder_sent = true where id = :reservationId")
@@ -147,50 +141,21 @@ public interface TicketReservationRepository {
     int resetBillingData(@Bind("reservationId") String reservationId);
 
 
-    @Query("select count(ticket.id) ticket_count, to_char(trunc(confirmation_ts), 'yyyy-MM-dd') as day from ticket " +
+    @Query("select count(ticket.id) ticket_count, to_char(date_trunc('day', confirmation_ts), 'YYYY-MM-DD') as day from ticket " +
         "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
         "ticket.event_id = :eventId and " +
         "confirmation_ts is not null and " +
         "confirmation_ts >= :from and " +
-        "confirmation_ts <= :to " +
-        "group by day order by day asc")
-    @QueriesOverride({
-        @QueryOverride(value = "select count(ticket.id) ticket_count, to_char(date_trunc('day', confirmation_ts), 'YYYY-MM-DD') as day from ticket " +
-            "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
-            "ticket.event_id = :eventId and " +
-            "confirmation_ts is not null and " +
-            "confirmation_ts >= :from and " +
-            "confirmation_ts <= :to  group by day order by day asc", db = "PGSQL"),
-        @QueryOverride(value = "select count(ticket.id) ticket_count, date_format(date(confirmation_ts), '%Y-%m-%d') as day from ticket " +
-            "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
-            "ticket.event_id = :eventId and " +
-            "confirmation_ts is not null and " +
-            "confirmation_ts >= :from and " +
-            "confirmation_ts <= :to group by day order by day asc", db = "MYSQL")})
+        "confirmation_ts <= :to  group by day order by day asc")
     List<TicketsByDateStatistic> getSoldStatistic(@Bind("eventId") int eventId, @Bind("from") Date from, @Bind("to") Date to);
 
-    @Query("select count(ticket.id) ticket_count, to_char(trunc(tickets_reservation.creation_ts), 'yyyy-MM-dd') as day from ticket " +
+    @Query("select count(ticket.id) ticket_count, to_char(date_trunc('day', tickets_reservation.creation_ts), 'YYYY-MM-DD') as day from ticket " +
         "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
         "ticket.event_id = :eventId and " +
         "tickets_reservation.status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and " +
         "tickets_reservation.creation_ts >= :from and " +
         "tickets_reservation.creation_ts <= :to " +
         "group by day order by day asc")
-    @QueriesOverride({
-        @QueryOverride(value = "select count(ticket.id) ticket_count, to_char(date_trunc('day', tickets_reservation.creation_ts), 'YYYY-MM-DD') as day from ticket " +
-            "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
-            "ticket.event_id = :eventId and " +
-            "tickets_reservation.status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and " +
-            "tickets_reservation.creation_ts >= :from and " +
-            "tickets_reservation.creation_ts <= :to " +
-            "group by day order by day asc", db = "PGSQL"),
-        @QueryOverride(value = "select count(ticket.id) ticket_count, date_format(date(tickets_reservation.creation_ts), '%Y-%m-%d') as day from ticket " +
-            "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
-            "ticket.event_id = :eventId and " +
-            "tickets_reservation.status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and " +
-            "tickets_reservation.creation_ts >= :from and " +
-            "tickets_reservation.creation_ts <= :to " +
-            "group by day order by day asc", db = "MYSQL")})
     List<TicketsByDateStatistic> getReservedStatistic(@Bind("eventId") int eventId, @Bind("from") Date from, @Bind("to") Date to);
 
 

@@ -54,7 +54,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
 import javax.sql.DataSource;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -76,6 +75,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     private ResourceLoader resourceLoader;
 
     @Bean
+    @Profile({"!"+Initializer.PROFILE_INTEGRATION_TEST, "travis"})
     public PlatformProvider getCloudProvider(Environment environment) {
         PlatformProvider current = PLATFORM_PROVIDERS
                                     .stream()
@@ -96,7 +96,8 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     }
 
     @Bean
-    public DataSource getDataSource(Environment env, PlatformProvider platform) throws URISyntaxException {
+    @Profile({"!"+Initializer.PROFILE_INTEGRATION_TEST, "travis"})
+    public DataSource getDataSource(Environment env, PlatformProvider platform) {
         if(platform == PlatformProvider.CLOUD_FOUNDRY) {
             return new FakeCFDataSource();
         } else {
