@@ -389,6 +389,14 @@ public class EventApiController {
             .collect(toList());
     }
 
+    @RequestMapping("/events/{eventName}/additional-field/{id}/stats")
+    public List<RestrictedValueStats> getStats(@PathVariable("eventName") String eventName, @PathVariable("id") Integer id, Principal principal) {
+        if(!eventManager.getOptionalByName(eventName, principal.getName()).filter(event -> ticketFieldRepository.findById(id).getEventId() == event.getId()).isPresent()) {
+            return Collections.emptyList();
+        }
+        return ticketFieldRepository.retrieveStats(id);
+    }
+
     @RequestMapping(value = "/event/additional-field/templates", method = GET)
     public List<DynamicFieldTemplate> loadTemplates() {
         return dynamicFieldTemplateRepository.loadAll();

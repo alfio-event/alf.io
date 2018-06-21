@@ -168,7 +168,10 @@
                 return $http['get']('/admin/api/events/'+eventName+'/fields');
             },
             getAdditionalFields: function(eventName) {
-                return $http.get('/admin/api/events/'+eventName+'/additional-field');
+                return $http.get('/admin/api/events/'+eventName+'/additional-field').error(HttpErrorHandler.handle);
+            },
+            getRestrictedValuesStats: function(eventName, id) {
+                return $http.get('/admin/api/events/'+eventName+'/additional-field/'+id+'/stats').error(HttpErrorHandler.handle);
             },
             saveFieldDescription: function(eventName, fieldDescription) {
                 return $http.post('/admin/api/events/'+eventName+'/additional-field/descriptions', fieldDescription);
