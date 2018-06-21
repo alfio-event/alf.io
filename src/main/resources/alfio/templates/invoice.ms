@@ -3,8 +3,9 @@
 	<head>
 		<style>
 			body {
-				font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
-				font-size:11pt;
+				font-family: "DejaVu Sans";
+                font-size:10pt;
+                line-height:12pt;
 			}
 
             h1,h2,p {margin:0;}
@@ -73,8 +74,9 @@
                 min-height: 25px;
             }
 
-            .strong {
+            .strong, strong {
                 font-weight: bold;
+                font-family: "DejaVu Sans Bold"
             }
 
             .mb {
