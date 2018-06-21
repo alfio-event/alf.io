@@ -19,7 +19,9 @@ package alfio.manager.support;
 import alfio.model.Ticket;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 
+import java.io.IOException;
+
 @FunctionalInterface
 public interface PartialTicketPDFGenerator {
-    PdfBoxRenderer generate(Ticket ticket);
+    void generate(Ticket ticket) throws IOException;
 }

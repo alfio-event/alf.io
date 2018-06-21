@@ -38,7 +38,6 @@ import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import com.google.zxing.WriterException;
-import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -197,10 +196,7 @@ public class TicketController {
         response.setContentType("application/pdf");
         response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
         try (OutputStream os = response.getOutputStream()) {
-            PdfBoxRenderer renderer = preparePdfTicket(request, data.getLeft(), data.getMiddle(), ticket).generate(ticket);
-            if(renderer != null) {
-                renderer.createPDF(os);
-            }
+            preparePdfTicket(request, data.getLeft(), data.getMiddle(), ticket, os).generate(ticket);
         }
     }
     
@@ -234,12 +230,12 @@ public class TicketController {
         return "redirect:/event/" + eventName;
     }
 
-    private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket) throws WriterException, IOException {
+    private PartialTicketPDFGenerator preparePdfTicket(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket, OutputStream os) {
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation.getId());
         return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
-            ticketCategory, organization, templateManager, fileUploadManager, reservationID);
+            ticketCategory, organization, templateManager, fileUploadManager, reservationID, os);
     }
 
     private String internalShowTicket(String eventName, String ticketIdentifier, boolean ticketEmailSent, Model model, String backSuffix, Locale locale) {
