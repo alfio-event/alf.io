@@ -100,8 +100,18 @@ public final class TemplateProcessor {
 
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(Jsoup.parse(page)), "");
         PdfBoxRenderer renderer = builder.buildPdfRenderer();
-        try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream()) {
+        try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
+             InputStream issans = new ClassPathResource("/alfio/font/DejaVuSans.ttf").getInputStream();
+             InputStream isserif = new ClassPathResource("/alfio/font/DejaVuSerif.ttf").getInputStream();
+             InputStream issmonob = new ClassPathResource("/alfio/font/DejaVuSansMono-Bold.ttf").getInputStream();
+             InputStream issansb = new ClassPathResource("/alfio/font/DejaVuSans-Bold.ttf").getInputStream();
+             InputStream isserifb = new ClassPathResource("/alfio/font/DejaVuSerif-Bold.ttf").getInputStream()) {
             renderer.getFontResolver().addFont(() -> is, "DejaVu Sans Mono", null, null, false);
+            renderer.getFontResolver().addFont(() -> issans, "DejaVu Sans", null, null, false);
+            renderer.getFontResolver().addFont(() -> isserif, "DejaVu", null, null, false);
+            renderer.getFontResolver().addFont(() -> issmonob, "DejaVu Sans Mono Bold", null, null, false);
+            renderer.getFontResolver().addFont(() -> issansb, "DejaVu Sans Bold", null, null, false);
+            renderer.getFontResolver().addFont(() -> isserifb, "DejaVu Bold", null, null, false);
         } catch(IOException e) {
             log.warn("error while loading DejaVuSansMono.ttf font", e);
         }
