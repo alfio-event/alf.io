@@ -5,6 +5,11 @@ alf.io
 
 [![Build Status](http://img.shields.io/travis/alfio-event/alf.io/master.svg)](https://travis-ci.org/alfio-event/alf.io) [![Coverage Status](https://img.shields.io/coveralls/alfio-event/alf.io.svg)](https://coveralls.io/r/alfio-event/alf.io)
 
+## Warning
+
+As the work for Alf.io [v2](https://github.com/alfio-event/alf.io/milestones) has started, this branch may contain **unstable** and **untested** code. 
+If you want to build and deploy alf.io by yourself, we strongly suggest you to use the [1.x-maintenance](https://github.com/alfio-event/alf.io/tree/1.x-maintenance) branch.  
+
 ## Prerequisites
 
 You should have installed Java version 8 (either [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html) or [OpenJDK](http://openjdk.java.net/install/)) in order to build and run alf.io. Please note that for the build process the JDK is required.
