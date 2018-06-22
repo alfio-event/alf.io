@@ -83,7 +83,7 @@ public class TestConfiguration {
     }
 
     @PreDestroy
-    public void shutdown(EmbeddedPostgres postgres) {
+    public void shutdown() {
         if (postgres != null) {
             postgres.stop();
         }
