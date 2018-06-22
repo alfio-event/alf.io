@@ -237,6 +237,9 @@ public class NotificationManager {
 
     void sendWaitingMessages() {
         Date now = new Date();
+
+        emailMessageRepository.setToRetryOldInProcess(DateUtils.addHours(now, -1));
+
         eventRepository.findAllActiveIds(ZonedDateTime.now(UTC))
             .stream()
             .flatMap(id -> emailMessageRepository.loadIdsWaitingForProcessing(id, now).stream())

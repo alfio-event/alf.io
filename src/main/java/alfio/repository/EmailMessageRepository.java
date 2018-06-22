@@ -85,4 +85,6 @@ public interface EmailMessageRepository {
     @Query("select * from email_message where id = :messageId and event_id = :eventId")
     Optional<EmailMessage> findByEventIdAndMessageId(@Bind("eventId") int eventId, @Bind("messageId") int messageId);
 
+    @Query("update email_message set status = 'RETRY', attempts = coalesce(attempts, 0) +1 where status = 'IN_PROCESS' and request_ts < :date")
+    int setToRetryOldInProcess(@Bind("date") Date date);
 }
