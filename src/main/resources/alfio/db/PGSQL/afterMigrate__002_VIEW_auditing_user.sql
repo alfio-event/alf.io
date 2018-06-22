@@ -14,6 +14,7 @@
 -- You should have received a copy of the GNU General Public License
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
+
 drop view if exists auditing_user;
 CREATE VIEW auditing_user AS
  SELECT auditing.reservation_id,
