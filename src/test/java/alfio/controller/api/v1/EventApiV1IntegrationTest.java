@@ -56,7 +56,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static alfio.test.util.IntegrationTestUtil.initSystemProperties;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -69,7 +68,6 @@ public class EventApiV1IntegrationTest {
 
     @BeforeClass
     public static void initEnv() {
-        initSystemProperties();
     }
 
     @Autowired

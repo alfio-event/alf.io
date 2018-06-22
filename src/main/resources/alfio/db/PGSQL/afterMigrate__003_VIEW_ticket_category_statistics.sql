@@ -15,7 +15,6 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-drop view if exists ticket_category_statistics;
 create view ticket_category_statistics as (select
   res.*,
   is_expired and not_sold_tickets > 0 as is_containing_orphan_tickets,

@@ -15,7 +15,6 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-drop view if exists ticket_and_reservation_and_tx;
 CREATE VIEW ticket_and_reservation_and_tx AS
  SELECT ticket.id AS t_id,
     ticket.uuid AS t_uuid,

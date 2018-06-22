@@ -15,20 +15,9 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-CREATE VIEW auditing_user AS
- SELECT auditing.reservation_id,
-    auditing.user_id,
-    auditing.event_type,
-    auditing.event_time,
-    auditing.entity_type,
-    auditing.entity_id,
-    auditing.modifications,
-    ba_user.id,
-    ba_user.username,
-    ba_user.password,
-    ba_user.first_name,
-    ba_user.last_name,
-    ba_user.email_address,
-    ba_user.enabled
-   FROM auditing
-     LEFT JOIN ba_user ON auditing.user_id = ba_user.id;
+drop view if exists admin_reservation_request_stats;
+drop view if exists auditing_user;
+drop view if exists events_statistics;
+drop view if exists ticket_category_statistics;
+drop view if exists ticket_and_reservation_and_tx;
+drop view if exists latest_ticket_update;

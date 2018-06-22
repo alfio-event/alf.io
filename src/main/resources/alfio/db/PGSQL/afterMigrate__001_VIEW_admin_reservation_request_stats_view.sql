@@ -15,7 +15,6 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-drop view if exists admin_reservation_request_stats;
 create view admin_reservation_request_stats as (
    select request_id,
        user_id,

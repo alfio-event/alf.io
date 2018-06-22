@@ -15,7 +15,6 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-drop view if exists latest_ticket_update;
 CREATE VIEW latest_ticket_update as
 select cast(entity_id as int) ticket_id, event_id, max(event_time) last_update from auditing
 where entity_type = 'TICKET' group by ticket_id, event_id;

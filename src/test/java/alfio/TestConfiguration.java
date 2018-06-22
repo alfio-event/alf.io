@@ -19,6 +19,7 @@ package alfio;
 import alfio.config.support.PlatformProvider;
 import alfio.test.util.IntegrationTestUtil;
 import com.zaxxer.hikari.HikariDataSource;
+import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +32,7 @@ import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZoneId;
@@ -41,6 +43,8 @@ import static ru.yandex.qatools.embed.postgresql.distribution.Version.Main.PRODU
 
 @Configuration
 public class TestConfiguration {
+
+    private EmbeddedPostgres postgres;
 
     @Bean
     @Profile("!travis")
@@ -65,15 +69,24 @@ public class TestConfiguration {
     @Bean
     @Profile("!travis")
     public EmbeddedPostgres postgres() throws IOException {
-        EmbeddedPostgres postgres = new EmbeddedPostgres(PRODUCTION);
-        Path pgsqlPath = Paths.get(System.getProperty("java.io.tmpdir"), "alfio-itest");
-        postgres.start(EmbeddedPostgres.cachedRuntimeConfig(pgsqlPath));
+        Path pgsqlPath = Paths.get(".", "alfio-itest");
+        Path tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data");
+        postgres = new EmbeddedPostgres(PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString());
+        postgres.start(EmbeddedPostgres.cachedRuntimeConfig(Paths.get(System.getProperty("java.io.tmpdir"), "pgembed")));
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                FileUtils.deleteDirectory(tmpDataDir.normalize().toAbsolutePath().toFile());
+            } catch (IOException e) {
+            }
+        }));
         return postgres;
     }
 
     @PreDestroy
     public void shutdown(EmbeddedPostgres postgres) {
-        postgres.stop();
+        if (postgres != null) {
+            postgres.stop();
+        }
     }
 
 
