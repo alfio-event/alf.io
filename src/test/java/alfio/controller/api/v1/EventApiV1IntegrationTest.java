@@ -35,6 +35,7 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.BaseIntegrationTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,7 +65,7 @@ import static org.junit.Assert.assertTrue;
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
-public class EventApiV1IntegrationTest {
+public class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
     @BeforeClass
     public static void initEnv() {

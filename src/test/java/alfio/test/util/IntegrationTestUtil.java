@@ -48,7 +48,7 @@ public class IntegrationTestUtil {
     public static final int AVAILABLE_SEATS = 20;
 
 
-    private static final Map<String, Map<String, String>> DB_CONF = new HashMap<>();
+    public static final Map<String, Map<String, String>> DB_CONF = new HashMap<>();
     public static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
 
     static {
