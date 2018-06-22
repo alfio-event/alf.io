@@ -60,7 +60,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class EventRepositoryTest extends BaseIntegrationTest {
+public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
 
     private static final String NEW_YORK_TZ = "America/New_York";
     private static final String ORG_NAME = "name";
