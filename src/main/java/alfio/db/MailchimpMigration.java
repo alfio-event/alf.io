@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Locale;
 
 import static alfio.util.OptionalWrapper.optionally;
 
@@ -50,11 +49,7 @@ public class MailchimpMigration extends BaseSpringJdbcMigration {
             return;
         }
 
-
-        //extract sql dialect from the directory location: from "classpath:alfio/db/HSQLDB" to hsqldb
-        String dialect = flywayConfiguration.getLocations()[0].split("\\/db\\/")[1].toLowerCase(Locale.ROOT);
-
-        QueryFactory queryFactory = new QueryFactory(dialect, jdbcTemplate);
+        QueryFactory queryFactory = new QueryFactory("PGSQL", jdbcTemplate);
 
         EventRepository eventRepository = queryFactory.from(EventRepository.class);
         ExtensionRepository extensionRepository = queryFactory.from(ExtensionRepository.class);

@@ -16,7 +16,6 @@
 --
 
 drop view if exists events_statistics;
-
 create view events_statistics as (select
       event.id,
       (select count(id) from ticket where event_id = event.id and status not in ('INVALIDATED', 'EXPIRED')) as available_seats,
