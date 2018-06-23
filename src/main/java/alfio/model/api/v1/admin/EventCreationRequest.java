@@ -23,6 +23,7 @@ import alfio.model.PromoCodeDiscount;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
@@ -53,12 +54,13 @@ public class EventCreationRequest{
     private TicketRequest tickets;
 
     public EventModification toEventModification(Organization organization, Function<String,String> slugGenerator, String imageRef) {
+        String slug = this.slug;
         if(StringUtils.isBlank(slug)) {
             slug = slugGenerator.apply(title);
         }
 
         int locales = description.stream()
-            .map((x) -> ContentLanguage.ALL_LANGUAGES.stream().filter((l)-> l.getFlag().equals(x.lang)).findFirst())
+            .map((x) -> ContentLanguage.ALL_LANGUAGES.stream().filter((l)-> l.getLanguage().equals(x.lang)).findFirst())
             .filter(Optional::isPresent)
             .map(Optional::get)
             .mapToInt(ContentLanguage::getValue).reduce(0,(x,y) -> x | y);
@@ -90,7 +92,7 @@ public class EventCreationRequest{
             tickets.paymentsMethods,
             tickets.categories.stream().map(CategoryRequest::toTicketCategoryModification).collect(Collectors.toList()),
             tickets.freeOfCharge,
-            null,
+            new LocationDescriptor(timezone, location.getCoordinate().getLatitude(), location.getCoordinate().getLongitude(), null),
             locales,
             Collections.emptyList(), // TODO improve API
             Collections.emptyList()  // TODO improve API
