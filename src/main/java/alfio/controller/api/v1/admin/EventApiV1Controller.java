@@ -29,6 +29,7 @@ import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.MapBindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -68,7 +69,10 @@ public class EventApiV1Controller {
             .checkPrecondition(() -> StringUtils.isNotBlank(request.getTermsAndConditionsUrl()),ErrorCode.EventError.NOT_FOUND)
             .checkPrecondition(() -> StringUtils.isNotBlank(request.getImageUrl()),ErrorCode.EventError.NOT_FOUND)
             .checkPrecondition(() -> StringUtils.isNotBlank(request.getTimezone()),ErrorCode.EventError.NOT_FOUND)
-            .checkPrecondition(() -> validateEvent(request.toEventModification(organization,eventNameManager::generateShortName,imageRef),new MapBindingResult(new HashMap<>(),"")).isSuccess(), ErrorCode.EventError.NOT_FOUND)
+            .checkPrecondition(() -> {
+                EventModification eventModification = request.toEventModification(organization, eventNameManager::generateShortName, imageRef);
+                return validateEvent(eventModification, new BeanPropertyBindingResult(eventModification,"event")).isSuccess();
+            }, ErrorCode.EventError.NOT_FOUND)
             //TODO all location validation
             //TODO language validation, for all the description the same languages
             .build(() -> insertEvent(request, user, imageRef).map(Event::getShortName).orElseThrow(IllegalStateException::new));

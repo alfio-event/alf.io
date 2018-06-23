@@ -144,8 +144,8 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
                         10,
                         false,
                         BigDecimal.TEN,
-                        LocalDateTime.of(2019,1,10,12,00),
-                        LocalDateTime.of(2019,1,30,18,00),
+                        LocalDateTime.of(2019,1,10,12, 0),
+                        LocalDateTime.of(2019,1,30,18, 0),
                         null,
                         null
                     )
