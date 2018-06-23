@@ -1,5 +1,35 @@
 # Change Log
 
+## [1.15-RC1](https://github.com/alfio-event/alf.io/tree/1.15-RC1) (2018-06-23)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14.2...1.15-RC1)
+
+**Implemented enhancements:**
+
+- Include PDF invoice in reservation email [\#459](https://github.com/alfio-event/alf.io/issues/459)
+- Have the possibility to disable the contact details being added automatically to the ticket [\#457](https://github.com/alfio-event/alf.io/issues/457)
+- Invoice enhancements [\#449](https://github.com/alfio-event/alf.io/issues/449)
+- Add a possibility to always generate an invoice instead of the invoice/receipt dichotomy for private customers [\#443](https://github.com/alfio-event/alf.io/issues/443)
+- Add support for Canadian Tax Code \(GST\) [\#431](https://github.com/alfio-event/alf.io/issues/431)
+
+**Fixed bugs:**
+
+- Existing Privacy Policy url is again empty when editing event [\#440](https://github.com/alfio-event/alf.io/issues/440)
+- Follow EU VAT Rules \(for event in Belgium\) [\#432](https://github.com/alfio-event/alf.io/issues/432)
+- Dashboard Gross income is not updating correctly [\#427](https://github.com/alfio-event/alf.io/issues/427)
+
+**Closed issues:**
+
+- email: handle cases where the emails are stuck "IN\_PROCESS" for more than 1h [\#478](https://github.com/alfio-event/alf.io/issues/478)
+- Provide a Purchase Order textfield during registration [\#458](https://github.com/alfio-event/alf.io/issues/458)
+- VAT country is not added to billing address [\#453](https://github.com/alfio-event/alf.io/issues/453)
+- Reservations should not be deleted automatically when expired [\#447](https://github.com/alfio-event/alf.io/issues/447)
+- The possibility to turn-off "I don't know yet who will attend" [\#436](https://github.com/alfio-event/alf.io/issues/436)
+- Make it clear which VAT Country code is used [\#433](https://github.com/alfio-event/alf.io/issues/433)
+
+**Merged pull requests:**
+
+- Event API v1 [\#480](https://github.com/alfio-event/alf.io/pull/480) ([minettiandrea](https://github.com/minettiandrea))
+
 ## [1.14.2](https://github.com/alfio-event/alf.io/tree/1.14.2) (2018-05-14)
 [Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14.1...1.14.2)
 
