@@ -22,7 +22,7 @@ plugins {
     id 'com.github.kt3k.coveralls' version '2.8.2'
     id 'com.github.ben-manes.versions' version '0.17.0'
     id 'com.github.hierynomus.license' version '0.14.0'
-    id 'net.researchgate.release' version '2.6.0'
+    id 'net.researchgate.release' version '2.7.0'
 }
 
 apply plugin: 'war'
@@ -335,5 +335,6 @@ release {
     git {
         requireBranch = ''
         pushToRemote = 'origin'
+        signTag = true
     }
 }
