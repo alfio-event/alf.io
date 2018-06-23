@@ -70,6 +70,7 @@ public class TestConfiguration {
     @Profile("!travis")
     public EmbeddedPostgres postgres() throws IOException {
         Path pgsqlPath = Paths.get(".", "alfio-itest");
+        Files.createDirectories(pgsqlPath);
         Path tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data");
         postgres = new EmbeddedPostgres(PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString());
         postgres.start(EmbeddedPostgres.cachedRuntimeConfig(Paths.get(System.getProperty("java.io.tmpdir"), "pgembed")));
