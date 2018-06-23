@@ -16,7 +16,6 @@
  */
 package alfio.controller.api.v1.admin;
 
-import alfio.controller.api.admin.EventApiController;
 import alfio.manager.*;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
@@ -26,7 +25,6 @@ import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.modification.EventModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
-import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -34,10 +32,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.MapBindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.security.Principal;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+
+import static alfio.controller.api.admin.EventApiController.validateEvent;
 
 
 @RestController
@@ -57,6 +59,7 @@ public class EventApiV1Controller {
 
 
         String imageRef = fetchImage(request.getImageUrl());
+        Organization organization = userManager.findUserOrganizations(user.getName()).get(0);
 
         Result<String> result =  new Result.Builder<String>()
             .checkPrecondition(() -> StringUtils.isNotBlank(request.getTitle()),ErrorCode.EventError.NOT_FOUND)
@@ -65,9 +68,10 @@ public class EventApiV1Controller {
             .checkPrecondition(() -> StringUtils.isNotBlank(request.getTermsAndConditionsUrl()),ErrorCode.EventError.NOT_FOUND)
             .checkPrecondition(() -> StringUtils.isNotBlank(request.getImageUrl()),ErrorCode.EventError.NOT_FOUND)
             .checkPrecondition(() -> StringUtils.isNotBlank(request.getTimezone()),ErrorCode.EventError.NOT_FOUND)
+            .checkPrecondition(() -> validateEvent(request.toEventModification(organization,eventNameManager::generateShortName,imageRef),new MapBindingResult(new HashMap<>(),"")).isSuccess(), ErrorCode.EventError.NOT_FOUND)
             //TODO all location validation
             //TODO language validation, for all the description the same languages
-            .build(() -> insertEvent(request, user, imageRef).map((e) -> e.getShortName()).get());
+            .build(() -> insertEvent(request, user, imageRef).map(Event::getShortName).orElseThrow(IllegalStateException::new));
 
         if(result.isSuccess()) {
             return ResponseEntity.ok(result.getData());
@@ -155,8 +159,6 @@ public class EventApiV1Controller {
     private Optional<Event> insertEvent(EventCreationRequest request, Principal user, String imageRef) {
         Organization organization = userManager.findUserOrganizations(user.getName()).get(0);
         EventModification em = request.toEventModification(organization,eventNameManager::generateShortName,imageRef);
-
-        ValidationResult vr = EventApiController.validateEvent(em,new MapBindingResult(new HashMap<>(),""));
         eventManager.createEvent(em);
         Optional<Event> event = eventManager.getOptionalByName(em.getShortName(),user.getName());
 
