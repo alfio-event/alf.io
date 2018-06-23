@@ -19,6 +19,7 @@ package alfio.controller.api.admin;
 import alfio.manager.FileUploadManager;
 import alfio.model.modification.UploadBase64FileModification;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,7 +38,11 @@ public class FileUploadApiController {
     }
 
     @RequestMapping(value = "/file/upload", method = POST)
-    public String uploadFile(@RequestBody UploadBase64FileModification upload) {
-        return fileUploadManager.insertFile(upload);
+    public ResponseEntity<String> uploadFile(@RequestBody UploadBase64FileModification upload) {
+        try {
+            return ResponseEntity.ok(fileUploadManager.insertFile(upload));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }

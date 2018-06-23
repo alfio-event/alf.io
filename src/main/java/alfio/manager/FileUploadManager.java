@@ -22,9 +22,11 @@ import alfio.repository.FileUploadRepository;
 import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -49,20 +51,19 @@ import java.util.concurrent.TimeUnit;
 @Component
 @Transactional
 @Log4j2
+@RequiredArgsConstructor
 public class FileUploadManager {
 
+    /**
+     * Maximum allowed file size is 200kb
+     */
+    private static final int MAXIMUM_ALLOWED_SIZE = 1024 * 200;
     private final NamedParameterJdbcTemplate jdbc;
     private final FileUploadRepository repository;
     private final Cache<String, byte[]> cache = Caffeine.newBuilder()
         .maximumSize(20)
         .expireAfterWrite(20, TimeUnit.MINUTES)
         .build();
-
-    @Autowired
-    public FileUploadManager(NamedParameterJdbcTemplate jdbc, FileUploadRepository repository) {
-        this.jdbc = jdbc;
-        this.repository = repository;
-    }
 
     public Optional<FileBlobMetadata> findMetadata(String id) {
         return repository.findById(id);
@@ -90,6 +91,9 @@ public class FileUploadManager {
 
 
     public String insertFile(UploadBase64FileModification file) {
+
+        Validate.exclusiveBetween(1, MAXIMUM_ALLOWED_SIZE, file.getFile().length);
+
         String digest = DigestUtils.sha256Hex(file.getFile());
 
         if(Integer.valueOf(1).equals(repository.isPresent(digest))) {
