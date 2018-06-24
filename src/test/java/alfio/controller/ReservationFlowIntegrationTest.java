@@ -416,7 +416,7 @@ public class ReservationFlowIntegrationTest {
         assertFalse(offlineIdentifiers.isEmpty());
         Map<String, String> payload = checkInApiController.getOfflineEncryptedInfo(event.getShortName(), Collections.emptyList(), offlineIdentifiers, principal);
         assertEquals(1, payload.size());
-        Ticket ticket = ticketAndcheckInResult.getTicket();
+        TicketWithCategory ticket = ticketAndcheckInResult.getTicket();
         String ticketKey = ticket.hmacTicketInfo(event.getPrivateKey());
         String hashedTicketKey = DigestUtils.sha256Hex(ticketKey);
         String encJson = payload.get(hashedTicketKey);
