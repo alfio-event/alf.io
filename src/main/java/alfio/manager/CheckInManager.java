@@ -196,6 +196,10 @@ public class CheckInManager {
         Event event = maybeEvent.get();
         String code = ticketCode.get();
 
+        if(ticket.getCategoryId() == null) {
+            return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(INVALID_TICKET_STATE, "Invalid ticket state"));
+        }
+
         TicketCategory tc = ticketCategoryRepository.getById(ticket.getCategoryId());
 
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
@@ -204,7 +208,7 @@ public class CheckInManager {
             String from = tc.getValidCheckInFrom() == null ? ".." : formatter.format(tc.getValidCheckInFrom(event.getZoneId()));
             String to = tc.getValidCheckInTo() == null ? ".." : formatter.format(tc.getValidCheckInTo(event.getZoneId()));
             String formattedNow = formatter.format(now);
-            return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(INVALID_TICKET_CATEGORY_CHECK_IN_DATE,
+            return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new DefaultCheckInResult(INVALID_TICKET_CATEGORY_CHECK_IN_DATE,
                 String.format("Invalid check-in date: valid range for category %s is from %s to %s, current time is: %s",
                     tc.getName(), from, to, formattedNow)));
         }
@@ -219,18 +223,18 @@ public class CheckInManager {
         final TicketStatus ticketStatus = ticket.getStatus();
 
         if (ticketStatus == TicketStatus.TO_BE_PAID) {
-            return new TicketAndCheckInResult(ticket, new OnSitePaymentResult(MUST_PAY, "Must pay for ticket", MonetaryUtil.centsToUnit(ticket.getFinalPriceCts()), event.getCurrency()));
+            return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new OnSitePaymentResult(MUST_PAY, "Must pay for ticket", MonetaryUtil.centsToUnit(ticket.getFinalPriceCts()), event.getCurrency()));
         }
 
         if (ticketStatus == TicketStatus.CHECKED_IN) {
-            return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(ALREADY_CHECK_IN, "Error: already checked in"));
+            return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new DefaultCheckInResult(ALREADY_CHECK_IN, "Error: already checked in"));
         }
 
         if (ticket.getStatus() != TicketStatus.ACQUIRED) {
-            return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(INVALID_TICKET_STATE, "Invalid ticket state, expected ACQUIRED state, received " + ticket.getStatus()));
+            return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new DefaultCheckInResult(INVALID_TICKET_STATE, "Invalid ticket state, expected ACQUIRED state, received " + ticket.getStatus()));
         }
 
-        return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
+        return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new DefaultCheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
     }
 
     private static Pair<Cipher, SecretKeySpec>  getCypher(String key) {

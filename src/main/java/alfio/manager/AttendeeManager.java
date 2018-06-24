@@ -23,6 +23,7 @@ import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
+import alfio.model.TicketWithCategory;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.repository.EventRepository;
@@ -61,13 +62,13 @@ public class AttendeeManager {
         }
         Ticket ticket = maybeTicket.get();
         if(ticket.getStatus() != Ticket.TicketStatus.CHECKED_IN) {
-            return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(CheckInStatus.INVALID_TICKET_STATE, "not checked-in"));
+            return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(CheckInStatus.INVALID_TICKET_STATE, "not checked-in"));
         }
         Optional<ZonedDateTime> existingRegistration = sponsorScanRepository.getRegistrationTimestamp(userId, event.getId(), ticket.getId());
         if(!existingRegistration.isPresent()) {
             sponsorScanRepository.insert(userId, ZonedDateTime.now(event.getZoneId()), event.getId(), ticket.getId());
         }
-        return new TicketAndCheckInResult(ticket, new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
+        return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
     }
 
     public Result<Ticket> retrieveTicket(String eventShortName, String ticketUid, String username) {

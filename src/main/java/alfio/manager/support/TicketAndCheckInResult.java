@@ -16,11 +16,11 @@
  */
 package alfio.manager.support;
 
-import alfio.model.Ticket;
+import alfio.model.TicketWithCategory;
 import lombok.Data;
 
 @Data
 public class TicketAndCheckInResult {
-    private final Ticket ticket;
+    private final TicketWithCategory ticket;
     private final CheckInResult result;
 }
