@@ -27,7 +27,7 @@ public class TicketWithCategory {
     private final TicketCategory category;
 
     public String getCategoryName() {
-        return category.getName();
+        return category != null ? category.getName() : null;
     }
 
     public TicketCategory getCategory() {
