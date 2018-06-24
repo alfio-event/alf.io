@@ -1416,4 +1416,26 @@ public class TicketReservationManager {
             }
         }
     }
+
+
+    public void updateReservation(String reservationId, CustomerName customerName, String email,
+                                  String billingAddressCompany, String billingAddressLine1, String billingAddressLine2,
+                                  String billingAddressZip, String billingAddressCity, String vatCountryCode, String customerReference,
+                                  String vatNr,
+                                  boolean isInvoiceRequested,
+                                  boolean addCompanyBillingDetails,
+                                  boolean validated) {
+
+        String completeBillingAddress = StringUtils.trimToEmpty(billingAddressCompany)+"\n"+
+            StringUtils.trimToEmpty(billingAddressLine1)+"\n"+
+            StringUtils.trimToEmpty(billingAddressLine2)+"\n"+
+            StringUtils.trimToEmpty(StringUtils.trimToEmpty(billingAddressZip)+" "+StringUtils.trimToEmpty(billingAddressCity));
+
+        completeBillingAddress = completeBillingAddress.replace("\n\n", "\n");
+
+        ticketReservationRepository.updateTicketReservationWithValidation(reservationId,
+            customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(),
+            email, billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip,
+            billingAddressCity, completeBillingAddress, vatCountryCode, vatNr, isInvoiceRequested, addCompanyBillingDetails, customerReference, validated);
+    }
 }

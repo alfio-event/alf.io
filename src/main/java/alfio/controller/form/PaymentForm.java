@@ -59,6 +59,12 @@ public class PaymentForm implements Serializable {
     private String vatNr;
     private boolean invoiceRequested = false;
     private Map<String, UpdateTicketOwnerForm> tickets = new HashMap<>();
+    //
+    private String billingAddressCompany;
+    private String billingAddressLine1;
+    private String billingAddressLine2;
+    private String billingAddressZip;
+    private String billingAddressCity;
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
             String value, int maxLength) {
