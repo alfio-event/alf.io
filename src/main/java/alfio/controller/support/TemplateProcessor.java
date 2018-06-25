@@ -32,19 +32,44 @@ import com.openhtmltopdf.DOMBuilder;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jsoup.Jsoup;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.util.FileCopyUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Log4j2
 public final class TemplateProcessor {
+
+    private static final Map<String, File> FONTS_CACHE = new ConcurrentHashMap<>();
+    private static final List<Pair<String, String>> FONTS = Arrays.asList(
+        Pair.of("DejaVuSansMono.ttf", "DejaVu Sans Mono"),
+        Pair.of("DejaVuSans.ttf", "DejaVu Sans"),
+        Pair.of("DejaVuSerif.ttf", "DejaVu"),
+        Pair.of("DejaVuSansMono-Bold.ttf", "DejaVu Sans Mono Bold"),
+        Pair.of("DejaVuSans-Bold.ttf", "DejaVu Sans Bold"),
+        Pair.of("DejaVuSerif-Bold.ttf", "DejaVu Bold"));
+
+    static {
+        for (Pair<String, String> fontDef : FONTS) {
+            FONTS_CACHE.put(fontDef.getKey(), getTemporaryFileForFont(fontDef.getKey()));
+        }
+    }
+
+    private static File getTemporaryFileForFont(String name) {
+        try (InputStream is = new ClassPathResource("/alfio/font/"+name).getInputStream()) {
+            File f = File.createTempFile(name, null);
+            FileCopyUtils.copy(is, new FileOutputStream(f));
+            f.deleteOnExit();
+            return f;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     private TemplateProcessor() {}
 
@@ -94,29 +119,21 @@ public final class TemplateProcessor {
         };
     }
 
-    public static PdfBoxRenderer prepareItextRenderer(String page) {
+    public static PDFTemplateGenerator.ClosingRenderer prepareItextRenderer(String page) {
 
         PdfRendererBuilder builder = new PdfRendererBuilder();
 
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(Jsoup.parse(page)), "");
         PdfBoxRenderer renderer = builder.buildPdfRenderer();
-        try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
-             InputStream issans = new ClassPathResource("/alfio/font/DejaVuSans.ttf").getInputStream();
-             InputStream isserif = new ClassPathResource("/alfio/font/DejaVuSerif.ttf").getInputStream();
-             InputStream issmonob = new ClassPathResource("/alfio/font/DejaVuSansMono-Bold.ttf").getInputStream();
-             InputStream issansb = new ClassPathResource("/alfio/font/DejaVuSans-Bold.ttf").getInputStream();
-             InputStream isserifb = new ClassPathResource("/alfio/font/DejaVuSerif-Bold.ttf").getInputStream()) {
-            renderer.getFontResolver().addFont(() -> is, "DejaVu Sans Mono", null, null, false);
-            renderer.getFontResolver().addFont(() -> issans, "DejaVu Sans", null, null, false);
-            renderer.getFontResolver().addFont(() -> isserif, "DejaVu", null, null, false);
-            renderer.getFontResolver().addFont(() -> issmonob, "DejaVu Sans Mono Bold", null, null, false);
-            renderer.getFontResolver().addFont(() -> issansb, "DejaVu Sans Bold", null, null, false);
-            renderer.getFontResolver().addFont(() -> isserifb, "DejaVu Bold", null, null, false);
-        } catch(IOException e) {
-            log.warn("error while loading DejaVuSansMono.ttf font", e);
+        try {
+            for (Pair<String, String> fontDef : FONTS) {
+                renderer.getFontResolver().addFont(FONTS_CACHE.get(fontDef.getKey()), fontDef.getValue(), null, null, false);
+            }
+        } catch (IOException e) {
+            log.warn("error while loading fonts", e);
         }
         renderer.layout();
-        return renderer;
+        return new PDFTemplateGenerator.ClosingRenderer(renderer);
     }
 
     public static Optional<TemplateResource.ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
