@@ -651,7 +651,7 @@
         };
     }]);
 
-    baseServices.service("FileUploadService", function($http) {
+    baseServices.service("FileUploadService", function($http, HttpErrorHandler) {
         return {
             upload : function(file) {
                 return $http['post']('/admin/api/file/upload', file).error(HttpErrorHandler.handle);
