@@ -1,11 +1,32 @@
 {{>/event/page-top}}
-
+{{#includeStripe}}
+<script src="https://js.stripe.com/v2/"></script>
+{{/includeStripe}}
 <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/h5f/h5f.min.js"></script>
 <script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
 <script src="{{request.contextPath}}/resources/js/countdownjs/countdown.min.js"></script>
-<script src="{{request.contextPath}}/resources/js/event/overview-page.js" ></script>
+<script src="{{request.contextPath}}/resources/js/event/overview-page.js"
+{{#includeStripe}}
+    id="stripe-key"
+    data-stripe-key="{{stripe_p_key}}"
+
+    data-stripe-message-incorrect_number="{{#i18n}}error.STEP2_STRIPE_incorrect_number{{/i18n}}"
+    data-stripe-message-invalid_number="{{#i18n}}error.STEP2_STRIPE_invalid_number{{/i18n}}"
+    data-stripe-message-invalid_expiry_month="{{#i18n}}error.STEP2_STRIPE_invalid_expiry_month{{/i18n}}"
+    data-stripe-message-invalid_expiry_year="{{#i18n}}error.STEP2_STRIPE_invalid_expiry_year{{/i18n}}"
+    data-stripe-message-invalid_cvc="{{#i18n}}error.STEP2_STRIPE_invalid_cvc{{/i18n}}"
+    data-stripe-message-expired_card="{{#i18n}}error.STEP2_STRIPE_expired_card{{/i18n}}"
+    data-stripe-message-incorrect_cvc="{{#i18n}}error.STEP2_STRIPE_incorrect_cvc{{/i18n}}"
+    data-stripe-message-incorrect_zip="{{#i18n}}error.STEP2_STRIPE_incorrect_zip{{/i18n}}"
+    data-stripe-message-card_declined="{{#i18n}}error.STEP2_STRIPE_card_declined{{/i18n}}"
+    data-stripe-message-missing="{{#i18n}}error.STEP2_STRIPE_missing{{/i18n}}"
+    data-stripe-message-processing_error="{{#i18n}}error.STEP2_STRIPE_processing_error{{/i18n}}"
+    data-stripe-message-abort="{{#i18n}}error.STEP2_STRIPE_abort{{/i18n}}"
+    data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
+{{/includeStripe}}
+></script>
 
 {{>/event/header}}
 

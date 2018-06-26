@@ -1,32 +1,9 @@
 {{>/event/page-top}}
-
-{{#includeStripe}}
- <script src="https://js.stripe.com/v2/"></script>
-{{/includeStripe}}
- <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
- <script src="{{request.contextPath}}/resources/js/h5f/h5f.min.js"></script>
- <script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
- <script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
- <script src="{{request.contextPath}}/resources/js/event/reservation-page.js"
-{{#includeStripe}}
-    id="stripe-key"
-    data-stripe-key="{{stripe_p_key}}"
-    
-    data-stripe-message-incorrect_number="{{#i18n}}error.STEP2_STRIPE_incorrect_number{{/i18n}}"
-    data-stripe-message-invalid_number="{{#i18n}}error.STEP2_STRIPE_invalid_number{{/i18n}}"
-    data-stripe-message-invalid_expiry_month="{{#i18n}}error.STEP2_STRIPE_invalid_expiry_month{{/i18n}}"
-    data-stripe-message-invalid_expiry_year="{{#i18n}}error.STEP2_STRIPE_invalid_expiry_year{{/i18n}}"
-    data-stripe-message-invalid_cvc="{{#i18n}}error.STEP2_STRIPE_invalid_cvc{{/i18n}}"
-    data-stripe-message-expired_card="{{#i18n}}error.STEP2_STRIPE_expired_card{{/i18n}}"
-    data-stripe-message-incorrect_cvc="{{#i18n}}error.STEP2_STRIPE_incorrect_cvc{{/i18n}}"
-    data-stripe-message-incorrect_zip="{{#i18n}}error.STEP2_STRIPE_incorrect_zip{{/i18n}}"
-    data-stripe-message-card_declined="{{#i18n}}error.STEP2_STRIPE_card_declined{{/i18n}}"
-    data-stripe-message-missing="{{#i18n}}error.STEP2_STRIPE_missing{{/i18n}}"
-    data-stripe-message-processing_error="{{#i18n}}error.STEP2_STRIPE_processing_error{{/i18n}}"
-    data-stripe-message-abort="{{#i18n}}error.STEP2_STRIPE_abort{{/i18n}}"
-    data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
-{{/includeStripe}}
- ></script>
+<script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="{{request.contextPath}}/resources/js/h5f/h5f.min.js"></script>
+<script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
+<script src="{{request.contextPath}}/resources/js/event/reservation-page.js"
 <script src="{{request.contextPath}}/resources/js/event/attendee-form.js"></script>
 <script src="{{request.contextPath}}/resources/js/countdownjs/countdown.min.js"></script>
 {{>/event/header}}
@@ -105,30 +82,6 @@
 </div>
 
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/validate-to-overview" method="POST" id="payment-form">
-    {{#paypalCheckoutConfirmation}}
-        {{#useFirstAndLastName}}
-        <input type="hidden" name="firstName" value="{{firstName}}">
-        <input type="hidden" name="lastName" value="{{lastName}}">
-        {{/useFirstAndLastName}}
-        {{^useFirstAndLastName}}
-        <input type="hidden" name="fullName" value="{{fullName}}">
-        {{/useFirstAndLastName}}
-        <input type="hidden" name="email" value="{{email}}">
-        <input type="hidden" name="billingAddress" value="{{billingAddress}}">
-        <input type="hidden" name="hmac" value="{{hmac}}">
-        <input type="hidden" name="paymentMethod" value="PAYPAL">
-        <input type="hidden" name="paypalPaymentId" value="{{paypalPaymentId}}">
-        <input type="hidden" name="paypalPayerID" value="{{paypalPayerID}}">
-        <input type="hidden" name="termAndConditionsAccepted" value="true">
-        <input type="hidden" name="invoiceRequested" value="{{invoiceRequested}}">
-        <input type="hidden" name="customerReference" value="{{customerReference}}">
-    <div class="alert alert-success">
-        <h3><i class="fa fa-check"></i> {{#i18n}}reservation-page.paypal.confirm{{/i18n}}</h3>
-    </div>
-
-    {{/paypalCheckoutConfirmation}}
-    {{^paypalCheckoutConfirmation}}
-
     <div class="page-header">
         <h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
     </div>
@@ -213,168 +166,6 @@
     </div>
     <div class="clearfix"></div>
 
-
-    {{^orderSummary.free}}
-
-    <div class="page-header wMarginTop">
-        <h2>{{#i18n}}reservation-page.payment{{/i18n}}</h2>
-    </div>
-
-        {{#multiplePaymentMethods}}
-            <div class="btn-group j-btn-group" data-toggle="buttons">
-                {{#activePaymentMethods}}
-                <label class="btn btn-default tooltip-handler xs-payment-method" {{#is-payment-method}}[STRIPE,{{.}}]  title="Powered by Stripe"{{/is-payment-method}}>
-                    <input type="radio" required name="paymentMethod" id="option-{{.}}" data-payment-method="{{.}}" autocomplete="off" value="{{.}}">
-                    {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-cc-stripe"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[MOLLIE,{{.}}] {{#i18n}}reservation-page.mollie{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
-                </label>
-                {{/activePaymentMethods}}
-            </div>
-        {{/multiplePaymentMethods}}
-        {{^multiplePaymentMethods}}
-            {{#activePaymentMethods}}
-                <h4 class="wMarginTop">
-                {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[MOLLIE,{{.}}] {{#i18n}}reservation-page.mollie{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
-                </h4>
-                <input type="hidden" name="paymentMethod" value="{{.}}">
-            {{/activePaymentMethods}}
-        {{/multiplePaymentMethods}}
-        {{#activePaymentMethods}}
-            <div class="payment-method-detail" id="payment-method-{{.}}">
-                {{#is-payment-method}}[STRIPE,{{.}}]{{> /event/payment/stripe }}{{/is-payment-method}}
-                {{#is-payment-method}}[PAYPAL,{{.}}]{{> /event/payment/paypal }}{{/is-payment-method}}
-                {{#is-payment-method}}[MOLLIE,{{.}}]{{> /event/payment/mollie }}{{/is-payment-method}}
-                {{#is-payment-method}}[ON_SITE,{{.}}]{{> /event/payment/on-site }}{{/is-payment-method}}
-                {{#is-payment-method}}[OFFLINE,{{.}}]{{> /event/payment/offline }}{{/is-payment-method}}
-            </div>
-        {{/activePaymentMethods}}
-
-    {{#invoiceIsAllowed}}
-        {{^vatNrIsLinked}}
-            {{#onlyInvoice}}
-                <input type="hidden" name="invoiceRequested" id="invoice-requested" value="true">
-                {{#euVatCheckingEnabled}}
-                    <div class="checkbox wMarginTop">
-                        <label>
-                            <input type="checkbox" name="addCompanyBillingDetails" id="add-company-billing-details" value="true">
-                            {{#i18n}}reservation.add-company-billing-details [{{vatTranslation}}]{{/i18n}}
-                        </label>
-                    </div>
-                {{/euVatCheckingEnabled}}
-            {{/onlyInvoice}}
-            {{^onlyInvoice}}
-                <div class="checkbox wMarginTop">
-                    <label>
-                        <input type="checkbox" name="invoiceRequested" id="invoice-requested" value="true" {{#paymentForm.invoiceRequested}}checked{{/paymentForm.invoiceRequested}}>
-                        {{#i18n}}reservation-page.i-need-an-invoice{{/i18n}}
-                    </label>
-                </div>
-            {{/onlyInvoice}}
-        {{/vatNrIsLinked}}
-        {{#vatNrIsLinked}}
-            <div class="page-header wMarginTop">
-                <h2>{{#i18n}}invoice.title{{/i18n}}</h2>
-            </div>
-        {{/vatNrIsLinked}}
-    {{/invoiceIsAllowed}}
-
-    <div id="invoice" class="wMarginTop {{#invoiceIsAllowed}}{{^paymentForm.invoiceRequested}}hidden{{/paymentForm.invoiceRequested}}{{/invoiceIsAllowed}}" {{#euVatCheckingEnabled}}data-eu-vat-checking-enabled="true"{{/euVatCheckingEnabled}}>
-        {{#euVatCheckingEnabled}}
-            {{^vatNrIsLinked}}
-                <div class="row" id="eu-vat-check-countries">
-                    <div class="col-xs-12 col-sm-4">
-                        <div class="form-group">
-                            <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
-                            <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control field-required">
-                                <option value="">{{#i18n}}reservation-page.country.select{{/i18n}}</option>
-                                <optgroup label="{{#i18n}}reservation-page.eu-countries{{/i18n}}" id="optgroup-eu-countries-list">
-                                {{#euCountriesForVat}}
-                                    <option value="{{left}}">{{left}} - {{right}}</option>
-                                {{/euCountriesForVat}}
-                                </optgroup>
-                                <optgroup label="{{#i18n}}reservation-page.all-countries{{/i18n}}">
-                                {{#countriesForVat}}
-                                    <option value="{{left}}">{{left}} - {{right}}</option>
-                                {{/countriesForVat}}
-                                </optgroup>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div id="vat-number-container" class="{{^paymentForm.hasVatCountryCode}}hidden-xs hidden-sm hidden-md hidden-lg{{/paymentForm.hasVatCountryCode}}">
-                            <div class="col-xs-6 col-sm-8">
-                                <div class="form-group">
-                                    <label for="vatNr">{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}}</label>
-                                    <div class="input-group">
-                                        <input id="vatNr" type="text" required name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
-                                        <div class="input-group-btn">
-                                            <button type="button" class="btn btn-warning btn-block" data-validation-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/vat-validation" id="validateVAT"
-                                                data-text="{{#i18n}}invoice.validate.vat [{{vatTranslation}}]{{/i18n}}"
-                                                data-text-non-eu="{{#i18n}}common.apply{{/i18n}}">{{#i18n}}invoice.validate.vat [{{vatTranslation}}]{{/i18n}}</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                    </div>
-                </div>
-                <div id="validation-result-container" class="row {{^paymentForm.hasVatCountryCode}}hidden-xs hidden-sm hidden-md hidden-lg{{/paymentForm.hasVatCountryCode}}">
-                    <div class="col-xs-10 text-right">
-                        <span id="validation-result" class="text-danger" data-validation-error-msg="{{#i18n}}reservation-page.vat-validation-error [{{vatTranslation}}]{{/i18n}}"
-                              data-generic-error-msg="{{#i18n}}reservation-page.vat-error [{{vatTranslation}}]{{/i18n}}"
-                              data-vies-down="{{#i18n}}error.vatVIESDown{{/i18n}}"
-                              data-validation-required-msg="{{#i18n}}reservation-page.vat-validation-required [{{vatTranslation}}]{{/i18n}}"></span>
-                    </div>
-                </div>
-            {{/vatNrIsLinked}}
-            <div class="clearfix"></div>
-        {{/euVatCheckingEnabled}}
-
-        <div class="row">
-            {{#vatNrIsLinked}}
-                <input type="hidden" name="vatCountryCode" value="{{paymentForm.vatCountryCode}}">
-                <input type="hidden" name="vatNr" value="{{paymentForm.vatNr}}"/>
-                <input type="hidden" name="invoiceRequested" value="true">
-                <div class="col-xs-6 col-md-2">
-                    <div class="form-group">
-                        <label class="control-label">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
-                        <p class="form-control-static">{{paymentForm.vatCountryCode}}</p>
-                    </div>
-                </div>
-                <div class="col-xs-6 col-md-2">
-                    <div class="form-group">
-                        <label class="control-label">{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}}</label>
-                        <p class="form-control-static">{{paymentForm.vatNr}}</p>
-                    </div>
-                </div>
-            {{/vatNrIsLinked}}
-            <div class="col-xs-12 {{#vatNrIsLinked}}col-md-8{{/vatNrIsLinked}}">
-                <div class="form-group {{#field-has-error}}[billingAddress] has-error{{/field-has-error}}" id="billing-address-container">
-                    <label for="billing-address" class="control-label">{{#i18n}}{{billingAddressLabel}}{{/i18n}}</label>
-                    <textarea name="billingAddress" id="billing-address" class="form-control" maxlength="450" {{#invoiceIsAllowed}}data-invoice-enabled="true"{{/invoiceIsAllowed}}>{{paymentForm.billingAddress}}</textarea>
-                    {{#field-has-error}}[billingAddress]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddress{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
-                </div>
-            </div>
-            {{#euVatCheckingEnabled}}{{#vatNrIsLinked}}
-            <div class="col-md-6 col-md-push-6 col-xs-12">
-                <div class="form-group">
-                    <button type="button" id="reset-billing-information" class="btn btn-warning btn-block"
-                        data-reset-billing-information-url="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/reset-billing-info">
-                        {{#i18n}}reservation-page.reset-billing-informations{{/i18n}}
-                    </button>
-                </div>
-            </div>
-            {{/vatNrIsLinked}}{{/euVatCheckingEnabled}}
-
-        </div>
-    </div>
-    {{/orderSummary.free}}
     <hr/>
 
 {{#event.privacyPolicyLinkOrNull}}
@@ -393,9 +184,6 @@
         </label>
     </div>
 
-
-    {{/paypalCheckoutConfirmation}}
-
     {{#orderSummary.free}}
         <div class="row">
             <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success btn-block" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button></div>
@@ -406,12 +194,7 @@
         <div class="row">
             <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom">
                 <button type="submit" class="btn btn-success btn-block" id="continue-button">
-                {{#paypalCheckoutConfirmation}}
-                    {{#i18n}}reservation-page.paypal.confirm-button{{/i18n}}
-                {{/paypalCheckoutConfirmation}}
-                {{^paypalCheckoutConfirmation}}
                     {{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}
-                {{/paypalCheckoutConfirmation}}
                 </button>
             </div>
             <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button></div>
