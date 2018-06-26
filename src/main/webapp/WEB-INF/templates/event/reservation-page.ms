@@ -166,24 +166,6 @@
     </div>
     <div class="clearfix"></div>
 
-    <hr/>
-
-{{#event.privacyPolicyLinkOrNull}}
-    <div class="checkbox wMarginTop wMarginBottom">
-        <label>
-            <input type="checkbox" required name="privacyPolicyAccepted" value="true">
-            {{#i18n}}reservation-page.privacy.prefix{{/i18n}} <a href="{{event.privacyPolicyLinkOrNull}}" target="_blank">{{#i18n}}reservation-page.privacy.link.text{{/i18n}}</a>{{#i18n}}reservation-page.privacy.suffix{{/i18n}}
-        </label>
-    </div>
-{{/event.privacyPolicyLinkOrNull}}
-
-    <div class="checkbox wMarginTop wMarginBottom">
-        <label>
-            <input type="checkbox" required name="termAndConditionsAccepted" value="true">
-            {{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termsAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
-        </label>
-    </div>
-
     <div class="row">
         <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success btn-block" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button></div>
         <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}reservation-page.cancel{{/i18n}}</button></div>

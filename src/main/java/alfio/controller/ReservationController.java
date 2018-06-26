@@ -167,11 +167,6 @@ public class ReservationController {
                         .addAttribute("billingAddressLabel", invoiceAllowed ? "reservation-page.billing-address" : "reservation-page.receipt-address")
                         .addAttribute("customerReferenceEnabled", configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_CUSTOMER_REFERENCE), false));
 
-                    boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
-                    model.addAttribute("includeStripe", includeStripe);
-                    if (includeStripe) {
-                        model.addAttribute("stripe_p_key", paymentManager.getStripePublicKey(event));
-                    }
                     Map<String, Object> modelMap = model.asMap();
                     modelMap.putIfAbsent("paymentForm", paymentForm);
                     modelMap.putIfAbsent("hasErrors", false);
@@ -614,10 +609,6 @@ public class ReservationController {
         sendReservationCompleteEmail(request, event,reservation);
         sendReservationCompleteEmailToOrganizer(request, event, reservation);
         //
-
-        if(paymentForm.getPaymentMethod() != PaymentProxy.PAYPAL) {
-            //assignTickets(eventName, reservationId, paymentForm, bindingResult, request, paymentForm.getPaymentMethod() == PaymentProxy.OFFLINE, false);
-        }
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
     }

@@ -170,7 +170,7 @@
         </div>
     {{/event.privacyPolicyLinkOrNull}}
 
-    {{/paypalCheckoutConfirmation}}
+
 
     <div class="checkbox wMarginTop wMarginBottom">
         <label>
@@ -178,6 +178,8 @@
             {{#i18n}}reservation-page.tc.prefix{{/i18n}} <a href="{{event.termsAndConditionsUrl}}" target="_blank">{{#i18n}}reservation-page.tc.link.text{{/i18n}}</a>{{#i18n}}reservation-page.tc.suffix{{/i18n}}
         </label>
     </div>
+
+    {{/paypalCheckoutConfirmation}}
 
 
     {{#orderSummary.free}}
