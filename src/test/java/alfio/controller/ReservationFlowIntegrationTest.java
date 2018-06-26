@@ -511,6 +511,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         Model model = new BindingAwareModelMap();
         MockHttpServletRequest request = new MockHttpServletRequest();
         RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
+
+        reservationController.validateToOverview(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
+
         return reservationController.handleReservation(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
     }
 

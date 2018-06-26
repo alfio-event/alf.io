@@ -279,7 +279,7 @@ public class ReservationController {
                                      Model model, HttpServletRequest request, Locale locale, RedirectAttributes redirectAttributes) {
 
         Optional<Event> eventOptional = eventRepository.findOptionalByShortName(eventName);
-        Optional<String> redirectForFailure = checkReservation(paymentForm, eventName, reservationId, request, eventOptional);
+        Optional<String> redirectForFailure = checkReservation(paymentForm.isBackFromOverview(), paymentForm.shouldCancelReservation(), eventName, reservationId, request, eventOptional);
         if(redirectForFailure.isPresent()) { //ugly
             return redirectForFailure.get();
         }
@@ -509,7 +509,7 @@ public class ReservationController {
             Model model, HttpServletRequest request, Locale locale, RedirectAttributes redirectAttributes) {
 
         Optional<Event> eventOptional = eventRepository.findOptionalByShortName(eventName);
-        Optional<String> redirectForFailure = checkReservation(paymentForm, eventName, reservationId, request, eventOptional);
+        Optional<String> redirectForFailure = checkReservation(paymentForm.isBackFromOverview(), paymentForm.shouldCancelReservation(), eventName, reservationId, request, eventOptional);
         if(redirectForFailure.isPresent()) { //ugly
             return redirectForFailure.get();
         }
@@ -697,18 +697,24 @@ public class ReservationController {
         return orderSummary.getTicketAmount() == 1 && ticketFieldRepository.countRequiredAdditionalFieldsForEvent(event.getId()) == 0;
     }
 
-    private Optional<String> checkReservation(PaymentForm paymentForm, String eventName, String reservationId, HttpServletRequest request, Optional<Event> eventOptional) {
+    private Optional<String> checkReservation(boolean backFromOverview, boolean cancelReservation, String eventName, String reservationId, HttpServletRequest request, Optional<Event> eventOptional) {
 
         if (!eventOptional.isPresent()) {
             return Optional.of("redirect:/");
         }
 
         Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(reservationId);
-        if (!ticketReservation.isPresent()) {
+        if (!ticketReservation.isPresent() || ticketReservation.get().getStatus() != TicketReservationStatus.PENDING) {
             return Optional.of(redirectReservation(ticketReservation, eventName, reservationId));
         }
-        if (paymentForm.shouldCancelReservation()) {
-            ticketReservationManager.cancelPendingReservation(reservationId, false);
+
+        if(backFromOverview) {
+            ticketReservationRepository.updateValidationStatus(reservationId, false);
+            return Optional.of("redirect:/event/" + eventName + "/reservation/" + reservationId);
+        }
+
+        if (cancelReservation) {
+            ticketReservationManager.cancelPendingReservation(reservationId, false); //FIXME
             SessionUtil.removeSpecialPriceData(request);
             return Optional.of("redirect:/event/" + eventName + "/");
         }
