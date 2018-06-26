@@ -6,15 +6,15 @@
         <thead>
             <tr>
                 <th>Option</th>
-                <th>Count</th>
-                <th>Percentage</th>
+                <th style="width:15%">Count</th>
+                <th style="width:15%">Percentage</th>
             </tr>
         </thead>
         <tbody>
             <tr ng-repeat="stats in $ctrl.field.stats">
                 <td>{{stats.name}}</td>
-                <td>{{stats.count}}</td>
-                <td>{{stats.percentage}}%</td>
+                <td class="text-right" style="padding-right: 35px">{{stats.count}}</td>
+                <td class="text-right">{{stats.percentage}}%</td>
             </tr>
         </tbody>
     </table>

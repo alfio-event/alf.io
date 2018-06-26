@@ -24,7 +24,7 @@ import lombok.Getter;
 public class RestrictedValueStats {
     private final String name;
     private final int count;
-    private final int percentage;
+    private final String percentage;
 
     @Getter
     public static class RestrictedValueCount {
