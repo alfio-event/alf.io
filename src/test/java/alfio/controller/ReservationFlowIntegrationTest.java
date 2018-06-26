@@ -251,7 +251,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
         // check that the booking page is shown
-        String bookingPage = reservationController.showBookingPage(eventName, reservationIdentifier, null, null, null, null, null, null, null, null, null, null, null, null, null, new BindingAwareModelMap(), Locale.ENGLISH);
+        String bookingPage = reservationController.showBookingPage(eventName, reservationIdentifier, new BindingAwareModelMap(), Locale.ENGLISH);
         assertEquals("/event/reservation-page", bookingPage);
         //
 
@@ -513,6 +513,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
 
         reservationController.validateToOverview(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
+
+        Assert.assertEquals("/event/overview", reservationController.showOverview(eventName, reservationIdentifier, null, null, null, null, Locale.ENGLISH, model));
 
         return reservationController.handleReservation(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
     }
