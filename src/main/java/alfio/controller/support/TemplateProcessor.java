@@ -30,6 +30,8 @@ import com.openhtmltopdf.DOMBuilder;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.extern.log4j.Log4j2;
+import org.apache.pdfbox.io.MemoryUsageSetting;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.jsoup.Jsoup;
 import org.springframework.core.io.ClassPathResource;
 
@@ -114,6 +116,8 @@ public final class TemplateProcessor {
     public static void renderToPdf(String page, OutputStream os) throws IOException {
 
         PdfRendererBuilder builder = new PdfRendererBuilder();
+        PDDocument doc = new PDDocument(MemoryUsageSetting.setupTempFileOnly());
+        builder.usePDDocument(doc);
         builder.toStream(os);
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(Jsoup.parse(page)), "");
         PdfBoxRenderer renderer = builder.buildPdfRenderer();
