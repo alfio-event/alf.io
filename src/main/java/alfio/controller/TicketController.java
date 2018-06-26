@@ -197,10 +197,7 @@ public class TicketController {
         response.setContentType("application/pdf");
         response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
         try (OutputStream os = response.getOutputStream()) {
-            PdfBoxRenderer renderer = preparePdfTicket(request, data.getLeft(), data.getMiddle(), ticket).generate(ticket);
-            if(renderer != null) {
-                renderer.createPDF(os);
-            }
+            preparePdfTicket(request, data.getLeft(), data.getMiddle(), ticket).generate(ticket).createPDF(os);
         }
     }
     

@@ -18,7 +18,27 @@ package alfio.manager.support;
 
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 @FunctionalInterface
 public interface PDFTemplateGenerator {
-    PdfBoxRenderer generate();
+    ClosingRenderer generate();
+
+    class ClosingRenderer {
+
+        private final PdfBoxRenderer renderer;
+
+        public ClosingRenderer(PdfBoxRenderer renderer) {
+            this.renderer = renderer;
+        }
+
+        public void createPDF(OutputStream os) throws IOException {
+            try {
+                renderer.createPDF(os);
+            } finally {
+                renderer.close();
+            }
+        }
+    }
 }

@@ -155,9 +155,9 @@ dependencies {
     }
     compile 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC12"
-    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC12"
-    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC12"
+    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC13"
+    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC13"
+    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC13"
     /**/
     compile "com.google.zxing:core:3.3.2"
     compile "com.google.zxing:javase:3.3.2"

@@ -32,6 +32,8 @@ import com.openhtmltopdf.DOMBuilder;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.extern.log4j.Log4j2;
+import org.apache.pdfbox.io.MemoryUsageSetting;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.jsoup.Jsoup;
 import org.springframework.core.io.ClassPathResource;
 
@@ -116,9 +118,11 @@ public final class TemplateProcessor {
         };
     }
 
-    public static PdfBoxRenderer prepareItextRenderer(String page) {
+    public static PDFTemplateGenerator.ClosingRenderer prepareItextRenderer(String page) {
 
+        PDDocument doc = new PDDocument(MemoryUsageSetting.setupTempFileOnly());
         PdfRendererBuilder builder = new PdfRendererBuilder();
+        builder.usePDDocument(doc);
 
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(Jsoup.parse(page)), "");
         PdfBoxRenderer renderer = builder.buildPdfRenderer();
@@ -128,7 +132,7 @@ public final class TemplateProcessor {
             log.warn("error while loading DejaVuSansMono.ttf font", e);
         }
         renderer.layout();
-        return renderer;
+        return new PDFTemplateGenerator.ClosingRenderer(renderer);
     }
 
     public static Optional<TemplateResource.ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
