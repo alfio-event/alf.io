@@ -34,16 +34,36 @@ import org.jsoup.Jsoup;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.net.URLStreamHandlerFactory;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 @Log4j2
 public final class TemplateProcessor {
+
+    static {
+        URL.setURLStreamHandlerFactory(protocol -> {
+            if ("alfio-internal".equals(protocol)) {
+                return new URLStreamHandler() {
+                    protected URLConnection openConnection(URL u) {
+                        return new URLConnection(u) {
+                            public void connect() {}
+                            public @Override InputStream getInputStream() throws IOException {
+                                return new ClassPathResource("/alfio/font/" + u.getFile()).getInputStream();
+                            }
+                        };
+                    }
+                };
+            } else {
+                return null;
+            }
+        });
+    }
 
     private TemplateProcessor() {}
 
@@ -97,18 +117,8 @@ public final class TemplateProcessor {
         builder.toStream(os);
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(Jsoup.parse(page)), "");
         PdfBoxRenderer renderer = builder.buildPdfRenderer();
-        try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
-             InputStream issans = new ClassPathResource("/alfio/font/DejaVuSans.ttf").getInputStream();
-             InputStream isserif = new ClassPathResource("/alfio/font/DejaVuSerif.ttf").getInputStream();
-             InputStream issmonob = new ClassPathResource("/alfio/font/DejaVuSansMono-Bold.ttf").getInputStream();
-             InputStream issansb = new ClassPathResource("/alfio/font/DejaVuSans-Bold.ttf").getInputStream();
-             InputStream isserifb = new ClassPathResource("/alfio/font/DejaVuSerif-Bold.ttf").getInputStream()) {
+        try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream()) {
             renderer.getFontResolver().addFont(() -> is, "DejaVu Sans Mono", null, null, false);
-            renderer.getFontResolver().addFont(() -> issans, "DejaVu Sans", null, null, false);
-            renderer.getFontResolver().addFont(() -> isserif, "DejaVu", null, null, false);
-            renderer.getFontResolver().addFont(() -> issmonob, "DejaVu Sans Mono Bold", null, null, false);
-            renderer.getFontResolver().addFont(() -> issansb, "DejaVu Sans Bold", null, null, false);
-            renderer.getFontResolver().addFont(() -> isserifb, "DejaVu Bold", null, null, false);
         } catch(IOException e) {
             log.warn("error while loading DejaVuSansMono.ttf font", e);
         }
