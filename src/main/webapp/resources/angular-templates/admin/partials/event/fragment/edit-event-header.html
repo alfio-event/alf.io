@@ -57,7 +57,7 @@
     <div data-ng-if="obj.type === 'INTERNAL'">
         <div class="row">
             <div class="col-xs-12">
-                <div class="form-group">
+                <div class="form-group" ng-hide="allLanguages.length == 1">
                     <label>Languages</label>
                     <div class="checkbox" ng-repeat="lang in allLanguages">
                         <label>
