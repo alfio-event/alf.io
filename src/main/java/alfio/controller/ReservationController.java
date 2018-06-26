@@ -273,6 +273,45 @@ public class ReservationController {
         }).orElse("redirect:/");
     }
 
+    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/validate-to-overview", method = RequestMethod.POST)
+    public String validateToOverview(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
+                                     PaymentForm paymentForm, BindingResult bindingResult,
+                                     Model model, HttpServletRequest request, Locale locale, RedirectAttributes redirectAttributes) {
+
+        Optional<Event> eventOptional = eventRepository.findOptionalByShortName(eventName);
+        Optional<String> redirectForFailure = checkReservation(paymentForm, eventName, reservationId, request, eventOptional);
+        if(redirectForFailure.isPresent()) { //ugly
+            return redirectForFailure.get();
+        }
+        //FIXME add VALIDATION, VAT CHECK and UPDATE
+
+        Event event = eventOptional.get();
+
+        CustomerName customerName = new CustomerName(paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), event);
+
+        //FIXME persist data
+
+        //FIXME implement validation
+        return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/overview";
+    }
+
+    @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/overview", method = RequestMethod.GET)
+    public String showOverview(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Locale locale, Model model) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .map(event -> ticketReservationManager.findById(reservationId)
+                .map(reservation -> {
+                    OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
+                    model.addAttribute("orderSummary", orderSummary)
+                        .addAttribute("reservationId", reservationId)
+                        .addAttribute("reservation", reservation)
+                        .addAttribute("pageTitle", "reservation-page.header.title")
+                        .addAttribute("event", event);
+                    return "/event/overview";
+                }).orElseGet(() -> redirectReservation(Optional.empty(), eventName, reservationId)))
+            .orElse("redirect:/");
+    }
+
+
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/failure", method = RequestMethod.GET)
     public String showFailurePage(@PathVariable("eventName") String eventName,
                                        @PathVariable("reservationId") String reservationId,
@@ -414,9 +453,11 @@ public class ReservationController {
             Model model, HttpServletRequest request, Locale locale, RedirectAttributes redirectAttributes) {
 
         Optional<Event> eventOptional = eventRepository.findOptionalByShortName(eventName);
-        if (!eventOptional.isPresent()) {
-            return "redirect:/";
+        Optional<String> redirectForFailure = checkReservation(paymentForm, eventName, reservationId, request, eventOptional);
+        if(redirectForFailure.isPresent()) { //ugly
+            return redirectForFailure.get();
         }
+
         Event event = eventOptional.get();
         Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
         if (!optionalReservation.isPresent()) {
@@ -578,7 +619,7 @@ public class ReservationController {
                                        HttpServletRequest request,
                                        Model model) throws Exception {
 
-        Optional<Triple<ValidationResult, Event, Ticket>> result = ticketHelper.assignTicket(eventName, reservationId, ticketIdentifier, updateTicketOwner, Optional.of(bindingResult), request, model);
+        Optional<Triple<ValidationResult, Event, Ticket>> result = ticketHelper.assignTicket(eventName, ticketIdentifier, updateTicketOwner, Optional.of(bindingResult), request, model);
         return result.map(t -> "redirect:/event/"+t.getMiddle().getShortName()+"/reservation/"+t.getRight().getTicketsReservationId()+"/success").orElse("redirect:/");
     }
 
@@ -600,5 +641,23 @@ public class ReservationController {
 
     private boolean isExpressCheckoutEnabled(Event event, OrderSummary orderSummary) {
         return orderSummary.getTicketAmount() == 1 && ticketFieldRepository.countRequiredAdditionalFieldsForEvent(event.getId()) == 0;
+    }
+
+    private Optional<String> checkReservation(PaymentForm paymentForm, String eventName, String reservationId, HttpServletRequest request, Optional<Event> eventOptional) {
+
+        if (!eventOptional.isPresent()) {
+            return Optional.of("redirect:/");
+        }
+
+        Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(reservationId);
+        if (!ticketReservation.isPresent()) {
+            return Optional.of(redirectReservation(ticketReservation, eventName, reservationId));
+        }
+        if (paymentForm.shouldCancelReservation()) {
+            ticketReservationManager.cancelPendingReservation(reservationId, false);
+            SessionUtil.removeSpecialPriceData(request);
+            return Optional.of("redirect:/event/" + eventName + "/");
+        }
+        return Optional.empty();
     }
 }

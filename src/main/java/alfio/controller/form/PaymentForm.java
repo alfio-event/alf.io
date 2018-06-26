@@ -66,6 +66,9 @@ public class PaymentForm implements Serializable {
     private String billingAddressZip;
     private String billingAddressCity;
 
+    private boolean addCompanyBillingDetails = false;
+    private Boolean backFromOverview;
+
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
             String value, int maxLength) {
         if (value != null && value.length() > maxLength) {
@@ -184,5 +187,9 @@ public class PaymentForm implements Serializable {
 
     public boolean getHasVatCountryCode() {
         return !StringUtils.isEmpty(vatCountryCode);
+    }
+
+    public boolean isBackFromOverview() {
+        return Optional.ofNullable(backFromOverview).orElse(false);
     }
 }

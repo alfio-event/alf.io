@@ -135,7 +135,6 @@ public class TicketHelper {
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
-                                                                          String reservationId,
                                                                           String ticketIdentifier,
                                                                           UpdateTicketOwnerForm updateTicketOwner,
                                                                           Optional<Errors> bindingResult,
@@ -171,7 +170,7 @@ public class TicketHelper {
         form.setFirstName(firstName);
         form.setLastName(lastName);
         form.setUserLanguage(userLanguage);
-        return assignTicket(eventName, reservationId, ticketUuid, form, bindingResult, request, model);
+        return assignTicket(eventName, ticketUuid, form, bindingResult, request, model);
     }
 
     public static List<Pair<String, String>> getLocalizedCountries(Locale locale) {
