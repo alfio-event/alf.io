@@ -94,20 +94,6 @@ public class ReservationController {
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
     public String showBookingPage(@PathVariable("eventName") String eventName,
                                   @PathVariable("reservationId") String reservationId,
-                                  //paypal related parameters
-                                  @RequestParam(value = "paymentId", required = false) String paypalPaymentId,
-                                  @RequestParam(value = "PayerID", required = false) String paypalPayerID,
-                                  @RequestParam(value = "paypal-success", required = false) Boolean isPaypalSuccess,
-                                  @RequestParam(value = "paypal-error", required = false) Boolean isPaypalError,
-                                  @RequestParam(value = "fullName", required = false) String fullName,
-                                  @RequestParam(value = "firstName", required = false) String firstName,
-                                  @RequestParam(value = "lastName", required = false) String lastName,
-                                  @RequestParam(value = "email", required = false) String email,
-                                  @RequestParam(value = "billingAddress", required = false) String billingAddress,
-                                  @RequestParam(value = "customerReference", required = false) String customerReference,
-                                  @RequestParam(value = "hmac", required = false) String hmac,
-                                  @RequestParam(value = "postponeAssignment", required = false) Boolean postponeAssignment,
-                                  @RequestParam(value = "invoiceRequested", required = false) Boolean invoiceRequested,
                                   Model model,
                                   Locale locale) {
 
@@ -119,31 +105,21 @@ public class ReservationController {
                         return redirectReservation(Optional.of(reservation), eventName, reservationId);
                     }
 
+                    TicketReservationAdditionalInfo additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
+                    if (additionalInfo.hasBeenValidated()) {
+                        return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/overview";
+                    }
+
                     Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partialConfig = Configuration.from(event.getOrganizationId(), event.getId());
 
                     Configuration.ConfigurationPathKey forceAssignmentKey = partialConfig.apply(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
                     boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
 
                     List<Ticket> ticketsInReservation = ticketReservationManager.findTicketsInReservation(reservationId);
-                    if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null) {
-                        model.addAttribute("paypalPaymentId", paypalPaymentId)
-                            .addAttribute("paypalPayerID", paypalPayerID)
-                            .addAttribute("paypalCheckoutConfirmation", true)
-                            .addAttribute("fullName", fullName)
-                            .addAttribute("firstName", firstName)
-                            .addAttribute("lastName", lastName)
-                            .addAttribute("email", email)
-                            .addAttribute("billingAddress", billingAddress)
-                            .addAttribute("hmac", hmac)
-                            .addAttribute("postponeAssignment", Boolean.TRUE.equals(postponeAssignment))
-                            .addAttribute("invoiceRequested", Boolean.TRUE.equals(invoiceRequested))
-                            .addAttribute("customerReference", customerReference)
-                            .addAttribute("showPostpone", !forceAssignment && Boolean.TRUE.equals(postponeAssignment));
-                    } else {
-                        model.addAttribute("paypalCheckoutConfirmation", false)
-                             .addAttribute("postponeAssignment", false)
-                             .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1);
-                    }
+
+                    model.addAttribute("postponeAssignment", false)
+                         .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1);
+
 
                     try {
                         model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
@@ -330,7 +306,14 @@ public class ReservationController {
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/overview", method = RequestMethod.GET)
-    public String showOverview(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Locale locale, Model model) {
+    public String showOverview(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
+                               //paypal
+                               @RequestParam(value = "paymentId", required = false) String paypalPaymentId,
+                               @RequestParam(value = "PayerID", required = false) String paypalPayerID,
+                               @RequestParam(value = "paypal-success", required = false) Boolean isPaypalSuccess,
+                               @RequestParam(value = "paypal-error", required = false) Boolean isPaypalError,
+                               //
+                               Locale locale, Model model) {
         return eventRepository.findOptionalByShortName(eventName)
             .map(event -> ticketReservationManager.findById(reservationId)
                 .map(reservation -> {
@@ -340,6 +323,14 @@ public class ReservationController {
                     TicketReservationAdditionalInfo additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
                     if (!additionalInfo.hasBeenValidated()) {
                         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
+                    }
+
+                    if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null) {
+                        model.addAttribute("paypalPaymentId", paypalPaymentId)
+                            .addAttribute("paypalPayerID", paypalPayerID)
+                            .addAttribute("paypalCheckoutConfirmation", true);
+                    } else {
+                        model.addAttribute("paypalCheckoutConfirmation", false);
                     }
 
 
@@ -493,7 +484,8 @@ public class ReservationController {
 
         switch(reservation.getStatus()) {
             case PENDING:
-                return baseUrl + "/book";
+                TicketReservationAdditionalInfo additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
+                return additionalInfo.hasBeenValidated() ? baseUrl + "/overview" : baseUrl + "/book";
             case COMPLETE:
                 return baseUrl + "/success";
             case OFFLINE_PAYMENT:
@@ -720,7 +712,7 @@ public class ReservationController {
         }
 
         if (cancelReservation) {
-            ticketReservationManager.cancelPendingReservation(reservationId, false); //FIXME
+            ticketReservationManager.cancelPendingReservation(reservationId, false);    //FIXME
             SessionUtil.removeSpecialPriceData(request);
             return Optional.of("redirect:/event/" + eventName + "/");
         }

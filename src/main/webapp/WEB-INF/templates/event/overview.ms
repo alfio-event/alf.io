@@ -104,6 +104,16 @@
 </table>
 
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
+    {{#paypalCheckoutConfirmation}}
+        <input type="hidden" name="paymentMethod" value="PAYPAL">
+        <input type="hidden" name="paypalPaymentId" value="{{paypalPaymentId}}">
+        <input type="hidden" name="paypalPayerID" value="{{paypalPayerID}}">
+        <input type="hidden" name="termAndConditionsAccepted" value="true">
+        <div class="alert alert-success">
+            <h3><i class="fa fa-check"></i> {{#i18n}}reservation-page.paypal.confirm{{/i18n}}</h3>
+        </div>
+    {{/paypalCheckoutConfirmation}}
+    {{^paypalCheckoutConfirmation}}
 
 
     {{^orderSummary.free}}
@@ -149,6 +159,8 @@
     {{/orderSummary.free}}
 
 
+
+
     {{#event.privacyPolicyLinkOrNull}}
         <div class="checkbox wMarginTop wMarginBottom">
             <label>
@@ -157,6 +169,8 @@
             </label>
         </div>
     {{/event.privacyPolicyLinkOrNull}}
+
+    {{/paypalCheckoutConfirmation}}
 
     <div class="checkbox wMarginTop wMarginBottom">
         <label>
