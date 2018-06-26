@@ -250,9 +250,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         String reservationIdentifier = redirectResult.substring(redirectStart.length()).replace("/book", "");
 
 
-        // check that the payment page is shown
-        String reservationPage = reservationController.showPaymentPage(eventName, reservationIdentifier, null, null, null, null, null, null, null, null, null, null, null, null, null, new BindingAwareModelMap(), Locale.ENGLISH);
-        assertEquals("/event/reservation-page", reservationPage);
+        // check that the booking page is shown
+        String bookingPage = reservationController.showBookingPage(eventName, reservationIdentifier, null, null, null, null, null, null, null, null, null, null, null, null, null, new BindingAwareModelMap(), Locale.ENGLISH);
+        assertEquals("/event/reservation-page", bookingPage);
         //
 
         // pay offline

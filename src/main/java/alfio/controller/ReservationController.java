@@ -92,7 +92,7 @@ public class ReservationController {
     private final TicketReservationRepository ticketReservationRepository;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
-    public String showPaymentPage(@PathVariable("eventName") String eventName,
+    public String showBookingPage(@PathVariable("eventName") String eventName,
                                   @PathVariable("reservationId") String reservationId,
                                   //paypal related parameters
                                   @RequestParam(value = "paymentId", required = false) String paypalPaymentId,
@@ -353,6 +353,12 @@ public class ReservationController {
                         .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
                         .map(PaymentManager.PaymentMethod::getPaymentProxy)
                         .collect(toList());
+
+                    boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
+                    model.addAttribute("includeStripe", includeStripe);
+                    if (includeStripe) {
+                        model.addAttribute("stripe_p_key", paymentManager.getStripePublicKey(event));
+                    }
 
                     model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 )
                         .addAttribute("activePaymentMethods", activePaymentMethods);
