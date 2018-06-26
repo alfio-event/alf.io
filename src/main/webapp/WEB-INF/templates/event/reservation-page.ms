@@ -103,7 +103,7 @@
     </span>
 </div>
 
-<form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
+<form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}/validate-to-overview" method="POST" id="payment-form">
     {{#paypalCheckoutConfirmation}}
         {{#useFirstAndLastName}}
         <input type="hidden" name="firstName" value="{{firstName}}">
