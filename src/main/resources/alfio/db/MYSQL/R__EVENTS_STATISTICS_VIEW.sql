@@ -100,10 +100,12 @@ create view events_statistics as (select
       case(contains_unbounded_categories) when true then 0 else (select count(id) from ticket where event_id = event.id and status not in ('INVALIDATED', 'EXPIRED')) - allocated_count end as not_allocated_tickets,
       pending_count as pending_tickets,
       sold_tickets_count as sold_tickets,
+      (select released_count + count(id) from ticket where event_id = event.id and status = 'RELEASED' and category_id is null) as released_tickets,
       stats.checked_in_count as checked_in_tickets,
       case(contains_unbounded_categories) when true then
         (select count(id) from ticket where event_id = event.id and status not in ('INVALIDATED', 'EXPIRED'))
           - allocated_count
+          - released_count
           - sold_tickets_count_unbounded
           - checked_in_count_unbounded
           - pending_count_unbounded
