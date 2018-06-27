@@ -458,20 +458,28 @@
 
         OrganizationService.getAllOrganizations().success(function(result) {
             $scope.organizations = result;
+            if(result.length === 1) {
+                $scope.event.organizationId = result[0].id;
+                loadAllowedPaymentProxies(result[0].id);
+            }
         });
+
+        function loadAllowedPaymentProxies(orgId) {
+            PaymentProxyService.getAllProxies(orgId).success(function(result) {
+                $scope.allowedPaymentProxies = _.map(result, function(p) {
+                    return {
+                        id: p.paymentProxy,
+                        description: PAYMENT_PROXY_DESCRIPTIONS[p.paymentProxy] || 'Unknown provider ('+p.paymentProxy+')  Please check configuration',
+                        enabled: p.status === 'ACTIVE',
+                        onlyForCurrency: p.onlyForCurrency
+                    };
+                });
+            });
+        }
 
         $scope.$watch('event.organizationId', function(newVal) {
             if(newVal !== undefined && newVal !== null) {
-                PaymentProxyService.getAllProxies(newVal).success(function(result) {
-                    $scope.allowedPaymentProxies = _.map(result, function(p) {
-                        return {
-                            id: p.paymentProxy,
-                            description: PAYMENT_PROXY_DESCRIPTIONS[p.paymentProxy] || 'Unknown provider ('+p.paymentProxy+')  Please check configuration',
-                            enabled: p.status === 'ACTIVE',
-                            onlyForCurrency: p.onlyForCurrency
-                        };
-                    });
-                });
+                loadAllowedPaymentProxies(newVal)
             }
         });
 
