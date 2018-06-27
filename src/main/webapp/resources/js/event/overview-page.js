@@ -143,6 +143,7 @@
                 .attr('novalidate', 'novalidate')
                 .unbind('submit', submitForm)
                 .find('button').prop('disabled', true);
+            $form.trigger("reset");
             $form.append($('<input type="hidden" name="backFromOverview" />').val(true))
             $form.submit();
         });
