@@ -90,25 +90,24 @@ public class PaymentForm implements Serializable {
         return StringUtils.isNotBlank(paypalPayerID) && StringUtils.isNotBlank(paypalPaymentId);
     }
 
-    public void validate(BindingResult bindingResult, TotalPrice reservationCost, Event event,
-                         List<TicketFieldConfiguration> fieldConf, EuVatChecker.SameCountryValidator vatValidator) {
+    public void validate(BindingResult bindingResult, Event event, List<TicketFieldConfiguration> fieldConf, EuVatChecker.SameCountryValidator vatValidator) {
 
-        List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
+        //List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
 
-        Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
-        PaymentProxy paymentProxy = paymentProxyOptional.filter(allowedPaymentMethods::contains).orElse(PaymentProxy.STRIPE);
-        boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
-        boolean multiplePaymentMethods = allowedPaymentMethods.size() > 1;
-        if (multiplePaymentMethods && priceGreaterThanZero && !paymentProxyOptional.isPresent()) {
-            bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
-        } else if (priceGreaterThanZero && (paymentProxy == PaymentProxy.STRIPE && StringUtils.isBlank(stripeToken))) {
-            bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
-        }
+        //Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
+        //PaymentProxy paymentProxy = paymentProxyOptional.filter(allowedPaymentMethods::contains).orElse(PaymentProxy.STRIPE);
+        //boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
+        //boolean multiplePaymentMethods = allowedPaymentMethods.size() > 1;
+        //if (multiplePaymentMethods && priceGreaterThanZero && !paymentProxyOptional.isPresent()) {
+            //bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
+        //} else if (priceGreaterThanZero && (paymentProxy == PaymentProxy.STRIPE && StringUtils.isBlank(stripeToken))) {
+            //bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
+        //}
 
-        if(Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted
-            || (StringUtils.isNotEmpty(event.getPrivacyPolicyUrl()) && (Objects.isNull(privacyPolicyAccepted) || !privacyPolicyAccepted)) ) {
-            bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
-        }
+        //if(Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted
+            //|| (StringUtils.isNotEmpty(event.getPrivacyPolicyUrl()) && (Objects.isNull(privacyPolicyAccepted) || !privacyPolicyAccepted)) ) {
+            //bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
+        //}
         
         email = StringUtils.trim(email);
 

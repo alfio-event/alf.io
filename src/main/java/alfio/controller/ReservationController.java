@@ -181,7 +181,7 @@ public class ReservationController {
                                     !hasPaidSupplement && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), category.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false),
                                     eventManager.checkTicketCancellationPrerequisites(),
                                     ticketHelper::findTicketFieldConfigurationAndValue,
-                                    true, (t) -> "tickets['"+t.getUuid()+"'].");
+                                    true, (t) -> "tickets["+t.getUuid()+"].");
                                 return Pair.of(category, decorators);
                             })
                             .collect(toList()));
@@ -276,7 +276,7 @@ public class ReservationController {
             paymentForm.setInvoiceRequested(true);
         }
 
-        CustomerName customerName = new CustomerName(paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), event);
+        CustomerName customerName = new CustomerName(paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), event, false);
 
         //persist data
         ticketReservationManager.updateReservation(reservationId, customerName, paymentForm.getEmail(),
@@ -287,8 +287,9 @@ public class ReservationController {
         assignTickets(event.getShortName(), reservationId, paymentForm, bindingResult, request, true, true);
         //
 
-        // FIXME validate!
-        //paymentForm.validate(bindingResult, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()), companyVatChecked);
+        //
+        paymentForm.validate(bindingResult, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()), new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId));
+        //
 
         if(bindingResult.hasErrors()) {
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
