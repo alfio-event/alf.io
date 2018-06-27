@@ -345,6 +345,13 @@
             });
         });
 
+        $("select").map(function() {
+            var value = $(this).attr('value');
+            if(value && value.length > 0) {
+                $(this).val(value);
+            }
+        });
+
     });
 
     window.recaptchaLoadCallback = function() {
