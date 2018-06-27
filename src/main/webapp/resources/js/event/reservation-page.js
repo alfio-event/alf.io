@@ -152,11 +152,11 @@
             $("input[type=submit], button:not([type=button])", $form ).unbind('click');
             $form.unbind('submit');
             $("input", $form).unbind('keypress');
-            
             $form
                 .attr('novalidate', 'novalidate')
                 .unbind('submit', submitForm)
                 .find('button').prop('disabled', true);
+            $form.trigger("reset");
             $form.append($('<input type="hidden" name="cancelReservation" />').val(true))
             $form.submit();
         });
