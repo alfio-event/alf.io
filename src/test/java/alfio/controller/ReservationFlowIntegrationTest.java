@@ -27,6 +27,7 @@ import alfio.controller.api.admin.EventApiController;
 import alfio.controller.api.admin.SerializablePair;
 import alfio.controller.api.admin.UsersApiController;
 import alfio.controller.api.support.TicketHelper;
+import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
@@ -498,24 +499,26 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     }
 
     private String payOffline(String eventName, String reservationIdentifier) {
-        PaymentForm paymentForm = new PaymentForm();
-        paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
-        paymentForm.setEmail("test@test.com");
-        paymentForm.setBillingAddress("my billing address");
-        paymentForm.setFirstName("full");
-        paymentForm.setLastName("name");
-        paymentForm.setTermAndConditionsAccepted(true);
-        paymentForm.setPrivacyPolicyAccepted(true);
-        paymentForm.setPostponeAssignment(true);
-        BindingResult bindingResult = new BeanPropertyBindingResult(paymentForm, "paymentForm");
+        ContactAndTicketsForm contactAndTicketsForm = new ContactAndTicketsForm();
+
+        contactAndTicketsForm.setEmail("test@test.com");
+        contactAndTicketsForm.setBillingAddress("my billing address");
+        contactAndTicketsForm.setFirstName("full");
+        contactAndTicketsForm.setLastName("name");
+        contactAndTicketsForm.setPostponeAssignment(true);
+        BindingResult bindingResult = new BeanPropertyBindingResult(contactAndTicketsForm, "paymentForm");
         Model model = new BindingAwareModelMap();
         MockHttpServletRequest request = new MockHttpServletRequest();
         RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
 
-        reservationController.validateToOverview(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
+        reservationController.validateToOverview(eventName, reservationIdentifier, contactAndTicketsForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
 
         Assert.assertEquals("/event/overview", reservationController.showOverview(eventName, reservationIdentifier, null, null, null, null, Locale.ENGLISH, model));
 
+        PaymentForm paymentForm = new PaymentForm();
+        paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
+        paymentForm.setTermAndConditionsAccepted(true);
+        paymentForm.setPrivacyPolicyAccepted(true);
         return reservationController.handleReservation(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
     }
 

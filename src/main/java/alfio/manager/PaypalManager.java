@@ -128,7 +128,7 @@ public class PaypalManager {
 
     public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary,
                                         CustomerName customerName, String email, String billingAddress, String customerReference,
-                                        Locale locale, boolean postponeAssignment, boolean invoiceRequested) throws Exception {
+                                        Locale locale) throws Exception {
 
 
         APIContext apiContext = getApiContext(event);

@@ -158,9 +158,9 @@ public class PaymentManager {
 
     public String createPayPalCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary,
                                               CustomerName customerName, String email, String billingAddress, String customerReference,
-                                              Locale locale, boolean postponeAssignment, boolean invoiceRequested) throws Exception {
+                                              Locale locale) throws Exception {
         return paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName, email,
-                                                   billingAddress, customerReference, locale, postponeAssignment, invoiceRequested);
+                                                   billingAddress, customerReference, locale);
     }
 
     public boolean refund(TicketReservation reservation, Event event, Optional<Integer> amount, String username) {
