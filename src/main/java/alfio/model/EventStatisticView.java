@@ -30,6 +30,7 @@ public class EventStatisticView {
                               @Column("checked_in_tickets") int checkedInTickets,
                               @Column("not_allocated_tickets") int notAllocatedTickets,
                               @Column("pending_tickets") int pendingTickets,
+                              @Column("released_tickets") int releasedTickets,
                               @Column("dynamic_allocation") int dynamicAllocation,
                               @Column("id") int eventId) {
         this.eventId = eventId;
@@ -41,6 +42,7 @@ public class EventStatisticView {
         this.checkedInTickets = checkedInTickets;
         this.notAllocatedTickets = notAllocatedTickets;
         this.pendingTickets = pendingTickets;
+        this.releasedTickets = releasedTickets;
         this.dynamicAllocation = dynamicAllocation;
     }
 
@@ -54,13 +56,14 @@ public class EventStatisticView {
     private final int notAllocatedTickets;
     private final int pendingTickets;
     private final int dynamicAllocation;
+    private final int releasedTickets;
 
     public boolean isLiveData() {
         return true;
     }
 
     public static EventStatisticView empty(int eventId) {
-        return new EventStatisticView(false, false, 0, 0, 0, 0, 0, 0, 0, eventId) {
+        return new EventStatisticView(false, false, 0, 0, 0, 0, 0, 0, 0, 0, eventId) {
             @Override
             public boolean isLiveData() {
                 return false;

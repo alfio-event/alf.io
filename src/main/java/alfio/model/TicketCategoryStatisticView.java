@@ -32,6 +32,7 @@ public class TicketCategoryStatisticView {
     private final int checkedInCount;
     private final int soldTicketsCount;
     private final int notSoldTicketsCount;
+    private final int releasedTicketsCount;
     private final int stuckCount;
     private final boolean containsOrphanTickets;
     private final boolean containsStuckTickets;
@@ -45,6 +46,7 @@ public class TicketCategoryStatisticView {
                                        @Column("checked_in_count") int checkedInCount,
                                        @Column("sold_tickets_count") int soldTicketsCount,
                                        @Column("not_sold_tickets") int notSoldTicketsCount,
+                                       @Column("released_count") int releasedCount,
                                        @Column("stuck_count") int stuckCount,
                                        @Column("is_containing_orphan_tickets") boolean containsOrphanTickets,
                                        @Column("is_containing_stuck_tickets") boolean containsStuckTickets) {
@@ -60,9 +62,10 @@ public class TicketCategoryStatisticView {
         this.stuckCount = stuckCount;
         this.containsOrphanTickets = containsOrphanTickets;
         this.containsStuckTickets = containsStuckTickets;
+        this.releasedTicketsCount = releasedCount;
     }
 
     public static TicketCategoryStatisticView empty(int ticketCategoryId, int eventId) {
-        return new TicketCategoryStatisticView(ticketCategoryId, 0, false, false, eventId, 0, 0, 0, 0, 0, false, false);
+        return new TicketCategoryStatisticView(ticketCategoryId, 0, false, false, eventId, 0, 0, 0, 0, 0, 0, false, false);
     }
 }

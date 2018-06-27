@@ -107,6 +107,11 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
         return eventStatisticView.getDynamicAllocation();
     }
 
+    @Override
+    public int getReleasedTickets() {
+        return eventStatisticView.getReleasedTickets();
+    }
+
     public int getOrganizationId() {
         return event.getOrganizationId();
     }

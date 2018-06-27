@@ -51,25 +51,6 @@ import java.util.Optional;
 @Log4j2
 public final class TemplateProcessor {
 
-    static {
-        URL.setURLStreamHandlerFactory(protocol -> {
-            if ("alfio-internal".equals(protocol)) {
-                return new URLStreamHandler() {
-                    protected URLConnection openConnection(URL u) {
-                        return new URLConnection(u) {
-                            public void connect() {}
-                            public @Override InputStream getInputStream() throws IOException {
-                                return new ClassPathResource("/alfio/font/" + u.getFile()).getInputStream();
-                            }
-                        };
-                    }
-                };
-            } else {
-                return null;
-            }
-        });
-    }
-
     private TemplateProcessor() {}
 
 
