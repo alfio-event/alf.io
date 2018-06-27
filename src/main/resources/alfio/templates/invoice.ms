@@ -3,20 +3,9 @@
 	<head>
 		<style>
 
-		    @font-face {
-		        font-family: 'DejaVu Sans';
-		        src: url('alfio-internal:/DejaVuSans.ttf');
-            }
-
-            @font-face {
-                font-family: 'DejaVu Sans Bold';
-                src: url('alfio-internal:/DejaVuSans-Bold.ttf');
-            }
-
 			body {
-				font-family: "DejaVu Sans";
-                font-size:10pt;
-                line-height:12pt;
+                font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size:11pt;
 			}
 
             h1,h2,p {margin:0;}
@@ -87,7 +76,6 @@
 
             .strong, strong {
                 font-weight: bold;
-                font-family: "DejaVu Sans Bold"
             }
 
             .mb {

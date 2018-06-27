@@ -23,13 +23,7 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.io.ClassPathResource;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,25 +38,6 @@ public class SpringBootLauncher {
         Thread.setDefaultUncaughtExceptionHandler(new DefaultExceptionHandler());
         String profiles = System.getProperty("spring.profiles.active", "");
 
-        log.info("setting custom stream handler factory for fonts");
-        URL.setURLStreamHandlerFactory(protocol -> {
-            if ("alfio-internal".equals(protocol)) {
-                return new URLStreamHandler() {
-                    protected URLConnection openConnection(URL u) {
-                        return new URLConnection(u) {
-                            public void connect() {}
-                            public @Override
-                            InputStream getInputStream() throws IOException {
-                                log.info("loading {}", u.getFile());
-                                return new ClassPathResource("/alfio/font/" + u.getFile()).getInputStream();
-                            }
-                        };
-                    }
-                };
-            } else {
-                return null;
-            }
-        });
         SpringApplication application = new SpringApplication(SpringBootInitializer.class, RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class, MvcConfiguration.class);
         List<String> additionalProfiles = new ArrayList<>();
         additionalProfiles.add(Initializer.PROFILE_SPRING_BOOT);
