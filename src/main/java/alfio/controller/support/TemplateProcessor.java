@@ -23,6 +23,7 @@ import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.user.Organization;
+import alfio.repository.TicketFieldRepository;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
@@ -36,11 +37,13 @@ import org.jsoup.Jsoup;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import java.net.URLStreamHandlerFactory;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -105,9 +108,11 @@ public final class TemplateProcessor {
                                        TemplateManager templateManager,
                                        FileUploadManager fileUploadManager,
                                        String reservationID,
-                                       OutputStream os) throws IOException {
+                                       OutputStream os,
+                                       TicketFieldRepository ticketFieldRepository) throws IOException {
         Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
-        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID);
+        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization,
+            event, ticketReservation, ticketCategory, ticket, imageData, reservationID, ticketFieldRepository.findAllValuesForTicketId(ticket.getId()));
 
         String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
         renderToPdf(page, os);

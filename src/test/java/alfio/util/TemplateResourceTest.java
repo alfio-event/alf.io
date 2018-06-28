@@ -29,6 +29,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
@@ -63,7 +64,7 @@ public class TemplateResourceTest {
     @Test
     public void buildModelForTicketPDF() throws Exception {
         Pair<ZonedDateTime, ZonedDateTime> dates = getDates();
-        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, Optional.empty(), "abcd");
+        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, Optional.empty(), "abcd", Collections.emptyMap());
         assertEquals(dates.getLeft(), model.get("validityStart"));
         assertEquals(dates.getRight(), model.get("validityEnd"));
     }

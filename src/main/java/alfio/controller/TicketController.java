@@ -32,14 +32,15 @@ import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import com.google.zxing.WriterException;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -54,6 +55,7 @@ import java.util.Optional;
 import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
 
 @Controller
+@RequiredArgsConstructor
 public class TicketController {
 
     private final OrganizationRepository organizationRepository;
@@ -65,27 +67,7 @@ public class TicketController {
     private final ConfigurationManager configurationManager;
     private final FileUploadManager fileUploadManager;
     private final TicketHelper ticketHelper;
-
-    @Autowired
-    public TicketController(OrganizationRepository organizationRepository,
-                            TicketReservationManager ticketReservationManager,
-                            TicketCategoryRepository ticketCategoryRepository,
-                            TemplateManager templateManager,
-                            NotificationManager notificationManager,
-                            EventManager eventManager,
-                            ConfigurationManager configurationManager,
-                            FileUploadManager fileUploadManager,
-                            TicketHelper ticketHelper) {
-        this.organizationRepository = organizationRepository;
-        this.ticketReservationManager = ticketReservationManager;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-        this.templateManager = templateManager;
-        this.notificationManager = notificationManager;
-        this.eventManager = eventManager;
-        this.configurationManager = configurationManager;
-        this.fileUploadManager = fileUploadManager;
-        this.ticketHelper = ticketHelper;
-    }
+    private final TicketFieldRepository ticketFieldRepository;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
     public String showTicketOLD(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
@@ -203,7 +185,7 @@ public class TicketController {
             TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
                 ticket, ticketCategory, organization,
                 templateManager, fileUploadManager,
-                reservationID, os);
+                reservationID, os, ticketFieldRepository);
         }
     }
     
