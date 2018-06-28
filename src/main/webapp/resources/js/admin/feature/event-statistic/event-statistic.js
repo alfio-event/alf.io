@@ -54,10 +54,10 @@
                             className: 'slice-warning',
                             meta: 'Sold ('+event.soldTickets+')'
                         },{
-                            value: event.pendingTickets,
+                            value: event.pendingTickets + event.releasedTickets,
                             name: 'Reservation in progress',
                             className: 'slice-pending',
-                            meta: 'Reservation in progress ('+event.pendingTickets+')'
+                            meta: 'Reservation in progress ('+(event.pendingTickets + event.releasedTickets)+')'
                         },{
                             value: event.notSoldTickets,
                             name: 'Reserved for categories',

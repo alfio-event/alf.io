@@ -137,6 +137,11 @@ public class TicketCategoryWithAdditionalInfo implements StatisticsContainer, Pr
         return ticketCategoryStatisticView.getPendingCount();
     }
 
+    @Override
+    public int getReleasedTickets() {
+        return ticketCategoryStatisticView.getReleasedTicketsCount();
+    }
+
     public boolean isExpired() {
         return ZonedDateTime.now(event.getZoneId()).isAfter(ticketCategory.getExpiration(event.getZoneId()));
     }
