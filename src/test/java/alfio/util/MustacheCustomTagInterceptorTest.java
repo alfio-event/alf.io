@@ -16,13 +16,23 @@
  */
 package alfio.util;
 
+import com.samskivert.mustache.Template;
 import org.junit.Test;
+import org.mockito.Mockito;
 
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Collections;
 import java.util.Locale;
 
+import static alfio.util.MustacheCustomTagInterceptor.*;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class MustacheCustomTagInterceptorTest {
+
+    private Template.Fragment fragment = Mockito.mock(Template.Fragment.class);
+    private Writer out = Mockito.mock(Writer.class);
 
     @Test
     public void translateCountryCode() {
@@ -30,4 +40,40 @@ public class MustacheCustomTagInterceptorTest {
         assertEquals("Greece", MustacheCustomTagInterceptor.translateCountryCode("EL", null));
         assertEquals("Grecia", MustacheCustomTagInterceptor.translateCountryCode("EL", Locale.ITALIAN));
     }
+
+    @Test
+    public void additionalFieldValueMapIsEmptyOrNull() throws IOException {
+        ADDITIONAL_FIELD_VALUE.apply(Collections.emptyMap()).execute(fragment, out);
+        ADDITIONAL_FIELD_VALUE.apply(null).execute(fragment, out);
+        verifyNoMoreInteractions(fragment, out);
+    }
+
+    @Test
+    public void additionalFieldValueMapDoesNotContainValue() throws IOException {
+        when(fragment.execute()).thenReturn("[not-existing]");
+        ADDITIONAL_FIELD_VALUE.apply(Collections.singletonMap("test", "test")).execute(fragment, out);
+        verifyNoMoreInteractions(out);
+    }
+
+    @Test
+    public void additionalFieldValue() throws IOException {
+        when(fragment.execute()).thenReturn("[existing]");
+        ADDITIONAL_FIELD_VALUE.apply(Collections.singletonMap("existing", "existing value")).execute(fragment, out);
+        verify(out).write("existing value");
+    }
+
+    @Test
+    public void additionalFieldValuePrefix() throws IOException {
+        when(fragment.execute()).thenReturn("[prefix!][existing]");
+        ADDITIONAL_FIELD_VALUE.apply(Collections.singletonMap("existing", "existing value")).execute(fragment, out);
+        verify(out).write("prefix! existing value");
+    }
+
+    @Test
+    public void additionalFieldValueSuffix() throws IOException {
+        when(fragment.execute()).thenReturn("[prefix!][existing][suffix-]");
+        ADDITIONAL_FIELD_VALUE.apply(Collections.singletonMap("existing", "existing value")).execute(fragment, out);
+        verify(out).write("prefix! existing value suffix-");
+    }
+
 }

@@ -25,6 +25,7 @@ import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.user.Organization;
+import alfio.repository.TicketFieldRepository;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
@@ -41,9 +42,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -88,11 +86,12 @@ public final class TemplateProcessor {
                                                       Organization organization,
                                                       TemplateManager templateManager,
                                                       FileUploadManager fileUploadManager,
+                                                      TicketFieldRepository ticketFieldRepository,
                                                       String reservationID) {
         
         return () -> {
             Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
-            Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID);
+            Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID, ticketFieldRepository.findAllValuesForTicketId(ticket.getId()));
 
             String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
             return prepareItextRenderer(page);
@@ -135,8 +134,9 @@ public final class TemplateProcessor {
                                                                   Organization organization,
                                                                   TemplateManager templateManager,
                                                                   FileUploadManager fileUploadManager,
-                                                                  String reservationID) {
-        return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager, reservationID).generate();
+                                                                  String reservationID,
+                                                                  TicketFieldRepository ticketFieldRepository) {
+        return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager, ticketFieldRepository, reservationID).generate();
     }
 
     private static Optional<byte[]> buildReceiptOrInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {

@@ -90,7 +90,8 @@ public class NotificationManager {
                                TemplateManager templateManager,
                                TicketReservationRepository ticketReservationRepository,
                                TicketCategoryRepository ticketCategoryRepository,
-                               PassBookManager passBookManager) {
+                               PassBookManager passBookManager,
+                               TicketFieldRepository ticketFieldRepository) {
         this.messageSource = messageSource;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
@@ -108,10 +109,16 @@ public class NotificationManager {
         attachmentTransformer.put(Mailer.AttachmentIdentifier.INVOICE_PDF, receiptOrInvoiceFactory(eventRepository,
             payload -> TemplateProcessor.buildInvoicePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight())));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passBookManager::getPassBook);
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, ticketFieldRepository));
     }
 
-    private static Function<Map<String, String>, byte[]> generateTicketPDF(EventRepository eventRepository, OrganizationRepository organizationRepository, ConfigurationManager configurationManager, FileUploadManager fileUploadManager, TemplateManager templateManager, TicketReservationRepository ticketReservationRepository) {
+    private static Function<Map<String, String>, byte[]> generateTicketPDF(EventRepository eventRepository,
+                                                                           OrganizationRepository organizationRepository,
+                                                                           ConfigurationManager configurationManager,
+                                                                           FileUploadManager fileUploadManager,
+                                                                           TemplateManager templateManager,
+                                                                           TicketReservationRepository ticketReservationRepository,
+                                                                           TicketFieldRepository ticketFieldRepository) {
         return (model) -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
@@ -121,7 +128,7 @@ public class NotificationManager {
                 Event event = eventRepository.findById(ticket.getEventId());
                 Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
                 PDFTemplateGenerator pdfTemplateGenerator = TemplateProcessor.buildPDFTicket(Locale.forLanguageTag(ticket.getUserLanguage()), event, reservation,
-                    ticket, ticketCategory, organization, templateManager, fileUploadManager, configurationManager.getShortReservationID(event, ticket.getTicketsReservationId()));
+                    ticket, ticketCategory, organization, templateManager, fileUploadManager, ticketFieldRepository, configurationManager.getShortReservationID(event, ticket.getTicketsReservationId()));
                 pdfTemplateGenerator.generate().createPDF(baos);
             } catch (IOException e) {
                 log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);

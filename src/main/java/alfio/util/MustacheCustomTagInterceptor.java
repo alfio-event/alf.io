@@ -19,6 +19,7 @@ package alfio.util;
 import alfio.controller.api.support.TicketHelper;
 import alfio.model.transaction.PaymentProxy;
 import com.samskivert.mustache.Mustache;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
@@ -32,9 +33,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,11 +57,13 @@ import static org.apache.commons.lang3.StringUtils.substring;
  * <li>optional: locale:YOUR_LOCALE you can define the locale</li>
  * </ul>
  */
+@Log4j2
 public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
     private static final String LOCALE_LABEL = "locale:";
+    private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*?)\\]");
 
-    public static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
+    static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
         String execution = frag.execute().trim();
         ZonedDateTime d = ZonedDateTime.parse(substring(execution, 0, execution.indexOf(" ")));
         Pair<String, Optional<Locale>> p = parseParams(execution);
@@ -73,11 +74,39 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
         }
     };
 
-    public static final Mustache.Lambda COUNTRY_NAME = (frag, out) -> {
+    static final Mustache.Lambda COUNTRY_NAME = (frag, out) -> {
         String execution = frag.execute().trim();
         String code = substring(execution, 0, 2);
         Pair<String, Optional<Locale>> p = parseParams(execution);
         out.write(translateCountryCode(code, p.getRight().orElse(null)));
+    };
+
+    /**
+     * {{#additional-field-value}}[Prefix][name][suffix]{{/additional-field-value}}
+     * prefix is optional, unless a suffix is needed.
+     */
+    static final Function<Object, Mustache.Lambda> ADDITIONAL_FIELD_VALUE = (obj) -> (frag, out) -> {
+        if( !(obj instanceof Map) || ((Map<?,?>)obj).isEmpty()) {
+            log.warn("map not found or empty. Skipping additionalFieldValue tag");
+            return;
+        }
+        Map<?, ?> fieldNamesAndValues = (Map<?, ?>) obj;
+        String execution = frag.execute().trim();
+        Matcher matcher = ARG_PATTERN.matcher(execution);
+        List<String> args = new ArrayList<>();
+        while(matcher.find()) {
+            args.add(matcher.group(1));
+        }
+        if(args.isEmpty()) {
+            return;
+        }
+        String name = args.get(args.size() > 1 ? 1 : 0);
+        String prefix = args.size() > 1 ? args.get(0) + " " : "";
+        String suffix = args.size() > 2 ? " "+args.get(2) : "";
+
+        if(fieldNamesAndValues.containsKey(name)) {
+            out.write(prefix + fieldNamesAndValues.get(name) + suffix);
+        }
     };
 
     static String translateCountryCode(String code, Locale locale) {
@@ -105,8 +134,6 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
         return Pair.of(format, locale);
     }
-
-    private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*?)\\]");
 
     private static final Function<ModelAndView, Mustache.Lambda> HAS_ERROR = (mv) -> {
         return (frag, out) -> {
@@ -177,6 +204,7 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
             modelAndView.addObject("is-payment-method", IS_PAYMENT_METHOD);
             modelAndView.addObject("commonmark", RENDER_TO_COMMON_MARK);
             modelAndView.addObject("country-name", COUNTRY_NAME);
+            modelAndView.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(modelAndView.getModel().get("additional-fields")));
         }
 
         super.postHandle(request, response, handler, modelAndView);
