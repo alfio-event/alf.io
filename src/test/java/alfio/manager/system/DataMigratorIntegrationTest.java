@@ -20,7 +20,6 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.config.RepositoryConfiguration;
-import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
@@ -36,7 +35,10 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
-import alfio.repository.*;
+import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -93,8 +95,6 @@ public class DataMigratorIntegrationTest {
     private FileUploadManager fileUploadManager;
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
-    @Autowired
-    private TicketHelper ticketHelper;
     @Value("${alfio.version}")
     private String currentVersion;
     @Value("${alfio.build-ts}")
