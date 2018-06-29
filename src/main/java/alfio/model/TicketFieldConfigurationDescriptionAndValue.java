@@ -23,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
 import java.util.Collections;
@@ -60,6 +59,22 @@ public class TicketFieldConfigurationDescriptionAndValue {
             .mapToObj(i -> new TicketFieldValue(i, i+1, i < values.size() ? values.get(i) : ""))
             .collect(Collectors.toList());
 
+    }
+
+    public String getValueDescription() {
+        if(isSelectField()) {
+            return getTranslatedRestrictedValue().stream()
+                .filter(t -> StringUtils.equals(t.getLeft(), value))
+                .map(Triple::getMiddle)
+                .findFirst()
+                .orElse("");
+        } else {
+            return value;
+        }
+    }
+
+    public String getValue() {
+        return value;
     }
 
     private static boolean isFieldValueEnabled(TicketFieldConfiguration ticketFieldConfiguration, String value) {

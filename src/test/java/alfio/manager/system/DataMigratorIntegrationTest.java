@@ -34,7 +34,10 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
-import alfio.repository.*;
+import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.BaseIntegrationTest;
@@ -297,7 +300,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
             second.setLastName("Name");
 	        TemplateProcessor.renderPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(),
                 tickets.get(0), ticketCategoryRepository.getByIdAndActive(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()),
-                templateManager, fileUploadManager, "", new ByteArrayOutputStream(), ticketFieldRepository);
+                templateManager, fileUploadManager, "", new ByteArrayOutputStream(), t -> Collections.emptyList());
 	        ticketReservationManager.updateTicketOwner(tickets.get(0), Locale.ITALIAN, event, first, (t) -> "", (t) -> "", Optional.empty());
 	        ticketReservationManager.updateTicketOwner(tickets.get(1), Locale.ITALIAN, event, second, (t) -> "", (t) -> "", Optional.empty());
 	        //FIXME

@@ -18,12 +18,8 @@ package alfio.controller.support;
 
 import alfio.manager.FileUploadManager;
 import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.user.Organization;
-import alfio.repository.TicketFieldRepository;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
@@ -44,9 +40,12 @@ import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Log4j2
 public final class TemplateProcessor {
@@ -109,10 +108,11 @@ public final class TemplateProcessor {
                                        FileUploadManager fileUploadManager,
                                        String reservationID,
                                        OutputStream os,
-                                       TicketFieldRepository ticketFieldRepository) throws IOException {
+                                       Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues) throws IOException {
         Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
-        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization,
-            event, ticketReservation, ticketCategory, ticket, imageData, reservationID, ticketFieldRepository.findAllValuesForTicketId(ticket.getId()));
+        List<TicketFieldConfigurationDescriptionAndValue> fields = retrieveFieldValues.apply(ticket);
+        Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID,
+            fields.stream().collect(Collectors.toMap(TicketFieldConfigurationDescriptionAndValue::getName, TicketFieldConfigurationDescriptionAndValue::getValueDescription)));
 
         String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
         renderToPdf(page, os);

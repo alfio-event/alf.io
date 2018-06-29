@@ -20,12 +20,16 @@ import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.system.Configuration;
+import alfio.repository.AdditionalServiceItemRepository;
+import alfio.repository.TicketFieldRepository;
+import alfio.repository.TicketRepository;
 import biweekly.ICalVersion;
 import biweekly.ICalendar;
 import biweekly.component.VEvent;
 import biweekly.io.text.ICalWriter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -37,9 +41,12 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.time.temporal.ChronoField.*;
 
@@ -175,6 +182,31 @@ public class EventUtil {
             .queryParam("location", event.getLocation())
             .queryParam("detail", description)
             .toUriString();
+    }
+
+    public static Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues(TicketRepository ticketRepository,
+                                                                                                          TicketFieldRepository ticketFieldRepository,
+                                                                                                          AdditionalServiceItemRepository additionalServiceItemRepository) {
+        return ticket -> {
+            List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(ticket.getTicketsReservationId());
+            //WORKAROUND: we only add the additionalServiceItems related fields only if it's the _first_ ticket of the reservation
+            boolean isFirstTicket = ticketsInReservation.get(0).getId() == ticket.getId();
+
+            Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(Locale.forLanguageTag(ticket.getUserLanguage()), ticket.getEventId());
+            Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticket.getId());
+            Function<TicketFieldConfiguration, String> extractor = (f) -> Optional.ofNullable(values.get(f.getName())).map(TicketFieldValue::getValue).orElse("");
+            List<AdditionalServiceItem> additionalServiceItems = isFirstTicket ? additionalServiceItemRepository.findByReservationUuid(ticket.getTicketsReservationId()) : Collections.emptyList();
+            Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
+            return ticketFieldRepository.findAdditionalFieldsForEvent(ticket.getEventId())
+                .stream()
+                .filter(f -> f.getContext() == ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
+                .filter(f -> CollectionUtils.isEmpty(f.getCategoryIds()) || f.getCategoryIds().contains(ticket.getCategoryId()))
+                .map(f-> {
+                    int count = Math.max(1, Optional.ofNullable(f.getAdditionalServiceId()).map(id -> (int) additionalServiceItems.stream().filter(i -> i.getAdditionalServiceId() == id).count()).orElse(1));
+                    return new TicketFieldConfigurationDescriptionAndValue(f, descriptions.getOrDefault(f.getId(), TicketFieldDescription.MISSING_FIELD), count, extractor.apply(f));
+                })
+                .collect(Collectors.toList());
+        };
     }
 
 

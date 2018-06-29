@@ -119,7 +119,7 @@ public class TicketController {
 
         boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false);
         Ticket ticket = data.getRight();
-        model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view", ticketHelper.findTicketFieldConfigurationAndValue(event.getId(), ticket, locale), true, "")))//
+        model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view", ticketHelper.findTicketFieldConfigurationAndValue(ticket), true, "")))//
                 .addAttribute("reservation", data.getMiddle())//
                 .addAttribute("reservationId", ticketReservationManager.getShortReservationID(event, data.getMiddle().getId()))
                 .addAttribute("event", event)//
@@ -175,7 +175,7 @@ public class TicketController {
         Ticket ticket = data.getRight();
         Event event = data.getLeft();
         TicketReservation ticketReservation = data.getMiddle();
-        
+
         response.setContentType("application/pdf");
         response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
         try (OutputStream os = response.getOutputStream()) {
