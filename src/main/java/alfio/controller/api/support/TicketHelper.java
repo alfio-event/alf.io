@@ -31,6 +31,7 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.EventUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.Validator;
@@ -72,28 +73,12 @@ public class TicketHelper {
     private final EuVatChecker vatChecker;
 
 
-    public List<TicketFieldConfigurationDescriptionAndValue> findTicketFieldConfigurationAndValue(int eventId, Ticket ticket, Locale locale) {
+    public List<TicketFieldConfigurationDescriptionAndValue> findTicketFieldConfigurationAndValue(Ticket ticket) {
+        return buildRetrieveFieldValuesFunction().apply(ticket);
+    }
 
-        List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(ticket.getTicketsReservationId());
-        //WORKAROUND: we only add the additionalServiceItems related fields only if it's the _first_ ticket of the reservation
-        boolean isFirstTicket = ticketsInReservation.get(0).getId() == ticket.getId();
-
-
-
-        Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(locale, eventId);
-        Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticket.getId());
-        Function<TicketFieldConfiguration, String> extractor = (f) -> Optional.ofNullable(values.get(f.getName())).map(TicketFieldValue::getValue).orElse("");
-        List<AdditionalServiceItem> additionalServiceItems = isFirstTicket ? additionalServiceItemRepository.findByReservationUuid(ticket.getTicketsReservationId()) : Collections.emptyList();
-        Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
-        return ticketFieldRepository.findAdditionalFieldsForEvent(eventId)
-            .stream()
-            .filter(f -> f.getContext() == ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
-            .filter(f -> CollectionUtils.isEmpty(f.getCategoryIds()) || f.getCategoryIds().contains(ticket.getCategoryId()))
-            .map(f-> {
-                int count = Math.max(1, Optional.ofNullable(f.getAdditionalServiceId()).map(id -> (int) additionalServiceItems.stream().filter(i -> i.getAdditionalServiceId() == id).count()).orElse(1));
-                return new TicketFieldConfigurationDescriptionAndValue(f, descriptions.getOrDefault(f.getId(), TicketFieldDescription.MISSING_FIELD), count, extractor.apply(f));
-            })
-            .collect(Collectors.toList());
+    public Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
+        return EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,

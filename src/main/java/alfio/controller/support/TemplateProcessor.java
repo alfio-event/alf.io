@@ -16,14 +16,12 @@
  */
 package alfio.controller.support;
 
+import alfio.controller.api.support.TicketHelper;
 import alfio.manager.FileUploadManager;
 import alfio.manager.support.PDFTemplateGenerator;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.user.Organization;
 import alfio.repository.TicketFieldRepository;
 import alfio.util.LocaleUtil;
@@ -42,9 +40,12 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Log4j2
 public final class TemplateProcessor {
@@ -86,12 +87,14 @@ public final class TemplateProcessor {
                                                       Organization organization,
                                                       TemplateManager templateManager,
                                                       FileUploadManager fileUploadManager,
-                                                      TicketFieldRepository ticketFieldRepository,
+                                                      Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                                       String reservationID) {
         
         return () -> {
             Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
-            Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID, ticketFieldRepository.findAllValuesForTicketId(ticket.getId()));
+            List<TicketFieldConfigurationDescriptionAndValue> fields = retrieveFieldValues.apply(ticket);
+            Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID,
+                fields.stream().collect(Collectors.toMap(TicketFieldConfigurationDescriptionAndValue::getName, TicketFieldConfigurationDescriptionAndValue::getValueDescription)));
 
             String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
             return prepareItextRenderer(page);
@@ -135,8 +138,9 @@ public final class TemplateProcessor {
                                                                   TemplateManager templateManager,
                                                                   FileUploadManager fileUploadManager,
                                                                   String reservationID,
-                                                                  TicketFieldRepository ticketFieldRepository) {
-        return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager, ticketFieldRepository, reservationID).generate();
+                                                                  Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues
+                                                                  ) {
+        return (ticket) -> buildPDFTicket(language, event, ticketReservation, ticket, ticketCategory, organization, templateManager, fileUploadManager, retrieveFieldValues, reservationID).generate();
     }
 
     private static Optional<byte[]> buildReceiptOrInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {

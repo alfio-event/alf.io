@@ -20,6 +20,7 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.config.RepositoryConfiguration;
+import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
@@ -93,7 +94,7 @@ public class DataMigratorIntegrationTest {
     @Autowired
     private TicketReservationRepository ticketReservationRepository;
     @Autowired
-    private TicketFieldRepository ticketFieldRepository;
+    private TicketHelper ticketHelper;
     @Value("${alfio.version}")
     private String currentVersion;
     @Value("${alfio.build-ts}")
@@ -302,7 +303,7 @@ public class DataMigratorIntegrationTest {
             second.setLastName("Name");
 	        PartialTicketPDFGenerator generator = TemplateProcessor.buildPartialPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(),
                 ticketCategoryRepository.getByIdAndActive(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()),
-                templateManager, fileUploadManager, "", ticketFieldRepository);
+                templateManager, fileUploadManager, "", t -> Collections.emptyList());
 	        ticketReservationManager.updateTicketOwner(tickets.get(0), Locale.ITALIAN, event, first, (t) -> "", (t) -> "", Optional.empty());
 	        ticketReservationManager.updateTicketOwner(tickets.get(1), Locale.ITALIAN, event, second, (t) -> "", (t) -> "", Optional.empty());
 	        //FIXME

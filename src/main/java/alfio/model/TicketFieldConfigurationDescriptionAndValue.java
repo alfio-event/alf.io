@@ -62,6 +62,22 @@ public class TicketFieldConfigurationDescriptionAndValue {
 
     }
 
+    public String getValueDescription() {
+        if(isSelectField()) {
+            return getTranslatedRestrictedValue().stream()
+                .filter(t -> StringUtils.equals(t.getLeft(), value))
+                .map(Triple::getMiddle)
+                .findFirst()
+                .orElse("");
+        } else {
+            return value;
+        }
+    }
+
+    public String getValue() {
+        return value;
+    }
+
     private static boolean isFieldValueEnabled(TicketFieldConfiguration ticketFieldConfiguration, String value) {
         return !ticketFieldConfiguration.isSelectField()
             || CollectionUtils.isEmpty(ticketFieldConfiguration.getDisabledValues())

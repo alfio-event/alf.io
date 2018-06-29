@@ -80,7 +80,7 @@ public class ReservationApiController {
 
         Optional<Triple<ValidationResult, Event, Ticket>> assignmentResult = ticketHelper.assignTicket(eventName, ticketIdentifier, updateTicketOwner, Optional.of(bindingResult), request, t -> {
             Locale requestLocale = RequestContextUtils.getLocale(request);
-            model.addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(t.getMiddle().getId(), t.getRight(), requestLocale));
+            model.addAttribute("ticketFieldConfiguration", ticketHelper.findTicketFieldConfigurationAndValue(t.getRight()));
             model.addAttribute("value", t.getRight());
             model.addAttribute("validationResult", t.getLeft());
             model.addAttribute("countries", TicketHelper.getLocalizedCountries(requestLocale));

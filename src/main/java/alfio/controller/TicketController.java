@@ -35,6 +35,7 @@ import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.EventUtil;
 import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
@@ -121,7 +122,7 @@ public class TicketController {
 
         boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false);
         Ticket ticket = data.getRight();
-        model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view", ticketHelper.findTicketFieldConfigurationAndValue(event.getId(), ticket, locale), true, "")))//
+        model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view", ticketHelper.findTicketFieldConfigurationAndValue(ticket), true, "")))//
                 .addAttribute("reservation", data.getMiddle())//
                 .addAttribute("reservationId", ticketReservationManager.getShortReservationID(event, data.getMiddle().getId()))
                 .addAttribute("event", event)//
@@ -218,7 +219,7 @@ public class TicketController {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation.getId());
         return TemplateProcessor.buildPartialPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
-            ticketCategory, organization, templateManager, fileUploadManager, reservationID, ticketFieldRepository);
+            ticketCategory, organization, templateManager, fileUploadManager, reservationID, ticketHelper.buildRetrieveFieldValuesFunction());
     }
 
     private String internalShowTicket(String eventName, String ticketIdentifier, boolean ticketEmailSent, Model model, String backSuffix, Locale locale) {
