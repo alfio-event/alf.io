@@ -146,7 +146,7 @@ public class TicketReservation {
     }
 
     public boolean getHasBeenPaid() {
-        return status == TicketReservationStatus.COMPLETE;
+        return status == TicketReservationStatus.COMPLETE && !EnumSet.of(PaymentProxy.NONE, PaymentProxy.ADMIN).contains(paymentMethod);
     }
 
     public boolean getHasVatNumber() {
