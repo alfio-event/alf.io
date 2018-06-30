@@ -205,3 +205,7 @@ html[lang=en] .alfio-lang a[lang=en] {
 html[lang=it] .alfio-lang a[lang=it] {
     font-weight:bold;
 }
+
+.form-horizontal .control-label.category-name {
+    text-align:left;
+}
