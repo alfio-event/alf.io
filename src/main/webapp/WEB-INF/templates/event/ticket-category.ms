@@ -1,7 +1,7 @@
 <li class="list-group-item {{#expired}}text-muted expired{{/expired}} ticket-category-restricted-{{accessRestricted}}">
     <div class="form-group">
         <div class="col-sm-7" id="{{id}}-label">
-            <label class="control-label">{{name}}</label>
+            <label class="control-label category-name">{{name}}</label>
             {{^expired}}
                 <div>
                     {{#saleInFuture}}
