@@ -61,7 +61,6 @@ import static org.apache.commons.lang3.StringUtils.substring;
 public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
     private static final String LOCALE_LABEL = "locale:";
-    private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*?)]");
 
     static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
         String execution = frag.execute().trim();
@@ -90,6 +89,8 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
             .orElse(code);
     }
 
+    private static final Pattern ADDITIONAL_FIELD_PARAM_ARG_PATTERN = Pattern.compile("\\[(.*?)]");
+
     /**
      * {{#additional-field-value}}[Prefix][name][suffix]{{/additional-field-value}}
      * prefix is optional, unless a suffix is needed.
@@ -101,7 +102,7 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
         }
         Map<?, ?> fieldNamesAndValues = (Map<?, ?>) obj;
         String execution = frag.execute().trim();
-        Matcher matcher = ARG_PATTERN.matcher(execution);
+        Matcher matcher = ADDITIONAL_FIELD_PARAM_ARG_PATTERN.matcher(execution);
         List<String> args = new ArrayList<>();
         while(matcher.find()) {
             args.add(matcher.group(1));
@@ -134,6 +135,8 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
         return Pair.of(format, locale);
     }
+
+    private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*)\\]");
 
 
     private static final Function<ModelAndView, Mustache.Lambda> HAS_ERROR = (mv) -> {
