@@ -185,7 +185,7 @@ public class TicketController {
             TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
                 ticket, ticketCategory, organization,
                 templateManager, fileUploadManager,
-                reservationID, os, ticketFieldRepository);
+                reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction());
         }
     }
     

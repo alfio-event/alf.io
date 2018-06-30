@@ -99,8 +99,6 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
     private String currentVersion;
     @Value("${alfio.build-ts}")
     private String buildTimestamp;
-    @Autowired
-    private TicketFieldRepository ticketFieldRepository;
 
     private Pair<Event, String> initEvent(List<TicketCategoryModification> categories) {
         return initEvent(categories, "display name");
