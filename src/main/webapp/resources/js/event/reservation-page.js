@@ -50,18 +50,7 @@
             if(!this.checkValidity()) {
                 return false;
             }
-
-            var vatCountry = $('#vatCountry');
-            if(vatCountry.length && vatCountry.val() !== '') {
-                var vatNr = $('#vatNr');
-                markFieldAsError(vatNr);
-                $('#validation-result-container').removeClass(hiddenClasses);
-                var validationResult = $('#validation-result');
-                validationResult.html(validationResult.attr('data-validation-required-msg'));
-                vatNr.focus();
-                return false;
-            }
-             
+            
             // Disable the submit button to prevent repeated clicks
             $form.find('button').prop('disabled', true);
 
