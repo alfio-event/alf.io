@@ -365,6 +365,10 @@
             }
         });
 
+        $("#vatCountry").change(function() {
+            $("#selected-country-code").text($("#vatCountry").val());
+        })
+
     });
 
     /*window.recaptchaLoadCallback = function() {

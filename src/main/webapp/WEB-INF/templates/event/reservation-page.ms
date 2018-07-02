@@ -308,6 +308,20 @@
             </div>
             {{/customerReferenceEnabled}}
         </div>
+        <div class="row">
+            <div id="vat-number-container">
+                <div class="col-xs-12">
+                    <div class="form-group {{#field-has-error}}[vatNr] has-error{{/field-has-error}}">
+                        <label for="vatNr">{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}}</label>
+                        <div class="input-group">
+                            <div class="input-group-addon" id="selected-country-code"></div>
+                            <input id="vatNr" type="text" name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
+                        </div>
+                        {{#field-has-error}}[vatNr]<span class="help-block text-danger">{{#i18n}}{{#field-error}}vatNr{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     {{/onlyInvoice}}
     {{/invoiceIsAllowed}}
