@@ -85,6 +85,8 @@
     <div class="page-header">
         <h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
     </div>
+
+    {{#onlyInvoice}}
     <div class="row">
         <div class="col-xs-12">
             <div class="form-group {{#field-has-error}}[billingAddressCompany] has-error{{/field-has-error}}">
@@ -94,6 +96,7 @@
             </div>
         </div>
     </div>
+    {{/onlyInvoice}}
 
 
     {{#useFirstAndLastName}}
@@ -133,6 +136,7 @@
         </div>
     </div>
 
+    {{#onlyInvoice}}
     <div class="row">
         <div class="col-xs-12">
             <div class="form-group {{#field-has-error}}[billingAddressLine1] has-error{{/field-has-error}}">
@@ -185,17 +189,41 @@
                     </optgroup>
                 </select>
             </div>
-
         </div>
-    </div>
-
-    {{#customerReferenceEnabled}}
+        {{#customerReferenceEnabled}}
         <div class="form-group {{#field-has-error}}[customerReference] has-error{{/field-has-error}}">
             <label for="customerReference" class="control-label">{{#i18n}}common.customer-reference{{/i18n}}</label>
             <input type="text" name="customerReference" id="customerReference" class="form-control" maxlength="255" value="{{paymentForm.customerReference}}">
             {{#field-has-error}}[customerReference]<span class="help-block text-danger">{{#i18n}}{{#field-error}}customerReference{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
         </div>
-    {{/customerReferenceEnabled}}
+        {{/customerReferenceEnabled}}
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <input type="hidden" name="invoiceRequested" id="invoice-requested" value="true">
+            <div class="checkbox wMarginTop">
+                <label>
+                    <input type="checkbox" name="addCompanyBillingDetails" id="add-company-billing-details" value="true" {{#paymentForm.addCompanyBillingDetails}}checked{{/paymentForm.addCompanyBillingDetails}}>
+                    {{#i18n}}reservation.add-company-billing-details [{{vatTranslation}}]{{/i18n}}
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div id="vat-number-container">
+            <div class="col-xs-12">
+                <div class="form-group {{#field-has-error}}[vatNr] has-error{{/field-has-error}}">
+                    <label for="vatNr">{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}}</label>
+                    <div class="input-group">
+                        <div class="input-group-addon" id="selected-country-code"></div>
+                        <input id="vatNr" type="text" name="vatNr" class="form-control" value="{{paymentForm.vatNr}}"/>
+                    </div>
+                    {{#field-has-error}}[vatNr]<span class="help-block text-danger">{{#i18n}}{{#field-error}}vatNr{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+                </div>
+            </div>
+        </div>
+    </div>
+    {{/onlyInvoice}}
 
     <div class="page-header">
         <h2>{{#i18n}}reservation-page.attendees{{/i18n}}</h2>

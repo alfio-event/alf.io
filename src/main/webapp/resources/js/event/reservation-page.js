@@ -200,7 +200,7 @@
         }
 
 
-        function disableBillingFields() {
+        /*function disableBillingFields() {
             $('#vatNr,#vatCountryCode').attr('required', false).attr('disabled', '');
         }
 
@@ -344,7 +344,7 @@
                 },
                 data:frm.serialize()
             });
-        });
+        });*/
 
         $("select").map(function() {
             var value = $(this).attr('value');
@@ -355,7 +355,7 @@
 
     });
 
-    window.recaptchaLoadCallback = function() {
+    /*window.recaptchaLoadCallback = function() {
         window.recaptchaReady = true;
         var methods = $('input[name=paymentMethod]');
         if(methods.length === 1) {
@@ -381,7 +381,7 @@
                 });
             } catch(x) {}
         }
-    };
+    };*/
 
 
 })();
