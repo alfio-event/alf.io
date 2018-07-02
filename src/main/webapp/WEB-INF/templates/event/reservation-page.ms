@@ -224,6 +224,18 @@
         </div>
     </div>
     {{/onlyInvoice}}
+    {{^orderSummary.free}}
+    {{#invoiceIsAllowed}}
+    {{^onlyInvoice}}
+    <div class="checkbox wMarginTop">
+        <label>
+            <input type="checkbox" name="invoiceRequested" id="invoice-requested" value="true" {{#paymentForm.invoiceRequested}}checked{{/paymentForm.invoiceRequested}}>
+                {{#i18n}}reservation-page.i-need-an-invoice{{/i18n}}
+        </label>
+    </div>
+    {{/onlyInvoice}}
+    {{/invoiceIsAllowed}}
+    {{/orderSummary.free}}
 
     <div class="page-header">
         <h2>{{#i18n}}reservation-page.attendees{{/i18n}}</h2>
