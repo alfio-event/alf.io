@@ -165,4 +165,42 @@ public interface TicketReservationRepository {
 
     @Query("select * from tickets_reservation where id in (:ids)")
     List<TicketReservation> findByIds(@Bind("ids") Collection<String> ids);
+
+    @Query("update tickets_reservation set full_name = :fullName, first_name = :firstName, last_name = :lastName, email_address = :email, " +
+        " billing_address = :completeBillingAddress, vat_country = :vatCountry, vat_nr = :vatNr, " +
+        " invoice_requested = :invoiceRequested, " +
+        " billing_address_company = :billingAddressCompany, " +
+        " billing_address_line1 = :billingAddressLine1, " +
+        " billing_address_line2 = :billingAddressLine2, " +
+        " billing_address_zip = :billingAddressZip, " +
+        " billing_address_city = :billingAddressCity, " +
+        " add_company_billing_details = :addCompanyBillingDetails, " +
+        " customer_reference = :customerReference, "+
+        " validated_for_overview = :validated " +
+        " where id = :reservationId")
+    int updateTicketReservationWithValidation(@Bind("reservationId") String reservationId,
+                                              @Bind("fullName") String fullName,
+                                              @Bind("firstName") String firstName,
+                                              @Bind("lastName") String lastName,
+                                              @Bind("email") String email,
+                                              @Bind("billingAddressCompany") String billingAddressCompany,
+                                              @Bind("billingAddressLine1") String billingAddressLine1,
+                                              @Bind("billingAddressLine2") String billingAddressLine2,
+                                              @Bind("billingAddressZip") String billingAddressZip,
+                                              @Bind("billingAddressCity") String billingAddressCity,
+                                              @Bind("completeBillingAddress") String completeBillingAddress,
+                                              @Bind("vatCountry") String vatCountry,
+                                              @Bind("vatNr") String vatNr,
+                                              @Bind("invoiceRequested") boolean invoiceRequested,
+                                              @Bind("addCompanyBillingDetails") boolean addCompanyBillingDetails,
+                                              @Bind("customerReference") String customerReference,
+                                              @Bind("validated") boolean validated);
+
+
+    @Query("select billing_address_company, billing_address_line1, billing_address_line2, " +
+        " billing_address_zip, billing_address_city, validated_for_overview, add_company_billing_details from tickets_reservation where id = :id")
+    TicketReservationAdditionalInfo getAdditionalInfo(@Bind("id") String reservationId);
+
+    @Query("update tickets_reservation set validated_for_overview = :validated where id = :reservationId")
+    int updateValidationStatus(@Bind("reservationId") String reservationId, @Bind("validated") boolean validated);
 }

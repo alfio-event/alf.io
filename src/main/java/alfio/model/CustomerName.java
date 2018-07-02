@@ -29,17 +29,25 @@ public class CustomerName {
     private final boolean hasFirstAndLastName;
 
     public CustomerName(String fullName, String firstName, String lastName, Event event) {
+        this(fullName, firstName, lastName, event, true);
+    }
 
+    public CustomerName(String fullName, String firstName, String lastName, Event event, boolean validate) {
         this.firstName = StringUtils.trimToNull(firstName);
         this.lastName = StringUtils.trimToNull(lastName);
         hasFirstAndLastName = event.mustUseFirstAndLastName();
         fullName = StringUtils.trimToNull(fullName);
         if(hasFirstAndLastName) {
-            Validate.isTrue(this.firstName != null, "firstName must not be null");
-            Validate.isTrue(this.lastName != null, "lastName must not be null");
+            if(validate) {
+                Validate.isTrue(this.firstName != null, "firstName must not be null");
+                Validate.isTrue(this.lastName != null, "lastName must not be null");
+            }
+
             this.fullName = firstName + " " + lastName;
         } else {
-            Validate.isTrue(fullName != null, "fullName must not be null");
+            if (validate) {
+                Validate.isTrue(fullName != null, "fullName must not be null");
+            }
             this.fullName = fullName;
         }
     }

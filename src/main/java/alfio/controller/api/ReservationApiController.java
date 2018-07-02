@@ -17,7 +17,7 @@
 package alfio.controller.api;
 
 import alfio.controller.api.support.TicketHelper;
-import alfio.controller.form.PaymentForm;
+import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.EuVatChecker;
 import alfio.manager.TicketReservationManager;
@@ -128,18 +128,18 @@ public class ReservationApiController {
     @Transactional
     public ResponseEntity<VatDetail> validateEUVat(@PathVariable("eventName") String eventName,
                                                    @PathVariable("reservationId") String reservationId,
-                                                   PaymentForm paymentForm,
+                                                   ContactAndTicketsForm contactAndTicketsForm,
                                                    Locale locale,
                                                    HttpServletRequest request) {
 
-        String country = paymentForm.getVatCountryCode();
+        /*String country = contactAndTicketsForm.getVatCountryCode();
         Optional<Triple<Event, TicketReservation, VatDetail>> vatDetail;
         try {
              vatDetail = eventRepository.findOptionalByShortName(eventName)
                 .flatMap(e -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r)))
                 .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(e.getKey().getVatStatus()))
                 .filter(e -> vatChecker.isVatCheckingEnabledFor(e.getKey().getOrganizationId()))
-                .flatMap(e -> vatChecker.checkVat(paymentForm.getVatNr(), country, e.getKey().getOrganizationId()).map(vd -> Triple.of(e.getLeft(), e.getRight(), vd)));
+                .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, e.getKey().getOrganizationId()).map(vd -> Triple.of(e.getLeft(), e.getRight(), vd)));
         } catch (IllegalStateException e) {
             return new ResponseEntity<>(HttpStatus.SERVICE_UNAVAILABLE);
         }
@@ -151,13 +151,13 @@ public class ReservationApiController {
                 VatDetail vd = t.getRight();
                 String billingAddress = vd.getName() + "\n" + vd.getAddress();
                 PriceContainer.VatStatus vatStatus = determineVatStatus(t.getLeft().getVatStatus(), t.getRight().isVatExempt());
-                ticketReservationRepository.updateBillingData(vatStatus, vd.getVatNr(), country, paymentForm.isInvoiceRequested(), reservationId);
+                ticketReservationRepository.updateBillingData(vatStatus, vd.getVatNr(), country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
                 OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, t.getLeft(), Locale.forLanguageTag(t.getMiddle().getUserLanguage()));
                 ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
-                ticketReservationRepository.updateTicketReservation(reservationId, t.getMiddle().getStatus().name(), paymentForm.getEmail(),
-                    paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), locale.getLanguage(), billingAddress, null,
-                    Optional.ofNullable(paymentForm.getPaymentMethod()).map(PaymentProxy::name).orElse(null), paymentForm.getCustomerReference());
-                paymentForm.getTickets().forEach((ticketId, owner) -> {
+                ticketReservationRepository.updateTicketReservation(reservationId, t.getMiddle().getStatus().name(), contactAndTicketsForm.getEmail(),
+                    contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), locale.getLanguage(), billingAddress, null,
+                    Optional.ofNullable(contactAndTicketsForm.getPaymentMethod()).map(PaymentProxy::name).orElse(null), contactAndTicketsForm.getCustomerReference());
+                contactAndTicketsForm.getTickets().forEach((ticketId, owner) -> {
                     if(isNotEmpty(owner.getEmail()) && ((isNotEmpty(owner.getFirstName()) && isNotEmpty(owner.getLastName())) || isNotEmpty(owner.getFullName()))) {
                         ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, Optional.empty(), request, (tr) -> {}, Optional.empty());
                     }
@@ -173,7 +173,8 @@ public class ReservationApiController {
                     return new ResponseEntity<VatDetail>(HttpStatus.BAD_REQUEST);
                 }
             })
-            .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+            .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));*/
+        return null;
     }
 
     private static PriceContainer.VatStatus determineVatStatus(PriceContainer.VatStatus current, boolean isVatExempt) {

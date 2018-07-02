@@ -139,18 +139,17 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
     private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*)\\]");
 
 
-    private static final Function<ModelAndView, Mustache.Lambda> HAS_ERROR = (mv) -> {
-        return (frag, out) -> {
-            Errors err = (Errors) mv.getModelMap().get("error");
-            String execution = frag.execute().trim();
-            Matcher matcher = ARG_PATTERN.matcher(execution);
-            if (matcher.find()) {
-                String field = matcher.group(1);
-                if (err != null && err.hasFieldErrors(field)) {
-                    out.write(execution.substring(matcher.end(1) + 1));
-                }
+
+    private static final Function<ModelAndView, Mustache.Lambda> HAS_ERROR = (mv) -> (frag, out) -> {
+        Errors err = (Errors) mv.getModelMap().get("error");
+        String execution = frag.execute().trim();
+        Matcher matcher = ARG_PATTERN.matcher(execution);
+        if (matcher.find()) {
+            String field = matcher.group(1);
+            if (err != null && err.hasFieldErrors(field)) {
+                out.write(execution.substring(matcher.end(1) + 1));
             }
-        };
+        }
     };
 
     private static final Mustache.Lambda IS_PAYMENT_METHOD = (frag, out) -> {
@@ -166,20 +165,18 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
         }
     };
 
-    private static final Function<ModelAndView, Mustache.Lambda> FIELD_ERROR = (mv) -> {
-        return (frag, out) -> {
-            Errors err = (Errors) mv.getModelMap().get("error");
-            String field = frag.execute().trim();
-            if (err != null && err.hasFieldErrors(field)) {
-                FieldError fe = err.getFieldError(field);
-                out.write(fe.getCode()
-                        + " "
-                        + Arrays.stream(Optional.ofNullable(fe.getArguments()).orElse(new Object[] {}))
-                                .map(x -> "[" + x.toString() + "]").collect(Collectors.joining(" ")));
-            } else {
-                out.write("empty");
-            }
-        };
+    private static final Function<ModelAndView, Mustache.Lambda> FIELD_ERROR = (mv) -> (frag, out) -> {
+        Errors err = (Errors) mv.getModelMap().get("error");
+        String field = frag.execute().trim();
+        if (err != null && err.hasFieldErrors(field)) {
+            FieldError fe = err.getFieldError(field);
+            out.write(fe.getCode()
+                    + " "
+                    + Arrays.stream(Optional.ofNullable(fe.getArguments()).orElse(new Object[] {}))
+                            .map(x -> "[" + x.toString() + "]").collect(Collectors.joining(" ")));
+        } else {
+            out.write("empty");
+        }
     };
     
     

@@ -23,6 +23,7 @@
     <a class="current"><span class="badge badge-inverse">1</span> {{#i18n}}breadcrumb.step1{{/i18n}}</a>
     <a><span class="badge">2</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step2{{/i18n}}</span></a>
     <a><span class="badge">3</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step3{{/i18n}}</span></a>
+    <a><span class="badge">4</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step4{{/i18n}}</span></a>
 </div>
 
 <h2>{{#i18n}}show-event.tickets{{/i18n}}</h2>

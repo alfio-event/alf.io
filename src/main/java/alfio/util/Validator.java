@@ -36,6 +36,7 @@ import org.springframework.validation.ValidationUtils;
 
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -218,37 +219,38 @@ public final class Validator {
             if(!isField) {
                 continue;
             }
-
-            form.getAdditional().get(fieldConf.getName()).forEach(formValue -> {
+            
+            List<String> values = Optional.ofNullable(form.getAdditional().get(fieldConf.getName())).orElse(Collections.emptyList());
+            for(int i = 0; i < values.size(); i++) {
+                String formValue = values.get(i);
                 if(fieldConf.isMaxLengthDefined()) {
-                    validateMaxLength(formValue, prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
+                    validateMaxLength(formValue, prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
                 }
 
                 if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined() && StringUtils.length(formValue) < fieldConf.getMinLength()) {
-                    errors.rejectValue(prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName());
                 }
 
                 if(!fieldConf.getRestrictedValues().isEmpty()) {
-                    validateRestrictedValue(formValue, prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
+                    validateRestrictedValue(formValue, prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
                 }
 
                 if(fieldConf.isRequired() && StringUtils.isBlank(formValue)){
-                    errors.rejectValue(prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName());
                 }
 
                 if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
-                    errors.rejectValue(prefixForLambda + "additional['"+fieldConf.getName()+"']", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName());
                 }
 
                 try {
                     if (fieldConf.isEuVat() && !vatValidator.test(formValue)) {
-                        errors.rejectValue(prefixForLambda + "additional['" + fieldConf.getName() + "']", ErrorsCode.STEP_2_INVALID_VAT);
+                        errors.rejectValue(prefixForLambda + "additional[" + fieldConf.getName() + "]["+i+"]", ErrorsCode.STEP_2_INVALID_VAT);
                     }
                 } catch (IllegalStateException e) {
-                    errors.rejectValue(prefixForLambda + "additional['" + fieldConf.getName() + "']", ErrorsCode.VIES_IS_DOWN);
+                    errors.rejectValue(prefixForLambda + "additional[" + fieldConf.getName() + "]["+i+"]", ErrorsCode.VIES_IS_DOWN);
                 }
-
-            });
+            }
 
 
         }

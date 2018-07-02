@@ -128,7 +128,7 @@ public class PaypalManager {
 
     public String createCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary,
                                         CustomerName customerName, String email, String billingAddress, String customerReference,
-                                        Locale locale, boolean postponeAssignment, boolean invoiceRequested) throws Exception {
+                                        Locale locale) throws Exception {
 
 
         APIContext apiContext = getApiContext(event);
@@ -148,17 +148,9 @@ public class PaypalManager {
         RedirectUrls redirectUrls = new RedirectUrls();
 
         String baseUrl = StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/");
-        String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + reservationId + "/book";
+        String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + reservationId + "/overview";
 
         UriComponentsBuilder bookUrlBuilder = UriComponentsBuilder.fromUriString(bookUrl)
-            .queryParam("fullName", customerName.getFullName())
-            .queryParam("firstName", customerName.getFirstName())
-            .queryParam("lastName", customerName.getLastName())
-            .queryParam("email", email)
-            .queryParam("billingAddress", billingAddress)
-            .queryParam("customerReference", customerReference)
-            .queryParam("postponeAssignment", postponeAssignment)
-            .queryParam("invoiceRequested", invoiceRequested)
             .queryParam("hmac", computeHMAC(customerName, email, billingAddress, event));
         String finalUrl = bookUrlBuilder.toUriString();
 
