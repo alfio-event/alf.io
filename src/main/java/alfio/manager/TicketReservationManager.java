@@ -565,6 +565,10 @@ public class TicketReservationManager {
 
     public static ZonedDateTime getOfflinePaymentDeadline(Event event, ConfigurationManager configurationManager) {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        return getOfflinePaymentDeadline(now, event, configurationManager);
+    }
+
+    static ZonedDateTime getOfflinePaymentDeadline(ZonedDateTime now, Event event, ConfigurationManager configurationManager) {
         int waitingPeriod = getOfflinePaymentWaitingPeriod(event, configurationManager);
         if(waitingPeriod == 0) {
             log.warn("accepting offline payments the same day is a very bad practice and should be avoided. Please set cash payment as payment method next time");

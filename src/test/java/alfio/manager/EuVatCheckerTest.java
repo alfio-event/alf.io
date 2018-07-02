@@ -24,33 +24,28 @@ import ch.digitalfondue.vatchecker.EUVatCheckResponse;
 import ch.digitalfondue.vatchecker.EUVatChecker;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
-import java.io.IOException;
 import java.util.Optional;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class EuVatCheckerTest {
 
-    @Mock
     private EUVatChecker client;
-    @Mock
     private ConfigurationManager configurationManager;
 
     @Before
     public void init() {
+        client = mock(EUVatChecker.class);
+        configurationManager = mock(ConfigurationManager.class);
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(1, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE)), anyBoolean())).thenReturn(true);
         when(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST))).thenReturn("IE");
-        when(configurationManager.getStringConfigValue(eq(Configuration.from(1, ConfigurationKeys.COUNTRY_OF_BUSINESS)), anyString())).thenReturn("IT");
+        when(configurationManager.getStringConfigValue(eq(Configuration.from(1, ConfigurationKeys.COUNTRY_OF_BUSINESS)), isNull())).thenReturn("IT");
     }
 
     @Test

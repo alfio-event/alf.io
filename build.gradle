@@ -23,6 +23,7 @@ buildscript {
 }
 
 plugins {
+    id 'io.franzbecker.gradle-lombok' version '1.14'
     id 'java'
     id 'idea'
     id 'jacoco'
@@ -376,4 +377,7 @@ release {
         pushToRemote = 'origin'
         signTag = true
     }
+}
+
+lombok {
 }
