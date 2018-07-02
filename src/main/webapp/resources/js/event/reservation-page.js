@@ -356,9 +356,12 @@
 
         $("#invoice-requested").change(function() {
             if($("#invoice-requested:checked").length) {
-                $(".invoice-details-section").removeClass(hiddenClasses)
+                $(".invoice-details-section").removeClass(hiddenClasses);
+                $("#billingAddressLine1, #billingAddressZip, #billingAddressCity, #vatCountry").attr('required', true)
+
             } else {
-                $(".invoice-details-section").addClass(hiddenClasses)
+                $(".invoice-details-section").addClass(hiddenClasses);
+                $(".invoice-details-section input").removeAttr('required');
             }
         });
 

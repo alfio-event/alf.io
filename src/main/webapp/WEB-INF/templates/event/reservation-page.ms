@@ -238,10 +238,77 @@
         <div class="page-header">
             <h2>{{#i18n}}reservation-page.invoice-details{{/i18n}}</h2>
         </div>
-        <div>
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="form-group {{#field-has-error}}[billingAddressCompany] has-error{{/field-has-error}}">
+                    <label for="billingAddressCompany">{{#i18n}}reservation-page-complete.company{{/i18n}}</label>
+                    <input id="billingAddressCompany" name="billingAddressCompany" class="form-control" type="text" value="{{paymentForm.billingAddressCompany}}" maxlength="255" placeholder="if applicable">
+                    {{#field-has-error}}[billingAddressCompany]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressCompany{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="form-group {{#field-has-error}}[billingAddressLine1] has-error{{/field-has-error}}">
+                    <label for="billingAddressLine1">{{#i18n}}reservation-page.address-line-1{{/i18n}}</label>
+                    <input id="billingAddressLine1" name="billingAddressLine1" class="form-control" type="text" value="{{paymentForm.billingAddressLine1}}" maxlength="255">
+                    {{#field-has-error}}[billingAddressLine1]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressLine1{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="form-group">
+                    <label for="billingAddressLine2">{{#i18n}}reservation-page.address-line-2{{/i18n}}</label>
+                    <input id="billingAddressLine2" name="billingAddressLine2" class="form-control" type="text" value="{{paymentForm.billingAddressLine2}}" maxlength="255">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-md-3">
+                <div class="form-group {{#field-has-error}}[billingAddressZip] has-error{{/field-has-error}}">
+                    <label for="billingAddressZip">{{#i18n}}reservation-page.zip-postal-code{{/i18n}}</label>
+                    <input id="billingAddressZip" name="billingAddressZip" class="form-control" type="text" value="{{paymentForm.billingAddressZip}}" maxlength="50">
+                    {{#field-has-error}}[billingAddressZip]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressZip{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+                </div>
+            </div>
+            <div class="col-xs-12 col-md-9">
+                    <div class="form-group {{#field-has-error}}[billingAddressCity] has-error{{/field-has-error}}">
+                        <label for="billingAddressCity">{{#i18n}}reservation-page.city{{/i18n}}</label>
+                        <input id="billingAddressCity" name="billingAddressCity" class="form-control" type="text" value="{{paymentForm.billingAddressCity}}" maxlength="255">
+                        {{#field-has-error}}[billingAddressCity]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressCity{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+                    </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 {{#customerReferenceEnabled}}col-md-6{{/customerReferenceEnabled}}">
+                <div class="form-group">
+                    <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
+
+                    <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control field-required">
+                        <option value="">{{#i18n}}reservation-page.country.select{{/i18n}}</option>
+                        <optgroup label="{{#i18n}}reservation-page.eu-countries{{/i18n}}" id="optgroup-eu-countries-list">
+                            {{#euCountriesForVat}}
+                                <option value="{{left}}" data-description="{{right}}">{{left}} - {{right}}</option>
+                            {{/euCountriesForVat}}
+                        </optgroup>
+                        <optgroup label="{{#i18n}}reservation-page.all-countries{{/i18n}}">
+                            {{#countriesForVat}}
+                                <option value="{{left}}" data-description="{{right}}">{{left}} - {{right}}</option>
+                            {{/countriesForVat}}
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+            {{#customerReferenceEnabled}}
+            <div class="form-group {{#field-has-error}}[customerReference] has-error{{/field-has-error}}">
+                <label for="customerReference" class="control-label">{{#i18n}}common.customer-reference{{/i18n}}</label>
+                <input type="text" name="customerReference" id="customerReference" class="form-control" maxlength="255" value="{{paymentForm.customerReference}}">
+                {{#field-has-error}}[customerReference]<span class="help-block text-danger">{{#i18n}}{{#field-error}}customerReference{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+            </div>
+            {{/customerReferenceEnabled}}
         </div>
     </div>
-
     {{/onlyInvoice}}
     {{/invoiceIsAllowed}}
     {{/orderSummary.free}}
