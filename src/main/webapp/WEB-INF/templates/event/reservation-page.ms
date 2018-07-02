@@ -85,47 +85,109 @@
     <div class="page-header">
         <h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
     </div>
-        {{#useFirstAndLastName}}
-        <div class="row">
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group {{#field-has-error}}[firstName] has-error{{/field-has-error}}">
-                    <label for="first-name" class="control-label">{{#i18n}}common.first-name{{/i18n}}</label>
-                    <input type="text" name="firstName" id="first-name" required class="form-control {{#attendeeAutocompleteEnabled}}autocomplete-src{{/attendeeAutocompleteEnabled}}" autocomplete="fname" maxlength="255" value="{{paymentForm.firstName}}">
-                    {{#field-has-error}}[firstName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}firstName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
-                </div>
-            </div>
-            <div class="col-xs-12 col-sm-6">
-                <div class="form-group {{#field-has-error}}[lastName] has-error{{/field-has-error}}">
-                    <label for="last-name" class="control-label">{{#i18n}}common.last-name{{/i18n}}</label>
-                    <input type="text" name="lastName" id="last-name" required class="form-control {{#attendeeAutocompleteEnabled}}autocomplete-src{{/attendeeAutocompleteEnabled}}" autocomplete="lname" maxlength="255" value="{{paymentForm.lastName}}">
-                    {{#field-has-error}}[lastName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}lastName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
-                </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="form-group {{#field-has-error}}[billingAddressCompany] has-error{{/field-has-error}}">
+                <label for="billingAddressCompany">{{#i18n}}reservation-page-complete.company{{/i18n}}</label>
+                <input id="billingAddressCompany" name="billingAddressCompany" class="form-control" type="text" value="{{paymentForm.billingAddressCompany}}" maxlength="255" placeholder="if applicable">
+                {{#field-has-error}}[billingAddressCompany]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressCompany{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
             </div>
         </div>
-        {{/useFirstAndLastName}}
-        {{^useFirstAndLastName}}
-        <div class="form-group {{#field-has-error}}[fullName] has-error{{/field-has-error}}">
-            <label for="full-name" class="control-label">{{#i18n}}common.full-name{{/i18n}}</label>
-            <input type="text" name="fullName" id="full-name" required class="form-control {{#attendeeAutocompleteEnabled}}autocomplete-src{{/attendeeAutocompleteEnabled}}" autocomplete="name" maxlength="255" value="{{paymentForm.fullName}}">
-            {{#field-has-error}}[fullName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}fullName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
-        </div>
-        {{/useFirstAndLastName}}
+    </div>
 
 
-        <div class="row">
-            <div class="col-xs-12 {{#captchaRequestedFreeOfCharge}}col-md-6{{/captchaRequestedFreeOfCharge}}">
-                <div class="form-group {{#field-has-error}}[email] has-error{{/field-has-error}}">
-                    <label for="email" class="control-label">{{#i18n}}common.email{{/i18n}}</label>
-                    <input type="email" name="email" id="email" required class="form-control {{#attendeeAutocompleteEnabled}}autocomplete-src{{/attendeeAutocompleteEnabled}}" autocomplete="email" maxlength="255" value="{{paymentForm.email}}">
-                    {{#field-has-error}}[email]<span class="help-block text-danger">{{#i18n}}{{#field-error}}email{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
-                </div>
+    {{#useFirstAndLastName}}
+    <div class="row">
+        <div class="col-xs-12 col-sm-6">
+            <div class="form-group {{#field-has-error}}[firstName] has-error{{/field-has-error}}">
+                <label for="first-name" class="control-label">{{#i18n}}common.first-name{{/i18n}}</label>
+                <input type="text" name="firstName" id="first-name" required class="form-control {{#attendeeAutocompleteEnabled}}autocomplete-src{{/attendeeAutocompleteEnabled}}" autocomplete="fname" maxlength="255" value="{{paymentForm.firstName}}">
+                {{#field-has-error}}[firstName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}firstName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
             </div>
-            {{#captchaRequestedFreeOfCharge}}
-                <div class="col-xs-12 col-md-6">
-                    <div id="captcha-FREE" class="g-recaptcha" data-sitekey="{{recaptchaApiKey}}"></div>
-                </div>
-            {{/captchaRequestedFreeOfCharge}}
         </div>
+        <div class="col-xs-12 col-sm-6">
+            <div class="form-group {{#field-has-error}}[lastName] has-error{{/field-has-error}}">
+                <label for="last-name" class="control-label">{{#i18n}}common.last-name{{/i18n}}</label>
+                <input type="text" name="lastName" id="last-name" required class="form-control {{#attendeeAutocompleteEnabled}}autocomplete-src{{/attendeeAutocompleteEnabled}}" autocomplete="lname" maxlength="255" value="{{paymentForm.lastName}}">
+                {{#field-has-error}}[lastName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}lastName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+            </div>
+        </div>
+    </div>
+    {{/useFirstAndLastName}}
+    {{^useFirstAndLastName}}
+    <div class="form-group {{#field-has-error}}[fullName] has-error{{/field-has-error}}">
+        <label for="full-name" class="control-label">{{#i18n}}common.full-name{{/i18n}}</label>
+        <input type="text" name="fullName" id="full-name" required class="form-control {{#attendeeAutocompleteEnabled}}autocomplete-src{{/attendeeAutocompleteEnabled}}" autocomplete="name" maxlength="255" value="{{paymentForm.fullName}}">
+        {{#field-has-error}}[fullName]<span class="help-block text-danger">{{#i18n}}{{#field-error}}fullName{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+    </div>
+    {{/useFirstAndLastName}}
+
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="form-group {{#field-has-error}}[email] has-error{{/field-has-error}}">
+                <label for="email" class="control-label">{{#i18n}}common.email{{/i18n}}</label>
+                <input type="email" name="email" id="email" required class="form-control {{#attendeeAutocompleteEnabled}}autocomplete-src{{/attendeeAutocompleteEnabled}}" autocomplete="email" maxlength="255" value="{{paymentForm.email}}">
+                {{#field-has-error}}[email]<span class="help-block text-danger">{{#i18n}}{{#field-error}}email{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="form-group {{#field-has-error}}[billingAddressLine1] has-error{{/field-has-error}}">
+                <label for="billingAddressLine1">{{#i18n}}reservation-page.address-line-1{{/i18n}}</label>
+                <input id="billingAddressLine1" name="billingAddressLine1" class="form-control" type="text" required value="{{paymentForm.billingAddressLine1}}" maxlength="255">
+                {{#field-has-error}}[billingAddressLine1]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressLine1{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="form-group">
+                <label for="billingAddressLine2">{{#i18n}}reservation-page.address-line-2{{/i18n}}</label>
+                <input id="billingAddressLine2" name="billingAddressLine2" class="form-control" type="text" value="{{paymentForm.billingAddressLine2}}" maxlength="255">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 col-md-3">
+            <div class="form-group {{#field-has-error}}[billingAddressZip] has-error{{/field-has-error}}">
+                <label for="billingAddressZip">{{#i18n}}reservation-page.zip-postal-code{{/i18n}}</label>
+                <input id="billingAddressZip" name="billingAddressZip" class="form-control" type="text" required value="{{paymentForm.billingAddressZip}}" maxlength="50">
+                {{#field-has-error}}[billingAddressZip]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressZip{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+            </div>
+        </div>
+        <div class="col-xs-12 col-md-9">
+                <div class="form-group {{#field-has-error}}[billingAddressCity] has-error{{/field-has-error}}">
+                    <label for="billingAddressCity">{{#i18n}}reservation-page.city{{/i18n}}</label>
+                    <input id="billingAddressCity" name="billingAddressCity" class="form-control" type="text" required value="{{paymentForm.billingAddressCity}}" maxlength="255">
+                    {{#field-has-error}}[billingAddressCity]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressCity{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+                </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12 {{#customerReferenceEnabled}}col-md-6{{/customerReferenceEnabled}}">
+            <div class="form-group">
+                <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
+
+                <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control field-required" required>
+                    <option value="">{{#i18n}}reservation-page.country.select{{/i18n}}</option>
+                    <optgroup label="{{#i18n}}reservation-page.eu-countries{{/i18n}}" id="optgroup-eu-countries-list">
+                        {{#euCountriesForVat}}
+                            <option value="{{left}}" data-description="{{right}}">{{left}} - {{right}}</option>
+                        {{/euCountriesForVat}}
+                    </optgroup>
+                    <optgroup label="{{#i18n}}reservation-page.all-countries{{/i18n}}">
+                        {{#countriesForVat}}
+                            <option value="{{left}}" data-description="{{right}}">{{left}} - {{right}}</option>
+                        {{/countriesForVat}}
+                    </optgroup>
+                </select>
+            </div>
+
+        </div>
+    </div>
 
     {{#customerReferenceEnabled}}
         <div class="form-group {{#field-has-error}}[customerReference] has-error{{/field-has-error}}">
