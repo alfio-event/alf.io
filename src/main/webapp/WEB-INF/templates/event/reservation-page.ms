@@ -233,6 +233,15 @@
                 {{#i18n}}reservation-page.i-need-an-invoice{{/i18n}}
         </label>
     </div>
+
+    <div class="hidden-xs hidden-sm hidden-md hidden-lg invoice-details-section">
+        <div class="page-header">
+            <h2>{{#i18n}}reservation-page.invoice-details{{/i18n}}</h2>
+        </div>
+        <div>
+        </div>
+    </div>
+
     {{/onlyInvoice}}
     {{/invoiceIsAllowed}}
     {{/orderSummary.free}}

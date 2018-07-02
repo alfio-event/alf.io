@@ -353,6 +353,15 @@
             }
         });
 
+
+        $("#invoice-requested").change(function() {
+            if($("#invoice-requested:checked").length) {
+                $(".invoice-details-section").removeClass(hiddenClasses)
+            } else {
+                $(".invoice-details-section").addClass(hiddenClasses)
+            }
+        });
+
     });
 
     /*window.recaptchaLoadCallback = function() {
