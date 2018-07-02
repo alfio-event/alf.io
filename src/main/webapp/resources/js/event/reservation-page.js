@@ -367,7 +367,11 @@
 
         $("#vatCountry").change(function() {
             $("#selected-country-code").text($("#vatCountry").val());
-        })
+        });
+
+        //
+        $("#vatCountry").change();
+        $("#invoice-requested").change();
 
     });
 

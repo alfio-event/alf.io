@@ -97,10 +97,23 @@ public class ContactAndTicketsForm implements Serializable {
         }
 
 
-        rejectIfOverLength(bindingResult, "billingAddress", ErrorsCode.STEP_2_MAX_LENGTH_BILLING_ADDRESS,
-                billingAddress, 450);
+
         if(invoiceRequested) {
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddress", ErrorsCode.STEP_2_EMPTY_BILLING_ADDRESS);
+            /*if(companyVatChecked) {
+                ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressCompany", "error.emptyField");
+                rejectIfOverLength(bindingResult, "billingAddressCompany", "error.tooLong", billingAddressCompany, 256);
+            }*/
+
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressLine1", "error.emptyField");
+            rejectIfOverLength(bindingResult, "billingAddressLine1", "error.tooLong", billingAddressLine1, 256);
+
+            rejectIfOverLength(bindingResult, "billingAddressLine2", "error.tooLong", billingAddressLine2, 256);
+
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressZip", "error.emptyField");
+            rejectIfOverLength(bindingResult, "billingAddressZip", "error.tooLong", billingAddressZip, 51);
+
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressCity", "error.emptyField");
+            rejectIfOverLength(bindingResult, "billingAddressCity", "error.tooLong", billingAddressCity, 256);
         }
 
         if (email != null && !email.contains("@") && !bindingResult.hasFieldErrors("email")) {
@@ -132,7 +145,7 @@ public class ContactAndTicketsForm implements Serializable {
         return Optional.ofNullable(cancelReservation).orElse(false);
     }
 
-    public static ContactAndTicketsForm fromExistingReservation(TicketReservation reservation) {
+    public static ContactAndTicketsForm fromExistingReservation(TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
         ContactAndTicketsForm form = new ContactAndTicketsForm();
         form.setFirstName(reservation.getFirstName());
         form.setLastName(reservation.getLastName());
@@ -143,6 +156,13 @@ public class ContactAndTicketsForm implements Serializable {
         form.setVatNr(reservation.getVatNr());
         form.setInvoiceRequested(reservation.isInvoiceRequested());
         form.setCustomerReference(reservation.getCustomerReference());
+
+
+        form.setBillingAddressCompany(additionalInfo.getBillingAddressCompany());
+        form.setBillingAddressLine1(additionalInfo.getBillingAddressLine1());
+        form.setBillingAddressLine2(additionalInfo.getBillingAddressLine2());
+        form.setBillingAddressZip(additionalInfo.getBillingAddressZip());
+        form.setBillingAddressCity(additionalInfo.getBillingAddressCity());
         return form;
     }
 
