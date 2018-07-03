@@ -212,6 +212,7 @@ public class ExtensionService {
         T res = null;
         Map<String, Object> input = new HashMap<>(payload);
         input.put("extensionEvent", event);
+        input.put("output", null);
         for (ScriptPathNameHash activePath : activePaths) {
             String path = activePath.getPath();
             String name = activePath.getName();
