@@ -50,7 +50,8 @@ public class Audit {
         FORCED_UPDATE_INVOICE,
         TERMS_CONDITION_ACCEPTED,
         PRIVACY_POLICY_ACCEPTED,
-        VAT_VALIDATION_SUCCESSFUL
+        VAT_VALIDATION_SUCCESSFUL,
+        VAT_FORMAL_VALIDATION_SUCCESSFUL
     }
 
     private final String reservationId;

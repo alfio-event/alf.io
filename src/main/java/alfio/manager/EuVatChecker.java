@@ -31,13 +31,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
+import static alfio.model.Audit.EventType.VAT_FORMAL_VALIDATION_SUCCESSFUL;
 import static alfio.model.Audit.EventType.VAT_VALIDATION_SUCCESSFUL;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS;
@@ -51,6 +55,7 @@ public class EuVatChecker {
     private final ConfigurationManager configurationManager;
     private final AuditingRepository auditingRepository;
     private final EUVatChecker client = new EUVatChecker();
+    private final ExtensionManager extensionManager;
 
     private static final Cache<Pair<String, String>, EUVatCheckResponse> validationCache = Caffeine.newBuilder()
         .expireAfterWrite(15, TimeUnit.MINUTES)
@@ -137,12 +142,17 @@ public class EuVatChecker {
             }
 
             EUVatCheckResponse result = validateEUVat(vatNr, organizerCountry, checker.client);
-            boolean valid = result != null && result.isValid();
+            boolean validStrict = result != null && result.isValid();
+            boolean valid = validStrict;
+
+            if(!valid && StringUtils.isNotBlank(vatNr)) {
+                valid = checker.extensionManager.handleTaxIdValidation(eventId, vatNr, organizerCountry);
+            }
             if(valid && StringUtils.isNotEmpty(ticketReservationId)) {
                 Map<String, Object> data = new HashMap<>();
                 data.put("vatNumber", vatNr);
                 data.put("country", organizerCountry);
-                checker.auditingRepository.insert(ticketReservationId, null, eventId, VAT_VALIDATION_SUCCESSFUL, new Date(), RESERVATION, ticketReservationId, singletonList(data));
+                checker.auditingRepository.insert(ticketReservationId, null, eventId, validStrict ? VAT_VALIDATION_SUCCESSFUL : VAT_FORMAL_VALIDATION_SUCCESSFUL, new Date(), RESERVATION, ticketReservationId, singletonList(data));
             }
             return valid;
         }

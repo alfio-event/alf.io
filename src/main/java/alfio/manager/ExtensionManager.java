@@ -43,6 +43,7 @@ public class ExtensionManager {
         TICKET_ASSIGNED,
         WAITING_QUEUE_SUBSCRIBED,
         INVOICE_GENERATION,
+        TAX_ID_NUMBER_VALIDATION,
         //
         STUCK_RESERVATIONS,
         OFFLINE_RESERVATIONS_WILL_EXPIRE,
@@ -153,6 +154,14 @@ public class ExtensionManager {
         payload.put("vatStatus", vatStatus);
 
         return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, event, event.getOrganizationId(), payload, InvoiceGeneration.class));
+    }
+
+    public boolean handleTaxIdValidation(int eventId, String taxIdNumber, String countryCode) {
+        Event event = eventRepository.findById(eventId);
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("taxIdNumber", taxIdNumber);
+        payload.put("countryCode", countryCode);
+        return Optional.ofNullable(syncCall(ExtensionEvent.TAX_ID_NUMBER_VALIDATION, event, event.getOrganizationId(), payload, Boolean.class)).orElse(false);
     }
 
     public void handleTicketCheckedIn(Ticket ticket) {
