@@ -198,6 +198,23 @@
             $("#selected-country-code").text($("#vatCountry").val());
         });
 
+        function canSkipVatNr() {
+            return $("#skip-vat-nr:checked").length === 1;
+        }
+
+        $("#skip-vat-nr").change(function() {
+            $("#billingAddressCompany").change();
+        });
+
+        $("#billingAddressCompany").change(function() {
+            var companyName = $(this).val();
+            if(companyName && companyName.trim().length > 0 && !canSkipVatNr()) {
+                $("#vatNr").attr('required', true);
+            } else {
+                $("#vatNr").removeAttr('required');
+            }
+        });
+
         //
         $("#vatCountry").change();
         $("#invoice-requested").change();
