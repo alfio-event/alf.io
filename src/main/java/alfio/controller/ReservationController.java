@@ -35,7 +35,6 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
-import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
@@ -43,6 +42,7 @@ import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.context.MessageSource;
@@ -52,6 +52,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -65,6 +66,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
@@ -255,7 +257,6 @@ public class ReservationController {
         if(redirectForFailure.isPresent()) { //ugly
             return redirectForFailure.get();
         }
-        //FIXME add VALIDATION, VAT CHECK and UPDATE
 
         Event event = eventOptional.get();
 
@@ -276,6 +277,11 @@ public class ReservationController {
         }
 
         CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event, false);
+
+        ticketReservationRepository.resetVat(reservationId);
+        if(contactAndTicketsForm.isBusiness()) {
+            checkAndApplyVATRules(eventName, reservationId, contactAndTicketsForm, bindingResult, event);
+        }
 
         //persist data
         ticketReservationManager.updateReservation(reservationId, customerName, contactAndTicketsForm.getEmail(),
@@ -298,6 +304,36 @@ public class ReservationController {
 
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/overview";
+    }
+
+    private void checkAndApplyVATRules(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Event event) {
+        // VAT handling
+        String country = contactAndTicketsForm.getVatCountryCode();
+
+        // validate VAT presence if EU mode is enabled
+        if(vatChecker.isVatCheckingEnabledFor(event.getOrganizationId()) && isEUCountry(country)) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
+        }
+
+        try {
+            Optional<VatDetail> vatDetail = eventRepository.findOptionalByShortName(eventName)
+                .flatMap(e -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r)))
+                .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(e.getKey().getVatStatus()))
+                .filter(e -> vatChecker.isVatCheckingEnabledFor(e.getKey().getOrganizationId()))
+                .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, e.getKey()));
+
+
+            vatDetail.ifPresent(vatValidation -> {
+                if (!vatValidation.isValid()) {
+                    bindingResult.rejectValue("vatNr", "error.vat");
+                } else {
+                    PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
+                    ticketReservationRepository.updateBillingData(vatStatus, StringUtils.trimToNull(vatValidation.getVatNr()), country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
+                }
+            });
+        } catch (IllegalStateException ise) {//vat checker failure
+            bindingResult.rejectValue("vatNr", "error.vatVIESDown");
+        }
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/overview", method = RequestMethod.GET)
@@ -689,5 +725,17 @@ public class ReservationController {
             }
             model.addAttribute("delayForOfflinePayment", 0);
         }
+    }
+
+    private boolean isEUCountry(String countryCode) {
+        return configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)).contains(countryCode);
+    }
+
+
+    private static PriceContainer.VatStatus determineVatStatus(PriceContainer.VatStatus current, boolean isVatExempt) {
+        if(!isVatExempt) {
+            return current;
+        }
+        return current == NOT_INCLUDED ? NOT_INCLUDED_EXEMPT : INCLUDED_EXEMPT;
     }
 }

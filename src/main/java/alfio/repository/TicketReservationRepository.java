@@ -203,4 +203,7 @@ public interface TicketReservationRepository {
 
     @Query("update tickets_reservation set validated_for_overview = :validated where id = :reservationId")
     int updateValidationStatus(@Bind("reservationId") String reservationId, @Bind("validated") boolean validated);
+
+    @Query("update tickets_reservation set  invoice_requested = false, vat_status = null where id = :reservationId")
+    int resetVat(@Bind("reservationId") String reservationId);
 }

@@ -187,4 +187,8 @@ public class ContactAndTicketsForm implements Serializable {
     public boolean canSkipVatNrCheck() {
         return Optional.ofNullable(skipVatNr).orElse(false);
     }
+
+    public boolean isBusiness() {
+        return StringUtils.isNotBlank(billingAddressCompany) && !canSkipVatNrCheck() && invoiceRequested;
+    }
 }

@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.Event;
 import alfio.model.VatDetail;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -65,8 +66,19 @@ public class EuVatChecker {
         return reverseChargeEnabled(configurationManager, organizationId) && validationEnabled(configurationManager, organizationId);
     }
 
-    public Optional<VatDetail> checkVat(String vatNr, String countryCode, int organizationId) {
-        return performCheck(vatNr, countryCode, organizationId).apply(configurationManager, client);
+    public Optional<VatDetail> checkVat(String vatNr, String countryCode, Event event) {
+        Optional<VatDetail> res = performCheck(vatNr, countryCode, event.getOrganizationId()).apply(configurationManager, client);
+        res.map(detail -> {
+           if(!detail.isValid()) {
+               String organizerCountry = organizerCountry(configurationManager, event.getOrganizationId());
+               boolean valid = extensionManager.handleTaxIdValidation(event.getId(), vatNr, organizerCountry);
+               return new VatDetail(detail.getVatNr(), detail.getCountry(), valid, detail.getName(), detail.getAddress(), detail.isVatExempt());
+           } else {
+               return detail;
+           }
+        });
+
+        return res;
     }
 
     static BiFunction<ConfigurationManager, EUVatChecker, Optional<VatDetail>> performCheck(String vatNr, String countryCode, int organizationId) {
