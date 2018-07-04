@@ -59,7 +59,7 @@ public class ContactAndTicketsForm implements Serializable {
     private String billingAddressZip;
     private String billingAddressCity;
 
-    private boolean addCompanyBillingDetails = false;
+    private Boolean skipVatNr;
     private Boolean backFromOverview;
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
@@ -114,6 +114,15 @@ public class ContactAndTicketsForm implements Serializable {
 
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressCity", "error.emptyField");
             rejectIfOverLength(bindingResult, "billingAddressCity", "error.tooLong", billingAddressCity, 256);
+
+            ValidationUtils.rejectIfEmpty(bindingResult, "vatCountryCode", "error.emptyField");
+
+            if(StringUtils.trimToNull(billingAddressCompany) != null && !canSkipVatNrCheck()) {
+                ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
+            }
+
+            //TODO: here add vat nr validation!
+            //
         }
 
         if (email != null && !email.contains("@") && !bindingResult.hasFieldErrors("email")) {
@@ -163,6 +172,7 @@ public class ContactAndTicketsForm implements Serializable {
         form.setBillingAddressLine2(additionalInfo.getBillingAddressLine2());
         form.setBillingAddressZip(additionalInfo.getBillingAddressZip());
         form.setBillingAddressCity(additionalInfo.getBillingAddressCity());
+        form.setSkipVatNr(additionalInfo.getSkipVatNr());
         return form;
     }
 
@@ -172,5 +182,9 @@ public class ContactAndTicketsForm implements Serializable {
 
     public boolean isBackFromOverview() {
         return Optional.ofNullable(backFromOverview).orElse(false);
+    }
+
+    public boolean canSkipVatNrCheck() {
+        return Optional.ofNullable(skipVatNr).orElse(false);
     }
 }

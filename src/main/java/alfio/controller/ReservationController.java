@@ -270,8 +270,6 @@ public class ReservationController {
         Configuration.ConfigurationPathKey invoiceOnlyKey = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.GENERATE_ONLY_INVOICE);
         boolean invoiceOnly = configurationManager.getBooleanConfigValue(invoiceOnlyKey, false);
 
-        final boolean companyVatChecked = invoiceOnly ? contactAndTicketsForm.isAddCompanyBillingDetails() : contactAndTicketsForm.isInvoiceRequested();
-
         if(invoiceOnly && reservationCost.getPriceWithVAT() > 0) {
             //override, that's why we save it
             contactAndTicketsForm.setInvoiceRequested(true);
@@ -284,7 +282,7 @@ public class ReservationController {
             contactAndTicketsForm.getBillingAddressCompany(), contactAndTicketsForm.getBillingAddressLine1(), contactAndTicketsForm.getBillingAddressLine2(),
             contactAndTicketsForm.getBillingAddressZip(), contactAndTicketsForm.getBillingAddressCity(), contactAndTicketsForm.getVatCountryCode(),
             contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
-            contactAndTicketsForm.isAddCompanyBillingDetails(), false);
+            contactAndTicketsForm.canSkipVatNrCheck(), false);
         assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, request, true, true);
         //
 

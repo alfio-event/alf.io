@@ -115,22 +115,6 @@
                 }
             });
         };
-        
-        $("form").each(createAllErrors);
-        $("input,select,textarea").change(function() {
-            if( !this.validity.valid) {
-                $(this).parent().addClass('has-error');
-                if($(this).parent().parent().parent().hasClass('form-group')) {
-                    $(this).parent().parent().parent().addClass('has-error');
-                }
-            } else {
-                $(this).parent().removeClass('has-error');
-                if($(this).parent().parent().parent().hasClass('form-group')) {
-                    $(this).parent().parent().parent().removeClass('has-error');
-                }
-            }
-        });
-
 
 
         $('#first-name.autocomplete-src, #last-name.autocomplete-src').change(function() {
@@ -189,151 +173,7 @@
         }
 
 
-        /*function disableBillingFields() {
-            $('#vatNr,#vatCountryCode').attr('required', false).attr('disabled', '');
-        }
 
-        disableBillingFields();
-
-
-        $('#invoice-requested').change(function() {
-            var element = $('#invoice');
-            if($(this).is(':checked')) {
-                element.find('.field-required').attr('required', true);
-                element.removeClass('hidden');
-                euBillingCountry.change();
-                if(euBillingCountry.length === 0) {
-                    //$('#billing-address-container').removeClass(hiddenClasses);
-                    $('#billing-address').attr('required', true).removeAttr('disabled');
-                } else {
-                    $('#continue-button').attr('disabled', true);
-                }
-            } else {
-                element.find('.field-required').attr('required', false);
-                $('#billing-address').attr('required', false).attr('disabled');
-                element.addClass('hidden');
-                disableBillingFields();
-                $('#continue-button').removeAttr('disabled');
-            }
-        });
-
-        var euBillingCountry = $('#vatCountry');
-        euBillingCountry.change(function() {
-            if($(this).val() === '') {
-                //$('#billing-address-container').removeClass(hiddenClasses);
-                $('#billing-address').attr('required', true).removeAttr('disabled');
-                $('#validation-result-container, #vat-number-container, #validateVAT').addClass(hiddenClasses);
-                $('#vatNr').attr('required', false).attr('disabled', '');
-                $("#vatCountryCode").attr('required', false).attr('disabled', '');
-            } else {
-                $('#billing-address-container').addClass(hiddenClasses);
-                $('#validation-result-container, #vat-number-container, #validateVAT').removeClass(hiddenClasses);
-                $('#billing-address').attr('required', false).attr('disabled');
-                $('#vatNr').attr('required', true).removeAttr('disabled');
-                $("#vatCountryCode").attr('required', true).removeAttr('disabled', '');
-                var countryCode = $(this).val();
-                var validateVATButton = $("#validateVAT");
-                if($("#optgroup-eu-countries-list option[value="+countryCode+"]").length === 1) {
-                    validateVATButton.text(validateVATButton.attr('data-text'));
-                } else {
-                    validateVATButton.text(validateVATButton.attr('data-text-non-eu'));
-                }
-            }
-        });
-
-        var invoiceOnlyMode = $('#invoice-requested[type=hidden]') && $('#invoice-requested[type=hidden]').val() == 'true';
-
-        var euVATCheckingEnabled = $("#invoice[data-eu-vat-checking-enabled=true]").length === 1;
-
-        if(!invoiceOnlyMode && euVATCheckingEnabled && $("input[type=hidden][name=vatNr]").length === 0) {
-            $("#billing-address-container").addClass(hiddenClasses);
-        }
-
-        // invoice only mode
-        if(invoiceOnlyMode) {
-            $('#billing-address').attr('required', true).removeAttr('disabled');
-            $('#billing-address-container').removeClass(hiddenClasses);
-            $('#invoice').removeClass('hidden');
-            $("#eu-vat-check-countries").addClass(hiddenClasses);
-        }
-
-        $("#add-company-billing-details").change(function() {
-            if($(this).is(':checked')) {
-                $('#billing-address').attr('required', false).attr('disabled');
-                $('#billing-address-container').addClass(hiddenClasses);
-                $("#eu-vat-check-countries").removeClass(hiddenClasses);
-                $('#continue-button').attr('disabled', true);
-                if(euVATCheckingEnabled) {
-                    $("#vatCountry").attr('required', true).removeAttr('disabled', '');
-                }
-            } else {
-                $('#continue-button').attr('disabled', false);
-                $('#billing-address').attr('required', true).removeAttr('disabled');
-                $('#billing-address-container').removeClass(hiddenClasses);
-                $("#eu-vat-check-countries").addClass(hiddenClasses);
-                $("#vatCountry").removeAttr('required').removeAttr('disabled', '');
-            }
-        });
-        //
-
-        $('#validateVAT').click(function() {
-            var frm = $(this.form);
-            var action = $(this).attr('data-validation-url');
-            var vatInput = $('#vatNr');
-            vatInput.removeClass('has-error');
-            vatInput.parent('div').removeClass('has-error');
-            var vatNr = vatInput.val();
-            var country = euBillingCountry.val();
-            var resultContainer = $('#validation-result');
-            if(vatNr !== '' && country !== '') {
-                var btn = $(this);
-                var previousText = btn.text();
-                btn.html('<i class="fa fa-circle-o-notch fa-spin"></i>');
-                $('#continue-button').attr('disabled', true);
-                jQuery.ajax({
-                    url: action,
-                    type: 'POST',
-                    data: frm.serialize(),
-                    success: function() {
-                        window.location.reload();
-                    },
-                    error: function(xhr, textStatus, errorThrown) {
-                        vatInput.addClass('has-error');
-                        vatInput.parent('div').addClass('has-error');
-                        if(xhr.status === 400) {
-                            resultContainer.html(resultContainer.attr('data-validation-error-msg'));
-                        } else if (xhr.status === 503) {
-                            resultContainer.html(resultContainer.attr('data-vies-down'));
-                        } else {
-                            resultContainer.html(resultContainer.attr('data-generic-error-msg'));
-                        }
-                    },
-                    complete: function(xhr) {
-                        btn.text(previousText);
-                        var vatInput = $('#vatNr');
-                        if(vatInput.hasClass('has-error')) {
-                            $('#continue-button').attr('disabled', true);
-                        } else {
-                            $('#continue-button').attr('disabled', false);
-                        }
-                    }
-
-                });
-            }
-        })
-
-        $('#reset-billing-information').click(function() {
-            var action = $(this).attr('data-reset-billing-information-url');
-            var frm = $(this.form);
-            jQuery.ajax({
-                url: action,
-                type:'POST',
-                success: function() {
-                    window.location.reload();
-                },
-                data:frm.serialize()
-            });
-        });*/
 
         $("select").map(function() {
             var value = $(this).attr('value');
@@ -362,35 +202,21 @@
         $("#vatCountry").change();
         $("#invoice-requested").change();
 
+
+        $("form").each(createAllErrors);
+        $("input,select,textarea").change(function() {
+            if( !this.validity.valid) {
+                $(this).parent().addClass('has-error');
+                if($(this).parent().parent().parent().hasClass('form-group')) {
+                    $(this).parent().parent().parent().addClass('has-error');
+                }
+            } else {
+                $(this).parent().removeClass('has-error');
+                if($(this).parent().parent().parent().hasClass('form-group')) {
+                    $(this).parent().parent().parent().removeClass('has-error');
+                }
+            }
+        });
+
     });
-
-    /*window.recaptchaLoadCallback = function() {
-        window.recaptchaReady = true;
-        var methods = $('input[name=paymentMethod]');
-        if(methods.length === 1) {
-            methodSelected(methods.val());
-        } else if(methods.length === 0) {
-            $('#captcha-FREE').each(function(e) {
-                methodSelected('FREE');
-            });
-        }
-    };
-
-    var methodSelected = function(method) {
-        if((method === 'FREE' || method === 'OFFLINE' || method === 'ON_SITE') && window.recaptchaReady) {
-            $('.g-recaptcha').each(function(i, e) {
-                try {
-                    grecaptcha.reset(e.id);
-                } catch(x) {}
-            });
-            try {
-                grecaptcha.render('captcha-'+method, {
-                    'sitekey': $('#captcha-'+method).attr('data-sitekey'),
-                    'hl': $('html').attr('lang')
-                });
-            } catch(x) {}
-        }
-    };*/
-
-
 })();

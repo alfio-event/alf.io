@@ -209,3 +209,12 @@ html[lang=it] .alfio-lang a[lang=it] {
 .form-horizontal .control-label.category-name {
     text-align:left;
 }
+
+.checkbox-in-form-group {
+    margin-top:30px;
+}
+
+.checkbox-in-form-group label {
+    padding-left:20px;
+    font-weight:normal;
+}

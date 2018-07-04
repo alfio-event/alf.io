@@ -174,7 +174,7 @@ public interface TicketReservationRepository {
         " billing_address_line2 = :billingAddressLine2, " +
         " billing_address_zip = :billingAddressZip, " +
         " billing_address_city = :billingAddressCity, " +
-        " add_company_billing_details = :addCompanyBillingDetails, " +
+        " skip_vat_nr = :skipVatNr, " +
         " customer_reference = :customerReference, "+
         " validated_for_overview = :validated " +
         " where id = :reservationId")
@@ -192,13 +192,13 @@ public interface TicketReservationRepository {
                                               @Bind("vatCountry") String vatCountry,
                                               @Bind("vatNr") String vatNr,
                                               @Bind("invoiceRequested") boolean invoiceRequested,
-                                              @Bind("addCompanyBillingDetails") boolean addCompanyBillingDetails,
+                                              @Bind("skipVatNr") boolean skipVatNr,
                                               @Bind("customerReference") String customerReference,
                                               @Bind("validated") boolean validated);
 
 
     @Query("select billing_address_company, billing_address_line1, billing_address_line2, " +
-        " billing_address_zip, billing_address_city, validated_for_overview, add_company_billing_details from tickets_reservation where id = :id")
+        " billing_address_zip, billing_address_city, validated_for_overview, skip_vat_nr from tickets_reservation where id = :id")
     TicketReservationAdditionalInfo getAdditionalInfo(@Bind("id") String reservationId);
 
     @Query("update tickets_reservation set validated_for_overview = :validated where id = :reservationId")
