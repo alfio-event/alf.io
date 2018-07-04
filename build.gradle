@@ -61,16 +61,6 @@ task validate {
     }
 }
 
-war {
-    //generic excludes
-
-    def bowerDir = "resources/bower_components"
-    def excludesFile = new File("./lib_exclude")
-    if(excludesFile.exists()) {
-        exclude(excludesFile.readLines().collect({ bowerDir + it }))
-    }
-}
-
 idea {
     project {
         jdkName sourceCompatibility.toString()
@@ -291,6 +281,12 @@ bootRun {
 bootWar {
     mainClassName = 'alfio.config.SpringBootLauncher'
     classifier = 'boot'
+
+    def bowerDir = "resources/bower_components"
+    def excludesFile = new File("./lib_exclude")
+    if(excludesFile.exists()) {
+        exclude(excludesFile.readLines().collect({ bowerDir + it }))
+    }
 }
 
 // -- code-coverage
