@@ -72,7 +72,7 @@ public class EuVatChecker {
            if(!detail.isValid()) {
                String organizerCountry = organizerCountry(configurationManager, event.getOrganizationId());
                boolean valid = extensionManager.handleTaxIdValidation(event.getId(), vatNr, organizerCountry);
-               return new VatDetail(detail.getVatNr(), detail.getCountry(), valid, detail.getName(), detail.getAddress(), detail.isVatExempt());
+               return new VatDetail(detail.getVatNr(), detail.getCountry(), valid, detail.getName(), detail.getAddress(), false);
            } else {
                return detail;
            }
