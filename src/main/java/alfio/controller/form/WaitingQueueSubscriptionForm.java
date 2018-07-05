@@ -20,10 +20,11 @@ import alfio.model.CustomerName;
 import alfio.model.Event;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Locale;
 
 @Data
-public class WaitingQueueSubscriptionForm {
+public class WaitingQueueSubscriptionForm implements Serializable {
     private String fullName;
     private String firstName;
     private String lastName;

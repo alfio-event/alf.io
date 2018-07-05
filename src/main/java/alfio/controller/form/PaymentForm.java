@@ -24,12 +24,13 @@ import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 @Data
-public class PaymentForm {
+public class PaymentForm implements Serializable {
 
     private String stripeToken;
     private String paypalPaymentId;
