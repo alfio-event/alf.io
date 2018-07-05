@@ -2,15 +2,6 @@
 
 {{>/event/header}}
 
-{{^ticketsAreAllAssigned}}
-<div class="wizard wMarginBottom wMarginTop center">
-    <a><span class="badge">1</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step1{{/i18n}}</span></a>
-    <a><span class="badge">2</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step2{{/i18n}}</span></a>
-    <a><span class="badge">3</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step3{{#event.free}}.free{{/event.free}}{{/i18n}}</span></a>
-    <a class="current"><span class="badge badge-inverse">4</span> {{#i18n}}breadcrumb.step4{{/i18n}}</a>
-</div>
-{{/ticketsAreAllAssigned}}
-
 <div class="wMarginBottom"></div>
 
 <h1>

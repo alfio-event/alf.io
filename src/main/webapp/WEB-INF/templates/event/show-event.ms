@@ -19,11 +19,22 @@
     </div>
 </div>
 
-<div class="wizard wMarginBottom wMarginTop center">
-    <a class="current"><span class="badge badge-inverse">1</span> {{#i18n}}breadcrumb.step1{{/i18n}}</a>
-    <a><span class="badge">2</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step2{{/i18n}}</span></a>
-    <a><span class="badge">3</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step3{{#event.free}}.free{{/event.free}}{{/i18n}}</span></a>
-    <a><span class="badge">4</span> <span class="hidden-xs">{{#i18n}}breadcrumb.step4{{/i18n}}</span></a>
+<div class="wizard2 wMarginBottom wMarginTop center">
+    <div class="wizard2-current">
+        <div><span class="badge">1</span><span>{{#i18n}}breadcrumb.step1{{/i18n}}</span></div>
+        <div class="wizard2-line"></div>
+    </div>
+    <div>
+        <div><span class="badge">2</span><span>{{#i18n}}breadcrumb.step2{{/i18n}}</span></div>
+        <div class="wizard2-line"></div>
+    </div>
+    <div>
+        <div><span class="badge">3</span><span>{{#i18n}}breadcrumb.step3{{#event.free}}.free{{/event.free}}{{/i18n}}</span></div>
+        <div class="wizard2-line"></div>
+    </div>
+    <div>
+        <div><span class="badge">4</span><span>{{#i18n}}breadcrumb.step4{{/i18n}}</span></div>
+    </div>
 </div>
 
 <h2>{{#i18n}}show-event.tickets{{/i18n}}</h2>
