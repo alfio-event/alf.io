@@ -43,11 +43,14 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjuster;
+import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -419,10 +422,12 @@ public class TicketReservationManagerTest {
     @Test
     public void returnTheExpiredDateAsConfigured() {
         initOfflinePaymentTest();
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
-        ZonedDateTime now = ZonedDateTime.now().with(ChronoField.HOUR_OF_DAY, 11);
+        ZonedDateTime from = ZonedDateTime.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+        ZonedDateTime eventBegin = from.plusDays(2);
+        when(event.getBegin()).thenReturn(eventBegin);
+        ZonedDateTime now = from.with(ChronoField.HOUR_OF_DAY, 11);
         ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(now, event, configurationManager);
-        assertEquals(2L, ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()));
+        assertEquals(2L, ChronoUnit.DAYS.between(now.toLocalDate(), offlinePaymentDeadline.toLocalDate()));
     }
 
     @Test
