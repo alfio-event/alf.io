@@ -16,18 +16,18 @@
  */
 package alfio.controller.support;
 
-import alfio.controller.api.support.TicketHelper;
 import alfio.manager.FileUploadManager;
 import alfio.manager.support.PDFTemplateGenerator;
 import alfio.manager.support.PartialTicketPDFGenerator;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
 import alfio.model.user.Organization;
-import alfio.repository.TicketFieldRepository;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import com.openhtmltopdf.DOMBuilder;
+import com.openhtmltopdf.extend.FSStream;
+import com.openhtmltopdf.extend.FSStreamFactory;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.extern.log4j.Log4j2;
@@ -37,9 +37,8 @@ import org.jsoup.Jsoup;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -106,7 +105,7 @@ public final class TemplateProcessor {
         PDDocument doc = new PDDocument(MemoryUsageSetting.setupTempFileOnly());
         PdfRendererBuilder builder = new PdfRendererBuilder();
         builder.usePDDocument(doc);
-
+        builder.useProtocolsStreamImplementation(new AlfioInternalFSStreamFactory(), "alfio-internal");
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(Jsoup.parse(page)), "");
         PdfBoxRenderer renderer = builder.buildPdfRenderer();
         try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream()) {
@@ -116,6 +115,29 @@ public final class TemplateProcessor {
         }
         renderer.layout();
         return new PDFTemplateGenerator.ClosingRenderer(renderer);
+    }
+
+    private static class AlfioInternalFSStreamFactory implements FSStreamFactory {
+
+        @Override
+        public FSStream getUrl(String url) {
+            return new FSStream() {
+                @Override
+                public InputStream getStream() {
+                    String urlWithoutProtocol = url.substring("alfio-internal:/".length());
+                    try {
+                        return new ClassPathResource("/alfio/font/" + urlWithoutProtocol).getInputStream();
+                    } catch (IOException e) {
+                        throw new IllegalStateException(e);
+                    }
+                }
+
+                @Override
+                public Reader getReader() {
+                    return new InputStreamReader(getStream(), StandardCharsets.UTF_8);
+                }
+            };
+        }
     }
 
     public static Optional<TemplateResource.ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
