@@ -569,7 +569,7 @@ public class TicketReservationManager {
     }
 
     static ZonedDateTime getOfflinePaymentDeadline(ZonedDateTime now, Event event, ConfigurationManager configurationManager) {
-        int waitingPeriod = getOfflinePaymentWaitingPeriod(event, configurationManager);
+        int waitingPeriod = getOfflinePaymentWaitingPeriod(event, configurationManager, now);
         if(waitingPeriod == 0) {
             log.warn("accepting offline payments the same day is a very bad practice and should be avoided. Please set cash payment as payment method next time");
             //if today is the event start date, then we add a couple of hours.
@@ -580,7 +580,10 @@ public class TicketReservationManager {
     }
 
     public static int getOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager) {
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        return getOfflinePaymentWaitingPeriod(event, configurationManager, ZonedDateTime.now(event.getZoneId()));
+    }
+
+    public static int getOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager, ZonedDateTime now) {
         ZonedDateTime eventBegin = event.getBegin();
         int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), eventBegin.toLocalDate());
         if (daysToBegin < 0) {
