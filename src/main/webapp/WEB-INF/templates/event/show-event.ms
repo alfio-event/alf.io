@@ -214,6 +214,9 @@
     </div>
 </div>
 {{/hasAccessPromotions}}
+{{#captchaForTicketSelectionEnabled}}
+    <div class="show-event g-recaptcha" data-sitekey="{{recaptchaApiKey}}"></div>
+{{/captchaForTicketSelectionEnabled}}
 {{/validPaymentMethodAvailable}}
     <hr/>
 
@@ -235,4 +238,9 @@
 {{/displayWaitingQueueForm}}
 <script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
+
+{{#captchaForTicketSelectionEnabled}}
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+{{/captchaForTicketSelectionEnabled}}
+
 {{>/event/page-bottom}}

@@ -24,6 +24,7 @@ import alfio.controller.form.ReservationForm;
 import alfio.controller.support.SessionUtil;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
+import alfio.manager.RecaptchaService;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
@@ -60,6 +61,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.controller.support.SessionUtil.addToFlash;
+import static alfio.model.system.Configuration.getSystemConfiguration;
+import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
 import static alfio.util.OptionalWrapper.optionally;
 
 @Controller
@@ -82,6 +85,7 @@ public class EventController {
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final TicketRepository ticketRepository;
+    private final RecaptchaService recaptchaService;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -245,6 +249,11 @@ public class EventController {
                 .addAttribute("validityStart", event.getBegin())
                 .addAttribute("validityEnd", event.getEnd());
 
+            if(configurationManager.isRecaptchaForTicketSelectionEnabled(event)) {
+                model.addAttribute("captchaForTicketSelectionEnabled", true)
+                    .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(getSystemConfiguration(RECAPTCHA_API_KEY), null));
+            }
+
             model.asMap().putIfAbsent("hasErrors", false);//
             return "/event/show-event";
         }).orElse(REDIRECT + "/");
@@ -361,6 +370,11 @@ public class EventController {
     }
 
     private String validateAndReserve(String eventName, ReservationForm reservation, BindingResult bindingResult, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, Event event) {
+
+        if(isCaptchaInvalid(request.getRequest(), event)) {
+            bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
+        }
+
         final String redirectToEvent = "redirect:/event/" + eventName + "/";
         return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event)
             .map(selected -> {
@@ -421,6 +435,13 @@ public class EventController {
             //Check whether event already started and it has only PaymentProxy.OFFLINE as payment method
             return !(event.getAllowedPaymentProxies().size() == 1 && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE) && !TicketReservationManager.hasValidOfflinePaymentWaitingPeriod(event, configurationManager));
         }
+    }
+
+
+
+    private boolean isCaptchaInvalid(HttpServletRequest request, Event event) {
+        return configurationManager.isRecaptchaForTicketSelectionEnabled(event)
+            && !recaptchaService.checkRecaptcha(request);
     }
 
 }

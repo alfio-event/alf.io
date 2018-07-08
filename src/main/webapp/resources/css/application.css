@@ -203,6 +203,13 @@ html[lang=it] .alfio-lang a[lang=it] {
     font-weight:normal;
 }
 
+.show-event.g-recaptcha {
+    text-align:center;
+}
+.show-event.g-recaptcha > div {
+    display:inline-block;
+}
+
 /* based on https://material-ui.com/demos/steppers/ */
 .wizard2 {
     display: flex;

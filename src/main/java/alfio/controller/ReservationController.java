@@ -132,31 +132,17 @@ public class ReservationController {
                     }
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
-                    List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
-                        .stream()
-                        .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
-                        .map(PaymentManager.PaymentMethod::getPaymentProxy)
-                        .collect(toList());
-
-                    if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
-                        boolean captchaForOfflinePaymentEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
-                        model.addAttribute("captchaRequestedForOffline", captchaForOfflinePaymentEnabled)
-                            .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(getSystemConfiguration(RECAPTCHA_API_KEY), null))
-                            .addAttribute("captchaRequestedFreeOfCharge", orderSummary.getFree() && captchaForOfflinePaymentEnabled);
-                    }
 
                     boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
                     boolean onlyInvoice = invoiceAllowed && configurationManager.getBooleanConfigValue(partialConfig.apply(ConfigurationKeys.GENERATE_ONLY_INVOICE), false);
 
 
                     ContactAndTicketsForm contactAndTicketsForm = ContactAndTicketsForm.fromExistingReservation(reservation, additionalInfo);
-                    model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 )
-                        .addAttribute("orderSummary", orderSummary)
+                    model.addAttribute("orderSummary", orderSummary)
                         .addAttribute("reservationId", reservationId)
                         .addAttribute("reservation", reservation)
                         .addAttribute("pageTitle", "reservation-page.header.title")
                         .addAttribute("event", event)
-                        .addAttribute("activePaymentMethods", activePaymentMethods)
                         .addAttribute("expressCheckoutEnabled", isExpressCheckoutEnabled(event, orderSummary))
                         .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
                         .addAttribute("countries", TicketHelper.getLocalizedCountries(locale))
@@ -380,6 +366,13 @@ public class ReservationController {
                     model.addAttribute("includeStripe", includeStripe);
                     if (includeStripe) {
                         model.addAttribute("stripe_p_key", paymentManager.getStripePublicKey(event));
+                    }
+
+                    if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
+                        boolean captchaForOfflinePaymentEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
+                        model.addAttribute("captchaRequestedForOffline", captchaForOfflinePaymentEnabled)
+                            .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(getSystemConfiguration(RECAPTCHA_API_KEY), null))
+                            .addAttribute("captchaRequestedFreeOfCharge", orderSummary.getFree() && captchaForOfflinePaymentEnabled);
                     }
 
                     model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 )

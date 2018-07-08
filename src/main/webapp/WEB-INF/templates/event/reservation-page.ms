@@ -391,8 +391,4 @@
     <div class="clearfix"></div>
 
 </form>
-{{#captchaRequestedForOffline}}
-<script src="https://www.google.com/recaptcha/api.js?onload=recaptchaLoadCallback&render=explicit" async defer></script>
-{{/captchaRequestedForOffline}}
-
 {{>/event/page-bottom}}
