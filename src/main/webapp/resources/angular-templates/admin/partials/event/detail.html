@@ -33,6 +33,15 @@
             <label class="btn btn-sm btn-default" data-ng-model="selection.expired" data-uib-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.expired, 'fa-square-o': !selection.expired}"></i> Expired <span class="badge">{{countExpired(event.ticketCategories)}}</span></label>
             <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input type="text" class="form-control input-sm" data-ng-model="selection.freeText" data-ng-change="updateSelectionText(selection.freeText)"></div></label>
         </div>
+        <script type="text/ng-template" id="categoryStats.html">
+            <ul class="list-unstyled">
+                <li ng-if="ticketCategory.checkedInTickets > 0"><span class="text-left">Checked in</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.checkedInTickets}}</span></li>
+                <li ng-if="ticketCategory.soldTickets > 0"><span class="text-left">Sold</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.soldTickets}}</span></li>
+                <li ng-if="ticketCategory.pendingTickets > 0"><span class="text-left">Reservation in progress</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.pendingTickets}}</span></li>
+                <li ng-if="ticketCategory.notSoldTickets > 0"><span class="text-left">Still Available</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.notSoldTickets}}</span></li>
+                <li ng-if="!ticketCategory.bounded"><span class="text-left">Dynamically allocated</span><span class="text-right pull-right" style="margin-left: 10px">{{event.dynamicAllocation}}</span></li>
+            </ul>
+        </script>
         <div data-ng-switch="(event.ticketCategories | showSelectedCategories : selection).length">
             <div data-ng-switch-when="0" class="alert alert-warning">
                 No categories matching the selected criteria have been found.
@@ -49,11 +58,12 @@
                                     <div class="category-name" data-ng-class="{'category-active': !ticketCategory.expired}"><i class="fa" data-ng-class="{'fa-warning': displayWarning, 'fa-paperclip': !displayWarning}"></i> {{ticketCategory.name}}</div>
                                 </div>
                                 <div class="hidden-xs hidden-sm col-md-4">
-                                    <uib-progress max="getActualCapacity(ticketCategory, event)">
-                                        <uib-bar value="ticketCategory.checkedInTickets" type="success" uib-tooltip="Checked in ({{ticketCategory.checkedInTickets}})"><span>{{ticketCategory.checkedInTickets}}</span></uib-bar>
-                                        <uib-bar value="ticketCategory.soldTickets" type="warning" uib-tooltip="Sold ({{ticketCategory.soldTickets}})"><span>{{ticketCategory.soldTickets}}</span></uib-bar>
-                                        <uib-bar value="ticketCategory.notSoldTickets" type="info" uib-tooltip="Still available ({{ticketCategory.notSoldTickets}})">{{ticketCategory.notSoldTickets}}</uib-bar>
-                                        <uib-bar ng-if="!ticketCategory.bounded" value="event.dynamicAllocation" type="default" uib-tooltip="Dynamically allocated ({{event.dynamicAllocation}})">{{event.dynamicAllocation}}</uib-bar>
+                                    <uib-progress max="getActualCapacity(ticketCategory, event)" uib-tooltip-template="'categoryStats.html'" tooltip-popup-close-delay="500">
+                                        <uib-bar value="ticketCategory.checkedInTickets" type="success"><span>{{ticketCategory.checkedInTickets}}</span></uib-bar>
+                                        <uib-bar value="ticketCategory.soldTickets" type="warning"><span>{{ticketCategory.soldTickets}}</span></uib-bar>
+                                        <uib-bar value="ticketCategory.pendingTickets" type="info" class="slice-pending">{{ticketCategory.pendingTickets}}</uib-bar>
+                                        <uib-bar value="ticketCategory.notSoldTickets" type="info">{{ticketCategory.notSoldTickets}}</uib-bar>
+                                        <uib-bar ng-if="!ticketCategory.bounded" value="event.dynamicAllocation" type="default">{{event.dynamicAllocation}}</uib-bar>
                                     </uib-progress>
                                 </div>
                                 <div class="col-xs-12 col-md-5">
