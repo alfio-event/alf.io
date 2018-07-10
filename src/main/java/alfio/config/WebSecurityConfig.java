@@ -105,12 +105,7 @@ public class WebSecurityConfig {
 
         @Override
         protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
-            String apiKey = request.getHeader("Authorization");
-            if (apiKey != null && apiKey.toLowerCase(Locale.ENGLISH).startsWith("token ")) {
-                return apiKey.substring("token ".length());
-            } else {
-                return null;
-            }
+            return isTokenAuthentication(request) ? request.getHeader("Authorization").substring("token ".length()) : null;
         }
 
         @Override
@@ -186,9 +181,7 @@ public class WebSecurityConfig {
             });
 
 
-            http.requestMatcher(request ->
-                request.getHeader("Authorization") != null &&
-                    request.getHeader("Authorization").toLowerCase(Locale.ENGLISH).startsWith("token "))
+            http.requestMatcher(WebSecurityConfig::isTokenAuthentication)
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and().csrf().disable()
                 .authorizeRequests()
@@ -202,6 +195,11 @@ public class WebSecurityConfig {
                 .antMatchers("/**").authenticated()
                 .and().addFilter(filter);
         }
+    }
+
+    private static boolean isTokenAuthentication(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("token ");
     }
 
     /**
