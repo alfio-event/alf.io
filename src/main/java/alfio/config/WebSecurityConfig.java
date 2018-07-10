@@ -169,7 +169,7 @@ public class WebSecurityConfig {
                 if (!user.isEnabled()) {
                     throw new DisabledException("Api key " + apiKey + " is disabled");
                 }
-                if (User.Type.API_KEY != userRepository.getTypeById(user.getId())) {
+                if (User.Type.API_KEY != user.getType()) {
                     throw new WrongAccountTypeException("Wrong account type for username " + apiKey);
                 }
 

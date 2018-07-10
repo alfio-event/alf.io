@@ -79,7 +79,4 @@ public interface UserRepository {
 
     @Query("select id from ba_user where user_type = :type and enabled = true and user_creation_time < :date")
     List<Integer> findUserToDisableOlderThan(@Bind("date") Date date, @Bind("type") User.Type type);
-
-    @Query("select user_type from ba_user where id = :id")
-    User.Type getTypeById(@Bind("id") int id);
 }

@@ -37,7 +37,7 @@
 
         function loadUsers() {
             self.loading = true;
-            UserService.getAllUsers().then(function(result) {
+            UserService.getAllUsers().filter(function(user) {user.type !== 'API_KEY'}).then(function(result) {
                 ctrl.users = _.sortByOrder(result.data, ['enabled','username'], [false, true]);
                 ctrl.organizations = _.chain(result.data)
                     .map('memberOf')

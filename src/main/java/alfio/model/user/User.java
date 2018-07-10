@@ -34,6 +34,7 @@ public class User implements Serializable {
     private final String lastName;
     private final String emailAddress;
     private final boolean enabled;
+    private final Type type;
 
 
     public User(@Column("id") int id,
@@ -41,12 +42,14 @@ public class User implements Serializable {
                 @Column("first_name") String firstName,
                 @Column("last_name") String lastName,
                 @Column("email_address") String emailAddress,
-                @Column("enabled") boolean enabled) {
+                @Column("enabled") boolean enabled,
+                @Column("user_type") Type type) {
         this.id = id;
         this.username = username;
         this.firstName = firstName;
         this.lastName = lastName;
         this.emailAddress = emailAddress;
         this.enabled=enabled;
+        this.type = type;
     }
 }
