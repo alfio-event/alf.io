@@ -51,13 +51,13 @@
             })
             .state('users', {
                 url: "/users/",
-                template: "<users></users>"
+                template: "<users data-title='Users' type='user'></users>"
             })
             .state('users.new', {
                 url: "new",
                 views: {
                     "editUser": {
-                        template: "<user-edit type='new'></user-edit>"
+                        template: "<user-edit type='new' for='user'></user-edit>"
                     }
                 }
             })
@@ -65,7 +65,29 @@
                 url: ":userId/edit",
                 views: {
                     "editUser": {
-                        template: "<user-edit type='edit' user-id='$ctrl.$state.params.userId'></user-edit>",
+                        template: "<user-edit type='edit' for='user' user-id='$ctrl.$state.params.userId'></user-edit>",
+                        controller: ['$state', function($state) {this.$state = $state;}],
+                        controllerAs: '$ctrl'
+                    }
+                }
+            })
+            .state('apikey', {
+                url: "/api-keys/",
+                template: "<users data-title='Api key' type='apikey'></users>"
+            })
+            .state('apikey.new', {
+                url: "new",
+                views: {
+                    "editUser": {
+                        template: "<user-edit type='new' for='apikey'></user-edit>"
+                    }
+                }
+            })
+            .state('apikey.edit', {
+                url: ":userId/edit",
+                views: {
+                    "editUser": {
+                        template: "<user-edit type='edit' for='apikey' user-id='$ctrl.$state.params.userId'></user-edit>",
                         controller: ['$state', function($state) {this.$state = $state;}],
                         controllerAs: '$ctrl'
                     }

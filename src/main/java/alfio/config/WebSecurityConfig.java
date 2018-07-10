@@ -21,21 +21,31 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.Role;
 import alfio.model.user.User;
+import alfio.repository.user.AuthorityRepository;
+import alfio.repository.user.UserRepository;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -49,8 +59,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Locale;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
@@ -88,12 +105,116 @@ public class WebSecurityConfig {
         }
     }
 
+    private static class APIKeyAuthFilter extends AbstractPreAuthenticatedProcessingFilter {
+
+        @Override
+        protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
+            return isTokenAuthentication(request) ? request.getHeader("Authorization").substring("token ".length()) : null;
+        }
+
+        @Override
+        protected Object getPreAuthenticatedCredentials(HttpServletRequest request) {
+            return "N/A";
+        }
+    }
+
+
+    public static class APITokenAuthentication extends AbstractAuthenticationToken {
+
+        private Object credentials;
+        private final Object principal;
+
+
+        public APITokenAuthentication(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
+            super(authorities);
+            this.credentials = credentials;
+            this.principal = principal;
+            setAuthenticated(true);
+        }
+
+        @Override
+        public Object getCredentials() {
+            return credentials;
+        }
+
+        @Override
+        public Object getPrincipal() {
+            return principal;
+        }
+    }
+
+    public static class WrongAccountTypeException extends AccountStatusException {
+
+        public WrongAccountTypeException(String msg) {
+            super(msg);
+        }
+    }
+
+    @Configuration
+    @Order(0)
+    public static class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
+
+        @Autowired
+        private UserRepository userRepository;
+
+        @Autowired
+        private AuthorityRepository authorityRepository;
+
+        //https://stackoverflow.com/a/48448901
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+
+            APIKeyAuthFilter filter = new APIKeyAuthFilter();
+            filter.setAuthenticationManager(authentication -> {
+                //
+                String apiKey = (String) authentication.getPrincipal();
+                //check if user type ->
+                User user = userRepository.findByUsername(apiKey).orElseThrow(() -> new BadCredentialsException("Api key " + apiKey + " don't exists"));
+                if (!user.isEnabled()) {
+                    throw new DisabledException("Api key " + apiKey + " is disabled");
+                }
+                if (User.Type.API_KEY != user.getType()) {
+                    throw new WrongAccountTypeException("Wrong account type for username " + apiKey);
+                }
+                if (!user.isCurrentlyValid(ZonedDateTime.now(ZoneId.of("UTC")))) {
+                    throw new DisabledException("Api key " + apiKey + " is expired");
+                }
+
+                APITokenAuthentication auth = new APITokenAuthentication(
+                    authentication.getPrincipal(),
+                    authentication.getCredentials(),
+                    authorityRepository.findRoles(apiKey).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
+                return auth;
+            });
+
+
+            http.requestMatcher(WebSecurityConfig::isTokenAuthentication)
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and().csrf().disable()
+                .authorizeRequests()
+                .antMatchers(ADMIN_PUBLIC_API + "/**").hasRole(API_CLIENT)
+                .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
+                .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
+                .antMatchers(ADMIN_API + "/user-type").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
+                .antMatchers(ADMIN_API + "/**").denyAll()
+                .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
+                .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR)
+                .antMatchers("/**").authenticated()
+                .and().addFilter(filter);
+        }
+    }
+
+    private static boolean isTokenAuthentication(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("token ");
+    }
+
     /**
      * Basic auth configuration for Public APIs.
      * The rules are valid only if the Authorization header is present and if the context path starts with /api/v1/admin
      */
     @Configuration
-    @Order(0)
+    @Order(1)
     public static class APIBasicAuthWebSecurity extends BaseWebSecurity {
 
         @Override
@@ -113,7 +234,7 @@ public class WebSecurityConfig {
      * FormBasedWebSecurity rules.
      */
     @Configuration
-    @Order(1)
+    @Order(2)
     public static class BasicAuthWebSecurity extends BaseWebSecurity {
 
         @Override
@@ -136,7 +257,7 @@ public class WebSecurityConfig {
      * Default form based configuration.
      */
     @Configuration
-    @Order(2)
+    @Order(3)
     public static class FormBasedWebSecurity extends BaseWebSecurity {
 
         @Autowired
@@ -300,7 +421,7 @@ public class WebSecurityConfig {
                     String username = req.getParameter("username");
                     if(!userManager.usernameExists(username)) {
                         int orgId = userManager.createOrganization(username, "Demo organization", username);
-                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"));
+                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null);
                     }
                 }
 

@@ -6,7 +6,8 @@
         templateUrl: '../resources/js/admin/feature/user-edit/user-edit.html',
         bindings: {
             userId: '<',
-            type:'@'
+            type:'@',
+            for:'@'
         },
         require: {
             usersCtrl: '^?users'
@@ -22,6 +23,9 @@
 
         ctrl.$onInit = function() {
             ctrl.user = {};
+            if (ctrl.for === 'apikey') {
+                ctrl.user.type = 'API_KEY';
+            }
             ctrl.organizations = [];
             ctrl.roles = [];
 
@@ -56,7 +60,7 @@
 
             ValidationService.validationPerformer($q, UserService.checkUser, user, form).then(function() {
                 UserService.editUser(user).success(function(user) {
-                    if(angular.isDefined(user.password)) {
+                    if(angular.isDefined(user.password) && ctrl.for !== 'apikey') {
                         UserService.showUserData(user).then(function() {
                             successFn();
                         });

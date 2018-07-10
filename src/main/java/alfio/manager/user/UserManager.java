@@ -30,11 +30,13 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.omg.CORBA.INTERNAL;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -183,14 +185,26 @@ public class UserManager {
 
     @Transactional
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType) {
-        String userPassword = PasswordGenerator.generateRandomPassword();
-        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, userPassword);
+        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, null);
     }
 
     @Transactional
-    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, String userPassword) {
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, ZonedDateTime validTo) {
+        if (userType == User.Type.API_KEY) {
+            username = UUID.randomUUID().toString();
+            firstName = "apikey";
+            lastName = "";
+            emailAddress = "";
+        }
+
+        String userPassword = PasswordGenerator.generateRandomPassword();
+        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, userPassword, validTo);
+    }
+
+    @Transactional
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, String userPassword, ZonedDateTime validTo) {
         Organization organization = organizationRepository.getById(organizationId);
-        AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true, userType);
+        AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true, userType, validTo);
         userOrganizationRepository.create(result.getKey(), organization.getId());
         authorityRepository.create(username, role.getRoleName());
         return new UserWithPassword(userRepository.findById(result.getKey()), userPassword, UUID.randomUUID().toString());

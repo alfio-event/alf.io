@@ -32,6 +32,9 @@ public interface AuthorityRepository {
     @Query("SELECT * from authority where username = :username")
     List<Authority> findGrantedAuthorities(@Bind("username") String username);
 
+    @Query("SELECT role from authority where username = :username order by role")
+    List<String> findRoles(@Bind("username") String username);
+
     @Query("INSERT INTO authority(username, role) VALUES (:username, :role)")
     int create(@Bind("username") String username, @Bind("role") String role);
 
