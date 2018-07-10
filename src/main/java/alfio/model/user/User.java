@@ -25,7 +25,7 @@ import java.io.Serializable;
 public class User implements Serializable {
 
     public enum Type {
-        INTERNAL, DEMO
+        INTERNAL, DEMO, API_KEY
     }
 
     private final int id;
