@@ -40,6 +40,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
+import alfio.model.whitelist.WhitelistConfiguration;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
@@ -121,6 +122,7 @@ public class TicketReservationManager {
     private final UserRepository userRepository;
     private final ExtensionManager extensionManager;
     private final TicketSearchRepository ticketSearchRepository;
+    private final WhitelistManager whitelistManager;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -160,7 +162,8 @@ public class TicketReservationManager {
                                     InvoiceSequencesRepository invoiceSequencesRepository,
                                     AuditingRepository auditingRepository,
                                     UserRepository userRepository,
-                                    ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository) {
+                                    ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository,
+                                    WhitelistManager whitelistManager) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -186,6 +189,7 @@ public class TicketReservationManager {
         this.userRepository = userRepository;
         this.extensionManager = extensionManager;
         this.ticketSearchRepository = ticketSearchRepository;
+        this.whitelistManager = whitelistManager;
     }
     
     /**
@@ -344,6 +348,12 @@ public class TicketReservationManager {
                                  boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus,
                                  boolean tcAccepted, boolean privacyPolicyAccepted) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
+
+        if(!acquireWhitelistItems(reservationId, event)) {
+            whitelistManager.deleteWhitelistedTicketsForReservation(reservationId);
+            return PaymentResult.unsuccessful("error.STEP2_WHITELIST");
+        }
+
         if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, customerName, userLanguage, billingAddress, customerReference)) {
             return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
         }
@@ -429,6 +439,20 @@ public class TicketReservationManager {
                 log.debug(String.format("unable to flag the reservation %s as IN_PAYMENT", reservationId), e);
                 return false;
             }
+        }
+        return true;
+    }
+
+    private boolean acquireWhitelistItems(String reservationId, Event event) {
+        int eventId = event.getId();
+        List<WhitelistConfiguration> whitelistConfigurations = whitelistManager.getConfigurationsForEvent(eventId);
+        if(!whitelistConfigurations.isEmpty()) {
+            return requiresNewTransactionTemplate.execute(status ->
+                ticketRepository.findTicketsInReservation(reservationId)
+                    .stream()
+                    .filter(ticket -> whitelistConfigurations.stream().anyMatch(c -> c.getTicketCategoryId() == null || c.getTicketCategoryId().equals(ticket.getCategoryId())))
+                    .map(whitelistManager::acquireItemForTicket)
+                    .reduce(true, Boolean::logicalAnd));
         }
         return true;
     }
@@ -665,11 +689,26 @@ public class TicketReservationManager {
                               String userLanguage, String billingAddress, String customerReference, int eventId) {
         Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
         int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
-        Map<Integer, Ticket> postUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
 
+        List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
+        Map<Integer, Ticket> postUpdateTicket = ticketsInReservation.stream().collect(toMap(Ticket::getId, Function.identity()));
         postUpdateTicket.forEach((id, ticket) -> {
             auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), eventId);
         });
+
+        Set<Integer> categoriesId = ticketsInReservation.stream().map(Ticket::getCategoryId).collect(Collectors.toSet());
+
+        List<Integer> whitelistedTickets = whitelistManager.getConfigurationsForEvent(eventId).stream()
+            .filter(conf -> conf.getTicketCategoryId() == null || categoriesId.contains(conf.getTicketCategoryId()))
+            .flatMap(conf -> ticketsInReservation.stream().filter(t -> conf.getTicketCategoryId() == null || conf.getTicketCategoryId().equals(t.getCategoryId())))
+            .map(Ticket::getId)
+            .distinct()
+            .collect(Collectors.toList());
+
+        if(!whitelistedTickets.isEmpty()) {
+            ticketRepository.forbidReassignment(whitelistedTickets);
+        }
+
 
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
@@ -976,6 +1015,7 @@ public class TicketReservationManager {
         int updatedTickets = ticketRepository.findTicketsInReservation(reservationId).stream().mapToInt(t -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), t.getId())).sum();
         Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
         waitingQueueManager.fireReservationExpired(reservationId);
+        whitelistManager.deleteWhitelistedTicketsForReservation(reservationId);
         deleteReservation(event, reservationId, expired);
         auditingRepository.insert(reservationId, null, event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
@@ -1051,6 +1091,11 @@ public class TicketReservationManager {
                                   Optional<UserDetails> userDetails) {
 
         Ticket preUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
+        if(preUpdateTicket.getLockedAssignment()) {
+            log.warn("trying to update assignee for a locked ticket ({})", preUpdateTicket.getId());
+            return;
+        }
+
         Map<String, String> preUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
 
         String newEmail = updateTicketOwner.getEmail().trim();

@@ -129,13 +129,16 @@ public class WhitelistManagerIntegrationTest {
             Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
         Ticket ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertTrue("cannot confirm ticket", whitelistManager.confirmTicket("test@test.ch", event.getId(), categoryId, ticket.getId()));
+        ticketRepository.updateTicketOwnerById(ticket.getId(), "test@test.ch", "This is a Test", "This is", "a Test");
+
+        ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
+        assertTrue("cannot confirm ticket", whitelistManager.acquireItemForTicket(ticket));
 
         reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.empty())),
             Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertFalse("shouldn't be allowed", whitelistManager.confirmTicket("test@test.ch", event.getId(), categoryId, ticket.getId()));
+        assertFalse("shouldn't be allowed", whitelistManager.acquireItemForTicket(ticket));
 
     }
 }
