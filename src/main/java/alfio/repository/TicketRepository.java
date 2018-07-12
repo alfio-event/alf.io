@@ -146,6 +146,9 @@ public interface TicketRepository {
     @Query("update ticket set locked_assignment = :lockedAssignment where id = :id and category_id = :categoryId")
     int toggleTicketLocking(@Bind("id") int ticketId, @Bind("categoryId") int categoryId, @Bind("lockedAssignment") boolean locked);
 
+    @Query("update ticket set locked_assignment = :lockedAssignment where id in (:ids)")
+    int forbidReassignment(@Bind("ids") List<Integer> ticketIds);
+
     @Query("update ticket set ext_reference = :extReference, locked_assignment = :lockedAssignment where id = :id and category_id = :categoryId")
     int updateExternalReferenceAndLocking(@Bind("id") int ticketId, @Bind("categoryId") int categoryId, @Bind("extReference") String extReference, @Bind("lockedAssignment") boolean locked);
     

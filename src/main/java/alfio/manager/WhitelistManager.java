@@ -16,14 +16,19 @@
  */
 package alfio.manager;
 
+import alfio.model.Audit;
+import alfio.model.Ticket;
 import alfio.model.modification.WhitelistItemModification;
 import alfio.model.whitelist.Whitelist;
 import alfio.model.whitelist.WhitelistConfiguration;
 import alfio.model.whitelist.WhitelistItem;
 import alfio.model.whitelist.WhitelistedTicket;
+import alfio.repository.AuditingRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.WhitelistRepository;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -31,18 +36,21 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.Collections.singletonList;
 
 @AllArgsConstructor
 @Transactional
 @Component
+@Log4j2
 public class WhitelistManager {
 
     private final WhitelistRepository whitelistRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final TicketRepository ticketRepository;
+    private final AuditingRepository auditingRepository;
 
     public Whitelist createNew(String name, String description, int organizationId) {
         AffectedRowCountAndKey<Integer> insert = whitelistRepository.insert(name, description, organizationId);
@@ -73,6 +81,10 @@ public class WhitelistManager {
         return whitelistRepository.findItemByValueExactMatch(configuration.getId(), configuration.getWhitelistId(), StringUtils.trim(value)).isPresent();
     }
 
+    public List<WhitelistConfiguration> getConfigurationsForEvent(int eventId) {
+        return whitelistRepository.findActiveConfigurationsForEvent(eventId);
+    }
+
     private List<WhitelistConfiguration> findConfigurations(int eventId, int categoryId) {
         return whitelistRepository.findActiveConfigurationsFor(eventId, categoryId);
     }
@@ -84,13 +96,13 @@ public class WhitelistManager {
         return Arrays.stream(jdbcTemplate.batchUpdate(whitelistRepository.insertItemTemplate(), params)).sum();
     }
 
-    public boolean confirmTicket(String value, int eventId, int categoryId, int ticketId) {
-        List<WhitelistConfiguration> configurations = findConfigurations(eventId, categoryId);
+    public boolean acquireItemForTicket(Ticket ticket) {
+        List<WhitelistConfiguration> configurations = findConfigurations(ticket.getEventId(), ticket.getCategoryId());
         if(CollectionUtils.isEmpty(configurations)) {
             return true;
         }
         WhitelistConfiguration configuration = configurations.get(0);
-        Optional<WhitelistItem> optionalItem = whitelistRepository.findItemByValueExactMatch(configuration.getId(), configuration.getWhitelistId(), StringUtils.trim(value));
+        Optional<WhitelistItem> optionalItem = whitelistRepository.findItemByValueExactMatch(configuration.getId(), configuration.getWhitelistId(), StringUtils.trim(ticket.getEmail()));
         if(!optionalItem.isPresent()) {
             return false;
         }
@@ -104,7 +116,20 @@ public class WhitelistManager {
                 return false;
             }
         }
-        whitelistRepository.insertWhitelistedTicket(item.getId(), configuration.getId(), ticketId, preventDuplication ? true : null);
+        whitelistRepository.insertWhitelistedTicket(item.getId(), configuration.getId(), ticket.getId(), preventDuplication ? true : null);
+        Map<String, Object> modifications = new HashMap<>();
+        modifications.put("itemId", item.getId());
+        modifications.put("configurationId", configuration.getId());
+        modifications.put("ticketId", ticket.getId());
+        auditingRepository.insert(ticket.getTicketsReservationId(), null, ticket.getEventId(), Audit.EventType.WHITELIST_ITEM_ACQUIRED, new Date(), Audit.EntityType.TICKET, ticket.getUuid(), singletonList(modifications));
         return true;
+    }
+
+    public void deleteWhitelistedTicketsForReservation(String reservationId) {
+        List<Integer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
+        if(!tickets.isEmpty()) {
+            int result = whitelistRepository.deleteExistingWhitelistedTickets(tickets);
+            log.trace("deleted {} whitelisted tickets for reservation {}", result, reservationId);
+        }
     }
 }

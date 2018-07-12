@@ -51,7 +51,8 @@ public class Audit {
         TERMS_CONDITION_ACCEPTED,
         PRIVACY_POLICY_ACCEPTED,
         VAT_VALIDATION_SUCCESSFUL,
-        VAT_FORMAL_VALIDATION_SUCCESSFUL
+        VAT_FORMAL_VALIDATION_SUCCESSFUL,
+        WHITELIST_ITEM_ACQUIRED
     }
 
     private final String reservationId;
