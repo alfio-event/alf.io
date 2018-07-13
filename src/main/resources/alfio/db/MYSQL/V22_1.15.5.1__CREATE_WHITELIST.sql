@@ -21,9 +21,8 @@ create table whitelist (
     description varchar(2048),
     organization_id_fk integer not null
 );
-
-alter table whitelist add constraint "whitelist_org_id_fk" foreign key(organization_id_fk) references organization(id);
-alter table whitelist add constraint "whitelist_unique_name_org_id" unique(name, organization_id_fk);
+alter table whitelist add foreign key whitelist_org_id_fk (organization_id_fk) references organization(id);
+alter table whitelist add constraint whitelist_unique_name_org_id unique(name, organization_id_fk);
 
 create table whitelist_item (
     id integer auto_increment primary key not null,
@@ -32,8 +31,8 @@ create table whitelist_item (
     description varchar(2048)
 );
 
-alter table whitelist_item add constraint "whitelisted_attendee_whitelist_id_fk" foreign key(whitelist_id_fk) references whitelist(id);
-alter table whitelist_item add constraint "whitelisted_attendee_unique_value" unique(whitelist_id_fk, value);
+alter table whitelist_item add foreign key whitelisted_attendee_whitelist_id_fk (whitelist_id_fk) references whitelist(id);
+alter table whitelist_item add constraint whitelisted_attendee_unique_value unique(whitelist_id_fk, value);
 
 create table whitelist_configuration (
     id integer auto_increment primary key not null,
@@ -44,9 +43,9 @@ create table whitelist_configuration (
     match_type varchar(255)
 );
 
-alter table whitelist_configuration add constraint "whitelist_configuration_whitelist_id_fk" foreign key(whitelist_id_fk) references whitelist(id);
-alter table whitelist_configuration add constraint "whitelist_configuration_event_id_fk" foreign key(event_id_fk) references event(id);
-alter table whitelist_configuration add constraint "whitelist_configuration_ticket_category_id_fk" foreign key(ticket_category_id_fk) references ticket_category(id);
+alter table whitelist_configuration add foreign key whitelist_configuration_whitelist_id_fk (whitelist_id_fk) references whitelist(id);
+alter table whitelist_configuration add foreign key whitelist_configuration_event_id_fk (event_id_fk) references event(id);
+alter table whitelist_configuration add foreign key whitelist_configuration_ticket_category_id_fk (ticket_category_id_fk) references ticket_category(id);
 
 create table whitelisted_ticket (
     whitelist_item_id_fk integer not null,
@@ -55,7 +54,7 @@ create table whitelisted_ticket (
     requires_unique_value boolean
 );
 
-alter table whitelisted_ticket add constraint "whitelisted_ticket_whitelist_item_id_fk" foreign key(whitelist_item_id_fk) references whitelist_item(id);
-alter table whitelisted_ticket add constraint "whitelisted_ticket_whitelist_configuration_id_fk" foreign key(whitelist_configuration_id_fk) references whitelist_configuration(id);
-alter table whitelisted_ticket add constraint "whitelisted_ticket_ticket_id_fk" foreign key(ticket_id_fk) references ticket(id);
-alter table whitelisted_ticket add constraint "whitelisted_ticket_unique_item_id" unique(whitelist_item_id_fk, whitelist_configuration_id_fk, requires_unique_value);
+alter table whitelisted_ticket add foreign key whitelisted_ticket_whitelist_item_id_fk (whitelist_item_id_fk) references whitelist_item(id);
+alter table whitelisted_ticket add foreign key whitelisted_ticket_whitelist_configuration_id_fk (whitelist_configuration_id_fk) references whitelist_configuration(id);
+alter table whitelisted_ticket add foreign key whitelisted_ticket_ticket_id_fk (ticket_id_fk) references ticket(id);
+alter table whitelisted_ticket add constraint whitelisted_ticket_unique_item_id unique(whitelist_item_id_fk, whitelist_configuration_id_fk, requires_unique_value);
