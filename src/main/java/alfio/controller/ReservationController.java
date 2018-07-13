@@ -40,6 +40,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import alfio.util.Validator.AdvancedTicketAssignmentValidator;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
@@ -67,6 +68,7 @@ import java.util.stream.Collectors;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 @Controller
 @Log4j2
@@ -90,6 +92,7 @@ public class ReservationController {
     private final MollieManager mollieManager;
     private final RecaptchaService recaptchaService;
     private final TicketReservationRepository ticketReservationRepository;
+    private final WhitelistManager whitelistManager;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
     public String showPaymentPage(@PathVariable("eventName") String eventName,
@@ -455,7 +458,10 @@ public class ReservationController {
             if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
                 bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
             }
-            paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()), new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId));
+            Map<String, Integer> categories = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getUuid, Ticket::getCategoryId));
+            AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId),
+                new WhitelistManager.WhitelistValidator(event.getId(), whitelistManager));
+            paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()), advancedValidator, categories);
             if (bindingResult.hasErrors()) {
                 ticketReservationRepository.updateTicketReservation(reservationId, ticketReservation.getStatus().name(), paymentForm.getEmail(),
                     paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), locale.getLanguage(), paymentForm.getBillingAddress(), null, null, paymentForm.getCustomerReference());
