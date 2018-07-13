@@ -773,7 +773,7 @@
 
 
         $scope.getActualCapacity = function(category, event) {
-            return category.bounded ? category.maxTickets : (event.dynamicAllocation + category.checkedInTickets + category.soldTickets);
+            return category.bounded ? category.maxTickets : (event.dynamicAllocation + category.checkedInTickets + category.soldTickets + category.pendingTickets);
         };
 
         $scope.isTokenViewCollapsed = function(category) {
