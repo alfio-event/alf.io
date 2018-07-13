@@ -16,13 +16,13 @@
  */
 package alfio.controller.form;
 
-import alfio.manager.EuVatChecker;
 import alfio.manager.PaypalManager;
 import alfio.model.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ErrorsCode;
 import alfio.util.Validator;
+import alfio.util.Validator.AdvancedTicketAssignmentValidator;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
@@ -82,7 +82,9 @@ public class PaymentForm implements Serializable {
     }
 
     public void validate(BindingResult bindingResult, TotalPrice reservationCost, Event event,
-                         List<TicketFieldConfiguration> fieldConf, EuVatChecker.SameCountryValidator vatValidator) {
+                         List<TicketFieldConfiguration> fieldConf,
+                         AdvancedTicketAssignmentValidator advancedValidator,
+                         Map<String, Integer> ticketCategories) {
 
         List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
 
@@ -141,7 +143,7 @@ public class PaymentForm implements Serializable {
             Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                 .filter(m -> !m.isEmpty())
                 .map(m -> m.entrySet().stream().map(e -> Validator.validateTicketAssignment(e.getValue(),
-                    fieldConf, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator)))
+                    fieldConf, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", advancedValidator, ticketCategories.get(e.getKey()))))
                 .map(s -> s.collect(Collectors.toList()));
 
             boolean success = validationResults

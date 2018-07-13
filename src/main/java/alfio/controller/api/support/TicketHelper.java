@@ -22,6 +22,7 @@ import alfio.manager.EuVatChecker;
 import alfio.manager.EuVatChecker.SameCountryValidator;
 import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.WhitelistManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
 import alfio.model.result.ValidationResult;
@@ -35,12 +36,11 @@ import alfio.util.EventUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.Validator;
+import alfio.util.Validator.AdvancedTicketAssignmentValidator;
 import lombok.AllArgsConstructor;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.Model;
@@ -53,8 +53,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
 
 @Component
 @AllArgsConstructor
@@ -71,6 +69,7 @@ public class TicketHelper {
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final EuVatChecker vatChecker;
+    private final WhitelistManager whitelistManager;
 
 
     public List<TicketFieldConfigurationDescriptionAndValue> findTicketFieldConfigurationAndValue(Ticket ticket) {
@@ -114,7 +113,10 @@ public class TicketHelper {
 
         final TicketReservation ticketReservation = result.getMiddle();
         List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event, formPrefix, new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), ticketReservation.getId()))
+        AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), ticketReservation.getId()),
+            new WhitelistManager.WhitelistValidator(event.getId(), whitelistManager));
+
+        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event, formPrefix, advancedValidator, t.getCategoryId())
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, request, t, event, ticketReservation, userDetails));
         return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
     }

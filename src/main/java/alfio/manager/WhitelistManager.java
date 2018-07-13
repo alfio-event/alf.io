@@ -28,6 +28,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.WhitelistRepository;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -37,6 +38,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonList;
@@ -131,5 +133,23 @@ public class WhitelistManager {
             int result = whitelistRepository.deleteExistingWhitelistedTickets(tickets);
             log.trace("deleted {} whitelisted tickets for reservation {}", result, reservationId);
         }
+    }
+
+    @RequiredArgsConstructor
+    public static class WhitelistValidator implements Predicate<WhitelistValidationItem> {
+
+        private final int eventId;
+        private final WhitelistManager whitelistManager;
+
+        @Override
+        public boolean test(WhitelistValidationItem item) {
+            return whitelistManager.isAllowed(item.value, eventId, item.categoryId);
+        }
+    }
+
+    @RequiredArgsConstructor
+    public static class WhitelistValidationItem {
+        private final int categoryId;
+        private final String value;
     }
 }
