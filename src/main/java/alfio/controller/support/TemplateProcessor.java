@@ -36,9 +36,6 @@ import org.springframework.core.io.ClassPathResource;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLStreamHandler;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
@@ -106,6 +103,7 @@ public final class TemplateProcessor {
         builder.usePDDocument(doc);
         builder.toStream(os);
         builder.useProtocolsStreamImplementation(new AlfioInternalFSStreamFactory(), "alfio-internal");
+        builder.useProtocolsStreamImplementation(new InvalidProtocolFSStreamFactory(), "http", "https", "file", "jar");
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(Jsoup.parse(page)), "");
         PdfBoxRenderer renderer = builder.buildPdfRenderer();
         try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream()) {
@@ -141,6 +139,20 @@ public final class TemplateProcessor {
                     return new InputStreamReader(getStream(), StandardCharsets.UTF_8);
                 }
             };
+        }
+    }
+
+    private static class InvalidProtocolFSStreamFactory implements FSStreamFactory {
+
+        @Override
+        public FSStream getUrl(String url) {
+            throw new IllegalStateException(new TemplateAccessException("Protocol for resource '" + url + "' is not supported"));
+        }
+    }
+
+    public static class TemplateAccessException  extends IllegalStateException {
+        TemplateAccessException(String message) {
+            super(message);
         }
     }
 

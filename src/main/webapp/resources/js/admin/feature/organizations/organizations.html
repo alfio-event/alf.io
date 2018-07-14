@@ -15,7 +15,7 @@
         </thead>
         <tbody>
             <tr ng-if="!$ctrl.organizations || $ctrl.organizations.length == 0">
-                <td colspan="4">no organizations have been found. <a data-ui-sref="index.new-organization">Insert a new one</a></td>
+                <td colspan="4">no organizations have been found. <a data-ui-sref="organizations.new">Insert a new one</a></td>
             </tr>
             <tr ng-repeat="organization in $ctrl.organizations">
                 <td>{{organization.name}}</td>
