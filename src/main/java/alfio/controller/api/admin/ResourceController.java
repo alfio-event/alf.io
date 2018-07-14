@@ -105,7 +105,7 @@ public class ResourceController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleSyntaxError(Exception ex) {
         Optional<String> cause = Optional.ofNullable(ex.getCause())
-            .filter(MustacheException.class::isInstance)
+            .filter(e -> MustacheException.class.isInstance(e) || TemplateProcessor.TemplateAccessException.class.isInstance(e))
             .map(Throwable::getMessage);
         return cause.orElse("Something went wrong. Please check the syntax and retry");
     }
@@ -155,10 +155,12 @@ public class ResourceController {
                     StreamUtils.copy(renderedTemplate,StandardCharsets.UTF_8, os);
                 }
             } else if ("application/pdf".equals(name.getRenderedContentType())) {
-                response.setContentType("application/pdf");
-                response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".pdf");
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                TemplateProcessor.prepareItextRenderer(renderedTemplate).createPDF(baos);
                 try (OutputStream os = response.getOutputStream()) {
-                    TemplateProcessor.prepareItextRenderer(renderedTemplate).createPDF(os);
+                    response.setContentType("application/pdf");
+                    response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".pdf");
+                    os.write(baos.toByteArray());
                 }
             } else {
                 throw new IllegalStateException("cannot enter here!");
