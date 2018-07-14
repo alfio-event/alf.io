@@ -44,9 +44,15 @@ angular.module('adminApplication').service('ResourceService', function($http, $q
                 var fileUrl = URL.createObjectURL(finalFile);
 
                 var a = document.createElement('a');
+                //for FF, we must append the element: https://stackoverflow.com/a/32226068
+                document.body.appendChild(a);
                 a.href = fileUrl;
                 a.download = fileName;
                 a.click();
+                setTimeout(function(){
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
 
                 return {download: true}
             });
