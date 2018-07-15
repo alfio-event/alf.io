@@ -1,0 +1,17 @@
+<table class="table table-hover" ng-if="!$ctrl.loading">
+    <thead>
+        <tr>
+            <th width="40%">Name</th>
+            <th width="50%">Description</th>
+            <th width="10%">&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr ng-repeat="list in $ctrl.lists">
+            <td ng-bind="list.name"></td>
+            <td ng-bind="list.description"></td>
+            <td><a class="btn btn-default btn-sm" ui-sref="attendee-list({listId: list.id, orgId: $ctrl.organizationId})">edit</a></td>
+        </tr>
+    </tbody>
+</table>
+<a class="btn btn-success pull-right" ui-sref="attendee-list-new({orgId: $ctrl.organizationId})">Add New</a>

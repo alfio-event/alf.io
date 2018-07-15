@@ -1,0 +1,74 @@
+<div class="page-header">
+    <h2><span ng-if="!$ctrl.createNew">Edit</span><span ng-if="$ctrl.createNew">Create</span> list {{$ctrl.list.name}}</h2>
+</div>
+<form role="form" name="editList" ng-submit="$ctrl.submit(editList)" error-sensitive="editList" novalidate>
+    <div class="row">
+        <div class="col-xs-12 col-sm-6">
+            <div class="form-group">
+                <label for="listName">Name</label>
+                <input class="form-control" id="listName" name="listName" ng-model="$ctrl.list.name" required>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-6">
+            <div class="form-group">
+                <label for="listDescription">Description</label>
+                <input class="form-control" id="listDescription" name="listDescription" ng-model="$ctrl.list.description" required>
+            </div>
+        </div>
+    </div>
+
+<div class="page-header">
+    <h3>Items</h3>
+</div>
+
+
+<ul class="list-group wMarginTop10px" ng-if="$ctrl.list.items.length > 0">
+    <li class="list-group-item" ng-repeat="item in $ctrl.list.items">
+        <div class="list-group-item-text row">
+            <div class="col-xs-12 col-md-6">
+                <div class="form-group">
+                    <label for="item-{{$index}}-emailAddress">E-Mail</label>
+                    <input type="email" class="form-control" id="item-{{$index}}-emailAddress" required name="item-{{$index}}-emailAddress" ng-model="item.value">
+                </div>
+            </div>
+            <div class="col-xs-12 col-md-6">
+                <div class="form-group">
+                    <label for="item-{{$index}}-description">Description</label>
+                    <input type="text" class="form-control" id="item-{{$index}}-description" name="item-{{$index}}-description" ng-model="item.description">
+                </div>
+            </div>
+            <div class="col-xs-12">
+                <div class="pull-right">
+                    <button class="btn btn-sm btn-default" ng-click="$ctrl.removeItem($index)" ng-if="!$first"><i class="fa fa-trash"></i> delete</button>
+                    <button class="btn btn-sm btn-success" ng-click="$ctrl.addItem()" ng-if="$last"><i class="fa fa-plus"></i> add Item</button>
+                </div>
+            </div>
+        </div>
+    </li>
+</ul>
+<div class="text-right">
+    <button type="button" class="btn btn-default" ng-click="$ctrl.toggleUploadCsv()">Upload CSV</button>
+</div>
+
+<div uib-collapse="!$ctrl.uploadCsv">
+    <div class="wMarginTop10px">
+        <h4>File Specifications:</h4>
+        <h5><strong>General</strong></h5>
+        <span>Please create a CSV file without header, using commas (<strong>,</strong>) as separator, double quotes (<strong>"</strong>) as quote character and backslash (<strong>\</strong>) as escaping character</span>
+        <h5><strong>Row specification</strong></h5>
+        <pre>
+            <span class="text-info">email@host.tld</span>,<span class="text-warning">description</span>
+
+            where:
+
+            <span class="text-info">email@host.tld</span> is the allowed email
+            <span class="text-warning">description</span> description, for internal usage
+        </pre>
+    </div>
+
+    <file-upload accept="'text/csv'" read-as-text="true" success-callback="$ctrl.parseFileContent" direct-handling="true"></file-upload>
+</div>
+<hr class="clearfix"/>
+<control-buttons data-form-obj="editList" cancel-handler="$ctrl.reinit" success-text="Save"></control-buttons>
+
+</form>

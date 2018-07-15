@@ -20,18 +20,27 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
-public class WhitelistItemModification {
+public class WhitelistModification {
     private final Integer id;
-    private final String value;
+    private final String name;
     private final String description;
+    private final int organizationId;
+    private final List<WhitelistItemModification> items;
+
 
     @JsonCreator
-    public WhitelistItemModification(@JsonProperty("id") Integer id,
-                                     @JsonProperty("value") String value,
-                                     @JsonProperty("description") String description) {
+    public WhitelistModification(@JsonProperty("id") Integer id,
+                                 @JsonProperty("name") String name,
+                                 @JsonProperty("description") String description,
+                                 @JsonProperty("organizationId") int organizationId,
+                                 @JsonProperty("items") List<WhitelistItemModification> items) {
         this.id = id;
-        this.value = value;
+        this.name = name;
         this.description = description;
+        this.organizationId = organizationId;
+        this.items = items;
     }
 }
