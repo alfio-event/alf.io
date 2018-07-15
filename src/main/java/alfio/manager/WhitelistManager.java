@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.model.Audit;
 import alfio.model.Ticket;
 import alfio.model.modification.WhitelistItemModification;
+import alfio.model.modification.WhitelistModification;
 import alfio.model.whitelist.Whitelist;
 import alfio.model.whitelist.WhitelistConfiguration;
 import alfio.model.whitelist.WhitelistItem;
@@ -54,6 +55,12 @@ public class WhitelistManager {
     private final TicketRepository ticketRepository;
     private final AuditingRepository auditingRepository;
 
+    public int createNew(WhitelistModification input) {
+        Whitelist wl = createNew(input.getName(), input.getDescription(), input.getOrganizationId());
+        insertItems(wl.getId(), input.getItems());
+        return wl.getId();
+    }
+
     public Whitelist createNew(String name, String description, int organizationId) {
         AffectedRowCountAndKey<Integer> insert = whitelistRepository.insert(name, description, organizationId);
         return whitelistRepository.getById(insert.getKey());
@@ -71,6 +78,18 @@ public class WhitelistManager {
 
     public boolean isWhitelistConfiguredFor(int eventId, int categoryId) {
         return CollectionUtils.isNotEmpty(findConfigurations(eventId, categoryId));
+    }
+
+    public List<Whitelist> getAllForOrganization(int organizationId) {
+        return whitelistRepository.getAllForOrganization(organizationId);
+    }
+
+    public Optional<WhitelistModification> loadComplete(int id) {
+        return whitelistRepository.getOptionalById(id)
+            .map(wl -> {
+                List<WhitelistItemModification> items = whitelistRepository.getItems(wl.getId()).stream().map(i -> new WhitelistItemModification(i.getId(), i.getValue(), i.getDescription())).collect(Collectors.toList());
+                return new WhitelistModification(wl.getId(), wl.getName(), wl.getDescription(), wl.getOrganizationId(), items);
+            });
     }
 
     public boolean isAllowed(String value, int eventId, int categoryId) {
