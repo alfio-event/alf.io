@@ -39,7 +39,10 @@
             </thead>
             <tbody>
             <tr ng-repeat="user in ($ctrl.users | orgSelected:$ctrl.selectedOrganization | userEnabled:true)" data-ng-class-even="active">
-                <td><a ui-sref="users.edit({userId:user.id})">{{user.username}}</a></td>
+                <td>
+                    <a ng-if="$ctrl.type === 'user'" ui-sref="users.edit({userId:user.id})">{{user.username}}</a>
+                    <span ng-if="$ctrl.type === 'apikey'">{{user.username}}</span>
+                </td>
                 <td ng-show="$ctrl.type == 'user'">{{user.firstName}} {{user.lastName}}</td>
                 <td><span class="label label-info" ng-repeat="org in user.memberOf">{{org.name}}</span></td>
                 <td class="text-right">
@@ -72,7 +75,10 @@
             </thead>
             <tbody>
             <tr ng-repeat="user in ($ctrl.users | orgSelected:$ctrl.selectedOrganization | userEnabled:false)" data-ng-class-even="active">
-                <td><a ui-sref="users.edit({userId:user.id})">{{user.username}}</a></td>
+                <td>
+                    <a ng-if="$ctrl.type === 'user'" ui-sref="users.edit({userId:user.id})">{{user.username}}</a>
+                    <span ng-if="$ctrl.type === 'apikey'">{{user.username}}</span>
+                </td>
                 <td ng-show="$ctrl.type == 'user'">{{user.firstName}} {{user.lastName}}</td>
                 <td><span class="label label-info" ng-repeat="org in user.memberOf">{{org.name}}</span></td>
                 <td class="text-right">
