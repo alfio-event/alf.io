@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.model.user.User;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -30,6 +31,7 @@ public class UserModification {
     private final String firstName;
     private final String lastName;
     private final String emailAddress;
+    private final User.Type type;
 
     @JsonCreator
     public UserModification(@JsonProperty("id") Integer id,
@@ -38,7 +40,8 @@ public class UserModification {
                             @JsonProperty("username") String username,
                             @JsonProperty("firstName") String firstName,
                             @JsonProperty("lastName") String lastName,
-                            @JsonProperty("emailAddress") String emailAddress) {
+                            @JsonProperty("emailAddress") String emailAddress,
+                            @JsonProperty("type") User.Type type) {
         this.id = id;
         this.organizationId = organizationId;
         this.role = role;
@@ -46,5 +49,6 @@ public class UserModification {
         this.firstName = firstName;
         this.lastName = lastName;
         this.emailAddress = emailAddress;
+        this.type = type;
     }
 }

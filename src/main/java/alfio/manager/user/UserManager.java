@@ -30,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.omg.CORBA.INTERNAL;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -183,6 +184,13 @@ public class UserManager {
 
     @Transactional
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType) {
+        if (userType == User.Type.API_KEY) {
+            username = UUID.randomUUID().toString();
+            firstName = "apikey";
+            lastName = "";
+            emailAddress = "";
+        }
+
         String userPassword = PasswordGenerator.generateRandomPassword();
         return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, userPassword);
     }
