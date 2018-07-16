@@ -117,7 +117,7 @@ public class WhitelistManagerIntegrationTest {
         assertEquals(1, activeConfigurations.size());
         assertEquals(configuration.getId(), activeConfigurations.get(0).getId());
         assertFalse("Whitelist is empty, therefore no value is allowed", whitelistManager.isAllowed("test@test.ch", event.getId(), categoryId));
-        int items = whitelistManager.insertItems(whitelist.getId(), Collections.singletonList(new WhitelistItemModification("test@test.ch", "description")));
+        int items = whitelistManager.insertItems(whitelist.getId(), Collections.singletonList(new WhitelistItemModification(null,"test@test.ch", "description")));
         assertEquals(1, items);
         assertTrue("Value should be allowed", whitelistManager.isAllowed("test@test.ch", event.getId(), categoryId));
 
