@@ -21,6 +21,10 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+
 @Getter
 public class UserModification {
 
@@ -32,6 +36,7 @@ public class UserModification {
     private final String lastName;
     private final String emailAddress;
     private final User.Type type;
+    private final Long validTo;
 
     @JsonCreator
     public UserModification(@JsonProperty("id") Integer id,
@@ -41,7 +46,8 @@ public class UserModification {
                             @JsonProperty("firstName") String firstName,
                             @JsonProperty("lastName") String lastName,
                             @JsonProperty("emailAddress") String emailAddress,
-                            @JsonProperty("type") User.Type type) {
+                            @JsonProperty("type") User.Type type,
+                            @JsonProperty("validTo") Long validTo) {
         this.id = id;
         this.organizationId = organizationId;
         this.role = role;
@@ -50,5 +56,10 @@ public class UserModification {
         this.lastName = lastName;
         this.emailAddress = emailAddress;
         this.type = type;
+        this.validTo = validTo;
+    }
+
+    public ZonedDateTime getValidToAsDateTime() {
+        return validTo == null ? null : ZonedDateTime.ofInstant(Instant.ofEpochSecond(validTo), ZoneId.of("UTC"));
     }
 }

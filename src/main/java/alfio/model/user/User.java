@@ -20,6 +20,8 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 import java.io.Serializable;
+import java.time.ZonedDateTime;
+import java.util.Date;
 
 @Getter
 public class User implements Serializable {
@@ -35,6 +37,7 @@ public class User implements Serializable {
     private final String emailAddress;
     private final boolean enabled;
     private final Type type;
+    private final ZonedDateTime validTo;
 
 
     public User(@Column("id") int id,
@@ -43,7 +46,8 @@ public class User implements Serializable {
                 @Column("last_name") String lastName,
                 @Column("email_address") String emailAddress,
                 @Column("enabled") boolean enabled,
-                @Column("user_type") Type type) {
+                @Column("user_type") Type type,
+                @Column("valid_to") ZonedDateTime validTo) {
         this.id = id;
         this.username = username;
         this.firstName = firstName;
@@ -51,5 +55,14 @@ public class User implements Serializable {
         this.emailAddress = emailAddress;
         this.enabled=enabled;
         this.type = type;
+        this.validTo = validTo;
+    }
+
+    public boolean isCurrentlyValid(ZonedDateTime date) {
+        return validTo == null || validTo.isAfter(date);
+    }
+
+    public Long getValidToEpochSecond() {
+        return validTo == null ? null : validTo.toEpochSecond();
     }
 }

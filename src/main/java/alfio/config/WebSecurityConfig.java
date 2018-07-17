@@ -24,6 +24,7 @@ import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -58,8 +59,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Locale;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -171,6 +175,9 @@ public class WebSecurityConfig {
                 }
                 if (User.Type.API_KEY != user.getType()) {
                     throw new WrongAccountTypeException("Wrong account type for username " + apiKey);
+                }
+                if (!user.isCurrentlyValid(ZonedDateTime.now(ZoneId.of("UTC")))) {
+                    throw new DisabledException("Api key " + apiKey + " is expired");
                 }
 
                 APITokenAuthentication auth = new APITokenAuthentication(
@@ -414,7 +421,7 @@ public class WebSecurityConfig {
                     String username = req.getParameter("username");
                     if(!userManager.usernameExists(username)) {
                         int orgId = userManager.createOrganization(username, "Demo organization", username);
-                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"));
+                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null);
                     }
                 }
 

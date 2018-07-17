@@ -151,7 +151,8 @@ public class UsersApiController {
         UserWithPassword userWithPassword = userManager.insertUser(userModification.getOrganizationId(), userModification.getUsername(),
             userModification.getFirstName(), userModification.getLastName(),
             userModification.getEmailAddress(), requested,
-            type == null ? User.Type.INTERNAL : type);
+            type == null ? User.Type.INTERNAL : type,
+            userModification.getValidToAsDateTime());
         return new UserWithPasswordAndQRCode(userWithPassword, toBase64QRCode(userWithPassword, baseUrl));
     }
 
@@ -180,14 +181,18 @@ public class UsersApiController {
     public UserModification loadUser(@PathVariable("id") int userId) {
         User user = userManager.findUser(userId);
         List<Organization> userOrganizations = userManager.findUserOrganizations(user.getUsername());
-        return new UserModification(user.getId(), userOrganizations.get(0).getId(), userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress(), user.getType());
+        return new UserModification(user.getId(), userOrganizations.get(0).getId(), userManager.getUserRole(user).name(),
+            user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress(),
+            user.getType(), user.getValidToEpochSecond());
     }
 
     @RequestMapping(value = "/users/current", method = GET)
     public UserModification loadCurrentUser(Principal principal) {
         User user = userManager.findUserByUsername(principal.getName());
         Optional<Organization> userOrganization = userManager.findUserOrganizations(user.getUsername()).stream().findFirst();
-        return new UserModification(user.getId(), userOrganization.map(Organization::getId).orElse(-1), userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress(), user.getType());
+        return new UserModification(user.getId(), userOrganization.map(Organization::getId).orElse(-1),
+            userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(),
+            user.getEmailAddress(), user.getType(), user.getValidToEpochSecond());
     }
 
     @RequestMapping(value = "/users/{id}/reset-password", method = PUT)
