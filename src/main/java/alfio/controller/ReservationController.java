@@ -509,15 +509,18 @@ public class ReservationController {
         }
         //
 
+        Map<String, String> ticketEmails = paymentForm.getTickets().entrySet().stream().map(e -> Pair.of(e.getKey(), e.getValue().getEmail())).collect(toMap(Pair::getKey, Pair::getValue));//TODO temporary, to be removed in 2.0
+
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
             customerName, locale, paymentForm.getBillingAddress(), paymentForm.getCustomerReference(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()), paymentForm.isInvoiceRequested(), paymentForm.getVatCountryCode(),
-                paymentForm.getVatNr(), optionalReservation.get().getVatStatus(), paymentForm.getTermAndConditionsAccepted(), Optional.ofNullable(paymentForm.getPrivacyPolicyAccepted()).orElse(false));
+                paymentForm.getVatNr(), optionalReservation.get().getVatStatus(), paymentForm.getTermAndConditionsAccepted(), Optional.ofNullable(paymentForm.getPrivacyPolicyAccepted()).orElse(false),  ticketEmails);
 
         if(!status.isSuccessful()) {
-            String errorMessageCode = status.getErrorCode().get();
+            String errorMessageCode = status.getErrorCode().orElse("");
             MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeManager.STRIPE_UNEXPECTED});
-            bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
+            String errorCode = ErrorsCode.STEP_2_WHITELIST_CHECK_FAILED.equals(errorMessageCode) ? errorMessageCode : ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR;
+            bindingResult.reject(errorCode, new Object[]{messageSource.getMessage(message, locale)}, null);
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
             return redirectReservation(optionalReservation, eventName, reservationId);
         }

@@ -1,6 +1,6 @@
 (function() {
     "use strict";
-    angular.module('alfio-configuration', ['adminServices'])
+    angular.module('alfio-configuration', ['adminServices', 'attendee-list'])
         .config(['$stateProvider', function($stateProvider) {
             $stateProvider
                 .state('configuration', {
@@ -109,7 +109,7 @@
                         mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';}),
                         mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';})
                     };
-                };
+                }
 
                 if(angular.isDefined(original['MAP']) && original['MAP'].length > 0) {
                     transformed.map = {
@@ -155,12 +155,12 @@
 
     function handleEuCountries(conf, euCountries) {
         if(conf.invoiceEu) {
-            var euCountries = _.map(euCountries, function(o) {
+            var eu = _.map(euCountries, function(o) {
                 var key = Object.keys(o)[0];
                 return {key: key, value: o[key]};
             });
             _.forEach(_.filter(conf.invoiceEu.settings, function(e) {return e.key === 'COUNTRY_OF_BUSINESS'}), function(cb) {
-                cb.listValues = euCountries;
+                cb.listValues = eu;
             });
         }
     }
@@ -392,33 +392,67 @@
                 closeModal: '&'
             },
             bindToController: true,
-            controller: 'CategoryConfigurationController',
+            controller: ['ConfigurationService', '$rootScope', 'AttendeeListService', '$q', CategoryConfigurationController],
             controllerAs: 'categoryConf',
             templateUrl: '/resources/angular-templates/admin/partials/configuration/category.html'
         };
     }
 
-    function CategoryConfigurationController(ConfigurationService, $rootScope) {
+    function CategoryConfigurationController(ConfigurationService, $rootScope, AttendeeListService, $q) {
         var categoryConf = this;
 
         var load = function() {
             categoryConf.loading = true;
-            ConfigurationService.loadCategory(categoryConf.event.id, categoryConf.category.id).then(function(result) {
-                loadSettings(categoryConf, result.data, ConfigurationService);
-                categoryConf.loading = false;
-            }, function() {
-                categoryConf.loading = false;
-            });
+            $q.all([ConfigurationService.loadCategory(categoryConf.event.id, categoryConf.category.id),
+                AttendeeListService.loadLists(categoryConf.event.organizationId),
+                AttendeeListService.loadActiveList(categoryConf.event.shortName, categoryConf.category.id)])
+                .then(function(results) {
+                    loadSettings(categoryConf, results[0].data, ConfigurationService);
+                    categoryConf.lists = results[1].data;
+                    categoryConf.list = results[2].status === 200 ? results[2].data : null;
+                    categoryConf.loading = false;
+                }, function() {
+                    categoryConf.loading = false;
+                });
         };
         load();
+
+        categoryConf.selectList = function(list) {
+            categoryConf.list = {
+                whitelistId: list.id,
+                eventId: categoryConf.event.id,
+                ticketCategoryId: categoryConf.category.id,
+                matchType: 'FULL',
+                type: 'ONCE_PER_VALUE'
+            };
+        };
+
+        categoryConf.whitelistTypes = {
+            'ONCE_PER_VALUE': 'Limit to one ticket per email address',
+            'LIMITED_QUANTITY': 'Limit to a specific number of tickets per email address',
+            'UNLIMITED': 'Unlimited'
+        };
+
+        categoryConf.whitelistMatchTypes = {
+            'FULL': 'Full match',
+            'EMAIL_DOMAIN': 'Match full email address, fallback on domain'
+        };
+
 
         categoryConf.saveSettings = function(frm) {
             if(!frm.$valid) {
                 return;
             }
             categoryConf.loading = true;
+
             ConfigurationService.updateCategoryConfig(categoryConf.category.id, categoryConf.event.id, categoryConf.settings).then(function() {
-                load();
+                if(categoryConf.list) {
+                    AttendeeListService.linkTo(categoryConf.list).then(function() {
+                        load();
+                    });
+                } else {
+                    load();
+                }
             }, function(e) {
                 alert(e.data);
                 categoryConf.loading = false;

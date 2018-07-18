@@ -116,7 +116,9 @@ public class TicketHelper {
         AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), ticketReservation.getId()),
             new WhitelistManager.WhitelistValidator(event.getId(), whitelistManager));
 
-        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event, formPrefix, advancedValidator, t.getCategoryId())
+        Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
+        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event, formPrefix)
+                .or(Validator.performAdvancedValidation(advancedValidator, context, bindingResult.orElse(null)))
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, request, t, event, ticketReservation, userDetails));
         return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
     }
@@ -220,6 +222,9 @@ public class TicketHelper {
                 getConfirmationTextBuilder(request, event, ticketReservation, t, category),
                 getOwnerChangeTextBuilder(request, t, event),
                 userDetails);
+        if(t.hasBeenSold() && !whitelistManager.findConfigurations(event.getId(), t.getCategoryId()).isEmpty()) {
+            ticketRepository.forbidReassignment(Collections.singletonList(t.getId()));
+        }
     }
 
     private PartialTicketTextGenerator getOwnerChangeTextBuilder(HttpServletRequest request, Ticket t, Event event) {

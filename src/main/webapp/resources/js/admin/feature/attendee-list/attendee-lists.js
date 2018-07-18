@@ -161,6 +161,12 @@
             },
             createList: function(orgId, list) {
                 return $http.post('/admin/api/whitelist/'+orgId+'/new', list).error(HttpErrorHandler.handle);
+            },
+            loadActiveList: function(eventId, categoryId) {
+                return $http.get('/admin/api/whitelist/event/'+eventId+'/category/'+categoryId).error(HttpErrorHandler.handle);
+            },
+            linkTo: function(configuration) {
+                return $http.post('/admin/api/whitelist/'+configuration.whitelistId+'/link', configuration).error(HttpErrorHandler.handle);
             }
         }
     }

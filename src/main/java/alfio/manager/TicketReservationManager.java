@@ -346,10 +346,10 @@ public class TicketReservationManager {
                                  String email, CustomerName customerName, Locale userLanguage, String billingAddress, String customerReference,
                                  TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method,
                                  boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus,
-                                 boolean tcAccepted, boolean privacyPolicyAccepted) {
+                                 boolean tcAccepted, boolean privacyPolicyAccepted, Map<String, String> ticketEmails) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
 
-        if(!acquireWhitelistItems(reservationId, event)) {
+        if(!acquireWhitelistItems(reservationId, event, ticketEmails)) {
             whitelistManager.deleteWhitelistedTicketsForReservation(reservationId);
             return PaymentResult.unsuccessful("error.STEP2_WHITELIST");
         }
@@ -443,15 +443,16 @@ public class TicketReservationManager {
         return true;
     }
 
-    private boolean acquireWhitelistItems(String reservationId, Event event) {
+    private boolean acquireWhitelistItems(String reservationId, Event event, Map<String, String> ticketEmails) {
         int eventId = event.getId();
         List<WhitelistConfiguration> whitelistConfigurations = whitelistManager.getConfigurationsForEvent(eventId);
         if(!whitelistConfigurations.isEmpty()) {
+            List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
             return requiresNewTransactionTemplate.execute(status ->
-                ticketRepository.findTicketsInReservation(reservationId)
+                ticketsInReservation
                     .stream()
                     .filter(ticket -> whitelistConfigurations.stream().anyMatch(c -> c.getTicketCategoryId() == null || c.getTicketCategoryId().equals(ticket.getCategoryId())))
-                    .map(whitelistManager::acquireItemForTicket)
+                    .map(t -> whitelistManager.acquireItemForTicket(t, ticketEmails.get(t.getUuid())))
                     .reduce(true, Boolean::logicalAnd));
         }
         return true;
@@ -697,18 +698,6 @@ public class TicketReservationManager {
         });
 
         Set<Integer> categoriesId = ticketsInReservation.stream().map(Ticket::getCategoryId).collect(Collectors.toSet());
-
-        List<Integer> whitelistedTickets = whitelistManager.getConfigurationsForEvent(eventId).stream()
-            .filter(conf -> conf.getTicketCategoryId() == null || categoriesId.contains(conf.getTicketCategoryId()))
-            .flatMap(conf -> ticketsInReservation.stream().filter(t -> conf.getTicketCategoryId() == null || conf.getTicketCategoryId().equals(t.getCategoryId())))
-            .map(Ticket::getId)
-            .distinct()
-            .collect(Collectors.toList());
-
-        if(!whitelistedTickets.isEmpty()) {
-            ticketRepository.forbidReassignment(whitelistedTickets);
-        }
-
 
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");

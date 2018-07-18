@@ -41,7 +41,8 @@ create table whitelist_configuration (
     event_id_fk integer not null,
     ticket_category_id_fk integer,
     type varchar(255),
-    match_type varchar(255)
+    match_type varchar(255),
+    max_allocation integer
 );
 
 alter table whitelist_configuration add constraint "whitelist_configuration_whitelist_id_fk" foreign key(whitelist_id_fk) references whitelist(id);

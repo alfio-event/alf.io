@@ -107,7 +107,8 @@ public class WhitelistManagerIntegrationTest {
         Event event = pair.getKey();
         Whitelist whitelist = whitelistManager.createNew("test", "This is a test", event.getOrganizationId());
         assertNotNull(whitelist);
-        WhitelistConfiguration configuration = whitelistManager.createConfiguration(whitelist.getId(), event.getId(), null, WhitelistConfiguration.Type.ONCE_PER_VALUE, WhitelistConfiguration.MatchType.FULL);
+        WhitelistConfigurationModification modification = new WhitelistConfigurationModification(null, whitelist.getId(), event.getId(), null, WhitelistConfiguration.Type.ONCE_PER_VALUE, WhitelistConfiguration.MatchType.FULL, null);
+        WhitelistConfiguration configuration = whitelistManager.createConfiguration(whitelist.getId(), event.getId(), modification);
         assertNotNull(configuration);
         List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
         int categoryId = ticketCategories.get(0).getId();
@@ -132,13 +133,13 @@ public class WhitelistManagerIntegrationTest {
         ticketRepository.updateTicketOwnerById(ticket.getId(), "test@test.ch", "This is a Test", "This is", "a Test");
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertTrue("cannot confirm ticket", whitelistManager.acquireItemForTicket(ticket));
+        assertTrue("cannot confirm ticket", whitelistManager.acquireItemForTicket(ticket, "not-valid"));
 
         reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.empty())),
             Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertFalse("shouldn't be allowed", whitelistManager.acquireItemForTicket(ticket));
+        assertFalse("shouldn't be allowed", whitelistManager.acquireItemForTicket(ticket, "not-valid"));
 
     }
 }

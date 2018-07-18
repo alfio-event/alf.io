@@ -24,11 +24,11 @@ public class WhitelistConfiguration {
 
 
     public enum Type {
-        ONCE_PER_VALUE, UNLIMITED
+        ONCE_PER_VALUE, LIMITED_QUANTITY, UNLIMITED
     }
 
     public enum MatchType {
-        FULL
+        FULL, EMAIL_DOMAIN
     }
 
     private final int id;
@@ -37,18 +37,21 @@ public class WhitelistConfiguration {
     private final Integer ticketCategoryId;
     private final Type type;
     private final MatchType matchType;
+    private final Integer maxAllocation;
 
     public WhitelistConfiguration(@Column("id") int id,
                                   @Column("whitelist_id_fk") int whitelistId,
                                   @Column("event_id_fk") Integer eventId,
                                   @Column("ticket_category_id_fk") Integer ticketCategoryId,
                                   @Column("type") Type type,
-                                  @Column("match_type") MatchType matchType) {
+                                  @Column("match_type") MatchType matchType,
+                                  @Column("max_allocation") Integer maxAllocation) {
         this.id = id;
         this.whitelistId = whitelistId;
         this.eventId = eventId;
         this.ticketCategoryId = ticketCategoryId;
         this.type = type;
         this.matchType = matchType;
+        this.maxAllocation = maxAllocation;
     }
 }

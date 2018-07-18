@@ -18,12 +18,12 @@ package alfio.manager;
 
 import alfio.model.Audit;
 import alfio.model.Ticket;
+import alfio.model.modification.WhitelistConfigurationModification;
 import alfio.model.modification.WhitelistItemModification;
 import alfio.model.modification.WhitelistModification;
 import alfio.model.whitelist.Whitelist;
 import alfio.model.whitelist.WhitelistConfiguration;
 import alfio.model.whitelist.WhitelistItem;
-import alfio.model.whitelist.WhitelistedTicket;
 import alfio.repository.AuditingRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.WhitelistRepository;
@@ -33,6 +33,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -42,6 +43,8 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static alfio.model.whitelist.WhitelistConfiguration.MatchType.FULL;
+import static alfio.model.whitelist.WhitelistConfiguration.Type.*;
 import static java.util.Collections.singletonList;
 
 @AllArgsConstructor
@@ -68,12 +71,27 @@ public class WhitelistManager {
 
     public WhitelistConfiguration createConfiguration(int whitelistId,
                                                       int eventId,
-                                                      Integer categoryId,
-                                                      WhitelistConfiguration.Type type,
-                                                      WhitelistConfiguration.MatchType matchType) {
+                                                      WhitelistConfigurationModification modification) {
         Objects.requireNonNull(whitelistRepository.getById(whitelistId), "Whitelist not found");
-        AffectedRowCountAndKey<Integer> configuration = whitelistRepository.createConfiguration(whitelistId, eventId, categoryId, type, matchType);
+        Validate.isTrue(modification.getType() != LIMITED_QUANTITY || modification.getMaxAllocation() != null, "Missing max allocation");
+        AffectedRowCountAndKey<Integer> configuration = whitelistRepository.createConfiguration(whitelistId, eventId,
+            modification.getTicketCategoryId(), modification.getType(), modification.getMatchType(), modification.getMaxAllocation());
         return whitelistRepository.getConfiguration(configuration.getKey());
+    }
+
+    public WhitelistConfiguration updateConfiguration(int id, WhitelistConfigurationModification modification) {
+        WhitelistConfiguration original = whitelistRepository.getConfigurationForUpdate(id);
+        if(requiresCleanState(modification, original)) {
+            Validate.isTrue(whitelistRepository.countWhitelistedTicketsForConfiguration(original.getId()) == 0, "Cannot update as there are already confirmed tickets.");
+        }
+        whitelistRepository.updateConfiguration(id, modification.getWhitelistId(), original.getEventId(), modification.getTicketCategoryId(), modification.getType(), modification.getMatchType(), modification.getMaxAllocation());
+        return whitelistRepository.getConfiguration(id);
+    }
+
+    private boolean requiresCleanState(WhitelistConfigurationModification modification, WhitelistConfiguration original) {
+        return (original.getType() == UNLIMITED && modification.getType() != UNLIMITED)
+            || original.getWhitelistId() != modification.getWhitelistId()
+            || (modification.getType() == LIMITED_QUANTITY && modification.getMaxAllocation() != null && original.getMaxAllocation() != null && modification.getMaxAllocation().compareTo(original.getMaxAllocation()) < 0);
     }
 
     public boolean isWhitelistConfiguredFor(int eventId, int categoryId) {
@@ -99,14 +117,14 @@ public class WhitelistManager {
             return true;
         }
         WhitelistConfiguration configuration = configurations.get(0);
-        return whitelistRepository.findItemByValueExactMatch(configuration.getId(), configuration.getWhitelistId(), StringUtils.trim(value)).isPresent();
+        return getMatchingItem(configuration, value).isPresent();
     }
 
     public List<WhitelistConfiguration> getConfigurationsForEvent(int eventId) {
         return whitelistRepository.findActiveConfigurationsForEvent(eventId);
     }
 
-    private List<WhitelistConfiguration> findConfigurations(int eventId, int categoryId) {
+    public List<WhitelistConfiguration> findConfigurations(int eventId, int categoryId) {
         return whitelistRepository.findActiveConfigurationsFor(eventId, categoryId);
     }
 
@@ -117,23 +135,25 @@ public class WhitelistManager {
         return Arrays.stream(jdbcTemplate.batchUpdate(whitelistRepository.insertItemTemplate(), params)).sum();
     }
 
-    public boolean acquireItemForTicket(Ticket ticket) {
+    boolean acquireItemForTicket(Ticket ticket, String email) {
         List<WhitelistConfiguration> configurations = findConfigurations(ticket.getEventId(), ticket.getCategoryId());
         if(CollectionUtils.isEmpty(configurations)) {
             return true;
         }
         WhitelistConfiguration configuration = configurations.get(0);
-        Optional<WhitelistItem> optionalItem = whitelistRepository.findItemByValueExactMatch(configuration.getId(), configuration.getWhitelistId(), StringUtils.trim(ticket.getEmail()));
+        Optional<WhitelistItem> optionalItem = getMatchingItem(configuration, StringUtils.defaultString(StringUtils.trimToNull(ticket.getEmail()), email));
         if(!optionalItem.isPresent()) {
             return false;
         }
         WhitelistItem item = optionalItem.get();
-        boolean preventDuplication = configuration.getType() == WhitelistConfiguration.Type.ONCE_PER_VALUE;
-        if(preventDuplication) {
+        boolean preventDuplication = configuration.getType() == ONCE_PER_VALUE;
+        boolean limitAssignments = preventDuplication || configuration.getType() == LIMITED_QUANTITY;
+        if(limitAssignments) {
             //reload and lock configuration
             configuration = whitelistRepository.getConfigurationForUpdate(configuration.getId());
-            Optional<WhitelistedTicket> existing = whitelistRepository.findExistingWhitelistedTicket(item.getId(), configuration.getId());
-            if(existing.isPresent()) {
+            int existing = whitelistRepository.countExistingWhitelistedTickets(item.getId(), configuration.getId());
+            int expected = preventDuplication ? 1 : Optional.ofNullable(configuration.getMaxAllocation()).orElse(0);
+            if(existing >= expected) {
                 return false;
             }
         }
@@ -144,6 +164,16 @@ public class WhitelistManager {
         modifications.put("ticketId", ticket.getId());
         auditingRepository.insert(ticket.getTicketsReservationId(), null, ticket.getEventId(), Audit.EventType.WHITELIST_ITEM_ACQUIRED, new Date(), Audit.EntityType.TICKET, ticket.getUuid(), singletonList(modifications));
         return true;
+    }
+
+    private Optional<WhitelistItem> getMatchingItem(WhitelistConfiguration configuration, String email) {
+        String trimmed = StringUtils.trimToEmpty(email);
+        Optional<WhitelistItem> exactMatch = whitelistRepository.findItemByValueExactMatch(configuration.getWhitelistId(), trimmed);
+        if(exactMatch.isPresent() || configuration.getMatchType() == FULL) {
+            return exactMatch;
+        }
+        String partial = StringUtils.substringAfterLast(trimmed, "@");
+        return partial.length() > 0 ? whitelistRepository.findItemEndsWith(configuration.getId(), configuration.getWhitelistId(), "%@"+partial) : Optional.empty();
     }
 
     public void deleteWhitelistedTicketsForReservation(String reservationId) {

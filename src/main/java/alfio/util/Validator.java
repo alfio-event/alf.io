@@ -178,13 +178,24 @@ public final class Validator {
         return ValidationResult.success();
     }
 
+    public static ValidationResult performAdvancedValidation(AdvancedTicketAssignmentValidator advancedValidator, AdvancedValidationContext context, Errors errors) {
+        if(errors == null) {
+            return ValidationResult.success();
+        }
+        Result<Void> advancedValidation = advancedValidator.apply(context);
+        if(!advancedValidation.isSuccess()) {
+            ErrorCode error = advancedValidation.getFirstErrorOrNull();
+            Validate.notNull(error, "unexpected error");
+            errors.rejectValue(StringUtils.defaultString(context.prefix) + error.getDescription(), error.getCode());
+        }
+        return evaluateValidationResult(errors);
+    }
+
     public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form,
                                                             List<TicketFieldConfiguration> additionalFieldsForEvent,
                                                             Optional<Errors> errorsOptional,
                                                             Event event,
-                                                            String baseField,
-                                                            AdvancedTicketAssignmentValidator advancedValidator,
-                                                            int categoryId) {
+                                                            String baseField) {
         if(!errorsOptional.isPresent()) {
             return ValidationResult.success();//already validated
         }
@@ -248,13 +259,6 @@ public final class Validator {
             });
 
 
-        }
-
-        Result<Void> advancedValidation = advancedValidator.apply(new AdvancedValidationContext(form, additionalFieldsForEvent, categoryId));
-        if(!advancedValidation.isSuccess()) {
-            ErrorCode error = advancedValidation.getFirstErrorOrNull();
-            Validate.notNull(error, "unexpected error");
-            errors.rejectValue(prefixForLambda + error.getDescription(), error.getCode());
         }
 
         return evaluateValidationResult(errors);
@@ -391,5 +395,7 @@ public final class Validator {
         private final UpdateTicketOwnerForm updateTicketOwnerForm;
         private final List<TicketFieldConfiguration> ticketFieldConfigurations;
         private final int categoryId;
+        private final String ticketUuid;
+        private final String prefix;
     }
 }
