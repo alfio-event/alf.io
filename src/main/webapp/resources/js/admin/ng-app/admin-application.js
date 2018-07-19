@@ -1072,7 +1072,7 @@
         };
 
         $scope.downloadSponsorsScan = function() {
-            $window.open($window.location.pathname+"/api/events/"+parentScope.event.shortName+"/sponsor-scan/export.csv");
+            $window.open($window.location.pathname+"/api/events/"+parentScope.event.shortName+"/sponsor-scan/export");
         };
 
         $scope.activateEvent = function(id) {

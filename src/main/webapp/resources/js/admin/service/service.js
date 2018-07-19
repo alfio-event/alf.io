@@ -233,6 +233,7 @@
                     backdrop: 'static',
                     controller: function($scope) {
                         $scope.selected = {};
+                        $scope.format = 'excel';
                         service.getFields(event.shortName).then(function(fields) {
                             $scope.fields = fields.data;
                             angular.forEach(fields.data, function(v) {
@@ -253,7 +254,7 @@
                         };
 
                         $scope.download = function() {
-                            var queryString = "";
+                            var queryString = "format="+$scope.format+"&";
                             angular.forEach($scope.selected, function(v,k) {
                                 if(v) {
                                     queryString+="fields="+k+"&";

@@ -907,7 +907,7 @@
                                 EventService.exportAttendees(ctrl.event);
                             };
                             ctrl.downloadSponsorsScan = function() {
-                                $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export.csv");
+                                $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export");
                             };
                             ctrl.downloadInvoices = function() {
                                 EventService.countInvoices(ctrl.event.shortName).then(function (res) {

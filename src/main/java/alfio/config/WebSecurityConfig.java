@@ -204,9 +204,8 @@ public class WebSecurityConfig {
                 ADMIN_API + "/events/*/email/",
                 ADMIN_API + "/event/*/waiting-queue/load",
                 ADMIN_API + "/events/*/pending-payments",
-                ADMIN_API + "/events/*/export.csv",
-                ADMIN_API + "/events/*/sponsor-scan/export.csv",
-                ADMIN_API + "/events/*/sponsor-scan/export.csv",
+                ADMIN_API + "/events/*/export",
+                ADMIN_API + "/events/*/sponsor-scan/export",
                 ADMIN_API + "/events/*/invoices/**",
                 ADMIN_API + "/reservation/event/*/*/audit"
 
