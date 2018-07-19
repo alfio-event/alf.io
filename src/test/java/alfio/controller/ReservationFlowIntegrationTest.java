@@ -437,6 +437,17 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertTrue(attendeeApiController.getScannedBadges(event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().isEmpty());
         assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid()), sponsorPrincipal).getBody().getResult().getStatus());
         assertEquals(1, attendeeApiController.getScannedBadges(event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
+
+        // check export
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        eventApiController.downloadSponsorScanExport(event.getShortName(), "csv", response, principal);
+        response.getContentAsString();
+        CSVReader csvReader = new CSVReader(new StringReader(response.getContentAsString()));
+        List<String[]> csvSponsorScan = csvReader.readAll();
+        Assert.assertEquals(2, csvSponsorScan.size());
+        Assert.assertEquals("sponsor", csvSponsorScan.get(1)[0]);
+        Assert.assertEquals("Test OTest", csvSponsorScan.get(1)[2]);
+        Assert.assertEquals("testmctest@test.com", csvSponsorScan.get(1)[3]);
         //
         
         eventManager.deleteEvent(event.getId(), principal.getName());
@@ -481,7 +492,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         List<SerializablePair<String, String>> fields = eventApiController.getAllFields(eventName);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setParameter("fields", fields.stream().map(SerializablePair::getKey).toArray(String[]::new));
-        eventApiController.downloadAllTicketsCSV(eventName, request, response, principal);
+        eventApiController.downloadAllTicketsCSV(eventName, "csv", request, response, principal);
         CSVReader csvReader = new CSVReader(new StringReader(response.getContentAsString()));
         List<String[]> csv = csvReader.readAll();
         assertEquals(2, csv.size());
