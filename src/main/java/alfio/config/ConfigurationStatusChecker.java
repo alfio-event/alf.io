@@ -68,7 +68,7 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
         boolean initCompleted = configurationManager.getBooleanConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.INIT_COMPLETED), false);
         if (!initCompleted) {
             String adminPassword = PasswordGenerator.generateRandomPassword();
-            userRepository.create(UserManager.ADMIN_USERNAME, passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true, User.Type.INTERNAL);
+            userRepository.create(UserManager.ADMIN_USERNAME, passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true, User.Type.INTERNAL, null, null);
             authorityRepository.create(UserManager.ADMIN_USERNAME, Role.ADMIN.getRoleName());
             log.info("*******************************************************");
             log.info("   This is the first time you're running alf.io");

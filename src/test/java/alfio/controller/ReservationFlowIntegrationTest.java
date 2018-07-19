@@ -44,6 +44,7 @@ import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.UserModification;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketReservationRepository;
@@ -379,7 +380,7 @@ public class ReservationFlowIntegrationTest {
         TicketAndCheckInResult ticketAndCheckInResult2 = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
         assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult2.getResult().getStatus());
 
-        UsersApiController.UserWithPasswordAndQRCode sponsorUser = usersApiController.insertUser(new UserModification(null, event.getOrganizationId(), "SPONSOR", "sponsor", "first", "last", "email@email.com"), "http://localhost:8080", principal);
+        UsersApiController.UserWithPasswordAndQRCode sponsorUser = usersApiController.insertUser(new UserModification(null, event.getOrganizationId(), "SPONSOR", "sponsor", "first", "last", "email@email.com", User.Type.INTERNAL, null, null), "http://localhost:8080", principal);
         Principal sponsorPrincipal = Mockito.mock(Principal.class);
         Mockito.when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
 

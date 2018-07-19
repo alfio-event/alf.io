@@ -3,7 +3,11 @@
 
     angular.module('adminApplication').component('users', {
         controller: ['$window', 'UserService', UsersCtrl],
-        templateUrl: '../resources/js/admin/feature/users/users.html'
+        templateUrl: '../resources/js/admin/feature/users/users.html',
+        bindings: {
+            title: '@',
+            type: '@'
+        }
     }).filter('userEnabled', function() {
         return function(list, activeRequired) {
             return _.filter(list, function(e) { return e.enabled === activeRequired })
@@ -34,11 +38,13 @@
             loadUsers();
         };
 
+        var filterFunction = ctrl.type == 'user' ? function(user) {return user.type !== 'API_KEY'} : function(user) {return user.type === 'API_KEY'};
 
         function loadUsers() {
             self.loading = true;
             UserService.getAllUsers().then(function(result) {
-                ctrl.users = _.sortByOrder(result.data, ['enabled','username'], [false, true]);
+                var filteredUsers = result.data.filter(filterFunction);
+                ctrl.users = _.sortByOrder(filteredUsers, ['enabled','username'], [false, true]);
                 ctrl.organizations = _.chain(result.data)
                     .map('memberOf')
                     .flatten()
@@ -50,7 +56,7 @@
 
 
         function deleteUser(user) {
-            if($window.confirm('The user '+user.username+' will be deleted. Are you sure?')) {
+            if($window.confirm('The ' + ctrl.type + ' ' + user.username + ' will be deleted. Are you sure?')) {
                 UserService.deleteUser(user).then(function() {
                     loadUsers();
                 });
