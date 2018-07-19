@@ -30,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
-import org.omg.CORBA.INTERNAL;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -168,13 +167,13 @@ public class UserManager {
     }
 
     @Transactional
-    public void editUser(int id, int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, String currentUsername) {
+    public void editUser(int id, int organizationId, String username, String firstName, String lastName, String emailAddress, String description, Role role, String currentUsername) {
         boolean admin = ADMIN_USERNAME.equals(username) && Role.ADMIN == role;
         if(!admin) {
             int userOrganizationResult = userOrganizationRepository.updateUserOrganization(id, organizationId);
             Assert.isTrue(userOrganizationResult == 1, "unexpected error during organization update");
         }
-        int userResult = userRepository.update(id, username, firstName, lastName, emailAddress);
+        int userResult = userRepository.update(id, username, firstName, lastName, emailAddress, description);
         Assert.isTrue(userResult == 1, "unexpected error during user update");
         if(!admin) {
             Assert.isTrue(getAvailableRoles(currentUsername).contains(role), "cannot assign role "+role);
@@ -185,11 +184,11 @@ public class UserManager {
 
     @Transactional
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType) {
-        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, null);
+        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, null, null);
     }
 
     @Transactional
-    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, ZonedDateTime validTo) {
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, ZonedDateTime validTo, String description) {
         if (userType == User.Type.API_KEY) {
             username = UUID.randomUUID().toString();
             firstName = "apikey";
@@ -198,13 +197,13 @@ public class UserManager {
         }
 
         String userPassword = PasswordGenerator.generateRandomPassword();
-        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, userPassword, validTo);
+        return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, userPassword, validTo, description);
     }
 
     @Transactional
-    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, String userPassword, ZonedDateTime validTo) {
+    public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, String userPassword, ZonedDateTime validTo, String description) {
         Organization organization = organizationRepository.getById(organizationId);
-        AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true, userType, validTo);
+        AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true, userType, validTo, description);
         userOrganizationRepository.create(result.getKey(), organization.getId());
         authorityRepository.create(username, role.getRoleName());
         return new UserWithPassword(userRepository.findById(result.getKey()), userPassword, UUID.randomUUID().toString());

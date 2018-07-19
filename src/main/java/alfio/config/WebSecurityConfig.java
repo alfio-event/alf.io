@@ -24,7 +24,6 @@ import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -109,7 +108,7 @@ public class WebSecurityConfig {
 
         @Override
         protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
-            return isTokenAuthentication(request) ? request.getHeader("Authorization").substring("token ".length()) : null;
+            return isTokenAuthentication(request) ? request.getHeader("Authorization").substring("apikey ".length()) : null;
         }
 
         @Override
@@ -206,7 +205,7 @@ public class WebSecurityConfig {
 
     private static boolean isTokenAuthentication(HttpServletRequest request) {
         String authorization = request.getHeader("Authorization");
-        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("token ");
+        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
     }
 
     /**
@@ -421,7 +420,7 @@ public class WebSecurityConfig {
                     String username = req.getParameter("username");
                     if(!userManager.usernameExists(username)) {
                         int orgId = userManager.createOrganization(username, "Demo organization", username);
-                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null);
+                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null, null);
                     }
                 }
 

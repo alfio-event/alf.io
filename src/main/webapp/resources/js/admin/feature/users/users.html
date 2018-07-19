@@ -33,7 +33,8 @@
                     <span ng-show="$ctrl.type == 'apikey'">Api key</span>
                 </th>
                 <th width="20%" ng-show="$ctrl.type == 'user'">Name</th>
-                <th width="40%">Member of</th>
+                <th width="20%" ng-show="$ctrl.type == 'apikey'">Description</th>
+                <th>Member of</th>
                 <th><span class="sr-only">actions</span></th>
             </tr>
             </thead>
@@ -44,6 +45,7 @@
                     <span ng-if="$ctrl.type === 'apikey'">{{user.username}}</span>
                 </td>
                 <td ng-show="$ctrl.type == 'user'">{{user.firstName}} {{user.lastName}}</td>
+                <td ng-show="$ctrl.type == 'apikey'">{{user.description}}</td>
                 <td><span class="label label-info" ng-repeat="org in user.memberOf">{{org.name}}</span></td>
                 <td class="text-right">
                     <a ng-show="$ctrl.type == 'user'" class="btn btn-xs btn-default" data-ui-sref="users.edit({userId:user.id})"><i class="fa fa-edit"></i> Edit</a>
@@ -64,12 +66,13 @@
         <table class="table table-striped">
             <thead>
             <tr>
-                <th width="10%">
+                <th width="{{$ctrl.type == 'user' ? '10%' : '30%'}}">
                     <span ng-show="$ctrl.type == 'user'">Username</span>
                     <span ng-show="$ctrl.type == 'apikey'">Api key</span>
                 </th>
                 <th width="20%" ng-show="$ctrl.type == 'user'">Name</th>
-                <th width="40%">Member of</th>
+                <th width="20%" ng-show="$ctrl.type == 'apikey'">Description</th>
+                <th>Member of</th>
                 <th><span class="sr-only">actions</span></th>
             </tr>
             </thead>
@@ -80,6 +83,7 @@
                     <span ng-if="$ctrl.type === 'apikey'">{{user.username}}</span>
                 </td>
                 <td ng-show="$ctrl.type == 'user'">{{user.firstName}} {{user.lastName}}</td>
+                <td ng-show="$ctrl.type == 'apikey'">{{user.description}}</td>
                 <td><span class="label label-info" ng-repeat="org in user.memberOf">{{org.name}}</span></td>
                 <td class="text-right">
                     <button class="btn btn-xs btn-success" ng-if="!user.enabled" ng-click="$ctrl.enable(user, true)"><i class="fa fa-eye"></i> Enable</button>

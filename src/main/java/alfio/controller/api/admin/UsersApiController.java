@@ -133,7 +133,10 @@ public class UsersApiController {
 
     @RequestMapping(value = "/users/edit", method = POST)
     public String editUser(@RequestBody UserModification userModification, Principal principal) {
-        userManager.editUser(userModification.getId(), userModification.getOrganizationId(), userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress(), Role.valueOf(userModification.getRole()), principal.getName());
+        userManager.editUser(userModification.getId(), userModification.getOrganizationId(),
+            userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(),
+            userModification.getEmailAddress(), userModification.getDescription(),
+            Role.valueOf(userModification.getRole()), principal.getName());
         return OK;
     }
 
@@ -152,7 +155,7 @@ public class UsersApiController {
             userModification.getFirstName(), userModification.getLastName(),
             userModification.getEmailAddress(), requested,
             type == null ? User.Type.INTERNAL : type,
-            userModification.getValidToAsDateTime());
+            userModification.getValidToAsDateTime(), userModification.getDescription());
         return new UserWithPasswordAndQRCode(userWithPassword, toBase64QRCode(userWithPassword, baseUrl));
     }
 
@@ -183,7 +186,7 @@ public class UsersApiController {
         List<Organization> userOrganizations = userManager.findUserOrganizations(user.getUsername());
         return new UserModification(user.getId(), userOrganizations.get(0).getId(), userManager.getUserRole(user).name(),
             user.getUsername(), user.getFirstName(), user.getLastName(), user.getEmailAddress(),
-            user.getType(), user.getValidToEpochSecond());
+            user.getType(), user.getValidToEpochSecond(), user.getDescription());
     }
 
     @RequestMapping(value = "/users/current", method = GET)
@@ -192,7 +195,7 @@ public class UsersApiController {
         Optional<Organization> userOrganization = userManager.findUserOrganizations(user.getUsername()).stream().findFirst();
         return new UserModification(user.getId(), userOrganization.map(Organization::getId).orElse(-1),
             userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(),
-            user.getEmailAddress(), user.getType(), user.getValidToEpochSecond());
+            user.getEmailAddress(), user.getType(), user.getValidToEpochSecond(), user.getDescription());
     }
 
     @RequestMapping(value = "/users/{id}/reset-password", method = PUT)
