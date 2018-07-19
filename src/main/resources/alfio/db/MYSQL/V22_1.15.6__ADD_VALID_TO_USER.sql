@@ -16,3 +16,4 @@
 --
 
 alter table ba_user add column valid_to timestamp;
+alter table ba_user add column description varchar(256);

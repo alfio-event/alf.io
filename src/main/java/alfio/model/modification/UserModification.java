@@ -37,6 +37,7 @@ public class UserModification {
     private final String emailAddress;
     private final User.Type type;
     private final Long validTo;
+    private final String description;
 
     @JsonCreator
     public UserModification(@JsonProperty("id") Integer id,
@@ -47,7 +48,8 @@ public class UserModification {
                             @JsonProperty("lastName") String lastName,
                             @JsonProperty("emailAddress") String emailAddress,
                             @JsonProperty("type") User.Type type,
-                            @JsonProperty("validTo") Long validTo) {
+                            @JsonProperty("validTo") Long validTo,
+                            @JsonProperty("description") String description) {
         this.id = id;
         this.organizationId = organizationId;
         this.role = role;
@@ -57,6 +59,7 @@ public class UserModification {
         this.emailAddress = emailAddress;
         this.type = type;
         this.validTo = validTo;
+        this.description = description;
     }
 
     public ZonedDateTime getValidToAsDateTime() {

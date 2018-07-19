@@ -38,6 +38,7 @@ public class User implements Serializable {
     private final boolean enabled;
     private final Type type;
     private final ZonedDateTime validTo;
+    private final String description;
 
 
     public User(@Column("id") int id,
@@ -47,7 +48,8 @@ public class User implements Serializable {
                 @Column("email_address") String emailAddress,
                 @Column("enabled") boolean enabled,
                 @Column("user_type") Type type,
-                @Column("valid_to") ZonedDateTime validTo) {
+                @Column("valid_to") ZonedDateTime validTo,
+                @Column("description") String description) {
         this.id = id;
         this.username = username;
         this.firstName = firstName;
@@ -56,6 +58,7 @@ public class User implements Serializable {
         this.enabled=enabled;
         this.type = type;
         this.validTo = validTo;
+        this.description = description;
     }
 
     public boolean isCurrentlyValid(ZonedDateTime date) {
