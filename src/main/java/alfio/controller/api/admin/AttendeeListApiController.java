@@ -71,6 +71,19 @@ public class AttendeeListApiController {
         return ResponseEntity.ok(whitelistManager.createNew(request));
     }
 
+    @GetMapping("/event/{eventName}")
+    public ResponseEntity<WhitelistConfiguration> findActiveList(@PathVariable("eventName") String eventName,
+                                                                 Principal principal) {
+        return eventManager.getOptionalByName(eventName, principal.getName())
+            .map(event -> {
+                Optional<WhitelistConfiguration> configuration = whitelistManager.getConfigurationsForEvent(event.getId()).stream()
+                    .filter(c -> c.getTicketCategoryId() == null)
+                    .findFirst();
+                return configuration.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
+            })
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/event/{eventName}/category/{categoryId}")
     public ResponseEntity<WhitelistConfiguration> findActiveList(@PathVariable("eventName") String eventName,
                                                                  @PathVariable("categoryId") int categoryId,

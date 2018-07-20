@@ -293,7 +293,30 @@
 
     OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', 'ExtensionService', 'NotificationHandler', '$stateParams', '$q', '$rootScope'];
 
-    function EventConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $q, $rootScope, $stateParams) {
+    var whitelistTypes = {
+        'ONCE_PER_VALUE': 'Limit to one ticket per email address',
+        'LIMITED_QUANTITY': 'Limit to a specific number of tickets per email address',
+        'UNLIMITED': 'Unlimited'
+    };
+
+    var whitelistMatchTypes = {
+        'FULL': 'Full match',
+        'EMAIL_DOMAIN': 'Match full email address, fallback on domain'
+    };
+
+    function selectList(conf) {
+        return function(list) {
+            conf.whitelist = {
+                whitelistId: list.id,
+                eventId: conf.event.id,
+                ticketCategoryId: conf.category ? conf.category.id : null,
+                matchType: 'FULL',
+                type: 'ONCE_PER_VALUE'
+            };
+        }
+    }
+
+    function EventConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $q, $rootScope, $stateParams, AttendeeListService) {
         var eventConf = this;
         var getData = function() {
             if(angular.isDefined($stateParams.eventName)) {
@@ -303,7 +326,10 @@
                     var event = result.data.event;
                     eventConf.eventName = event.shortName;
                     eventConf.eventId = event.id;
-                    $q.all([ConfigurationService.loadEventConfig(eventConf.eventId), ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)]).then(function(result) {
+                    $q.all([
+                        ConfigurationService.loadEventConfig(eventConf.eventId),
+                        ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)
+                    ]).then(function(result) {
                         deferred.resolve([{data:event}].concat(result));
                     }, function(e) {
                         deferred.reject(e);
@@ -323,7 +349,9 @@
             eventConf.loading = true;
             getData().then(function(result) {
                     eventConf.event = result[0].data;
+                    loadWhitelists();
                     loadSettings(eventConf, result[1].data, ConfigurationService);
+
 
                     if(eventConf.alfioPi) {
                         eventConf.alfioPiOptions = _.filter(eventConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
@@ -347,7 +375,9 @@
             }
             eventConf.loading = true;
             $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings),
-                ExtensionService.saveBulkEventSetting(eventConf.organizationId, eventConf.eventId, eventConf.extensionSettings)]).then(function() {
+                ExtensionService.saveBulkEventSetting(eventConf.organizationId, eventConf.eventId, eventConf.extensionSettings),
+                AttendeeListService.linkTo(eventConf.whitelist)
+            ]).then(function() {
                 load();
                 NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
@@ -368,9 +398,23 @@
         $rootScope.$on('ReloadSettings', function() {
             load();
         });
+
+        function loadWhitelists() {
+            $q.all([
+                AttendeeListService.loadLists(eventConf.event.organizationId),
+                AttendeeListService.loadActiveList(eventConf.event.shortName)
+            ]).then(function(results) {
+                eventConf.whitelists = results[0].data;
+                eventConf.whitelist = results[1].status === 200 ? results[1].data : null;
+                eventConf.selectList = selectList(eventConf);
+                eventConf.whitelistTypes = whitelistTypes;
+                eventConf.whitelistMatchTypes = whitelistMatchTypes;
+            })
+
+        }
     }
 
-    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams'];
+    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams', 'AttendeeListService'];
 
     function loadSettings(container, settings, ConfigurationService) {
         var general = settings['GENERAL'] || [];
@@ -408,8 +452,8 @@
                 AttendeeListService.loadActiveList(categoryConf.event.shortName, categoryConf.category.id)])
                 .then(function(results) {
                     loadSettings(categoryConf, results[0].data, ConfigurationService);
-                    categoryConf.lists = results[1].data;
-                    categoryConf.list = results[2].status === 200 ? results[2].data : null;
+                    categoryConf.whitelists = results[1].data;
+                    categoryConf.whitelist = results[2].status === 200 ? results[2].data : null;
                     categoryConf.loading = false;
                 }, function() {
                     categoryConf.loading = false;
@@ -417,26 +461,9 @@
         };
         load();
 
-        categoryConf.selectList = function(list) {
-            categoryConf.list = {
-                whitelistId: list.id,
-                eventId: categoryConf.event.id,
-                ticketCategoryId: categoryConf.category.id,
-                matchType: 'FULL',
-                type: 'ONCE_PER_VALUE'
-            };
-        };
-
-        categoryConf.whitelistTypes = {
-            'ONCE_PER_VALUE': 'Limit to one ticket per email address',
-            'LIMITED_QUANTITY': 'Limit to a specific number of tickets per email address',
-            'UNLIMITED': 'Unlimited'
-        };
-
-        categoryConf.whitelistMatchTypes = {
-            'FULL': 'Full match',
-            'EMAIL_DOMAIN': 'Match full email address, fallback on domain'
-        };
+        categoryConf.selectList = selectList(categoryConf);
+        categoryConf.whitelistTypes = whitelistTypes;
+        categoryConf.whitelistMatchTypes = whitelistMatchTypes;
 
 
         categoryConf.saveSettings = function(frm) {
@@ -446,8 +473,8 @@
             categoryConf.loading = true;
 
             ConfigurationService.updateCategoryConfig(categoryConf.category.id, categoryConf.event.id, categoryConf.settings).then(function() {
-                if(categoryConf.list) {
-                    AttendeeListService.linkTo(categoryConf.list).then(function() {
+                if(categoryConf.whitelist) {
+                    AttendeeListService.linkTo(categoryConf.whitelist).then(function() {
                         load();
                     });
                 } else {
@@ -467,7 +494,7 @@
             load();
         });
     }
-    CategoryConfigurationController.$inject = ['ConfigurationService', '$rootScope'];
+    CategoryConfigurationController.$inject = ['ConfigurationService', '$rootScope', 'AttendeeListService', '$q'];
 
     function basicConfigurationNeeded($uibModal, ConfigurationService, EventService, $q, $window) {
         return {

@@ -37,7 +37,7 @@
                 listId: '<',
                 createNew: '<'
             }
-        }).service('AttendeeListService', ['$http', 'HttpErrorHandler', AttendeeListService]);
+        }).service('AttendeeListService', ['$http', 'HttpErrorHandler', '$q', AttendeeListService]);
 
 
 
@@ -151,7 +151,7 @@
         }
     }
 
-    function AttendeeListService($http, HttpErrorHandler) {
+    function AttendeeListService($http, HttpErrorHandler, $q) {
         return {
             loadLists: function(orgId) {
                 return $http.get('/admin/api/whitelist/'+orgId).error(HttpErrorHandler.handle);
@@ -163,10 +163,15 @@
                 return $http.post('/admin/api/whitelist/'+orgId+'/new', list).error(HttpErrorHandler.handle);
             },
             loadActiveList: function(eventId, categoryId) {
-                return $http.get('/admin/api/whitelist/event/'+eventId+'/category/'+categoryId).error(HttpErrorHandler.handle);
+                var url = '/admin/api/whitelist/event/'+eventId + (angular.isDefined(categoryId) ? '/category/'+categoryId : '');
+                return $http.get(url).error(HttpErrorHandler.handle);
             },
             linkTo: function(configuration) {
-                return $http.post('/admin/api/whitelist/'+configuration.whitelistId+'/link', configuration).error(HttpErrorHandler.handle);
+                if(configuration) {
+                    return $http.post('/admin/api/whitelist/'+configuration.whitelistId+'/link', configuration).error(HttpErrorHandler.handle);
+                } else {
+                    return $q.resolve(true);
+                }
             }
         }
     }
