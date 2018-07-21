@@ -44,7 +44,7 @@
                     </div>
                     <div class="col-xs-12">
                         <div class="pull-right">
-                            <button type="button" class="btn btn-sm btn-default" ng-click="$ctrl.removeItem($index)" ng-if="!$first"><i class="fa fa-trash"></i> delete</button>
+                            <button type="button" class="btn btn-sm btn-default" ng-click="$ctrl.removeItem($index)" ng-if="!$first && item.editable"><i class="fa fa-trash"></i> delete</button>
                             <button type="button" class="btn btn-sm btn-success" ng-click="$ctrl.addItem()" ng-if="$last"><i class="fa fa-plus"></i> add Item</button>
                         </div>
                     </div>

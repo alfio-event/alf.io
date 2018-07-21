@@ -60,6 +60,17 @@ public class AttendeeListApiController {
         return attendeeListManager.loadComplete(listId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PostMapping("/{organizationId}/update/{listId}")
+    public ResponseEntity<AttendeeListModification> updateList(@PathVariable("organizationId") int organizationId,
+                                                               @PathVariable("listId") int listId,
+                                                               @RequestBody AttendeeListModification modification,
+                                                               Principal principal) {
+        if(notOwner(principal.getName(), organizationId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        return attendeeListManager.update(listId, modification).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @PostMapping("/{organizationId}/new")
     public ResponseEntity<Integer> createNew(@PathVariable("organizationId") int organizationId, @RequestBody AttendeeListModification request, Principal principal) {
         if(notOwner(principal.getName(), organizationId)) {

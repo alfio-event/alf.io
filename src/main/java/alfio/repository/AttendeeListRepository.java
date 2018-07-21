@@ -39,6 +39,9 @@ public interface AttendeeListRepository {
     @Query("select * from attendee_list where id = :id")
     AttendeeList getById(@Bind("id") int id);
 
+    @Query("update attendee_list set name = :name, description = :description where id = :id")
+    int update(@Bind("id") int id, @Bind("name") String name, @Bind("description") String description);
+
     @Query("select * from attendee_list where id = :id")
     Optional<AttendeeList> getOptionalById(@Bind("id") int id);
 
@@ -94,7 +97,6 @@ public interface AttendeeListRepository {
 
     @Query("update attendee_list_configuration set active = false where id = :id")
     int disableConfiguration(@Bind("id") int id);
-
 
     @Query("select * from attendee_list_item wi where wi.attendee_list_id_fk = :attendeeListId and wi.value = lower(:value)")
     Optional<AttendeeListItem> findItemByValueExactMatch(@Bind("attendeeListId") int attendeeListId, @Bind("value") String value);

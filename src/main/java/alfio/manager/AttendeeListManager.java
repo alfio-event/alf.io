@@ -192,6 +192,23 @@ public class AttendeeListManager {
         Validate.isTrue(attendeeListRepository.disableConfiguration(configurationId) == 1, "Error while deleting configuration");
     }
 
+    public Optional<AttendeeListModification> update(int listId, AttendeeListModification modification) {
+
+        if(!attendeeListRepository.getOptionalById(listId).isPresent() || CollectionUtils.isEmpty(modification.getItems())) {
+            return Optional.empty();
+        }
+
+        List<AttendeeListItem> existingItems = attendeeListRepository.getItems(listId);
+        List<AttendeeListItemModification> notPresent = modification.getItems().stream()
+            .filter(i -> i.getId() == null && existingItems.stream().noneMatch(ali -> ali.getValue().equals(i.getValue())))
+            .collect(Collectors.toList());
+        if(!notPresent.isEmpty()) {
+            insertItems(listId, notPresent);
+        }
+        attendeeListRepository.update(listId, modification.getName(), modification.getDescription());
+        return loadComplete(listId);
+    }
+
     @RequiredArgsConstructor
     public static class WhitelistValidator implements Predicate<WhitelistValidationItem> {
 

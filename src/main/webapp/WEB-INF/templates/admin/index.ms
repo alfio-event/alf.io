@@ -122,7 +122,7 @@
                                 <li data-ui-sref-active="active"><a data-ui-sref="users" ng-click="ctrl.menuCollapsed = true">Users</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="configuration.system" ng-click="ctrl.menuCollapsed = true">Configuration</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="extension.list" ng-click="ctrl.menuCollapsed = true">Extension</a></li>
-                                <li data-ui-sref-active="active"><a data-ui-sref="attendee-lists" ng-click="ctrl.menuCollapsed = true">Attendees Lists</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="attendee-lists" ui-sref-opts="{reload: true, notify: true}" ng-click="ctrl.menuCollapsed = true">Attendees Lists</a></li>
                                 {{/isOwner}}
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">

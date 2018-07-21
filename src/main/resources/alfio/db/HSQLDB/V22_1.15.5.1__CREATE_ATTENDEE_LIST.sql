@@ -61,4 +61,5 @@ alter table whitelisted_ticket add constraint "whitelisted_ticket_attendee_list_
 alter table whitelisted_ticket add constraint "whitelisted_ticket_attendee_list_configuration_id_fk" foreign key(attendee_list_configuration_id_fk) references attendee_list_configuration(id);
 alter table whitelisted_ticket add constraint "whitelisted_ticket_ticket_id_fk" foreign key(ticket_id_fk) references ticket(id);
 alter table whitelisted_ticket add constraint "whitelisted_ticket_unique_item_id" unique(attendee_list_item_id_fk, attendee_list_configuration_id_fk, requires_unique_value);
+
 create view attendee_list_configuration_active as select * from attendee_list_configuration where active = true;
