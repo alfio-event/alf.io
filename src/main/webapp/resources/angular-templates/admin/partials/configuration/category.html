@@ -89,7 +89,7 @@
                         <div class="col-xs-12">
                             <div class="list-group">
                                 <a class="list-group-item" ng-repeat="list in categoryConf.whitelists" ng-class="{'active': categoryConf.whitelist.whitelistId == list.id}" ng-click="categoryConf.selectList(list)">
-                                    <h5 class="list-group-item-heading"><i class="fa fa-check" ng-if="categoryConf.whitelist.whitelistId == list.id"></i> {{list.name}}</h5>
+                                    <h4 class="list-group-item-heading"><i class="fa fa-check" ng-if="categoryConf.whitelist.whitelistId == list.id"></i> {{list.name}}</h4>
                                     <p class="list-group-item-text" ng-bind="list.description"></p>
                                 </a>
                             </div>

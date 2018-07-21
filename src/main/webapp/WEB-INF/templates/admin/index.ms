@@ -122,6 +122,7 @@
                                 <li data-ui-sref-active="active"><a data-ui-sref="users" ng-click="ctrl.menuCollapsed = true">Users</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="configuration.system" ng-click="ctrl.menuCollapsed = true">Configuration</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="extension.list" ng-click="ctrl.menuCollapsed = true">Extension</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="attendee-lists" ng-click="ctrl.menuCollapsed = true">Attendees Lists</a></li>
                                 {{/isOwner}}
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
@@ -130,7 +131,7 @@
                                 <li data-ui-sref-active="active"><a data-ui-sref="events.single.configuration({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-wrench"></i> edit configuration</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="events.single.show-resources({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-file-text-o" aria-hidden="true"></i> customize templates</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="events.single.compose-custom-message({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-envelope"></i> compose message</a></li>
-                                <li data-ui-sref-active="active" data-ng-if="!ctrl.event.expired"><a data-ui-sref="events.single.checkIn({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-check"></i> Check-in</a></li>
+                                <li data-ui-sref-active="active" {{^isOwner}}data-ng-if="!ctrl.event.expired"{{/isOwner}}><a data-ui-sref="events.single.checkIn({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-check"></i> Check-in</a></li>
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
                                 <li class="navbar-header"><h4>Status</h4></li>

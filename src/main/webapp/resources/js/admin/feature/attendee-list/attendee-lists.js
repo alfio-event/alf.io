@@ -3,26 +3,49 @@
 
     angular.module('attendee-list', ['adminServices'])
         .config(['$stateProvider', function($stateProvider) {
-            $stateProvider.state('attendee-list', {
-                url: '/attendee-list/:orgId/edit/:listId',
-                template: '<div class="container"><attendee-list list-id="ctrl.listId" organization-id="ctrl.orgId"></attendee-list></div>',
+            $stateProvider.state('attendee-lists', {
+                url: '/attendee-list',
+                template: '<attendee-lists-container organizations="ctrl.organizations"></attendee-lists-container>',
+                controller: ['loadOrganizations', function (loadOrganizations) {
+                    this.organizations = loadOrganizations.data;
+                }],
+                controllerAs: 'ctrl',
+                resolve: {
+                    'loadOrganizations': function(OrganizationService) {
+                        return OrganizationService.getAllOrganizations();
+                    }
+                }
+            }).state('attendee-lists.all', {
+                url: '/:orgId/all',
+                template: '<attendee-lists organization-id="ctrl.orgId"></attendee-lists>',
+                controller: ['$stateParams', function ($stateParams) {
+                    this.orgId = $stateParams.orgId;
+                }],
+                controllerAs: 'ctrl'
+            }).state('attendee-lists.edit', {
+                url: '/:orgId/edit/:listId',
+                template: '<attendee-list list-id="ctrl.listId" organization-id="ctrl.orgId"></attendee-list>',
                 controller: ['$stateParams', function ($stateParams) {
                     this.orgId = $stateParams.orgId;
                     this.listId = $stateParams.listId;
                 }],
-                controllerAs: 'ctrl',
-                data: {
-                    view: 'ATTENDEE_LIST'
-                }
-            }).state('attendee-list-new', {
-                url: '/attendee-list/:orgId/new',
-                template: '<div class="container"><attendee-list create-new="true" organization-id="ctrl.orgId"></attendee-list></div>',
+                controllerAs: 'ctrl'
+            }).state('attendee-lists.new', {
+                url: '/:orgId/new',
+                template: '<attendee-list create-new="true" organization-id="ctrl.orgId"></attendee-list>',
                 controller: ['$stateParams', function ($stateParams) {
                     this.orgId = $stateParams.orgId;
                 }],
                 controllerAs: 'ctrl'
             });
         }])
+        .component('attendeeListsContainer', {
+            controller: ['$stateParams', '$state', ContainerCtrl],
+            templateUrl: '../resources/js/admin/feature/attendee-list/all.html',
+            bindings: {
+                organizations: '<'
+            }
+        })
         .component('attendeeLists', {
             controller: ['AttendeeListService', ListCtrl],
             templateUrl: '../resources/js/admin/feature/attendee-list/list.html',
@@ -40,6 +63,20 @@
         }).service('AttendeeListService', ['$http', 'HttpErrorHandler', '$q', AttendeeListService]);
 
 
+    function ContainerCtrl($stateParams, $state) {
+        var ctrl = this;
+
+        ctrl.$onInit = function() {
+            if(ctrl.organizations && ctrl.organizations.length > 0) {
+                var orgId = ctrl.organizations[0].id;
+                if($stateParams.orgId) {
+                    orgId = $stateParams.orgId;
+                }
+                ctrl.organization = _.find(ctrl.organizations, function(org) {return org.id === orgId});
+                $state.go('.all', {orgId: ctrl.organization.id});
+            }
+        };
+    }
 
     function ListCtrl(AttendeeListService) {
         var ctrl = this;
@@ -50,7 +87,6 @@
             ctrl.lists = [];
             loadLists();
         };
-
 
         function loadLists() {
             ctrl.loading = true;
