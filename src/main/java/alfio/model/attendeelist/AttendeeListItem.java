@@ -14,26 +14,27 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.whitelist;
+package alfio.model.attendeelist;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
-public class Whitelist {
+public class AttendeeListItem {
+
     private final int id;
-    private final String name;
+    private final int attendeeListId;
+    private final String value;
     private final String description;
-    private final Integer organizationId;
 
 
-    public Whitelist(@Column("id") int id,
-                     @Column("name") String name,
-                     @Column("description") String description,
-                     @Column("organization_id_fk") Integer organizationId) {
+    public AttendeeListItem(@Column("id") int id,
+                            @Column("attendee_list_id_fk") int attendeeListId,
+                            @Column("value") String value,
+                            @Column("description") String description) {
         this.id = id;
-        this.name = name;
+        this.attendeeListId = attendeeListId;
+        this.value = value;
         this.description = description;
-        this.organizationId = organizationId;
     }
 }

@@ -24,12 +24,12 @@ import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
+import alfio.model.attendeelist.AttendeeList;
+import alfio.model.attendeelist.AttendeeListConfiguration;
 import alfio.model.modification.*;
-import alfio.model.whitelist.Whitelist;
-import alfio.model.whitelist.WhitelistConfiguration;
+import alfio.repository.AttendeeListRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
-import alfio.repository.WhitelistRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -59,7 +59,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
-public class WhitelistManagerIntegrationTest {
+public class AttendeeListManagerIntegrationTest {
 
     @Autowired
     private EventManager eventManager;
@@ -78,9 +78,9 @@ public class WhitelistManagerIntegrationTest {
     @Autowired
     private EventRepository eventRepository;
     @Autowired
-    private WhitelistRepository whitelistRepository;
+    private AttendeeListRepository attendeeListRepository;
     @Autowired
-    private WhitelistManager whitelistManager;
+    private AttendeeListManager attendeeListManager;
     @Autowired
     private TicketReservationManager ticketReservationManager;
 
@@ -105,22 +105,22 @@ public class WhitelistManagerIntegrationTest {
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
-        Whitelist whitelist = whitelistManager.createNew("test", "This is a test", event.getOrganizationId());
-        assertNotNull(whitelist);
-        WhitelistConfigurationModification modification = new WhitelistConfigurationModification(null, whitelist.getId(), event.getId(), null, WhitelistConfiguration.Type.ONCE_PER_VALUE, WhitelistConfiguration.MatchType.FULL, null);
-        WhitelistConfiguration configuration = whitelistManager.createConfiguration(whitelist.getId(), event.getId(), modification);
+        AttendeeList attendeeList = attendeeListManager.createNew("test", "This is a test", event.getOrganizationId());
+        assertNotNull(attendeeList);
+        AttendeeListConfigurationModification modification = new AttendeeListConfigurationModification(null, attendeeList.getId(), event.getId(), null, AttendeeListConfiguration.Type.ONCE_PER_VALUE, AttendeeListConfiguration.MatchType.FULL, null);
+        AttendeeListConfiguration configuration = attendeeListManager.createConfiguration(attendeeList.getId(), event.getId(), modification);
         assertNotNull(configuration);
         List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
         int categoryId = ticketCategories.get(0).getId();
-        assertTrue(whitelistManager.isWhitelistConfiguredFor(event.getId(), categoryId));
-        List<WhitelistConfiguration> activeConfigurations = whitelistRepository.findActiveConfigurationsFor(event.getId(), categoryId);
+        assertTrue(attendeeListManager.isAttendeeListConfiguredFor(event.getId(), categoryId));
+        List<AttendeeListConfiguration> activeConfigurations = attendeeListRepository.findActiveConfigurationsFor(event.getId(), categoryId);
         assertFalse(activeConfigurations.isEmpty());
         assertEquals(1, activeConfigurations.size());
         assertEquals(configuration.getId(), activeConfigurations.get(0).getId());
-        assertFalse("Whitelist is empty, therefore no value is allowed", whitelistManager.isAllowed("test@test.ch", event.getId(), categoryId));
-        int items = whitelistManager.insertItems(whitelist.getId(), Collections.singletonList(new WhitelistItemModification(null,"test@test.ch", "description")));
+        assertFalse("AttendeeList is empty, therefore no value is allowed", attendeeListManager.isAllowed("test@test.ch", event.getId(), categoryId));
+        int items = attendeeListManager.insertItems(attendeeList.getId(), Collections.singletonList(new AttendeeListItemModification(null,"test@test.ch", "description")));
         assertEquals(1, items);
-        assertTrue("Value should be allowed", whitelistManager.isAllowed("test@test.ch", event.getId(), categoryId));
+        assertTrue("Value should be allowed", attendeeListManager.isAllowed("test@test.ch", event.getId(), categoryId));
 
         TicketReservationModification ticketReservation = new TicketReservationModification();
         ticketReservation.setAmount(1);
@@ -133,13 +133,13 @@ public class WhitelistManagerIntegrationTest {
         ticketRepository.updateTicketOwnerById(ticket.getId(), "test@test.ch", "This is a Test", "This is", "a Test");
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertTrue("cannot confirm ticket", whitelistManager.acquireItemForTicket(ticket, "not-valid"));
+        assertTrue("cannot confirm ticket", attendeeListManager.acquireItemForTicket(ticket, "not-valid"));
 
         reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.empty())),
             Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertFalse("shouldn't be allowed", whitelistManager.acquireItemForTicket(ticket, "not-valid"));
+        assertFalse("shouldn't be allowed", attendeeListManager.acquireItemForTicket(ticket, "not-valid"));
 
     }
 }

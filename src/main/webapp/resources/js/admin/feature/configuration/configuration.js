@@ -293,21 +293,21 @@
 
     OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', 'ExtensionService', 'NotificationHandler', '$stateParams', '$q', '$rootScope'];
 
-    var whitelistTypes = {
+    var attendeeListTypes = {
         'ONCE_PER_VALUE': 'Limit to one ticket per email address',
         'LIMITED_QUANTITY': 'Limit to a specific number of tickets per email address',
         'UNLIMITED': 'Unlimited'
     };
 
-    var whitelistMatchTypes = {
+    var attendeeListMatchTypes = {
         'FULL': 'Full match',
         'EMAIL_DOMAIN': 'Match full email address, fallback on domain'
     };
 
     function selectList(conf) {
         return function(list) {
-            conf.whitelist = {
-                whitelistId: list.id,
+            conf.attendeeList = {
+                attendeeListId: list.id,
                 eventId: conf.event.id,
                 ticketCategoryId: conf.category ? conf.category.id : null,
                 matchType: 'FULL',
@@ -349,7 +349,7 @@
             eventConf.loading = true;
             getData().then(function(result) {
                     eventConf.event = result[0].data;
-                    loadWhitelists();
+                    loadAttendeeLists();
                     loadSettings(eventConf, result[1].data, ConfigurationService);
 
 
@@ -376,7 +376,7 @@
             eventConf.loading = true;
             $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings),
                 ExtensionService.saveBulkEventSetting(eventConf.organizationId, eventConf.eventId, eventConf.extensionSettings),
-                AttendeeListService.linkTo(eventConf.whitelist)
+                AttendeeListService.linkTo(eventConf.attendeeList)
             ]).then(function() {
                 load();
                 NotificationHandler.showSuccess("Configurations have been saved successfully");
@@ -399,17 +399,17 @@
             load();
         });
 
-        function loadWhitelists() {
+        function loadAttendeeLists() {
             $q.all([
                 AttendeeListService.loadLists(eventConf.event.organizationId),
                 AttendeeListService.loadActiveList(eventConf.event.shortName)
             ]).then(function(results) {
-                eventConf.whitelists = results[0].data;
-                eventConf.whitelist = results[1].status === 200 ? results[1].data : null;
+                eventConf.attendeeLists = results[0].data;
+                eventConf.attendeeList = results[1].status === 200 ? results[1].data : null;
                 eventConf.selectList = selectList(eventConf);
-                eventConf.whitelistTypes = whitelistTypes;
-                eventConf.whitelistMatchTypes = whitelistMatchTypes;
-                eventConf.removeWhitelistLink = unlinkWhitelist(eventConf, AttendeeListService, load);
+                eventConf.attendeeListTypes = attendeeListTypes;
+                eventConf.attendeeListMatchTypes = attendeeListMatchTypes;
+                eventConf.removeAttendeeListLink = unlinkAttendeeList(eventConf, AttendeeListService, load);
             });
 
         }
@@ -417,14 +417,14 @@
 
     EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams', 'AttendeeListService'];
 
-    function unlinkWhitelist(conf, AttendeeListService, loadFn) {
-        return function(organizationId, whitelistConfiguration) {
-            if(whitelistConfiguration && angular.isDefined(whitelistConfiguration.id)) {
-                AttendeeListService.unlinkFrom(organizationId, whitelistConfiguration.id).then(function() {
+    function unlinkAttendeeList(conf, AttendeeListService, loadFn) {
+        return function(organizationId, attendeeListConfiguration) {
+            if(attendeeListConfiguration && angular.isDefined(attendeeListConfiguration.id)) {
+                AttendeeListService.unlinkFrom(organizationId, attendeeListConfiguration.id).then(function() {
                     loadFn();
                 });
             } else {
-                conf.whitelist = undefined;
+                conf.attendeeList = undefined;
             }
         };
     }
@@ -465,9 +465,9 @@
                 AttendeeListService.loadActiveList(categoryConf.event.shortName, categoryConf.category.id)])
                 .then(function(results) {
                     loadSettings(categoryConf, results[0].data, ConfigurationService);
-                    categoryConf.whitelists = results[1].data;
-                    categoryConf.whitelist = results[2].status === 200 ? results[2].data : null;
-                    categoryConf.removeWhitelistLink = unlinkWhitelist(categoryConf, AttendeeListService, load);
+                    categoryConf.attendeeLists = results[1].data;
+                    categoryConf.attendeeList = results[2].status === 200 ? results[2].data : null;
+                    categoryConf.removeAttendeeListLink = unlinkAttendeeList(categoryConf, AttendeeListService, load);
                     categoryConf.loading = false;
                 }, function() {
                     categoryConf.loading = false;
@@ -476,8 +476,8 @@
         load();
 
         categoryConf.selectList = selectList(categoryConf);
-        categoryConf.whitelistTypes = whitelistTypes;
-        categoryConf.whitelistMatchTypes = whitelistMatchTypes;
+        categoryConf.attendeeListTypes = attendeeListTypes;
+        categoryConf.attendeeListMatchTypes = attendeeListMatchTypes;
 
 
         categoryConf.saveSettings = function(frm) {
@@ -487,8 +487,8 @@
             categoryConf.loading = true;
 
             ConfigurationService.updateCategoryConfig(categoryConf.category.id, categoryConf.event.id, categoryConf.settings).then(function() {
-                if(categoryConf.whitelist) {
-                    AttendeeListService.linkTo(categoryConf.whitelist).then(function() {
+                if(categoryConf.attendeeList) {
+                    AttendeeListService.linkTo(categoryConf.attendeeList).then(function() {
                         load();
                     });
                 } else {

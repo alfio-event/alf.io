@@ -31,19 +31,21 @@
                     <div class="col-xs-12 col-md-6">
                         <div class="form-group">
                             <label for="item-{{$index}}-emailAddress">E-Mail</label>
-                            <input type="email" class="form-control" id="item-{{$index}}-emailAddress" required name="item-{{$index}}-emailAddress" ng-model="item.value">
+                            <input type="email" class="form-control" id="item-{{$index}}-emailAddress" required name="item-{{$index}}-emailAddress" ng-model="item.value" ng-if="item.editable">
+                            <p class="form-control-static" ng-if="!item.editable" ng-bind="item.value"></p>
                         </div>
                     </div>
                     <div class="col-xs-12 col-md-6">
                         <div class="form-group">
                             <label for="item-{{$index}}-description">Description</label>
-                            <input type="text" class="form-control" id="item-{{$index}}-description" name="item-{{$index}}-description" ng-model="item.description">
+                            <input type="text" class="form-control" id="item-{{$index}}-description" name="item-{{$index}}-description" ng-model="item.description" ng-if="item.editable">
+                            <p class="form-control-static" ng-if="!item.editable" ng-bind="item.description"></p>
                         </div>
                     </div>
                     <div class="col-xs-12">
                         <div class="pull-right">
-                            <button class="btn btn-sm btn-default" ng-click="$ctrl.removeItem($index)" ng-if="!$first"><i class="fa fa-trash"></i> delete</button>
-                            <button class="btn btn-sm btn-success" ng-click="$ctrl.addItem()" ng-if="$last"><i class="fa fa-plus"></i> add Item</button>
+                            <button type="button" class="btn btn-sm btn-default" ng-click="$ctrl.removeItem($index)" ng-if="!$first"><i class="fa fa-trash"></i> delete</button>
+                            <button type="button" class="btn btn-sm btn-success" ng-click="$ctrl.addItem()" ng-if="$last"><i class="fa fa-plus"></i> add Item</button>
                         </div>
                     </div>
                 </div>

@@ -107,7 +107,7 @@ public class TicketReservationManagerUnitTest {
     @Mock
     private TicketSearchRepository ticketSearchRepository;
     @Mock
-    private WhitelistManager whitelistManager;
+    private AttendeeListManager attendeeListManager;
 
     @Before
     public void setUp() {
@@ -134,7 +134,7 @@ public class TicketReservationManagerUnitTest {
             invoiceSequencesRepository,
             auditingRepository,
             userRepository,
-            extensionManager, ticketSearchRepository, whitelistManager);
+            extensionManager, ticketSearchRepository, attendeeListManager);
     }
 
     @Test

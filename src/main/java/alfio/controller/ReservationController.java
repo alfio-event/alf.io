@@ -92,7 +92,7 @@ public class ReservationController {
     private final MollieManager mollieManager;
     private final RecaptchaService recaptchaService;
     private final TicketReservationRepository ticketReservationRepository;
-    private final WhitelistManager whitelistManager;
+    private final AttendeeListManager attendeeListManager;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
     public String showPaymentPage(@PathVariable("eventName") String eventName,
@@ -460,7 +460,7 @@ public class ReservationController {
             }
             Map<String, Integer> categories = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getUuid, Ticket::getCategoryId));
             AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId),
-                new WhitelistManager.WhitelistValidator(event.getId(), whitelistManager));
+                new AttendeeListManager.WhitelistValidator(event.getId(), attendeeListManager));
             paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()), advancedValidator, categories);
             if (bindingResult.hasErrors()) {
                 ticketReservationRepository.updateTicketReservation(reservationId, ticketReservation.getStatus().name(), paymentForm.getEmail(),

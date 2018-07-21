@@ -14,13 +14,13 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.whitelist;
+package alfio.model.attendeelist;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
-public class WhitelistConfiguration {
+public class AttendeeListConfiguration {
 
 
     public enum Type {
@@ -32,22 +32,22 @@ public class WhitelistConfiguration {
     }
 
     private final int id;
-    private final int whitelistId;
+    private final int attendeeListId;
     private final Integer eventId;
     private final Integer ticketCategoryId;
     private final Type type;
     private final MatchType matchType;
     private final Integer maxAllocation;
 
-    public WhitelistConfiguration(@Column("id") int id,
-                                  @Column("whitelist_id_fk") int whitelistId,
-                                  @Column("event_id_fk") Integer eventId,
-                                  @Column("ticket_category_id_fk") Integer ticketCategoryId,
-                                  @Column("type") Type type,
-                                  @Column("match_type") MatchType matchType,
-                                  @Column("max_allocation") Integer maxAllocation) {
+    public AttendeeListConfiguration(@Column("id") int id,
+                                     @Column("attendee_list_id_fk") int attendeeListId,
+                                     @Column("event_id_fk") Integer eventId,
+                                     @Column("ticket_category_id_fk") Integer ticketCategoryId,
+                                     @Column("type") Type type,
+                                     @Column("match_type") MatchType matchType,
+                                     @Column("max_allocation") Integer maxAllocation) {
         this.id = id;
-        this.whitelistId = whitelistId;
+        this.attendeeListId = attendeeListId;
         this.eventId = eventId;
         this.ticketCategoryId = ticketCategoryId;
         this.type = type;

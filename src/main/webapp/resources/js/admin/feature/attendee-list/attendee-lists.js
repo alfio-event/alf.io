@@ -119,7 +119,7 @@
         }
 
         function addItem() {
-            ctrl.list.items.push({ value: null, description: null});
+            ctrl.list.items.push({ value: null, description: null, editable: true});
         }
 
         function init() {
@@ -128,11 +128,9 @@
                     name: '',
                     description: '',
                     organizationId: ctrl.organizationId,
-                    items: [{
-                        value: null,
-                        description: null
-                    }]
-                }
+                    items: []
+                };
+                addItem();
             } else {
                 ctrl.loading = true;
                 AttendeeListService.loadListDetail(ctrl.organizationId, ctrl.listId).then(function(result) {
@@ -146,17 +144,23 @@
             if(!frm.$valid) {
                 return false;
             }
-            AttendeeListService.createList(ctrl.organizationId, ctrl.list).then(function(result) {
-                NotificationHandler.showSuccess('List '+ctrl.list.name+' successfully created');
-                $state.go('attendee-list',{orgId: ctrl.organizationId, listId: result.data});
-            });
+            if(angular.isDefined(ctrl.list.id)) {
+                AttendeeListService.updateList(ctrl.organizationId, ctrl.list).then(function(result) {
+                    NotificationHandler.showSuccess('List '+ctrl.list.name+' successfully updated');
+                });
+            } else {
+                AttendeeListService.createList(ctrl.organizationId, ctrl.list).then(function(result) {
+                    NotificationHandler.showSuccess('List '+ctrl.list.name+' successfully created');
+                    $state.go('^.edit', {orgId: ctrl.organizationId, listId: result.data});
+                });
+            }
         }
 
         function parseFile(content) {
             $timeout(function() {
                 ctrl.loading = true;
             });
-            var items = [];
+            var items = _.filter(ctrl.list.items, function(i) {return !i.editable;});
             $timeout(function() {
                 Papa.parse(content, {
                     header: false,
@@ -167,7 +171,8 @@
                             if(row.length >= 1) {
                                 var item = {
                                     value: row[0],
-                                    description: row.length > 1 ? row[1] : null
+                                    description: row.length > 1 ? row[1] : null,
+                                    editable: true
                                 };
                                 items.push(item);
                             } else {
@@ -190,27 +195,30 @@
     function AttendeeListService($http, HttpErrorHandler, $q) {
         return {
             loadLists: function(orgId) {
-                return $http.get('/admin/api/whitelist/'+orgId).error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/attendee-list/'+orgId).error(HttpErrorHandler.handle);
             },
             loadListDetail: function(orgId, listId) {
-                return $http.get('/admin/api/whitelist/'+orgId+'/detail/'+listId).error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/attendee-list/'+orgId+'/detail/'+listId).error(HttpErrorHandler.handle);
             },
             createList: function(orgId, list) {
-                return $http.post('/admin/api/whitelist/'+orgId+'/new', list).error(HttpErrorHandler.handle);
+                return $http.post('/admin/api/attendee-list/'+orgId+'/new', list).error(HttpErrorHandler.handle);
+            },
+            updateList: function(orgId, list) {
+                return $http.post('/admin/api/attendee-list/'+orgId+'/update/'+list.id, list)
             },
             loadActiveList: function(eventId, categoryId) {
-                var url = '/admin/api/whitelist/event/'+eventId + (angular.isDefined(categoryId) ? '/category/'+categoryId : '');
+                var url = '/admin/api/attendee-list/event/'+eventId + (angular.isDefined(categoryId) ? '/category/'+categoryId : '');
                 return $http.get(url).error(HttpErrorHandler.handle);
             },
             linkTo: function(configuration) {
                 if(configuration) {
-                    return $http.post('/admin/api/whitelist/'+configuration.whitelistId+'/link', configuration).error(HttpErrorHandler.handle);
+                    return $http.post('/admin/api/attendee-list/'+configuration.attendeeListId+'/link', configuration).error(HttpErrorHandler.handle);
                 } else {
                     return $q.resolve(true);
                 }
             },
-            unlinkFrom: function(organizationId, whitelistConfigurationId) {
-                return $http['delete']('/admin/api/whitelist/'+organizationId+'/link/'+whitelistConfigurationId);
+            unlinkFrom: function(organizationId, attendeeListConfigurationId) {
+                return $http['delete']('/admin/api/attendee-list/'+organizationId+'/link/'+attendeeListConfigurationId);
             }
         }
     }

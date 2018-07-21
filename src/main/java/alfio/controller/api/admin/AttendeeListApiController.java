@@ -16,13 +16,13 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AttendeeListManager;
 import alfio.manager.EventManager;
-import alfio.manager.WhitelistManager;
 import alfio.manager.user.UserManager;
-import alfio.model.modification.WhitelistConfigurationModification;
-import alfio.model.modification.WhitelistModification;
-import alfio.model.whitelist.Whitelist;
-import alfio.model.whitelist.WhitelistConfiguration;
+import alfio.model.attendeelist.AttendeeList;
+import alfio.model.attendeelist.AttendeeListConfiguration;
+import alfio.model.modification.AttendeeListConfigurationModification;
+import alfio.model.modification.AttendeeListModification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,47 +36,47 @@ import java.util.Optional;
 import static alfio.util.OptionalWrapper.optionally;
 
 @RestController
-@RequestMapping("/admin/api/whitelist")
+@RequestMapping("/admin/api/attendee-list")
 @RequiredArgsConstructor
 public class AttendeeListApiController {
 
-    private final WhitelistManager whitelistManager;
+    private final AttendeeListManager attendeeListManager;
     private final UserManager userManager;
     private final EventManager eventManager;
 
     @GetMapping("/{organizationId}")
-    public ResponseEntity<List<Whitelist>> loadAllWhitelistsForOrganization(@PathVariable("organizationId") int organizationId, Principal principal) {
+    public ResponseEntity<List<AttendeeList>> loadAllAttendeeListsForOrganization(@PathVariable("organizationId") int organizationId, Principal principal) {
         if(notOwner(principal.getName(), organizationId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return ResponseEntity.ok(whitelistManager.getAllForOrganization(organizationId));
+        return ResponseEntity.ok(attendeeListManager.getAllForOrganization(organizationId));
     }
 
     @GetMapping("/{organizationId}/detail/{listId}")
-    public ResponseEntity<WhitelistModification> loadDetail(@PathVariable("organizationId") int organizationId, @PathVariable("listId") int listId, Principal principal) {
+    public ResponseEntity<AttendeeListModification> loadDetail(@PathVariable("organizationId") int organizationId, @PathVariable("listId") int listId, Principal principal) {
         if(notOwner(principal.getName(), organizationId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return whitelistManager.loadComplete(listId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return attendeeListManager.loadComplete(listId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{organizationId}/new")
-    public ResponseEntity<Integer> createNew(@PathVariable("organizationId") int organizationId, @RequestBody WhitelistModification request, Principal principal) {
+    public ResponseEntity<Integer> createNew(@PathVariable("organizationId") int organizationId, @RequestBody AttendeeListModification request, Principal principal) {
         if(notOwner(principal.getName(), organizationId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         if(request.getOrganizationId() != organizationId) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(whitelistManager.createNew(request));
+        return ResponseEntity.ok(attendeeListManager.createNew(request));
     }
 
     @GetMapping("/event/{eventName}")
-    public ResponseEntity<WhitelistConfiguration> findActiveList(@PathVariable("eventName") String eventName,
-                                                                 Principal principal) {
+    public ResponseEntity<AttendeeListConfiguration> findActiveList(@PathVariable("eventName") String eventName,
+                                                                    Principal principal) {
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
-                Optional<WhitelistConfiguration> configuration = whitelistManager.getConfigurationsForEvent(event.getId()).stream()
+                Optional<AttendeeListConfiguration> configuration = attendeeListManager.getConfigurationsForEvent(event.getId()).stream()
                     .filter(c -> c.getTicketCategoryId() == null)
                     .findFirst();
                 return configuration.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
@@ -85,34 +85,34 @@ public class AttendeeListApiController {
     }
 
     @GetMapping("/event/{eventName}/category/{categoryId}")
-    public ResponseEntity<WhitelistConfiguration> findActiveList(@PathVariable("eventName") String eventName,
-                                                                 @PathVariable("categoryId") int categoryId,
-                                                                 Principal principal) {
+    public ResponseEntity<AttendeeListConfiguration> findActiveList(@PathVariable("eventName") String eventName,
+                                                                    @PathVariable("categoryId") int categoryId,
+                                                                    Principal principal) {
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
-                Optional<WhitelistConfiguration> configuration = whitelistManager.findConfigurations(event.getId(), categoryId).stream().findFirst();
+                Optional<AttendeeListConfiguration> configuration = attendeeListManager.findConfigurations(event.getId(), categoryId).stream().findFirst();
                 return configuration.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
             })
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{listId}/link")
-    public ResponseEntity<Integer> linkList(@PathVariable("listId") int listId, @RequestBody WhitelistConfigurationModification body, Principal principal) {
-        if(body == null || listId != body.getWhitelistId()) {
+    public ResponseEntity<Integer> linkList(@PathVariable("listId") int listId, @RequestBody AttendeeListConfigurationModification body, Principal principal) {
+        if(body == null || listId != body.getAttendeeListId()) {
             return ResponseEntity.badRequest().build();
         }
 
         return optionally(() -> eventManager.getSingleEventById(body.getEventId(), principal.getName()))
             .map(event -> {
-                Optional<WhitelistConfiguration> existing = whitelistManager.getConfigurationsForEvent(event.getId())
+                Optional<AttendeeListConfiguration> existing = attendeeListManager.getConfigurationsForEvent(event.getId())
                     .stream()
-                    .filter(c -> c.getWhitelistId() == listId && Objects.equals(body.getTicketCategoryId(), c.getTicketCategoryId()))
+                    .filter(c -> c.getAttendeeListId() == listId && Objects.equals(body.getTicketCategoryId(), c.getTicketCategoryId()))
                     .findFirst();
-                WhitelistConfiguration conf;
+                AttendeeListConfiguration conf;
                 if(existing.isPresent()) {
-                    conf = whitelistManager.updateConfiguration(existing.get().getId(), body);
+                    conf = attendeeListManager.updateConfiguration(existing.get().getId(), body);
                 } else {
-                    conf = whitelistManager.createConfiguration(listId, event.getId(), body);
+                    conf = attendeeListManager.createConfiguration(listId, event.getId(), body);
                 }
                 return ResponseEntity.ok(conf.getId());
             })
@@ -122,7 +122,7 @@ public class AttendeeListApiController {
     @DeleteMapping("/{organizationId}/link/{configurationId}")
     public ResponseEntity<String> unlinkList(@PathVariable("organizationId") int organizationId, @PathVariable("configurationId") int configurationId, Principal principal) {
         if(optionally(() -> userManager.findUserByUsername(principal.getName())).filter(u -> userManager.isOwnerOfOrganization(u, organizationId)).isPresent()) {
-            whitelistManager.disableConfiguration(configurationId);
+            attendeeListManager.disableConfiguration(configurationId);
             return ResponseEntity.ok("OK");
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

@@ -16,31 +16,31 @@
  */
 package alfio.model.modification;
 
-import alfio.model.whitelist.WhitelistConfiguration;
+import alfio.model.attendeelist.AttendeeListConfiguration;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
-public class WhitelistConfigurationModification {
+public class AttendeeListConfigurationModification {
     private final Integer id;
-    private final int whitelistId;
+    private final int attendeeListId;
     private final int eventId;
     private final Integer ticketCategoryId;
-    private final WhitelistConfiguration.Type type;
-    private final WhitelistConfiguration.MatchType matchType;
+    private final AttendeeListConfiguration.Type type;
+    private final AttendeeListConfiguration.MatchType matchType;
     private final Integer maxAllocation;
 
     @JsonCreator
-    public WhitelistConfigurationModification(@JsonProperty("id") Integer id,
-                                              @JsonProperty("whitelistId") int whitelistId,
-                                              @JsonProperty("eventId") int eventId,
-                                              @JsonProperty("ticketCategoryId") Integer ticketCategoryId,
-                                              @JsonProperty("type") WhitelistConfiguration.Type type,
-                                              @JsonProperty("matchType") WhitelistConfiguration.MatchType matchType,
-                                              @JsonProperty("maxAllocation") Integer maxAllocation) {
+    public AttendeeListConfigurationModification(@JsonProperty("id") Integer id,
+                                                 @JsonProperty("attendeeListId") int attendeeListId,
+                                                 @JsonProperty("eventId") int eventId,
+                                                 @JsonProperty("ticketCategoryId") Integer ticketCategoryId,
+                                                 @JsonProperty("type") AttendeeListConfiguration.Type type,
+                                                 @JsonProperty("matchType") AttendeeListConfiguration.MatchType matchType,
+                                                 @JsonProperty("maxAllocation") Integer maxAllocation) {
         this.id = id;
-        this.whitelistId = whitelistId;
+        this.attendeeListId = attendeeListId;
         this.eventId = eventId;
         this.ticketCategoryId = ticketCategoryId;
         this.type = type;

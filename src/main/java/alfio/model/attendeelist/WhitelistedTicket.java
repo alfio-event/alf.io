@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.whitelist;
+package alfio.model.attendeelist;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
@@ -22,17 +22,17 @@ import lombok.Getter;
 @Getter
 public class WhitelistedTicket {
 
-    private final int whitelistItemId;
-    private final int whitelistConfigurationId;
+    private final int attendeeListItemId;
+    private final int attendeeListConfigurationId;
     private final int ticketId;
     private final boolean requiresUniqueValue;
 
-    public WhitelistedTicket(@Column("whitelist_item_id_fk") int whitelistItemId,
-                             @Column("whitelist_configuration_id_fk") int whitelistConfigurationId,
+    public WhitelistedTicket(@Column("attendee_list_item_id_fk") int attendeeListItemId,
+                             @Column("attendee_list_configuration_id_fk") int attendeeListConfigurationId,
                              @Column("ticket_id_fk") int ticketId,
                              @Column("requires_unique_value") Boolean requiresUniqueValue) {
-        this.whitelistItemId = whitelistItemId;
-        this.whitelistConfigurationId = whitelistConfigurationId;
+        this.attendeeListItemId = attendeeListItemId;
+        this.attendeeListConfigurationId = attendeeListConfigurationId;
         this.ticketId = ticketId;
         this.requiresUniqueValue = requiresUniqueValue != null ? requiresUniqueValue : false;
     }

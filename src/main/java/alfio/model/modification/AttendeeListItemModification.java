@@ -21,15 +21,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
-public class WhitelistItemModification {
+public class AttendeeListItemModification {
     private final Integer id;
     private final String value;
     private final String description;
 
     @JsonCreator
-    public WhitelistItemModification(@JsonProperty("id") Integer id,
-                                     @JsonProperty("value") String value,
-                                     @JsonProperty("description") String description) {
+    public AttendeeListItemModification(@JsonProperty("id") Integer id,
+                                        @JsonProperty("value") String value,
+                                        @JsonProperty("description") String description) {
         this.id = id;
         this.value = value;
         this.description = description;

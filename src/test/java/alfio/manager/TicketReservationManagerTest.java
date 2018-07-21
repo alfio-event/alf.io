@@ -150,7 +150,7 @@ public class TicketReservationManagerTest {
     @Mock
     private ExtensionManager extensionManager;
     @Mock
-    private WhitelistManager whitelistManager;
+    private AttendeeListManager attendeeListManager;
 
     @Before
     public void init() {
@@ -177,7 +177,7 @@ public class TicketReservationManagerTest {
             invoiceSequencesRepository,
             auditingRepository,
             userRepository,
-            extensionManager, ticketSearchRepository, whitelistManager);
+            extensionManager, ticketSearchRepository, attendeeListManager);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);

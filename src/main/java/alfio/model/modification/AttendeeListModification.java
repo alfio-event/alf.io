@@ -23,20 +23,20 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public class WhitelistModification {
+public class AttendeeListModification {
     private final Integer id;
     private final String name;
     private final String description;
     private final int organizationId;
-    private final List<WhitelistItemModification> items;
+    private final List<AttendeeListItemModification> items;
 
 
     @JsonCreator
-    public WhitelistModification(@JsonProperty("id") Integer id,
-                                 @JsonProperty("name") String name,
-                                 @JsonProperty("description") String description,
-                                 @JsonProperty("organizationId") int organizationId,
-                                 @JsonProperty("items") List<WhitelistItemModification> items) {
+    public AttendeeListModification(@JsonProperty("id") Integer id,
+                                    @JsonProperty("name") String name,
+                                    @JsonProperty("description") String description,
+                                    @JsonProperty("organizationId") int organizationId,
+                                    @JsonProperty("items") List<AttendeeListItemModification> items) {
         this.id = id;
         this.name = name;
         this.description = description;
