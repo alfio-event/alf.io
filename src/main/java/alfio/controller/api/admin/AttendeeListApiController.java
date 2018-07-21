@@ -119,6 +119,15 @@ public class AttendeeListApiController {
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @DeleteMapping("/{organizationId}/link/{configurationId}")
+    public ResponseEntity<String> unlinkList(@PathVariable("organizationId") int organizationId, @PathVariable("configurationId") int configurationId, Principal principal) {
+        if(optionally(() -> userManager.findUserByUsername(principal.getName())).filter(u -> userManager.isOwnerOfOrganization(u, organizationId)).isPresent()) {
+            whitelistManager.disableConfiguration(configurationId);
+            return ResponseEntity.ok("OK");
+        }
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
     private boolean notOwner(String username, int organizationId) {
         return !optionally(() -> userManager.findUserByUsername(username))
             .filter(user -> userManager.isOwnerOfOrganization(user, organizationId))

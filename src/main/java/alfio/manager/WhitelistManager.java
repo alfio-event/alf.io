@@ -110,6 +110,10 @@ public class WhitelistManager {
             });
     }
 
+    public Optional<Whitelist> findById(int whitelistId, int organizationId) {
+        return whitelistRepository.getOptionalById(whitelistId).filter(w -> w.getOrganizationId() == organizationId);
+    }
+
     public boolean isAllowed(String value, int eventId, int categoryId) {
 
         List<WhitelistConfiguration> configurations = findConfigurations(eventId, categoryId);
@@ -182,6 +186,10 @@ public class WhitelistManager {
             int result = whitelistRepository.deleteExistingWhitelistedTickets(tickets);
             log.trace("deleted {} whitelisted tickets for reservation {}", result, reservationId);
         }
+    }
+
+    public void disableConfiguration(int configurationId) {
+        Validate.isTrue(whitelistRepository.disableConfiguration(configurationId) == 1, "Error while deleting configuration");
     }
 
     @RequiredArgsConstructor

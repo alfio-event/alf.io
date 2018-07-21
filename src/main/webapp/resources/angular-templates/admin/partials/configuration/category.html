@@ -6,12 +6,12 @@
 </div>
 <div data-ng-if="categoryConf.hasResults" class="category-conf">
 
-    <div>
-        <h3>Configuration for {{categoryConf.category.name}}</h3>
+    <div class="modal-header">
+        <h2>Configuration for {{categoryConf.category.name}}</h2>
     </div>
 
     <div class="page-header">
-        <h4>General</h4>
+        <h3>General</h3>
         <span>General settings</span>
     </div>
 
@@ -23,7 +23,7 @@
         </div>
 
         <div class="page-header" data-ng-if="categoryConf.mail">
-            <h4>E-Mail</h4>
+            <h3>E-Mail</h3>
             <span>E-Mail settings</span>
         </div>
 
@@ -69,7 +69,7 @@
         </div>
 
         <div class="page-header" data-ng-if="categoryConf.payment">
-            <h4>Payment</h4>
+            <h3>Payment</h3>
             <span>Payment provider settings</span>
         </div>
 
@@ -80,16 +80,23 @@
         </div>
         <div ng-if="categoryConf.whitelists.length > 0">
             <div class="page-header" data-ng-if="categoryConf.whitelists.length > 0">
-                <h4>Link to attendees list</h4>
+                <h3>Link to attendees list</h3>
                 <span>Allow only selected people to assign/buy a ticket for this category</span>
             </div>
             <div class="row">
                 <div class="col-xs-12 col-md-6">
-                    <div class="list-group">
-                        <a class="list-group-item" ng-repeat="list in categoryConf.whitelists" ng-class="{'active': categoryConf.whitelist.whitelistId == list.id}" ng-click="categoryConf.selectList(list)">
-                            <h5 class="list-group-item-heading"><i class="fa fa-check" ng-if="categoryConf.whitelist.whitelistId == list.id"></i> {{list.name}}</h5>
-                            <p class="list-group-item-text" ng-bind="list.description"></p>
-                        </a>
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="list-group">
+                                <a class="list-group-item" ng-repeat="list in categoryConf.whitelists" ng-class="{'active': categoryConf.whitelist.whitelistId == list.id}" ng-click="categoryConf.selectList(list)">
+                                    <h5 class="list-group-item-heading"><i class="fa fa-check" ng-if="categoryConf.whitelist.whitelistId == list.id"></i> {{list.name}}</h5>
+                                    <p class="list-group-item-text" ng-bind="list.description"></p>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-xs-12" ng-if="categoryConf.whitelist">
+                            <button type="button" class="btn btn-danger" ng-click="categoryConf.removeWhitelistLink(categoryConf.event.organizationId, categoryConf.whitelist)"><i class="fa fa-trash"></i> Deactivate</button>
+                        </div>
                     </div>
                 </div>
                 <div class="col-xs-12 col-md-6">

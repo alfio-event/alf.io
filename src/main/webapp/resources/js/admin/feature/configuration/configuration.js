@@ -409,12 +409,25 @@
                 eventConf.selectList = selectList(eventConf);
                 eventConf.whitelistTypes = whitelistTypes;
                 eventConf.whitelistMatchTypes = whitelistMatchTypes;
-            })
+                eventConf.removeWhitelistLink = unlinkWhitelist(eventConf, AttendeeListService, load);
+            });
 
         }
     }
 
     EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams', 'AttendeeListService'];
+
+    function unlinkWhitelist(conf, AttendeeListService, loadFn) {
+        return function(organizationId, whitelistConfiguration) {
+            if(whitelistConfiguration && angular.isDefined(whitelistConfiguration.id)) {
+                AttendeeListService.unlinkFrom(organizationId, whitelistConfiguration.id).then(function() {
+                    loadFn();
+                });
+            } else {
+                conf.whitelist = undefined;
+            }
+        };
+    }
 
     function loadSettings(container, settings, ConfigurationService) {
         var general = settings['GENERAL'] || [];
@@ -454,6 +467,7 @@
                     loadSettings(categoryConf, results[0].data, ConfigurationService);
                     categoryConf.whitelists = results[1].data;
                     categoryConf.whitelist = results[2].status === 200 ? results[2].data : null;
+                    categoryConf.removeWhitelistLink = unlinkWhitelist(categoryConf, AttendeeListService, load);
                     categoryConf.loading = false;
                 }, function() {
                     categoryConf.loading = false;

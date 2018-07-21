@@ -172,6 +172,9 @@
                 } else {
                     return $q.resolve(true);
                 }
+            },
+            unlinkFrom: function(organizationId, whitelistConfigurationId) {
+                return $http['delete']('/admin/api/whitelist/'+organizationId+'/link/'+whitelistConfigurationId);
             }
         }
     }

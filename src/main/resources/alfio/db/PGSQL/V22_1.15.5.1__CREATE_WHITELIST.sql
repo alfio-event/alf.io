@@ -42,7 +42,8 @@ create table whitelist_configuration (
     ticket_category_id_fk integer,
     type varchar(255),
     match_type varchar(255),
-    max_allocation integer
+    max_allocation integer,
+    active boolean not null default true
 );
 
 alter table whitelist_configuration add constraint "whitelist_configuration_whitelist_id_fk" foreign key(whitelist_id_fk) references whitelist(id);
@@ -61,5 +62,6 @@ alter table whitelisted_ticket add constraint "whitelisted_ticket_whitelist_conf
 alter table whitelisted_ticket add constraint "whitelisted_ticket_ticket_id_fk" foreign key(ticket_id_fk) references ticket(id);
 alter table whitelisted_ticket add constraint "whitelisted_ticket_unique_item_id" unique(whitelist_item_id_fk, whitelist_configuration_id_fk, requires_unique_value);
 
+create view whitelist_configuration_active as select * from whitelist_configuration where active = true;
 
 
