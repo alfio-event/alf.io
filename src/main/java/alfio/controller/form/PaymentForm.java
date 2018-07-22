@@ -16,13 +16,13 @@
  */
 package alfio.controller.form;
 
-import alfio.manager.EuVatChecker;
 import alfio.manager.PaypalManager;
 import alfio.model.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ErrorsCode;
 import alfio.util.Validator;
+import alfio.util.Validator.AdvancedTicketAssignmentValidator;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
@@ -32,8 +32,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static alfio.util.ErrorsCode.STEP_2_INVALID_VAT;
-import static alfio.util.ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA;
+import static alfio.util.ErrorsCode.*;
 
 // step 2 : payment/claim tickets
 //
@@ -82,7 +81,9 @@ public class PaymentForm implements Serializable {
     }
 
     public void validate(BindingResult bindingResult, TotalPrice reservationCost, Event event,
-                         List<TicketFieldConfiguration> fieldConf, EuVatChecker.SameCountryValidator vatValidator) {
+                         List<TicketFieldConfiguration> fieldConf,
+                         AdvancedTicketAssignmentValidator advancedValidator,
+                         Map<String, Integer> ticketCategories) {
 
         List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
 
@@ -140,22 +141,40 @@ public class PaymentForm implements Serializable {
         if(!postponeAssignment) {
             Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                 .filter(m -> !m.isEmpty())
-                .map(m -> m.entrySet().stream().map(e -> Validator.validateTicketAssignment(e.getValue(),
-                    fieldConf, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator)))
+                .map(m -> m.entrySet().stream().map(e -> {
+                    String prefix = "tickets[" + e.getKey() + "]";
+                    ValidationResult baseValidationResult = Validator.validateTicketAssignment(e.getValue(), fieldConf, Optional.of(bindingResult), event, prefix);
+                    Validator.AdvancedValidationContext advancedValidationContext = new Validator.AdvancedValidationContext(e.getValue(), fieldConf, ticketCategories.get(e.getKey()), e.getKey(), prefix);
+                    return baseValidationResult.or(Validator.performAdvancedValidation(advancedValidator, advancedValidationContext, bindingResult));
+                }))
                 .map(s -> s.collect(Collectors.toList()));
 
             boolean success = validationResults
                 .filter(l -> l.stream().allMatch(ValidationResult::isSuccess))
                 .isPresent();
             if(!success) {
-                String errorCode = validationResults.filter(this::containsVatValidationError).isPresent() ? STEP_2_INVALID_VAT : STEP_2_MISSING_ATTENDEE_DATA;
+                String errorCode = getErrorCode(validationResults.orElseThrow(IllegalStateException::new));
                 bindingResult.reject(errorCode);
             }
         }
     }
 
+    private String getErrorCode(List<ValidationResult> validationResults) {
+        if(containsVatValidationError(validationResults)) {
+            return STEP_2_INVALID_VAT;
+        }
+        if(containsValidationError(validationResults, STEP_2_WHITELIST_CHECK_FAILED)) {
+            return STEP_2_WHITELIST_CHECK_FAILED;
+        }
+        return STEP_2_MISSING_ATTENDEE_DATA;
+    }
+
     private boolean containsVatValidationError(List<ValidationResult> l) {
-        return l.stream().anyMatch(v -> !v.isSuccess() && v.getErrorDescriptors().stream().anyMatch(ed -> ed.getCode().equals(STEP_2_INVALID_VAT)));
+        return containsValidationError(l, STEP_2_INVALID_VAT);
+    }
+
+    private boolean containsValidationError(List<ValidationResult> l, String errorCode) {
+        return l.stream().anyMatch(v -> !v.isSuccess() && v.getErrorDescriptors().stream().anyMatch(ed -> ed.getCode().equals(errorCode)));
     }
 
     public Boolean shouldCancelReservation() {

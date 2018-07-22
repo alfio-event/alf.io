@@ -40,6 +40,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import alfio.util.Validator.AdvancedTicketAssignmentValidator;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
@@ -67,6 +68,7 @@ import java.util.stream.Collectors;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 @Controller
 @Log4j2
@@ -90,6 +92,7 @@ public class ReservationController {
     private final MollieManager mollieManager;
     private final RecaptchaService recaptchaService;
     private final TicketReservationRepository ticketReservationRepository;
+    private final GroupManager groupManager;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
     public String showPaymentPage(@PathVariable("eventName") String eventName,
@@ -455,7 +458,10 @@ public class ReservationController {
             if(!paymentForm.isPostponeAssignment() && !ticketRepository.checkTicketUUIDs(reservationId, paymentForm.getTickets().keySet())) {
                 bindingResult.reject(ErrorsCode.STEP_2_MISSING_ATTENDEE_DATA);
             }
-            paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()), new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId));
+            Map<String, Integer> categories = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getUuid, Ticket::getCategoryId));
+            AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId),
+                new GroupManager.WhitelistValidator(event.getId(), groupManager));
+            paymentForm.validate(bindingResult, reservationCost, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()), advancedValidator, categories);
             if (bindingResult.hasErrors()) {
                 ticketReservationRepository.updateTicketReservation(reservationId, ticketReservation.getStatus().name(), paymentForm.getEmail(),
                     paymentForm.getFullName(), paymentForm.getFirstName(), paymentForm.getLastName(), locale.getLanguage(), paymentForm.getBillingAddress(), null, null, paymentForm.getCustomerReference());
@@ -503,15 +509,18 @@ public class ReservationController {
         }
         //
 
+        Map<String, String> ticketEmails = paymentForm.getTickets().entrySet().stream().map(e -> Pair.of(e.getKey(), e.getValue().getEmail())).collect(toMap(Pair::getKey, Pair::getValue));//TODO temporary, to be removed in 2.0
+
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, paymentForm.getEmail(),
             customerName, locale, paymentForm.getBillingAddress(), paymentForm.getCustomerReference(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()), paymentForm.isInvoiceRequested(), paymentForm.getVatCountryCode(),
-                paymentForm.getVatNr(), optionalReservation.get().getVatStatus(), paymentForm.getTermAndConditionsAccepted(), Optional.ofNullable(paymentForm.getPrivacyPolicyAccepted()).orElse(false));
+                paymentForm.getVatNr(), optionalReservation.get().getVatStatus(), paymentForm.getTermAndConditionsAccepted(), Optional.ofNullable(paymentForm.getPrivacyPolicyAccepted()).orElse(false),  ticketEmails);
 
         if(!status.isSuccessful()) {
-            String errorMessageCode = status.getErrorCode().get();
+            String errorMessageCode = status.getErrorCode().orElse("");
             MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeManager.STRIPE_UNEXPECTED});
-            bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
+            String errorCode = ErrorsCode.STEP_2_WHITELIST_CHECK_FAILED.equals(errorMessageCode) ? errorMessageCode : ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR;
+            bindingResult.reject(errorCode, new Object[]{messageSource.getMessage(message, locale)}, null);
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
             return redirectReservation(optionalReservation, eventName, reservationId);
         }
