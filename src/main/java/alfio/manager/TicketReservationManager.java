@@ -29,10 +29,10 @@ import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.SpecialPrice.Status;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
-import alfio.model.attendeelist.AttendeeListConfiguration;
 import alfio.model.decorator.AdditionalServiceItemPriceContainer;
 import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
+import alfio.model.group.LinkedGroup;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
@@ -122,7 +122,7 @@ public class TicketReservationManager {
     private final UserRepository userRepository;
     private final ExtensionManager extensionManager;
     private final TicketSearchRepository ticketSearchRepository;
-    private final AttendeeListManager attendeeListManager;
+    private final GroupManager groupManager;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -163,7 +163,7 @@ public class TicketReservationManager {
                                     AuditingRepository auditingRepository,
                                     UserRepository userRepository,
                                     ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository,
-                                    AttendeeListManager attendeeListManager) {
+                                    GroupManager groupManager) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -189,7 +189,7 @@ public class TicketReservationManager {
         this.userRepository = userRepository;
         this.extensionManager = extensionManager;
         this.ticketSearchRepository = ticketSearchRepository;
-        this.attendeeListManager = attendeeListManager;
+        this.groupManager = groupManager;
     }
     
     /**
@@ -349,8 +349,8 @@ public class TicketReservationManager {
                                  boolean tcAccepted, boolean privacyPolicyAccepted, Map<String, String> ticketEmails) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
 
-        if(!acquireAttendeeListItems(reservationId, event, ticketEmails)) {
-            attendeeListManager.deleteWhitelistedTicketsForReservation(reservationId);
+        if(!acquiregroupMembers(reservationId, event, ticketEmails)) {
+            groupManager.deleteWhitelistedTicketsForReservation(reservationId);
             return PaymentResult.unsuccessful("error.STEP2_WHITELIST");
         }
 
@@ -443,16 +443,16 @@ public class TicketReservationManager {
         return true;
     }
 
-    private boolean acquireAttendeeListItems(String reservationId, Event event, Map<String, String> ticketEmails) {
+    private boolean acquiregroupMembers(String reservationId, Event event, Map<String, String> ticketEmails) {
         int eventId = event.getId();
-        List<AttendeeListConfiguration> attendeeListConfigurations = attendeeListManager.getConfigurationsForEvent(eventId);
-        if(!attendeeListConfigurations.isEmpty()) {
+        List<LinkedGroup> linkedGroups = groupManager.getLinksForEvent(eventId);
+        if(!linkedGroups.isEmpty()) {
             List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
             return requiresNewTransactionTemplate.execute(status ->
                 ticketsInReservation
                     .stream()
-                    .filter(ticket -> attendeeListConfigurations.stream().anyMatch(c -> c.getTicketCategoryId() == null || c.getTicketCategoryId().equals(ticket.getCategoryId())))
-                    .map(t -> attendeeListManager.acquireItemForTicket(t, ticketEmails.get(t.getUuid())))
+                    .filter(ticket -> linkedGroups.stream().anyMatch(c -> c.getTicketCategoryId() == null || c.getTicketCategoryId().equals(ticket.getCategoryId())))
+                    .map(t -> groupManager.acquireMemberForTicket(t, ticketEmails.get(t.getUuid())))
                     .reduce(true, Boolean::logicalAnd));
         }
         return true;
@@ -1004,7 +1004,7 @@ public class TicketReservationManager {
         int updatedTickets = ticketRepository.findTicketsInReservation(reservationId).stream().mapToInt(t -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), t.getId())).sum();
         Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
         waitingQueueManager.fireReservationExpired(reservationId);
-        attendeeListManager.deleteWhitelistedTicketsForReservation(reservationId);
+        groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         deleteReservation(event, reservationId, expired);
         auditingRepository.insert(reservationId, null, event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }

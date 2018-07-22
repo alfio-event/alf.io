@@ -14,26 +14,26 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.attendeelist;
+package alfio.model.group;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 @Getter
-public class AttendeeListItem {
+public class GroupMember {
 
     private final int id;
-    private final int attendeeListId;
+    private final int groupId;
     private final String value;
     private final String description;
 
 
-    public AttendeeListItem(@Column("id") int id,
-                            @Column("attendee_list_id_fk") int attendeeListId,
-                            @Column("value") String value,
-                            @Column("description") String description) {
+    public GroupMember(@Column("id") int id,
+                       @Column("a_group_id_fk") int groupId,
+                       @Column("value") String value,
+                       @Column("description") String description) {
         this.id = id;
-        this.attendeeListId = attendeeListId;
+        this.groupId = groupId;
         this.value = value;
         this.description = description;
     }

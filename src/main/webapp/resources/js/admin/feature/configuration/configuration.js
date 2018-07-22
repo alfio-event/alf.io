@@ -1,6 +1,6 @@
 (function() {
     "use strict";
-    angular.module('alfio-configuration', ['adminServices', 'attendee-list'])
+    angular.module('alfio-configuration', ['adminServices', 'group'])
         .config(['$stateProvider', function($stateProvider) {
             $stateProvider
                 .state('configuration', {
@@ -293,21 +293,21 @@
 
     OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', 'ExtensionService', 'NotificationHandler', '$stateParams', '$q', '$rootScope'];
 
-    var attendeeListTypes = {
+    var groupTypes = {
         'ONCE_PER_VALUE': 'Limit to one ticket per email address',
         'LIMITED_QUANTITY': 'Limit to a specific number of tickets per email address',
         'UNLIMITED': 'Unlimited'
     };
 
-    var attendeeListMatchTypes = {
+    var groupMatchTypes = {
         'FULL': 'Full match',
         'EMAIL_DOMAIN': 'Match full email address, fallback on domain'
     };
 
-    function selectList(conf) {
+    function selectGroup(conf) {
         return function(list) {
-            conf.attendeeList = {
-                attendeeListId: list.id,
+            conf.group = {
+                groupId: list.id,
                 eventId: conf.event.id,
                 ticketCategoryId: conf.category ? conf.category.id : null,
                 matchType: 'FULL',
@@ -316,7 +316,7 @@
         }
     }
 
-    function EventConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $q, $rootScope, $stateParams, AttendeeListService) {
+    function EventConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $q, $rootScope, $stateParams, GroupService) {
         var eventConf = this;
         var getData = function() {
             if(angular.isDefined($stateParams.eventName)) {
@@ -349,7 +349,7 @@
             eventConf.loading = true;
             getData().then(function(result) {
                     eventConf.event = result[0].data;
-                    loadAttendeeLists();
+                    loadGroups();
                     loadSettings(eventConf, result[1].data, ConfigurationService);
 
 
@@ -376,7 +376,7 @@
             eventConf.loading = true;
             $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings),
                 ExtensionService.saveBulkEventSetting(eventConf.organizationId, eventConf.eventId, eventConf.extensionSettings),
-                AttendeeListService.linkTo(eventConf.attendeeList)
+                GroupService.linkTo(eventConf.group)
             ]).then(function() {
                 load();
                 NotificationHandler.showSuccess("Configurations have been saved successfully");
@@ -399,32 +399,32 @@
             load();
         });
 
-        function loadAttendeeLists() {
+        function loadGroups() {
             $q.all([
-                AttendeeListService.loadLists(eventConf.event.organizationId),
-                AttendeeListService.loadActiveList(eventConf.event.shortName)
+                GroupService.loadGroups(eventConf.event.organizationId),
+                GroupService.loadActiveGroup(eventConf.event.shortName)
             ]).then(function(results) {
-                eventConf.attendeeLists = results[0].data;
-                eventConf.attendeeList = results[1].status === 200 ? results[1].data : null;
-                eventConf.selectList = selectList(eventConf);
-                eventConf.attendeeListTypes = attendeeListTypes;
-                eventConf.attendeeListMatchTypes = attendeeListMatchTypes;
-                eventConf.removeAttendeeListLink = unlinkAttendeeList(eventConf, AttendeeListService, load);
+                eventConf.groups = results[0].data;
+                eventConf.group = results[1].status === 200 ? results[1].data : null;
+                eventConf.selectGroup = selectGroup(eventConf);
+                eventConf.groupTypes = groupTypes;
+                eventConf.groupMatchTypes = groupMatchTypes;
+                eventConf.removeGroupLink = unlinkGroup(eventConf, GroupService, load);
             });
 
         }
     }
 
-    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams', 'AttendeeListService'];
+    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams', 'GroupService'];
 
-    function unlinkAttendeeList(conf, AttendeeListService, loadFn) {
-        return function(organizationId, attendeeListConfiguration) {
-            if(attendeeListConfiguration && angular.isDefined(attendeeListConfiguration.id)) {
-                AttendeeListService.unlinkFrom(organizationId, attendeeListConfiguration.id).then(function() {
+    function unlinkGroup(conf, GroupService, loadFn) {
+        return function(organizationId, groupLink) {
+            if(groupLink && angular.isDefined(groupLink.id)) {
+                GroupService.unlinkFrom(organizationId, groupLink.id).then(function() {
                     loadFn();
                 });
             } else {
-                conf.attendeeList = undefined;
+                conf.group = undefined;
             }
         };
     }
@@ -449,25 +449,25 @@
                 closeModal: '&'
             },
             bindToController: true,
-            controller: ['ConfigurationService', '$rootScope', 'AttendeeListService', '$q', CategoryConfigurationController],
+            controller: ['ConfigurationService', '$rootScope', 'GroupService', '$q', CategoryConfigurationController],
             controllerAs: 'categoryConf',
             templateUrl: '/resources/angular-templates/admin/partials/configuration/category.html'
         };
     }
 
-    function CategoryConfigurationController(ConfigurationService, $rootScope, AttendeeListService, $q) {
+    function CategoryConfigurationController(ConfigurationService, $rootScope, GroupService, $q) {
         var categoryConf = this;
 
         var load = function() {
             categoryConf.loading = true;
             $q.all([ConfigurationService.loadCategory(categoryConf.event.id, categoryConf.category.id),
-                AttendeeListService.loadLists(categoryConf.event.organizationId),
-                AttendeeListService.loadActiveList(categoryConf.event.shortName, categoryConf.category.id)])
+                GroupService.loadGroups(categoryConf.event.organizationId),
+                GroupService.loadActiveGroup(categoryConf.event.shortName, categoryConf.category.id)])
                 .then(function(results) {
                     loadSettings(categoryConf, results[0].data, ConfigurationService);
-                    categoryConf.attendeeLists = results[1].data;
-                    categoryConf.attendeeList = results[2].status === 200 ? results[2].data : null;
-                    categoryConf.removeAttendeeListLink = unlinkAttendeeList(categoryConf, AttendeeListService, load);
+                    categoryConf.groups = results[1].data;
+                    categoryConf.group = results[2].status === 200 ? results[2].data : null;
+                    categoryConf.removeGroupLink = unlinkGroup(categoryConf, GroupService, load);
                     categoryConf.loading = false;
                 }, function() {
                     categoryConf.loading = false;
@@ -475,9 +475,9 @@
         };
         load();
 
-        categoryConf.selectList = selectList(categoryConf);
-        categoryConf.attendeeListTypes = attendeeListTypes;
-        categoryConf.attendeeListMatchTypes = attendeeListMatchTypes;
+        categoryConf.selectGroup = selectGroup(categoryConf);
+        categoryConf.groupTypes = groupTypes;
+        categoryConf.groupMatchTypes = groupMatchTypes;
 
 
         categoryConf.saveSettings = function(frm) {
@@ -487,8 +487,8 @@
             categoryConf.loading = true;
 
             ConfigurationService.updateCategoryConfig(categoryConf.category.id, categoryConf.event.id, categoryConf.settings).then(function() {
-                if(categoryConf.attendeeList) {
-                    AttendeeListService.linkTo(categoryConf.attendeeList).then(function() {
+                if(categoryConf.group) {
+                    GroupService.linkTo(categoryConf.group).then(function() {
                         load();
                     });
                 } else {
@@ -508,7 +508,7 @@
             load();
         });
     }
-    CategoryConfigurationController.$inject = ['ConfigurationService', '$rootScope', 'AttendeeListService', '$q'];
+    CategoryConfigurationController.$inject = ['ConfigurationService', '$rootScope', 'GroupService', '$q'];
 
     function basicConfigurationNeeded($uibModal, ConfigurationService, EventService, $q, $window) {
         return {

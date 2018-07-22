@@ -16,31 +16,31 @@
  */
 package alfio.model.modification;
 
-import alfio.model.attendeelist.AttendeeListConfiguration;
+import alfio.model.group.LinkedGroup;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
-public class AttendeeListConfigurationModification {
+public class LinkedGroupModification {
     private final Integer id;
-    private final int attendeeListId;
+    private final int groupId;
     private final int eventId;
     private final Integer ticketCategoryId;
-    private final AttendeeListConfiguration.Type type;
-    private final AttendeeListConfiguration.MatchType matchType;
+    private final LinkedGroup.Type type;
+    private final LinkedGroup.MatchType matchType;
     private final Integer maxAllocation;
 
     @JsonCreator
-    public AttendeeListConfigurationModification(@JsonProperty("id") Integer id,
-                                                 @JsonProperty("attendeeListId") int attendeeListId,
-                                                 @JsonProperty("eventId") int eventId,
-                                                 @JsonProperty("ticketCategoryId") Integer ticketCategoryId,
-                                                 @JsonProperty("type") AttendeeListConfiguration.Type type,
-                                                 @JsonProperty("matchType") AttendeeListConfiguration.MatchType matchType,
-                                                 @JsonProperty("maxAllocation") Integer maxAllocation) {
+    public LinkedGroupModification(@JsonProperty("id") Integer id,
+                                   @JsonProperty("groupId") int groupId,
+                                   @JsonProperty("eventId") int eventId,
+                                   @JsonProperty("ticketCategoryId") Integer ticketCategoryId,
+                                   @JsonProperty("type") LinkedGroup.Type type,
+                                   @JsonProperty("matchType") LinkedGroup.MatchType matchType,
+                                   @JsonProperty("maxAllocation") Integer maxAllocation) {
         this.id = id;
-        this.attendeeListId = attendeeListId;
+        this.groupId = groupId;
         this.eventId = eventId;
         this.ticketCategoryId = ticketCategoryId;
         this.type = type;

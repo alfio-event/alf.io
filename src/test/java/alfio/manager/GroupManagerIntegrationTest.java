@@ -24,11 +24,11 @@ import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
-import alfio.model.attendeelist.AttendeeList;
-import alfio.model.attendeelist.AttendeeListConfiguration;
+import alfio.model.group.Group;
+import alfio.model.group.LinkedGroup;
 import alfio.model.modification.*;
-import alfio.repository.AttendeeListRepository;
 import alfio.repository.EventRepository;
+import alfio.repository.GroupRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
@@ -59,7 +59,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
-public class AttendeeListManagerIntegrationTest {
+public class GroupManagerIntegrationTest {
 
     @Autowired
     private EventManager eventManager;
@@ -78,9 +78,9 @@ public class AttendeeListManagerIntegrationTest {
     @Autowired
     private EventRepository eventRepository;
     @Autowired
-    private AttendeeListRepository attendeeListRepository;
+    private GroupRepository groupRepository;
     @Autowired
-    private AttendeeListManager attendeeListManager;
+    private GroupManager groupManager;
     @Autowired
     private TicketReservationManager ticketReservationManager;
 
@@ -105,22 +105,22 @@ public class AttendeeListManagerIntegrationTest {
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
-        AttendeeList attendeeList = attendeeListManager.createNew("test", "This is a test", event.getOrganizationId());
-        assertNotNull(attendeeList);
-        AttendeeListConfigurationModification modification = new AttendeeListConfigurationModification(null, attendeeList.getId(), event.getId(), null, AttendeeListConfiguration.Type.ONCE_PER_VALUE, AttendeeListConfiguration.MatchType.FULL, null);
-        AttendeeListConfiguration configuration = attendeeListManager.createConfiguration(attendeeList.getId(), event.getId(), modification);
+        Group group = groupManager.createNew("test", "This is a test", event.getOrganizationId());
+        assertNotNull(group);
+        LinkedGroupModification modification = new LinkedGroupModification(null, group.getId(), event.getId(), null, LinkedGroup.Type.ONCE_PER_VALUE, LinkedGroup.MatchType.FULL, null);
+        LinkedGroup configuration = groupManager.createLink(group.getId(), event.getId(), modification);
         assertNotNull(configuration);
         List<TicketCategory> ticketCategories = eventManager.loadTicketCategories(event);
         int categoryId = ticketCategories.get(0).getId();
-        assertTrue(attendeeListManager.isAttendeeListConfiguredFor(event.getId(), categoryId));
-        List<AttendeeListConfiguration> activeConfigurations = attendeeListRepository.findActiveConfigurationsFor(event.getId(), categoryId);
+        assertTrue(groupManager.isGroupLinked(event.getId(), categoryId));
+        List<LinkedGroup> activeConfigurations = groupRepository.findActiveConfigurationsFor(event.getId(), categoryId);
         assertFalse(activeConfigurations.isEmpty());
         assertEquals(1, activeConfigurations.size());
         assertEquals(configuration.getId(), activeConfigurations.get(0).getId());
-        assertFalse("AttendeeList is empty, therefore no value is allowed", attendeeListManager.isAllowed("test@test.ch", event.getId(), categoryId));
-        int items = attendeeListManager.insertItems(attendeeList.getId(), Collections.singletonList(new AttendeeListItemModification(null,"test@test.ch", "description")));
+        assertFalse("Group is empty, therefore no value is allowed", groupManager.isAllowed("test@test.ch", event.getId(), categoryId));
+        int items = groupManager.insertMembers(group.getId(), Collections.singletonList(new GroupMemberModification(null,"test@test.ch", "description")));
         assertEquals(1, items);
-        assertTrue("Value should be allowed", attendeeListManager.isAllowed("test@test.ch", event.getId(), categoryId));
+        assertTrue("Value should be allowed", groupManager.isAllowed("test@test.ch", event.getId(), categoryId));
 
         TicketReservationModification ticketReservation = new TicketReservationModification();
         ticketReservation.setAmount(1);
@@ -133,13 +133,13 @@ public class AttendeeListManagerIntegrationTest {
         ticketRepository.updateTicketOwnerById(ticket.getId(), "test@test.ch", "This is a Test", "This is", "a Test");
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertTrue("cannot confirm ticket", attendeeListManager.acquireItemForTicket(ticket, "not-valid"));
+        assertTrue("cannot confirm ticket", groupManager.acquireMemberForTicket(ticket, "not-valid"));
 
         reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.empty())),
             Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertFalse("shouldn't be allowed", attendeeListManager.acquireItemForTicket(ticket, "not-valid"));
+        assertFalse("shouldn't be allowed", groupManager.acquireMemberForTicket(ticket, "not-valid"));
 
     }
 }

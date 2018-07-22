@@ -78,9 +78,9 @@
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)"></setting>
             </div>
         </div>
-        <div ng-if="categoryConf.attendeeLists.length > 0">
-            <div class="page-header" data-ng-if="categoryConf.attendeeLists.length > 0">
-                <h3>Link to attendees list</h3>
+        <div ng-if="categoryConf.groups.length > 0">
+            <div class="page-header" data-ng-if="categoryConf.groups.length > 0">
+                <h3>Link to Group</h3>
                 <span>Allow only selected people to assign/buy a ticket for this category</span>
             </div>
             <div class="row">
@@ -88,35 +88,36 @@
                     <div class="row">
                         <div class="col-xs-12">
                             <div class="list-group">
-                                <a class="list-group-item" ng-repeat="list in categoryConf.attendeeLists" ng-class="{'active': categoryConf.attendeeList.attendeeListId == list.id}" ng-click="categoryConf.selectList(list)">
-                                    <h4 class="list-group-item-heading"><i class="fa fa-check" ng-if="categoryConf.attendeeList.attendeeListId == list.id"></i> {{list.name}}</h4>
-                                    <p class="list-group-item-text" ng-bind="list.description"></p>
+                                <a class="list-group-item" ng-repeat="group in categoryConf.groups" ng-class="{'active': categoryConf.group.groupId == group.id}" ng-click="categoryConf.selectGroup(group)">
+                                    <h4 class="list-group-item-heading"><i class="fa fa-check" ng-if="categoryConf.group.groupId == group.id"></i>
+                                        {{group.name}}</h4>
+                                    <p class="list-group-item-text" ng-bind="group.description"></p>
                                 </a>
                             </div>
                         </div>
-                        <div class="col-xs-12" ng-if="categoryConf.attendeeList">
-                            <button type="button" class="btn btn-danger" ng-click="categoryConf.removeAttendeeListLink(categoryConf.event.organizationId, categoryConf.attendeeList)"><i class="fa fa-trash"></i> Deactivate</button>
+                        <div class="col-xs-12" ng-if="categoryConf.group">
+                            <button type="button" class="btn btn-danger" ng-click="categoryConf.removeGroupLink(categoryConf.event.organizationId, categoryConf.group)"><i class="fa fa-trash"></i> Deactivate</button>
                         </div>
                     </div>
                 </div>
                 <div class="col-xs-12 col-md-6">
-                    <div class="row" ng-if="categoryConf.attendeeList">
+                    <div class="row" ng-if="categoryConf.group">
                         <div class="col-xs-12">
                             <div class="form-group">
                                 <label for="matchType">Match Type</label>
-                                <select class="form-control" id="matchType" ng-options="key as value for (key , value) in categoryConf.attendeeListMatchTypes" ng-model="categoryConf.attendeeList.matchType"></select>
+                                <select class="form-control" id="matchType" ng-options="key as value for (key , value) in categoryConf.groupMatchTypes" ng-model="categoryConf.group.matchType"></select>
                             </div>
                         </div>
                         <div class="col-xs-12">
                             <div class="form-group">
                                 <label for="selectStrategy">Ticket Allocation Strategy</label>
-                                <select class="form-control" id="selectStrategy" ng-options="key as value for (key , value) in categoryConf.attendeeListTypes" ng-model="categoryConf.attendeeList.type"></select>
+                                <select class="form-control" id="selectStrategy" ng-options="key as value for (key , value) in categoryConf.groupTypes" ng-model="categoryConf.group.type"></select>
                             </div>
                         </div>
-                        <div class="col-xs-12" ng-if="categoryConf.attendeeList.type == 'LIMITED_QUANTITY'">
+                        <div class="col-xs-12" ng-if="categoryConf.group.type == 'LIMITED_QUANTITY'">
                             <div class="form-group">
                                 <label for="maxAllocation">Max tickets</label>
-                                <input type="number" pattern="\d+" required class="form-control" id="maxAllocation" ng-model="categoryConf.attendeeList.maxAllocation"/>
+                                <input type="number" pattern="\d+" required class="form-control" id="maxAllocation" ng-model="categoryConf.group.maxAllocation"/>
                             </div>
                         </div>
 
@@ -129,6 +130,6 @@
         </div>
 
         <hr />
-        <control-buttons data-success-text="Save" data-cancel-handler="categoryConf.closeModal"></control-buttons>
+        <control-buttons data-form-obj="settingsForm" data-success-text="Save" data-cancel-handler="categoryConf.closeModal"></control-buttons>
     </form>
 </div>

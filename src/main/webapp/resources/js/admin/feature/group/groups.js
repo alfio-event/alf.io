@@ -1,11 +1,11 @@
 (function() {
     'use strict';
 
-    angular.module('attendee-list', ['adminServices'])
+    angular.module('group', ['adminServices'])
         .config(['$stateProvider', function($stateProvider) {
-            $stateProvider.state('attendee-lists', {
-                url: '/attendee-list',
-                template: '<attendee-lists-container organizations="ctrl.organizations"></attendee-lists-container>',
+            $stateProvider.state('groups', {
+                url: '/group',
+                template: '<groups-container organizations="ctrl.organizations"></groups-container>',
                 controller: ['loadOrganizations', function (loadOrganizations) {
                     this.organizations = loadOrganizations.data;
                 }],
@@ -15,52 +15,52 @@
                         return OrganizationService.getAllOrganizations();
                     }
                 }
-            }).state('attendee-lists.all', {
+            }).state('groups.all', {
                 url: '/:orgId/all',
-                template: '<attendee-lists organization-id="ctrl.orgId"></attendee-lists>',
+                template: '<groups organization-id="ctrl.orgId"></groups>',
                 controller: ['$stateParams', function ($stateParams) {
                     this.orgId = $stateParams.orgId;
                 }],
                 controllerAs: 'ctrl'
-            }).state('attendee-lists.edit', {
-                url: '/:orgId/edit/:listId',
-                template: '<attendee-list list-id="ctrl.listId" organization-id="ctrl.orgId"></attendee-list>',
+            }).state('groups.edit', {
+                url: '/:orgId/edit/:groupId',
+                template: '<group group-id="ctrl.groupId" organization-id="ctrl.orgId"></group>',
                 controller: ['$stateParams', function ($stateParams) {
                     this.orgId = $stateParams.orgId;
-                    this.listId = $stateParams.listId;
+                    this.groupId = $stateParams.groupId;
                 }],
                 controllerAs: 'ctrl'
-            }).state('attendee-lists.new', {
+            }).state('groups.new', {
                 url: '/:orgId/new',
-                template: '<attendee-list create-new="true" organization-id="ctrl.orgId"></attendee-list>',
+                template: '<group create-new="true" organization-id="ctrl.orgId"></group>',
                 controller: ['$stateParams', function ($stateParams) {
                     this.orgId = $stateParams.orgId;
                 }],
                 controllerAs: 'ctrl'
             });
         }])
-        .component('attendeeListsContainer', {
+        .component('groupsContainer', {
             controller: ['$stateParams', '$state', ContainerCtrl],
-            templateUrl: '../resources/js/admin/feature/attendee-list/all.html',
+            templateUrl: '../resources/js/admin/feature/group/all.html',
             bindings: {
                 organizations: '<'
             }
         })
-        .component('attendeeLists', {
-            controller: ['AttendeeListService', ListCtrl],
-            templateUrl: '../resources/js/admin/feature/attendee-list/list.html',
+        .component('groups', {
+            controller: ['GroupService', GroupCtrl],
+            templateUrl: '../resources/js/admin/feature/group/list.html',
             bindings: {
                 organizationId: '<'
             }
-        }).component('attendeeList', {
-            controller: ['AttendeeListService', '$timeout', 'NotificationHandler', DetailCtrl],
-            templateUrl: '../resources/js/admin/feature/attendee-list/edit.html',
+        }).component('group', {
+            controller: ['GroupService', '$timeout', 'NotificationHandler', '$state', DetailCtrl],
+            templateUrl: '../resources/js/admin/feature/group/edit.html',
             bindings: {
                 organizationId: '<',
-                listId: '<',
+                groupId: '<',
                 createNew: '<'
             }
-        }).service('AttendeeListService', ['$http', 'HttpErrorHandler', '$q', AttendeeListService]);
+        }).service('GroupService', ['$http', 'HttpErrorHandler', '$q', GroupService]);
 
 
     function ContainerCtrl($stateParams, $state) {
@@ -70,35 +70,37 @@
             if(ctrl.organizations && ctrl.organizations.length > 0) {
                 var orgId = ctrl.organizations[0].id;
                 if($stateParams.orgId) {
-                    orgId = $stateParams.orgId;
+                    orgId = parseInt($stateParams.orgId, 10);
                 }
                 ctrl.organization = _.find(ctrl.organizations, function(org) {return org.id === orgId});
-                $state.go('.all', {orgId: ctrl.organization.id});
+                if($state.current.name === 'groups') {
+                    $state.go('.all', {orgId: ctrl.organization.id});
+                }
             }
         };
     }
 
-    function ListCtrl(AttendeeListService) {
+    function GroupCtrl(GroupService) {
         var ctrl = this;
 
-        ctrl.loadLists = loadLists;
+        ctrl.loadGroups = loadGroups;
 
         ctrl.$onInit = function() {
-            ctrl.lists = [];
-            loadLists();
+            ctrl.groups = [];
+            loadGroups();
         };
 
-        function loadLists() {
+        function loadGroups() {
             ctrl.loading = true;
-            AttendeeListService.loadLists(ctrl.organizationId).then(function(result) {
-                ctrl.lists = result.data;
+            GroupService.loadGroups(ctrl.organizationId).then(function(result) {
+                ctrl.groups = result.data;
                 ctrl.loading = false;
             });
         }
 
     }
 
-    function DetailCtrl(AttendeeListService, $timeout, NotificationHandler, $state) {
+    function DetailCtrl(GroupService, $timeout, NotificationHandler, $state) {
         var ctrl = this;
         ctrl.uploadCsv = false;
         ctrl.removeItem = removeItem;
@@ -115,16 +117,16 @@
         };
 
         function removeItem(index) {
-            ctrl.list.items.splice(index, 1);
+            ctrl.group.items.splice(index, 1);
         }
 
         function addItem() {
-            ctrl.list.items.push({ value: null, description: null, editable: true});
+            ctrl.group.items.push({ value: null, description: null, editable: true});
         }
 
         function init() {
             if(ctrl.createNew) {
-                ctrl.list = {
+                ctrl.group = {
                     name: '',
                     description: '',
                     organizationId: ctrl.organizationId,
@@ -133,8 +135,8 @@
                 addItem();
             } else {
                 ctrl.loading = true;
-                AttendeeListService.loadListDetail(ctrl.organizationId, ctrl.listId).then(function(result) {
-                    ctrl.list = result.data;
+                GroupService.loadGroupDetail(ctrl.organizationId, ctrl.groupId).then(function(result) {
+                    ctrl.group = result.data;
                     ctrl.loading = false;
                 });
             }
@@ -144,14 +146,15 @@
             if(!frm.$valid) {
                 return false;
             }
-            if(angular.isDefined(ctrl.list.id)) {
-                AttendeeListService.updateList(ctrl.organizationId, ctrl.list).then(function(result) {
-                    NotificationHandler.showSuccess('List '+ctrl.list.name+' successfully updated');
+            if(angular.isDefined(ctrl.group.id)) {
+                GroupService.updateGroup(ctrl.organizationId, ctrl.group).then(function(result) {
+                    NotificationHandler.showSuccess('Group '+ctrl.group.name+' successfully updated');
+                    $state.go('^.all', {orgId: ctrl.organizationId});
                 });
             } else {
-                AttendeeListService.createList(ctrl.organizationId, ctrl.list).then(function(result) {
-                    NotificationHandler.showSuccess('List '+ctrl.list.name+' successfully created');
-                    $state.go('^.edit', {orgId: ctrl.organizationId, listId: result.data});
+                GroupService.createGroup(ctrl.organizationId, ctrl.group).then(function(result) {
+                    NotificationHandler.showSuccess('Group '+ctrl.group.name+' successfully created');
+                    $state.go('^.all', {orgId: ctrl.organizationId});
                 });
             }
         }
@@ -160,7 +163,7 @@
             $timeout(function() {
                 ctrl.loading = true;
             });
-            var items = _.filter(ctrl.list.items, function(i) {return !i.editable;});
+            var items = _.filter(ctrl.group.items, function(i) {return !i.editable;});
             $timeout(function() {
                 Papa.parse(content, {
                     header: false,
@@ -182,7 +185,7 @@
                     },
                     complete: function() {
                         ctrl.loading = false;
-                        ctrl.list.items = items;
+                        ctrl.group.items = items;
                         if(items.length > 0) {
                             ctrl.uploadCsv = false;
                         }
@@ -192,36 +195,36 @@
         }
     }
 
-    function AttendeeListService($http, HttpErrorHandler, $q) {
+    function GroupService($http, HttpErrorHandler, $q) {
         return {
-            loadLists: function(orgId) {
-                return $http.get('/admin/api/attendee-list/'+orgId).error(HttpErrorHandler.handle);
+            loadGroups: function(orgId) {
+                return $http.get('/admin/api/group/'+orgId).error(HttpErrorHandler.handle);
             },
-            loadListDetail: function(orgId, listId) {
-                return $http.get('/admin/api/attendee-list/'+orgId+'/detail/'+listId).error(HttpErrorHandler.handle);
+            loadGroupDetail: function(orgId, groupId) {
+                return $http.get('/admin/api/group/'+orgId+'/detail/'+groupId).error(HttpErrorHandler.handle);
             },
-            createList: function(orgId, list) {
-                return $http.post('/admin/api/attendee-list/'+orgId+'/new', list).error(HttpErrorHandler.handle);
+            createGroup: function(orgId, group) {
+                return $http.post('/admin/api/group/'+orgId+'/new', group).error(HttpErrorHandler.handle);
             },
-            updateList: function(orgId, list) {
-                return $http.post('/admin/api/attendee-list/'+orgId+'/update/'+list.id, list)
+            updateGroup: function(orgId, group) {
+                return $http.post('/admin/api/group/'+orgId+'/update/'+group.id, group)
             },
-            loadActiveList: function(eventName, categoryId) {
-                var url = '/admin/api/attendee-list/event/'+eventName + (angular.isDefined(categoryId) ? '/category/'+categoryId : '');
+            loadActiveGroup: function(eventName, categoryId) {
+                var url = '/admin/api/group/event/'+eventName + (angular.isDefined(categoryId) ? '/category/'+categoryId : '');
                 return $http.get(url).error(HttpErrorHandler.handle);
             },
             loadActiveLinks: function(eventName) {
-                return $http.get('/admin/api/attendee-list/event/'+eventName+'/all').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/group/event/'+eventName+'/all').error(HttpErrorHandler.handle);
             },
             linkTo: function(configuration) {
                 if(configuration) {
-                    return $http.post('/admin/api/attendee-list/'+configuration.attendeeListId+'/link', configuration).error(HttpErrorHandler.handle);
+                    return $http.post('/admin/api/group/'+configuration.groupId+'/link', configuration).error(HttpErrorHandler.handle);
                 } else {
                     return $q.resolve(true);
                 }
             },
-            unlinkFrom: function(organizationId, attendeeListConfigurationId) {
-                return $http['delete']('/admin/api/attendee-list/'+organizationId+'/link/'+attendeeListConfigurationId);
+            unlinkFrom: function(organizationId, groupLinkId) {
+                return $http['delete']('/admin/api/group/'+organizationId+'/link/'+groupLinkId);
             }
         }
     }

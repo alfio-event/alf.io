@@ -18,8 +18,8 @@ package alfio.util;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
-import alfio.manager.AttendeeListManager;
 import alfio.manager.EuVatChecker;
+import alfio.manager.GroupManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.TicketFieldConfiguration;
@@ -369,7 +369,7 @@ public final class Validator {
     public static class AdvancedTicketAssignmentValidator implements Function<AdvancedValidationContext, Result<Void>> {
 
         private final EuVatChecker.SameCountryValidator vatValidator;
-        private final AttendeeListManager.WhitelistValidator whitelistValidator;
+        private final GroupManager.WhitelistValidator whitelistValidator;
 
 
         @Override
@@ -385,7 +385,7 @@ public final class Validator {
 
             return new Result.Builder<Void>()
                 .checkPrecondition(() -> !vatNr.isPresent() || vatValidator.test(vatNr.get()), ErrorCode.custom(STEP_2_INVALID_VAT, "additional['"+vatFieldName+"']"))
-                .checkPrecondition(() -> whitelistValidator.test(new AttendeeListManager.WhitelistValidationItem(context.categoryId, context.updateTicketOwnerForm.getEmail())), ErrorCode.custom(ErrorsCode.STEP_2_WHITELIST_CHECK_FAILED, "email"))
+                .checkPrecondition(() -> whitelistValidator.test(new GroupManager.WhitelistValidationItem(context.categoryId, context.updateTicketOwnerForm.getEmail())), ErrorCode.custom(ErrorsCode.STEP_2_WHITELIST_CHECK_FAILED, "email"))
                 .build(() -> null);
         }
     }

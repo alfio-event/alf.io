@@ -4,18 +4,18 @@
         <a class="btn btn-link" ui-sref="^.all({orgId: $ctrl.organizationId})"><i class="fa fa-chevron-left"></i> back</a>
     </div>
 
-    <form role="form" name="editList" ng-submit="$ctrl.submit(editList)" error-sensitive="editList" novalidate>
+    <form role="form" name="editGroup" ng-submit="$ctrl.submit(editGroup)" error-sensitive="editGroup" novalidate>
         <div class="row">
             <div class="col-xs-12 col-sm-6">
                 <div class="form-group">
-                    <label for="listName">Name</label>
-                    <input class="form-control" id="listName" name="listName" ng-model="$ctrl.list.name" required>
+                    <label for="groupName">Name</label>
+                    <input class="form-control" id="groupName" name="groupName" ng-model="$ctrl.group.name" required>
                 </div>
             </div>
             <div class="col-xs-12 col-sm-6">
                 <div class="form-group">
-                    <label for="listDescription">Description</label>
-                    <input class="form-control" id="listDescription" name="listDescription" ng-model="$ctrl.list.description" required>
+                    <label for="groupDescription">Description</label>
+                    <input class="form-control" id="groupDescription" name="groupDescription" ng-model="$ctrl.group.description" required>
                 </div>
             </div>
         </div>
@@ -25,8 +25,8 @@
         </div>
 
 
-        <ul class="list-group wMarginTop10px" ng-if="$ctrl.list.items.length > 0">
-            <li class="list-group-item" ng-repeat="item in $ctrl.list.items">
+        <ul class="list-group wMarginTop10px" ng-if="$ctrl.group.items.length > 0">
+            <li class="list-group-item" ng-repeat="item in $ctrl.group.items">
                 <div class="list-group-item-text row">
                     <div class="col-xs-12 col-md-6">
                         <div class="form-group">
@@ -74,7 +74,7 @@
             <file-upload accept="'text/csv'" read-as-text="true" success-callback="$ctrl.parseFileContent" direct-handling="true"></file-upload>
         </div>
         <hr class="clearfix"/>
-        <control-buttons data-form-obj="editList" cancel-handler="$ctrl.reinit" success-text="Save"></control-buttons>
+        <control-buttons data-form-obj="editGroup" cancel-handler="$ctrl.reinit" success-text="Save"></control-buttons>
 
     </form>
 </div>

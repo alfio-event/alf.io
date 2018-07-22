@@ -18,10 +18,10 @@ package alfio.controller.api.support;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
-import alfio.manager.AttendeeListManager;
 import alfio.manager.EuVatChecker;
 import alfio.manager.EuVatChecker.SameCountryValidator;
 import alfio.manager.FileUploadManager;
+import alfio.manager.GroupManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
@@ -69,7 +69,7 @@ public class TicketHelper {
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final EuVatChecker vatChecker;
-    private final AttendeeListManager attendeeListManager;
+    private final GroupManager groupManager;
 
 
     public List<TicketFieldConfigurationDescriptionAndValue> findTicketFieldConfigurationAndValue(Ticket ticket) {
@@ -114,7 +114,7 @@ public class TicketHelper {
         final TicketReservation ticketReservation = result.getMiddle();
         List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
         AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), ticketReservation.getId()),
-            new AttendeeListManager.WhitelistValidator(event.getId(), attendeeListManager));
+            new GroupManager.WhitelistValidator(event.getId(), groupManager));
 
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
         ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event, formPrefix)
@@ -222,7 +222,7 @@ public class TicketHelper {
                 getConfirmationTextBuilder(request, event, ticketReservation, t, category),
                 getOwnerChangeTextBuilder(request, t, event),
                 userDetails);
-        if(t.hasBeenSold() && !attendeeListManager.findConfigurations(event.getId(), t.getCategoryId()).isEmpty()) {
+        if(t.hasBeenSold() && !groupManager.findLinks(event.getId(), t.getCategoryId()).isEmpty()) {
             ticketRepository.forbidReassignment(Collections.singletonList(t.getId()));
         }
     }

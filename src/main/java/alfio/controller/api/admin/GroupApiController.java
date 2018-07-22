@@ -16,13 +16,13 @@
  */
 package alfio.controller.api.admin;
 
-import alfio.manager.AttendeeListManager;
 import alfio.manager.EventManager;
+import alfio.manager.GroupManager;
 import alfio.manager.user.UserManager;
-import alfio.model.attendeelist.AttendeeList;
-import alfio.model.attendeelist.AttendeeListConfiguration;
-import alfio.model.modification.AttendeeListConfigurationModification;
-import alfio.model.modification.AttendeeListModification;
+import alfio.model.group.Group;
+import alfio.model.group.LinkedGroup;
+import alfio.model.modification.GroupModification;
+import alfio.model.modification.LinkedGroupModification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,66 +36,66 @@ import java.util.Optional;
 import static alfio.util.OptionalWrapper.optionally;
 
 @RestController
-@RequestMapping("/admin/api/attendee-list")
+@RequestMapping("/admin/api/group")
 @RequiredArgsConstructor
-public class AttendeeListApiController {
+public class GroupApiController {
 
-    private final AttendeeListManager attendeeListManager;
+    private final GroupManager groupManager;
     private final UserManager userManager;
     private final EventManager eventManager;
 
     @GetMapping("/{organizationId}")
-    public ResponseEntity<List<AttendeeList>> loadAllAttendeeListsForOrganization(@PathVariable("organizationId") int organizationId, Principal principal) {
+    public ResponseEntity<List<Group>> loadAllGroupsForOrganization(@PathVariable("organizationId") int organizationId, Principal principal) {
         if(notOwner(principal.getName(), organizationId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return ResponseEntity.ok(attendeeListManager.getAllForOrganization(organizationId));
+        return ResponseEntity.ok(groupManager.getAllForOrganization(organizationId));
     }
 
     @GetMapping("/{organizationId}/detail/{listId}")
-    public ResponseEntity<AttendeeListModification> loadDetail(@PathVariable("organizationId") int organizationId, @PathVariable("listId") int listId, Principal principal) {
+    public ResponseEntity<GroupModification> loadDetail(@PathVariable("organizationId") int organizationId, @PathVariable("listId") int listId, Principal principal) {
         if(notOwner(principal.getName(), organizationId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return attendeeListManager.loadComplete(listId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return groupManager.loadComplete(listId).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{organizationId}/update/{listId}")
-    public ResponseEntity<AttendeeListModification> updateList(@PathVariable("organizationId") int organizationId,
-                                                               @PathVariable("listId") int listId,
-                                                               @RequestBody AttendeeListModification modification,
-                                                               Principal principal) {
+    public ResponseEntity<GroupModification> updateGroup(@PathVariable("organizationId") int organizationId,
+                                                         @PathVariable("listId") int listId,
+                                                         @RequestBody GroupModification modification,
+                                                         Principal principal) {
         if(notOwner(principal.getName(), organizationId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return attendeeListManager.update(listId, modification).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+        return groupManager.update(listId, modification).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/{organizationId}/new")
-    public ResponseEntity<Integer> createNew(@PathVariable("organizationId") int organizationId, @RequestBody AttendeeListModification request, Principal principal) {
+    public ResponseEntity<Integer> createNew(@PathVariable("organizationId") int organizationId, @RequestBody GroupModification request, Principal principal) {
         if(notOwner(principal.getName(), organizationId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         if(request.getOrganizationId() != organizationId) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(attendeeListManager.createNew(request));
+        return ResponseEntity.ok(groupManager.createNew(request));
     }
 
     @GetMapping("/event/{eventName}/all")
-    public ResponseEntity<List<AttendeeListConfiguration>> findLinked(@PathVariable("eventName") String eventName,
-                                                                    Principal principal) {
+    public ResponseEntity<List<LinkedGroup>> findLinked(@PathVariable("eventName") String eventName,
+                                                        Principal principal) {
         return eventManager.getOptionalByName(eventName, principal.getName())
-            .map(event -> ResponseEntity.ok(attendeeListManager.getConfigurationsForEvent(event.getId())))
+            .map(event -> ResponseEntity.ok(groupManager.getLinksForEvent(event.getId())))
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/event/{eventName}")
-    public ResponseEntity<AttendeeListConfiguration> findActiveList(@PathVariable("eventName") String eventName,
-                                                                    Principal principal) {
+    public ResponseEntity<LinkedGroup> findActiveGroup(@PathVariable("eventName") String eventName,
+                                                       Principal principal) {
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
-                Optional<AttendeeListConfiguration> configuration = attendeeListManager.getConfigurationsForEvent(event.getId()).stream()
+                Optional<LinkedGroup> configuration = groupManager.getLinksForEvent(event.getId()).stream()
                     .filter(c -> c.getTicketCategoryId() == null)
                     .findFirst();
                 return configuration.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
@@ -104,12 +104,12 @@ public class AttendeeListApiController {
     }
 
     @GetMapping("/event/{eventName}/category/{categoryId}")
-    public ResponseEntity<AttendeeListConfiguration> findActiveList(@PathVariable("eventName") String eventName,
-                                                                    @PathVariable("categoryId") int categoryId,
-                                                                    Principal principal) {
+    public ResponseEntity<LinkedGroup> findActiveGroup(@PathVariable("eventName") String eventName,
+                                                       @PathVariable("categoryId") int categoryId,
+                                                       Principal principal) {
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
-                Optional<AttendeeListConfiguration> configuration = attendeeListManager.findConfigurations(event.getId(), categoryId)
+                Optional<LinkedGroup> configuration = groupManager.findLinks(event.getId(), categoryId)
                     .stream()
                     .filter(c -> c.getTicketCategoryId() != null && c.getTicketCategoryId() == categoryId)
                     .findFirst();
@@ -119,32 +119,32 @@ public class AttendeeListApiController {
     }
 
     @PostMapping("/{listId}/link")
-    public ResponseEntity<Integer> linkList(@PathVariable("listId") int listId, @RequestBody AttendeeListConfigurationModification body, Principal principal) {
-        if(body == null || listId != body.getAttendeeListId()) {
+    public ResponseEntity<Integer> linkGroup(@PathVariable("listId") int listId, @RequestBody LinkedGroupModification body, Principal principal) {
+        if(body == null || listId != body.getGroupId()) {
             return ResponseEntity.badRequest().build();
         }
 
         return optionally(() -> eventManager.getSingleEventById(body.getEventId(), principal.getName()))
             .map(event -> {
-                Optional<AttendeeListConfiguration> existing = attendeeListManager.getConfigurationsForEvent(event.getId())
+                Optional<LinkedGroup> existing = groupManager.getLinksForEvent(event.getId())
                     .stream()
-                    .filter(c -> c.getAttendeeListId() == listId && Objects.equals(body.getTicketCategoryId(), c.getTicketCategoryId()))
+                    .filter(c -> c.getGroupId() == listId && Objects.equals(body.getTicketCategoryId(), c.getTicketCategoryId()))
                     .findFirst();
-                AttendeeListConfiguration conf;
+                LinkedGroup link;
                 if(existing.isPresent()) {
-                    conf = attendeeListManager.updateConfiguration(existing.get().getId(), body);
+                    link = groupManager.updateLink(existing.get().getId(), body);
                 } else {
-                    conf = attendeeListManager.createConfiguration(listId, event.getId(), body);
+                    link = groupManager.createLink(listId, event.getId(), body);
                 }
-                return ResponseEntity.ok(conf.getId());
+                return ResponseEntity.ok(link.getId());
             })
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{organizationId}/link/{configurationId}")
-    public ResponseEntity<String> unlinkList(@PathVariable("organizationId") int organizationId, @PathVariable("configurationId") int configurationId, Principal principal) {
+    public ResponseEntity<String> unlinkGroup(@PathVariable("organizationId") int organizationId, @PathVariable("configurationId") int configurationId, Principal principal) {
         if(optionally(() -> userManager.findUserByUsername(principal.getName())).filter(u -> userManager.isOwnerOfOrganization(u, organizationId)).isPresent()) {
-            attendeeListManager.disableConfiguration(configurationId);
+            groupManager.disableLink(configurationId);
             return ResponseEntity.ok("OK");
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
