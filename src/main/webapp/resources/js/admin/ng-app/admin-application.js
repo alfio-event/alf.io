@@ -697,7 +697,8 @@
                                                         UtilsService,
                                                         NotificationHandler,
                                                         $timeout,
-                                                        TicketCategoryEditorService) {
+                                                        TicketCategoryEditorService,
+                                                        AttendeeListService) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -749,6 +750,27 @@
                 expired: $scope.event.ticketCategories.filter(function(tc) { return tc.containingOrphans; }).length > 0,
                 freeText: ''
             };
+            $q.all([AttendeeListService.loadActiveLinks($state.params.eventName), AttendeeListService.loadLists($scope.event.organizationId)])
+                .then(function(results) {
+                    var confResult = results[0];
+                    var lists = results[1].data;
+                    if(confResult.status === 200) {
+                        _.forEach(confResult.data, function(list) {
+                            var attendeeList = _.find(lists, function(l) { return l.id === list.attendeeListId});
+                            list.attendeeListName = attendeeList ? attendeeList.name : "";
+                            if(angular.isDefined(list.ticketCategoryId)) {
+                                var category = _.find($scope.event.ticketCategories, function(c) { return c.id === list.ticketCategoryId;});
+                                if(category) {
+                                    category.attendeesList = list;
+                                }
+                            }
+                            $scope.event.attendeesList = list;
+                        });
+                    }
+
+                });
+            AttendeeListService.loadActiveLinks($state.params.eventName).then(function(confResult) {
+            });
         });
         $scope.allocationStrategyRadioClass = 'radio';
         $scope.evaluateCategoryStatusClass = function(index, category) {

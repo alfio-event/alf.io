@@ -206,9 +206,12 @@
             updateList: function(orgId, list) {
                 return $http.post('/admin/api/attendee-list/'+orgId+'/update/'+list.id, list)
             },
-            loadActiveList: function(eventId, categoryId) {
-                var url = '/admin/api/attendee-list/event/'+eventId + (angular.isDefined(categoryId) ? '/category/'+categoryId : '');
+            loadActiveList: function(eventName, categoryId) {
+                var url = '/admin/api/attendee-list/event/'+eventName + (angular.isDefined(categoryId) ? '/category/'+categoryId : '');
                 return $http.get(url).error(HttpErrorHandler.handle);
+            },
+            loadActiveLinks: function(eventName) {
+                return $http.get('/admin/api/attendee-list/event/'+eventName+'/all').error(HttpErrorHandler.handle);
             },
             linkTo: function(configuration) {
                 if(configuration) {

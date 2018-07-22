@@ -82,6 +82,14 @@ public class AttendeeListApiController {
         return ResponseEntity.ok(attendeeListManager.createNew(request));
     }
 
+    @GetMapping("/event/{eventName}/all")
+    public ResponseEntity<List<AttendeeListConfiguration>> findLinked(@PathVariable("eventName") String eventName,
+                                                                    Principal principal) {
+        return eventManager.getOptionalByName(eventName, principal.getName())
+            .map(event -> ResponseEntity.ok(attendeeListManager.getConfigurationsForEvent(event.getId())))
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/event/{eventName}")
     public ResponseEntity<AttendeeListConfiguration> findActiveList(@PathVariable("eventName") String eventName,
                                                                     Principal principal) {
@@ -101,7 +109,10 @@ public class AttendeeListApiController {
                                                                     Principal principal) {
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
-                Optional<AttendeeListConfiguration> configuration = attendeeListManager.findConfigurations(event.getId(), categoryId).stream().findFirst();
+                Optional<AttendeeListConfiguration> configuration = attendeeListManager.findConfigurations(event.getId(), categoryId)
+                    .stream()
+                    .filter(c -> c.getTicketCategoryId() != null && c.getTicketCategoryId() == categoryId)
+                    .findFirst();
                 return configuration.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.noContent().build());
             })
             .orElseGet(() -> ResponseEntity.notFound().build());

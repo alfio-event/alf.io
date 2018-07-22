@@ -19,6 +19,10 @@
         </a>
     </div>
 
+    <div ng-if="event.attendeesList" class="alert alert-info text-center">
+        <span><i class="fa fa-user-secret"></i> Access to this event has been limited to Group <a ui-sref="attendee-lists.edit({orgId: event.organizationId, listId: event.attendeesList.attendeeListId})" target="_blank">{{event.attendeesList.attendeeListName}}</a> <a class="btn btn-sm btn-default" ui-sref="configuration.event({organizationId: event.organizationId, eventId: event.id})" target="_blank"><i class="fa fa-wrench"></i> configure</a></span>
+    </div>
+
     <div data-ng-if="isInternal(event)">
 
         <div class="page-header">
@@ -86,6 +90,9 @@
                         </div>
                     </div>
                     <div class="panel-body">
+                        <div ng-if="ticketCategory.attendeesList" class="alert alert-info text-center">
+                            <span><i class="fa fa-user-secret"></i> Access to this category has been limited to Group <a ui-sref="attendee-lists.edit({orgId: event.organizationId, listId: ticketCategory.attendeesList.attendeeListId})" target="_blank">{{ticketCategory.attendeesList.attendeeListName}}</a> <button type="button" class="btn btn-default btn-sm" ng-click="openConfiguration(event, ticketCategory)"><i class="fa fa-wrench"></i> configure</button></span>
+                        </div>
                         <div class="row form-inline text-danger" data-ng-if="ticketCategory.containingOrphans">
                             <div class="col-xs-12" data-ng-form="moveTickets">
                                 <i class="fa fa-warning"></i> This category contains orphan (not sold) tickets. Move them to another category:
