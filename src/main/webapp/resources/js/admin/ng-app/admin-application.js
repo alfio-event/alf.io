@@ -8,7 +8,7 @@
     var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
     var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
     
-    var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-additional-services', 'alfio-event-statistic', 'ui.ace', 'monospaced.qrcode', 'checklist-model']);
+    var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives', 'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-additional-services', 'alfio-event-statistic', 'ui.ace', 'monospaced.qrcode', 'checklist-model', 'group']);
 
     var loadEvent = {
         'loadEvent': function($stateParams, EventService) {
@@ -719,7 +719,8 @@
                                                         UtilsService,
                                                         NotificationHandler,
                                                         $timeout,
-                                                        TicketCategoryEditorService) {
+                                                        TicketCategoryEditorService,
+                                                        GroupService) {
         var loadData = function() {
             $scope.loading = true;
 
@@ -771,6 +772,27 @@
                 expired: $scope.event.ticketCategories.filter(function(tc) { return tc.containingOrphans; }).length > 0,
                 freeText: ''
             };
+            $q.all([GroupService.loadActiveLinks($state.params.eventName), GroupService.loadGroups($scope.event.organizationId)])
+                .then(function(results) {
+                    var confResult = results[0];
+                    var lists = results[1].data;
+                    if(confResult.status === 200) {
+                        _.forEach(confResult.data, function(list) {
+                            var group = _.find(lists, function(l) { return l.id === list.groupId});
+                            list.groupName = group ? group.name : "";
+                            if(angular.isDefined(list.ticketCategoryId)) {
+                                var category = _.find($scope.event.ticketCategories, function(c) { return c.id === list.ticketCategoryId;});
+                                if(category) {
+                                    category.attendeesList = list;
+                                }
+                            }
+                            $scope.event.attendeesList = list;
+                        });
+                    }
+
+                });
+            GroupService.loadActiveLinks($state.params.eventName).then(function(confResult) {
+            });
         });
         $scope.allocationStrategyRadioClass = 'radio';
         $scope.evaluateCategoryStatusClass = function(index, category) {

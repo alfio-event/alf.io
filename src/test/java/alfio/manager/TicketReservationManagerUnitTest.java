@@ -72,6 +72,7 @@ public class TicketReservationManagerUnitTest {
     private AuditingRepository auditingRepository;
     private UserRepository userRepository;
     private ExtensionManager extensionManager;
+    private GroupManager groupManager;
 
     @BeforeEach
     public void setUp() {
@@ -104,6 +105,7 @@ public class TicketReservationManagerUnitTest {
         auditingRepository = mock(AuditingRepository.class);
         userRepository = mock(UserRepository.class);
         extensionManager = mock(ExtensionManager.class);
+        groupManager = mock(GroupManager.class);
 
         manager = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -129,7 +131,8 @@ public class TicketReservationManagerUnitTest {
             auditingRepository,
             userRepository,
             extensionManager,
-            mock(TicketSearchRepository.class));
+            mock(TicketSearchRepository.class),
+            groupManager);
     }
 
     @Test

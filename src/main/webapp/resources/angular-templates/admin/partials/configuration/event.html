@@ -123,6 +123,53 @@
                 </div>
             </div>
 
+            <div ng-if="eventConf.groups.length > 0">
+                <div class="page-header" data-ng-if="eventConf.groups.length > 0">
+                    <h2>Link to Group</h2>
+                    <span>Allow only selected people to assign/buy a ticket for this event</span>
+                </div>
+                <div class="row">
+                    <div class="col-xs-12 col-md-6">
+                        <div class="row">
+                            <div class="col-xs-12">
+                                <div class="list-group">
+                                    <a class="list-group-item" ng-repeat="group in eventConf.groups" ng-class="{'active': eventConf.group.groupId == group.id}" ng-click="eventConf.selectGroup(group)">
+                                        <h4 class="list-group-item-heading"><i class="fa fa-check" ng-if="eventConf.group.groupId == group.id"></i> {{group.name}}</h4>
+                                        <p class="list-group-item-text" ng-bind="group.description"></p>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="col-xs-12" ng-if="eventConf.group">
+                                <button type="button" class="btn btn-danger" ng-click="eventConf.removeGroupLink(eventConf.organizationId, eventConf.group)"><i class="fa fa-trash"></i> Deactivate</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-6">
+                        <div class="row" ng-if="eventConf.group">
+                            <div class="col-xs-12">
+                                <div class="form-group">
+                                    <label for="matchType">Match Type</label>
+                                    <select class="form-control" id="matchType" ng-options="key as value for (key , value) in eventConf.groupMatchTypes" ng-model="eventConf.group.matchType"></select>
+                                </div>
+                            </div>
+                            <div class="col-xs-12">
+                                <div class="form-group">
+                                    <label for="selectStrategy">Ticket Allocation Strategy</label>
+                                    <select class="form-control" id="selectStrategy" ng-options="key as value for (key , value) in eventConf.groupTypes" ng-model="eventConf.group.type"></select>
+                                </div>
+                            </div>
+                            <div class="col-xs-12" ng-if="eventConf.group.type == 'LIMITED_QUANTITY'">
+                                <div class="form-group">
+                                    <label for="maxAllocation">Max tickets</label>
+                                    <input type="number" pattern="\d+" required class="form-control" id="maxAllocation" ng-model="eventConf.group.maxAllocation"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
 
             <div class="page-header">
                 <h2>Internationalization</h2>

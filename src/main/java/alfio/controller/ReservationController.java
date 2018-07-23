@@ -593,7 +593,8 @@ public class ReservationController {
         final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, ticketReservation.getEmail(),
             customerName, locale, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
             Optional.ofNullable(paymentForm.getPaymentMethod()), invoiceRequested, ticketReservation.getVatCountryCode(),
-            ticketReservation.getVatNr(), ticketReservation.getVatStatus(), paymentForm.getTermAndConditionsAccepted(), Optional.ofNullable(paymentForm.getPrivacyPolicyAccepted()).orElse(false));
+            ticketReservation.getVatNr(), ticketReservation.getVatStatus(), paymentForm.getTermAndConditionsAccepted(), Optional.ofNullable(paymentForm.getPrivacyPolicyAccepted()).orElse(false),
+            Collections.emptyMap()); //FIXME
 
         if(!status.isSuccessful()) {
             String errorMessageCode = status.getErrorCode().get();

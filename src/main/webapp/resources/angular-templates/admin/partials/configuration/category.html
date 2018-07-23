@@ -6,12 +6,12 @@
 </div>
 <div data-ng-if="categoryConf.hasResults" class="category-conf">
 
-    <div>
-        <h3>Configuration for {{categoryConf.category.name}}</h3>
+    <div class="modal-header">
+        <h2>Configuration for {{categoryConf.category.name}}</h2>
     </div>
 
     <div class="page-header">
-        <h4>General</h4>
+        <h3>General</h3>
         <span>General settings</span>
     </div>
 
@@ -23,7 +23,7 @@
         </div>
 
         <div class="page-header" data-ng-if="categoryConf.mail">
-            <h4>E-Mail</h4>
+            <h3>E-Mail</h3>
             <span>E-Mail settings</span>
         </div>
 
@@ -69,7 +69,7 @@
         </div>
 
         <div class="page-header" data-ng-if="categoryConf.payment">
-            <h4>Payment</h4>
+            <h3>Payment</h3>
             <span>Payment provider settings</span>
         </div>
 
@@ -78,7 +78,58 @@
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="categoryConf.delete(config)"></setting>
             </div>
         </div>
+        <div ng-if="categoryConf.groups.length > 0">
+            <div class="page-header" data-ng-if="categoryConf.groups.length > 0">
+                <h3>Link to Group</h3>
+                <span>Allow only selected people to assign/buy a ticket for this category</span>
+            </div>
+            <div class="row">
+                <div class="col-xs-12 col-md-6">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="list-group">
+                                <a class="list-group-item" ng-repeat="group in categoryConf.groups" ng-class="{'active': categoryConf.group.groupId == group.id}" ng-click="categoryConf.selectGroup(group)">
+                                    <h4 class="list-group-item-heading"><i class="fa fa-check" ng-if="categoryConf.group.groupId == group.id"></i>
+                                        {{group.name}}</h4>
+                                    <p class="list-group-item-text" ng-bind="group.description"></p>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="col-xs-12" ng-if="categoryConf.group">
+                            <button type="button" class="btn btn-danger" ng-click="categoryConf.removeGroupLink(categoryConf.event.organizationId, categoryConf.group)"><i class="fa fa-trash"></i> Deactivate</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                    <div class="row" ng-if="categoryConf.group">
+                        <div class="col-xs-12">
+                            <div class="form-group">
+                                <label for="matchType">Match Type</label>
+                                <select class="form-control" id="matchType" ng-options="key as value for (key , value) in categoryConf.groupMatchTypes" ng-model="categoryConf.group.matchType"></select>
+                            </div>
+                        </div>
+                        <div class="col-xs-12">
+                            <div class="form-group">
+                                <label for="selectStrategy">Ticket Allocation Strategy</label>
+                                <select class="form-control" id="selectStrategy" ng-options="key as value for (key , value) in categoryConf.groupTypes" ng-model="categoryConf.group.type"></select>
+                            </div>
+                        </div>
+                        <div class="col-xs-12" ng-if="categoryConf.group.type == 'LIMITED_QUANTITY'">
+                            <div class="form-group">
+                                <label for="maxAllocation">Max tickets</label>
+                                <input type="number" pattern="\d+" required class="form-control" id="maxAllocation" ng-model="categoryConf.group.maxAllocation"/>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
         <hr />
-        <control-buttons data-success-text="Save" data-cancel-handler="categoryConf.closeModal"></control-buttons>
+        <control-buttons data-form-obj="settingsForm" data-success-text="Save" data-cancel-handler="categoryConf.closeModal"></control-buttons>
     </form>
 </div>
