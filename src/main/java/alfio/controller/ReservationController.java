@@ -126,6 +126,7 @@ public class ReservationController {
 
                     Configuration.ConfigurationPathKey forceAssignmentKey = partialConfig.apply(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
                     boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
+                    boolean categoriesLinkedToGroups = ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId());
 
                     List<Ticket> ticketsInReservation = ticketReservationManager.findTicketsInReservation(reservationId);
                     if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null) {
@@ -141,11 +142,11 @@ public class ReservationController {
                             .addAttribute("postponeAssignment", Boolean.TRUE.equals(postponeAssignment))
                             .addAttribute("invoiceRequested", Boolean.TRUE.equals(invoiceRequested))
                             .addAttribute("customerReference", customerReference)
-                            .addAttribute("showPostpone", !forceAssignment && Boolean.TRUE.equals(postponeAssignment));
+                            .addAttribute("showPostpone", !forceAssignment && Boolean.TRUE.equals(postponeAssignment) && !categoriesLinkedToGroups);
                     } else {
                         model.addAttribute("paypalCheckoutConfirmation", false)
                              .addAttribute("postponeAssignment", false)
-                             .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1);
+                             .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1 && !categoriesLinkedToGroups);
                     }
 
                     try {
@@ -444,7 +445,7 @@ public class ReservationController {
 
         Configuration.ConfigurationPathKey forceAssignmentKey = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
         boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
-        if(forceAssignment) {
+        if(forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
             paymentForm.setPostponeAssignment(false);
         }
 
