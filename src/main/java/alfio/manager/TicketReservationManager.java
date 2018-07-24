@@ -349,7 +349,7 @@ public class TicketReservationManager {
                                  boolean tcAccepted, boolean privacyPolicyAccepted, Map<String, String> ticketEmails) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
 
-        if(!acquiregroupMembers(reservationId, event, ticketEmails)) {
+        if(!acquireGroupMembers(reservationId, event, ticketEmails)) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);
             return PaymentResult.unsuccessful("error.STEP2_WHITELIST");
         }
@@ -418,6 +418,15 @@ public class TicketReservationManager {
 
     }
 
+    public boolean containsCategoriesLinkedToGroups(String reservationId, int eventId) {
+        List<LinkedGroup> allLinks = groupManager.getLinksForEvent(eventId);
+        if(allLinks.isEmpty()) {
+            return false;
+        }
+        return ticketRepository.findTicketsInReservation(reservationId).stream()
+            .anyMatch(t -> allLinks.stream().anyMatch(lg -> lg.getTicketCategoryId() == null || lg.getTicketCategoryId().equals(t.getCategoryId())));
+    }
+
     private PaymentProxy evaluatePaymentProxy(Optional<PaymentProxy> method, TotalPrice reservationCost) {
         if(method.isPresent()) {
             return method.get();
@@ -443,17 +452,17 @@ public class TicketReservationManager {
         return true;
     }
 
-    private boolean acquiregroupMembers(String reservationId, Event event, Map<String, String> ticketEmails) {
+    private boolean acquireGroupMembers(String reservationId, Event event, Map<String, String> ticketEmails) {
         int eventId = event.getId();
         List<LinkedGroup> linkedGroups = groupManager.getLinksForEvent(eventId);
         if(!linkedGroups.isEmpty()) {
             List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
-            return requiresNewTransactionTemplate.execute(status ->
+            return Boolean.TRUE.equals(requiresNewTransactionTemplate.execute(status ->
                 ticketsInReservation
                     .stream()
                     .filter(ticket -> linkedGroups.stream().anyMatch(c -> c.getTicketCategoryId() == null || c.getTicketCategoryId().equals(ticket.getCategoryId())))
                     .map(t -> groupManager.acquireMemberForTicket(t, ticketEmails.get(t.getUuid())))
-                    .reduce(true, Boolean::logicalAnd));
+                    .reduce(true, Boolean::logicalAnd)));
         }
         return true;
     }

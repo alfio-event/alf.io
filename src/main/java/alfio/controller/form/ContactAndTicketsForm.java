@@ -17,7 +17,10 @@
 package alfio.controller.form;
 
 import alfio.manager.EuVatChecker;
-import alfio.model.*;
+import alfio.model.Event;
+import alfio.model.TicketFieldConfiguration;
+import alfio.model.TicketReservation;
+import alfio.model.TicketReservationAdditionalInfo;
 import alfio.model.result.ValidationResult;
 import alfio.util.ErrorsCode;
 import alfio.util.Validator;
@@ -27,7 +30,10 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static alfio.util.ErrorsCode.STEP_2_INVALID_VAT;
@@ -121,8 +127,6 @@ public class ContactAndTicketsForm implements Serializable {
                 ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
             }
 
-            //TODO: here add vat nr validation!
-            //
         }
 
         if (email != null && !email.contains("@") && !bindingResult.hasFieldErrors("email")) {
