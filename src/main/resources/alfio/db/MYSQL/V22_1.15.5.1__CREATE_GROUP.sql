@@ -19,7 +19,8 @@ create table a_group (
     id integer auto_increment primary key not null,
     name varchar(255) not null,
     description varchar(2048),
-    organization_id_fk integer not null
+    organization_id_fk integer not null,
+    active boolean default true
 );
 alter table a_group add foreign key a_group_org_id_fk (organization_id_fk) references organization(id);
 alter table a_group add constraint a_group_unique_name_org_id unique(name, organization_id_fk);
@@ -28,7 +29,8 @@ create table group_member (
     id integer auto_increment primary key not null,
     a_group_id_fk integer not null,
     value varchar(255),
-    description varchar(2048)
+    description varchar(2048),
+    active boolean default true
 );
 
 alter table group_member add foreign key group_member_a_group_id_fk (a_group_id_fk) references a_group(id);
@@ -62,3 +64,7 @@ alter table whitelisted_ticket add foreign key whitelisted_ticket_ticket_id_fk (
 alter table whitelisted_ticket add constraint whitelisted_ticket_unique_item_id unique(group_member_id_fk, group_link_id_fk, requires_unique_value);
 
 create view group_link_active as select * from group_link where active = true;
+
+create view group_member_active as select * from group_member where active = true;
+
+create view group_active as select * from a_group where active = true;
