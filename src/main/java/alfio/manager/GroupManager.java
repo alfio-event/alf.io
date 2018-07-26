@@ -189,7 +189,7 @@ public class GroupManager {
     }
 
     public void disableLink(int linkId) {
-        Validate.isTrue(groupRepository.disableConfiguration(linkId) == 1, "Error while disabling link");
+        Validate.isTrue(groupRepository.disableLink(linkId) == 1, "Error while disabling link");
     }
 
     public Optional<GroupModification> update(int listId, GroupModification modification) {
@@ -207,6 +207,32 @@ public class GroupManager {
         }
         groupRepository.update(listId, modification.getName(), modification.getDescription());
         return loadComplete(listId);
+    }
+
+    public boolean deactivateMembers(List<Integer> memberIds, int groupId) {
+        if(memberIds.isEmpty()) {
+            return false;
+        }
+        MapSqlParameterSource[] params = memberIds.stream().map(i -> toParameterSource(groupId, i)).toArray(MapSqlParameterSource[]::new);
+        jdbcTemplate.batchUpdate(groupRepository.deactivateGroupMember(), params);
+        return true;
+    }
+
+    public boolean deactivateGroup(int groupId) {
+        List<Integer> members = groupRepository.getItems(groupId).stream().map(GroupMember::getId).collect(Collectors.toList());
+        if(!members.isEmpty()) {
+            Validate.isTrue(deactivateMembers(members, groupId), "error while disabling group members");
+        }
+        groupRepository.disableAllLinks(groupId);
+        Validate.isTrue(groupRepository.deactivateGroup(groupId) == 1, "unexpected error while disabling group");
+        return true;
+    }
+
+
+    private static MapSqlParameterSource toParameterSource(int groupId, Integer itemId) {
+        return new MapSqlParameterSource("groupId", groupId)
+            .addValue("memberId", itemId)
+            .addValue("disabledPlaceholder", UUID.randomUUID().toString());
     }
 
     @RequiredArgsConstructor

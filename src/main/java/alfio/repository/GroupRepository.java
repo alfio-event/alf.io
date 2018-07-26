@@ -36,16 +36,16 @@ public interface GroupRepository {
                                            @Bind("description") String description,
                                            @Bind("orgId") int organizationId);
 
-    @Query("select * from a_group where id = :id")
+    @Query("select * from group_active where id = :id")
     Group getById(@Bind("id") int id);
 
     @Query("update a_group set name = :name, description = :description where id = :id")
     int update(@Bind("id") int id, @Bind("name") String name, @Bind("description") String description);
 
-    @Query("select * from a_group where id = :id")
+    @Query("select * from group_active where id = :id")
     Optional<Group> getOptionalById(@Bind("id") int id);
 
-    @Query("select * from a_group where organization_id_fk = :organizationId")
+    @Query("select * from group_active where organization_id_fk = :organizationId")
     List<Group> getAllForOrganization(@Bind("organizationId") int organizationId);
 
     @Query("insert into group_link(a_group_id_fk, event_id_fk, ticket_category_id_fk, type, match_type, max_allocation)" +
@@ -62,7 +62,7 @@ public interface GroupRepository {
         value = "insert into group_member(a_group_id_fk, value, description) values(:groupId, :value, :description)")
     String insertItemTemplate();
 
-    @Query("select * from group_member where a_group_id_fk = :groupId order by value")
+    @Query("select * from group_member_active where a_group_id_fk = :groupId order by value")
     List<GroupMember> getItems(@Bind("groupId") int groupId);
 
     @Query("insert into whitelisted_ticket(group_member_id_fk, group_link_id_fk, ticket_id_fk, requires_unique_value)" +
@@ -96,12 +96,15 @@ public interface GroupRepository {
                             @Bind("maxAllocation") Integer maxAllocation);
 
     @Query("update group_link set active = false where id = :id")
-    int disableConfiguration(@Bind("id") int id);
+    int disableLink(@Bind("id") int id);
 
-    @Query("select * from group_member wi where wi.a_group_id_fk = :groupId and wi.value = lower(:value)")
+    @Query("update group_link set active = false where a_group_id_fk = :groupId")
+    int disableAllLinks(@Bind("groupId") int groupId);
+
+    @Query("select * from group_member_active wi where wi.a_group_id_fk = :groupId and wi.value = lower(:value)")
     Optional<GroupMember> findItemByValueExactMatch(@Bind("groupId") int groupId, @Bind("value") String value);
 
-    @Query("select * from group_member wi where wi.a_group_id_fk = :groupId and wi.value like lower(:value) limit 1")
+    @Query("select * from group_member_active wi where wi.a_group_id_fk = :groupId and wi.value like lower(:value) limit 1")
     Optional<GroupMember> findItemEndsWith(@Bind("configurationId") int configurationId,
                                            @Bind("groupId") int groupId,
                                            @Bind("value") String value);
@@ -117,5 +120,10 @@ public interface GroupRepository {
     @Query("delete from whitelisted_ticket where ticket_id_fk in (:ticketIds)")
     int deleteExistingWhitelistedTickets(@Bind("ticketIds") List<Integer> ticketIds);
 
+    @Query(type = QueryType.TEMPLATE, value = "update group_member set active = false, value = 'DISABLED-' || :disabledPlaceholder where id = :memberId and a_group_id_fk = :groupId")
+    String deactivateGroupMember();
 
+
+    @Query("update a_group set active = false where id = :groupId")
+    int deactivateGroup(@Bind("groupId") int groupId);
 }

@@ -53,7 +53,7 @@
                 organizationId: '<'
             }
         }).component('group', {
-            controller: ['GroupService', '$timeout', 'NotificationHandler', '$state', DetailCtrl],
+            controller: ['GroupService', '$timeout', 'NotificationHandler', '$state', '$window', DetailCtrl],
             templateUrl: '../resources/js/admin/feature/group/edit.html',
             bindings: {
                 organizationId: '<',
@@ -100,13 +100,15 @@
 
     }
 
-    function DetailCtrl(GroupService, $timeout, NotificationHandler, $state) {
+    function DetailCtrl(GroupService, $timeout, NotificationHandler, $state, $window) {
         var ctrl = this;
         ctrl.uploadCsv = false;
         ctrl.removeItem = removeItem;
         ctrl.addItem = addItem;
         ctrl.parseFileContent = parseFile;
         ctrl.reinit = init;
+        ctrl.deactivateGroup = deactivateGroup;
+        ctrl.deactivateMember = deactivateMember;
         ctrl.toggleUploadCsv = function() {
             ctrl.uploadCsv = !ctrl.uploadCsv;
         };
@@ -159,6 +161,24 @@
             }
         }
 
+        function deactivateGroup() {
+            if($window.confirm('About to delete ['+ctrl.group.name+'] group. Are you sure?')) {
+                GroupService.deactivateGroup(ctrl.organizationId, ctrl.group.id).then(function() {
+                    NotificationHandler.showSuccess('Group '+ctrl.group.name+' successfully deleted');
+                    $state.go('^.all', {orgId: ctrl.organizationId});
+                });
+            }
+        }
+
+        function deactivateMember(member) {
+            if($window.confirm('About to remove ['+member.value+']. Are you sure?')) {
+                GroupService.deactivateMember(ctrl.organizationId, ctrl.group.id, member.id).then(function() {
+                    NotificationHandler.showSuccess(member.value+' successfully removed');
+                    init();
+                });
+            }
+        }
+
         function parseFile(content) {
             $timeout(function() {
                 ctrl.loading = true;
@@ -198,23 +218,23 @@
     function GroupService($http, HttpErrorHandler, $q) {
         return {
             loadGroups: function(orgId) {
-                return $http.get('/admin/api/group/'+orgId).error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/group/for/'+orgId).error(HttpErrorHandler.handle);
             },
             loadGroupDetail: function(orgId, groupId) {
-                return $http.get('/admin/api/group/'+orgId+'/detail/'+groupId).error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/group/for/'+orgId+'/detail/'+groupId).error(HttpErrorHandler.handle);
             },
             createGroup: function(orgId, group) {
-                return $http.post('/admin/api/group/'+orgId+'/new', group).error(HttpErrorHandler.handle);
+                return $http.post('/admin/api/group/for/'+orgId+'/new', group).error(HttpErrorHandler.handle);
             },
             updateGroup: function(orgId, group) {
-                return $http.post('/admin/api/group/'+orgId+'/update/'+group.id, group)
+                return $http.post('/admin/api/group/for/'+orgId+'/update/'+group.id, group)
             },
             loadActiveGroup: function(eventName, categoryId) {
-                var url = '/admin/api/group/event/'+eventName + (angular.isDefined(categoryId) ? '/category/'+categoryId : '');
+                var url = '/admin/api/group/for/event/'+eventName + (angular.isDefined(categoryId) ? '/category/'+categoryId : '');
                 return $http.get(url).error(HttpErrorHandler.handle);
             },
             loadActiveLinks: function(eventName) {
-                return $http.get('/admin/api/group/event/'+eventName+'/all').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/group/for/event/'+eventName+'/all').error(HttpErrorHandler.handle);
             },
             linkTo: function(configuration) {
                 if(configuration) {
@@ -224,7 +244,13 @@
                 }
             },
             unlinkFrom: function(organizationId, groupLinkId) {
-                return $http['delete']('/admin/api/group/'+organizationId+'/link/'+groupLinkId);
+                return $http['delete']('/admin/api/group/for/'+organizationId+'/link/'+groupLinkId);
+            },
+            deactivateGroup: function(organizationId, groupId) {
+                return $http['delete']('/admin/api/group/for/'+organizationId+'/id/'+groupId);
+            },
+            deactivateMember: function(organizationId, groupId, memberId) {
+                return $http['delete']('/admin/api/group/for/'+organizationId+'/id/'+groupId+'/member/'+memberId);
             }
         }
     }
