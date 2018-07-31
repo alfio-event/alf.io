@@ -84,7 +84,6 @@ ext {
     //springProfilesActive = 'dev,demo'
     //springProfilesActive = 'dev,demo,jdbc-session'
     springProfilesActive = 'dev'
-    baseImage = "openjdk:jre-alpine"
     port = "8080"
 
 
@@ -312,11 +311,7 @@ jacocoTestReport {
 task dockerize(type: Copy) {
     from 'src/main/dist/Dockerfile'
     into "${buildDir}/dockerize"
-    filter(ReplaceTokens, tokens: [APP_NAME   : project.name,
-                                   APP_VERSION: project.version,
-                                   BASE_IMAGE : baseImage,
-                                   PORT       : port
-                                  ])
+    filter(ReplaceTokens, tokens: [ALFIO_VERSION: project.version])
 }
 
 task distribution(type: Copy) {

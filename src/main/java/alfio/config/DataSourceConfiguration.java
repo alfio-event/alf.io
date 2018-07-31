@@ -106,11 +106,10 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
             dataSource.setUsername(platform.getUsername(env));
             dataSource.setPassword(platform.getPassword(env));
             dataSource.setDriverClassName(platform.getDriverClassName(env));
-            int maxActive = platform.getMaxActive(env);
+            dataSource.setMaximumPoolSize(platform.getMaxActive(env));
+            dataSource.setMinimumIdle(platform.getMinIdle(env));
 
-            dataSource.setMaximumPoolSize(maxActive);
-
-            log.debug("Connection pool properties: max active {}, initial size {}", maxActive, dataSource.getMinimumIdle());
+            log.debug("Connection pool properties: max active {}, initial size {}", dataSource.getMaximumPoolSize(), dataSource.getMinimumIdle());
             return dataSource;
         }
     }

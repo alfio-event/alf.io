@@ -1,20 +1,20 @@
 #
-# @APP_NAME@ dockerfile.
+# Alf.io dockerfile.
 #
 
 # Pull base image.
-FROM @BASE_IMAGE@
+FROM adoptopenjdk/openjdk8-openj9:slim
 
-RUN adduser -S alfio
+RUN useradd -ms /bin/bash alfio
 USER alfio
-COPY ./@APP_NAME@-@APP_VERSION@-boot.war /home/alfio/alfio-boot.war
+COPY ./alfio-@ALFIO_VERSION@-boot.war /home/alfio/alfio-boot.war
 
 # Define working directory.
 WORKDIR /home/alfio
 RUN mkdir /home/alfio/logs
 ENV ALFIO_LOG_STDOUT_ONLY=true
-ENV JAVA_OPTS="-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:+UseConcMarkSweepGC"
+ENV ALFIO_JAVA_OPTS=""
 
-CMD java $JAVA_OPTS -jar /home/alfio/alfio-boot.war
+CMD java $ALFIO_JAVA_OPTS -jar /home/alfio/alfio-boot.war
 
-EXPOSE @PORT@
+EXPOSE 8080
