@@ -54,7 +54,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
 import javax.sql.DataSource;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -96,7 +95,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     }
 
     @Bean
-    public DataSource getDataSource(Environment env, PlatformProvider platform) throws URISyntaxException {
+    public DataSource getDataSource(Environment env, PlatformProvider platform) {
         if(platform == PlatformProvider.CLOUD_FOUNDRY) {
             return new FakeCFDataSource();
         } else {
@@ -105,11 +104,10 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
             dataSource.setUsername(platform.getUsername(env));
             dataSource.setPassword(platform.getPassword(env));
             dataSource.setDriverClassName(platform.getDriveClassName(env));
-            int maxActive = platform.getMaxActive(env);
+            dataSource.setMaximumPoolSize(platform.getMaxActive(env));
+            dataSource.setMinimumIdle(platform.getMinIdle(env));
 
-            dataSource.setMaximumPoolSize(maxActive);
-
-            log.debug("Connection pool properties: max active {}, initial size {}", maxActive, dataSource.getMinimumIdle());
+            log.debug("Connection pool properties: max active {}, initial size {}", dataSource.getMaximumPoolSize(), dataSource.getMinimumIdle());
             return dataSource;
         }
     }

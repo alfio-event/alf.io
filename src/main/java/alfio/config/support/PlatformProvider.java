@@ -368,6 +368,12 @@ public enum PlatformProvider {
             .orElse(10);//
     }
 
+    public int getMinIdle(Environment env) {
+        return ofNullable(env.getProperty("datasource.connections.min-idle"))
+            .map(Integer::parseInt)
+            .orElse(5);//
+    }
+
     public boolean isHosting(Environment env) {
         return true;
     }
