@@ -87,6 +87,7 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/extension/add-update/extension-add-update.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/extension/log/extension-log.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/ticket-category/ticket-category.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/group/groups.js"></script>
 
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 
@@ -122,6 +123,7 @@
                                 <li data-ui-sref-active="active"><a data-ui-sref="apikey" ng-click="ctrl.menuCollapsed = true">Api Key</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="configuration.system" ng-click="ctrl.menuCollapsed = true">Configuration</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="extension.list" ng-click="ctrl.menuCollapsed = true">Extension</a></li>
+                                <li data-ui-sref-active="active"><a data-ui-sref="groups" ui-sref-opts="{reload: true, notify: true}" ng-click="ctrl.menuCollapsed = true">Groups</a></li>
                                 {{/isOwner}}
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
@@ -130,7 +132,7 @@
                                 <li data-ui-sref-active="active"><a data-ui-sref="events.single.configuration({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-wrench"></i> edit configuration</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="events.single.show-resources({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-file-text-o" aria-hidden="true"></i> customize templates</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="events.single.compose-custom-message({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-envelope"></i> compose message</a></li>
-                                <li data-ui-sref-active="active" data-ng-if="!ctrl.event.expired"><a data-ui-sref="events.single.checkIn({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-check"></i> Check-in</a></li>
+                                <li data-ui-sref-active="active" {{^isOwner}}data-ng-if="!ctrl.event.expired"{{/isOwner}}><a data-ui-sref="events.single.checkIn({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-check"></i> Check-in</a></li>
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
                                 <li class="navbar-header"><h4>Status</h4></li>

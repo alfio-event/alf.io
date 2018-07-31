@@ -119,17 +119,10 @@ public class ReservationController {
                     List<Ticket> ticketsInReservation = ticketReservationManager.findTicketsInReservation(reservationId);
 
                     model.addAttribute("postponeAssignment", false)
-                         .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1);
+                         .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1 && ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId()));
 
 
-                    try {
-                        model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
-                    } catch (TicketReservationManager.OfflinePaymentException e) {
-                        if(event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
-                            log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName() , e);
-                        }
-                        model.addAttribute("delayForOfflinePayment", 0);
-                    }
+                    addDelayForOffline(model, event);
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
 
@@ -250,7 +243,8 @@ public class ReservationController {
         final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         Configuration.ConfigurationPathKey forceAssignmentKey = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
         boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
-        if(forceAssignment) {
+
+        if(forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
             contactAndTicketsForm.setPostponeAssignment(false);
         }
 

@@ -19,6 +19,7 @@ package alfio.util;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.manager.EuVatChecker;
+import alfio.manager.GroupManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.TicketFieldConfiguration;
@@ -27,10 +28,13 @@ import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ErrorCode;
+import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 
@@ -39,6 +43,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -173,6 +178,19 @@ public final class Validator {
                     .collect(Collectors.toList()));
         }
         return ValidationResult.success();
+    }
+
+    public static ValidationResult performAdvancedValidation(AdvancedTicketAssignmentValidator advancedValidator, AdvancedValidationContext context, Errors errors) {
+        if(errors == null) {
+            return ValidationResult.success();
+        }
+        Result<Void> advancedValidation = advancedValidator.apply(context);
+        if(!advancedValidation.isSuccess()) {
+            ErrorCode error = advancedValidation.getFirstErrorOrNull();
+            Validate.notNull(error, "unexpected error");
+            errors.rejectValue(StringUtils.defaultString(context.prefix) + error.getDescription(), error.getCode());
+        }
+        return evaluateValidationResult(errors);
     }
 
     public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form,
@@ -358,4 +376,39 @@ public final class Validator {
         }
         return evaluateValidationResult(errors);
     }
+
+    @RequiredArgsConstructor
+    public static class AdvancedTicketAssignmentValidator implements Function<AdvancedValidationContext, Result<Void>> {
+
+        private final EuVatChecker.SameCountryValidator vatValidator;
+        private final GroupManager.WhitelistValidator whitelistValidator;
+
+
+        @Override
+        public Result<Void> apply(AdvancedValidationContext context) {
+
+            Optional<TicketFieldConfiguration> vatField = context.ticketFieldConfigurations.stream()
+                .filter(TicketFieldConfiguration::isEuVat)
+                .filter(f -> context.updateTicketOwnerForm.getAdditional() !=null && context.updateTicketOwnerForm.getAdditional().containsKey(f.getName()))
+                .findFirst();
+
+            Optional<String> vatNr = vatField.map(c -> context.updateTicketOwnerForm.getAdditional().get(c.getName()).get(0));
+            String vatFieldName = vatField.map(TicketFieldConfiguration::getName).orElse("");
+
+            return new Result.Builder<Void>()
+                .checkPrecondition(() -> !vatNr.isPresent() || vatValidator.test(vatNr.get()), ErrorCode.custom(ErrorsCode.STEP_2_INVALID_VAT, "additional['"+vatFieldName+"']"))
+                .checkPrecondition(() -> whitelistValidator.test(new GroupManager.WhitelistValidationItem(context.categoryId, context.updateTicketOwnerForm.getEmail())), ErrorCode.custom(ErrorsCode.STEP_2_WHITELIST_CHECK_FAILED, "email"))
+                .build(() -> null);
+        }
+    }
+
+    @RequiredArgsConstructor
+    public static class AdvancedValidationContext {
+        private final UpdateTicketOwnerForm updateTicketOwnerForm;
+        private final List<TicketFieldConfiguration> ticketFieldConfigurations;
+        private final int categoryId;
+        private final String ticketUuid;
+        private final String prefix;
+    }
+
 }

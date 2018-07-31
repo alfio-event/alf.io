@@ -44,12 +44,10 @@ import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
 import java.time.DayOfWeek;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -116,6 +114,7 @@ public class TicketReservationManagerTest {
     private UserRepository userRepository;
     private ExtensionManager extensionManager;
     private TicketSearchRepository ticketSearchRepository;
+    private GroupManager groupManager;
 
     @BeforeEach
     public void init() {
@@ -151,6 +150,7 @@ public class TicketReservationManagerTest {
         userRepository = mock(UserRepository.class);
         extensionManager = mock(ExtensionManager.class);
         ticketSearchRepository = mock(TicketSearchRepository.class);
+        groupManager = mock(GroupManager.class);
 
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -176,7 +176,8 @@ public class TicketReservationManagerTest {
             auditingRepository,
             userRepository,
             extensionManager,
-            ticketSearchRepository);
+            ticketSearchRepository,
+            groupManager);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);

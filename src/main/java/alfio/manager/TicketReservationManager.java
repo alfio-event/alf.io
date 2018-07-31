@@ -32,6 +32,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.AdditionalServiceItemPriceContainer;
 import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
+import alfio.model.group.LinkedGroup;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
@@ -121,6 +122,7 @@ public class TicketReservationManager {
     private final UserRepository userRepository;
     private final ExtensionManager extensionManager;
     private final TicketSearchRepository ticketSearchRepository;
+    private final GroupManager groupManager;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -160,7 +162,8 @@ public class TicketReservationManager {
                                     InvoiceSequencesRepository invoiceSequencesRepository,
                                     AuditingRepository auditingRepository,
                                     UserRepository userRepository,
-                                    ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository) {
+                                    ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository,
+                                    GroupManager groupManager) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -186,6 +189,7 @@ public class TicketReservationManager {
         this.userRepository = userRepository;
         this.extensionManager = extensionManager;
         this.ticketSearchRepository = ticketSearchRepository;
+        this.groupManager = groupManager;
     }
     
     /**
@@ -344,6 +348,12 @@ public class TicketReservationManager {
                                  boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus,
                                  boolean tcAccepted, boolean privacyPolicyAccepted) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
+
+        if(!acquireGroupMembers(reservationId, event)) {
+            groupManager.deleteWhitelistedTicketsForReservation(reservationId);
+            return PaymentResult.unsuccessful("error.STEP2_WHITELIST");
+        }
+
         if(!initPaymentProcess(reservationCost, paymentProxy, reservationId, email, customerName, userLanguage, billingAddress, customerReference)) {
             return PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION");
         }
@@ -408,6 +418,15 @@ public class TicketReservationManager {
 
     }
 
+    public boolean containsCategoriesLinkedToGroups(String reservationId, int eventId) {
+        List<LinkedGroup> allLinks = groupManager.getLinksForEvent(eventId);
+        if(allLinks.isEmpty()) {
+            return false;
+        }
+        return ticketRepository.findTicketsInReservation(reservationId).stream()
+            .anyMatch(t -> allLinks.stream().anyMatch(lg -> lg.getTicketCategoryId() == null || lg.getTicketCategoryId().equals(t.getCategoryId())));
+    }
+
     private PaymentProxy evaluatePaymentProxy(Optional<PaymentProxy> method, TotalPrice reservationCost) {
         if(method.isPresent()) {
             return method.get();
@@ -429,6 +448,21 @@ public class TicketReservationManager {
                 log.debug(String.format("unable to flag the reservation %s as IN_PAYMENT", reservationId), e);
                 return false;
             }
+        }
+        return true;
+    }
+
+    private boolean acquireGroupMembers(String reservationId, Event event) {
+        int eventId = event.getId();
+        List<LinkedGroup> linkedGroups = groupManager.getLinksForEvent(eventId);
+        if(!linkedGroups.isEmpty()) {
+            List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
+            return Boolean.TRUE.equals(requiresNewTransactionTemplate.execute(status ->
+                ticketsInReservation
+                    .stream()
+                    .filter(ticket -> linkedGroups.stream().anyMatch(c -> c.getTicketCategoryId() == null || c.getTicketCategoryId().equals(ticket.getCategoryId())))
+                    .map(t -> groupManager.acquireMemberForTicket(t))
+                    .reduce(true, Boolean::logicalAnd)));
         }
         return true;
     }
@@ -672,11 +706,14 @@ public class TicketReservationManager {
                               String userLanguage, String billingAddress, String customerReference, int eventId) {
         Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
         int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
-        Map<Integer, Ticket> postUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
 
+        List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
+        Map<Integer, Ticket> postUpdateTicket = ticketsInReservation.stream().collect(toMap(Ticket::getId, Function.identity()));
         postUpdateTicket.forEach((id, ticket) -> {
             auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), eventId);
         });
+
+        Set<Integer> categoriesId = ticketsInReservation.stream().map(Ticket::getCategoryId).collect(Collectors.toSet());
 
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
@@ -983,6 +1020,7 @@ public class TicketReservationManager {
         int updatedTickets = ticketRepository.findTicketsInReservation(reservationId).stream().mapToInt(t -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), t.getId())).sum();
         Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
         waitingQueueManager.fireReservationExpired(reservationId);
+        groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         deleteReservation(event, reservationId, expired);
         auditingRepository.insert(reservationId, null, event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
@@ -1058,6 +1096,11 @@ public class TicketReservationManager {
                                   Optional<UserDetails> userDetails) {
 
         Ticket preUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
+        if(preUpdateTicket.getLockedAssignment()) {
+            log.warn("trying to update assignee for a locked ticket ({})", preUpdateTicket.getId());
+            return;
+        }
+
         Map<String, String> preUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
 
         String newEmail = updateTicketOwner.getEmail().trim();

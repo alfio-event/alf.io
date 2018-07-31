@@ -1,6 +1,6 @@
 (function() {
     "use strict";
-    angular.module('alfio-configuration', ['adminServices'])
+    angular.module('alfio-configuration', ['adminServices', 'group'])
         .config(['$stateProvider', function($stateProvider) {
             $stateProvider
                 .state('configuration', {
@@ -109,7 +109,7 @@
                         mailReplyTo: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_REPLY_TO';}),
                         mailAttemptsCount: _.find(original['MAIL'], function(e) {return e.configurationKey === 'MAIL_ATTEMPTS_COUNT';})
                     };
-                };
+                }
 
                 if(angular.isDefined(original['MAP']) && original['MAP'].length > 0) {
                     transformed.map = {
@@ -155,12 +155,12 @@
 
     function handleEuCountries(conf, euCountries) {
         if(conf.invoiceEu) {
-            var euCountries = _.map(euCountries, function(o) {
+            var eu = _.map(euCountries, function(o) {
                 var key = Object.keys(o)[0];
                 return {key: key, value: o[key]};
             });
             _.forEach(_.filter(conf.invoiceEu.settings, function(e) {return e.key === 'COUNTRY_OF_BUSINESS'}), function(cb) {
-                cb.listValues = euCountries;
+                cb.listValues = eu;
             });
         }
     }
@@ -293,7 +293,30 @@
 
     OrganizationConfigurationController.$inject = ['ConfigurationService', 'OrganizationService', 'ExtensionService', 'NotificationHandler', '$stateParams', '$q', '$rootScope'];
 
-    function EventConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $q, $rootScope, $stateParams) {
+    var groupTypes = {
+        'ONCE_PER_VALUE': 'Limit to one ticket per email address',
+        'LIMITED_QUANTITY': 'Limit to a specific number of tickets per email address',
+        'UNLIMITED': 'Unlimited'
+    };
+
+    var groupMatchTypes = {
+        'FULL': 'Full match',
+        'EMAIL_DOMAIN': 'Match full email address, fallback on domain'
+    };
+
+    function selectGroup(conf) {
+        return function(list) {
+            conf.group = {
+                groupId: list.id,
+                eventId: conf.event.id,
+                ticketCategoryId: conf.category ? conf.category.id : null,
+                matchType: 'FULL',
+                type: 'ONCE_PER_VALUE'
+            };
+        }
+    }
+
+    function EventConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $q, $rootScope, $stateParams, GroupService) {
         var eventConf = this;
         var getData = function() {
             if(angular.isDefined($stateParams.eventName)) {
@@ -303,7 +326,10 @@
                     var event = result.data.event;
                     eventConf.eventName = event.shortName;
                     eventConf.eventId = event.id;
-                    $q.all([ConfigurationService.loadEventConfig(eventConf.eventId), ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)]).then(function(result) {
+                    $q.all([
+                        ConfigurationService.loadEventConfig(eventConf.eventId),
+                        ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)
+                    ]).then(function(result) {
                         deferred.resolve([{data:event}].concat(result));
                     }, function(e) {
                         deferred.reject(e);
@@ -323,7 +349,9 @@
             eventConf.loading = true;
             getData().then(function(result) {
                     eventConf.event = result[0].data;
+                    loadGroups();
                     loadSettings(eventConf, result[1].data, ConfigurationService);
+
 
                     if(eventConf.alfioPi) {
                         eventConf.alfioPiOptions = _.filter(eventConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
@@ -347,7 +375,9 @@
             }
             eventConf.loading = true;
             $q.all([ConfigurationService.updateEventConfig(eventConf.organizationId, eventConf.eventId, eventConf.settings),
-                ExtensionService.saveBulkEventSetting(eventConf.organizationId, eventConf.eventId, eventConf.extensionSettings)]).then(function() {
+                ExtensionService.saveBulkEventSetting(eventConf.organizationId, eventConf.eventId, eventConf.extensionSettings),
+                GroupService.linkTo(eventConf.group)
+            ]).then(function() {
                 load();
                 NotificationHandler.showSuccess("Configurations have been saved successfully");
             }, function(e) {
@@ -368,9 +398,36 @@
         $rootScope.$on('ReloadSettings', function() {
             load();
         });
+
+        function loadGroups() {
+            $q.all([
+                GroupService.loadGroups(eventConf.event.organizationId),
+                GroupService.loadActiveGroup(eventConf.event.shortName)
+            ]).then(function(results) {
+                eventConf.groups = results[0].data;
+                eventConf.group = results[1].status === 200 ? results[1].data : null;
+                eventConf.selectGroup = selectGroup(eventConf);
+                eventConf.groupTypes = groupTypes;
+                eventConf.groupMatchTypes = groupMatchTypes;
+                eventConf.removeGroupLink = unlinkGroup(eventConf, GroupService, load);
+            });
+
+        }
     }
 
-    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams'];
+    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams', 'GroupService'];
+
+    function unlinkGroup(conf, GroupService, loadFn) {
+        return function(organizationId, groupLink) {
+            if(groupLink && angular.isDefined(groupLink.id)) {
+                GroupService.unlinkFrom(organizationId, groupLink.id).then(function() {
+                    loadFn();
+                });
+            } else {
+                conf.group = undefined;
+            }
+        };
+    }
 
     function loadSettings(container, settings, ConfigurationService) {
         var general = settings['GENERAL'] || [];
@@ -392,33 +449,51 @@
                 closeModal: '&'
             },
             bindToController: true,
-            controller: 'CategoryConfigurationController',
+            controller: ['ConfigurationService', '$rootScope', 'GroupService', '$q', CategoryConfigurationController],
             controllerAs: 'categoryConf',
             templateUrl: '/resources/angular-templates/admin/partials/configuration/category.html'
         };
     }
 
-    function CategoryConfigurationController(ConfigurationService, $rootScope) {
+    function CategoryConfigurationController(ConfigurationService, $rootScope, GroupService, $q) {
         var categoryConf = this;
 
         var load = function() {
             categoryConf.loading = true;
-            ConfigurationService.loadCategory(categoryConf.event.id, categoryConf.category.id).then(function(result) {
-                loadSettings(categoryConf, result.data, ConfigurationService);
-                categoryConf.loading = false;
-            }, function() {
-                categoryConf.loading = false;
-            });
+            $q.all([ConfigurationService.loadCategory(categoryConf.event.id, categoryConf.category.id),
+                GroupService.loadGroups(categoryConf.event.organizationId),
+                GroupService.loadActiveGroup(categoryConf.event.shortName, categoryConf.category.id)])
+                .then(function(results) {
+                    loadSettings(categoryConf, results[0].data, ConfigurationService);
+                    categoryConf.groups = results[1].data;
+                    categoryConf.group = results[2].status === 200 ? results[2].data : null;
+                    categoryConf.removeGroupLink = unlinkGroup(categoryConf, GroupService, load);
+                    categoryConf.loading = false;
+                }, function() {
+                    categoryConf.loading = false;
+                });
         };
         load();
+
+        categoryConf.selectGroup = selectGroup(categoryConf);
+        categoryConf.groupTypes = groupTypes;
+        categoryConf.groupMatchTypes = groupMatchTypes;
+
 
         categoryConf.saveSettings = function(frm) {
             if(!frm.$valid) {
                 return;
             }
             categoryConf.loading = true;
+
             ConfigurationService.updateCategoryConfig(categoryConf.category.id, categoryConf.event.id, categoryConf.settings).then(function() {
-                load();
+                if(categoryConf.group) {
+                    GroupService.linkTo(categoryConf.group).then(function() {
+                        load();
+                    });
+                } else {
+                    load();
+                }
             }, function(e) {
                 alert(e.data);
                 categoryConf.loading = false;
@@ -433,7 +508,7 @@
             load();
         });
     }
-    CategoryConfigurationController.$inject = ['ConfigurationService', '$rootScope'];
+    CategoryConfigurationController.$inject = ['ConfigurationService', '$rootScope', 'GroupService', '$q'];
 
     function basicConfigurationNeeded($uibModal, ConfigurationService, EventService, $q, $window) {
         return {
