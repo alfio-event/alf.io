@@ -17,6 +17,7 @@
 
 package alfio.extension;
 
+import alfio.manager.ExtensionManager;
 import alfio.model.Event;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
@@ -207,6 +208,12 @@ public class ExtensionService {
         return extensionRepository.getSingle(path, name);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<ExtensionSupport> getSingle(Organization organization, Event event, String name) {
+        Set<String> paths = generatePossiblePath(ExtensionManager.toPath(organization.getId(), event.getId()), Comparator.reverseOrder());
+        return extensionRepository.getSingle(paths, name);
+    }
+
     public <T> T executeScriptsForEvent(String event, String basePath, Map<String, Object> payload, Class<T> clazz) {
         List<ScriptPathNameHash> activePaths = getActiveScriptsForEvent(event, basePath, false);
         T res = null;
@@ -280,11 +287,11 @@ public class ExtensionService {
         return extensionRepository.findActive(paths, async, event);
     }
 
-    private static Set<String> generatePossiblePath(String basePath) {
+    private static Set<String> generatePossiblePath(String basePath, Comparator<String> comparator) {
         //generate all the paths
         // given "-0-0" it will generate
         // "-", "-0", "-0-0"
-        Set<String> paths = new TreeSet<>();
+        Set<String> paths = new TreeSet<>(comparator);
         int basePathLength = basePath.length();
         for (int i = 1; i < basePathLength; i++) {
             if (basePath.charAt(i) == '-') {
@@ -294,6 +301,10 @@ public class ExtensionService {
         paths.add("-"); //handle first and last case
         paths.add(basePath);
         return paths;
+    }
+
+    private static Set<String> generatePossiblePath(String basePath) {
+        return generatePossiblePath(basePath, Comparator.naturalOrder());
     }
 
     @Transactional(readOnly = true)

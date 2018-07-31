@@ -17,7 +17,7 @@ NC='\033[0m'
 #
 # Creating an event
 #
-curl --silent  -X POST http://localhost:8080/api/v1/admin/event/create -H 'Authorization: Basic YXBpOmFiY2Q=' -H 'Cache-Control: no-cache' -H 'Content-Type: application/json' -d '{
+curl --silent  -X POST http://localhost:8080/api/v1/admin/event/create -H 'Authorization: ApiKey e210468a-1831-4cf2-93d8-8cc093c7bd7d' -H 'Cache-Control: no-cache' -H 'Content-Type: application/json' -d '{
     "title": "Titolo",
     "slug": "titolo",
     "description": [{
@@ -41,8 +41,8 @@ curl --silent  -X POST http://localhost:8080/api/v1/admin/event/create -H 'Autho
         "freeOfCharge": false,
         "max": 10,
         "currency": "CHF",
-        "VAT": 7.7,
-        "VATIncluded": true,
+        "taxPercentage": 7.7,
+        "taxIncludedInPrice": true,
         "paymentMethods": ["CREDIT_CARD","ONSITE","OFFLINE"],
         "categories": [
             {

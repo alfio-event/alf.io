@@ -20,6 +20,7 @@ import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.EventWithAdditionalInfo;
 import alfio.model.PromoCodeDiscount;
+import alfio.model.group.LinkedGroup;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -52,6 +53,7 @@ public class EventCreationRequest{
     private String termsAndConditionsUrl;
     private String imageUrl;
     private TicketRequest tickets;
+    private List<ExtensionSetting> extensionSettings;
 
     public EventModification toEventModification(Organization organization, Function<String,String> slugGenerator, String imageRef) {
         String slug = this.slug;
@@ -84,12 +86,12 @@ public class EventCreationRequest{
             description.stream().collect(Collectors.toMap(DescriptionRequest::getLang,DescriptionRequest::getBody)),
             new DateTimeModification(startDate.toLocalDate(),startDate.toLocalTime()),
             new DateTimeModification(endDate.toLocalDate(),endDate.toLocalTime()),
-            tickets.categories.stream().map((x) -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ZERO),
+            tickets.freeOfCharge ? BigDecimal.ZERO : tickets.categories.stream().map((x) -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ONE).max(BigDecimal.ONE),
             tickets.currency,
             tickets.max,
-            tickets.VAT,
-            tickets.VATIncluded,
-            tickets.paymentsMethods,
+            tickets.taxPercentage,
+            tickets.taxIncludedInPrice,
+            tickets.paymentMethods,
             tickets.categories.stream().map(CategoryRequest::toTicketCategoryModification).collect(Collectors.toList()),
             tickets.freeOfCharge,
             new LocationDescriptor(timezone, location.getCoordinate().getLatitude(), location.getCoordinate().getLongitude(), null),
@@ -144,9 +146,9 @@ public class EventCreationRequest{
             tickets != null && tickets.categories != null ? tickets.categories.stream().map((x) -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ZERO).max(original.getRegularPrice()) : original.getRegularPrice(),
             tickets != null ? first(tickets.currency,original.getCurrency()) : original.getCurrency(),
             tickets != null ? tickets.max : original.getAvailableSeats(),
-            tickets != null ? first(tickets.VAT,original.getVat()) : original.getVat(),
-            tickets != null ? first(tickets.VATIncluded,original.isVatIncluded()) : original.isVatIncluded(),
-            tickets != null ? first(tickets.paymentsMethods,original.getAllowedPaymentProxies()) : original.getAllowedPaymentProxies(),
+            tickets != null ? first(tickets.taxPercentage,original.getVat()) : original.getVat(),
+            tickets != null ? first(tickets.taxIncludedInPrice,original.isVatIncluded()) : original.isVatIncluded(),
+            tickets != null ? first(tickets.paymentMethods,original.getAllowedPaymentProxies()) : original.getAllowedPaymentProxies(),
             tickets != null && tickets.categories != null ? tickets.categories.stream().map(CategoryRequest::toTicketCategoryModification).collect(Collectors.toList()) : null, // should use the merged version
             tickets != null ? first(tickets.freeOfCharge,original.isFreeOfCharge()) : original.isFreeOfCharge(),
             null,
@@ -159,41 +161,41 @@ public class EventCreationRequest{
 
     @Getter
     @AllArgsConstructor
-    public static class DescriptionRequest{
+    public static class DescriptionRequest {
         private String lang;
         private String body;
     }
 
     @Getter
     @AllArgsConstructor
-    public static class LocationRequest{
+    public static class LocationRequest {
         private String fullAddress;
         private CoordinateRequest coordinate;
     }
 
     @Getter
     @AllArgsConstructor
-    public static class TicketRequest{
+    public static class TicketRequest {
         private Boolean freeOfCharge;
         private Integer max;
         private String currency;
-        private BigDecimal VAT;
-        private Boolean VATIncluded;
-        private List<PaymentProxy> paymentsMethods;
+        private BigDecimal taxPercentage;
+        private Boolean taxIncludedInPrice;
+        private List<PaymentProxy> paymentMethods;
         private List<CategoryRequest> categories;
         private List<PromoCodeRequest> promoCodes;
     }
 
     @Getter
     @AllArgsConstructor
-    public static class CoordinateRequest{
+    public static class CoordinateRequest {
         private String latitude;
         private String longitude;
     }
 
     @Getter
     @AllArgsConstructor
-    public static class CategoryRequest{
+    public static class CategoryRequest {
         private String name;
         private List<DescriptionRequest> description;
         private Integer maxTickets;
@@ -203,6 +205,7 @@ public class EventCreationRequest{
         private LocalDateTime endSellingDate;
         private String accessCode;
         private CustomTicketValidityRequest customValidity;
+        private GroupLinkRequest groupLink;
 
         TicketCategoryModification toTicketCategoryModification() {
             int capacity = Optional.ofNullable(maxTickets).orElse(0);
@@ -231,7 +234,7 @@ public class EventCreationRequest{
 
     @Getter
     @AllArgsConstructor
-    public static class CustomTicketValidityRequest{
+    public static class CustomTicketValidityRequest {
         private LocalDateTime checkInFrom;
         private LocalDateTime checkInTo;
         private LocalDateTime validityStart;
@@ -247,4 +250,23 @@ public class EventCreationRequest{
         private PromoCodeDiscount.DiscountType discountType;
         private int discount;
     }
+
+    @Getter
+    @AllArgsConstructor
+    public static class ExtensionSetting {
+        private String extensionId;
+        private String key;
+        private String value;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class GroupLinkRequest {
+        private Integer groupId;
+        private LinkedGroup.Type type;
+        private LinkedGroup.MatchType matchType;
+        private Integer maxAllocation;
+    }
+
+
 }

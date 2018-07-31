@@ -20,6 +20,8 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.function.Supplier;
+
 @JsonSerialize(using=ErrorCodeSerializer.class)
 public interface ErrorCode {
 
@@ -99,6 +101,31 @@ public interface ErrorCode {
             @Override
             public String toString() {
                 return description;
+            }
+        };
+    }
+
+    static ErrorCode lazy(Supplier<ErrorCode> supplier) {
+        return new ErrorCode() {
+
+            private transient ErrorCode delegate = null;
+
+            @Override
+            public String getCode() {
+                return get().getCode();
+            }
+
+            @Override
+            public String getDescription() {
+                return get().getDescription();
+            }
+
+            private synchronized ErrorCode get() {
+                if(delegate != null) {
+                    return delegate;
+                }
+                delegate = supplier.get();
+                return delegate;
             }
         };
     }
