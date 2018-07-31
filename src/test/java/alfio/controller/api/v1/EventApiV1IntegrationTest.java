@@ -52,6 +52,7 @@ import java.net.URISyntaxException;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -120,7 +121,7 @@ public class EventApiV1IntegrationTest {
         return new EventCreationRequest(
             "Title",
             this.shortName,
-            Arrays.asList(new EventCreationRequest.DescriptionRequest("en","desc")),
+            Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
             new EventCreationRequest.LocationRequest(
                 "Pollegio 6742 Switzerland",
                 new EventCreationRequest.CoordinateRequest("45.5","9.00")
@@ -148,11 +149,13 @@ public class EventApiV1IntegrationTest {
                         LocalDateTime.of(2019,1,10,12, 0),
                         LocalDateTime.of(2019,1,30,18, 0),
                         null,
+                        null,
                         null
                     )
                 ),
                 null
-            )
+            ),
+            null
         );
 
     }
@@ -174,7 +177,7 @@ public class EventApiV1IntegrationTest {
         assertEquals(eventCreationRequest.getSlug(),event.getShortName());
         assertEquals(eventCreationRequest.getTickets().getCurrency(),event.getCurrency());
         assertEquals(eventCreationRequest.getWebsiteUrl(),event.getWebsiteUrl());
-        assertEquals(eventCreationRequest.getTickets().getPaymentsMethods(),event.getAllowedPaymentProxies());
+        assertEquals(eventCreationRequest.getTickets().getPaymentMethods(),event.getAllowedPaymentProxies());
         assertTrue(event.getFileBlobIdIsPresent());
         assertEquals(eventCreationRequest.getTickets().getCategories().size(),tickets.size());
         tickets.forEach((t) -> {
@@ -197,7 +200,7 @@ public class EventApiV1IntegrationTest {
 
         String newTitle = "new title";
         EventCreationRequest updateRequest = new EventCreationRequest(newTitle,null,null,null,null,null,null,null,null,null,
-            new EventCreationRequest.TicketRequest(null,10,null,null,null,null,null,null)
+            new EventCreationRequest.TicketRequest(null,10,null,null,null,null,null,null), null
         );
         controller.update(shortName,updateRequest,mockPrincipal);
         Event event = eventManager.getSingleEvent(shortName,username);

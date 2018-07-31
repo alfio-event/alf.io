@@ -16,36 +16,51 @@
  */
 package alfio.controller.api.v1.admin;
 
+import alfio.extension.ExtensionService;
 import alfio.manager.*;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.EventWithAdditionalInfo;
+import alfio.model.ExtensionSupport;
+import alfio.model.ExtensionSupport.ExtensionMetadataValue;
 import alfio.model.TicketCategory;
 import alfio.model.api.v1.admin.EventCreationRequest;
+import alfio.model.group.Group;
 import alfio.model.modification.EventModification;
+import alfio.model.modification.LinkedGroupModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
+import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
+import alfio.repository.ExtensionRepository;
+import alfio.util.Json;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.MapBindingResult;
+import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import static alfio.controller.api.admin.EventApiController.validateEvent;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 
 @RestController
 @RequestMapping("/api/v1/admin/event")
 @AllArgsConstructor
+@Log4j2
 public class EventApiV1Controller {
 
     private final EventManager eventManager;
@@ -54,25 +69,34 @@ public class EventApiV1Controller {
     private final FileDownloadManager fileDownloadManager;
     private final UserManager userManager;
     private final EventStatisticsManager eventStatisticsManager;
+    private final GroupManager groupManager;
+    private final ExtensionService extensionService;
+    private final ExtensionRepository extensionRepository;
 
     @PostMapping("/create")
+    @Transactional
     public ResponseEntity<String> create(@RequestBody EventCreationRequest request, Principal user) {
 
 
-        String imageRef = fetchImage(request.getImageUrl());
+        String imageRef = Optional.ofNullable(request.getImageUrl()).map(this::fetchImage).orElse(null);
         Organization organization = userManager.findUserOrganizations(user.getName()).get(0);
-
+        AtomicReference<Errors> errorsContainer = new AtomicReference<>();
         Result<String> result =  new Result.Builder<String>()
-            .checkPrecondition(() -> StringUtils.isNotBlank(request.getTitle()),ErrorCode.EventError.NOT_FOUND)
-            .checkPrecondition(() -> StringUtils.isNotBlank(request.getSlug()) && eventNameManager.isUnique(request.getSlug()),ErrorCode.EventError.NOT_FOUND)
-            .checkPrecondition(() -> StringUtils.isNotBlank(request.getWebsiteUrl()),ErrorCode.EventError.NOT_FOUND)
-            .checkPrecondition(() -> StringUtils.isNotBlank(request.getTermsAndConditionsUrl()),ErrorCode.EventError.NOT_FOUND)
-            .checkPrecondition(() -> StringUtils.isNotBlank(request.getImageUrl()),ErrorCode.EventError.NOT_FOUND)
-            .checkPrecondition(() -> StringUtils.isNotBlank(request.getTimezone()),ErrorCode.EventError.NOT_FOUND)
+            .checkPrecondition(() -> isNotBlank(request.getTitle()), ErrorCode.custom("invalid.title", "Invalid title"))
+            .checkPrecondition(() -> isBlank(request.getSlug()) || eventNameManager.isUnique(request.getSlug()), ErrorCode.custom("invalid.slug", "Invalid slug"))
+            .checkPrecondition(() -> isNotBlank(request.getWebsiteUrl()), ErrorCode.custom("invalid.websiteUrl", "Invalid Website URL"))
+            .checkPrecondition(() -> isNotBlank(request.getTermsAndConditionsUrl()), ErrorCode.custom("invalid.tc", "Invalid Terms and Conditions"))
+            .checkPrecondition(() -> isNotBlank(request.getImageUrl()), ErrorCode.custom("invalid.imageUrl", "Invalid Image URL"))
+            .checkPrecondition(() -> isNotBlank(request.getTimezone()), ErrorCode.custom("invalid.timezone", "Invalid Timezone"))
             .checkPrecondition(() -> {
                 EventModification eventModification = request.toEventModification(organization, eventNameManager::generateShortName, imageRef);
-                return validateEvent(eventModification, new BeanPropertyBindingResult(eventModification,"event")).isSuccess();
-            }, ErrorCode.EventError.NOT_FOUND)
+                errorsContainer.set(new BeanPropertyBindingResult(eventModification, "event"));
+                ValidationResult validationResult = validateEvent(eventModification, errorsContainer.get());
+                if(!validationResult.isSuccess()) {
+                    log.warn("validation failed {}", validationResult.getValidationErrors());
+                }
+                return validationResult.isSuccess();
+            }, ErrorCode.lazy(() -> toErrorCode(errorsContainer.get())))
             //TODO all location validation
             //TODO language validation, for all the description the same languages
             .build(() -> insertEvent(request, user, imageRef).map(Event::getShortName).orElseThrow(IllegalStateException::new));
@@ -80,9 +104,16 @@ public class EventApiV1Controller {
         if(result.isSuccess()) {
             return ResponseEntity.ok(result.getData());
         } else {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(Json.toJson(result.getErrors()));
         }
 
+    }
+
+    private ErrorCode toErrorCode(Errors errors) {
+        return errors.getAllErrors().stream()
+            .map(e -> ErrorCode.custom(e.getCode(), e.getObjectName()))
+            .findFirst()
+            .orElse(ErrorCode.EventError.NOT_FOUND);
     }
 
     @GetMapping("/{slug}/stats")
@@ -156,7 +187,6 @@ public class EventApiV1Controller {
 
     private Optional<TicketCategory> findCategoryByName(Event event, String name) {
         List<TicketCategory> categories = eventManager.loadTicketCategories(event);
-
         return categories.stream().filter( oc -> oc.getName().equals(name)).findFirst();
     }
 
@@ -166,7 +196,7 @@ public class EventApiV1Controller {
         eventManager.createEvent(em);
         Optional<Event> event = eventManager.getOptionalByName(em.getShortName(),user.getName());
 
-        event.ifPresent((e) ->
+        event.ifPresent((e) -> {
             Optional.ofNullable(request.getTickets().getPromoCodes()).ifPresent((promoCodes) ->
                 promoCodes.forEach((pc) -> //TODO add ref to categories
                     eventManager.addPromoCode(
@@ -180,8 +210,52 @@ public class EventApiV1Controller {
                         Collections.emptyList()
                     )
                 )
-            )
-        );
+            );
+            //link categories to groups, if any
+            request.getTickets().getCategories().stream()
+                .filter(cr -> cr.getGroupLink() != null && cr.getGroupLink().getGroupId() != null)
+                .map(cr -> Pair.of(cr, groupManager.findById(cr.getGroupLink().getGroupId(), organization.getId())))
+                .forEach(link -> {
+                    if(link.getRight().isPresent()) {
+                        Group group = link.getRight().get();
+                        EventCreationRequest.CategoryRequest categoryRequest = link.getLeft();
+                        findCategoryByName(e, categoryRequest.getName()).ifPresent(category -> {
+                            EventCreationRequest.GroupLinkRequest groupLinkRequest = categoryRequest.getGroupLink();
+                            LinkedGroupModification modification = new LinkedGroupModification(null,
+                                group.getId(),
+                                e.getId(),
+                                category.getId(),
+                                groupLinkRequest.getType(),
+                                groupLinkRequest.getMatchType(),
+                                groupLinkRequest.getMaxAllocation());
+                            groupManager.createLink(group.getId(), e.getId(), modification);
+                        });
+                    }
+                });
+            if(!CollectionUtils.isEmpty(request.getExtensionSettings())) {
+                request.getExtensionSettings().stream()
+                    .collect(Collectors.groupingBy(EventCreationRequest.ExtensionSetting::getExtensionId))
+                    .forEach((id,settings) -> {
+                        List<ExtensionSupport.ExtensionMetadata> metadata = extensionService.getSingle(organization, e, id)
+                            .map(es -> extensionRepository.findAllParametersForExtension(es.getId()))
+                            .orElseGet(Collections::emptyList);
+
+                        List<ExtensionMetadataValue> values = settings.stream()
+                            .map(es -> Pair.of(es, metadata.stream().filter(mm -> mm.getName().equals(es.getKey())).findFirst()))
+                            .filter(pair -> {
+                                if (!pair.getRight().isPresent()) {
+                                    log.warn("ignoring non-existent extension setting key {}", pair.getLeft().getKey());
+                                }
+                                return pair.getRight().isPresent();
+                            })
+                            .map(pair -> new ExtensionMetadataValue(pair.getRight().get().getId(), pair.getLeft().getValue()))
+                            .collect(Collectors.toList());
+                        extensionService.bulkUpdateEventSettings(organization, e, values);
+                    });
+
+            }
+
+        });
         return event;
     }
 

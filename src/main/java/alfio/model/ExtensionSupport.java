@@ -23,6 +23,7 @@ import lombok.Getter;
 @Getter
 public class ExtensionSupport {
 
+    private final int id;
     private final String path;
     private final String name;
     private final String hash;
@@ -31,12 +32,14 @@ public class ExtensionSupport {
     private final String script;
 
 
-    public ExtensionSupport(@Column("path") String path,
+    public ExtensionSupport(@Column("es_id") Integer id,
+                            @Column("path") String path,
                             @Column("name") String name,
                             @Column("hash") String hash,
                             @Column("enabled") boolean enabled,
                             @Column("async") boolean async,
                             @Column("script") String script) {
+        this.id = id;
         this.path = path;
         this.name = name;
         this.hash = hash;
@@ -152,6 +155,18 @@ public class ExtensionSupport {
                             @Column("conf_value") String value) {
             this.name = name;
             this.value = value;
+        }
+    }
+
+    @Getter
+    public static class ExtensionMetadata {
+        private final int id;
+        private final String name;
+
+        public ExtensionMetadata(@Column("ecm_id") int id,
+                                 @Column("ecm_name") String name) {
+            this.id = id;
+            this.name = name;
         }
     }
 }

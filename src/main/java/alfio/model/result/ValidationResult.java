@@ -17,6 +17,7 @@
 package alfio.model.result;
 
 import lombok.Getter;
+import lombok.ToString;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 
@@ -83,6 +84,7 @@ public final class ValidationResult {
     }
 
     @Getter
+    @ToString
     public static final class ErrorDescriptor implements ErrorCode {
         private final String fieldName;
         private final String message;

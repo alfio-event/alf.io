@@ -18,13 +18,14 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.api.support.PageAndContent;
+import alfio.extension.Extension;
+import alfio.extension.ExtensionService;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
-import alfio.model.ExtensionSupport.*;
-import alfio.extension.Extension;
-import alfio.extension.ExtensionService;
+import alfio.model.ExtensionSupport.ExtensionMetadataValue;
+import alfio.model.ExtensionSupport.ExtensionParameterMetadataAndValue;
 import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
@@ -45,7 +46,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -79,7 +82,7 @@ public class ExtensionApiController {
 
     @RequestMapping(value = "/sample", method = RequestMethod.GET)
     public ExtensionSupport getSample() {
-        return new ExtensionSupport("-", "", null, true, true, SAMPLE_JS);
+        return new ExtensionSupport(null, "-", "", null, true, true, SAMPLE_JS);
     }
 
     @RequestMapping(value = "", method = RequestMethod.POST)
