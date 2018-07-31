@@ -785,8 +785,9 @@
                                 if(category) {
                                     category.attendeesList = list;
                                 }
+                            } else {
+                                $scope.event.attendeesList = list;
                             }
-                            $scope.event.attendeesList = list;
                         });
                     }
 
