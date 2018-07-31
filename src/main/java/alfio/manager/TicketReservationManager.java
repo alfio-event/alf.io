@@ -346,10 +346,10 @@ public class TicketReservationManager {
                                  String email, CustomerName customerName, Locale userLanguage, String billingAddress, String customerReference,
                                  TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method,
                                  boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus,
-                                 boolean tcAccepted, boolean privacyPolicyAccepted, Map<String, String> ticketEmails) {
+                                 boolean tcAccepted, boolean privacyPolicyAccepted) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
 
-        if(!acquireGroupMembers(reservationId, event, ticketEmails)) {
+        if(!acquireGroupMembers(reservationId, event)) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);
             return PaymentResult.unsuccessful("error.STEP2_WHITELIST");
         }
@@ -452,7 +452,7 @@ public class TicketReservationManager {
         return true;
     }
 
-    private boolean acquireGroupMembers(String reservationId, Event event, Map<String, String> ticketEmails) {
+    private boolean acquireGroupMembers(String reservationId, Event event) {
         int eventId = event.getId();
         List<LinkedGroup> linkedGroups = groupManager.getLinksForEvent(eventId);
         if(!linkedGroups.isEmpty()) {
@@ -461,7 +461,7 @@ public class TicketReservationManager {
                 ticketsInReservation
                     .stream()
                     .filter(ticket -> linkedGroups.stream().anyMatch(c -> c.getTicketCategoryId() == null || c.getTicketCategoryId().equals(ticket.getCategoryId())))
-                    .map(t -> groupManager.acquireMemberForTicket(t, ticketEmails.get(t.getUuid())))
+                    .map(t -> groupManager.acquireMemberForTicket(t))
                     .reduce(true, Boolean::logicalAnd)));
         }
         return true;

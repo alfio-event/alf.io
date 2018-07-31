@@ -168,7 +168,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         assertEquals(0, ticketReservationManager.getPendingPayments(event).size());
 
         PaymentResult confirm = ticketReservationManager.confirm(null, null, event, reservationId, "email@example.com", new CustomerName("full name", "full", "name", event), Locale.ENGLISH, "billing address", "reference",
-            totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null, false, false, Collections.emptyMap());
+            totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null, false, false);
 
 
         assertTrue(confirm.isSuccessful());
@@ -203,7 +203,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         String reservationId2 = ticketReservationManager.createTicketReservation(event, Collections.singletonList(modForDelete), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
         ticketReservationManager.confirm(null, null, event, reservationId2, "email@example.com", new CustomerName("full name", "full", "name", event), Locale.ENGLISH, "billing address", "reference",
-            totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null, false, false, Collections.emptyMap());
+            totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null, false, false);
 
         assertTrue(ticketReservationManager.findById(reservationId2).isPresent());
 
@@ -355,7 +355,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentResult result = ticketReservationManager.confirm("", null, event, reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event), Locale.ENGLISH, "", "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null, false, false, Collections.emptyMap());
+        PaymentResult result = ticketReservationManager.confirm("", null, event, reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event), Locale.ENGLISH, "", "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null, false, false);
         assertTrue(result.isSuccessful());
         ticketReservationManager.deleteOfflinePayment(event, reservationId, false);
         waitingQueueManager.distributeSeats(event);
@@ -363,7 +363,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
         reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        result = ticketReservationManager.confirm("", null, event, reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event), Locale.ENGLISH, "", "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null, false, false, Collections.emptyMap());
+        result = ticketReservationManager.confirm("", null, event, reservationId, "test@test.ch", new CustomerName("full name", "full", "name", event), Locale.ENGLISH, "", "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null, false, false);
         assertTrue(result.isSuccessful());
     }
 }

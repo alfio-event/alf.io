@@ -139,13 +139,13 @@ public class GroupManager {
         return Arrays.stream(jdbcTemplate.batchUpdate(groupRepository.insertItemTemplate(), params)).sum();
     }
 
-    boolean acquireMemberForTicket(Ticket ticket, String email) {
+    boolean acquireMemberForTicket(Ticket ticket) {
         List<LinkedGroup> configurations = findLinks(ticket.getEventId(), ticket.getCategoryId());
         if(CollectionUtils.isEmpty(configurations)) {
             return true;
         }
         LinkedGroup configuration = configurations.get(0);
-        Optional<GroupMember> optionalItem = getMatchingMember(configuration, StringUtils.defaultString(StringUtils.trimToNull(ticket.getEmail()), email));
+        Optional<GroupMember> optionalItem = getMatchingMember(configuration, ticket.getEmail());
         if(!optionalItem.isPresent()) {
             return false;
         }

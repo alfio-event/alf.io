@@ -128,13 +128,13 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
         ticketRepository.updateTicketOwnerById(ticket.getId(), "test@test.ch", "This is a Test", "This is", "a Test");
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertTrue("cannot confirm ticket", groupManager.acquireMemberForTicket(ticket, "not-valid"));
+        assertTrue("cannot confirm ticket", groupManager.acquireMemberForTicket(ticket));
 
         reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.empty())),
             Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
-        assertFalse("shouldn't be allowed", groupManager.acquireMemberForTicket(ticket, "not-valid"));
+        assertFalse("shouldn't be allowed", groupManager.acquireMemberForTicket(ticket));
 
     }
 }
