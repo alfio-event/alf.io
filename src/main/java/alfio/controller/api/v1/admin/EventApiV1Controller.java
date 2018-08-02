@@ -110,8 +110,8 @@ public class EventApiV1Controller {
     }
 
     private ErrorCode toErrorCode(Errors errors) {
-        return errors.getAllErrors().stream()
-            .map(e -> ErrorCode.custom(e.getCode(), e.getObjectName()))
+        return errors.getFieldErrors().stream()
+            .map(e -> ErrorCode.custom(e.getField(), e.getCode()))
             .findFirst()
             .orElse(ErrorCode.EventError.NOT_FOUND);
     }
@@ -149,7 +149,7 @@ public class EventApiV1Controller {
         String imageRef = fetchImage(request.getImageUrl());
 
         Result<String> result =  new Result.Builder<String>()
-            .build(() -> updateEvent(slug, request, user, imageRef).map((e) -> e.getShortName()).get());
+            .build(() -> updateEvent(slug, request, user, imageRef).map(Event::getShortName).get());
 
         if(result.isSuccess()) {
             return ResponseEntity.ok(result.getData());
