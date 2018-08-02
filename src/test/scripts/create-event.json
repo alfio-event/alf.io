@@ -1,0 +1,43 @@
+{
+    "title": "Titolo",
+    "slug": "titolo",
+    "description": [{
+        "lang": "de",
+        "body": "text description"
+    }],
+    "location": {
+        "fullAddress": "Pollegio 6742 Switzerland",
+        "coordinate": {
+            "latitude": "45.55",
+            "longitude": "9.00"
+        }
+    },
+    "timezone": "Europe/Zurich",
+    "startDate": "--EVENT_DATE--T08:00:00",
+    "endDate": "--EVENT_DATE--T09:00:00",
+    "websiteUrl": "http://www.amicidelticino.ch/aktivitaten/exklusivbesuch-des-kommandoturms-der-sbb",
+    "termsAndConditionsUrl": "http://www.amicidelticino.ch/agb",
+    "imageUrl": "https://www.amicidelticino.ch/assets/adt/images/amicidelticino-logo.png",
+    "tickets": {
+        "freeOfCharge": false,
+        "max": 10,
+        "currency": "CHF",
+        "taxPercentage": 7.7,
+        "taxIncludedInPrice": true,
+        "paymentMethods": ["ON_SITE"],
+        "categories": [
+            {
+                "name":"Standard",
+                "description": [{
+                    "lang": "de",
+                    "body": "text description"
+                }],
+                "maxTickets": null,
+                "accessRestricted": false,
+                "price": 10.0,
+                "startSellingDate": "--TODAY--T15:24:22",
+                "endSellingDate": "--EVENT_DATE--T07:00:00"
+            }
+        ]
+    }
+}
