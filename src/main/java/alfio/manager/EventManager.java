@@ -858,7 +858,10 @@ public class EventManager {
 		checkOwnership(event, username, event.getOrganizationId());
 		
 		eventDeleterRepository.deleteWaitingQueue(eventId);
-		
+
+		eventDeleterRepository.deleteWhitelistedTickets(eventId);
+		eventDeleterRepository.deleteGroupLinks(eventId);
+
 		eventDeleterRepository.deletePluginLog(eventId);
 		eventDeleterRepository.deletePluginConfiguration(eventId);
 		
