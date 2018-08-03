@@ -16,10 +16,7 @@
  */
 package alfio.model.api.v1.admin;
 
-import alfio.model.ContentLanguage;
-import alfio.model.Event;
-import alfio.model.EventWithAdditionalInfo;
-import alfio.model.PromoCodeDiscount;
+import alfio.model.*;
 import alfio.model.group.LinkedGroup;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
@@ -51,6 +48,7 @@ public class EventCreationRequest{
     private LocalDateTime endDate;
     private String websiteUrl;
     private String termsAndConditionsUrl;
+    private String privacyPolicyUrl;
     private String imageUrl;
     private TicketRequest tickets;
     private List<ExtensionSetting> extensionSettings;
@@ -73,7 +71,7 @@ public class EventCreationRequest{
             websiteUrl,
             null,
             termsAndConditionsUrl,
-            null,
+            StringUtils.trimToNull(privacyPolicyUrl),
             null,
             imageRef,
             slug,
@@ -118,12 +116,6 @@ public class EventCreationRequest{
         }
 
 
-
-        //TODO merge ticket categories
-        original.getTicketCategories();
-
-
-
         return new EventModification(
             original.getId(),
             Event.EventType.INTERNAL,
@@ -149,13 +141,21 @@ public class EventCreationRequest{
             tickets != null ? first(tickets.taxPercentage,original.getVat()) : original.getVat(),
             tickets != null ? first(tickets.taxIncludedInPrice,original.isVatIncluded()) : original.isVatIncluded(),
             tickets != null ? first(tickets.paymentMethods,original.getAllowedPaymentProxies()) : original.getAllowedPaymentProxies(),
-            tickets != null && tickets.categories != null ? tickets.categories.stream().map(CategoryRequest::toTicketCategoryModification).collect(Collectors.toList()) : null, // should use the merged version
+            tickets != null && tickets.categories != null ? tickets.categories.stream().map(tc -> tc.toTicketCategoryModification(findCategoryId(original, tc))).collect(Collectors.toList()) : null,
             tickets != null ? first(tickets.freeOfCharge,original.isFreeOfCharge()) : original.isFreeOfCharge(),
             null,
             locales,
             Collections.emptyList(), // TODO improve API
             Collections.emptyList()  // TODO improve API
         );
+    }
+
+    private static Integer findCategoryId(EventWithAdditionalInfo event, CategoryRequest categoryRequest) {
+        return event.getTicketCategories().stream()
+            .filter(tc -> tc.getName().equals(categoryRequest.getName()))
+            .map(TicketCategoryWithAdditionalInfo::getId)
+            .findFirst()
+            .orElse(null);
     }
 
 
@@ -208,12 +208,16 @@ public class EventCreationRequest{
         private GroupLinkRequest groupLink;
 
         TicketCategoryModification toTicketCategoryModification() {
+            return toTicketCategoryModification(null);
+        }
+
+        TicketCategoryModification toTicketCategoryModification(Integer categoryId) {
             int capacity = Optional.ofNullable(maxTickets).orElse(0);
 
             Optional<CustomTicketValidityRequest> customValidityOpt = Optional.ofNullable(customValidity);
 
             return new TicketCategoryModification(
-                null,
+                categoryId,
                 name,
                 capacity,
                 new DateTimeModification(startSellingDate.toLocalDate(),startSellingDate.toLocalTime()),
