@@ -23,12 +23,33 @@ import lombok.Getter;
 public class LinkedGroup {
 
 
+    /**
+     * Link type
+     */
     public enum Type {
-        ONCE_PER_VALUE, LIMITED_QUANTITY, UNLIMITED
+        /**
+         * Allow exactly one ticket per group member
+         */
+        ONCE_PER_VALUE,
+        /**
+         * Allow a limited quantity ( 1 < n < ∞)
+         */
+        LIMITED_QUANTITY,
+        /**
+         * No limit
+         */
+        UNLIMITED
     }
 
     public enum MatchType {
-        FULL, EMAIL_DOMAIN
+        /**
+         * The given email address *must* match the group member's email address exactly
+         */
+        FULL,
+        /**
+         * Try to find a FULL match; if not successful, try to match email domain (everything after '@')
+         */
+        EMAIL_DOMAIN
     }
 
     private final int id;
