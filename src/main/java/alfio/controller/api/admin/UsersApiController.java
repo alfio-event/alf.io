@@ -229,6 +229,8 @@ public class UsersApiController {
         public String getDescription() {
             return role.getDescription();
         }
+
+        public String getTarget() { return role.getTarget().name(); }
     }
 
     private static final class PasswordModification {

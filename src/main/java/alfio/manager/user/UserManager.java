@@ -24,6 +24,7 @@ import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
+import alfio.util.OptionalWrapper;
 import alfio.util.PasswordGenerator;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.RequiredArgsConstructor;
@@ -244,7 +245,11 @@ public class UserManager {
     }
 
     public ValidationResult validateUser(Integer id, String username, int organizationId, String role, String firstName, String lastName, String emailAddress) {
-        if(userRepository.findByUsername(username).isPresent()) {
+
+        Optional<User> existing = Optional.ofNullable(id)
+            .flatMap(uid -> OptionalWrapper.optionally(() -> userRepository.findById(uid)));
+
+        if(!existing.filter(e -> e.getUsername().equals(username)).isPresent() && usernameExists(username)) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("username", "There is already another user with the same username."));
         }
         return ValidationResult.of(Stream.of(Pair.of(firstName, "firstName"), Pair.of(lastName, "lastName"), Pair.of(emailAddress, "emailAddress"))

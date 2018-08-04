@@ -14,7 +14,7 @@
         }
     }).filter('orgSelected', function() {
         return function(list, orgId) {
-            if(orgId == null || orgId == undefined) {
+            if(orgId == null || !angular.isDefined(orgId)) {
                 return list;
             }
             return _.filter(list, function(e) { return _.any(e.memberOf, function(i) { return i.id === orgId })})
@@ -38,7 +38,7 @@
             loadUsers();
         };
 
-        var filterFunction = ctrl.type == 'user' ? function(user) {return user.type !== 'API_KEY'} : function(user) {return user.type === 'API_KEY'};
+        var filterFunction = function(user) { return ctrl.type === 'user' ^ user.type === 'API_KEY'; };
 
         function loadUsers() {
             self.loading = true;

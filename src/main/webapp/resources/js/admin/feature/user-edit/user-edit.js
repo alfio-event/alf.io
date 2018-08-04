@@ -23,15 +23,19 @@
 
         ctrl.$onInit = function() {
             ctrl.user = {};
+
             if (ctrl.for === 'apikey') {
                 ctrl.user.type = 'API_KEY';
+            } else {
+                ctrl.user.type = 'USER';
             }
+
             ctrl.organizations = [];
             ctrl.roles = [];
 
             $q.all([OrganizationService.getAllOrganizations(), UserService.getAllRoles()]).then(function(results) {
                 ctrl.organizations = results[0].data;
-                ctrl.roles = results[1].data;
+                ctrl.roles = _.filter(results[1].data, function(r) { return r.target === ctrl.user.type; });
             });
 
             if(ctrl.type === 'edit') {
