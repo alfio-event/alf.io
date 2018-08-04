@@ -93,6 +93,14 @@
                     }
                 }
             })
+            .state('apikey.bulk', {
+                url: "bulk-creation",
+                views: {
+                    "editUser": {
+                        template: "<api-key-bulk-import></api-key-bulk-import>"
+                    }
+                }
+            })
             .state('edit-current-user', {
                 url: "/profile/edit",
                 template: '<user-edit-current></user-edit-current>'

@@ -1,0 +1,13 @@
+<div class="modal-header">
+    <h2 class="modal-title">{{ctrl.user.description}}</h2>
+</div>
+<div class="modal-body">
+    <div class="row">
+        <div class="col-xs-8 col-xs-push-2">
+            <qrcode error-correction-level="Q" size="200" data="{{ctrl.qrCodeData()}}"></qrcode>
+        </div>
+    </div>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-warning btn-lg pull-right" ng-click="ctrl.close()">Close</button>
+</div>

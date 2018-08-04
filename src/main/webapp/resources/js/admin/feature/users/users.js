@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('adminApplication').component('users', {
-        controller: ['$window', 'UserService', UsersCtrl],
+        controller: ['$window', 'UserService', '$uibModal', '$q', UsersCtrl],
         templateUrl: '../resources/js/admin/feature/users/users.html',
         bindings: {
             title: '@',
@@ -23,13 +23,15 @@
 
 
 
-    function UsersCtrl($window, UserService) {
+    function UsersCtrl($window, UserService, $uibModal, $q) {
         var ctrl = this;
 
         ctrl.loadUsers = loadUsers;
         ctrl.deleteUser = deleteUser;
         ctrl.resetPassword = resetPassword;
         ctrl.enable = enable;
+        ctrl.downloadApiKeys = downloadAllApiKeys;
+        ctrl.viewApiKey = viewApiKeyQR;
         ctrl.selectedOrganization = null;
 
         ctrl.$onInit = function() {
@@ -74,6 +76,34 @@
         function enable(user, status) {
             UserService.enable(user, status).then(function() {
                 loadUsers();
+            });
+        }
+
+        function downloadAllApiKeys(orgId) {
+            if(angular.isDefined(orgId)) {
+                $window.open('/admin/api/api-keys/organization/'+orgId+'/all');
+            }
+        }
+
+        function viewApiKeyQR(user) {
+            var modal = $uibModal.open({
+                size:'sm',
+                templateUrl:'../resources/js/admin/feature/users/api-key-qr.html',
+                backdrop: 'static',
+                controllerAs: 'ctrl',
+                controller: function() {
+                    var ctrl = this;
+                    ctrl.user = user;
+                    ctrl.qrCodeData = function() {
+                        return {
+                            apiKey: user.username,
+                            baseUrl: $window.location.origin
+                        };
+                    };
+                    ctrl.close = function() {
+                        modal.close();
+                    }
+                }
             });
         }
     }

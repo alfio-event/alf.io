@@ -26,8 +26,9 @@
 
             if (ctrl.for === 'apikey') {
                 ctrl.user.type = 'API_KEY';
+                ctrl.user.target = 'API_KEY';
             } else {
-                ctrl.user.type = 'USER';
+                ctrl.user.target = 'USER';
             }
 
             ctrl.organizations = [];
@@ -35,7 +36,7 @@
 
             $q.all([OrganizationService.getAllOrganizations(), UserService.getAllRoles()]).then(function(results) {
                 ctrl.organizations = results[0].data;
-                ctrl.roles = _.filter(results[1].data, function(r) { return r.target === ctrl.user.type; });
+                ctrl.roles = _.filter(results[1].data, function(r) { return r.target === ctrl.user.target; });
             });
 
             if(ctrl.type === 'edit') {

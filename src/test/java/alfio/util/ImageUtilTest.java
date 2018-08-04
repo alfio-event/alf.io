@@ -14,22 +14,24 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.user;
+package alfio.util;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Delegate;
+import org.junit.Test;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-@RequiredArgsConstructor
-public class UserWithOrganizations {
-    @Delegate
-    @JsonIgnore
-    private final User user;
-    private final List<Organization> memberOf;
+import static org.junit.Assert.assertNotNull;
 
-    public List<Organization> getMemberOf() {
-        return memberOf;
+public class ImageUtilTest {
+
+    @Test
+    public void createQRCodeWithDescription() {
+        Map<String, Object> info = new HashMap<>();
+        info.put("apiKey", UUID.randomUUID().toString());
+        info.put("baseUrl", "https://veeerylongsubdomain.verylongdomain.fiesta");
+        byte[] array = ImageUtil.createQRCodeWithDescription(Json.GSON.toJson(info), "1234567890123456789012345");
+        assertNotNull(array);
     }
 }

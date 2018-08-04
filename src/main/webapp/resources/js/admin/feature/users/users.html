@@ -2,7 +2,7 @@
     <h1>{{$ctrl.title}}</h1>
     <hr>
     <div class="row">
-        <div class="col-xs-9">
+        <div class="col-xs-6">
             <div class="form-inline" ng-if="!$ctrl.loading && $ctrl.organizations.length > 1">
                 <div class="form-group-lg">
                     <label for="selectedOrganization">Show only members of</label>
@@ -11,9 +11,19 @@
                 </div>
             </div>
         </div>
-        <div class="col-xs-3 text-right">
+        <div class="col-xs-6 text-right">
             <a ng-show="$ctrl.type == 'user'" ui-sref="users.new" class="btn btn-success"><i class="fa fa-plus"></i> add new</a>
             <a ng-show="$ctrl.type == 'apikey'" ui-sref="apikey.new" class="btn btn-success"><i class="fa fa-plus"></i> add new</a>
+            <a ng-show="$ctrl.type == 'apikey'" ui-sref="apikey.bulk" class="btn btn-warning ml-1"><i class="fa fa-group"></i> bulk creation</a>
+            <a ng-if="$ctrl.type == 'apikey' && $ctrl.organizations.length == 1" ng-click="$ctrl.downloadApiKeys($ctrl.organizations[0].id)" class="btn btn-default ml-1"><i class="fa fa-download"></i> Download all API Keys</a>
+            <div class="btn-group" uib-dropdown is-open="$ctrl.isDropdownOpen" ng-if="$ctrl.type == 'apikey' && $ctrl.organizations.length > 1">
+                <button id="single-button" type="button" class="btn btn-default" uib-dropdown-toggle>
+                    Download all API Keys for <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                    <li role="menuitem" ng-repeat="organization in $ctrl.organizations"><a ng-click="$ctrl.downloadApiKeys(organization.id)" ng-bind="organization.name"></a></li>
+                </ul>
+            </div>
         </div>
     </div>
     <div class="text-center text-muted" data-ng-if="$ctrl.loading">
@@ -51,6 +61,7 @@
                     <a ng-show="$ctrl.type == 'user'" class="btn btn-xs btn-default" data-ui-sref="users.edit({userId:user.id})"><i class="fa fa-edit"></i> Edit</a>
                     <a ng-show="$ctrl.type == 'apikey'" class="btn btn-xs btn-default" data-ui-sref="apikey.edit({userId:user.id})"><i class="fa fa-edit"></i> Edit</a>
                     <button ng-show="$ctrl.type == 'user'" class="btn btn-xs btn-default" ng-click="$ctrl.resetPassword(user)"><i class="fa fa-refresh"></i> Reset Password</button>
+                    <button ng-show="$ctrl.type == 'apikey'" class="btn btn-xs btn-default" ng-click="$ctrl.viewApiKey(user)"><i class="fa fa-qrcode"></i> View QR Code</button>
                     <button class="btn btn-xs btn-warning" ng-if="user.enabled" ng-click="$ctrl.enable(user, false)"><i class="fa fa-eye-slash"></i> Disable</button>
                     <button class="btn btn-xs btn-danger" ng-click="$ctrl.deleteUser(user)"><i class="fa fa-trash"></i> Delete</button>
                 </td>

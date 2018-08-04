@@ -89,6 +89,10 @@ public class UserManager {
                 .collect(toList());
     }
 
+    public List<User> findAllApiKeysFor(int organizationId) {
+        return userRepository.findAllApiKeysForOrganization(organizationId);
+    }
+
     public User findUserByUsername(String username) {
         return userRepository.findEnabledByUsername(username).orElseThrow(IllegalArgumentException::new);
     }
@@ -137,6 +141,12 @@ public class UserManager {
 
     public boolean isOwnerOfOrganization(User user, int organizationId) {
         return isAdmin(user) || (isOwner(user) && userOrganizationRepository.findByUserId(user.getId()).stream().anyMatch(uo -> uo.getOrganizationId() == organizationId));
+    }
+
+    public boolean isOwnerOfOrganization(String username, int organizationId) {
+        return userRepository.findByUsername(username)
+            .filter(user -> isOwnerOfOrganization(user, organizationId))
+            .isPresent();
     }
 
     private boolean checkRole(User user, Set<Role> expectedRoles) {
@@ -202,12 +212,19 @@ public class UserManager {
     }
 
     @Transactional
+    public void bulkInsertApiKeys(int organizationId, Role role, List<String> descriptions) {
+        for (String description : descriptions) {
+            insertUser(organizationId, null, null, null, null, role, User.Type.API_KEY, null, description);
+        }
+    }
+
+    @Transactional
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, String userPassword, ZonedDateTime validTo, String description) {
         Organization organization = organizationRepository.getById(organizationId);
         AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true, userType, validTo, description);
         userOrganizationRepository.create(result.getKey(), organization.getId());
         authorityRepository.create(username, role.getRoleName());
-        return new UserWithPassword(userRepository.findById(result.getKey()), userPassword, UUID.randomUUID().toString());
+        return new UserWithPassword(userRepository.findById(result.getKey()), userType != User.Type.API_KEY ? userPassword : "", UUID.randomUUID().toString());
     }
 
     @Transactional
