@@ -22,19 +22,21 @@ import java.util.Arrays;
 
 @Getter
 public enum Role {
-    ADMIN("ROLE_ADMIN", "Administrator"),
-    OWNER("ROLE_OWNER", "Organization owner"),
-    SUPERVISOR("ROLE_SUPERVISOR", "Check-in supervisor"),
-    OPERATOR("ROLE_OPERATOR", "Check-in operator"),
-    SPONSOR("ROLE_SPONSOR", "Sponsor"),
-    API_CONSUMER("ROLE_API_CLIENT", "API Client");
+    ADMIN("ROLE_ADMIN", "Administrator", RoleTarget.ADMIN),
+    OWNER("ROLE_OWNER", "Organization owner", RoleTarget.USER),
+    SUPERVISOR("ROLE_SUPERVISOR", "Check-in supervisor", RoleTarget.USER),
+    OPERATOR("ROLE_OPERATOR", "Check-in operator", RoleTarget.API_KEY),
+    SPONSOR("ROLE_SPONSOR", "Sponsor", RoleTarget.API_KEY),
+    API_CONSUMER("ROLE_API_CLIENT", "API Client", RoleTarget.API_KEY);
 
     private final String roleName;
     private final String description;
+    private final RoleTarget target;
 
-    Role(String roleName, String description) {
+    Role(String roleName, String description, RoleTarget target) {
         this.roleName = roleName;
         this.description = description;
+        this.target = target;
     }
 
     public static Role fromRoleName(String roleName) {
