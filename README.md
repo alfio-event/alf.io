@@ -129,7 +129,7 @@ Here's an example of deployment as a 3 tier application using the following imag
  
  * Launch the proxy
  ```
- docker run --name alfio-proxy --link alfio-web:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy
+ docker run --name alfio-proxy --link alfio:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy
  ```
 
 ### Test alf.io application
