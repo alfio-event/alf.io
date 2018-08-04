@@ -65,6 +65,7 @@
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/users/users.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/user-edit/user-edit.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/apikey-bulk-import/apikey-bulk-import.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/user-edit-current/user-edit-current.js"></script>
 
     <script src="{{request.contextPath}}/resources/js/admin/feature/organizations/organizations.js"></script>

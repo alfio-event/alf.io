@@ -17,44 +17,54 @@
 package alfio.controller.api.admin;
 
 import alfio.config.WebSecurityConfig;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
 import alfio.model.modification.UserModification;
 import alfio.model.result.ValidationResult;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.*;
 import alfio.util.ImageUtil;
 import alfio.util.Json;
+import alfio.util.OptionalWrapper;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import static org.apache.commons.lang3.StringUtils.defaultString;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 @RequestMapping("/admin/api")
 @Log4j2
+@AllArgsConstructor
 public class UsersApiController {
 
     private static final String OK = "OK";
     private final UserManager userManager;
-
-
-    @Autowired
-    public UsersApiController(UserManager userManager) {
-        this.userManager = userManager;
-    }
+    private final ConfigurationManager configurationManager;
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -102,6 +112,16 @@ public class UsersApiController {
         return userManager.findAllUsers(principal.getName());
     }
 
+    @PostMapping(value = "/api-keys/bulk")
+    public ResponseEntity<String> bulkCreate(@RequestBody BulkApiKeyCreation request, Principal principal) {
+        Optional<User> userOptional = OptionalWrapper.optionally(() -> userManager.findUserByUsername(principal.getName()))
+            .filter(u -> userManager.isOwnerOfOrganization(u, request.organizationId));
+        if(userOptional.isPresent()) {
+            userManager.bulkInsertApiKeys(request.organizationId, request.role, request.descriptions);
+            return ResponseEntity.ok("OK");
+        }
+        return ResponseEntity.badRequest().build();
+    }
 
     @RequestMapping(value = "/organizations/new", method = POST)
     public String insertOrganization(@RequestBody OrganizationModification om) {
@@ -156,16 +176,44 @@ public class UsersApiController {
             userModification.getEmailAddress(), requested,
             type == null ? User.Type.INTERNAL : type,
             userModification.getValidToAsDateTime(), userModification.getDescription());
-        return new UserWithPasswordAndQRCode(userWithPassword, toBase64QRCode(userWithPassword, baseUrl));
+        String qrCode = type != User.Type.API_KEY ? Base64.getEncoder().encodeToString(generateQRCode(userWithPassword, baseUrl)) : null;
+        return new UserWithPasswordAndQRCode(userWithPassword, qrCode);
     }
 
+    @GetMapping("/api-keys/organization/{organizationId}/all")
+    public void getAllApiKeys(@PathVariable("organizationId") int organizationId, HttpServletResponse response, Principal principal) throws IOException {
+        String username = principal.getName();
+        if(userManager.isOwnerOfOrganization(username, organizationId)) {
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment; filename=apiKeys.zip");
 
-    private static String toBase64QRCode(UserWithPassword userWithPassword, String baseUrl) {
+            String baseUrl = configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.BASE_URL)).orElseThrow(IllegalStateException::new);
+            try(OutputStream os = response.getOutputStream(); ZipOutputStream zipOS = new ZipOutputStream(os)) {
+                for (User user : userManager.findAllApiKeysFor(organizationId)) {
+                    Pair<String, byte[]> result = generateApiKeyQRCode(user, baseUrl);
+                    zipOS.putNextEntry(new ZipEntry(user.getType().name() + "-" +result.getLeft()+".png"));
+                    StreamUtils.copy(result.getRight(), zipOS);
+                }
+            }
+        } else {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        }
+    }
+
+    private static Pair<String, byte[]> generateApiKeyQRCode(User user, String baseUrl) {
+        Map<String, String> info = new HashMap<>();
+        info.put("apiKey", user.getUsername());
+        info.put("baseUrl", baseUrl);
+        String description = defaultString(trimToNull(user.getDescription()), user.getUsername());
+        return Pair.of(description, ImageUtil.createQRCodeWithDescription(Json.GSON.toJson(info), description));
+    }
+
+    private static byte[] generateQRCode(UserWithPassword userWithPassword, String baseUrl) {
         Map<String, Object> info = new HashMap<>();
         info.put("username", userWithPassword.getUsername());
         info.put("password", userWithPassword.getPassword());
         info.put("baseUrl", baseUrl);
-        return Base64.getEncoder().encodeToString(ImageUtil.createQRCode(Json.GSON.toJson(info)));
+        return ImageUtil.createQRCode(Json.GSON.toJson(info));
     }
 
     @RequestMapping(value = "/users/{id}", method = DELETE)
@@ -201,7 +249,7 @@ public class UsersApiController {
     @RequestMapping(value = "/users/{id}/reset-password", method = PUT)
     public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam("baseUrl") String baseUrl) {
         UserWithPassword userWithPassword = userManager.resetPassword(userId);
-        return new UserWithPasswordAndQRCode(userWithPassword, toBase64QRCode(userWithPassword, baseUrl));
+        return new UserWithPasswordAndQRCode(userWithPassword, Base64.getEncoder().encodeToString(generateQRCode(userWithPassword, baseUrl)));
     }
 
     @Getter
@@ -246,6 +294,22 @@ public class UsersApiController {
             this.oldPassword = oldPassword;
             this.newPassword = newPassword;
             this.newPasswordConfirm = newPasswordConfirm;
+        }
+    }
+
+    private static final class BulkApiKeyCreation {
+
+        private final int organizationId;
+        private final Role role;
+        private final List<String> descriptions;
+
+        @JsonCreator
+        private BulkApiKeyCreation(@JsonProperty("organizationId") int organizationId,
+                                   @JsonProperty("role") Role role,
+                                   @JsonProperty("descriptions") List<String> descriptions) {
+            this.organizationId = organizationId;
+            this.role = role;
+            this.descriptions = descriptions;
         }
     }
 }
