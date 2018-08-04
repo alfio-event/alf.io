@@ -31,6 +31,13 @@ You must specify a project property at the command line, such as
 ```
 ./gradlew -Pprofile=dev :bootRun
 ```
+The local "bootRun" task has the following prerequisites:
+
+- a PostgreSQL instance up and runnning on localhost:5432
+- a _postgres_ user having password: _password_
+- a database named _alfio_
+
+once started, alf.io will create all the required tables on the database.
 
 Note: if you want to test without installing a pgsql instance, we have configured the following tasks:
 
