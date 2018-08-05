@@ -71,7 +71,7 @@ public class UsersApiController {
     @ResponseBody
     public String unhandledException(Exception e) {
         log.error("unhandled exception", e);
-        return e.getMessage();
+        return e != null ? e.getMessage() : "Unexpected error";
     }
 
     @RequestMapping(value = "/roles", method = GET)
@@ -94,6 +94,21 @@ public class UsersApiController {
             .filter(WebSecurityConfig.SPONSOR::equals)
             .findFirst()
             .orElse(WebSecurityConfig.OPERATOR);
+    }
+
+    @GetMapping("/user/details")
+    public Map<String, String> retrieveDetails(Principal principal) {
+        User user = userManager.findUserByUsername(principal.getName());
+        Map<String, String> result = new HashMap<>();
+        boolean isApiKey = user.getType() == User.Type.API_KEY;
+        result.put(isApiKey ? "apiKey" : "username", user.getUsername());
+        if(!isApiKey) {
+            result.put("firstName", user.getFirstName());
+            result.put("lastName", user.getLastName());
+        }
+        result.put("description", user.getDescription());
+        result.put("userType", getLoggedUserType());
+        return result;
     }
 
     @RequestMapping(value = "/organizations", method = GET)

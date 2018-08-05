@@ -61,8 +61,6 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
 import java.util.Locale;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -75,9 +73,9 @@ import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 @EnableWebSecurity
 public class WebSecurityConfig {
 
-    static final String ADMIN_API = "/admin/api";
-    static final String ADMIN_PUBLIC_API = "/api/v1/admin";
-    static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
+    private static final String ADMIN_API = "/admin/api";
+    private static final String ADMIN_PUBLIC_API = "/api/v1/admin";
+    private static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
     public static final String CSRF_PARAM_NAME = "_csrf";
     public static final String OPERATOR = "OPERATOR";
     private static final String SUPERVISOR = "SUPERVISOR";
@@ -85,7 +83,7 @@ public class WebSecurityConfig {
     private static final String ADMIN = "ADMIN";
     private static final String OWNER = "OWNER";
     private static final String API_CLIENT = "API_CLIENT";
-    static final String X_REQUESTED_WITH = "X-Requested-With";
+    private static final String X_REQUESTED_WITH = "X-Requested-With";
 
 
     private static class BaseWebSecurity extends  WebSecurityConfigurerAdapter {
@@ -108,7 +106,7 @@ public class WebSecurityConfig {
 
         @Override
         protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
-            return isTokenAuthentication(request) ? request.getHeader("Authorization").substring("apikey ".length()) : null;
+            return isTokenAuthentication(request) ? StringUtils.trim(request.getHeader("Authorization").substring("apikey ".length())) : null;
         }
 
         @Override
@@ -179,11 +177,10 @@ public class WebSecurityConfig {
                     throw new DisabledException("Api key " + apiKey + " is expired");
                 }
 
-                APITokenAuthentication auth = new APITokenAuthentication(
+                return new APITokenAuthentication(
                     authentication.getPrincipal(),
                     authentication.getCredentials(),
                     authorityRepository.findRoles(apiKey).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
-                return auth;
             });
 
 
@@ -194,7 +191,7 @@ public class WebSecurityConfig {
                 .antMatchers(ADMIN_PUBLIC_API + "/**").hasRole(API_CLIENT)
                 .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
                 .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
-                .antMatchers(ADMIN_API + "/user-type").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
+                .antMatchers(HttpMethod.GET, ADMIN_API + "/user-type", ADMIN_API + "/user/details").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
                 .antMatchers(ADMIN_API + "/**").denyAll()
                 .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
                 .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR)
@@ -238,12 +235,13 @@ public class WebSecurityConfig {
 
         @Override
         protected void configure(HttpSecurity http) throws Exception {
-            http.requestMatcher((request) -> request.getHeader("Authorization") != null).sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            http.requestMatcher((request) -> request.getHeader("Authorization") != null)
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and().csrf().disable()
             .authorizeRequests()
             .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
             .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
-            .antMatchers(ADMIN_API + "/user-type").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
+            .antMatchers(HttpMethod.GET, ADMIN_API + "/user-type", ADMIN_API + "/user/details").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
             .antMatchers(ADMIN_API + "/**").denyAll()
             .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
             .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR)
