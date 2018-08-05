@@ -23,6 +23,10 @@
     </Appenders>
 
     <Loggers>
+        <Logger name="alfio.config.WebSecurityConfig" level="warn" additivity="false">
+            <appender-ref ref="Console" />
+            <appender-ref ref="Async" />
+        </Logger>
         <Logger name="alfio" level="debug" additivity="false">
             <appender-ref ref="Console" level="info"/>
             <appender-ref ref="Async" />
