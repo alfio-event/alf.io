@@ -7,7 +7,13 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/admin.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
-    <title>Authentication</title>
+    {{#demoModeEnabled}}
+        <title>Alf.io Demo: Open Source Event Ticketing System</title>
+        <meta name="description" content="You can try Alf.io for free. Use a demo version of Alf.io's ticketing system to experience this great way to control your event and your sensitive attendee data!">
+    {{/demoModeEnabled}}
+    {{^demoModeEnabled}}
+        <title>Authentication</title>
+    {{/demoModeEnabled}}
     {{#hasRecaptchaApiKey}}
         <script src='https://www.google.com/recaptcha/api.js'></script>
     {{/hasRecaptchaApiKey}}
