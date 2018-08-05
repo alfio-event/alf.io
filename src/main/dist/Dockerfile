@@ -6,6 +6,12 @@
 FROM adoptopenjdk/openjdk8-openj9:slim
 
 RUN useradd -ms /bin/bash alfio
+RUN apt-get update \
+ && apt-get install --assume-yes apt-utils \
+ && apt-get install --assume-yes software-properties-common \
+ && apt-get install --assume-yes dconf-cli \
+ && apt-get install --assume-yes fontconfig
+
 USER alfio
 COPY ./alfio-@ALFIO_VERSION@-boot.war /home/alfio/alfio-boot.war
 
