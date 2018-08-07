@@ -116,7 +116,9 @@ public class ExtensionService {
 
         Validate.notBlank(extensionMetadata.displayName, "Display Name is mandatory");
 
-        extensionRepository.deleteEventsForPath(previousPath, previousName);
+        if(previousPath != null && previousName != null) {
+            extensionRepository.deleteEventsForPath(previousPath, previousName);
+        }
 
         if (!Objects.equals(previousPath, script.getPath()) || !Objects.equals(previousName, script.getName())) {
             extensionRepository.deleteScriptForPath(previousPath, previousName);
