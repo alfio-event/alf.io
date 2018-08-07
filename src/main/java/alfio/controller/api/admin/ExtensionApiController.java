@@ -101,6 +101,7 @@ public class ExtensionApiController {
             extensionService.createOrUpdate(previousPath, previousName, script);
             return ResponseEntity.ok(SerializablePair.of(true, null));
         } catch (Throwable t) {
+            log.error("unexpected exception", t);
             return ResponseEntity.badRequest().body(SerializablePair.of(false, t.getMessage()));
         }
     }

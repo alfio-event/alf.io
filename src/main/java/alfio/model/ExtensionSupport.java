@@ -23,7 +23,7 @@ import lombok.Getter;
 @Getter
 public class ExtensionSupport {
 
-    private final int id;
+    private final Integer id;
     private final String path;
     private final String name;
     private final String hash;
