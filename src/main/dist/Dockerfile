@@ -3,9 +3,9 @@
 #
 
 # Pull base image.
-FROM adoptopenjdk/openjdk8-openj9:slim
+FROM adoptopenjdk/openjdk8-openj9
 
-RUN useradd -ms /bin/bash alfio
+RUN useradd -ms /bin/bash -u 1001 alfio
 RUN apt-get update \
  && apt-get install --assume-yes apt-utils \
  && apt-get install --assume-yes software-properties-common \
