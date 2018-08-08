@@ -3,7 +3,7 @@
 #
 
 # Pull base image.
-FROM adoptopenjdk/openjdk8-openj9
+FROM adoptopenjdk/openjdk8-openj9:jdk8u162-b12_openj9-0.8.0
 
 RUN useradd -ms /bin/bash -u 1001 alfio
 RUN apt-get update \
