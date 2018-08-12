@@ -166,7 +166,7 @@ public class GroupManager {
         modifications.put("itemId", item.getId());
         modifications.put("configurationId", configuration.getId());
         modifications.put("ticketId", ticket.getId());
-        auditingRepository.insert(ticket.getTicketsReservationId(), null, ticket.getEventId(), Audit.EventType.GROUP_MEMBER_ACQUIRED, new Date(), Audit.EntityType.TICKET, ticket.getUuid(), singletonList(modifications));
+        auditingRepository.insert(ticket.getTicketsReservationId(), null, ticket.getEventId(), Audit.EventType.GROUP_MEMBER_ACQUIRED, new Date(), Audit.EntityType.TICKET, String.valueOf(ticket.getId()), singletonList(modifications));
         return true;
     }
 
