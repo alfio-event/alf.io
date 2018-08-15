@@ -156,6 +156,7 @@ public class EventApiV1IntegrationTest {
                 ),
                 null
             ),
+            null,
             null
         );
 
@@ -201,7 +202,7 @@ public class EventApiV1IntegrationTest {
 
         String newTitle = "new title";
         EventCreationRequest updateRequest = new EventCreationRequest(newTitle,null,null,null,null,null,null,null,null, null,null,
-            new EventCreationRequest.TicketRequest(null,10,null,null,null,null,null,null), null
+            new EventCreationRequest.TicketRequest(null,10,null,null,null,null,null,null), null, null
         );
         controller.update(shortName,updateRequest,mockPrincipal);
         Event event = eventManager.getSingleEvent(shortName,username);
