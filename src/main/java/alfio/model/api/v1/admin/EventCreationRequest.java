@@ -27,14 +27,18 @@ import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.emptyList;
+import static org.apache.commons.collections.CollectionUtils.isEmpty;
 
 @Getter
 @AllArgsConstructor
@@ -52,6 +56,7 @@ public class EventCreationRequest{
     private String imageUrl;
     private TicketRequest tickets;
     private List<ExtensionSetting> extensionSettings;
+    private List<AttendeeAdditionalInfoRequest> additionalInfo;
 
     public EventModification toEventModification(Organization organization, Function<String,String> slugGenerator, String imageRef) {
         String slug = this.slug;
@@ -94,8 +99,8 @@ public class EventCreationRequest{
             tickets.freeOfCharge,
             new LocationDescriptor(timezone, location.getCoordinate().getLatitude(), location.getCoordinate().getLongitude(), null),
             locales,
-            Collections.emptyList(), // TODO improve API
-            Collections.emptyList()  // TODO improve API
+            toAdditionalFields(orEmpty(additionalInfo)),
+            emptyList()  // TODO improve API
         );
     }
 
@@ -145,8 +150,8 @@ public class EventCreationRequest{
             tickets != null ? first(tickets.freeOfCharge,original.isFreeOfCharge()) : original.isFreeOfCharge(),
             null,
             locales,
-            Collections.emptyList(), // TODO improve API
-            Collections.emptyList()  // TODO improve API
+            toAdditionalFields(orEmpty(additionalInfo)),
+            emptyList()  // TODO improve API
         );
     }
 
@@ -270,6 +275,113 @@ public class EventCreationRequest{
         private LinkedGroup.Type type;
         private LinkedGroup.MatchType matchType;
         private Integer maxAllocation;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class AttendeeAdditionalInfoRequest {
+
+        private Integer ordinal;
+        private String name;
+        private AdditionalInfoType type;
+        private Boolean required;
+        private List<DescriptionRequest> label;
+        private List<DescriptionRequest> placeholder;
+        private List<RestrictedValueRequest> restrictedValues;
+        private ContentLengthRequest contentLength;
+
+
+        private EventModification.AdditionalField toAdditionalField(int ordinal) {
+            int position = this.ordinal != null ? this.ordinal : ordinal;
+            String code = type != null ? type.code : AdditionalInfoType.GENERIC_TEXT.code;
+            Integer minLength = contentLength != null ? contentLength.min : null;
+            Integer maxLength = contentLength != null ? contentLength.max : null;
+            List<EventModification.RestrictedValue> restrictedValues = null;
+            if(!isEmpty(this.restrictedValues)) {
+                restrictedValues = this.restrictedValues.stream().map(rv -> new EventModification.RestrictedValue(rv.value, rv.enabled)).collect(Collectors.toList());
+            }
+
+            return new EventModification.AdditionalField(
+                position,
+                name,
+                code,
+                Boolean.TRUE.equals(required),
+                minLength,
+                maxLength,
+                restrictedValues,
+                toDescriptionMap(orEmpty(label), orEmpty(placeholder), orEmpty(this.restrictedValues)),
+                null,//TODO: linkedAdditionalService
+                null);//TODO: linkedCategoryIds
+        }
+    }
+
+    private static <T> List<T> orEmpty(List<T> input) {
+        return isEmpty(input) ? emptyList() : input;
+    }
+
+    private static Map<String, EventModification.Description> toDescriptionMap(List<DescriptionRequest> label,
+                                                                               List<DescriptionRequest> placeholder,
+                                                                               List<RestrictedValueRequest> restrictedValues) {
+        Map<String, String> labelsByLang = label.stream().collect(Collectors.toMap(DescriptionRequest::getLang, DescriptionRequest::getBody));
+        Map<String, String> placeholdersByLang = placeholder.stream().collect(Collectors.toMap(DescriptionRequest::getLang, DescriptionRequest::getBody));
+        Map<String, List<Triple<String, String, String>>> valuesByLang = restrictedValues.stream()
+            .flatMap(rv -> rv.descriptions.stream().map(rvd -> Triple.of(rvd.lang, rv.value, rvd.body)))
+            .collect(Collectors.groupingBy(Triple::getLeft));
+
+
+        Set<String> keys = new HashSet<>(labelsByLang.keySet());
+        keys.addAll(placeholdersByLang.keySet());
+        keys.addAll(valuesByLang.keySet());
+
+        return keys.stream()
+            .map(lang -> {
+                Map<String, String> rvsMap = valuesByLang.getOrDefault(lang, emptyList()).stream().collect(Collectors.toMap(Triple::getMiddle, Triple::getRight));
+                return Pair.of(lang, new EventModification.Description(labelsByLang.get(lang), placeholdersByLang.get(lang), rvsMap));
+            }).collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+    }
+
+
+    private static List<EventModification.AdditionalField> toAdditionalFields(List<AttendeeAdditionalInfoRequest> additionalInfoRequests) {
+        if(isEmpty(additionalInfoRequests)) {
+            return emptyList();
+        }
+        AtomicInteger counter = new AtomicInteger(1);
+        return additionalInfoRequests.stream().map(air -> air.toAdditionalField(counter.getAndIncrement())).collect(Collectors.toList());
+    }
+
+    @Getter
+    enum AdditionalInfoType {
+
+        GENERIC_TEXT("input:text"),
+        PHONE_NUMBER("input:tel"),
+        MULTI_LINE_TEXT("textarea"),
+        LIST_BOX("select"),
+        COUNTRY("country"),
+        EU_VAT_NR("vat:eu");
+
+        private final String code;
+
+        AdditionalInfoType(String code) {
+            this.code = code;
+        }
+
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class ContentLengthRequest {
+        private Integer min;
+        private Integer max;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    public static class RestrictedValueRequest {
+
+        private String value;
+        private Boolean enabled;
+        private List<DescriptionRequest> descriptions;
+
     }
 
 
