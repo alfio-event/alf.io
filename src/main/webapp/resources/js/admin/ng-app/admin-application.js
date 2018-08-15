@@ -73,7 +73,7 @@
             })
             .state('apikey', {
                 url: "/api-keys/",
-                template: "<users data-title='Api key' type='apikey'></users>"
+                template: "<users data-title='Api Keys' type='apikey'></users>"
             })
             .state('apikey.new', {
                 url: "new",
