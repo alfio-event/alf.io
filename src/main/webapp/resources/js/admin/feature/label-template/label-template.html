@@ -16,7 +16,8 @@
                 </div>
                 <div class="row">
                     <div class="col-md-10">
-                        <span ng-repeat="info in $ctrl.configValue.content.thirdRow"> Sample {{info}}</span>
+                        <div ng-repeat="info in $ctrl.configValue.content.additionalRows">Sample {{info}}</div>
+                        <span ng-if="$ctrl.configValue.content.thirdRow && !$ctrl.configValue.content.additionalRows" ng-repeat="info in $ctrl.configValue.content.thirdRow"> Sample {{info}}</span>
                     </div>
                     <div class="col-md-2 text-center"><span ng-if="$ctrl.configValue.general.printPartialID">12345</span></div>
                 </div>
