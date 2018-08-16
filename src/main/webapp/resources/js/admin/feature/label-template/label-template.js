@@ -16,7 +16,7 @@
             infoSeparator: "::"
         },
         content: {
-            thirdRow: []
+            additionalRows: []
         },
         general: {
             printPartialID: true

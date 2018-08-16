@@ -253,10 +253,13 @@ public class CheckInApiController {
         private static class Content {
 
             private final List<String> thirdRow;
+            private final List<String> additionalRows;
 
             @JsonCreator
-            private Content(@JsonProperty("thirdRow") List<String> thirdRow) {
+            private Content(@JsonProperty("thirdRow") List<String> thirdRow,
+                            @JsonProperty("additionalRows") List<String> additionalRows) {
                 this.thirdRow = thirdRow;
+                this.additionalRows = additionalRows;
             }
         }
 
