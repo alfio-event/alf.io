@@ -19,6 +19,13 @@
             }
             return _.filter(list, function(e) { return _.any(e.memberOf, function(i) { return i.id === orgId })})
         }
+    }).filter('roleDesc', function() {
+        return function(role, roleList) {
+            if(role == null || roleList == null) {
+                return role;
+            }
+            return _.filter(roleList, {role:role})[0].description;
+        }
     });
 
 
@@ -37,6 +44,9 @@
         ctrl.$onInit = function() {
             ctrl.users = [];
             ctrl.organizations = [];
+            UserService.getAllRoles().then(function(roles) {
+                ctrl.roles = roles.data;
+            });
             loadUsers();
         };
 

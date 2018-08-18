@@ -44,6 +44,7 @@
                 </th>
                 <th width="20%" ng-show="$ctrl.type == 'user'">Name</th>
                 <th width="20%" ng-show="$ctrl.type == 'apikey'">Description</th>
+                <th>Role</th>
                 <th>Member of</th>
                 <th><span class="sr-only">actions</span></th>
             </tr>
@@ -56,6 +57,7 @@
                 </td>
                 <td ng-show="$ctrl.type == 'user'">{{user.firstName}} {{user.lastName}}</td>
                 <td ng-show="$ctrl.type == 'apikey'">{{user.description}}</td>
+                <td><span data-ng-repeat="role in user.roles">{{role | roleDesc: $ctrl.roles}}</span></td>
                 <td><span class="label label-info" ng-repeat="org in user.memberOf">{{org.name}}</span></td>
                 <td class="text-right">
                     <a ng-show="$ctrl.type == 'user'" class="btn btn-xs btn-default" data-ui-sref="users.edit({userId:user.id})"><i class="fa fa-edit"></i> Edit</a>
@@ -83,6 +85,7 @@
                 </th>
                 <th width="20%" ng-show="$ctrl.type == 'user'">Name</th>
                 <th width="20%" ng-show="$ctrl.type == 'apikey'">Description</th>
+                <th>Role</th>
                 <th>Member of</th>
                 <th><span class="sr-only">actions</span></th>
             </tr>
@@ -95,6 +98,7 @@
                 </td>
                 <td ng-show="$ctrl.type == 'user'">{{user.firstName}} {{user.lastName}}</td>
                 <td ng-show="$ctrl.type == 'apikey'">{{user.description}}</td>
+                <td><span data-ng-repeat="role in user.roles">{{role | roleDesc: $ctrl.roles}}</span></td>
                 <td><span class="label label-info" ng-repeat="org in user.memberOf">{{org.name}}</span></td>
                 <td class="text-right">
                     <button class="btn btn-xs btn-success" ng-if="!user.enabled" ng-click="$ctrl.enable(user, true)"><i class="fa fa-eye"></i> Enable</button>

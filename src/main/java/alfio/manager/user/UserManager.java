@@ -75,7 +75,9 @@ public class UserManager {
                         .stream()
                         .map(u -> {
                             List<UserOrganization> userOrganizations = usersAndOrganizations.get(u.getId());
-                            return new UserWithOrganizations(u, organizations.stream().filter(o -> userOrganizations.stream().anyMatch(uo -> uo.getOrganizationId() == o.getId())).collect(toList()));
+                            List<Organization> filteredOrganizations = organizations.stream().filter(o -> userOrganizations.stream().anyMatch(uo -> uo.getOrganizationId() == o.getId())).collect(toList());
+                            List<Role> roles = authorityRepository.findRoles(u.getUsername()).stream().map(Role::fromRoleName).collect(toList());
+                            return new UserWithOrganizations(u, filteredOrganizations, roles);
                         }).collect(toList()));
             }).orElseGet(Collections::emptyList);
     }
