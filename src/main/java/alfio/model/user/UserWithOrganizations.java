@@ -28,8 +28,12 @@ public class UserWithOrganizations {
     @JsonIgnore
     private final User user;
     private final List<Organization> memberOf;
+    private final List<Role> roles;
 
     public List<Organization> getMemberOf() {
         return memberOf;
+    }
+    public List<Role> getRoles() {
+        return roles;
     }
 }
