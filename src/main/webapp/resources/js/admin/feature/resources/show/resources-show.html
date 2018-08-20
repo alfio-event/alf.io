@@ -7,5 +7,8 @@
 </div>
 
 <ul>
-    <li ng-repeat="templateName in $ctrl.availableTemplates"><a ui-sref="events.single.edit-resources({event: $ctrl.event.shortName, resourceName: templateName})">{{templateName}}</a></li>
+    <li ng-repeat="templateName in $ctrl.availableTemplates">
+        <a ng-if="!$ctrl.forOrganization" ui-sref="events.single.edit-resources({event: $ctrl.event.shortName, resourceName: templateName})">{{templateName}}</a>
+        <a ng-if="$ctrl.forOrganization" target="_blank" ui-sref="organization-edit-resources({organizationId: $ctrl.organizationId, resourceName: templateName})">{{templateName}}</a>
+    </li>
 </ul>

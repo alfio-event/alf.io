@@ -3,7 +3,9 @@
 
     angular.module('adminApplication').component('resourcesShow', {
         bindings: {
-            event:'<'
+            event:'<',
+            forOrganization:'<',
+            organizationId: '<'
         },
         controller: ResourcesShowCtrl,
         templateUrl: '../resources/js/admin/feature/resources/show/resources-show.html'
