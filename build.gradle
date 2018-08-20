@@ -31,7 +31,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.20.0'
     id 'com.github.hierynomus.license' version '0.14.0'
     id 'net.researchgate.release' version '2.7.0'
-    id 'org.springframework.boot' version '2.0.3.RELEASE'
+    id 'org.springframework.boot' version '2.0.4.RELEASE'
 }
 
 apply plugin: 'java'
