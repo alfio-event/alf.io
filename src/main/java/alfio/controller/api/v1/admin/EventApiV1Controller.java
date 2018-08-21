@@ -262,7 +262,7 @@ public class EventApiV1Controller {
     private String fetchImage(String url) {
         if(url != null) {
             FileDownloadManager.DownloadedFile file = fileDownloadManager.downloadFile(url);
-            return fileUploadManager.insertFile(file.toUploadBase64FileModification());
+            return file != null ? fileUploadManager.insertFile(file.toUploadBase64FileModification()) : null;
         } else {
             return null;
         }

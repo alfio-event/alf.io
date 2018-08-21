@@ -16,11 +16,12 @@
  */
 package alfio.repository;
 
-import alfio.config.support.PlatformProvider;
 import alfio.model.*;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
-import ch.digitalfondue.npjt.*;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
+import ch.digitalfondue.npjt.QueryRepository;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -38,8 +39,19 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("select a.ticket_id_fk, a.ticket_field_configuration_id_fk, b.field_name, a.field_value from ticket_field_value a, ticket_field_configuration b where a.ticket_id_fk = :ticketId and a.ticket_field_configuration_id_fk = b.id")
     List<TicketFieldValue> findAllByTicketId(@Bind("ticketId") int id);
 
-    @Query("select a.ticket_id_fk, a.ticket_field_configuration_id_fk, b.field_name, a.field_value from ticket_field_value a, ticket_field_configuration b where a.ticket_id_fk = :ticketId and a.ticket_field_configuration_id_fk = b.id and b.field_name in (:fieldNames)")
-    List<TicketFieldValue> findValueForTicketId(@Bind("ticketId") int id, @Bind("fieldNames") Set<String> fieldNames);
+    @Query("select a.ticket_id_fk, a.ticket_field_configuration_id_fk, b.field_name, a.field_value, null as description " +
+        "from ticket_field_value a inner join ticket_field_configuration b on a.ticket_field_configuration_id_fk = b.id " +
+        "where a.ticket_id_fk = :ticketId and b.field_name in (:fieldNames) and b.field_type <> 'select' " +
+        "union all " +
+        "select a.ticket_id_fk, a.ticket_field_configuration_id_fk, b.field_name, a.field_value, c.description " +
+        "from ticket_field_value a " +
+        "inner join ticket_field_configuration b on a.ticket_field_configuration_id_fk = b.id " +
+        "inner join ticket on a.ticket_id_fk = ticket.id "+
+        "left join ticket_field_description c on c.ticket_field_configuration_id_fk = a.ticket_field_configuration_id_fk " +
+        "where a.ticket_id_fk = :ticketId and b.field_name in (:fieldNames) " +
+        "and c.field_locale = ticket.user_language " +
+        "and b.field_type = 'select'")
+    List<TicketFieldValueAndDescription> findValueForTicketId(@Bind("ticketId") int id, @Bind("fieldNames") Set<String> fieldNames);
 
     @Query("update ticket_field_value set field_value = :value where ticket_id_fk = :ticketId and ticket_field_configuration_id_fk = :fieldConfigurationId")
     int updateValue(@Bind("ticketId") int ticketId, @Bind("fieldConfigurationId") int fieldConfigurationId, @Bind("value") String value);
