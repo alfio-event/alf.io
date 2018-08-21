@@ -29,6 +29,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
+import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
@@ -329,7 +330,24 @@ public class CheckInManager {
                 info.put("uuid", ticket.getUuid());
                 info.put("category", ticket.getTicketCategory().getName());
                 if (!additionalFields.isEmpty()) {
-                    Map<String, String> map = ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
+                    Map<String, String> map = ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream()
+                        .map(vd -> {
+                            try {
+                                if(StringUtils.isNotBlank(vd.getDescription())) {
+                                    Map<String, Object> description = Json.GSON.fromJson(vd.getDescription(), new TypeToken<Map<String, Object>>(){}.getType());
+                                    Object rv = description.get("restrictedValues");
+                                    if(rv instanceof Map) {
+                                        @SuppressWarnings("unchecked")
+                                        Map<String, String> restrictedValues = (Map<String, String>) rv;
+                                        return Pair.of(vd.getName(), restrictedValues.getOrDefault(vd.getValue(), vd.getValue()));
+                                    }
+                                }
+                            } catch (Exception e) {
+                                log.error("cannot deserialize restricted values", e);
+                            }
+                            return Pair.of(vd.getName(), vd.getValue());
+                        })
+                        .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
                     info.put("additionalInfoJson", Json.toJson(map));
                 }
 
