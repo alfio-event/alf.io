@@ -10,6 +10,19 @@ angular.module('adminApplication').service('ResourceService', function($http, $q
         getTemplateBody: function(name, locale) {
             return $http.get('/admin/api/overridable-template/'+name+'/'+locale);
         },
+        getMetadataForOrganizationResource: function(orgId, name) {
+            return $http.get('/admin/api/resource-organization/'+orgId+'/'+name+'/metadata');
+        },
+        getOrganizationResource: function(orgId, name) {
+            return $http.get('/admin/api/resource-organization/'+orgId+'/'+name);
+        },
+        uploadOrganizationFile: function(orgId, file) {
+            return $http.post('/admin/api/resource-organization/'+orgId+'/', file);
+        },
+        deleteOrganizationFile: function(orgId, name) {
+            return $http.delete('/admin/api/resource-organization/'+orgId+'/'+name);
+        },
+        /**/
         getMetadataForEventResource: function(orgId, eventId, name) {
             return $http.get('/admin/api/resource-event/'+orgId+'/'+eventId+'/'+name+'/metadata');
         },
@@ -24,7 +37,7 @@ angular.module('adminApplication').service('ResourceService', function($http, $q
         },
         preview: function(orgId, eventId, name, locale, file) {
 
-            return $http.post('/admin/api/overridable-template/'+name+'/'+locale+'/preview?organizationId='+orgId+"&eventId="+eventId, file, {responseType: 'blob'}).then(function(res) {
+            return $http.post('/admin/api/overridable-template/'+name+'/'+locale+'/preview?organizationId='+orgId+(eventId !== undefined ? '&eventId='+eventId : ''), file, {responseType: 'blob'}).then(function(res) {
 
                 var contentType = res.headers('Content-Type');
                 if(contentType.startsWith('text/plain')) {
