@@ -49,6 +49,15 @@
                     }
                 }
             })
+            .state('organization-edit-resources', {
+                url: '/organizations/:organizationId/show-resources/:resourceName/',
+                template: '<resources-edit for-organization="true" organization-id="ctrl.organizationId" resource-name="ctrl.resourceName"></resources-show>',
+                controller: function($state) {
+                    this.organizationId = $state.params.organizationId;
+                    this.resourceName = $state.params.resourceName;
+                },
+                controllerAs: 'ctrl'
+            })
             .state('users', {
                 url: "/users/",
                 template: "<users data-title='Users' type='user'></users>"

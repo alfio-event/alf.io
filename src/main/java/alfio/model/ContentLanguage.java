@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 public class ContentLanguage {
 
     public static final int ENGLISH_IDENTIFIER = 0b00010;
+    public static final int ALL_LANGUAGES_IDENTIFIER = 0b00001 | ENGLISH_IDENTIFIER | 0b00100 | 0b01000 | 0b10000;
     public static final ContentLanguage ITALIAN = new ContentLanguage(Locale.ITALIAN, 0b00001, Locale.ITALIAN, "it");
     public static final ContentLanguage ENGLISH = new ContentLanguage(Locale.ENGLISH, ENGLISH_IDENTIFIER, Locale.ENGLISH, "gb");
     private static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN,   0b00100, Locale.GERMAN, "de");

@@ -8,11 +8,6 @@
                 src: url('alfio-internal:/DejaVuSans.ttf');
             }
 
-            @font-face {
-                font-family: 'DejaVu Sans Bold';
-                src: url('alfio-internal:/DejaVuSans-Bold.ttf');
-            }
-
 			body {
                 font-family: "DejaVu Sans";
                 font-size:10pt;
@@ -83,10 +78,6 @@
 
             table.summary td, table.summary th {
                 min-height: 25px;
-            }
-
-            .strong, strong {
-                font-family: "DejaVu Sans Bold"
             }
 
             .mb {
