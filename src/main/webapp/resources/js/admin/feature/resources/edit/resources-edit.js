@@ -20,6 +20,7 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
     ctrl.deleteFor = deleteFor;
     ctrl.resetFor = resetFor;
     ctrl.previewFor = previewFor;
+    ctrl.showDeleteButton = showDeleteButton;
 
     ctrl.$onInit = function() {
         loadAll()
@@ -149,6 +150,7 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
 
                 metadataLoader.then(function(res) {
                     ctrl.resourcesMetadata[locale] = res.data;
+                    console.log(res.data);
                     var resourceLoader;
                     if(ctrl.forOrganization) {
                         resourceLoader = ResourceService.getOrganizationResource(getOrgId(), getFileName(locale));
@@ -170,6 +172,14 @@ function ResourcesEditCtrl(ResourceService, EventService, $q) {
                 });
             });
         });
+    }
+
+    function showDeleteButton(locale) {
+        if(ctrl.forOrganization) {
+            return ctrl.resourcesMetadata[locale];
+        } else {
+            return ctrl.resourcesMetadata[locale] && ctrl.resourcesMetadata[locale].eventId === ctrl.event.id;
+        }
     }
 
     function getFileName(locale) {
