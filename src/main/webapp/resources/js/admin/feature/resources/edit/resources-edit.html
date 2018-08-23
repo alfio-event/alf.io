@@ -16,7 +16,7 @@
                         }" ng-if="$ctrl.resources[locale.locale] && !$ctrl.previewMode"></div>
                         <pre ng-show="$ctrl.previewMode" ng-bind="$ctrl.previewedText"></pre>
                     </div>
-                    <div class="pull-left" ng-if="$ctrl.resourcesMetadata[locale.locale]">
+                    <div class="pull-left" ng-if="$ctrl.showDeleteButton(locale.locale)">
                         <button type="button" class="btn btn-lg btn-default" ng-click="$ctrl.deleteFor(locale.locale)">Delete</button>
                     </div>
                     <div class="pull-right">
