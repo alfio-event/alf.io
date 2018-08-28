@@ -793,7 +793,7 @@ public class TicketReservationManager {
                 if(enabled) {
                     deleteOfflinePayment(event, reservationId, true);
                 } else {
-                    log.debug("Will not cleanup reservation with id {} because the automatic removal has been disabled", reservationId);
+                    log.trace("Will not cleanup reservation with id {} because the automatic removal has been disabled", reservationId);
                 }
                 return null;
             });
