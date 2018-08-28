@@ -24,11 +24,12 @@ import alfio.model.group.LinkedGroup;
 import alfio.model.modification.GroupMemberModification;
 import alfio.model.modification.GroupModification;
 import alfio.model.modification.LinkedGroupModification;
+import alfio.model.result.ErrorCode;
+import alfio.model.result.Result;
 import alfio.repository.AuditingRepository;
 import alfio.repository.GroupRepository;
 import alfio.repository.TicketRepository;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
@@ -37,7 +38,11 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -47,8 +52,6 @@ import static alfio.model.group.LinkedGroup.MatchType.FULL;
 import static alfio.model.group.LinkedGroup.Type.*;
 import static java.util.Collections.singletonList;
 
-@AllArgsConstructor
-@Transactional
 @Component
 @Log4j2
 public class GroupManager {
@@ -57,18 +60,38 @@ public class GroupManager {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final TicketRepository ticketRepository;
     private final AuditingRepository auditingRepository;
+    private final TransactionTemplate requiresNewTransactionTemplate;
 
-    public int createNew(GroupModification input) {
-        Group wl = createNew(input.getName(), input.getDescription(), input.getOrganizationId());
-        insertMembers(wl.getId(), input.getItems());
-        return wl.getId();
+    public GroupManager(GroupRepository groupRepository,
+                        NamedParameterJdbcTemplate jdbcTemplate,
+                        TicketRepository ticketRepository,
+                        AuditingRepository auditingRepository,
+                        PlatformTransactionManager transactionManager) {
+        this.groupRepository = groupRepository;
+        this.jdbcTemplate = jdbcTemplate;
+        this.ticketRepository = ticketRepository;
+        this.auditingRepository = auditingRepository;
+        this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
     }
 
-    public Group createNew(String name, String description, int organizationId) {
+    public Result<Integer> createNew(GroupModification input) {
+        return requiresNewTransactionTemplate.execute(status -> {
+            Group wl = createNew(input.getName(), input.getDescription(), input.getOrganizationId());
+            Result<Integer> insertMembers = insertMembers(wl.getId(), input.getItems());
+            if(!insertMembers.isSuccess()) {
+                status.setRollbackOnly();
+            }
+            return insertMembers;
+        });
+    }
+
+    @Transactional
+    Group createNew(String name, String description, int organizationId) {
         AffectedRowCountAndKey<Integer> insert = groupRepository.insert(name, description, organizationId);
         return groupRepository.getById(insert.getKey());
     }
 
+    @Transactional
     public LinkedGroup createLink(int groupId,
                                   int eventId,
                                   LinkedGroupModification modification) {
@@ -79,6 +102,7 @@ public class GroupManager {
         return groupRepository.getConfiguration(configuration.getKey());
     }
 
+    @Transactional
     public LinkedGroup updateLink(int id, LinkedGroupModification modification) {
         LinkedGroup original = groupRepository.getConfigurationForUpdate(id);
         if(requiresCleanState(modification, original)) {
@@ -94,14 +118,17 @@ public class GroupManager {
             || (modification.getType() == LIMITED_QUANTITY && modification.getMaxAllocation() != null && original.getMaxAllocation() != null && modification.getMaxAllocation().compareTo(original.getMaxAllocation()) < 0);
     }
 
-    public boolean isGroupLinked(int eventId, int categoryId) {
+    @Transactional
+    boolean isGroupLinked(int eventId, int categoryId) {
         return CollectionUtils.isNotEmpty(findLinks(eventId, categoryId));
     }
 
+    @Transactional
     public List<Group> getAllForOrganization(int organizationId) {
         return groupRepository.getAllForOrganization(organizationId);
     }
 
+    @Transactional
     public Optional<GroupModification> loadComplete(int id) {
         return groupRepository.getOptionalById(id)
             .map(wl -> {
@@ -110,11 +137,13 @@ public class GroupManager {
             });
     }
 
+    @Transactional
     public Optional<Group> findById(int groupId, int organizationId) {
         return groupRepository.getOptionalById(groupId).filter(w -> w.getOrganizationId() == organizationId);
     }
 
-    public boolean isAllowed(String value, int eventId, int categoryId) {
+    @Transactional
+    boolean isAllowed(String value, int eventId, int categoryId) {
 
         List<LinkedGroup> configurations = findLinks(eventId, categoryId);
         if(CollectionUtils.isEmpty(configurations)) {
@@ -124,21 +153,33 @@ public class GroupManager {
         return getMatchingMember(configuration, value).isPresent();
     }
 
+    @Transactional
     public List<LinkedGroup> getLinksForEvent(int eventId) {
         return groupRepository.findActiveConfigurationsForEvent(eventId);
     }
 
+    @Transactional
     public List<LinkedGroup> findLinks(int eventId, int categoryId) {
         return groupRepository.findActiveConfigurationsFor(eventId, categoryId);
     }
 
-    public int insertMembers(int groupId, List<GroupMemberModification> members) {
-        MapSqlParameterSource[] params = members.stream()
-            .map(i -> new MapSqlParameterSource("groupId", groupId).addValue("value", i.getValue()).addValue("description", i.getDescription()))
-            .toArray(MapSqlParameterSource[]::new);
-        return Arrays.stream(jdbcTemplate.batchUpdate(groupRepository.insertItemTemplate(), params)).sum();
+    @Transactional
+    Result<Integer> insertMembers(int groupId, List<GroupMemberModification> members) {
+
+        Map<String, List<GroupMemberModification>> grouped = members.stream().collect(Collectors.groupingBy(GroupMemberModification::getValue));
+        List<String> duplicates = grouped.entrySet().stream().filter(e -> e.getValue().size() > 1).map(Map.Entry::getKey).collect(Collectors.toList());
+
+        return new Result.Builder<Integer>()
+            .checkPrecondition(duplicates::isEmpty, ErrorCode.lazy(() -> ErrorCode.custom("value.duplicate", String.join(", ", duplicates))))
+            .build(() -> {
+                MapSqlParameterSource[] params = members.stream()
+                    .map(i -> new MapSqlParameterSource("groupId", groupId).addValue("value", i.getValue()).addValue("description", i.getDescription()))
+                    .toArray(MapSqlParameterSource[]::new);
+                return Arrays.stream(jdbcTemplate.batchUpdate(groupRepository.insertItemTemplate(), params)).sum();
+            });
     }
 
+    @Transactional
     boolean acquireMemberForTicket(Ticket ticket) {
         List<LinkedGroup> configurations = findLinks(ticket.getEventId(), ticket.getCategoryId());
         if(CollectionUtils.isEmpty(configurations)) {
@@ -180,7 +221,8 @@ public class GroupManager {
         return partial.length() > 0 ? groupRepository.findItemEndsWith(configuration.getId(), configuration.getGroupId(), "%@"+partial) : Optional.empty();
     }
 
-    public void deleteWhitelistedTicketsForReservation(String reservationId) {
+    @Transactional
+    void deleteWhitelistedTicketsForReservation(String reservationId) {
         List<Integer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
         if(!tickets.isEmpty()) {
             int result = groupRepository.deleteExistingWhitelistedTickets(tickets);
@@ -188,10 +230,12 @@ public class GroupManager {
         }
     }
 
+    @Transactional
     public void disableLink(int linkId) {
         Validate.isTrue(groupRepository.disableLink(linkId) == 1, "Error while disabling link");
     }
 
+    @Transactional
     public Optional<GroupModification> update(int listId, GroupModification modification) {
 
         if(!groupRepository.getOptionalById(listId).isPresent() || CollectionUtils.isEmpty(modification.getItems())) {
@@ -209,6 +253,7 @@ public class GroupManager {
         return loadComplete(listId);
     }
 
+    @Transactional
     public boolean deactivateMembers(List<Integer> memberIds, int groupId) {
         if(memberIds.isEmpty()) {
             return false;
@@ -218,6 +263,7 @@ public class GroupManager {
         return true;
     }
 
+    @Transactional
     public boolean deactivateGroup(int groupId) {
         List<Integer> members = groupRepository.getItems(groupId).stream().map(GroupMember::getId).collect(Collectors.toList());
         if(!members.isEmpty()) {
@@ -227,7 +273,6 @@ public class GroupManager {
         Validate.isTrue(groupRepository.deactivateGroup(groupId) == 1, "unexpected error while disabling group");
         return true;
     }
-
 
     private static MapSqlParameterSource toParameterSource(int groupId, Integer itemId) {
         return new MapSqlParameterSource("groupId", groupId)

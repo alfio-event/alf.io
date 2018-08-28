@@ -27,6 +27,7 @@ import alfio.model.TicketCategory;
 import alfio.model.group.Group;
 import alfio.model.group.LinkedGroup;
 import alfio.model.modification.*;
+import alfio.model.result.Result;
 import alfio.repository.EventRepository;
 import alfio.repository.GroupRepository;
 import alfio.repository.TicketRepository;
@@ -113,8 +114,9 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(1, activeConfigurations.size());
         assertEquals(configuration.getId(), activeConfigurations.get(0).getId());
         assertFalse("Group is empty, therefore no value is allowed", groupManager.isAllowed("test@test.ch", event.getId(), categoryId));
-        int items = groupManager.insertMembers(group.getId(), Collections.singletonList(new GroupMemberModification(null,"test@test.ch", "description")));
-        assertEquals(1, items);
+        Result<Integer> items = groupManager.insertMembers(group.getId(), Collections.singletonList(new GroupMemberModification(null,"test@test.ch", "description")));
+        assertTrue(items.isSuccess());
+        assertEquals(new Integer(1), items.getData());
         assertTrue("Value should be allowed", groupManager.isAllowed("test@test.ch", event.getId(), categoryId));
 
         TicketReservationModification ticketReservation = new TicketReservationModification();
@@ -136,5 +138,25 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
         ticket = ticketRepository.findFirstTicketInReservation(reservationId).orElseThrow(NullPointerException::new);
         assertFalse("shouldn't be allowed", groupManager.acquireMemberForTicket(ticket));
 
+    }
+
+    @Test
+    public void testDuplicates() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 10,
+                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+        Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = pair.getKey();
+        Group group = groupManager.createNew("test", "This is a test", event.getOrganizationId());
+        assertNotNull(group);
+        LinkedGroupModification modification = new LinkedGroupModification(null, group.getId(), event.getId(), null, LinkedGroup.Type.ONCE_PER_VALUE, LinkedGroup.MatchType.FULL, null);
+        LinkedGroup configuration = groupManager.createLink(group.getId(), event.getId(), modification);
+        assertNotNull(configuration);
+        Result<Integer> items = groupManager.insertMembers(group.getId(), Arrays.asList(new GroupMemberModification(null,"test@test.ch", "description"), new GroupMemberModification(null,"test@test.ch", "description")));
+        assertFalse(items.isSuccess());
+        assertEquals("value.duplicate", items.getFirstErrorOrNull().getCode());
+        assertEquals("test@test.ch", items.getFirstErrorOrNull().getDescription());
     }
 }
