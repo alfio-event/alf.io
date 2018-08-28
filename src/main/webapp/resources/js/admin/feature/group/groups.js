@@ -60,7 +60,7 @@
                 groupId: '<',
                 createNew: '<'
             }
-        }).service('GroupService', ['$http', 'HttpErrorHandler', '$q', GroupService]);
+        }).service('GroupService', ['$http', 'HttpErrorHandler', '$q', 'NotificationHandler', GroupService]);
 
 
     function ContainerCtrl($stateParams, $state) {
@@ -215,7 +215,7 @@
         }
     }
 
-    function GroupService($http, HttpErrorHandler, $q) {
+    function GroupService($http, HttpErrorHandler, $q, NotificationHandler) {
         return {
             loadGroups: function(orgId) {
                 return $http.get('/admin/api/group/for/'+orgId).error(HttpErrorHandler.handle);
@@ -224,7 +224,14 @@
                 return $http.get('/admin/api/group/for/'+orgId+'/detail/'+groupId).error(HttpErrorHandler.handle);
             },
             createGroup: function(orgId, group) {
-                return $http.post('/admin/api/group/for/'+orgId+'/new', group).error(HttpErrorHandler.handle);
+                return $http.post('/admin/api/group/for/'+orgId+'/new', group)
+                    .error(function(body,status) {
+                        if(status === 400 && body) {
+                            NotificationHandler.showError("Please remove duplicates: "+body);
+                        } else {
+                            HttpErrorHandler.handle(body, status);
+                        }
+                    });
             },
             updateGroup: function(orgId, group) {
                 return $http.post('/admin/api/group/for/'+orgId+'/update/'+group.id, group)

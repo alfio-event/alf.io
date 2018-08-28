@@ -23,6 +23,8 @@ import alfio.model.group.Group;
 import alfio.model.group.LinkedGroup;
 import alfio.model.modification.GroupModification;
 import alfio.model.modification.LinkedGroupModification;
+import alfio.model.result.ErrorCode;
+import alfio.model.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -73,14 +75,23 @@ public class GroupApiController {
     }
 
     @PostMapping("/for/{organizationId}/new")
-    public ResponseEntity<Integer> createNew(@PathVariable("organizationId") int organizationId, @RequestBody GroupModification request, Principal principal) {
+    public ResponseEntity<String> createNew(@PathVariable("organizationId") int organizationId, @RequestBody GroupModification request, Principal principal) {
         if(notOwner(principal.getName(), organizationId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         if(request.getOrganizationId() != organizationId) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.ok(groupManager.createNew(request));
+        Result<Integer> result = groupManager.createNew(request);
+        if(result.isSuccess()) {
+            return ResponseEntity.ok(String.valueOf(result.getData()));
+        }
+
+        ErrorCode error = result.getFirstErrorOrNull();
+        if(error != null && error.getCode().equals("value.duplicate")) {
+            return ResponseEntity.badRequest().body(error.getDescription());
+        }
+        return ResponseEntity.badRequest().build();
     }
 
     @GetMapping("/for/event/{eventName}/all")
