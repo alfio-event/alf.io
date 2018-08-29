@@ -23,6 +23,7 @@ import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
+import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
 import com.insightfullogic.lambdabehave.JunitSuiteRunner;
@@ -52,7 +53,9 @@ public class WaitingQueueSubscriptionProcessorTest {{
         TemplateManager templateManager = it.usesMock(TemplateManager.class);
         WaitingQueueRepository waitingQueueRepository = it.usesMock(WaitingQueueRepository.class);
         PlatformTransactionManager transactionManager = it.usesMock(PlatformTransactionManager.class);
-        WaitingQueueSubscriptionProcessor processor = new WaitingQueueSubscriptionProcessor(eventManager, ticketReservationManager, configurationManager, waitingQueueManager, notificationManager, waitingQueueRepository, messageSource, templateManager, transactionManager);
+        WaitingQueueSubscriptionProcessor processor = new WaitingQueueSubscriptionProcessor(eventManager,
+            ticketReservationManager, configurationManager, waitingQueueManager, notificationManager,
+            waitingQueueRepository, messageSource, templateManager, mock(TicketRepository.class), transactionManager);
         final int eventId = 1;
         Event event = mock(Event.class);
         final String reservationId = "reservation-id";
