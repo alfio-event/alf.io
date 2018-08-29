@@ -797,7 +797,7 @@
                         _.forEach(confResult.data, function(list) {
                             var group = _.find(lists, function(l) { return l.id === list.groupId});
                             list.groupName = group ? group.name : "";
-                            if(angular.isDefined(list.ticketCategoryId)) {
+                            if(list.ticketCategoryId != null) {
                                 var category = _.find($scope.event.ticketCategories, function(c) { return c.id === list.ticketCategoryId;});
                                 if(category) {
                                     category.attendeesList = list;
