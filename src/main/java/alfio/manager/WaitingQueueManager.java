@@ -145,6 +145,7 @@ public class WaitingQueueManager {
         List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAllWaiting(eventId);
         int waitingPeople = subscriptions.size();
         int waitingTickets = ticketRepository.countWaiting(eventId);
+
         if (waitingPeople == 0 && waitingTickets > 0) {
             ticketRepository.revertToFree(eventId);
         } else if (waitingPeople > 0 && waitingTickets > 0) {

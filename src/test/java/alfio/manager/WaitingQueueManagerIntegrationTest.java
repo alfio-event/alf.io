@@ -35,6 +35,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.BaseIntegrationTest;
+import alfio.util.MonetaryUtil;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -86,6 +87,8 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
     private EventRepository eventRepository;
     @Autowired
     private TicketRepository ticketRepository;
+    @Autowired
+    private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
 
     @Before
     public void init() {
@@ -392,6 +395,50 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         //now we should have an extra available ticket
         List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
         assertEquals(1, subscriptions.size());
+    }
+
+    @Test
+    public void testTicketBelongsToExpiredCategory() {
+        LocalDateTime start = LocalDateTime.now().minusHours(1);
+        LocalDateTime end = LocalDateTime.now().plusHours(1);
+
+        List<TicketCategoryModification> categories = Arrays.asList(
+            new TicketCategoryModification(null, "default", 2,
+                new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
+                new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null),
+            new TicketCategoryModification(null, "default2", 10,
+                new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
+                new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
+                DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null));
+
+        configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
+        Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventAndUsername.getKey();
+        List<TicketCategory> ticketCategories = ticketCategoryRepository.findByEventId(event.getId());
+        TicketCategory first = ticketCategories.stream().filter(tc -> !tc.isAccessRestricted()).findFirst().orElseThrow(IllegalStateException::new);
+        String reservationId = reserveTickets(event, first, 2);
+        assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH));
+        assertTrue(waitingQueueManager.subscribe(event, new CustomerName("John Doe 2", "John", "Doe 2", event), "john@doe2.com", null, Locale.ENGLISH));
+        ticketCategoryRepository.update(first.getId(), first.getName(), first.getInception(event.getZoneId()), ZonedDateTime.now(event.getZoneId()).minusMinutes(1L), first.getMaxTickets(), first.isAccessRestricted(),
+            MonetaryUtil.unitToCents(first.getPrice()), first.getCode(), null, null, null, null);
+
+        List<Integer> ticketIds = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
+        assertEquals(2, ticketIds.size());
+
+        ticketReservationManager.deleteOfflinePayment(event, reservationId, false);
+
+        List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(event.getId(), ZonedDateTime.now(event.getZoneId()));
+        assertEquals(2, releasedButExpired.size());
+
+        List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
+        assertEquals(2, subscriptions.size());
+
+        waitingQueueSubscriptionProcessor.revertTicketToFreeIfCategoryIsExpired(event);
+
+        subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
+        assertEquals(0, subscriptions.size());
+
     }
 
     private List<TicketCategoryModification> getPreSalesTicketCategoryModifications(boolean firstBounded, int firstSeats, boolean lastBounded, int lastSeats) {

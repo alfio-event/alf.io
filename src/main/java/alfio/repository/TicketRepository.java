@@ -19,8 +19,13 @@ package alfio.repository;
 import alfio.model.FullTicketInfo;
 import alfio.model.Ticket;
 import alfio.model.TicketCSVInfo;
-import ch.digitalfondue.npjt.*;
+import alfio.model.TicketInfo;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
+import ch.digitalfondue.npjt.QueryRepository;
+import ch.digitalfondue.npjt.QueryType;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -246,6 +251,18 @@ public interface TicketRepository {
 
     @Query("select count(*) from ticket where status = 'RELEASED' and event_id = :eventId")
     Integer countWaiting(@Bind("eventId") int eventId);
+
+    @Query("select " +
+        " t.id t_id, t.uuid t_uuid, t.creation t_creation, t.category_id t_category_id, t.status t_status, t.event_id t_event_id," +
+        " t.src_price_cts t_src_price_cts, t.final_price_cts t_final_price_cts, t.vat_cts t_vat_cts, t.discount_cts t_discount_cts, t.tickets_reservation_id t_tickets_reservation_id," +
+        " t.full_name t_full_name, t.first_name t_first_name, t.last_name t_last_name, t.email_address t_email_address, t.locked_assignment t_locked_assignment," +
+        " t.user_language t_user_language, t.ext_reference t_ext_reference, " +
+        " tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.src_price_cts tc_src_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded, tc.category_code tc_category_code, " +
+        " tc.valid_checkin_from tc_valid_checkin_from, tc.valid_checkin_to tc_valid_checkin_to, tc.ticket_validity_start tc_ticket_validity_start, tc.ticket_validity_end tc_ticket_validity_end" +
+        " from ticket t " +
+        " inner join ticket_category tc on t.category_id = tc.id "+
+        " where t.event_id = :eventId and t.status = 'RELEASED' and tc.expiration <= :currentTs")
+    List<TicketInfo> findReleasedBelongingToExpiredCategories(@Bind("eventId") int eventId, @Bind("currentTs") ZonedDateTime now);
 
     @Query(REVERT_TO_FREE)
     int revertToFree(@Bind("eventId") int eventId);
