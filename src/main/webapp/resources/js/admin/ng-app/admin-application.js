@@ -1246,6 +1246,7 @@
         $scope.advancedSearch = {};
         $scope.tickets = [];
         $scope.checkedInTickets = [];
+        $scope.showAlert = true;
 
         var db = new Dexie('AlfioDatabase', {autoOpen: false});
         db.version(1).stores({
@@ -1269,6 +1270,10 @@
 
         $scope.goToScanPage = function() {
             $state.go('events.single.checkInScan', $stateParams);
+        };
+
+        $scope.hideAlert = function() {
+            $scope.showAlert = false;
         };
 
         EventService.getEvent($stateParams.eventName).success(function(result) {

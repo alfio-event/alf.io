@@ -3,8 +3,21 @@
         <h1>Check-In: {{event.displayName}}</h1>
     </div>
 
-    <div uib-alert type="info">
-        <i class="fa fa-info-circle"></i> Scan tickets for event <i>{{event.displayName}}</i> using the <a href="https://play.google.com/store/apps/details?id=alfio.backoffice" target="_blank">Android app</a>, <a href="https://itunes.apple.com/us/app/alf-io/id1203898610" target="_blank">iOS app</a> or the <a data-ng-click="goToScanPage()">embedded scan functionality</a>
+    <div uib-alert type="info" ng-if="showAlert" close="hideAlert()">
+        <div class="row">
+            <div class="col-xs-12">
+                <h4><i class="fa fa-info-circle"></i> Scan tickets for event <i>{{event.displayName}}</i> using the <a href="https://play.google.com/store/apps/details?id=alfio.scan" target="_blank">Android app</a>, <a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" target="_blank">iOS app</a> or the <a data-ng-click="goToScanPage()">embedded scan functionality</a></h4>
+            </div>
+            <div class="col-xs-2">
+                <a href='https://play.google.com/store/apps/details?id=alfio.scan'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' style="height: auto; width: 150px;"/></a>
+            </div>
+            <div class="col-xs-2">
+                <a href="https://itunes.apple.com/us/app/alf-io-scan/id1425492093" style="display:inline-block;overflow:hidden;background:url(https://linkmaker.itunes.apple.com/assets/shared/badges/en-us/appstore-lrg.svg) no-repeat;width:135px;height:40px;background-size:contain;margin-top:9px;"></a>
+            </div>
+            <div class="col-xs-12 text-muted">
+                <small>Google Play and the Google Play logo are trademarks of Google LLC.</small>
+            </div>
+        </div>
     </div>
 
     <div uib-alert type="warning" ng-if="disabled">
