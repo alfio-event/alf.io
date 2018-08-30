@@ -328,7 +328,7 @@ task clever(type: Copy) {
 }
 
 release {
-    buildTasks ['distribution']
+    buildTasks = ['distribution']
     git {
         requireBranch = ''
         pushToRemote = 'origin'
