@@ -204,8 +204,9 @@ public class EventController {
 
             LocationDescriptor ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
 
-            final boolean hasAccessPromotions = ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
-                promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0;
+            final boolean hasAccessPromotions = configurationManager.getBooleanConfigValue(Configuration.from(orgId, eventId, ConfigurationKeys.DISPLAY_DISCOUNT_CODE_BOX), true) &&
+                (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
+                promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
 
             String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
 
