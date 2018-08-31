@@ -377,7 +377,7 @@ public class EventManager {
         return Optional.of(ticketCategoryRepository.getById(categoryId)).filter(tc -> tc.getId() == categoryId)
             .map(existing -> new Result.Builder<TicketCategory>()
                     .checkPrecondition(() -> tcm.getExpiration().toZonedDateTime(event.getZoneId()).isBefore(event.getEnd()), ErrorCode.CategoryError.EXPIRATION_AFTER_EVENT_END)
-                    .checkPrecondition(() -> tcm.getMaxTickets() - existing.getMaxTickets() + ticketRepository.countAllocatedTicketsForEvent(eventId) <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
+                    .checkPrecondition(() -> !existing.isBounded() || tcm.getMaxTickets() - existing.getMaxTickets() + ticketRepository.countAllocatedTicketsForEvent(eventId) <= eventRepository.countExistingTickets(eventId), ErrorCode.CategoryError.NOT_ENOUGH_SEATS)
                     .checkPrecondition(() -> tcm.isTokenGenerationRequested() == existing.isAccessRestricted() || ticketRepository.countConfirmedAndPendingTickets(eventId, categoryId) == 0, ErrorCode.custom("", "cannot update category: there are tickets already sold."))
                     .checkPrecondition(() -> tcm.isBounded() == existing.isBounded() || ticketRepository.countPendingOrReleasedForCategory(eventId, existing.getId()) == 0, ErrorCode.custom("", "It is not safe to change allocation strategy right now because there are pending reservations."))
                     .checkPrecondition(() -> !existing.isAccessRestricted() || tcm.isBounded() == existing.isAccessRestricted(), ErrorCode.custom("", "Dynamic allocation is not compatible with restricted access"))
@@ -625,7 +625,8 @@ public class EventManager {
             int confirmed = ticketRepository.countConfirmedForCategory(eventId, original.getId());
             int addedTickets = newSize - confirmed;
             List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, addedTickets, singletonList(TicketStatus.FREE.name()));
-            Validate.isTrue(ids.size() == addedTickets, "not enough tickets");
+            Validate.isTrue(addedTickets >= 0, "Cannot reduce capacity to "+newSize+". Minimum size allowed is "+confirmed);
+            Validate.isTrue(ids.size() >= addedTickets, "not enough tickets");
             Validate.isTrue(ids.size() == 0 || ticketRepository.moveToAnotherCategory(ids, original.getId(), updated.getPriceInCents()) == ids.size(), "not enough tickets");
         } else {
             reallocateTickets(ticketCategoryRepository.findStatisticWithId(original.getId(), event.getId()), Optional.empty(), event);
