@@ -22,6 +22,7 @@ import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
+import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
 import org.apache.commons.lang3.tuple.Triple;
@@ -30,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Date;
@@ -56,10 +58,11 @@ public class WaitingQueueSubscriptionProcessorTest {
     private WaitingQueueSubscription subscription;
     private TicketReservationWithOptionalCodeModification reservation;
     private WaitingQueueSubscriptionProcessor processor;
+    private TicketRepository ticketRepository;
 
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         eventManager = mock(EventManager.class);
         ticketReservationManager = mock(TicketReservationManager.class);
         configurationManager = mock(ConfigurationManager.class);
@@ -72,8 +75,10 @@ public class WaitingQueueSubscriptionProcessorTest {
         event = mock(Event.class);
         subscription = mock(WaitingQueueSubscription.class);
         reservation = mock(TicketReservationWithOptionalCodeModification.class);
+        ticketRepository = mock(TicketRepository.class);
         int eventId = 1;
         when(event.getId()).thenReturn(eventId);
+        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(eventManager.getActiveEvents()).thenReturn(Collections.singletonList(event));
         processor = new WaitingQueueSubscriptionProcessor(eventManager,
             ticketReservationManager,
@@ -83,18 +88,19 @@ public class WaitingQueueSubscriptionProcessorTest {
             waitingQueueRepository,
             messageSource,
             templateManager,
+            ticketRepository,
             transactionManager);
     }
 
     @Test
-    public void filterWaitingQueueFlagIsNotActive() {
+    void filterWaitingQueueFlagIsNotActive() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(false);
         processor.handleWaitingTickets();
         verify(waitingQueueManager, never()).distributeSeats(eq(event));
     }
 
     @Test
-    public void processPendingTickets() {
+    void processPendingTickets() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
         when(messageSource.getMessage(anyString(), any(), eq(Locale.ENGLISH))).thenReturn("subject");
         when(subscription.getLocale()).thenReturn(Locale.ENGLISH);
