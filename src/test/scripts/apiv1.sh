@@ -46,6 +46,6 @@ fi
 
 #
 # Finally delete the event
-curl --silent  -X DELETE http://localhost:8080/api/v1/admin/event/titolo -H 'Authorization: Basic YXBpOmFiY2Q=' -H 'Cache-Control: no-cache' -H 'Content-Type: application/json' > /dev/null
+curl --silent  -X DELETE http://localhost:8080/api/v1/admin/event/titolo -H "Authorization: ApiKey $API_KEY" -H 'Cache-Control: no-cache' -H 'Content-Type: application/json' > /dev/null
 
 
