@@ -164,7 +164,7 @@ dependencies {
     compile 'ch.digitalfondue.vatchecker:vatchecker:1.1'
     compile 'org.apache.poi:poi-ooxml:3.17'
 
-    annotationProcessor "org.projectlombok:lombok:1.16.20"
+    annotationProcessor "org.projectlombok:lombok:1.18.2"
 
     testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.8"
 
@@ -364,6 +364,7 @@ task stopEmbeddedPgSQL {
 }
 
 release {
+    buildTasks = ['distribution']
     git {
         requireBranch = ''
         pushToRemote = 'origin'
