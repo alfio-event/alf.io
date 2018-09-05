@@ -18,20 +18,14 @@ package alfio.manager;
 
 import alfio.model.modification.UploadBase64FileModification;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StreamUtils;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
 
 
 @Log4j2
@@ -58,7 +52,7 @@ public class FileDownloadManager {
                 return null;
             }
         } catch(IOException e) {
-            log.warn("error while downloading file");
+            log.warn("error while downloading file", e);
             return null;
         }
     }
