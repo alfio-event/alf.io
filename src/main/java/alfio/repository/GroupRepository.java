@@ -101,10 +101,10 @@ public interface GroupRepository {
     @Query("update group_link set active = false where a_group_id_fk = :groupId")
     int disableAllLinks(@Bind("groupId") int groupId);
 
-    @Query("select * from group_member_active wi where wi.a_group_id_fk = :groupId and wi.value = lower(:value)")
+    @Query("select * from group_member_active wi where wi.a_group_id_fk = :groupId and lower(wi.value) = lower(:value)")
     Optional<GroupMember> findItemByValueExactMatch(@Bind("groupId") int groupId, @Bind("value") String value);
 
-    @Query("select * from group_member_active wi where wi.a_group_id_fk = :groupId and wi.value like lower(:value) limit 1")
+    @Query("select * from group_member_active wi where wi.a_group_id_fk = :groupId and lower(wi.value) like lower(:value) limit 1")
     Optional<GroupMember> findItemEndsWith(@Bind("configurationId") int configurationId,
                                            @Bind("groupId") int groupId,
                                            @Bind("value") String value);
