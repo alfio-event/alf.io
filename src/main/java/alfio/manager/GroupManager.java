@@ -173,7 +173,7 @@ public class GroupManager {
             .checkPrecondition(duplicates::isEmpty, ErrorCode.lazy(() -> ErrorCode.custom("value.duplicate", String.join(", ", duplicates))))
             .build(() -> {
                 MapSqlParameterSource[] params = members.stream()
-                    .map(i -> new MapSqlParameterSource("groupId", groupId).addValue("value", i.getValue()).addValue("description", i.getDescription()))
+                    .map(i -> new MapSqlParameterSource("groupId", groupId).addValue("value", i.getValue().toLowerCase()).addValue("description", i.getDescription()))
                     .toArray(MapSqlParameterSource[]::new);
                 return Arrays.stream(jdbcTemplate.batchUpdate(groupRepository.insertItemTemplate(), params)).sum();
             });
