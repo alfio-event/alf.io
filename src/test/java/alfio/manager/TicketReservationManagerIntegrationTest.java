@@ -20,9 +20,11 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.config.RepositoryConfiguration;
+import alfio.manager.support.PaymentResult;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -167,7 +169,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         PaymentSpecification specification = new PaymentSpecification(reservationId, null, totalPrice.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event),
-            "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED);
+            "billing address", null, null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
 
         PaymentResult confirm = ticketReservationManager.performPayment(specification, totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(confirm.isSuccessful());
@@ -203,7 +205,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         PaymentSpecification specification2 = new PaymentSpecification(reservationId2, null, totalPrice.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event),
-            "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED);
+            "billing address", null, null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
 
         PaymentResult confirm2 = ticketReservationManager.performPayment(specification2, totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(confirm2.isSuccessful());
@@ -358,7 +360,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event),
-            "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED);
+            "billing address", null, null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
         ticketReservationManager.deleteOfflinePayment(event, reservationId, false);
@@ -369,7 +371,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         PaymentSpecification specification2 = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event),
-            "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED);
+            "billing address", null, null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         result = ticketReservationManager.performPayment(specification2, reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
     }

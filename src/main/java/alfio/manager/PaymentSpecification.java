@@ -20,9 +20,11 @@ import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.OrderSummary;
 import alfio.model.PriceContainer;
+import lombok.Getter;
 
 import java.util.Locale;
 
+@Getter
 public class PaymentSpecification {
     private final String reservationId;
     private final String gatewayToken;
@@ -31,6 +33,7 @@ public class PaymentSpecification {
     private final String email;
     private final CustomerName customerName;
     private final String billingAddress;
+    private final String customerReference;
     private final String payerId;
     private final Locale locale;
     private final boolean invoiceRequested;
@@ -39,10 +42,27 @@ public class PaymentSpecification {
     private final String vatCountryCode;
     private final String vatNr;
     private final PriceContainer.VatStatus vatStatus;
+    private final boolean tcAccepted;
+    private final boolean privacyAccepted;
 
-    public PaymentSpecification( String reservationId, String gatewayToken, int priceWithVAT, Event event, String email, CustomerName customerName,
-                                 String billingAddress, String payerId, Locale locale, boolean invoiceRequested, boolean postponeAssignment, OrderSummary orderSummary,
-                                 String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus ) {
+    public PaymentSpecification( String reservationId,
+                                 String gatewayToken,
+                                 int priceWithVAT,
+                                 Event event,
+                                 String email,
+                                 CustomerName customerName,
+                                 String billingAddress,
+                                 String customerReference,
+                                 String payerId,
+                                 Locale locale,
+                                 boolean invoiceRequested,
+                                 boolean postponeAssignment,
+                                 OrderSummary orderSummary,
+                                 String vatCountryCode,
+                                 String vatNr,
+                                 PriceContainer.VatStatus vatStatus,
+                                 boolean tcAccepted,
+                                 boolean privacyAccepted) {
         this.reservationId = reservationId;
         this.gatewayToken = gatewayToken;
         this.priceWithVAT = priceWithVAT;
@@ -50,6 +70,7 @@ public class PaymentSpecification {
         this.email = email;
         this.customerName = customerName;
         this.billingAddress = billingAddress;
+        this.customerReference = customerReference;
         this.payerId = payerId;
         this.locale = locale;
         this.invoiceRequested = invoiceRequested;
@@ -58,69 +79,11 @@ public class PaymentSpecification {
         this.vatCountryCode = vatCountryCode;
         this.vatNr = vatNr;
         this.vatStatus = vatStatus;
+        this.tcAccepted = tcAccepted;
+        this.privacyAccepted = privacyAccepted;
     }
 
     PaymentSpecification( String reservationId, String gatewayToken, int priceWithVAT, Event event, String email, CustomerName customerName ) {
-        this(reservationId, gatewayToken, priceWithVAT, event, email, customerName, null, null, null, false, false, null, null, null, null);
-    }
-
-    public String getReservationId() {
-        return reservationId;
-    }
-
-    public String getGatewayToken() {
-        return gatewayToken;
-    }
-
-    public int getPriceWithVAT() {
-        return priceWithVAT;
-    }
-
-    public Event getEvent() {
-        return event;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public CustomerName getCustomerName() {
-        return customerName;
-    }
-
-    public String getBillingAddress() {
-        return billingAddress;
-    }
-
-    public String getPayerId() {
-        return payerId;
-    }
-
-    public Locale getLocale() {
-        return locale;
-    }
-
-    public boolean isInvoiceRequested() {
-        return invoiceRequested;
-    }
-
-    public boolean isPostponeAssignment() {
-        return postponeAssignment;
-    }
-
-    public OrderSummary getOrderSummary() {
-        return orderSummary;
-    }
-
-    public String getVatCountryCode() {
-        return vatCountryCode;
-    }
-
-    public String getVatNr() {
-        return vatNr;
-    }
-
-    public PriceContainer.VatStatus getVatStatus() {
-        return vatStatus;
+        this(reservationId, gatewayToken, priceWithVAT, event, email, customerName, null, null, null, null, false, false, null, null, null, null, false, false);
     }
 }

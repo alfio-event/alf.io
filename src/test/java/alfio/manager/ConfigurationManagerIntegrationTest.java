@@ -107,7 +107,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false, null, null,
                 null, null, null));
-        EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", null, null,
+        EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", null, null, null,
             "eventShortName", "displayName", organization.getId(),
             "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
             new DateTimeModification(LocalDate.now(), LocalTime.now()),

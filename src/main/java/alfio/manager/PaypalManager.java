@@ -317,15 +317,15 @@ public class PaypalManager implements PaymentProvider {
 
     @Override
     public boolean accept( PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider) {
-        return paymentMethod == PaymentMethod.CREDIT_CARD && configurationManager.getBooleanConfigValue( contextProvider.apply( PAYPAL_ENABLED ), false );
+        return paymentMethod == PaymentMethod.PAYPAL && configurationManager.getBooleanConfigValue( contextProvider.apply( PAYPAL_ENABLED ), false );
     }
 
     @Override
     public PaymentResult doPayment( PaymentSpecification spec ) {
-        return hasPaypalTokens( spec ) ? confirmPayment( spec ) : preparePayment( spec );
+        return hasPayPalTokens( spec ) ? confirmPayment( spec ) : preparePayment( spec );
     }
 
-    private boolean hasPaypalTokens( PaymentSpecification spec ) {
+    private boolean hasPayPalTokens(PaymentSpecification spec ) {
         return StringUtils.isNotBlank(spec.getPayerId()) && StringUtils.isNotBlank(spec.getGatewayToken());
     }
 

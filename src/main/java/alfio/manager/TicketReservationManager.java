@@ -83,6 +83,7 @@ import static alfio.util.MonetaryUtil.unitToCents;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
@@ -337,13 +338,12 @@ public class TicketReservationManager {
         return specialPrice;
     }
 
-    // FIXME String customerReference, boolean privacyPolicyAccepted
     public PaymentResult performPayment( PaymentSpecification spec, TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
 
         if(!acquireGroupMembers(spec.getReservationId(), spec.getEvent())) {
-            groupManager.deleteWhitelistedTicketsForReservation(reservationId);
-            return PaymentResult.unsuccessful("error.STEP2_WHITELIST");
+            groupManager.deleteWhitelistedTicketsForReservation(spec.getReservationId());
+            return PaymentResult.failed("error.STEP2_WHITELIST");
         }
 
         if(!initPaymentProcess(reservationCost, paymentProxy, spec)) {
@@ -411,7 +411,6 @@ public class TicketReservationManager {
         return PaymentProxy.STRIPE;
     }
 
-    //FIXME , String customerReference
     private boolean initPaymentProcess(TotalPrice reservationCost, PaymentProxy paymentProxy, PaymentSpecification spec) {
         if(reservationCost.getPriceWithVAT() > 0 && paymentProxy == PaymentProxy.STRIPE) {
             try {
@@ -553,11 +552,12 @@ public class TicketReservationManager {
         return prepareModelForReservationEmail(event, reservation, vat, summary);
     }
 
-    //FIXME String customerReference
     private void transitionToInPayment(PaymentSpecification spec) {
         requiresNewTransactionTemplate.execute(status -> {
-            int updatedReservation = ticketReservationRepository.updateTicketReservation(spec.getReservationId(), IN_PAYMENT.toString(), spec.getEmail(),
-                spec.getCustomerName().getFullName(), spec.getCustomerName().getFirstName(), spec.getCustomerName().getLastName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), null, PaymentProxy.STRIPE.toString());
+            int updatedReservation = ticketReservationRepository.updateTicketReservation(spec.getReservationId(),
+                IN_PAYMENT.toString(), spec.getEmail(), spec.getCustomerName().getFullName(),
+                spec.getCustomerName().getFirstName(), spec.getCustomerName().getLastName(),
+                spec.getLocale().getLanguage(), spec.getBillingAddress(),null, PaymentProxy.STRIPE.toString(), spec.getCustomerReference());
             Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
             return null;
         });
@@ -607,25 +607,27 @@ public class TicketReservationManager {
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
      */
-    //FIXME String customerReference
     void completeReservation(PaymentSpecification spec, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
+        String reservationId = spec.getReservationId();
+        int eventId = spec.getEvent().getId();
         if(paymentProxy != PaymentProxy.OFFLINE) {
             TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
-            acquireItems(ticketStatus, asStatus, paymentProxy, spec.getReservationId(), spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getEvent().getId());
-            final TicketReservation reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
-            extensionManager.handleReservationConfirmation(reservation, spec.getEvent().getId());
+            acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), eventId);
+            final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+            extensionManager.handleReservationConfirmation(reservation, eventId);
             //cleanup unused special price codes...
             specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
         }
 
-        auditingRepository.insert(spec.getReservationId(), null, spec.getEvent().getId(), Audit.EventType.RESERVATION_COMPLETE, new Date(), Audit.EntityType.RESERVATION, spec.getReservationId());
+        Date eventTime = new Date();
+        auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, eventTime, Audit.EntityType.RESERVATION, reservationId);
         if(spec.isTcAccepted()) {
-            auditingRepository.insert(reservationId, null, eventId, Audit.EventType.TERMS_CONDITION_ACCEPTED, timestamp, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", event.getTermsAndConditionsUrl())));
+            auditingRepository.insert(reservationId, null, eventId, Audit.EventType.TERMS_CONDITION_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", spec.getEvent().getTermsAndConditionsUrl())));
         }
 
         if(StringUtils.isNotBlank(spec.getEvent().getPrivacyPolicyLinkOrNull()) && spec.isPrivacyAccepted()) {
-            auditingRepository.insert(reservationId, null, eventId, Audit.EventType.PRIVACY_POLICY_ACCEPTED, timestamp, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", event.getPrivacyPolicyUrl())));
+            auditingRepository.insert(reservationId, null, eventId, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getEvent().getPrivacyPolicyUrl())));
         }
     }
 
@@ -640,8 +642,6 @@ public class TicketReservationManager {
         postUpdateTicket.forEach((id, ticket) -> {
             auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), eventId);
         });
-
-        Set<Integer> categoriesId = ticketsInReservation.stream().map(Ticket::getCategoryId).collect(Collectors.toSet());
 
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");

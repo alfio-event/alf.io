@@ -23,6 +23,7 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.*;
+import alfio.manager.EuVatChecker.SameCountryValidator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -62,8 +63,10 @@ import org.springframework.web.servlet.support.RequestContextUtils;
 import javax.servlet.http.HttpServletRequest;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
@@ -120,11 +123,7 @@ public class ReservationController {
                          .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1 && ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId()));
 
 
-                    OptionalInt delay = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
-                    model.addAttribute("delayForOfflinePayment", Math.min(1, delay.orElse( 0 )));
-                    if(!delay.isPresent() && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
-                        log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());
-                    }
+                    addDelayForOffline(model, event);
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
                     List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
@@ -367,7 +366,7 @@ public class ReservationController {
                     List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
                         .stream()
                         .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
-                        .map(PaymentManager.PaymentMethod::getPaymentProxy)
+                        .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)
                         .collect(toList());
 
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
@@ -544,7 +543,7 @@ public class ReservationController {
             return redirectForFailure.get();
         }
 
-        Event event = eventOptional.get();
+        Event event = eventOptional.orElseThrow(IllegalStateException::new);
         Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
         if (!optionalReservation.isPresent()) {
             return redirectReservation(optionalReservation, eventName, reservationId);
@@ -584,10 +583,11 @@ public class ReservationController {
 
         OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
 
-        //FIXME check
         PaymentSpecification spec = new PaymentSpecification( reservationId, paymentForm.getToken(), reservationCost.getPriceWithVAT(),
-            event, paymentForm.getEmail(), customerName, paymentForm.getBillingAddress(), paymentForm.getPaypalPayerID(), locale,
-            paymentForm.isInvoiceRequested(), paymentForm.isPostponeAssignment(), orderSummary, paymentForm.getVatCountryCode(), paymentForm.getVatNr(), ticketReservation.get().getVatStatus() );
+            event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
+            paymentForm.getPaypalPayerID(), locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),
+            orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
+            Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
 
         final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()));
@@ -597,7 +597,7 @@ public class ReservationController {
         }
 
         if(!status.isSuccessful()) {
-            String errorMessageCode = status.getErrorCode().get();
+            String errorMessageCode = status.getErrorCode().orElse(StripeCreditCardManager.STRIPE_UNEXPECTED);
             MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
             bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
@@ -711,13 +711,10 @@ public class ReservationController {
     }
 
     private void addDelayForOffline(Model model, Event event) {
-        try {
-            model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
-        } catch (TicketReservationManager.OfflinePaymentException e) {
-            if(event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
-                log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName() , e);
-            }
-            model.addAttribute("delayForOfflinePayment", 0);
+        OptionalInt delay = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+        model.addAttribute("delayForOfflinePayment", Math.min(1, delay.orElse( 0 )));
+        if(!delay.isPresent() && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
+            log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());
         }
     }
 

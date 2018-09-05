@@ -137,10 +137,6 @@ public class ExtensionManager {
         syncCall(extensionEvent, event, organizationId, payload, Boolean.class);
     }
 
-    // FIXME old code
-    // public Optional<InvoiceGeneration> handleInvoiceGeneration(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage,
-    //                                                     String billingAddress, TotalPrice reservationCost, boolean invoiceRequested,
-    //                                                     String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
     public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservationId", spec.getReservationId());
@@ -148,7 +144,7 @@ public class ExtensionManager {
         payload.put("customerName", spec.getCustomerName());
         payload.put("userLanguage", spec.getLocale().getLanguage());
         payload.put("billingAddress", spec.getBillingAddress());
-        payload.put("customerReference", customerReference);
+        payload.put("customerReference", spec.getCustomerReference());
         payload.put("reservationCost", reservationCost);
         payload.put("invoiceRequested", spec.isInvoiceRequested());
         payload.put("vatCountryCode", spec.getVatCountryCode());

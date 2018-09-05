@@ -246,16 +246,12 @@ public class AdminReservationManager {
 
     private Result<Triple<TicketReservation, List<Ticket>, Event>> performConfirmation(String reservationId, Event event, TicketReservation original) {
         try {
-            ticketReservationManager.completeReservation(event.getId(), reservationId, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event),
             PaymentSpecification spec = new PaymentSpecification( reservationId, null, 0,
                 event, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event),
-                original.getBillingAddress(), null, Locale.forLanguageTag(original.getUserLanguage()),
-                false, false, null, null, null, null );
+                original.getBillingAddress(), original.getCustomerReference(), null, Locale.forLanguageTag(original.getUserLanguage()),
+                false, false, null, null, null, null, false, false );
 
             ticketReservationManager.completeReservation(spec, Optional.empty(), PaymentProxy.ADMIN);
-            // FIXME old call
-            // ticketReservationManager.completeReservation(event, reservationId, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event),
-            //                Locale.forLanguageTag(original.getUserLanguage()), original.getBillingAddress(), Optional.empty(), PaymentProxy.ADMIN, original.getCustomerReference(), false, false);
             return loadReservation(reservationId);
         } catch(Exception e) {
             return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);

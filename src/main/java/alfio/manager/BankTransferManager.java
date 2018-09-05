@@ -67,7 +67,7 @@ public class BankTransferManager implements PaymentProvider {
     private void transitionToOfflinePayment( PaymentSpecification spec ) {
         ZonedDateTime deadline = getOfflinePaymentDeadline(spec.getEvent(), configurationManager);
         int updatedReservation = ticketReservationRepository.postponePayment(spec.getReservationId(), Date.from(deadline.toInstant()), spec.getEmail(),
-            spec.getCustomerName().getFullName(), spec.getCustomerName().getFirstName(), spec.getCustomerName().getLastName(), spec.getBillingAddress());
+            spec.getCustomerName().getFullName(), spec.getCustomerName().getFirstName(), spec.getCustomerName().getLastName(), spec.getBillingAddress(), spec.getCustomerReference());
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
     }
 
