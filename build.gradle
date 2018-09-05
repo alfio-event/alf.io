@@ -188,6 +188,7 @@ dependencies {
     providedCompile "org.springframework.boot:spring-boot-autoconfigure@jar", {
         exclude module : 'spring-boot-starter-logging'
     }
+    providedCompile "org.springframework.boot:spring-boot-starter-log4j2"
     compile "org.springframework.boot:spring-boot-starter-jetty", {
         exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
