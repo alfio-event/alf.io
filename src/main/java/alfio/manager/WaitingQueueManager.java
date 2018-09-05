@@ -242,9 +242,14 @@ public class WaitingQueueManager {
 
     private Optional<TicketCategory> findBestCategory(List<TicketCategory> unboundedCategories, WaitingQueueSubscription subscription) {
         Integer selectedCategoryId = subscription.getSelectedCategoryId();
-        return unboundedCategories.stream()
+        Optional<TicketCategory> firstMatch = unboundedCategories.stream()
             .filter(tc -> selectedCategoryId == null || selectedCategoryId.equals(tc.getId()))
             .findFirst();
+        if(firstMatch.isPresent()) {
+            return firstMatch;
+        } else {
+            return unboundedCategories.stream().findFirst();
+        }
     }
 
     public void fireReservationConfirmed(String reservationId) {
