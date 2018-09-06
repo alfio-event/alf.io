@@ -44,6 +44,7 @@ public class PaymentSpecification {
     private final PriceContainer.VatStatus vatStatus;
     private final boolean tcAccepted;
     private final boolean privacyAccepted;
+    private final String validationToken;
 
     public PaymentSpecification( String reservationId,
                                  String gatewayToken,
@@ -62,7 +63,8 @@ public class PaymentSpecification {
                                  String vatNr,
                                  PriceContainer.VatStatus vatStatus,
                                  boolean tcAccepted,
-                                 boolean privacyAccepted) {
+                                 boolean privacyAccepted,
+                                 String validationToken) {
         this.reservationId = reservationId;
         this.gatewayToken = gatewayToken;
         this.priceWithVAT = priceWithVAT;
@@ -81,9 +83,10 @@ public class PaymentSpecification {
         this.vatStatus = vatStatus;
         this.tcAccepted = tcAccepted;
         this.privacyAccepted = privacyAccepted;
+        this.validationToken = validationToken;
     }
 
     PaymentSpecification( String reservationId, String gatewayToken, int priceWithVAT, Event event, String email, CustomerName customerName ) {
-        this(reservationId, gatewayToken, priceWithVAT, event, email, customerName, null, null, null, null, false, false, null, null, null, null, false, false);
+        this(reservationId, gatewayToken, priceWithVAT, event, email, customerName, null, null, null, null, false, false, null, null, null, null, false, false, null);
     }
 }

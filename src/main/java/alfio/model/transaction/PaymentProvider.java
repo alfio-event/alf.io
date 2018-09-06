@@ -27,7 +27,7 @@ public interface PaymentProvider {
 
     boolean accept(PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider);
 
-    PaymentResult doPayment( PaymentSpecification spec );
+    PaymentResult doPayment(PaymentSpecification spec);
 
     boolean supportRefund();
 }

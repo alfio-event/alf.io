@@ -583,11 +583,11 @@ public class ReservationController {
 
         OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
 
-        PaymentSpecification spec = new PaymentSpecification( reservationId, paymentForm.getToken(), reservationCost.getPriceWithVAT(),
+        PaymentSpecification spec = new PaymentSpecification(reservationId, paymentForm.getToken(), reservationCost.getPriceWithVAT(),
             event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
             paymentForm.getPaypalPayerID(), locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),
             orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
-            Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
+            Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()), paymentForm.getHmac());
 
         final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()));

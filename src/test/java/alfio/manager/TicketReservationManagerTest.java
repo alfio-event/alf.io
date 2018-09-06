@@ -35,6 +35,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.TemplateManager;
+import alfio.util.WorkingDaysAdjusters;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
@@ -411,14 +412,17 @@ class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(2L, ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()));
+        ZonedDateTime expectedDate = ZonedDateTime.now().plusDays(2L).truncatedTo(ChronoUnit.HALF_DAYS).with(WorkingDaysAdjusters.defaultWorkingDays());
+        assertEquals(expectedDate, offlinePaymentDeadline);
     }
 
     @Test
     void returnTheConfiguredWaitingTime() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
-        assertEquals(2, BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager).getAsInt());
+        OptionalInt offlinePaymentWaitingPeriod = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+        assertTrue(offlinePaymentWaitingPeriod.isPresent());
+        assertEquals(2, offlinePaymentWaitingPeriod.getAsInt());
     }
 
     @Test
@@ -441,7 +445,7 @@ class TicketReservationManagerTest {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now());
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
-        assertEquals(true, offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
+        assertTrue(offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
     }
 
 //    FIXME implement test
@@ -688,7 +692,7 @@ class TicketReservationManagerTest {
         when(stripeCreditCardManager.doPayment(any())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "test@email",
             new CustomerName("Full Name", null, null, event), "", null, null, Locale.ENGLISH,
-            true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+            true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayTransactionId());
@@ -712,7 +716,7 @@ class TicketReservationManagerTest {
         StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.CREDIT_CARD), any())).thenReturn(Optional.of(stripeCreditCardManager));
         when(stripeCreditCardManager.doPayment(any())).thenReturn(PaymentResult.failed("error-code"));
-        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "email@user", new CustomerName("Full Name", null, null, event), null, null, "", Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false);
+        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "email@user", new CustomerName("Full Name", null, null, event), null, null, "", Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false, null);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertFalse(result.isSuccessful());
         assertFalse(result.getGatewayTransactionId().isPresent());
@@ -734,7 +738,7 @@ class TicketReservationManagerTest {
         when(onSiteManager.doPayment(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "test@email",
             new CustomerName("Full Name", null, null, event),
-            "", null, "", Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+            "", null, "", Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), anyString(), anyString(), anyString(), isNull(), isNull(), eq(Locale.ENGLISH.getLanguage()), isNull(), any(), any(), isNull())).thenReturn(1);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE));
         assertTrue(result.isSuccessful());
@@ -759,7 +763,7 @@ class TicketReservationManagerTest {
         when(bankTransferManager.doPayment(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "test@email",
             new CustomerName("Full Name", null, null, event),
-            "", null, "", Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+            "", null, "", Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayTransactionId());

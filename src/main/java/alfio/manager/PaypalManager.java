@@ -194,8 +194,8 @@ public class PaypalManager implements PaymentProvider {
         return MessageDigest.isEqual(hmac.getBytes(StandardCharsets.UTF_8), computedHmac.getBytes(StandardCharsets.UTF_8));
     }
 
-    public static class HandledPaypalErrorException extends RuntimeException {
-        HandledPaypalErrorException(String errorMessage) {
+    public static class HandledPayPalErrorException extends RuntimeException {
+        HandledPayPalErrorException(String errorMessage) {
             super(errorMessage);
         }
     }
@@ -216,12 +216,12 @@ public class PaypalManager implements PaymentProvider {
         Payment payment = new Payment().setId(token);
         PaymentExecution paymentExecute = new PaymentExecution();
         paymentExecute.setPayerId(payerId);
-        Payment result = null;
+        Payment result;
         try {
             result = payment.execute(getApiContext(event), paymentExecute);
         } catch (PayPalRESTException e) {
             mappedException(e).ifPresent(message -> {
-                throw new HandledPaypalErrorException(message);
+                throw new HandledPayPalErrorException(message);
             });
             throw e;
         }
@@ -321,8 +321,8 @@ public class PaypalManager implements PaymentProvider {
     }
 
     @Override
-    public PaymentResult doPayment( PaymentSpecification spec ) {
-        return hasPayPalTokens( spec ) ? confirmPayment( spec ) : preparePayment( spec );
+    public PaymentResult doPayment(PaymentSpecification spec) {
+        return hasPayPalTokens(spec) ? confirmPayment(spec) : preparePayment(spec);
     }
 
     private boolean hasPayPalTokens(PaymentSpecification spec ) {
@@ -337,8 +337,11 @@ public class PaypalManager implements PaymentProvider {
         }
     }
 
-    private PaymentResult confirmPayment( PaymentSpecification spec ) {
+    private PaymentResult confirmPayment(PaymentSpecification spec) {
         try {
+            if(!PaypalManager.isValidHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getValidationToken(), spec.getEvent())) {
+                return PaymentResult.failed(ErrorsCode.STEP_2_INVALID_HMAC);
+            }
             Pair<String, String> captureAndPaymentId = commitPayment(spec.getReservationId(), spec.getGatewayToken(), spec.getPayerId(), spec.getEvent());
             String captureId = captureAndPaymentId.getLeft();
             String paymentId = captureAndPaymentId.getRight();
@@ -359,7 +362,7 @@ public class PaypalManager implements PaymentProvider {
             log.warn("errow while processing paypal payment: " + e.getMessage(), e);
             if(e instanceof PayPalRESTException ) {
                 return PaymentResult.failed(ErrorsCode.STEP_2_PAYPAL_UNEXPECTED);
-            } else if(e instanceof HandledPaypalErrorException) {
+            } else if(e instanceof HandledPayPalErrorException) {
                 return PaymentResult.failed(e.getMessage());
             }
             throw new IllegalStateException(e);
