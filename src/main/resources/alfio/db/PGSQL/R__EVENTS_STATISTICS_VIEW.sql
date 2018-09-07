@@ -83,7 +83,7 @@ create view events_statistics as (select
           - (select count(*) from ticket where status = 'RELEASED' and category_id is null and event_id = event.id)
           else 0 end as dynamic_allocation,
       case (contains_unbounded_categories) when true then
-        allocated_count - sold_tickets_count_bounded - checked_in_count_bounded - pending_count
+        allocated_count - sold_tickets_count_bounded - checked_in_count_bounded - pending_count_bounded
       else
         allocated_count - sold_tickets_count - stats.checked_in_count - pending_count
       end as not_sold_tickets,
@@ -96,6 +96,7 @@ from
 	sum(sold_tickets_count) as sold_tickets_count,
 	sum(checked_in_count) as checked_in_count,
 	sum(pending_count) as pending_count,
+	sum(case(bounded) when true then pending_count else 0 end) as pending_count_bounded,
 	sum(released_count) as released_count,
 	sum(case (bounded) when true then checked_in_count else 0 end) as checked_in_count_bounded,
 	sum(case (bounded = false) when true then checked_in_count else 0 end) as checked_in_count_unbounded,
