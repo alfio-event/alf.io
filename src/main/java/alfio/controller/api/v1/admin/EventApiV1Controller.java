@@ -207,7 +207,8 @@ public class EventApiV1Controller {
                         ZonedDateTime.of(pc.getValidTo(),e.getZoneId()),
                         pc.getDiscount(),
                         pc.getDiscountType(),
-                        Collections.emptyList()
+                        Collections.emptyList(),
+                        null
                     )
                 )
             );

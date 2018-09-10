@@ -69,6 +69,10 @@ public class SaleableTicketCategory implements PriceContainer {
         return inSale && !soldOut;
     }
 
+    public boolean getSaleableAndLimitNotReached() {
+        return getSaleable() && (promoCodeDiscount == null || maxTickets > 0);
+    }
+
     public boolean getExpired() {
         return getExpiration(zoneId).isBefore(now);
     }
@@ -84,6 +88,10 @@ public class SaleableTicketCategory implements PriceContainer {
     
     public boolean getSouldOut() {
         return soldOut;
+    }
+
+    public boolean getSouldOutOrLimitReached() {
+        return soldOut || (promoCodeDiscount != null && maxTickets == 0);
     }
 
     public String getFormattedExpiration() {

@@ -9,8 +9,8 @@
                 <input type="text" id="promoCode" data-ng-model="promocode.promoCode" class="form-control to-uppercase" required minlength="7"/>
                 <field-error data-form-obj="promocode" data-field-obj="promocode.promoCode" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
-            
-            
+
+
             <div class="form-group" bs-form-error="promocode.dateString">
                 <label for="date">Validity range <span ng-if="!forEvent">(Note: these dates are in your current timezone)</span><span ng-if="forEvent">(Note: these dates will use the timezone from the event)</span></label>
                 <input type="text" data-date-range data-start-model="promocode.start" min-date="true" data-end-model="promocode.end" data-ng-model="promocode.dateString" name="date" id="date" class="form-control" required />
@@ -23,8 +23,13 @@
                     <li ng-repeat="category in validCategories"><label><input type="checkbox" ng-true-value="{{::category.id}}" ng-false-value="null" ng-model="promocode.categories[$index]"> {{::category.name}}</label></li>
                 </ul>
             </div>
-            
-                    
+
+            <div class="form-group" bs-form-error="promocode.maxUsage">
+                <label for="maxUsage">Limit usage to (experimental)</label>
+                <input type="number" data-ng-model="promocode.maxUsage" name="maxUsage" id="maxUsage" class="form-control">
+                <field-error data-form-obj="promocode" data-field-obj="promocode.maxUsage" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
+
             <div class="form-group">
                 <label class="control-label">Discount type</label>
                 <div>
@@ -42,7 +47,7 @@
                     </div>
                 </div>
             </div>
-                    
+
             <div class="form-group" bs-form-error="promocode.discountAmount">
                 <label for="promoCode">Discount amount</label>
                 <div class="input-group">
@@ -55,7 +60,7 @@
                 <field-error data-form-obj="discountAmount" data-field-obj="promocode.discountAmount" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
-    
+
         <div class="clearfix"></div>
     </div>
 

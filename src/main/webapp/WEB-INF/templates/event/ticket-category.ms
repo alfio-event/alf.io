@@ -45,7 +45,7 @@
             </label>
         </div>
         <div class="col-sm-2 text-align-center">
-            {{#saleable}}
+            {{#saleableAndLimitNotReached}}
                 <input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
                 <select aria-labelledby="{{id}}-label" name="reservation[{{-index}}].amount" class="form-control text-align-center" placeholder="0" autocomplete="off" data-ticket-selector>
                     {{#accessRestricted}}
@@ -56,17 +56,17 @@
                         {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
                     {{/accessRestricted}}
                 </select>
-            {{/saleable}}
-            {{^saleable}}
+            {{/saleableAndLimitNotReached}}
+            {{^saleableAndLimitNotReached}}
                 <label class="control-label">
-                    {{#soldOut}}
+                    {{#souldOutOrLimitReached}}
                         {{#i18n}}show-event.sold-out{{/i18n}}
-                    {{/soldOut}}
-                    {{^soldOut}}
+                    {{/souldOutOrLimitReached}}
+                    {{^souldOutOrLimitReached}}
                         {{#i18n}}show-event.not-available{{/i18n}}
-                    {{/soldOut}}
+                    {{/souldOutOrLimitReached}}
                 </label>
-            {{/saleable}}
+            {{/saleableAndLimitNotReached}}
         </div>
     </div>
 </li>

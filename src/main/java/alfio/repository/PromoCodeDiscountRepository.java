@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,14 +41,15 @@ public interface PromoCodeDiscountRepository {
     @Query("select * from promo_code where id = :id")
     PromoCodeDiscount findById(@Bind("id") int id);
 
-    @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories) "
-            + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories)")
+    @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage) "
+            + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage)")
     int addPromoCode(@Bind("promoCode") String promoCode,
             @Bind("eventId") Integer eventId, @Bind("organizationId") Integer organizationId, @Bind("start") ZonedDateTime start,
             @Bind("end") ZonedDateTime end,
             @Bind("discountAmount") int discountAmount,
             @Bind("discountType") String discountType,
-            @Bind("categories") String categories);
+            @Bind("categories") String categories,
+            @Bind("maxUsage") Integer maxUsage);
 
     @Query("select * from promo_code where promo_code = :promoCode and ("
         +" (event_id_fk = :eventId and organization_id_fk is null) or "
@@ -61,9 +63,14 @@ public interface PromoCodeDiscountRepository {
     @Query("select count(*) from tickets_reservation where promo_code_id_fk = :id")
     Integer countAppliedPromoCode(@Bind("id") int id);
 
+    @Query("select count(b.id) from tickets_reservation a, ticket b" +
+        " where (:currentId is null or a.id <> :currentId) and a.status in ('OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and a.promo_code_id_fk = :id" +
+        " and b.tickets_reservation_id = a.id and (:categoriesJson is null or b.category_id in (:categories))")
+    Integer countConfirmedPromoCode(@Bind("id") int id, @Bind("categories") Collection<Integer> categories, @Bind("currentId") String currentReservationId, @Bind("categoriesJson") String categoriesJson);
+
     @Query("update promo_code set valid_to = :end where id = :id")
     int updateEventPromoCodeEnd(@Bind("id") int id, @Bind("end") ZonedDateTime end);
 
-    @Query("update promo_code set valid_from = :start, valid_to = :end where id = :id")
-    int updateEventPromoCode(@Bind("id") int id, @Bind("start") ZonedDateTime start, @Bind("end") ZonedDateTime end);
+    @Query("update promo_code set valid_from = :start, valid_to = :end, max_usage = :maxUsage, categories = :categories where id = :id")
+    int updateEventPromoCode(@Bind("id") int id, @Bind("start") ZonedDateTime start, @Bind("end") ZonedDateTime end, @Bind("maxUsage") Integer maxUsage, @Bind("categories") String categories);
 }

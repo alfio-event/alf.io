@@ -536,6 +536,7 @@ public class ReservationController {
             assignTickets(eventName, reservationId, paymentForm, bindingResult, request, paymentForm.getPaymentMethod() == PaymentProxy.OFFLINE, false);
         }
 
+        SessionUtil.removeSpecialPriceData(request);
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
     }
 
