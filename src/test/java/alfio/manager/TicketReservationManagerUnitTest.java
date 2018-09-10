@@ -133,6 +133,7 @@ public class TicketReservationManagerUnitTest {
             extensionManager,
             mock(TicketSearchRepository.class),
             groupManager);
+
     }
 
     @Test

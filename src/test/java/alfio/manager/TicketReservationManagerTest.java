@@ -175,9 +175,7 @@ public class TicketReservationManagerTest {
             invoiceSequencesRepository,
             auditingRepository,
             userRepository,
-            extensionManager,
-            ticketSearchRepository,
-            groupManager);
+            extensionManager, ticketSearchRepository, groupManager);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -702,6 +700,7 @@ public class TicketReservationManagerTest {
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), isNull(), eq(PaymentProxy.STRIPE.toString()), anyString())).thenReturn(1);
         when(paymentManager.processStripePayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class),  anyString())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
+        when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event),
             Locale.ENGLISH, "", "", new TotalPrice(100, 0, 0, 0), Optional.empty(),
             Optional.of(PaymentProxy.STRIPE), true, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
@@ -714,11 +713,10 @@ public class TicketReservationManagerTest {
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), anyString());
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
-        verify(ticketReservationRepository).findReservationById(RESERVATION_ID);
+        verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
-        verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
     @Test
@@ -727,6 +725,7 @@ public class TicketReservationManagerTest {
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), isNull(), eq(PaymentProxy.STRIPE.toString()), anyString())).thenReturn(1);
         when(ticketReservationRepository.updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()))).thenReturn(1);
         when(paymentManager.processStripePayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
+        when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event), Locale.ENGLISH, "","",
             new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE),
             true, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false);
@@ -739,7 +738,6 @@ public class TicketReservationManagerTest {
         verify(ticketReservationRepository).updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()));
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("12345"), eq("IT"), eq(true), eq(RESERVATION_ID));
-        verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
     @Test
@@ -748,6 +746,7 @@ public class TicketReservationManagerTest {
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()), anyString())).thenReturn(1);
         when(paymentManager.processStripePayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
+        when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event),
             Locale.ENGLISH, "", "", new TotalPrice(100, 0, 0, 0), Optional.empty(),
             Optional.of(PaymentProxy.ON_SITE), true, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
@@ -758,17 +757,17 @@ public class TicketReservationManagerTest {
         verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()));
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
-        verify(ticketReservationRepository).findReservationById(RESERVATION_ID);
+        verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
-        verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
     @Test
     public void handleOfflinePaymentMethod() throws Exception {
         initConfirmReservation();
-        when(ticketReservationRepository.postponePayment(eq(RESERVATION_ID), any(Date.class), anyString(), anyString(), isNull(), isNull(), anyString(), anyString())).thenReturn(1);
+        when(ticketReservationRepository.postponePayment(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
+        when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event),
             Locale.ENGLISH, "", "", new TotalPrice(100, 0, 0, 0), Optional.empty(),
             Optional.of(PaymentProxy.OFFLINE), true, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
@@ -780,7 +779,6 @@ public class TicketReservationManagerTest {
         verify(configurationManager).getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_PAYMENT_DAYS)), eq(5));
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
-        verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
     @Test

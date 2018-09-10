@@ -224,10 +224,10 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         //promo code at event level
-        eventManager.addPromoCode("MYPROMOCODE", event.getId(), null, event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null);
+        eventManager.addPromoCode("MYPROMOCODE", event.getId(), null, event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3);
 
         //promo code at organization level
-        eventManager.addPromoCode("MYFIXEDPROMO", null, event.getOrganizationId(), event.getBegin(), event.getEnd(), 5, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, null);
+        eventManager.addPromoCode("MYFIXEDPROMO", null, event.getOrganizationId(), event.getBegin(), event.getEnd(), 5, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, null, null);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(3);
@@ -269,6 +269,19 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         Assert.assertEquals("29.85", orderSummaryFixed.getTotalPrice());
         Assert.assertEquals("0.30", orderSummaryFixed.getTotalVAT());
         Assert.assertEquals(3, orderSummaryFixed.getTicketAmount());
+
+
+        //check if we try to fetch more than the limit
+
+        TicketReservationModification trTooMuch = new TicketReservationModification();
+        trTooMuch.setAmount(4);
+        trTooMuch.setTicketCategoryId(unbounded.getId());
+        TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
+        try {
+            ticketReservationManager.createTicketReservation(event, Collections.singletonList(modTooMuch ), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.of("MYPROMOCODE"), Locale.ENGLISH, false);
+            Assert.fail("must not enter here");
+        } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException e) {
+        }
 
     }
 

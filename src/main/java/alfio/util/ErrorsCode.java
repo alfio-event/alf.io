@@ -60,6 +60,8 @@ public interface ErrorsCode {
 
     String STEP_2_MISSING_ATTENDEE_DATA = "error.STEP_2_MISSING_ATTENDEE_DATA";
 
+
     String VIES_IS_DOWN = "error.vatVIESDown";
 
+    String STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED = "error.STEP2_DISCOUNT_CODE_USAGE_EXCEEDED";
 }

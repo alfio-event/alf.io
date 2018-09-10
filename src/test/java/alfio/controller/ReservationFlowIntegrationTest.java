@@ -43,6 +43,7 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.UserModification;
+import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.User;
@@ -92,6 +93,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
@@ -199,7 +201,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         //
         TemplateManager templateManager = Mockito.mock(TemplateManager.class);
         reservationApiController = new ReservationApiController(eventRepository, ticketHelper, templateManager, i18nManager, euVatChecker, ticketReservationRepository, ticketReservationManager);
+
+        //promo code at event level
+        eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3);
     }
+
+    private static final String PROMO_CODE = "MYPROMOCODE";
 
 
     /**
@@ -535,8 +542,15 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     }
 
     private String reserveTicket(String eventName) {
+
+        MockHttpServletRequest requestPromo = new MockHttpServletRequest();
+        //apply promo code
+        ValidationResult res = eventController.savePromoCode(event.getShortName(), PROMO_CODE, new BindingAwareModelMap(), requestPromo);
+        Assert.assertTrue(res.isSuccess());
+        //
         ReservationForm reservationForm = new ReservationForm();
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setSession(requestPromo.getSession());
         request.setMethod("POST");
         ServletWebRequest servletWebRequest = new ServletWebRequest(request);
         BindingResult bindingResult = new BeanPropertyBindingResult(reservationForm, "reservation");
