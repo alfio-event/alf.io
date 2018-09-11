@@ -32,6 +32,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -180,14 +181,7 @@ public class CheckInApiController {
         return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
             .map(event -> {
                 Set<String> addFields = loadLabelLayout(event)
-                    .map(layout -> {
-                        Set<String> union = new HashSet<>(layout.content.thirdRow);
-                        union.addAll(layout.qrCode.additionalInfo);
-                        if(additionalFields != null && !additionalFields.isEmpty()) {
-                            union.addAll(additionalFields);
-                        }
-                        return union;
-                    })
+                    .map(layout -> collectAllFieldNames(additionalFields, layout))
                     .orElseGet(() -> {
                         if(additionalFields != null && !additionalFields.isEmpty()) {
                             return new HashSet<>(additionalFields);
@@ -196,6 +190,23 @@ public class CheckInApiController {
                     });
                 return checkInManager.getEncryptedAttendeesInformation(event, addFields, ids);
             }).orElse(Collections.emptyMap());
+    }
+
+    private static Set<String> collectAllFieldNames(List<String> additionalFields, LabelLayout layout) {
+        Set<String> union = new HashSet<>();
+        if(CollectionUtils.isNotEmpty(layout.content.additionalRows)) {
+            union.addAll(layout.content.additionalRows);
+        }
+        if(CollectionUtils.isNotEmpty(layout.content.thirdRow)) {
+            union.addAll(layout.content.thirdRow);
+        }
+        if(CollectionUtils.isNotEmpty(layout.qrCode.additionalInfo)) {
+            union.addAll(layout.qrCode.additionalInfo);
+        }
+        if(CollectionUtils.isNotEmpty(additionalFields)) {
+            union.addAll(additionalFields);
+        }
+        return union;
     }
 
     private static void validateIdList(@RequestBody List<Integer> ids) {
