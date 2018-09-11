@@ -112,9 +112,8 @@ public class StripeManager {
 
     public ConnectResult storeConnectedAccountId(String code, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> keyResolver) {
         try {
-            String connectClientID = configurationManager.getRequiredValue(keyResolver.apply(STRIPE_CONNECT_CLIENT_ID));
             String clientSecret = getSystemApiKey();
-            OAuth20Service service = new ServiceBuilder(connectClientID).apiSecret(clientSecret).build(new StripeConnectApi());
+            OAuth20Service service = new ServiceBuilder(clientSecret).apiSecret(clientSecret).build(new StripeConnectApi());
             Map<String, String> token = Json.fromJson(service.getAccessToken(code).getRawResponse(), new TypeReference<Map<String, String>>() {});
             String accountId = token.get("stripe_user_id");
             if(accountId != null) {
