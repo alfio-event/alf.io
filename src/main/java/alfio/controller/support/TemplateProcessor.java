@@ -32,6 +32,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.servlet.http.HttpServletRequest;
@@ -104,7 +105,15 @@ public final class TemplateProcessor {
         builder.toStream(os);
         builder.useProtocolsStreamImplementation(new AlfioInternalFSStreamFactory(), "alfio-internal");
         builder.useProtocolsStreamImplementation(new InvalidProtocolFSStreamFactory(), "http", "https", "file", "jar");
-        builder.withW3cDocument(DOMBuilder.jsoup2DOM(Jsoup.parse(page)), "");
+
+
+        Document parsedDocument = Jsoup.parse(page);
+        //add <meta name="fast-renderer" content="true"> in the html document to enable  the fast renderer
+        if (!parsedDocument.select("meta[name=fast-renderer][content=true]").isEmpty()) {
+            builder.useFastMode();
+        }
+
+        builder.withW3cDocument(DOMBuilder.jsoup2DOM(parsedDocument), "");
         PdfBoxRenderer renderer = builder.buildPdfRenderer();
         try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream()) {
             renderer.getFontResolver().addFont(() -> is, "DejaVu Sans Mono", null, null, false);
