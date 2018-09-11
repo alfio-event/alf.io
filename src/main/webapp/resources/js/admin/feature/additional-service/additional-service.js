@@ -88,7 +88,7 @@
             var result = results[1].data;
             self.titles = titles;
             self.descriptions = descriptions;
-            self.group = _.map(result, function(item) {
+            self.list = _.map(result, function(item) {
                 item.title = _.map(angular.copy(titles), fillExistingTexts(item.title));
                 item.description = _.map(angular.copy(descriptions), fillExistingTexts(item.description));
                 return item;
@@ -184,7 +184,7 @@
 
         self.delete = function(item) {
             var afterDelete = function(r) {
-                self.group = _.filter(self.list, function (i) {
+                self.list = _.filter(self.list, function (i) {
                     return i !== r;
                 });
                 editComplete();
