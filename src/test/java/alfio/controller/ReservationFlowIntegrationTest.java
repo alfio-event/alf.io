@@ -309,6 +309,19 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         //
         assertEquals("/event/show-ticket", ticketController.showTicket(eventName, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
+
+        //send email
+        assertEquals("OK", ticketController.sendTicketByEmail(eventName, ticketIdentifier, new MockHttpServletRequest()));
+        //
+        //download ticket
+        MockHttpServletResponse responseForDownloadTicket = new MockHttpServletResponse();
+        ticketController.generateTicketPdf(eventName, ticketIdentifier, new MockHttpServletRequest(), responseForDownloadTicket);
+        assertEquals("attachment; filename=ticket-" + ticketIdentifier + ".pdf", responseForDownloadTicket.getHeader("Content-Disposition"));
+        //
+        //generate qrcode png
+        MockHttpServletResponse responseForTicketCode = new MockHttpServletResponse();
+        ticketController.generateTicketCode(eventName, ticketIdentifier, responseForTicketCode);
+        assertEquals("image/png", responseForTicketCode.getContentType());
         //
         checkCSV(eventName, ticketIdentifier, fname1 + " " + lname1);
 
