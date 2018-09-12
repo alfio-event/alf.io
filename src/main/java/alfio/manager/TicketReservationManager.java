@@ -363,7 +363,7 @@ public class TicketReservationManager {
             PaymentResult paymentResult;
             ticketReservationRepository.lockReservationForUpdate(spec.getReservationId());
             if(isDiscountCodeUsageExceeded(spec.getReservationId())) {
-                return PaymentResult.unsuccessful(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+                return PaymentResult.failed(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
             }
             if(reservationCost.getPriceWithVAT() > 0) {
                 if(spec.isInvoiceRequested() && configurationManager.hasAllConfigurationsForInvoice(spec.getEvent())) {
