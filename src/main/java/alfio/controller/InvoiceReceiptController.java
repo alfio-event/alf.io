@@ -103,10 +103,10 @@ public class InvoiceReceiptController {
     }
 
     @RequestMapping("/event/{eventName}/reservation/{reservationId}/invoice")
-    public void getInvoice(@PathVariable("eventName") String eventName,
+    public ResponseEntity<Void> getInvoice(@PathVariable("eventName") String eventName,
                            @PathVariable("reservationId") String reservationId,
                            HttpServletResponse response) {
-        handleReservationWith(eventName, reservationId, (event, reservation) -> {
+        return handleReservationWith(eventName, reservationId, (event, reservation) -> {
             if(reservation.getInvoiceNumber() == null || !reservation.getHasInvoiceOrReceiptDocument() || reservation.isCancelled()) {
                 return ResponseEntity.notFound().build();
             }
