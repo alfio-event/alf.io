@@ -1,16 +1,25 @@
 <div class="modal-header">
-    <h3>Edit promo code date</h3>
+    <h3>Edit promo code settings</h3>
 </div>
 <form name="promoCodeForm" data-ng-submit="update(promocode)" novalidate data-error-sensitive>
     <div class="modal-body">
-        <div class="col-sm-12 col-md-8 col-md-offset-2">
-            <div class="form-group" bs-form-error="promocode.dateString">
-                <label for="date">Validity range <span ng-if="!forEvent">(Note: these dates are in your current timezone)</span><span ng-if="forEvent">(Note: these dates will use the timezone from the event)</span></label>
-                <input type="text" data-date-range data-start-model="promocode.start" min-date="true" data-end-model="promocode.end" data-ng-model="promocode.dateString" name="date" id="date" class="form-control" required />
-                <field-error data-form-obj="promocode" data-field-obj="promocode.dateString" data-show-existing-errors="showExistingErrors"></field-error>
-            </div>
+        <div class="form-group" bs-form-error="promocode.dateString">
+            <label for="date">Validity range <span ng-if="!forEvent">(Note: these dates are in your current timezone)</span><span ng-if="forEvent">(Note: these dates will use the timezone from the event)</span></label>
+            <input type="text" data-date-range data-start-model="promocode.start" min-date="true" data-end-model="promocode.end" data-ng-model="promocode.dateString" name="date" id="date" class="form-control" required />
+            <field-error data-form-obj="promocode" data-field-obj="promocode.dateString" data-show-existing-errors="showExistingErrors"></field-error>
         </div>
-    
+        <div class="form-group" bs-form-error="promocode.maxUsage">
+            <label for="maxUsage">Limit usage to (experimental)</label>
+            <input type="number" data-ng-model="promocode.maxUsage" name="maxUsage" id="maxUsage" class="form-control">
+            <field-error data-form-obj="promocode" data-field-obj="promocode.maxUsage" data-show-existing-errors="showExistingErrors"></field-error>
+        </div>
+        <div class="form-group">
+            <label>Restrict to categories</label>
+            <ul class="list-unstyled">
+                <li ng-repeat="category in validCategories"><label><input type="checkbox" ng-model="category.selected"> {{::category.name}}</label></li>
+            </ul>
+        </div>
+
         <div class="clearfix"></div>
     </div>
 

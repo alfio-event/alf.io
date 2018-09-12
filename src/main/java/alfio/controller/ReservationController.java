@@ -610,6 +610,8 @@ public class ReservationController {
         sendReservationCompleteEmailToOrganizer(request, event, reservation);
         //
 
+        SessionUtil.removeSpecialPriceData(request);
+
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
     }
 

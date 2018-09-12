@@ -24,6 +24,7 @@ import alfio.model.modification.PromoCodeDiscountModification;
 import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,24 +35,21 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.TimeZone;
 
+import static alfio.model.PromoCodeDiscount.categoriesOrNull;
+import static alfio.util.OptionalWrapper.optionally;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 @RequestMapping("/admin/api")
+@RequiredArgsConstructor
 public class PromoCodeDiscountApiController {
 
     private final EventRepository eventRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final EventManager eventManager;
-
-    @Autowired
-    public PromoCodeDiscountApiController(EventRepository eventRepository, PromoCodeDiscountRepository promoCodeRepository, EventManager eventManager) {
-        this.eventRepository = eventRepository;
-        this.promoCodeRepository = promoCodeRepository;
-        this.eventManager = eventManager;
-    }
 
     @RequestMapping(value = "/promo-code", method = POST)
     public void addPromoCode(@RequestBody PromoCodeDiscountModification promoCode) {
@@ -62,14 +60,14 @@ public class PromoCodeDiscountApiController {
         int discount = promoCode.getDiscountType() == DiscountType.FIXED_AMOUNT ? promoCode.getDiscountInCents() : promoCode.getDiscountAsPercent();
 
         eventManager.addPromoCode(promoCode.getPromoCode(), eventId, organizationId, promoCode.getStart().toZonedDateTime(zoneId),
-                promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories());
+                promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories(), promoCode.getMaxUsage());
     }
 
     @RequestMapping(value = "/promo-code/{promoCodeId}", method = POST)
     public void updatePromocode(@PathVariable("promoCodeId") int promoCodeId, @RequestBody PromoCodeDiscountModification promoCode) {
         PromoCodeDiscount pcd = promoCodeRepository.findById(promoCodeId);
         ZoneId zoneId = zoneIdFromEventId(pcd.getEventId(), promoCode.getUtcOffset());
-        eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId), promoCode.getEnd().toZonedDateTime(zoneId));
+        eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId), promoCode.getEnd().toZonedDateTime(zoneId), promoCode.getMaxUsage(), promoCode.getCategories());
     }
 
     private ZoneId zoneIdFromEventId(Integer eventId, Integer utcOffset) {
@@ -103,6 +101,10 @@ public class PromoCodeDiscountApiController {
     
     @RequestMapping(value = "/promo-code/{promoCodeId}/count-use", method = GET)
     public int countPromoCodeUse(@PathVariable("promoCodeId") int promoCodeId) {
-        return promoCodeRepository.countAppliedPromoCode(promoCodeId);
+        Optional<PromoCodeDiscount> code = optionally(() -> promoCodeRepository.findById(promoCodeId));
+        if(!code.isPresent()) {
+            return 0;
+        }
+        return promoCodeRepository.countConfirmedPromoCode(promoCodeId, categoriesOrNull(code.get()), null, categoriesOrNull(code.get()) != null ? "X" : null);
     }
 }

@@ -64,6 +64,7 @@ import static alfio.controller.support.SessionUtil.addToFlash;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
 import static alfio.util.OptionalWrapper.optionally;
+import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 
 @Controller
 @AllArgsConstructor
@@ -155,6 +156,8 @@ public class EventController {
             
         } else if (promotionCodeDiscount.isPresent() && !promotionCodeDiscount.get().isCurrentlyValid(event.getZoneId(), now)) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
+        } else if (promotionCodeDiscount.isPresent() && isDiscountCodeUsageExceeded(promotionCodeDiscount.get())){
+            return ValidationResult.failed(new ValidationResult.ErrorDescriptor("usage", ""));
         } else if(!specialCode.isPresent() && !promotionCodeDiscount.isPresent()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
         }
@@ -168,6 +171,10 @@ public class EventController {
             return ValidationResult.success();
         }
         return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
+    }
+
+    private boolean isDiscountCodeUsageExceeded(PromoCodeDiscount discount) {
+        return discount.getMaxUsage() != null && discount.getMaxUsage() <= promoCodeRepository.countConfirmedPromoCode(discount.getId(), categoriesOrNull(discount), null, categoriesOrNull(discount) != null ? "X" : null);
     }
 
     @RequestMapping(value = "/event/{eventName}", method = {RequestMethod.GET, RequestMethod.HEAD})
@@ -188,9 +195,16 @@ public class EventController {
 
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
                 .filter((c) -> !c.isAccessRestricted() || (specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent()))
-                .map((m) -> new SaleableTicketCategory(m, categoriesDescription.getOrDefault(m.getId(), ""),
-                    now, event, ticketReservationManager.countAvailableTickets(event, m), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5),
-                    promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null)))
+                .map((m) -> {
+                    int maxTickets = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5);
+                    PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null);
+                    if(filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
+                        maxTickets = filteredPromoCode.getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(filteredPromoCode.getId(), categoriesOrNull(filteredPromoCode), null, categoriesOrNull(filteredPromoCode) != null ? "X" : null);
+                    }
+                    return new SaleableTicketCategory(m, categoriesDescription.getOrDefault(m.getId(), ""),
+                        now, event, ticketReservationManager.countAvailableTickets(event, m), maxTickets,
+                        filteredPromoCode);
+                })
                 .collect(Collectors.toList());
             //
 
@@ -401,6 +415,10 @@ public class EventController {
                     bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
                     addToFlash(bindingResult, redirectAttributes);
                     SessionUtil.removeSpecialPriceData(request.getRequest());
+                    return redirectToEvent;
+                } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
+                    bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+                    addToFlash(bindingResult, redirectAttributes);
                     return redirectToEvent;
                 }
             }).orElseGet(() -> {

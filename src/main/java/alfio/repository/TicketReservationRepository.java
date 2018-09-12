@@ -206,4 +206,20 @@ public interface TicketReservationRepository {
 
     @Query("update tickets_reservation set  invoice_requested = false, vat_status = null where id = :reservationId")
     int resetVat(@Bind("reservationId") String reservationId);
+
+
+    default Integer countTicketsInReservationForCategories(String reservationId, Collection<Integer> categories) {
+        if(categories == null || categories.isEmpty()) {
+            return this.countTicketsInReservationNoCategories(reservationId);
+        } else {
+            return this.countTicketsInReservationForExistingCategories(reservationId, categories);
+        }
+    }
+
+    @Query("select count(b.id) from tickets_reservation a, ticket b where a.id = :reservationId and b.tickets_reservation_id = a.id" +
+        " and (b.category_id in (:categories))")
+    Integer countTicketsInReservationForExistingCategories(@Bind("reservationId") String reservationId, @Bind("categories") Collection<Integer> categories);
+
+    @Query("select count(b.id) from tickets_reservation a, ticket b where a.id = :reservationId and b.tickets_reservation_id = a.id")
+    Integer countTicketsInReservationNoCategories(@Bind("reservationId") String reservationId);
 }

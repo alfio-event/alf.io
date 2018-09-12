@@ -54,6 +54,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -243,35 +244,38 @@ public class NotificationManager {
         return emailMessageRepository.findByEventIdAndMessageId(eventId, messageId);
     }
 
-    void sendWaitingMessages() {
+    public int sendWaitingMessages() {
         Date now = new Date();
 
         emailMessageRepository.setToRetryOldInProcess(DateUtils.addHours(now, -1));
+
+        AtomicInteger counter = new AtomicInteger();
 
         eventRepository.findAllActiveIds(ZonedDateTime.now(UTC))
             .stream()
             .flatMap(id -> emailMessageRepository.loadIdsWaitingForProcessing(id, now).stream())
             .distinct()
-            .forEach(this::processMessage);
+            .forEach((messageId) -> counter.addAndGet(processMessage(messageId)));
+        return counter.get();
     }
 
-    private void processMessage(int messageId) {
+    private int processMessage(int messageId) {
         EmailMessage message = emailMessageRepository.findById(messageId);
         int eventId = message.getEventId();
         int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
         if(message.getAttempts() >= configurationManager.getIntConfigValue(Configuration.from(organizationId, eventId, ConfigurationKeys.MAIL_ATTEMPTS_COUNT), 10)) {
             tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(messageId, ERROR.name(), message.getAttempts(), Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("Message with id " + messageId + " will be discarded");
-            return;
+            return 0;
         }
 
 
         try {
             int result = tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name())));
             if(result > 0) {
-                tx.execute(status -> {
+                return tx.execute(status -> {
                     sendMessage(message);
-                    return null;
+                    return 1;
                 });
             } else {
                 log.debug("no messages have been updated on DB for the following criteria: eventId: {}, checksum: {}", message.getEventId(), message.getChecksum());
@@ -280,6 +284,7 @@ public class NotificationManager {
             tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(message.getId(), RETRY.name(), DateUtils.addMinutes(new Date(), message.getAttempts() + 1), message.getAttempts() + 1, Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("could not send message: ",e);
         }
+        return 0;
     }
 
     private void sendMessage(EmailMessage message) {

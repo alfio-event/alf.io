@@ -43,6 +43,7 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.UserModification;
+import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.User;
@@ -92,6 +93,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
@@ -175,6 +177,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private UsersApiController usersApiController;
 
+    @Autowired
+    private NotificationManager notificationManager;
+
     private ReservationApiController reservationApiController;
 
 
@@ -199,7 +204,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         //
         TemplateManager templateManager = Mockito.mock(TemplateManager.class);
         reservationApiController = new ReservationApiController(eventRepository, ticketHelper, templateManager, i18nManager, euVatChecker, ticketReservationRepository, ticketReservationManager);
+
+        //promo code at event level
+        eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3);
     }
+
+    private static final String PROMO_CODE = "MYPROMOCODE";
 
 
     /**
@@ -302,6 +312,20 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         //
         assertEquals("/event/show-ticket", ticketController.showTicket(eventName, ticketIdentifier, false, Locale.ENGLISH, new BindingAwareModelMap()));
+
+        //send email
+        assertEquals("OK", ticketController.sendTicketByEmail(eventName, ticketIdentifier, new MockHttpServletRequest()));
+        assertTrue(notificationManager.sendWaitingMessages() > 0); //more than 0 emails should be sent (4 in theory)
+        //
+        //download ticket
+        MockHttpServletResponse responseForDownloadTicket = new MockHttpServletResponse();
+        ticketController.generateTicketPdf(eventName, ticketIdentifier, new MockHttpServletRequest(), responseForDownloadTicket);
+        assertEquals("attachment; filename=ticket-" + ticketIdentifier + ".pdf", responseForDownloadTicket.getHeader("Content-Disposition"));
+        //
+        //generate qrcode png
+        MockHttpServletResponse responseForTicketCode = new MockHttpServletResponse();
+        ticketController.generateTicketCode(eventName, ticketIdentifier, responseForTicketCode);
+        assertEquals("image/png", responseForTicketCode.getContentType());
         //
         checkCSV(eventName, ticketIdentifier, fname1 + " " + lname1);
 
@@ -535,8 +559,15 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     }
 
     private String reserveTicket(String eventName) {
+
+        MockHttpServletRequest requestPromo = new MockHttpServletRequest();
+        //apply promo code
+        ValidationResult res = eventController.savePromoCode(event.getShortName(), PROMO_CODE, new BindingAwareModelMap(), requestPromo);
+        Assert.assertTrue(res.isSuccess());
+        //
         ReservationForm reservationForm = new ReservationForm();
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setSession(requestPromo.getSession());
         request.setMethod("POST");
         ServletWebRequest servletWebRequest = new ServletWebRequest(request);
         BindingResult bindingResult = new BeanPropertyBindingResult(reservationForm, "reservation");

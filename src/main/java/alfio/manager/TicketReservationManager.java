@@ -75,6 +75,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -112,6 +113,7 @@ public class TicketReservationManager {
     private final MessageSource messageSource;
     private final TemplateManager templateManager;
     private final TransactionTemplate requiresNewTransactionTemplate;
+    private final TransactionTemplate serializedTransactionTemplate;
     private final WaitingQueueManager waitingQueueManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
@@ -133,6 +135,9 @@ public class TicketReservationManager {
 
     public static class InvalidSpecialPriceTokenException extends RuntimeException {
 
+    }
+
+    public static class TooManyTicketsForDiscountCodeException extends RuntimeException {
     }
 
     public TicketReservationManager(EventRepository eventRepository,
@@ -176,6 +181,9 @@ public class TicketReservationManager {
         this.templateManager = templateManager;
         this.waitingQueueManager = waitingQueueManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+        DefaultTransactionDefinition serialized = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        serialized.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
+        this.serializedTransactionTemplate = new TransactionTemplate(transactionManager, serialized);
         this.ticketFieldRepository = ticketFieldRepository;
         this.additionalServiceRepository = additionalServiceRepository;
         this.additionalServiceItemRepository = additionalServiceItemRepository;
@@ -237,7 +245,9 @@ public class TicketReservationManager {
         ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
 
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
-
+        if(isDiscountCodeUsageExceeded(reservationId)) {
+            throw new TooManyTicketsForDiscountCodeException();
+        }
         return reservationId;
     }
 
@@ -352,6 +362,9 @@ public class TicketReservationManager {
         try {
             PaymentResult paymentResult;
             ticketReservationRepository.lockReservationForUpdate(spec.getReservationId());
+            if(isDiscountCodeUsageExceeded(spec.getReservationId())) {
+                return PaymentResult.unsuccessful(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+            }
             if(reservationCost.getPriceWithVAT() > 0) {
                 if(spec.isInvoiceRequested() && configurationManager.hasAllConfigurationsForInvoice(spec.getEvent())) {
                     int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getEvent().getOrganizationId());
@@ -390,6 +403,20 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_STRIPE_unexpected");
         }
 
+    }
+
+    private boolean isDiscountCodeUsageExceeded(String reservationId) {
+        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        if(reservation.getPromoCodeDiscountId() != null) {
+            final PromoCodeDiscount promoCode = promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId());
+            if(promoCode.getMaxUsage() == null) {
+                return false;
+            }
+            int currentTickets = ticketReservationRepository.countTicketsInReservationForCategories(reservationId, categoriesOrNull(promoCode));
+            return serializedTransactionTemplate.execute(status ->
+                promoCode.getMaxUsage() < currentTickets + promoCodeDiscountRepository.countConfirmedPromoCode(promoCode.getId(), categoriesOrNull(promoCode), reservationId, categoriesOrNull(promoCode) != null ? "X" : null));
+        }
+        return false;
     }
 
     public boolean containsCategoriesLinkedToGroups(String reservationId, int eventId) {
@@ -616,9 +643,9 @@ public class TicketReservationManager {
             acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), eventId);
             final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
             extensionManager.handleReservationConfirmation(reservation, eventId);
-            //cleanup unused special price codes...
-            specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
         }
+        //cleanup unused special price codes...
+        specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
 
         Date eventTime = new Date();
         auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, eventTime, Audit.EntityType.RESERVATION, reservationId);

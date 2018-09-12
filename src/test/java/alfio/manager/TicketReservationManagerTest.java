@@ -163,9 +163,7 @@ class TicketReservationManagerTest {
             invoiceSequencesRepository,
             auditingRepository,
             userRepository,
-            extensionManager,
-            ticketSearchRepository,
-            groupManager);
+            extensionManager, ticketSearchRepository, groupManager);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -686,6 +684,7 @@ class TicketReservationManagerTest {
         initConfirmReservation();
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
+        when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
         StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.CREDIT_CARD), any())).thenReturn(Optional.of(stripeCreditCardManager));
@@ -702,7 +701,7 @@ class TicketReservationManagerTest {
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
-        verify(ticketReservationRepository).findReservationById(RESERVATION_ID);
+        verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
@@ -713,6 +712,7 @@ class TicketReservationManagerTest {
         initConfirmReservation();
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
         when(ticketReservationRepository.updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()))).thenReturn(1);
+        when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.CREDIT_CARD), any())).thenReturn(Optional.of(stripeCreditCardManager));
         when(stripeCreditCardManager.doPayment(any())).thenReturn(PaymentResult.failed("error-code"));
@@ -735,6 +735,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()), isNull())).thenReturn(1);
         OnSiteManager onSiteManager = mock(OnSiteManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.ON_SITE), any())).thenReturn(Optional.of(onSiteManager));
+        when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         when(onSiteManager.doPayment(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "test@email",
             new CustomerName("Full Name", null, null, event),
@@ -748,7 +749,7 @@ class TicketReservationManagerTest {
         verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()));
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
-        verify(ticketReservationRepository).findReservationById(RESERVATION_ID);
+        verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
@@ -758,6 +759,7 @@ class TicketReservationManagerTest {
     void handleOfflinePaymentMethod() {
         initConfirmReservation();
         when(ticketReservationRepository.postponePayment(eq(RESERVATION_ID), any(Date.class), anyString(), anyString(), isNull(), isNull(), anyString(), isNull())).thenReturn(1);
+        when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         BankTransferManager bankTransferManager = mock(BankTransferManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.BANK_TRANSFER), any())).thenReturn(Optional.of(bankTransferManager));
         when(bankTransferManager.doPayment(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
