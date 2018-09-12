@@ -177,6 +177,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private UsersApiController usersApiController;
 
+    @Autowired
+    private NotificationManager notificationManager;
+
     private ReservationApiController reservationApiController;
 
 
@@ -312,6 +315,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         //send email
         assertEquals("OK", ticketController.sendTicketByEmail(eventName, ticketIdentifier, new MockHttpServletRequest()));
+        assertTrue(notificationManager.sendWaitingMessages() > 0); //more than 0 emails should be sent (4 in theory)
         //
         //download ticket
         MockHttpServletResponse responseForDownloadTicket = new MockHttpServletResponse();
