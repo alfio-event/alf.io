@@ -94,14 +94,16 @@ class MailgunMailer implements Mailer {
 
         String apiKey = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_KEY));
         String domain = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_DOMAIN));
+        boolean useEU = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_EU), false);
 
+        String baseUrl = useEU ? "https://api.eu.mailgun.net/v3/" : "https://api.mailgun.net/v3/";
         try {
 
             RequestBody formBody = prepareBody(event, to, cc, subject, text, html,
                     attachment);
 
             Request request = new Request.Builder()
-                    .url("https://api.mailgun.net/v2/" + domain + "/messages")
+                    .url(baseUrl + domain + "/messages")
                     .header("Authorization", Credentials.basic("api", apiKey))
                     .post(formBody).build();
 
