@@ -105,12 +105,10 @@ class MailgunMailer implements Mailer {
                     .header("Authorization", Credentials.basic("api", apiKey))
                     .post(formBody).build();
 
-            Response resp = client.newCall(request).execute();
-            if (!resp.isSuccessful()) {
-                log.warn("sending email was not successful:" + resp);
-            } else {
-                //close response body, in order to prevent leaks
-                resp.body().close();
+            try(Response resp = client.newCall(request).execute()) {
+                if (!resp.isSuccessful()) {
+                    log.warn("sending email was not successful:" + resp);
+                }
             }
         } catch (IOException e) {
             log.warn("error while sending email", e);
