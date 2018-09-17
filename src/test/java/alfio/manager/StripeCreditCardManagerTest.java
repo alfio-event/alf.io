@@ -38,46 +38,45 @@ import static org.mockito.Mockito.when;
 public class StripeCreditCardManagerTest {
 
     private ConfigurationManager configurationManager;
-    private TicketRepository ticketRepository;
     private Event event;
 
     private StripeCreditCardManager stripeCreditCardManager;
 
     @BeforeEach
-    public void init() {
+    void init() {
         configurationManager = mock(ConfigurationManager.class);
-        ticketRepository = mock(TicketRepository.class);
+        TicketRepository ticketRepository = mock(TicketRepository.class);
         event = mock(Event.class);
         stripeCreditCardManager = new StripeCreditCardManager(configurationManager, ticketRepository, null, null, null);
     }
 
     @Test
-    public void testCardExceptionHandler() {
+    void testCardExceptionHandler() {
         assertEquals("error.STEP2_STRIPE_houston_we_ve_a_problem", stripeCreditCardManager.handleException(new CardException("", "abcd", "houston_we_ve_a_problem", "param", null, null, null, null)));
     }
 
     @Test
-    public void testInvalidRequestExceptionHandler() {
-        assertEquals("error.STEP2_STRIPE_invalid_param", stripeCreditCardManager.handleException(new InvalidRequestException("abcd", "param", null, null, null)));
+    void testInvalidRequestExceptionHandler() {
+        assertEquals("error.STEP2_STRIPE_invalid_param", stripeCreditCardManager.handleException(new InvalidRequestException("abcd", "param", null, null, null, null)));
     }
 
     @Test
-    public void testAuthenticationExceptionHandler() {
-        assertEquals("error.STEP2_STRIPE_abort", stripeCreditCardManager.handleException(new AuthenticationException("abcd", null, 401)));
+    void testAuthenticationExceptionHandler() {
+        assertEquals("error.STEP2_STRIPE_abort", stripeCreditCardManager.handleException(new AuthenticationException("abcd", null, "401", 401)));
     }
 
     @Test
-    public void testApiConnectionException() {
+    void testApiConnectionException() {
         assertEquals("error.STEP2_STRIPE_abort", stripeCreditCardManager.handleException(new APIConnectionException("abcd")));
     }
 
     @Test
-    public void testUnexpectedError() {
-        assertEquals("error.STEP2_STRIPE_unexpected", stripeCreditCardManager.handleException( new StripeException("", null, 42) {}));
+    void testUnexpectedError() {
+        assertEquals("error.STEP2_STRIPE_unexpected", stripeCreditCardManager.handleException( new StripeException("", null, "42", 42) {}));
     }
 
     @Test
-    public void testMissingStripeConnectedId() {
+    void testMissingStripeConnectedId() {
         Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event.getOrganizationId(), event.getId());
         when(configurationManager.getBooleanConfigValue(partial.apply(PLATFORM_MODE_ENABLED), false)).thenReturn(true);
         when(configurationManager.getStringConfigValue(partial.apply(STRIPE_CONNECTED_ID))).thenReturn(Optional.empty());

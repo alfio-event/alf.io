@@ -14,15 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.transaction;
+package alfio.model.transaction.capabilities;
 
-import java.util.Arrays;
+import alfio.model.Event;
 
-public enum PaymentMethod {
+/**
+ * Indicates that the {@link alfio.model.transaction.PaymentProvider} supports Refunds.
+ */
+public interface RefundRequest {
 
-    CREDIT_CARD, PAYPAL, IDEAL, BANK_TRANSFER, ON_SITE, NONE;
+    boolean refund(alfio.model.transaction.Transaction transaction, Event event, Integer amount);
 
-    public static PaymentMethod safeParse(String asString) {
-        return Arrays.stream(PaymentMethod.values()).filter(v -> v.name().equals(asString)).findFirst().orElse(null);
-    }
 }

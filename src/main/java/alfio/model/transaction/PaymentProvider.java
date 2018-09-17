@@ -21,13 +21,17 @@ import alfio.manager.support.PaymentResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 
+import java.util.UUID;
 import java.util.function.Function;
 
 public interface PaymentProvider {
 
     boolean accept(PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider);
 
+    default PaymentResult getToken(PaymentSpecification spec) {
+        return PaymentResult.initialized(UUID.randomUUID().toString());
+    }
+
     PaymentResult doPayment(PaymentSpecification spec);
 
-    boolean supportRefund();
 }

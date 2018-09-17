@@ -86,6 +86,10 @@ public enum PaymentProxy {
         return Arrays.stream(values()).filter(PaymentProxy::isVisible).collect(Collectors.toList());
     }
 
+    public static PaymentProxy fromPaymentMethod(PaymentMethod paymentMethod) {
+        return availableProxies().stream().filter(pp -> pp.getPaymentMethod() == paymentMethod).findFirst().orElse(null);
+    }
+
     public Set<String> getOnlyForCurrency() {
         return onlyForCurrency;
     }

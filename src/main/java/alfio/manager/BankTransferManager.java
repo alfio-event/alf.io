@@ -59,11 +59,6 @@ public class BankTransferManager implements PaymentProvider {
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }
 
-    @Override
-    public boolean supportRefund() {
-        return false;
-    }
-
     private void transitionToOfflinePayment( PaymentSpecification spec ) {
         ZonedDateTime deadline = getOfflinePaymentDeadline(spec.getEvent(), configurationManager);
         int updatedReservation = ticketReservationRepository.postponePayment(spec.getReservationId(), Date.from(deadline.toInstant()), spec.getEmail(),

@@ -48,8 +48,4 @@ public class OnSiteManager implements PaymentProvider {
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }
 
-    @Override
-    public boolean supportRefund() {
-        return false;
-    }
 }

@@ -24,14 +24,14 @@ import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
+import alfio.model.transaction.capabilities.PaymentInfo;
+import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.AuditingRepository;
-import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -43,57 +43,50 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class PaymentManager {
 
-    private final StripeCreditCardManager stripeCreditCardManager;
-    private final PaypalManager paypalManager;
-    private final MollieCreditCardManager mollieCreditCardManager;
     private final TransactionRepository transactionRepository;
     private final ConfigurationManager configurationManager;
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
-    private final TicketRepository ticketRepository;
 
     private final List<PaymentProvider> paymentProviders; // injected by Spring
 
     public Optional<PaymentProvider> lookupProviderByMethod( PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyProvider ) {
         return paymentProviders.stream()
-                .filter( p -> p.accept( paymentMethod, pathKeyProvider ) )
+                .filter(p -> p.accept(paymentMethod, pathKeyProvider))
                 .findFirst();
     }
 
-    public List<PaymentMethodDTO> getPaymentMethods( int organizationId) {
+    public List<PaymentMethodDTO> getPaymentMethods(int organizationId) {
         String blacklist = configurationManager.getStringConfigValue(Configuration.from(organizationId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST), "");
         return PaymentProxy.availableProxies()
             .stream()
             .filter(p -> !blacklist.contains(p.getKey()))
             .map(p -> {
-                PaymentMethodDTO.PaymentMethodStatus status = ConfigurationKeys.byCategory(p.getSettingCategories()).stream()
-                    .allMatch(c -> c.isBackedByDefault() || configurationManager.getStringConfigValue(Configuration.from(organizationId, c)).filter(StringUtils::isNotEmpty).isPresent()) ? PaymentMethodDTO.PaymentMethodStatus.ACTIVE : PaymentMethodDTO.PaymentMethodStatus.ERROR;
+                Optional<PaymentProvider> paymentProvider = lookupProviderByMethod(p.getPaymentMethod(), Configuration.from(organizationId));
+                PaymentMethodDTO.PaymentMethodStatus status = paymentProvider.isPresent() ? PaymentMethodDTO.PaymentMethodStatus.ACTIVE : PaymentMethodDTO.PaymentMethodStatus.ERROR;
                 return new PaymentMethodDTO(p, status);
             })
             .collect(Collectors.toList());
     }
 
-    public String getStripePublicKey(Event event) {
-        return stripeCreditCardManager.getPublicKey(event);
+    public List<PaymentMethodDTO> getActivePaymentMethods(int organizationId) {
+        return getPaymentMethods(organizationId)
+            .stream()
+            .filter(PaymentMethodDTO::isActive)
+            .collect(Collectors.toList());
     }
 
-    public boolean refund(TicketReservation reservation, Event event, Optional<Integer> amount, String username) {
+    public boolean refund(TicketReservation reservation, Event event, Integer amount, String username) {
         Transaction transaction = transactionRepository.loadByReservationId(reservation.getId());
-        boolean res;
-        switch(reservation.getPaymentMethod()) {
-            case PAYPAL:
-                res = paypalManager.refund(transaction, event, amount);
-                break;
-            case STRIPE:
-                res = stripeCreditCardManager.refund(transaction, event, amount);
-                break;
-            default:
-                throw new IllegalStateException("Cannot refund ");
-        }
+
+        boolean res = lookupProviderByMethod(reservation.getPaymentMethod().getPaymentMethod(), Configuration.from(event.getOrganizationId(), event.getId()))
+            .filter(RefundRequest.class::isInstance)
+            .map(paymentProvider -> ((RefundRequest)paymentProvider).refund(transaction, event, amount))
+            .orElse(false);
 
         if(res) {
             Map<String, Object> changes = new HashMap<>();
-            changes.put("refund", amount.map(Object::toString).orElse("full"));
+            changes.put("refund", amount != null ? amount.toString() : "full");
             changes.put("paymentMethod", reservation.getPaymentMethod().toString());
             auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
                 event.getId(),
@@ -106,16 +99,7 @@ public class PaymentManager {
 
     TransactionAndPaymentInfo getInfo(TicketReservation reservation, Event event) {
         Optional<TransactionAndPaymentInfo> maybeTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId())
-            .map(transaction -> {
-                switch(reservation.getPaymentMethod()) {
-                    case PAYPAL:
-                        return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, paypalManager.getInfo(transaction, event).orElse(null));
-                    case STRIPE:
-                        return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, stripeCreditCardManager.getInfo(transaction, event).orElse(null));
-                    default:
-                        return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformation(reservation.getPaidAmount(), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));
-                }
-            });
+            .map(transaction -> internalGetInfo(reservation, event, transaction));
         maybeTransaction.ifPresent(info -> {
             try {
                 Transaction transaction = info.getTransaction();
@@ -129,6 +113,16 @@ public class PaymentManager {
             }
         });
         return maybeTransaction.orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformation(reservation.getPaidAmount(), null, null, null)));
+    }
+
+    private TransactionAndPaymentInfo internalGetInfo(TicketReservation reservation, Event event, Transaction transaction) {
+        return lookupProviderByMethod(reservation.getPaymentMethod().getPaymentMethod(), Configuration.from(event.getOrganizationId(), event.getId()))
+            .filter(PaymentInfo.class::isInstance)
+            .map(provider -> {
+                Optional<PaymentInformation> info = ((PaymentInfo) provider).getInfo(transaction, event);
+                return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, info.orElse(null));
+            })
+            .orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformation(reservation.getPaidAmount(), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee()))));
     }
 
     private static long safeParseLong(String src) {

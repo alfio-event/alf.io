@@ -93,6 +93,11 @@ public class MollieCreditCardManager implements PaymentProvider {
     }
 
     @Override
+    public PaymentResult getToken(PaymentSpecification spec) {
+        throw new IllegalStateException("not yet implemented");
+    }
+
+    @Override
     public PaymentResult doPayment( PaymentSpecification spec ) {
         try {
             String eventName = spec.getEvent().getShortName();
@@ -146,10 +151,5 @@ public class MollieCreditCardManager implements PaymentProvider {
             log.warn(e);
             return PaymentResult.failed( ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION );
         }
-    }
-
-    @Override
-    public boolean supportRefund() {
-        return false;
     }
 }

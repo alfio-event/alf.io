@@ -23,10 +23,10 @@ import java.util.Optional;
 @EqualsAndHashCode
 public final class PaymentResult {
 
-    public enum Type { SUCCESSFUL, PENDING, REDIRECT, FAILED };
+    public enum Type { SUCCESSFUL, INITIALIZED, PENDING, REDIRECT, FAILED }
 
     private final Type type;
-    private Optional<String> gatewayTransactionId = Optional.empty();
+    private Optional<String> gatewayId = Optional.empty();
     private Optional<String> errorCode = Optional.empty();
     private String redirectUrl;
 
@@ -37,6 +37,8 @@ public final class PaymentResult {
     public boolean isSuccessful() {
         return type == Type.SUCCESSFUL;
     }
+
+    public boolean isFailed() { return type == Type.FAILED; }
 
     public boolean isRedirect() {
         return type == Type.REDIRECT;
@@ -51,12 +53,12 @@ public final class PaymentResult {
         return this;
     }
 
-    public Optional<String> getGatewayTransactionId() {
-        return gatewayTransactionId;
+    public Optional<String> getGatewayId() {
+        return gatewayId;
     }
 
-    private PaymentResult setGatewayTransactionId( String gatewayTransactionId ) {
-        this.gatewayTransactionId = Optional.of(gatewayTransactionId);
+    private PaymentResult setGatewayId(String gatewayId) {
+        this.gatewayId = Optional.of(gatewayId);
         return this;
     }
 
@@ -69,16 +71,20 @@ public final class PaymentResult {
         return this;
     }
 
-    public static PaymentResult successful( String gatewayTransactionId) {
-        return new PaymentResult(Type.SUCCESSFUL).setGatewayTransactionId( gatewayTransactionId );
+    public static PaymentResult successful( String gatewayId) {
+        return new PaymentResult(Type.SUCCESSFUL).setGatewayId( gatewayId );
     }
 
     public static PaymentResult redirect(String redirectUrl) {
         return new PaymentResult(Type.REDIRECT).setRedirectUrl( redirectUrl );
     }
 
-    public static PaymentResult pending(String gatewayTransactionId) {
-        return new PaymentResult(Type.PENDING).setGatewayTransactionId( gatewayTransactionId );
+    public static PaymentResult pending(String gatewayId) {
+        return new PaymentResult(Type.PENDING).setGatewayId( gatewayId );
+    }
+
+    public static PaymentResult initialized(String gatewayId) {
+        return new PaymentResult(Type.INITIALIZED).setGatewayId( gatewayId );
     }
 
     public static PaymentResult failed( String errorCode) {

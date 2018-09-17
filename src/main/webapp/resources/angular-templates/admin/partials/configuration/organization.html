@@ -131,7 +131,7 @@
                     <div class="panel-heading">
                         <div class="panel-title"><i class="fa fa-cc-stripe"></i> Stripe configuration</div>
                     </div>
-                    <div class="panel-body" ng-if="!organizationConf.platformModeEnabled">
+                    <div class="panel-body" ><!-- FIXME ng-if="!organizationConf.platformModeEnabled" -->
                         <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
                         <div data-ng-repeat="setting in organizationConf.paymentStripe.settings">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>

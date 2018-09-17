@@ -26,6 +26,9 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.capabilities.ExternalProcessing;
+import alfio.model.transaction.capabilities.PaymentInfo;
+import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
@@ -64,7 +67,7 @@ import static alfio.util.MonetaryUtil.formatCents;
 @Component
 @Log4j2
 @AllArgsConstructor
-public class PaypalManager implements PaymentProvider {
+public class PayPalManager implements PaymentProvider, ExternalProcessing, RefundRequest, PaymentInfo {
 
     private final ConfigurationManager configurationManager;
     private final MessageSource messageSource;
@@ -132,7 +135,7 @@ public class PaypalManager implements PaymentProvider {
         return transactions;
     }
 
-    private String createCheckoutRequest(PaymentSpecification spec) throws Exception { // FIXME , String customerReference
+    private String createCheckoutRequest(PaymentSpecification spec) throws Exception {
         APIContext apiContext = getApiContext(spec.getEvent());
 
         Optional<String> experienceProfileId = getOrCreateWebProfile(spec.getEvent(), spec.getLocale(), apiContext);
@@ -150,7 +153,7 @@ public class PaypalManager implements PaymentProvider {
         RedirectUrls redirectUrls = new RedirectUrls();
 
         String baseUrl = StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId(), ConfigurationKeys.BASE_URL)), "/");
-        String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/book";
+        String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/payment/"+PaymentMethod.PAYPAL.name()+"/{operation}";
 
         UriComponentsBuilder bookUrlBuilder = UriComponentsBuilder.fromUriString(bookUrl)
             .queryParam("fullName", spec.getCustomerName().getFullName())
@@ -163,8 +166,8 @@ public class PaypalManager implements PaymentProvider {
             .queryParam("hmac", computeHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getEvent()));
         String finalUrl = bookUrlBuilder.toUriString();
 
-        redirectUrls.setCancelUrl(finalUrl + "&paypal-cancel=true");
-        redirectUrls.setReturnUrl(finalUrl + "&paypal-success=true");
+        redirectUrls.setCancelUrl(finalUrl.replace("{operation}", "cancel"));
+        redirectUrls.setReturnUrl(finalUrl.replace("{operation}", "confirm"));
         payment.setRedirectUrls(redirectUrls);
 
         experienceProfileId.ifPresent(payment::setExperienceProfileId);
@@ -189,7 +192,7 @@ public class PaypalManager implements PaymentProvider {
         return new HmacUtils(HmacAlgorithms.HMAC_SHA_256, event.getPrivateKey()).hmacHex(StringUtils.trimToEmpty(customerName.getFullName()) + StringUtils.trimToEmpty(email) + StringUtils.trimToEmpty(billingAddress));
     }
 
-    public static boolean isValidHMAC(CustomerName customerName, String email, String billingAddress, String hmac, Event event) {
+    private static boolean isValidHMAC(CustomerName customerName, String email, String billingAddress, String hmac, Event event) {
         String computedHmac = computeHMAC(customerName, email, billingAddress, event);
         return MessageDigest.isEqual(hmac.getBytes(StandardCharsets.UTF_8), computedHmac.getBytes(StandardCharsets.UTF_8));
     }
@@ -211,7 +214,11 @@ public class PaypalManager implements PaymentProvider {
         }
     }
 
-    public Pair<String, String> commitPayment(String reservationId, String token, String payerId, Event event) throws PayPalRESTException {
+    private boolean hasTokens(Map<String, List<String>> params) {
+        return params.containsKey("paypalPayerID") && params.containsKey("paypalPaymentId");
+    }
+
+    private Pair<String, String> commitPayment(String reservationId, String token, String payerId, Event event) throws PayPalRESTException {
 
         Payment payment = new Payment().setId(token);
         PaymentExecution paymentExecute = new PaymentExecution();
@@ -247,7 +254,7 @@ public class PaypalManager implements PaymentProvider {
         return Pair.of(captureId, payment.getId());
     }
 
-    Optional<PaymentInformation> getInfo(String paymentId, String transactionId, Event event, Supplier<String> platformFeeSupplier) {
+    private Optional<PaymentInformation> getInfo(String paymentId, String transactionId, Event event, Supplier<String> platformFeeSupplier) {
         try {
             String refund = null;
 
@@ -280,7 +287,9 @@ public class PaypalManager implements PaymentProvider {
             return Optional.empty();
         }
     }
-    Optional<PaymentInformation> getInfo(alfio.model.transaction.Transaction transaction, Event event) {
+
+    @Override
+    public Optional<PaymentInformation> getInfo(alfio.model.transaction.Transaction transaction, Event event) {
         return getInfo(transaction.getPaymentId(), transaction.getTransactionId(), event, () -> {
             if(transaction.getPlatformFee() > 0) {
                 return String.valueOf(transaction.getPlatformFee());
@@ -292,14 +301,17 @@ public class PaypalManager implements PaymentProvider {
         });
     }
 
-    public boolean refund(alfio.model.transaction.Transaction transaction, Event event, Optional<Integer> amount) {
+
+    @Override
+    public boolean refund(alfio.model.transaction.Transaction transaction, Event event, Integer amountToRefund) {
+        Optional<Integer> amount = Optional.ofNullable(amountToRefund);
         String captureId = transaction.getTransactionId();
         try {
             APIContext apiContext = getApiContext(event);
             String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
             log.info("Paypal: trying to do a refund for payment {} with amount: {}", captureId, amountOrFull);
             Capture capture = Capture.get(apiContext, captureId);
-            RefundRequest refundRequest = new RefundRequest();
+            com.paypal.api.payments.RefundRequest refundRequest = new com.paypal.api.payments.RefundRequest();
             amount.ifPresent(a -> refundRequest.setAmount(new Amount(capture.getAmount().getCurrency(), formatCents(a))));
             DetailedRefund res = capture.refund(apiContext, refundRequest);
             log.info("Paypal: refund for payment {} executed with success for amount: {}", captureId, amountOrFull);
@@ -311,25 +323,33 @@ public class PaypalManager implements PaymentProvider {
     }
 
     @Override
-    public boolean supportRefund() {
-        return true;
-    }
-
-    @Override
     public boolean accept( PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider) {
         return paymentMethod == PaymentMethod.PAYPAL && configurationManager.getBooleanConfigValue( contextProvider.apply( PAYPAL_ENABLED ), false );
     }
 
     @Override
-    public PaymentResult doPayment(PaymentSpecification spec) {
-        return hasPayPalTokens(spec) ? confirmPayment(spec) : preparePayment(spec);
+    public Function<Map<String, List<String>>, PaymentSpecification> getSpecificationFromRequest(Event event,
+                                                                                                 TicketReservation reservation,
+                                                                                                 TotalPrice reservationCost,
+                                                                                                 OrderSummary orderSummary) {
+        return map -> {
+            if(hasTokens(map) && hasExactlyOneElementFor(map, "paypalPaymentId", "paypalPayerID", "hmac")) {
+                return new PaymentSpecification(reservation.getId(), map.get("paypalPaymentId").get(0), reservationCost.getPriceWithVAT(),
+                    event, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event),
+                    reservation.getBillingAddress(), reservation.getCustomerReference(), map.get("paypalPayerID").get(0), Locale.forLanguageTag(reservation.getUserLanguage()),
+                    reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
+                    reservation.getVatNr(), reservation.getVatStatus(), map.containsKey("termAndConditionsAccepted"), map.containsKey("privacyPolicyAccepted"), map.get("hmac").get(0));
+            }
+            return null;
+        };
     }
 
-    private boolean hasPayPalTokens(PaymentSpecification spec ) {
-        return StringUtils.isNotBlank(spec.getPayerId()) && StringUtils.isNotBlank(spec.getGatewayToken());
+    private static boolean hasExactlyOneElementFor(Map<String, List<String>> map, String... keys) {
+        return Arrays.stream(keys).allMatch(k -> map.containsKey(k) && map.getOrDefault(k, Collections.emptyList()).size() == 1);
     }
 
-    private PaymentResult preparePayment( PaymentSpecification spec ) {
+    @Override
+    public PaymentResult getToken(PaymentSpecification spec) {
         try {
             return PaymentResult.redirect( createCheckoutRequest(spec) );
         } catch (Exception e) {
@@ -337,9 +357,10 @@ public class PaypalManager implements PaymentProvider {
         }
     }
 
-    private PaymentResult confirmPayment(PaymentSpecification spec) {
+    @Override
+    public PaymentResult doPayment(PaymentSpecification spec) {
         try {
-            if(!PaypalManager.isValidHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getValidationToken(), spec.getEvent())) {
+            if(!PayPalManager.isValidHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getValidationToken(), spec.getEvent())) {
                 return PaymentResult.failed(ErrorsCode.STEP_2_INVALID_HMAC);
             }
             Pair<String, String> captureAndPaymentId = commitPayment(spec.getReservationId(), spec.getGatewayToken(), spec.getPayerId(), spec.getEvent());

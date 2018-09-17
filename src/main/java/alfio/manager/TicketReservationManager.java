@@ -413,8 +413,8 @@ public class TicketReservationManager {
                 return false;
             }
             int currentTickets = ticketReservationRepository.countTicketsInReservationForCategories(reservationId, categoriesOrNull(promoCode));
-            return serializedTransactionTemplate.execute(status ->
-                promoCode.getMaxUsage() < currentTickets + promoCodeDiscountRepository.countConfirmedPromoCode(promoCode.getId(), categoriesOrNull(promoCode), reservationId, categoriesOrNull(promoCode) != null ? "X" : null));
+            return Boolean.TRUE.equals(serializedTransactionTemplate.execute(status ->
+                promoCode.getMaxUsage() < currentTickets + promoCodeDiscountRepository.countConfirmedPromoCode(promoCode.getId(), categoriesOrNull(promoCode), reservationId, categoriesOrNull(promoCode) != null ? "X" : null)));
         }
         return false;
     }

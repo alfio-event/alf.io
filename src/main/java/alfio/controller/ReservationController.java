@@ -89,7 +89,7 @@ public class ReservationController {
     private final TicketFieldRepository ticketFieldRepository;
     private final PaymentManager paymentManager;
     private final EuVatChecker vatChecker;
-    private final MollieCreditCardManager mollieCreditCardManager;
+    private final StripeCreditCardManager stripeCreditCardManager;
     private final RecaptchaService recaptchaService;
     private final TicketReservationRepository ticketReservationRepository;
 
@@ -372,7 +372,7 @@ public class ReservationController {
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
                     model.addAttribute("includeStripe", includeStripe);
                     if (includeStripe) {
-                        model.addAttribute("stripe_p_key", paymentManager.getStripePublicKey(event));
+                        model.addAttribute("stripe_p_key", stripeCreditCardManager.getPublicKey(event));
                     }
 
                     if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {

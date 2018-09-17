@@ -83,11 +83,11 @@ public class StripeManagerTest {
     }
 
     @Test
-    public void stripeError() throws StripeException {
+    void stripeError() {
         StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager( configurationManager, ticketRepository, transactionRepository, null, mock(Environment.class ) ) {
             @Override
             protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) throws StripeException {
-                throw new AuthenticationException("401", "42", 401);
+                throw new AuthenticationException("401", "42", "401", 401);
             }
         };
         PaymentSpecification spec = new PaymentSpecification( "", "", 100, event, "", customerName );

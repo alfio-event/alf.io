@@ -694,7 +694,7 @@ class TicketReservationManagerTest {
             true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertTrue(result.isSuccessful());
-        assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayTransactionId());
+        assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()));
@@ -719,7 +719,7 @@ class TicketReservationManagerTest {
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "email@user", new CustomerName("Full Name", null, null, event), null, null, "", Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false, null);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertFalse(result.isSuccessful());
-        assertFalse(result.getGatewayTransactionId().isPresent());
+        assertFalse(result.getGatewayId().isPresent());
         assertEquals(Optional.of("error-code"), result.getErrorCode());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull());
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
@@ -743,7 +743,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), anyString(), anyString(), anyString(), isNull(), isNull(), eq(Locale.ENGLISH.getLanguage()), isNull(), any(), any(), isNull())).thenReturn(1);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE));
         assertTrue(result.isSuccessful());
-        assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayTransactionId());
+        assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()), isNull());
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()));
@@ -768,7 +768,7 @@ class TicketReservationManagerTest {
             "", null, "", Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
-        assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayTransactionId());
+        assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));

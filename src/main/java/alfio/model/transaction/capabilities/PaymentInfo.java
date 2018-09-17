@@ -14,15 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.transaction;
+package alfio.model.transaction.capabilities;
 
-import java.util.Arrays;
+import alfio.model.Event;
+import alfio.model.PaymentInformation;
+import alfio.model.transaction.Transaction;
 
-public enum PaymentMethod {
+import java.util.Optional;
 
-    CREDIT_CARD, PAYPAL, IDEAL, BANK_TRANSFER, ON_SITE, NONE;
+public interface PaymentInfo {
 
-    public static PaymentMethod safeParse(String asString) {
-        return Arrays.stream(PaymentMethod.values()).filter(v -> v.name().equals(asString)).findFirst().orElse(null);
-    }
+    Optional<PaymentInformation> getInfo(Transaction transaction, Event event);
+
 }

@@ -29,6 +29,8 @@ import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
+import alfio.model.transaction.capabilities.PaymentInfo;
+import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.system.ConfigurationRepository;
@@ -61,7 +63,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @Log4j2
-public class StripeCreditCardManager implements PaymentProvider {
+public class StripeCreditCardManager implements PaymentProvider, RefundRequest, PaymentInfo {
 
     public static final String STRIPE_UNEXPECTED = "error.STEP2_STRIPE_unexpected";
     public static final String CONNECT_REDIRECT_PATH = "/admin/configuration/payment/stripe/authorize";
@@ -99,7 +101,7 @@ public class StripeCreditCardManager implements PaymentProvider {
         return configurationManager.getRequiredValue(Configuration.getSystemConfiguration(STRIPE_WEBHOOK_KEY));
     }
 
-    String getPublicKey(Event event) {
+    public String getPublicKey(Event event) {
         if(isConnectEnabled(event)) {
             return configurationManager.getRequiredValue(Configuration.getSystemConfiguration(STRIPE_PUBLIC_KEY));
         }
@@ -236,7 +238,8 @@ public class StripeCreditCardManager implements PaymentProvider {
         return Optional.of(builder.setApiKey(getSecretKey(event)).build());
     }
 
-    Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
+    @Override
+    public Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
         try {
             Optional<RequestOptions> requestOptionsOptional = options(event);
             if(requestOptionsOptional.isPresent()) {
@@ -253,7 +256,7 @@ public class StripeCreditCardManager implements PaymentProvider {
         }
     }
 
-    static String getFeeAmount(List<Fee> fees, String feeType) {
+    private static String getFeeAmount(List<Fee> fees, String feeType) {
         return fees.stream()
             .filter(f -> f.getType().equals(feeType))
             .findFirst()
@@ -263,7 +266,9 @@ public class StripeCreditCardManager implements PaymentProvider {
     }
 
     // https://stripe.com/docs/api#create_refund
-    public boolean refund(Transaction transaction, Event event, Optional<Integer> amount) {
+    @Override
+    public boolean refund(Transaction transaction, Event event, Integer amountToRefund) {
+        Optional<Integer> amount = Optional.ofNullable(amountToRefund);
         String chargeId = transaction.getTransactionId();
         try {
             String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
@@ -388,11 +393,6 @@ public class StripeCreditCardManager implements PaymentProvider {
             }
             throw new IllegalStateException(e);
         }
-    }
-
-    @Override
-    public boolean supportRefund() {
-        return true;
     }
 
     @FunctionalInterface

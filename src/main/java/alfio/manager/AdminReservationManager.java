@@ -552,7 +552,7 @@ public class AdminReservationManager {
 
             if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
                 //fully refund
-                paymentManager.refund(reservation, e, Optional.empty(), username);
+                paymentManager.refund(reservation, e, null, username);
             }
 
             markAsCancelled(reservation);
@@ -566,7 +566,7 @@ public class AdminReservationManager {
             TicketReservation reservation = res.getLeft();
             return reservation.getPaymentMethod() != null
                 && reservation.getPaymentMethod().isSupportRefund()
-                && paymentManager.refund(reservation, e, Optional.of(MonetaryUtil.unitToCents(refundAmount)), username);
+                && paymentManager.refund(reservation, e, MonetaryUtil.unitToCents(refundAmount), username);
         });
     }
 
@@ -630,7 +630,7 @@ public class AdminReservationManager {
         for(Integer toRefundId : toRefund) {
             int toBeRefunded = ticketsById.get(toRefundId).getFinalPriceCts();
             if(toBeRefunded > 0) {
-                paymentManager.refund(reservation, e, Optional.of(toBeRefunded), username);
+                paymentManager.refund(reservation, e, toBeRefunded, username);
             }
         }
         //
