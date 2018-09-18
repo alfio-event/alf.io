@@ -799,7 +799,7 @@ public class EventManager {
         return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/") + "/event/" + event.getShortName() + "/";
     }
 
-    public List<TicketCSVInfo> findAllConfirmedTicketsForCSV(String eventName, String username) {
+    public List<TicketWithReservationAndTransaction> findAllConfirmedTicketsForCSV(String eventName, String username) {
         Event event = getSingleEvent(eventName, username);
         checkOwnership(event, username, event.getOrganizationId());
         return ticketRepository.findAllConfirmedForCSV(event.getId());
