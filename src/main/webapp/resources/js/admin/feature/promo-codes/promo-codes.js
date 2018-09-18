@@ -38,6 +38,11 @@
                         });
                     })(v);
                 });
+
+                ctrl.ticketCategoriesById = {};
+                angular.forEach(ctrl.event.ticketCategories, function(v) {
+                    ctrl.ticketCategoriesById[v.id] = v;
+                });
             });
         }
 
@@ -74,12 +79,31 @@
                     $scope.forEvent = ctrl.forEvent;
                     var start = moment(promocode.formattedStart);
                     var end = moment(promocode.formattedEnd);
-                    $scope.promocode = {start: {date: start.format('YYYY-MM-DD'), time: start.format('HH:mm')}, end: {date: end.format('YYYY-MM-DD'), time: end.format('HH:mm')}};
+                    $scope.promocode = {
+                        start: {date: start.format('YYYY-MM-DD'), time: start.format('HH:mm')},
+                        end: {date: end.format('YYYY-MM-DD'), time: end.format('HH:mm')},
+                        maxUsage: promocode.maxUsage
+                    };
+                    $scope.validCategories = _.map(ctrl.event.ticketCategories, function(c) {
+                        var c1 = angular.copy(c, {});
+                        let promoCodeIdx = _.indexOf(promocode.categories, c.id);
+                        c1.selected = promoCodeIdx > -1;
+                        return c1;
+                    });
                     $scope.update = function(toUpdate) {
+                        toUpdate.categories = _.chain($scope.validCategories)
+                            .filter(function(c) { return c.selected; })
+                            .map('id')
+                            .value();
                         PromoCodeService.update(promocode.id, toUpdate).then(function() {
                             $scope.$close(true);
                         }).then(loadData);
                     };
+                    $scope.addCategoryIfNotPresent = function(ev, id) {
+                        if(ev.target.checked && $scope.promocode.categories.indexOf(id) === -1) {
+                            $scope.promocode.categories.push(id);
+                        }
+                    }
                 }
             });
         }

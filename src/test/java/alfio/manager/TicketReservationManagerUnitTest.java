@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.config.support.PlatformProvider;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.*;
@@ -28,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.MessageSource;
+import org.springframework.core.env.Environment;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.math.BigDecimal;
@@ -108,6 +110,10 @@ public class TicketReservationManagerUnitTest {
     private TicketSearchRepository ticketSearchRepository;
     @Mock
     private GroupManager groupManager;
+    @Mock
+    private PlatformProvider platformProvider;
+    @Mock
+    private Environment environment;
 
     @Before
     public void setUp() {
@@ -134,7 +140,7 @@ public class TicketReservationManagerUnitTest {
             invoiceSequencesRepository,
             auditingRepository,
             userRepository,
-            extensionManager, ticketSearchRepository, groupManager);
+            extensionManager, ticketSearchRepository, groupManager, platformProvider, environment);
     }
 
     @Test

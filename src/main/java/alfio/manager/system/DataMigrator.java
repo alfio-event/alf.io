@@ -340,7 +340,7 @@ public class DataMigrator {
                     @Override
                     public Optional<PromoCodeDiscount> getDiscount() {
                         return Optional.ofNullable(ticket.get("discount_amount"))
-                            .map(amount -> new PromoCodeDiscount(0, "", eventId, null, null, null, (int) amount, PromoCodeDiscount.DiscountType.valueOf((String) ticket.get("discount_type")), ""));
+                            .map(amount -> new PromoCodeDiscount(0, "", eventId, null, null, null, (int) amount, PromoCodeDiscount.DiscountType.valueOf((String) ticket.get("discount_type")), "", null));
                     }
                 });
             })

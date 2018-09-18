@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.config.support.PlatformProvider;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.support.FeeCalculator;
@@ -54,6 +55,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.context.MessageSource;
+import org.springframework.core.env.Environment;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -75,6 +77,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -112,6 +115,7 @@ public class TicketReservationManager {
     private final MessageSource messageSource;
     private final TemplateManager templateManager;
     private final TransactionTemplate requiresNewTransactionTemplate;
+    private final TransactionTemplate serializedTransactionTemplate;
     private final WaitingQueueManager waitingQueueManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
@@ -123,6 +127,8 @@ public class TicketReservationManager {
     private final ExtensionManager extensionManager;
     private final TicketSearchRepository ticketSearchRepository;
     private final GroupManager groupManager;
+    private final PlatformProvider platformProvider;
+    private final Environment environment;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -137,6 +143,9 @@ public class TicketReservationManager {
 
     public static class OfflinePaymentException extends RuntimeException {
         OfflinePaymentException(String message){ super(message); }
+    }
+
+    public static class TooManyTicketsForDiscountCodeException extends RuntimeException {
     }
 
     public TicketReservationManager(EventRepository eventRepository,
@@ -163,7 +172,9 @@ public class TicketReservationManager {
                                     AuditingRepository auditingRepository,
                                     UserRepository userRepository,
                                     ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository,
-                                    GroupManager groupManager) {
+                                    GroupManager groupManager,
+                                    PlatformProvider platformProvider,
+                                    Environment environment) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -180,6 +191,9 @@ public class TicketReservationManager {
         this.templateManager = templateManager;
         this.waitingQueueManager = waitingQueueManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+        DefaultTransactionDefinition serialized = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        serialized.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
+        this.serializedTransactionTemplate = new TransactionTemplate(transactionManager, serialized);
         this.ticketFieldRepository = ticketFieldRepository;
         this.additionalServiceRepository = additionalServiceRepository;
         this.additionalServiceItemRepository = additionalServiceItemRepository;
@@ -190,6 +204,8 @@ public class TicketReservationManager {
         this.extensionManager = extensionManager;
         this.ticketSearchRepository = ticketSearchRepository;
         this.groupManager = groupManager;
+        this.platformProvider = platformProvider;
+        this.environment = environment;
     }
     
     /**
@@ -241,7 +257,9 @@ public class TicketReservationManager {
         ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
 
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
-
+        if(isDiscountCodeUsageExceeded(reservationId)) {
+            throw new TooManyTicketsForDiscountCodeException();
+        }
         return reservationId;
     }
 
@@ -360,6 +378,9 @@ public class TicketReservationManager {
         try {
             PaymentResult paymentResult;
             ticketReservationRepository.lockReservationForUpdate(reservationId);
+            if(isDiscountCodeUsageExceeded(reservationId)) {
+                return PaymentResult.unsuccessful(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+            }
             if(reservationCost.getPriceWithVAT() > 0) {
                 if(invoiceRequested && configurationManager.hasAllConfigurationsForInvoice(event)) {
                     int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(event.getOrganizationId());
@@ -416,6 +437,27 @@ public class TicketReservationManager {
             return PaymentResult.unsuccessful("error.STEP2_STRIPE_unexpected");
         }
 
+    }
+
+    private boolean isDiscountCodeUsageExceeded(String reservationId) {
+        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        if(reservation.getPromoCodeDiscountId() != null) {
+            final PromoCodeDiscount promoCode = promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId());
+            if(promoCode.getMaxUsage() == null) {
+                return false;
+            }
+            int currentTickets = ticketReservationRepository.countTicketsInReservationForCategories(reservationId, categoriesOrNull(promoCode));
+
+            //
+            if(PlatformProvider.PGSQL.equals(platformProvider.getDialect(environment))) { //hsql fail
+                return serializedTransactionTemplate.execute(status ->
+                    promoCode.getMaxUsage() < currentTickets + promoCodeDiscountRepository.countConfirmedPromoCode(promoCode.getId(), categoriesOrNull(promoCode), reservationId, categoriesOrNull(promoCode) != null ? "X" : null));
+            } else {
+                //the count will be done in a best effort basis on mysql/hsqldb
+                return promoCode.getMaxUsage() < currentTickets + promoCodeDiscountRepository.countConfirmedPromoCode(promoCode.getId(), categoriesOrNull(promoCode), reservationId, categoriesOrNull(promoCode) != null ? "X" : null);
+            }
+        }
+        return false;
     }
 
     public boolean containsCategoriesLinkedToGroups(String reservationId, int eventId) {
@@ -678,9 +720,9 @@ public class TicketReservationManager {
             acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, email, customerName, userLanguage.getLanguage(), billingAddress, customerReference, eventId);
             final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
             extensionManager.handleReservationConfirmation(reservation, eventId);
-            //cleanup unused special price codes...
-            specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
         }
+        //cleanup unused special price codes...
+        specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
 
         Date timestamp = new Date();
         auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, timestamp, Audit.EntityType.RESERVATION, reservationId);
