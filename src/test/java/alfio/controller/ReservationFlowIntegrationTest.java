@@ -457,8 +457,8 @@ public class ReservationFlowIntegrationTest {
         List<String[]> csvSponsorScan = csvReader.readAll();
         Assert.assertEquals(2, csvSponsorScan.size());
         Assert.assertEquals("sponsor", csvSponsorScan.get(1)[0]);
-        Assert.assertEquals("Test OTest", csvSponsorScan.get(1)[2]);
-        Assert.assertEquals("testmctest@test.com", csvSponsorScan.get(1)[3]);
+        Assert.assertEquals("Test OTest", csvSponsorScan.get(1)[3]);
+        Assert.assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
         //
         
         eventManager.deleteEvent(event.getId(), principal.getName());
