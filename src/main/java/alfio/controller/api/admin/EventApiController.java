@@ -276,7 +276,7 @@ public class EventApiController {
         return OK;
     }
 
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Transaction");
+    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Payment ID", "Payment Method");
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
     @RequestMapping("/events/{eventName}/export")
@@ -378,6 +378,13 @@ public class EventApiController {
             if(fields.contains("Language")) {line.add(String.valueOf(t.getUserLanguage()));}
             if(fields.contains("Confirmation")) {line.add(reservation.getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
             if(fields.contains("Billing Address")) {line.add(reservation.getBillingAddress());}
+            boolean paymentIdRequested = fields.contains("Payment ID");
+            boolean paymentGatewayRequested = fields.contains("Payment Method");
+            if((paymentIdRequested || paymentGatewayRequested) && trs.getTransaction().isPresent()) {
+                Transaction transaction = trs.getTransaction().get();
+                if(paymentIdRequested) { line.add(StringUtils.defaultString(transaction.getPaymentId(), transaction.getTransactionId())); }
+                if(paymentGatewayRequested) { line.add(transaction.getPaymentProxy().name()); }
+            }
 
             //obviously not optimized
             Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
@@ -389,12 +396,6 @@ public class EventApiController {
                 line.add(additionalValues.getOrDefault(customFieldName, "").replaceAll("\"", ""));
             });
 
-            if(fields.contains("Transaction") && trs.getTransaction().isPresent()) {
-                Transaction transaction = trs.getTransaction().get();
-                line.add(StringUtils.defaultString(transaction.getPaymentId(), transaction.getTransactionId()));
-                line.add(MonetaryUtil.formatCents(transaction.getPriceInCents()));
-                line.add(transaction.getPaymentProxy().name());
-            }
             return line.toArray(new String[0]);
         });
     }
