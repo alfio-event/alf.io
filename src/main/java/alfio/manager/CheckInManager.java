@@ -111,11 +111,22 @@ public class CheckInManager {
         return uuid;
     }
 
-    public TicketAndCheckInResult checkIn(String shortName, String ticketIdentifier, Optional<String> ticketCode, String username, String auditUser) {
-        return eventRepository.findOptionalByShortName(shortName)
+    public TicketAndCheckInResult checkIn(String eventShortName, String ticketIdentifier, Optional<String> ticketCode, String username, String auditUser,
+                                          boolean automaticallyConfirmOnSitePayment) {
+        return eventRepository.findOptionalByShortName(eventShortName)
             .filter(EventManager.checkOwnership(username, organizationRepository))
-            .map(e -> checkIn(e.getId(), ticketIdentifier, ticketCode, auditUser))
+            .map(e -> {
+                if (automaticallyConfirmOnSitePayment && CheckInStatus.MUST_PAY == evaluateTicketStatus(eventShortName, ticketIdentifier, ticketCode).getResult().getStatus()) {
+                    log.info("in event {} automaticallyConfirmOnSitePayment for {}", eventShortName, ticketIdentifier);
+                    confirmOnSitePayment(eventShortName, ticketIdentifier, ticketCode, username, auditUser);
+                }
+                return checkIn(e.getId(), ticketIdentifier, ticketCode, auditUser);
+            })
             .orElseGet(() -> new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found")));
+    }
+
+    public TicketAndCheckInResult checkIn(String shortName, String ticketIdentifier, Optional<String> ticketCode, String username, String auditUser) {
+        return checkIn(shortName, ticketIdentifier, ticketCode, username, auditUser, false);
     }
 
     public TicketAndCheckInResult checkIn(int eventId, String ticketIdentifier, Optional<String> ticketCode, String user) {
