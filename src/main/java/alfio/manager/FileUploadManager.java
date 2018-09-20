@@ -28,7 +28,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -57,7 +56,7 @@ public class FileUploadManager {
     /**
      * Maximum allowed file size is 200kb
      */
-    private static final int MAXIMUM_ALLOWED_SIZE = 1024 * 200;
+    static final int MAXIMUM_ALLOWED_SIZE = 1024 * 200;
     private final NamedParameterJdbcTemplate jdbc;
     private final FileUploadRepository repository;
     private final Cache<String, byte[]> cache = Caffeine.newBuilder()

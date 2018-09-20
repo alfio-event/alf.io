@@ -18,20 +18,15 @@ package alfio.manager;
 
 import alfio.model.modification.UploadBase64FileModification;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StreamUtils;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
+import java.util.Objects;
 
 
 @Log4j2
@@ -48,11 +43,16 @@ public class FileDownloadManager {
                 String[] parts = url.split("/");
                 String name = parts[parts.length - 1];
 
-                return new DownloadedFile(
-                    response.body().bytes(),
-                    name,
-                    response.header("Content-Type", "application/octet-stream")
-                );
+                byte[] bytes = Objects.requireNonNull(response.body()).bytes();
+                if(bytes.length <= FileUploadManager.MAXIMUM_ALLOWED_SIZE) {
+                    return new DownloadedFile(
+                        bytes,
+                        name,
+                        response.header("Content-Type", "application/octet-stream")
+                    );
+                } else {
+                    return null;
+                }
             } else {
                 log.warn("downloading file not successful:" + response);
                 return null;
