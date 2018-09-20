@@ -133,7 +133,7 @@ Here's an example of deployment as a 3 tier application using the following imag
  ```
 
 ### Test alf.io application
- * Check alfio-web logs: `docker logs alfio-web`
+ * Check alfio logs: `docker logs alfio`
  * Copy admin password in a secure place
  * Get IP of your docker container: (only on Mac/Windows, on linux the proxy will bind directly on your public IP)
     * `boot2docker ip` on Mac/Windows
