@@ -180,4 +180,12 @@ public interface TicketFieldRepository extends FieldRepository {
             }).collect(Collectors.toList());
 
     }
+
+    @Query("select c2.field_name as field_name, tfv.field_value as field_value, c2.additional_service_id as additional_service_id from ticket_field_value tfv" +
+        "  join ticket_field_configuration c2 on tfv.ticket_field_configuration_id_fk = c2.id" +
+        "  where tfv.ticket_id_fk = :ticketId" +
+        "  and c2.context = 'ADDITIONAL_SERVICE'" +
+        "  and c2.additional_service_id in (:additionalServiceIds)")
+    List<TicketFieldValueForAdditionalService> loadTicketFieldsForAdditionalService(@Bind("ticketId") int ticketId,
+                                                                                    @Bind("additionalServiceIds") List<Integer> additionalServiceIds);
 }
