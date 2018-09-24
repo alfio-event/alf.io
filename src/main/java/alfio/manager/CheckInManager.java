@@ -229,9 +229,6 @@ public class CheckInManager {
                     tc.getName(), from, to, formattedNow)));
         }
 
-        log.trace("scanned code is {}", code);
-        log.trace("true code    is {}", ticket.ticketCode(event.getPrivateKey()));
-
         if (!code.equals(ticket.ticketCode(event.getPrivateKey()))) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(INVALID_TICKET_CODE, "Ticket qr code does not match"));
         }
