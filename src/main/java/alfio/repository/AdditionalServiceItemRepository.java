@@ -18,6 +18,7 @@ package alfio.repository;
 
 import alfio.model.AdditionalServiceItem;
 import alfio.model.AdditionalServiceItem.AdditionalServiceItemStatus;
+import alfio.model.BookedAdditionalService;
 import ch.digitalfondue.npjt.*;
 
 import java.time.ZonedDateTime;
@@ -43,5 +44,21 @@ public interface AdditionalServiceItemRepository {
         " inner join additional_service on additional_service_id_fk = additional_service.id " +
         " where service_type = 'SUPPLEMENT' and tickets_reservation_uuid = :reservationId and final_price_cts > 0")
     boolean hasPaidSupplements(@Bind("reservationId") String reservationId);
+
+    @Query("select asd.value as as_name, ads.id as_id, count(ads.id) as qty from additional_service_item ai" +
+        "  join additional_service ads on additional_service_id_fk = ads.id" +
+        "  join additional_service_description asd on ads.id = asd.additional_service_id_fk" +
+        "  where ai.event_id_fk = :eventId and ai.status = 'ACQUIRED'" +
+        "  and ads.service_type <> 'DONATION'" +
+        "  and ads.supplement_policy <> 'MANDATORY_ONE_FOR_TICKET'"+
+        "  and asd.locale = :language" +
+        "  and asd.type = 'TITLE'" +
+        "  and ai.tickets_reservation_uuid = :reservationId" +
+        "  group by ads.id, asd.value")
+    List<BookedAdditionalService> getAdditionalServicesBookedForReservation(@Bind("reservationId") String reservationId,
+                                                                      @Bind("language") String language,
+                                                                      @Bind("eventId") int eventId);
+
+
 
 }
