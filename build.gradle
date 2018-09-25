@@ -209,6 +209,8 @@ dependencies {
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
         exclude module : 'spring-boot-starter-logging'
     }
+
+    runtime "org.glassfish.jaxb:jaxb-runtime:2.4.0-b180830.0438" //temporary for JDK11
 }
 
 // -- license configuration

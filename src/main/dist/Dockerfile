@@ -3,7 +3,7 @@
 #
 
 # Pull base image.
-FROM openjdk:10
+FROM openjdk:11
 
 RUN useradd -ms /bin/bash -u 1001 alfio
 RUN apt-get update \
@@ -21,6 +21,6 @@ RUN mkdir /home/alfio/logs
 ENV ALFIO_LOG_STDOUT_ONLY=true
 ENV ALFIO_JAVA_OPTS=""
 
-CMD java $ALFIO_JAVA_OPTS --add-modules java.xml.bind,jdk.scripting.nashorn -jar /home/alfio/alfio-boot.war
+CMD java $ALFIO_JAVA_OPTS --add-modules jdk.scripting.nashorn -jar /home/alfio/alfio-boot.war
 
 EXPOSE 8080
