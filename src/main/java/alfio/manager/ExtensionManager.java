@@ -114,7 +114,7 @@ public class ExtensionManager {
     }
 
     public void handleOfflineReservationsWillExpire(Event event, List<TicketReservationInfo> reservations) {
-        int organizationId = eventRepository.findOrganizationIdByEventId(event.getOrganizationId());
+        int organizationId = event.getOrganizationId();
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservations", reservations);
         asyncCall(ExtensionEvent.OFFLINE_RESERVATIONS_WILL_EXPIRE, event, organizationId, payload);
