@@ -17,9 +17,11 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.AdditionalServiceItem;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.TicketRepository;
 import com.stripe.exception.*;
 import com.stripe.net.RequestOptions;
@@ -29,13 +31,19 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.time.ZonedDateTime;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
-import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
-import static alfio.model.system.ConfigurationKeys.STRIPE_CONNECTED_ID;
+import static alfio.model.system.ConfigurationKeys.*;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StripeManagerTest {
@@ -46,12 +54,14 @@ public class StripeManagerTest {
     private TicketRepository ticketRepository;
     @Mock
     private Event event;
+    @Mock
+    private AdditionalServiceItemRepository additionalServiceItemRepository;
 
     private StripeManager stripeManager;
 
     @Before
     public void init() {
-        stripeManager = new StripeManager(configurationManager, ticketRepository, null, null);
+        stripeManager = new StripeManager(configurationManager, ticketRepository, null, null, additionalServiceItemRepository);
     }
 
     @Test
@@ -87,5 +97,26 @@ public class StripeManagerTest {
         Optional<RequestOptions> options = stripeManager.options(event);
         assertNotNull(options);
         assertFalse(options.isPresent());
+    }
+
+    @Test
+    public void testDoNotCalculateFeesIfTicketIsFree() {
+        when(additionalServiceItemRepository.findDonationsForReservation(anyString())).thenReturn(Collections.singletonList(new AdditionalServiceItem(1, "",
+            ZonedDateTime.now(), ZonedDateTime.now(), "", 1, AdditionalServiceItem.AdditionalServiceItemStatus.PENDING, 0, 20000, 20000, 0, 0)));
+        stripeManager.addFeesIfNeeded(20000L, event, "", 1, Collections.emptyMap());
+        verify(configurationManager, never()).getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId()).apply(PLATFORM_MODE_ENABLED)), anyBoolean());
+    }
+
+    @Test
+    public void testDoNotIncludeDonationsWhileCalculatingFees() {
+        when(additionalServiceItemRepository.findDonationsForReservation(anyString())).thenReturn(Collections.singletonList(new AdditionalServiceItem(1, "",
+            ZonedDateTime.now(), ZonedDateTime.now(), "", 1, AdditionalServiceItem.AdditionalServiceItemStatus.PENDING, 0, 20000, 20000, 0, 0)));
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId()).apply(PLATFORM_MODE_ENABLED)), anyBoolean())).thenReturn(true);
+        when(configurationManager.getStringConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), PLATFORM_FEE)), anyString())).thenReturn("1.9%");
+        when(configurationManager.getStringConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), PLATFORM_MINIMUM_FEE)), anyString())).thenReturn("2.0");
+        Map<String, Object> chargeParams = new HashMap<>();
+        stripeManager.addFeesIfNeeded(30000L, event, "", 1, chargeParams);
+        assertTrue(chargeParams.containsKey("application_fee"));
+        assertEquals(200L, chargeParams.get("application_fee"));
     }
 }

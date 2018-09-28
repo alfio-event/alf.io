@@ -25,6 +25,7 @@ import alfio.model.PaymentInformation;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.Transaction;
+import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.Json;
@@ -63,15 +64,18 @@ public class StripeManager {
     private final TicketRepository ticketRepository;
     private final ConfigurationRepository configurationRepository;
     private final Environment environment;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
     public StripeManager(ConfigurationManager configurationManager,
                          TicketRepository ticketRepository,
                          ConfigurationRepository configurationRepository,
-                         Environment environment) {
+                         Environment environment,
+                         AdditionalServiceItemRepository additionalServiceItemRepository) {
         this.configurationManager = configurationManager;
         this.ticketRepository = ticketRepository;
         this.configurationRepository = configurationRepository;
         this.environment = environment;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
 
         handlers = new HashMap<>();
         handlers.put(CardException.class, this::handleCardException);
@@ -173,7 +177,7 @@ public class StripeManager {
         int tickets = ticketRepository.countTicketsInReservation(reservationId);
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", amountInCent);
-        FeeCalculator.getCalculator(event, configurationManager).apply(tickets, amountInCent).ifPresent(fee -> chargeParams.put("application_fee", fee));
+        addFeesIfNeeded(amountInCent, event, reservationId, tickets, chargeParams);
         chargeParams.put("currency", event.getCurrency());
         chargeParams.put("card", stripeToken);
 
@@ -202,6 +206,13 @@ public class StripeManager {
             }
         }
         return Optional.of(charge);
+    }
+
+    void addFeesIfNeeded(long amountInCent, Event event, String reservationId, int tickets, Map<String, Object> chargeParams) {
+        long totalDonationCents = additionalServiceItemRepository.findDonationsForReservation(reservationId).stream().mapToLong(asi -> (long) asi.getFinalPriceCts()).sum();
+        if(amountInCent - totalDonationCents > 0) {
+            FeeCalculator.getCalculator(event, configurationManager).apply(tickets, amountInCent - totalDonationCents).ifPresent(fee -> chargeParams.put("application_fee", fee));
+        }
     }
 
     private BalanceTransaction retrieveBalanceTransaction(String balanceTransaction, RequestOptions options) throws AuthenticationException, InvalidRequestException, APIConnectionException, CardException, APIException {

@@ -59,6 +59,11 @@ public interface AdditionalServiceItemRepository {
                                                                       @Bind("language") String language,
                                                                       @Bind("eventId") int eventId);
 
+    @Query("select * from additional_service_item" +
+        " join additional_service on additional_service_id_fk = additional_service.id" +
+        " where tickets_reservation_uuid = :reservationId" +
+        " and additional_service.service_type = 'DONATION'")
+    List<AdditionalServiceItem> findDonationsForReservation(@Bind("reservationId") String reservationId);
 
 
 }
