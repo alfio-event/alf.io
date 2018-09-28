@@ -164,18 +164,19 @@ public class PaymentManager {
     }
 
     public boolean refund(TicketReservation reservation, Event event, Optional<Integer> amount, String username) {
-        Transaction transaction = transactionRepository.loadByReservationId(reservation.getId());
-        boolean res;
-        switch(reservation.getPaymentMethod()) {
-            case PAYPAL:
-                res = paypalManager.refund(transaction, event, amount);
-                break;
-            case STRIPE:
-                res = stripeManager.refund(transaction, event, amount);
-                break;
-            default:
-                throw new IllegalStateException("Cannot refund ");
-        }
+
+        Optional<Transaction> optionalTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId());
+
+        boolean res = optionalTransaction.map(transaction -> {
+            switch(reservation.getPaymentMethod()) {
+                case PAYPAL:
+                    return paypalManager.refund(transaction, event, amount);
+                case STRIPE:
+                    return stripeManager.refund(transaction, event, amount);
+                default:
+                    throw new IllegalStateException("Cannot refund ");
+            }
+        }).orElse(false);
 
         if(res) {
             Map<String, Object> changes = new HashMap<>();
