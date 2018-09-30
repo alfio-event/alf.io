@@ -279,7 +279,7 @@ public class WebSecurityConfig {
         @Override
         protected void configure(HttpSecurity http) throws Exception {
 
-            if(environment.acceptsProfiles("!"+Initializer.PROFILE_DEV)) {
+            if(environment.acceptsProfiles("!"+Initializer.PROFILE_DEV) && environment.acceptsProfiles("!"+Initializer.PROFILE_HTTP)) {
                 http.requiresChannel().antMatchers("/healthz").requiresInsecure()
                     .and()
                     .requiresChannel().mvcMatchers("/**").requiresSecure();
