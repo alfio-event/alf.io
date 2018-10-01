@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{#i18n}}locale{{/i18n}}" prefix="og: http://ogp.me/ns#">
+<html lang="{{#i18n}}locale{{/i18n}}" prefix="og: http://ogp.me/ns#"  {{#devModeEnabled}}dev-mode-enabled{{/devModeEnabled}} {{#prodModeEnabled}}prod-mode-enabled{{/prodModeEnabled}}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
