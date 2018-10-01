@@ -182,6 +182,8 @@ public class MvcConfiguration extends WebMvcConfigurerAdapter {
                         boolean demoModeEnabled = environment.acceptsProfiles(Initializer.PROFILE_DEMO);
 
                         modelMap.put("demoModeEnabled", demoModeEnabled);
+                        modelMap.put("devModeEnabled", environment.acceptsProfiles(Initializer.PROFILE_DEV));
+                        modelMap.put("prodModeEnabled", environment.acceptsProfiles(Initializer.PROFILE_LIVE));
 
                         Optional.ofNullable(request.getAttribute("ALFIO_EVENT_NAME")).map(Object::toString).ifPresent(eventName -> {
 
