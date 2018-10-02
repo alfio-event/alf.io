@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-ng-app="adminApplication" data-ng-csp>
+<html lang="en" data-ng-app="adminApplication" data-ng-csp {{#devModeEnabled}}dev-mode-enabled{{/devModeEnabled}} {{#prodModeEnabled}}prod-mode-enabled{{/prodModeEnabled}}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -64,5 +64,6 @@
             </div>
         </div>
     </div>
+    <script src="{{request.contextPath}}/resources/js/common/warning-msg.js" async="true"></script>
 </body>
 </html>
