@@ -41,7 +41,6 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
     public static final String PROFILE_INTEGRATION_TEST = "integration-test";
     public static final String PROFILE_DEBUG_CSP = "debug-csp";
     public static final String PROFILE_LIVE = "!dev";
-    static final String PROFILE_HTTP = "http";
     static final String PROFILE_SPRING_BOOT = "spring-boot";
     public static final String PROFILE_DEMO = "demo";
     public static final String PROFILE_DISABLE_JOBS = "disable-jobs";
@@ -76,9 +75,6 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
         ConfigurableWebApplicationContext ctx = ((ConfigurableWebApplicationContext) super.createRootApplicationContext());
         Objects.requireNonNull(ctx, "Something really bad is happening...");
         ConfigurableEnvironment environment = ctx.getEnvironment();
-        if(environment.acceptsProfiles(PROFILE_DEV)) {
-            environment.addActiveProfile(PROFILE_HTTP);
-        }
         this.environment = environment;
         return ctx;
     }
@@ -90,13 +86,10 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
         
         Validate.notNull(environment, "environment cannot be null!");
         // set secure cookie only if current environment doesn't strictly need HTTP
-        config.setSecure(!environment.acceptsProfiles(PROFILE_HTTP));
-        //
-        
+        config.setSecure(true);
 
         // FIXME and CHECKME what a mess, ouch: https://issues.jboss.org/browse/WFLY-3448 ?
         config.setPath(servletContext.getContextPath() + "/");
-        //
     }
 
     @Override

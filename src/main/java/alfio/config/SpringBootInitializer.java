@@ -57,14 +57,10 @@ public class SpringBootInitializer {
     public ServletContextInitializer servletContextInitializer() {
         return servletContext -> {
             WebApplicationContext ctx = getRequiredWebApplicationContext(servletContext);
-            ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
-            if(environment.acceptsProfiles(Initializer.PROFILE_DEV)) {
-                environment.addActiveProfile(Initializer.PROFILE_HTTP);
-            }
             SessionCookieConfig config = servletContext.getSessionCookieConfig();
             config.setHttpOnly(true);
-            config.setSecure(!environment.acceptsProfiles(Initializer.PROFILE_HTTP));
-            //force log initialization, then disable it
+            config.setSecure(true);
+            // force log initialization, then disable it
             XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
             XRLog.setLoggingEnabled(false);
         };
