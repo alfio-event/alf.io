@@ -86,7 +86,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
         
         Validate.notNull(environment, "environment cannot be null!");
         // set secure cookie only if current environment doesn't strictly need HTTP
-        config.setSecure(true);
+        config.setSecure(environment.acceptsProfiles(Initializer.PROFILE_LIVE));
 
         // FIXME and CHECKME what a mess, ouch: https://issues.jboss.org/browse/WFLY-3448 ?
         config.setPath(servletContext.getContextPath() + "/");

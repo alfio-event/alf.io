@@ -57,9 +57,10 @@ public class SpringBootInitializer {
     public ServletContextInitializer servletContextInitializer() {
         return servletContext -> {
             WebApplicationContext ctx = getRequiredWebApplicationContext(servletContext);
+            ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
             SessionCookieConfig config = servletContext.getSessionCookieConfig();
             config.setHttpOnly(true);
-            config.setSecure(true);
+            config.setSecure(environment.acceptsProfiles(Initializer.PROFILE_LIVE));
             // force log initialization, then disable it
             XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
             XRLog.setLoggingEnabled(false);
