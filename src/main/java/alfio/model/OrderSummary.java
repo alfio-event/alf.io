@@ -20,6 +20,7 @@ import alfio.util.MonetaryUtil;
 import lombok.Data;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 public class OrderSummary {
@@ -53,6 +54,14 @@ public class OrderSummary {
 
     public int getTicketAmount() {
         return summary.stream().filter(s-> SummaryRow.SummaryType.TICKET == s.getType()).mapToInt(SummaryRow::getAmount).sum();
+    }
+
+    public List<SummaryRow> getSummary() {
+
+        //filter out the promotions code that have been inserted in the order but not used
+        return summary.stream()
+            .filter(s-> !(SummaryRow.SummaryType.PROMOTION_CODE == s.getType() && s.getAmount() == 0))
+            .collect(Collectors.toList());
     }
 
     public boolean getSingleTicketOrder() {
