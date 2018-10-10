@@ -4,7 +4,7 @@
     function buildContainer(lvl, msg, dismiss) {
         var elem = document.createElement('div');
         elem.setAttribute('class', 'alert alert-'+lvl+' ' + (dismiss ? 'alert-dismissible' : ''));
-        elem.setAttribute('style', 'position: fixed;bottom: 0;width: 100%;margin: 0;'
+        elem.setAttribute('style', 'position: '+(dismiss ? 'sticky' : 'fixed')+';bottom: 0;width: 100%;margin: 0;'
             +'border-bottom: none;border-left: none;border-right: none;border-radius: 0;');
 
         if(dismiss) {
