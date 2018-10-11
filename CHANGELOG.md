@@ -1,5 +1,81 @@
 # Change Log
 
+## [1.16](https://github.com/alfio-event/alf.io/tree/1.16) (2018-09-28)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.16-RC2...1.16)
+
+**Implemented enhancements:**
+
+- Bulk check-in [\#508](https://github.com/alfio-event/alf.io/issues/508)
+- Display additional options at check-in [\#512](https://github.com/alfio-event/alf.io/issues/512)
+- Allow additional rows to be printed in the label [\#498](https://github.com/alfio-event/alf.io/issues/498)
+- Excel \(xslx\) export [\#488](https://github.com/alfio-event/alf.io/issues/488)
+
+**Fixed bugs:**
+
+- Cannot change a user details, without also changing the username. [\#503](https://github.com/alfio-event/alf.io/issues/503)
+
+**Closed issues:**
+
+- Display Transaction details in the attendees export [\#507](https://github.com/alfio-event/alf.io/issues/507)
+- Add template edit at the organization level [\#499](https://github.com/alfio-event/alf.io/issues/499)
+- Attendee Whitelist [\#487](https://github.com/alfio-event/alf.io/issues/487)
+- Api key support [\#486](https://github.com/alfio-event/alf.io/issues/486)
+
+**Merged pull requests:**
+
+- implement \#508 bulk check-in [\#510](https://github.com/alfio-event/alf.io/pull/510) ([syjer](https://github.com/syjer))
+- limit discount code usage: pick + fixes [\#502](https://github.com/alfio-event/alf.io/pull/502) ([syjer](https://github.com/syjer))
+
+## [1.16-RC2](https://github.com/alfio-event/alf.io/tree/1.16-RC2) (2018-09-18)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.16-RC1...1.16-RC2)
+
+**Closed issues:**
+
+- Could not work sending mail via mailgun. [\#504](https://github.com/alfio-event/alf.io/issues/504)
+
+## [1.16-RC1](https://github.com/alfio-event/alf.io/tree/1.16-RC1) (2018-08-30)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.15...1.16-RC1)
+
+**Implemented enhancements:**
+
+- Mark the login qrcode for mobile app [\#382](https://github.com/alfio-event/alf.io/issues/382)
+
+**Closed issues:**
+
+- Docker for me not working [\#460](https://github.com/alfio-event/alf.io/issues/460)
+
+**Merged pull requests:**
+
+- \#499 add organization level template editing [\#500](https://github.com/alfio-event/alf.io/pull/500) ([syjer](https://github.com/syjer))
+- Merge whitelist to master [\#496](https://github.com/alfio-event/alf.io/pull/496) ([cbellone](https://github.com/cbellone))
+- 487 whitelist [\#491](https://github.com/alfio-event/alf.io/pull/491) ([cbellone](https://github.com/cbellone))
+- implement: \#488 add excel support for export [\#490](https://github.com/alfio-event/alf.io/pull/490) ([syjer](https://github.com/syjer))
+- \#486 api key support [\#489](https://github.com/alfio-event/alf.io/pull/489) ([syjer](https://github.com/syjer))
+
+## [1.15](https://github.com/alfio-event/alf.io/tree/1.15) (2018-07-11)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.15-RC3...1.15)
+
+**Implemented enhancements:**
+
+- Improve category stats popover readability [\#485](https://github.com/alfio-event/alf.io/issues/485)
+- Pdf rendering: try to reduce memory consumption: don't load the fonts in memory, use temp files [\#481](https://github.com/alfio-event/alf.io/issues/481)
+- import new reservation flow [\#464](https://github.com/alfio-event/alf.io/issues/464)
+
+## [1.15-RC3](https://github.com/alfio-event/alf.io/tree/1.15-RC3) (2018-07-03)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.15-RC2...1.15-RC3)
+
+**Implemented enhancements:**
+
+- Vat checker validation extension [\#483](https://github.com/alfio-event/alf.io/issues/483)
+- Print additional information on ticket [\#482](https://github.com/alfio-event/alf.io/issues/482)
+
+**Merged pull requests:**
+
+- New reservation flow [\#484](https://github.com/alfio-event/alf.io/pull/484) ([syjer](https://github.com/syjer))
+
+## [1.15-RC2](https://github.com/alfio-event/alf.io/tree/1.15-RC2) (2018-06-28)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.15-RC1...1.15-RC2)
+
 ## [1.15-RC1](https://github.com/alfio-event/alf.io/tree/1.15-RC1) (2018-06-23)
 [Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14.2...1.15-RC1)
 
