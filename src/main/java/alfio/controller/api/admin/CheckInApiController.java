@@ -19,7 +19,6 @@ package alfio.controller.api.admin;
 import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
 import alfio.manager.support.CheckInStatistics;
-import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
@@ -290,14 +289,23 @@ public class CheckInApiController {
         @Getter
         private static class Content {
 
+            private final String firstRow;
+            private final String secondRow;
             private final List<String> thirdRow;
             private final List<String> additionalRows;
+            private final Boolean checkbox;
 
             @JsonCreator
-            private Content(@JsonProperty("thirdRow") List<String> thirdRow,
-                            @JsonProperty("additionalRows") List<String> additionalRows) {
+            private Content(@JsonProperty("firstRow") String firstRow,
+                            @JsonProperty("secondRow") String secondRow,
+                            @JsonProperty("thirdRow") List<String> thirdRow,
+                            @JsonProperty("additionalRows") List<String> additionalRows,
+                            @JsonProperty("checkbox") Boolean checkbox) {
+                this.firstRow = firstRow;
+                this.secondRow = secondRow;
                 this.thirdRow = thirdRow;
                 this.additionalRows = additionalRows;
+                this.checkbox = checkbox;
             }
         }
 
