@@ -16,7 +16,10 @@
             infoSeparator: "::"
         },
         content: {
-            additionalRows: []
+            firstRow: "firstName",
+            secondRow: "lastName",
+            additionalRows: [],
+            checkbox: false
         },
         general: {
             printPartialID: true
@@ -29,6 +32,8 @@
         ctrl.configValue = JSON.parse(ctrl.config.value);
         ctrl.updateHandler = updateHandler;
         ctrl.qrCodeData = qrCodeData;
+        ctrl.getFirstRow = getFirstRow;
+        ctrl.getSecondRow = getSecondRow;
 
         function updateHandler(val) {
             try {
@@ -44,6 +49,27 @@
         function qrCodeData() {
             return _.join(ctrl.configValue.qrCode.additionalInfo, ctrl.configValue.qrcode.infoSeparator);
         }
+
+        function getFirstRow() {
+            return getRowValue(ctrl.configValue.content.firstRow, 'firstName');
+        }
+
+        function getSecondRow() {
+            return getRowValue(ctrl.configValue.content.secondRow, 'lastName');
+        }
+
+        function getRowValue(k, defaultKey) {
+            var key = k || defaultKey;
+            switch(key) {
+                case 'firstName':
+                    return 'Homer J';
+                case 'lastName':
+                    return 'Simpson';
+                default:
+                    return 'Sample '+key;
+            }
+        }
+
     }
 
 
