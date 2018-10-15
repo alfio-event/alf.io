@@ -95,42 +95,17 @@ Importing the Gradle project into Intellij and Eclipse both work.
 
 `./gradlew dependencyUpdates`
 
-## Docker images
+## Docker
 
-### Pull the latest stable version from Docker Hub 
+alf.io can be run for development with Docker Compose:
 
- ```
- docker pull alfio/alf.io
- ```
+    docker-compose up
 
-Here's an example of deployment as a 3 tier application using the following images:
+If you plan on using Docker Compose to run alf.io in production, then you need
+to make a couple of changes:
 
- * `postgres` --> docker official image for PostgreSQL database
- * `alfio/alf.io`--> application runtime.
- * `tutum/haproxy` --> front layer proxy, force redirect to https and support load-balancing if multiple alf.io instances are running
-
-
-### Launch alf.io container instances
-
- * Define local directory for database data (on docker host, for data to survive postgres image restarts):  `/path/to/local/data = /data/postgres/alfio`
- 
- * Launch the Postgres instance
- 
- ```
- docker run --name alfio-db -e POSTGRES_DB=postgres -e POSTGRES_USERNAME=postgres -e POSTGRES_PASSWORD=alfiopassword --restart=always -d -v /path/to/local/data:/var/lib/postgresql/data postgres
- ```
-    * Note: on Mac volumes don't work (see https://jhipster.github.io/installation.html for a possible workaround), launch the above command without the `-v` parameter (data are lost at every restart)
-
- * Launch the alf.io server
- ```
- docker run --name alfio --link alfio-db:postgres -d alfio/alf.io
- ```
-    Please note that at the moment, the only alias supported for the DB link is *postgres*
- 
- * Launch the proxy
- ```
- docker run --name alfio-proxy --link alfio:web1 -e SSL_CERT="$(awk 1 ORS='\\n' src/main/dist/servercert.pem)" -e FORCE_SSL=yes -e PORT=8080 -p 443:443 -p 80:80 -d tutum/haproxy
- ```
+* Handle SSL termination (e.g. with something like `tutum/haproxy`)
+* Remove the `SPRING_PROFILES_ACTIVE: dev` environment variable
 
 ### Test alf.io application
  * Check alfio logs: `docker logs alfio`
