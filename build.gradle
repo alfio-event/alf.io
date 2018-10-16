@@ -8,7 +8,7 @@ import java.util.regex.Pattern
 
 buildscript {
     dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.10.RELEASE")
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.17.RELEASE")
     }
     repositories {
         jcenter()
