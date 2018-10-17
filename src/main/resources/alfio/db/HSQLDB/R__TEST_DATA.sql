@@ -18,17 +18,17 @@
 INSERT INTO organization(name, description, email) VALUES ('demo', 'demo organization', 'info@pippobaudo.com');
 
 insert into event(short_name, display_name, website_url, website_t_c_url, location, latitude, longitude, start_ts, end_ts, regular_price_cts, currency, available_seats, vat_included, vat, allowed_payment_proxies, private_key, org_id, time_zone, image_url)
-values('eventname', 'display_name', 'http://localhost:8080', 'http://localhost:8080', 'demo location', '0', '0', '2018-10-10 04:00:00' , '2018-10-11 03:59:00' , 1000, 'CHF', 20, 'true', 8, 'STRIPE,ON_SITE,OFFLINE,PAYPAL', 'alfio-uberall', 0, 'America/New_York', 'http://localhost:8080/resources/images/sample-logo.png');
+values('eventname', 'display_name', 'http://localhost:8080', 'http://localhost:8080', 'demo location', '0', '0', '2019-10-10 04:00:00' , '2019-10-11 03:59:00' , 1000, 'CHF', 20, 'true', 8, 'STRIPE,ON_SITE,OFFLINE,PAYPAL', 'alfio-uberall', 0, 'America/New_York', 'http://localhost:8080/resources/images/sample-logo.png');
 
 insert into invoice_sequences values (0, 0);
 
 insert into ticket_category(inception, expiration, name, max_tickets, price_cts, access_restricted, tc_status, event_id, bounded) values
-  ('2014-01-10 00:00:00', '2018-10-10 00:00:00', 'Normal', 2, 0, false, 'ACTIVE', 0, true),
-  ('2014-01-10 00:00:00', '2018-10-10 00:00:00', 'Not normal', 5, 463, false, 'ACTIVE', 0, TRUE ),
-  ('2016-09-10 00:00:00', '2018-10-10 00:00:00', 'Still not in sale', 1, 556, false, 'ACTIVE', 0, TRUE ),
+  ('2014-01-10 00:00:00', '2019-10-10 00:00:00', 'Normal', 2, 0, false, 'ACTIVE', 0, true),
+  ('2014-01-10 00:00:00', '2019-10-10 00:00:00', 'Not normal', 5, 463, false, 'ACTIVE', 0, TRUE ),
+  ('2016-09-10 00:00:00', '2019-10-10 00:00:00', 'Still not in sale', 1, 556, false, 'ACTIVE', 0, TRUE ),
   ('2014-01-01 00:00:00', '2014-09-01 00:00:00', 'Expired', 1, 400, false, 'ACTIVE', 0, TRUE ),
-  ('2014-01-10 00:00:00', '2018-10-10 00:00:00', 'Restricted', 4, 463, true, 'ACTIVE', 0, TRUE ),
-  ('2014-01-10 00:00:00', '2018-10-10 00:00:00', 'Unbounded', -1, 463, false, 'ACTIVE', 0, FALSE );
+  ('2014-01-10 00:00:00', '2019-10-10 00:00:00', 'Restricted', 4, 463, true, 'ACTIVE', 0, TRUE ),
+  ('2014-01-10 00:00:00', '2019-10-10 00:00:00', 'Unbounded', -1, 463, false, 'ACTIVE', 0, FALSE );
 
 insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address, event_id_fk) values('abcdefghi', '2014-01-10 00:00:00', 'IN_PAYMENT', 'ciccio', 'cc@cc.uu', null, 0);
 insert into tickets_reservation (id, validity, status, full_name, email_address, billing_address, event_id_fk) values('abcdefghiz', '2014-01-10 00:00:00', 'PENDING', 'ciccio', 'cc@cc.uu', null, 0);
