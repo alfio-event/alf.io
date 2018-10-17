@@ -8,7 +8,7 @@ services:
       POSTGRES_ENV_POSTGRES_DB: alfio
       POSTGRES_ENV_POSTGRES_USERNAME: alfio
       POSTGRES_ENV_POSTGRES_PASSWORD: alfio
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: dev,jdbc-session
     ports:
       - "8080:8080"
     links:
