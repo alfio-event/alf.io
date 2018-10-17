@@ -77,6 +77,9 @@ public interface GroupRepository {
     @Query(BY_EVENT_ID)
     List<LinkedGroup> findActiveConfigurationsForEvent(@Bind("eventId") int eventId);
 
+    @Query("select count(*) from group_link_active where event_id_fk = :eventId")
+    Integer countByEventId(@Bind("eventId") int eventId);
+
     @Query("select * from group_link_active where id = :configurationId")
     LinkedGroup getConfiguration(@Bind("configurationId") int configurationId);
 

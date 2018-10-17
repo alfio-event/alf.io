@@ -103,6 +103,7 @@ public class EventManager {
     private final OrganizationRepository organizationRepository;
     private final AuditingRepository auditingRepository;
     private final ExtensionManager extensionManager;
+    private final GroupRepository groupRepository;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -126,7 +127,15 @@ public class EventManager {
     }
 
     public static Predicate<Event> checkOwnership(String username, OrganizationRepository organizationRepository) {
-        return event -> organizationRepository.findOrganizationForUser(username, event.getOrganizationId()).isPresent();
+        return event -> checkOwnership(organizationRepository, username, event.getOrganizationId());
+    }
+
+    public static Predicate<Integer> checkOwnershipByOrgId(String username, OrganizationRepository organizationRepository) {
+        return id -> checkOwnership(organizationRepository, username, id);
+    }
+
+    private static boolean checkOwnership(OrganizationRepository organizationRepository, String username, Integer orgId) {
+        return orgId != null && organizationRepository.findOrganizationForUser(username, orgId).isPresent();
     }
 
     public List<TicketCategory> loadTicketCategories(Event event) {
@@ -272,8 +281,11 @@ public class EventManager {
     }
 
     public void updateEventHeader(Event original, EventModification em, String username) {
-        checkOwnership(original, username, em.getOrganizationId());
+        Predicate<Integer> ownershipChecker = checkOwnershipByOrgId(username, organizationRepository);
+        boolean sameOrganization = original.getOrganizationId() == em.getOrganizationId();
+        Validate.isTrue(ownershipChecker.test(original.getOrganizationId()) && (sameOrganization || ownershipChecker.test(em.getOrganizationId())), "Invalid organizationId");
         int eventId = original.getId();
+        Validate.isTrue(sameOrganization || groupRepository.countByEventId(eventId) == 0, "Cannot change organization because there is a group linked to this event.");
 
         final ZoneId zoneId = ZoneId.of(em.getZoneId());
         final ZonedDateTime begin = em.getBegin().toZonedDateTime(zoneId);
