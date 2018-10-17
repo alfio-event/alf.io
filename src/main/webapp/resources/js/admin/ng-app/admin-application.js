@@ -1468,7 +1468,6 @@
                 .toArray()
                 .then(function (tickets) {
                     $timeout(function () {
-                        console.log(tickets);
                         $scope.tickets = tickets;
                         deferred1.resolve();
                     }, 50);
