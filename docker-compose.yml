@@ -10,7 +10,7 @@ services:
       POSTGRES_ENV_POSTGRES_PASSWORD: alfio
       SPRING_PROFILES_ACTIVE: dev
     ports:
-      - "30100:8080"
+      - "8080:8080"
     links:
       - db:postgres
   db:
