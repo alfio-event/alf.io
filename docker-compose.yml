@@ -11,7 +11,6 @@ services:
       SPRING_PROFILES_ACTIVE: dev
     ports:
       - "30100:8080"
-      - "30101:8443"
     links:
       - db:postgres
   db:

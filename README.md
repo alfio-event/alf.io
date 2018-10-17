@@ -104,6 +104,7 @@ alf.io can be run for development with Docker Compose:
 If you plan on using Docker Compose to run alf.io in production, then you need
 to make a couple of changes:
 
+* Add a mapping for port `8443`
 * Handle SSL termination (e.g. with something like `tutum/haproxy`)
 * Remove the `SPRING_PROFILES_ACTIVE: dev` environment variable
 
