@@ -88,6 +88,7 @@ import java.util.zip.ZipOutputStream;
 import static alfio.util.OptionalWrapper.optionally;
 import static alfio.util.Validator.*;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
@@ -380,10 +381,10 @@ public class EventApiController {
             if(fields.contains("Billing Address")) {line.add(reservation.getBillingAddress());}
             boolean paymentIdRequested = fields.contains("Payment ID");
             boolean paymentGatewayRequested = fields.contains("Payment Method");
-            if((paymentIdRequested || paymentGatewayRequested) && trs.getTransaction().isPresent()) {
-                Transaction transaction = trs.getTransaction().get();
-                if(paymentIdRequested) { line.add(StringUtils.defaultString(transaction.getPaymentId(), transaction.getTransactionId())); }
-                if(paymentGatewayRequested) { line.add(transaction.getPaymentProxy().name()); }
+            if((paymentIdRequested || paymentGatewayRequested)) {
+                Optional<Transaction> transaction = trs.getTransaction();
+                if(paymentIdRequested) { line.add(defaultString(transaction.map(Transaction::getPaymentId).orElse(null), transaction.map(Transaction::getTransactionId).orElse(""))); }
+                if(paymentGatewayRequested) { line.add(transaction.map(tr -> tr.getPaymentProxy().name()).orElse("")); }
             }
 
             //obviously not optimized
