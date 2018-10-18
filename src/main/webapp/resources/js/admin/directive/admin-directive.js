@@ -907,13 +907,21 @@
                                 EventService.exportAttendees(ctrl.event);
                             };
                             ctrl.downloadSponsorsScan = function() {
-                                $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/sponsor-scan/export");
+                                var pathName = $window.location.pathname;
+                                if(!pathName.endsWith("/")) {
+                                    pathName = pathName + "/";
+                                }
+                                $window.open(pathName+"api/events/"+ctrl.event.shortName+"/sponsor-scan/export");
                             };
                             ctrl.downloadInvoices = function() {
                                 EventService.countInvoices(ctrl.event.shortName).then(function (res) {
                                     var count = res.data;
                                     if(count > 0) {
-                                        $window.open($window.location.pathname+"/api/events/"+ctrl.event.shortName+"/all-invoices");
+                                        var pathName = $window.location.pathname;
+                                        if(!pathName.endsWith("/")) {
+                                            pathName = pathName + "/";
+                                        }
+                                        $window.open(pathName+"api/events/"+ctrl.event.shortName+"/all-invoices");
                                     } else {
                                         NotificationHandler.showInfo("No invoices have been found.");
                                     }

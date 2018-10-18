@@ -260,7 +260,11 @@
                                     queryString+="fields="+k+"&";
                                 }
                             });
-                            $window.open($window.location.pathname+"/api/events/"+event.shortName+"/export.csv?"+queryString);
+                            var pathName = $window.location.pathname;
+                            if(!pathName.endsWith("/")) {
+                                pathName = pathName + "/";
+                            }
+                            $window.open(pathName+"api/events/"+event.shortName+"/export.csv?"+queryString);
                         };
                     }
                 });
