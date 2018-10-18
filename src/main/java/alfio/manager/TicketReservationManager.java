@@ -556,7 +556,7 @@ public class TicketReservationManager {
             model.put("reservationEmailModel", Json.toJson(reservationEmailModel));
             if(ticketReservation.getHasInvoiceNumber()) {
                 attachments.add(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
-            } else {
+            } else if(!summary.getNotYetPaid()) {
                 attachments.add(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
             }
 
