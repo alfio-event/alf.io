@@ -906,4 +906,40 @@ public class TicketReservationManagerTest {
         trm.sendReminderForOptionalData();
         verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
     }
+
+    @Test
+    public void testDetectTicketReassigned() {
+        when(ticket.getEmail()).thenReturn("test@test.ch");
+        when(ticket.getFullName()).thenReturn("Test Test");
+        when(event.mustUseFirstAndLastName()).thenReturn(true);
+        UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
+        form.setEmail("test@test.ch");
+        form.setFirstName("Test2");
+        form.setLastName("Test");
+        assertTrue(trm.isTicketBeingReassigned(ticket, form, event));
+    }
+
+    @Test
+    public void testDetectTicketNotReassigned() {
+        when(ticket.getEmail()).thenReturn("test@test.ch");
+        when(ticket.getFullName()).thenReturn("Test Test");
+        when(event.mustUseFirstAndLastName()).thenReturn(true);
+        UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
+        form.setEmail("test@test.ch");
+        form.setFirstName("Test");
+        form.setLastName("Test");
+        assertFalse(trm.isTicketBeingReassigned(ticket, form, event));
+    }
+
+    @Test
+    public void testDetectTicketWasNotYetAssigned() {
+        when(ticket.getEmail()).thenReturn(null);
+        when(ticket.getFullName()).thenReturn(null);
+        when(event.mustUseFirstAndLastName()).thenReturn(true);
+        UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
+        form.setEmail("test@test.ch");
+        form.setFirstName("Test");
+        form.setLastName("Test");
+        assertFalse(trm.isTicketBeingReassigned(ticket, form, event));
+    }
 }
