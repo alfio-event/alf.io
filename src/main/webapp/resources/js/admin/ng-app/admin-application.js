@@ -1134,7 +1134,11 @@
         };
 
         $scope.downloadSponsorsScan = function() {
-            $window.open($window.location.pathname+"/api/events/"+parentScope.event.shortName+"/sponsor-scan/export");
+            var pathName = $window.location.pathname;
+            if(!pathName.endsWith("/")) {
+                pathName = pathName + "/";
+            }
+            $window.open(pathName+"api/events/"+parentScope.event.shortName+"/sponsor-scan/export");
         };
 
         $scope.activateEvent = function(id) {
