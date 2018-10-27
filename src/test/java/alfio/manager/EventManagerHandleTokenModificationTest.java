@@ -57,7 +57,7 @@ class EventManagerHandleTokenModificationTest {
         TicketRepository ticketRepository = mock(TicketRepository.class);
         when(event.getId()).thenReturn(eventId);
         eventManager = new EventManager(null, null, null, null,
-            null, ticketRepository, specialPriceRepository, null, jdbc, null, null, null, null, null, null, null, null, null, null);
+            null, ticketRepository, specialPriceRepository, null, jdbc, null, null, null, null, null, null, null, null, null, null, null);
         when(original.getId()).thenReturn(20);
         when(updated.getId()).thenReturn(30);
         when(original.getSrcPriceCts()).thenReturn(1000);
