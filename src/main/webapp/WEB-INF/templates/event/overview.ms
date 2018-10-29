@@ -30,13 +30,13 @@
 
 {{>/event/header}}
 
-<div class="wizard2 wMarginBottom wMarginTop center">
+<div class="wizard2 center text-muted">
     <div>
-        <div><span class="badge">1</span><span>{{#i18n}}breadcrumb.step1{{/i18n}}</span></div>
+        <div><span class="badge badge-success">1</span><span>{{#i18n}}breadcrumb.step1{{/i18n}}</span></div>
         <div class="wizard2-line"></div>
     </div>
     <div>
-        <div><span class="badge">2</span><span>{{#i18n}}breadcrumb.step2{{/i18n}}</span></div>
+        <div><span class="badge badge-success">2</span><span>{{#i18n}}breadcrumb.step2{{/i18n}}</span></div>
         <div class="wizard2-line"></div>
     </div>
     <div class="wizard2-current">

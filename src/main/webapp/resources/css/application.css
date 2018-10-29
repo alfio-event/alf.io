@@ -211,6 +211,7 @@ html[lang=it] .alfio-lang a[lang=it] {
     display: flex;
     flex-direction: row;
     align-items: flex-start;
+    margin: 4rem 0;
 }
 
 .wizard2 > div {
@@ -232,10 +233,19 @@ html[lang=it] .alfio-lang a[lang=it] {
     border-top:1px solid #bdbdbd
 }
 
+.wizard2 .badge {
+    margin-bottom: 1rem;
+}
+
+.badge-success {
+    background-color: #449d44;
+}
+
 .wizard2 .wizard2-current .badge {
     background-color: #007ACC;
 }
 
 .wizard2 .wizard2-current span:nth-child(2) {
     font-weight:bold;
+    color: black;
 }

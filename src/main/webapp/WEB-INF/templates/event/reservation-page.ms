@@ -8,9 +8,9 @@
 <script src="{{request.contextPath}}/resources/js/countdownjs/countdown.min.js"></script>
 {{>/event/header}}
 
-<div class="wizard2 wMarginBottom wMarginTop center">
+<div class="wizard2 center text-muted">
     <div>
-        <div><span class="badge">1</span><span>{{#i18n}}breadcrumb.step1{{/i18n}}</span></div>
+        <div><span class="badge badge-success">1</span><span>{{#i18n}}breadcrumb.step1{{/i18n}}</span></div>
         <div class="wizard2-line"></div>
     </div>
     <div class="wizard2-current">
@@ -25,52 +25,6 @@
         <div><span class="badge">4</span><span>{{#i18n}}breadcrumb.step4{{/i18n}}</span></div>
     </div>
 </div>
-
-<div class="page-header">
-    <h2>{{#i18n}}reservation-page.title{{/i18n}}</h2>
-</div>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>{{#i18n}}reservation-page.category{{/i18n}}</th>
-            <th class="text-center">{{#i18n}}reservation-page.amount{{/i18n}}</th>
-            <th class="text-right">{{#i18n}}reservation-page.price{{/i18n}}</th>
-            <th class="text-right">{{#i18n}}reservation-page.subtotal{{/i18n}}</th>
-        </tr>
-    </thead>
-    <tbody>
-{{#orderSummary.summary}}
-        <tr>
-            <td>{{name}}</td>
-            <td class="text-center">{{amount}}</td>
-            <td class="text-right">{{price}}</td>
-            <td class="text-right">{{subTotal}} {{event.currency}}</td>
-        </tr>
-{{/orderSummary.summary}}
-    </tbody>
-    <tfoot>
-        {{^orderSummary.free}}
-            {{#orderSummary.displayVat}}
-                {{^event.vatIncluded}}
-                    <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}] [{{vatTranslation}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
-                {{/event.vatIncluded}}
-            {{/orderSummary.displayVat}}
-        {{/orderSummary.free}}
-        <tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td class="text-right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
-
-        {{^orderSummary.free}}
-            {{#orderSummary.displayVat}}
-                {{#event.vatIncluded}}
-                    <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}] [{{vatTranslation}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
-                {{/event.vatIncluded}}
-            {{/orderSummary.displayVat}}
-            {{^orderSummary.displayVat}}
-                <tr><td colspan="4">{{#i18n}}invoice.vat-voided [{{vatTranslation}}]{{/i18n}}</td></tr>
-            {{/orderSummary.displayVat}}
-        {{/orderSummary.free}}
-    </tfoot>
-</table>
 
 {{#hasErrors}}
     {{#error.globalErrors}}
@@ -187,16 +141,20 @@
                 <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
                 <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control field-required" required>
                     <option value="">{{#i18n}}reservation-page.country.select{{/i18n}}</option>
+                    {{#euVatCheckingEnabled}}
                     <optgroup label="{{#i18n}}reservation-page.eu-countries{{/i18n}}" id="optgroup-eu-countries-list">
                         {{#euCountriesForVat}}
                             <option value="{{left}}" data-description="{{right}}">{{left}} - {{right}}</option>
                         {{/euCountriesForVat}}
                     </optgroup>
                     <optgroup label="{{#i18n}}reservation-page.all-countries{{/i18n}}">
+                    {{/euVatCheckingEnabled}}
                         {{#countriesForVat}}
                             <option value="{{left}}" data-description="{{right}}">{{left}} - {{right}}</option>
                         {{/countriesForVat}}
+                    {{#euVatCheckingEnabled}}
                     </optgroup>
+                    {{/euVatCheckingEnabled}}
                 </select>
                 {{#field-has-error}}[vatCountryCode]<span class="help-block text-danger">{{#i18n}}{{#field-error}}vatCountryCode{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
             </div>
@@ -297,16 +255,20 @@
                     <label for="vatCountry">{{#i18n}}reservation-page-complete.country{{/i18n}}</label>
                     <select name="vatCountryCode" id="vatCountry" value="{{paymentForm.vatCountryCode}}" class="form-control field-required">
                         <option value="">{{#i18n}}reservation-page.country.select{{/i18n}}</option>
+                        {{#euVatCheckingEnabled}}
                         <optgroup label="{{#i18n}}reservation-page.eu-countries{{/i18n}}" id="optgroup-eu-countries-list">
                             {{#euCountriesForVat}}
                                 <option value="{{left}}" data-description="{{right}}">{{left}} - {{right}}</option>
                             {{/euCountriesForVat}}
                         </optgroup>
                         <optgroup label="{{#i18n}}reservation-page.all-countries{{/i18n}}">
+                        {{/euVatCheckingEnabled}}
                             {{#countriesForVat}}
                                 <option value="{{left}}" data-description="{{right}}">{{left}} - {{right}}</option>
                             {{/countriesForVat}}
+                        {{#euVatCheckingEnabled}}
                         </optgroup>
+                        {{/euVatCheckingEnabled}}
                     </select>
                     {{#field-has-error}}[vatCountryCode]<span class="help-block text-danger">{{#i18n}}{{#field-error}}vatCountryCode{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
                 </div>
