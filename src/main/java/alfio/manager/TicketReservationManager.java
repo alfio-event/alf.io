@@ -86,6 +86,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.*;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
 
@@ -527,7 +528,7 @@ public class TicketReservationManager {
             model.put("reservationEmailModel", Json.toJson(reservationEmailModel));
             if(ticketReservation.getHasInvoiceNumber()) {
                 attachments.add(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
-            } else {
+            } else if(!summary.getNotYetPaid()) {
                 attachments.add(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
             }
 
@@ -1051,7 +1052,7 @@ public class TicketReservationManager {
                                   Optional<UserDetails> userDetails) {
 
         Ticket preUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
-        if(preUpdateTicket.getLockedAssignment()) {
+        if(preUpdateTicket.getLockedAssignment() && isTicketBeingReassigned(ticket, updateTicketOwner, event)) {
             log.warn("trying to update assignee for a locked ticket ({})", preUpdateTicket.getId());
             return;
         }
@@ -1070,13 +1071,13 @@ public class TicketReservationManager {
 
         Ticket newTicket = ticketRepository.findByUUID(ticket.getUuid());
         if ((newTicket.getStatus() == TicketStatus.ACQUIRED || newTicket.getStatus() == TicketStatus.TO_BE_PAID)
-            && (!StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) || !StringUtils.equalsIgnoreCase(customerName.getFullName(), ticket.getFullName()))) {
+            && (!equalsIgnoreCase(newEmail, ticket.getEmail()) || !equalsIgnoreCase(customerName.getFullName(), ticket.getFullName()))) {
             sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder);
         }
 
         boolean admin = isAdmin(userDetails);
 
-        if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !StringUtils.equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
+        if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
             Locale oldUserLocale = Locale.forLanguageTag(ticket.getUserLanguage());
             String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
             notificationManager.sendSimpleEmail(event, ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
@@ -1101,6 +1102,15 @@ public class TicketReservationManager {
         Map<String, String> postUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
 
         auditUpdateTicket(preUpdateTicket, preUpdateTicketFields, postUpdateTicket, postUpdateTicketFields, event.getId());
+    }
+
+    boolean isTicketBeingReassigned(Ticket original, UpdateTicketOwnerForm updated, Event event) {
+        if(StringUtils.isBlank(original.getEmail()) || StringUtils.isBlank(original.getFullName())) {
+            return false;
+        }
+        CustomerName customerName = new CustomerName(updated.getFullName(), updated.getFirstName(), updated.getLastName(), event);
+        return StringUtils.isNotBlank(original.getEmail()) && StringUtils.isNotBlank(original.getFullName())
+            && (!equalsIgnoreCase(original.getEmail(), updated.getEmail()) || !equalsIgnoreCase(original.getFullName(), customerName.getFullName()));
     }
 
     private void auditUpdateTicket(Ticket preUpdateTicket, Map<String, String> preUpdateTicketFields, Ticket postUpdateTicket, Map<String, String> postUpdateTicketFields, int eventId) {

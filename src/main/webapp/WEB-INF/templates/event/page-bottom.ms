@@ -8,5 +8,6 @@
     <script src="https://ssl.google-analytics.com/analytics.js"></script>
     <!-- End Google Analytics -->
 {{/analyticsEnabled}}
+    <script src="{{request.contextPath}}/resources/js/common/warning-msg.js" async="true"></script>
     </body>
 </html>

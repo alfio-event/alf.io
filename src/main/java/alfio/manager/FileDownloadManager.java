@@ -26,6 +26,7 @@ import okhttp3.Response;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.util.Objects;
 
 
 @Log4j2
@@ -42,11 +43,16 @@ public class FileDownloadManager {
                 String[] parts = url.split("/");
                 String name = parts[parts.length - 1];
 
-                return new DownloadedFile(
-                    response.body().bytes(),
-                    name,
-                    response.header("Content-Type", "application/octet-stream")
-                );
+                byte[] bytes = Objects.requireNonNull(response.body()).bytes();
+                if(bytes.length <= FileUploadManager.MAXIMUM_ALLOWED_SIZE) {
+                    return new DownloadedFile(
+                        bytes,
+                        name,
+                        response.header("Content-Type", "application/octet-stream")
+                    );
+                } else {
+                    return null;
+                }
             } else {
                 log.warn("downloading file not successful:" + response);
                 return null;

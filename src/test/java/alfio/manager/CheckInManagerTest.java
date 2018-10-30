@@ -60,7 +60,7 @@ public class CheckInManagerTest {
         when(organization.getId()).thenReturn(ORG_ID);
         when(eventRepository.retrieveCheckInStatisticsForEvent(EVENT_ID)).thenReturn(new CheckInStatistics(0, 0, new Date()));
         checkInManager = new CheckInManager(null, eventRepository, null, null, null, null,
-            null, configurationManager, organizationRepository, null, null, null);
+            null, configurationManager, organizationRepository, null, null, null, null);
     }
 
     @Test

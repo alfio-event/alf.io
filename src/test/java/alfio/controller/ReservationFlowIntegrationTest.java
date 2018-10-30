@@ -99,6 +99,7 @@ import java.util.*;
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 /**
  *
@@ -180,7 +181,14 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private NotificationManager notificationManager;
 
+    @Autowired
+    private FileUploadManager fileUploadManager;
+
+    @Autowired
+    private TemplateManager templateManager;
+
     private ReservationApiController reservationApiController;
+    private InvoiceReceiptController invoiceReceiptController;
 
 
 
@@ -202,8 +210,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         user = eventAndUser.getValue() + "_owner";
 
         //
-        TemplateManager templateManager = Mockito.mock(TemplateManager.class);
-        reservationApiController = new ReservationApiController(eventRepository, ticketHelper, templateManager, i18nManager, euVatChecker, ticketReservationRepository, ticketReservationManager);
+        reservationApiController = new ReservationApiController(eventRepository, ticketHelper, mock(TemplateManager.class), i18nManager, euVatChecker, ticketReservationRepository, ticketReservationManager);
+        invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager);
 
         //promo code at event level
         eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3);
@@ -285,6 +293,15 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         Assert.assertTrue(reservationController.showWaitingPaymentPage(eventName, reservationIdentifier, new BindingAwareModelMap(), Locale.ENGLISH).endsWith("/success"));
 
+        //check receipt/invoice
+        MockHttpServletResponse responseForReceipt = new MockHttpServletResponse();
+        // no invoice
+        Assert.assertEquals(404, invoiceReceiptController.getInvoice(eventName, reservationIdentifier, new MockHttpServletResponse()).getStatusCodeValue());
+        // we got a receipt
+        Assert.assertEquals(200, invoiceReceiptController.getReceipt(eventName, reservationIdentifier, responseForReceipt).getStatusCodeValue());
+        Assert.assertEquals("attachment; filename=\"receipt-" + eventName + "-" + reservationIdentifier + ".pdf\"", responseForReceipt.getHeader("Content-Disposition"));
+        //
+
         //
         TicketDecorator ticketDecorator = checkReservationComplete(eventName, reservationIdentifier);
         //
@@ -349,7 +366,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         checkCSV(eventName, ticketIdentifier, fname2 + " " + lname2);
 
         //lock ticket
-        Principal principal = Mockito.mock(Principal.class);
+        Principal principal = mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(user);
         eventApiController.toggleTicketLocking(eventName, ticketDecorator.getCategoryId(), ticketDecorator.getId(), principal);
 
@@ -401,7 +418,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult2.getResult().getStatus());
 
         UsersApiController.UserWithPasswordAndQRCode sponsorUser = usersApiController.insertUser(new UserModification(null, event.getOrganizationId(), "SPONSOR", "sponsor", "first", "last", "email@email.com", User.Type.INTERNAL, null, null), "http://localhost:8080", principal);
-        Principal sponsorPrincipal = Mockito.mock(Principal.class);
+        Principal sponsorPrincipal = mock(Principal.class);
         Mockito.when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
 
         // check failures
@@ -470,8 +487,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         List<String[]> csvSponsorScan = csvReader.readAll();
         Assert.assertEquals(2, csvSponsorScan.size());
         Assert.assertEquals("sponsor", csvSponsorScan.get(1)[0]);
-        Assert.assertEquals("Test OTest", csvSponsorScan.get(1)[2]);
-        Assert.assertEquals("testmctest@test.com", csvSponsorScan.get(1)[3]);
+        Assert.assertEquals("Test OTest", csvSponsorScan.get(1)[3]);
+        Assert.assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
         //
         
         eventManager.deleteEvent(event.getId(), principal.getName());
@@ -505,12 +522,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         ticketOwnerForm.setLastName(lastName);
         ticketOwnerForm.setEmail("testmctest@test.com");
         ticketOwnerForm.setUserLanguage("en");
-        Assert.assertTrue(reservationController.assignTicketToPerson(eventName, reservationIdentifier, ticketIdentifier, ticketOwnerForm, Mockito.mock(BindingResult.class), new MockHttpServletRequest(), new BindingAwareModelMap()).endsWith("/success"));
+        Assert.assertTrue(reservationController.assignTicketToPerson(eventName, reservationIdentifier, ticketIdentifier, ticketOwnerForm, mock(BindingResult.class), new MockHttpServletRequest(), new BindingAwareModelMap()).endsWith("/success"));
     }
 
     private void checkCSV(String eventName, String ticketIdentifier, String fullName) throws IOException {
         //FIXME get all fields :D and put it in the request...
-        Principal principal = Mockito.mock(Principal.class);
+        Principal principal = mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(user);
         MockHttpServletResponse response = new MockHttpServletResponse();
         List<SerializablePair<String, String>> fields = eventApiController.getAllFields(eventName);
@@ -527,7 +544,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     }
 
     private void validatePayment(String eventName, String reservationIdentifier) {
-        Principal principal = Mockito.mock(Principal.class);
+        Principal principal = mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(user);
         assertEquals(1, eventApiController.getPendingPayments(eventName, principal).size());
         assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal, new BindingAwareModelMap(), new MockHttpServletRequest()));

@@ -65,7 +65,7 @@ class SmtpMailer implements Mailer {
             }
             message.setTo(to);
             if(cc != null && !cc.isEmpty()){
-                message.setCc(cc.toArray(new String[cc.size()]));
+                message.setCc(cc.toArray(new String[0]));
             }
             if (html.isPresent()) {
                 message.setText(text, html.get());

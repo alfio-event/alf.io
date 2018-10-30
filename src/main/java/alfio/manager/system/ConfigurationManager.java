@@ -93,9 +93,7 @@ public class ConfigurationManager {
      * @return
      */
     private Configuration selectPath(List<Configuration> conf) {
-        return conf.size() == 1 ? conf.get(0) : conf.stream()
-            .sorted(Comparator.comparing(Configuration::getConfigurationPathLevel).reversed())
-            .findFirst().orElse(null);
+        return conf.size() == 1 ? conf.get(0) : conf.stream().max(Comparator.comparing(Configuration::getConfigurationPathLevel)).orElse(null);
     }
 
     //meh

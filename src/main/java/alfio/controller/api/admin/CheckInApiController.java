@@ -35,6 +35,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,6 +43,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static alfio.util.OptionalWrapper.optionally;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
@@ -60,6 +62,12 @@ public class CheckInApiController {
 
     @Data
     public static class TicketCode {
+        private String code;
+    }
+
+    @Data
+    public static class TicketIdentifierCode {
+        private String identifier;
         private String code;
     }
     
@@ -90,6 +98,24 @@ public class CheckInApiController {
         String username = principal.getName();
         String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
         return checkInManager.checkIn(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), username, auditUser);
+    }
+
+    @PostMapping("/check-in/event/{eventName}/bulk")
+    public Map<String, TicketAndCheckInResult> bulkCheckIn(@PathVariable("eventName") String eventName,
+                                                           @RequestBody List<TicketIdentifierCode> ticketIdentifierCodes,
+                                                           @RequestParam(value = "offlineUser", required = false) String offlineUser,
+                                                           @RequestParam(value = "forceCheckInPaymentOnSite", required = false, defaultValue = "false") boolean forceCheckInPaymentOnSite,
+                                                           Principal principal) {
+        String username = principal.getName();
+        String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
+        return ticketIdentifierCodes.stream()
+            .map(t -> {
+                TicketAndCheckInResult res = checkInManager.checkIn(eventName, t.getIdentifier(),
+                    Optional.ofNullable(t.getCode()),
+                    username, auditUser, forceCheckInPaymentOnSite);
+                return Pair.of(t.identifier, res);
+            })
+            .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     }
 
     @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/manual-check-in", method = POST)
@@ -252,14 +278,23 @@ public class CheckInApiController {
         @Getter
         private static class Content {
 
+            private final String firstRow;
+            private final String secondRow;
             private final List<String> thirdRow;
             private final List<String> additionalRows;
+            private final Boolean checkbox;
 
             @JsonCreator
-            private Content(@JsonProperty("thirdRow") List<String> thirdRow,
-                            @JsonProperty("additionalRows") List<String> additionalRows) {
+            private Content(@JsonProperty("firstRow") String firstRow,
+                            @JsonProperty("secondRow") String secondRow,
+                            @JsonProperty("thirdRow") List<String> thirdRow,
+                            @JsonProperty("additionalRows") List<String> additionalRows,
+                            @JsonProperty("checkbox") Boolean checkbox) {
+                this.firstRow = firstRow;
+                this.secondRow = secondRow;
                 this.thirdRow = thirdRow;
                 this.additionalRows = additionalRows;
+                this.checkbox = checkbox;
             }
         }
 

@@ -19,7 +19,7 @@
     </div>
 </div>
 
-<div class="wizard2 wMarginBottom wMarginTop center">
+<div class="wizard2 center text-muted">
     <div class="wizard2-current">
         <div><span class="badge">1</span><span>{{#i18n}}breadcrumb.step1{{/i18n}}</span></div>
         <div class="wizard2-line"></div>

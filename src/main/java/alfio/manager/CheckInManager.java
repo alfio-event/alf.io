@@ -31,6 +31,8 @@ import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -58,6 +60,7 @@ import java.util.stream.Collectors;
 
 import static alfio.manager.support.CheckInStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
+import static java.util.stream.Collectors.toMap;
 
 @Component
 @Transactional
@@ -77,6 +80,7 @@ public class CheckInManager {
     private final UserRepository userRepository;
     private final TicketReservationManager ticketReservationManager;
     private final ExtensionManager extensionManager;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
 
     private void checkIn(String uuid) {
@@ -111,11 +115,22 @@ public class CheckInManager {
         return uuid;
     }
 
-    public TicketAndCheckInResult checkIn(String shortName, String ticketIdentifier, Optional<String> ticketCode, String username, String auditUser) {
-        return eventRepository.findOptionalByShortName(shortName)
+    public TicketAndCheckInResult checkIn(String eventShortName, String ticketIdentifier, Optional<String> ticketCode, String username, String auditUser,
+                                          boolean automaticallyConfirmOnSitePayment) {
+        return eventRepository.findOptionalByShortName(eventShortName)
             .filter(EventManager.checkOwnership(username, organizationRepository))
-            .map(e -> checkIn(e.getId(), ticketIdentifier, ticketCode, auditUser))
+            .map(e -> {
+                if (automaticallyConfirmOnSitePayment && CheckInStatus.MUST_PAY == evaluateTicketStatus(eventShortName, ticketIdentifier, ticketCode).getResult().getStatus()) {
+                    log.info("in event {} automaticallyConfirmOnSitePayment for {}", eventShortName, ticketIdentifier);
+                    confirmOnSitePayment(eventShortName, ticketIdentifier, ticketCode, username, auditUser);
+                }
+                return checkIn(e.getId(), ticketIdentifier, ticketCode, auditUser);
+            })
             .orElseGet(() -> new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found")));
+    }
+
+    public TicketAndCheckInResult checkIn(String shortName, String ticketIdentifier, Optional<String> ticketCode, String username, String auditUser) {
+        return checkIn(shortName, ticketIdentifier, ticketCode, username, auditUser, false);
     }
 
     public TicketAndCheckInResult checkIn(int eventId, String ticketIdentifier, Optional<String> ticketCode, String user) {
@@ -213,9 +228,6 @@ public class CheckInManager {
                 String.format("Invalid check-in date: valid range for category %s is from %s to %s, current time is: %s",
                     tc.getName(), from, to, formattedNow)));
         }
-
-        log.trace("scanned code is {}", code);
-        log.trace("true code    is {}", ticket.ticketCode(event.getPrivateKey()));
 
         if (!code.equals(ticket.ticketCode(event.getPrivateKey()))) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(INVALID_TICKET_CODE, "Ticket qr code does not match"));
@@ -347,7 +359,7 @@ public class CheckInManager {
                             }
                             return Pair.of(vd.getName(), vd.getValue());
                         })
-                        .collect(Collectors.toMap(Pair::getLeft, Pair::getRight));
+                        .collect(toMap(Pair::getLeft, Pair::getRight));
                     info.put("additionalInfoJson", Json.toJson(map));
                 }
 
@@ -360,12 +372,25 @@ public class CheckInManager {
                     info.put("validCheckInTo", Long.toString(tc.getValidCheckInTo(event.getZoneId()).toEpochSecond()));
                 }
                 //
+
+                List<BookedAdditionalService> additionalServices = additionalServiceItemRepository.getAdditionalServicesBookedForReservation(ticket.getTicketsReservationId(), ticket.getUserLanguage(), ticket.getEventId());
+                boolean additionalServicesEmpty = additionalServices.isEmpty();
+                if(!additionalServicesEmpty) {
+                    List<Integer> additionalServiceIds = additionalServices.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toList());
+                    Map<Integer, List<TicketFieldValueForAdditionalService>> fields = ticketFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
+                        .stream().collect(Collectors.groupingBy(TicketFieldValueForAdditionalService::getAdditionalServiceId));
+
+                    List<AdditionalServiceInfo> additionalServicesInfo = additionalServices.stream()
+                        .map(as -> new AdditionalServiceInfo(as.getAdditionalServiceName(), as.getCount(), fields.get(as.getAdditionalServiceId())))
+                        .collect(Collectors.toList());
+                    info.put("additionalServicesInfoJson", Json.toJson(additionalServicesInfo));
+                }
                 String key = ticket.ticketCode(eventKey);
                 return encrypt(key, Json.toJson(info));
             };
             return ticketRepository.findAllFullTicketInfoAssignedByEventId(event.getId(), ids)
                 .stream()
-                .collect(Collectors.toMap(hashedHMAC, encryptedBody));
+                .collect(toMap(hashedHMAC, encryptedBody));
 
         }).orElseGet(Collections::emptyMap);
     }
@@ -380,5 +405,13 @@ public class CheckInManager {
 
     private boolean areStatsEnabled(Event event) {
         return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), CHECK_IN_STATS), true);
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    private static class AdditionalServiceInfo {
+        private final String name;
+        private final int count;
+        private final List<TicketFieldValueForAdditionalService> fields;
     }
 }

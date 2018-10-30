@@ -88,6 +88,7 @@ public class EventApiV1Controller {
             .checkPrecondition(() -> isNotBlank(request.getTermsAndConditionsUrl()), ErrorCode.custom("invalid.tc", "Invalid Terms and Conditions"))
             .checkPrecondition(() -> isNotBlank(request.getImageUrl()), ErrorCode.custom("invalid.imageUrl", "Invalid Image URL"))
             .checkPrecondition(() -> isNotBlank(request.getTimezone()), ErrorCode.custom("invalid.timezone", "Invalid Timezone"))
+            .checkPrecondition(() -> isNotBlank(imageRef), ErrorCode.custom("invalid.image", "Image is either missing or too big (max 200kb)"))
             .checkPrecondition(() -> {
                 EventModification eventModification = request.toEventModification(organization, eventNameManager::generateShortName, imageRef);
                 errorsContainer.set(new BeanPropertyBindingResult(eventModification, "event"));

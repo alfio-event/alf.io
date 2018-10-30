@@ -31,7 +31,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.20.0'
     id 'com.github.hierynomus.license' version '0.14.0'
     id 'net.researchgate.release' version '2.7.0'
-    id 'org.springframework.boot' version '2.0.4.RELEASE'
+    id 'org.springframework.boot' version '2.0.6.RELEASE'
 }
 
 apply plugin: 'java'
@@ -138,9 +138,9 @@ dependencies {
     }
     compile 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC15"
-    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC15"
-    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC15"
+    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC16"
+    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC16"
+    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC16"
     /**/
     compile "com.google.zxing:core:3.3.3"
     compile "com.google.zxing:javase:3.3.3"
@@ -209,6 +209,8 @@ dependencies {
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
         exclude module : 'spring-boot-starter-logging'
     }
+
+    runtime "org.glassfish.jaxb:jaxb-runtime:2.4.0-b180830.0438" //temporary for JDK11
 }
 
 // -- license configuration

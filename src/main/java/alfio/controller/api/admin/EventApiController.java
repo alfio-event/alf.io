@@ -27,8 +27,10 @@ import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
+import alfio.model.transaction.Transaction;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
+import alfio.model.user.User;
 import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
@@ -86,6 +88,7 @@ import java.util.zip.ZipOutputStream;
 import static alfio.util.OptionalWrapper.optionally;
 import static alfio.util.Validator.*;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
@@ -121,7 +124,7 @@ public class EventApiController {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String unhandledException(Exception e) {
-        if(!IllegalArgumentException.class.isInstance(e)) {
+        if(!(e instanceof IllegalArgumentException)) {
             log.warn("unhandled exception", e);
         }
         return e.getMessage();
@@ -274,7 +277,7 @@ public class EventApiController {
         return OK;
     }
 
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address");
+    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Payment ID", "Payment Method");
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
     @RequestMapping("/events/{eventName}/export")
@@ -354,7 +357,9 @@ public class EventApiController {
     }
 
     private Stream<String[]> exportLines(String eventName, Principal principal, List<String> fields, Map<Integer, TicketCategory> categoriesMap, ZoneId eventZoneId) {
-        return eventManager.findAllConfirmedTicketsForCSV(eventName, principal.getName()).stream().map(t -> {
+        return eventManager.findAllConfirmedTicketsForCSV(eventName, principal.getName()).stream().map(trs -> {
+            Ticket t = trs.getTicket();
+            TicketReservation reservation = trs.getTicketReservation();
             List<String> line = new ArrayList<>();
             if(fields.contains("ID")) {line.add(t.getUuid());}
             if(fields.contains("Creation")) {line.add(t.getCreation().withZoneSameInstant(eventZoneId).toString());}
@@ -372,8 +377,15 @@ public class EventApiController {
             if(fields.contains("E-Mail")) {line.add(t.getEmail());}
             if(fields.contains("Locked")) {line.add(String.valueOf(t.getLockedAssignment()));}
             if(fields.contains("Language")) {line.add(String.valueOf(t.getUserLanguage()));}
-            if(fields.contains("Confirmation")) {line.add(t.getTicketReservation().getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
-            if(fields.contains("Billing Address")) {line.add(t.getTicketReservation().getBillingAddress());}
+            if(fields.contains("Confirmation")) {line.add(reservation.getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
+            if(fields.contains("Billing Address")) {line.add(reservation.getBillingAddress());}
+            boolean paymentIdRequested = fields.contains("Payment ID");
+            boolean paymentGatewayRequested = fields.contains("Payment Method");
+            if((paymentIdRequested || paymentGatewayRequested)) {
+                Optional<Transaction> transaction = trs.getTransaction();
+                if(paymentIdRequested) { line.add(defaultString(transaction.map(Transaction::getPaymentId).orElse(null), transaction.map(Transaction::getTransactionId).orElse(""))); }
+                if(paymentGatewayRequested) { line.add(transaction.map(tr -> tr.getPaymentProxy().name()).orElse("")); }
+            }
 
             //obviously not optimized
             Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
@@ -385,7 +397,7 @@ public class EventApiController {
                 line.add(additionalValues.getOrDefault(customFieldName, "").replaceAll("\"", ""));
             });
 
-            return line.toArray(new String[line.size()]);
+            return line.toArray(new String[0]);
         });
     }
 
@@ -395,7 +407,8 @@ public class EventApiController {
         List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
 
         List<String> header = new ArrayList<>();
-        header.add("Username");
+        header.add("Username/Api Key");
+        header.add("Description");
         header.add("Timestamp");
         header.add("Full name");
         header.add("Email");
@@ -415,12 +428,14 @@ public class EventApiController {
             List<String> line = new ArrayList<>();
             Ticket ticket = p.getLeft().getTicket();
             SponsorScan sponsorScan = p.getLeft().getSponsorScan();
-            line.add(userManager.findUser(sponsorScan.getUserId()).getUsername());
+            User user = userManager.findUser(sponsorScan.getUserId());
+            line.add(user.getUsername());
+            line.add(user.getDescription());
             line.add(sponsorScan.getTimestamp().toString());
             line.add(ticket.getFullName());
             line.add(ticket.getEmail());
             line.addAll(p.getRight());
-            return line.toArray(new String[line.size()]);
+            return line.toArray(new String[0]);
         });
 
         if ("excel".equals(format)) {

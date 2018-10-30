@@ -62,7 +62,7 @@ public class EventManagerHandleTicketModificationTest {
         ticketRepository = mock(TicketRepository.class);
         jdbc = mock(NamedParameterJdbcTemplate.class);
         when(event.getId()).thenReturn(eventId);
-        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, jdbc, null, null, null, null, null, null, null, null, null, null);
+        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, jdbc, null, null, null, null, null, null, null, null, null, null, null);
         when(original.getId()).thenReturn(originalCategoryId);
         when(updated.getId()).thenReturn(updatedCategoryId);
         when(original.getSrcPriceCts()).thenReturn(1000);
