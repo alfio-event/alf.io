@@ -104,7 +104,7 @@ public class AdminReservationRequestManager {
 
         result.values().forEach(list -> {
             try {
-                jdbc.batchUpdate(adminReservationRequestRepository.updateStatus(), list.toArray(new MapSqlParameterSource[list.size()]));
+                jdbc.batchUpdate(adminReservationRequestRepository.updateStatus(), list.toArray(new MapSqlParameterSource[0]));
             } catch(Exception e) {
                 log.fatal("cannot update the status of "+list.size()+" reservations", e);
             }
