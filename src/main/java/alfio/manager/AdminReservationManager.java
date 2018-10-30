@@ -31,6 +31,7 @@ import alfio.model.result.Result;
 import alfio.model.result.Result.ResultStatus;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
+import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.user.UserRepository;
 import alfio.util.Json;
@@ -136,7 +137,7 @@ public class AdminReservationManager {
                         eventManager.checkOwnership(e, username, e.getOrganizationId());
                         return e;
                     })).map(event -> ticketReservationRepository.findOptionalReservationById(reservationId)
-                        .map(r -> performUpdate(reservationId, event, r, adminReservationModification))
+                        .map(r -> performUpdate(reservationId, event, r, adminReservationModification, username))
                         .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
                     ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
                 if(!result.isSuccess()) {
@@ -204,7 +205,7 @@ public class AdminReservationManager {
 
     }
 
-    private Result<Boolean> performUpdate(String reservationId, Event event, TicketReservation r, AdminReservationModification arm) {
+    private Result<Boolean> performUpdate(String reservationId, Event event, TicketReservation r, AdminReservationModification arm, String username) {
         ticketReservationRepository.updateValidity(reservationId, Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant()));
         if(arm.isUpdateContactData()) {
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
@@ -218,11 +219,23 @@ public class AdminReservationManager {
             }
 
         }
+        Date d = new Date();
         arm.getTicketsInfo().stream()
             .filter(TicketsInfo::isUpdateAttendees)
             .flatMap(ti -> ti.getAttendees().stream())
-            .forEach(a -> ticketRepository.updateTicketOwnerById(a.getTicketId(), trimToNull(a.getEmailAddress()),
-                trimToNull(a.getFullName()), trimToNull(a.getFirstName()), trimToNull(a.getLastName())));
+            .forEach(a -> {
+                String email = trimToNull(a.getEmailAddress());
+                String firstName = trimToNull(a.getFirstName());
+                String lastName = trimToNull(a.getLastName());
+                String fullName = trimToNull(a.getFullName());
+                ticketRepository.updateTicketOwnerById(a.getTicketId(), email, fullName, firstName, lastName);
+                Integer userId = userRepository.findByUsername(username).map(User::getId).orElse(null);
+                Map<String, Object> modifications = new HashMap<>();
+                modifications.put("firstName", firstName);
+                modifications.put("lastName", lastName);
+                modifications.put("fullName", fullName);
+                auditingRepository.insert(reservationId, userId, event.getId(), UPDATE_TICKET, d, TICKET, Integer.toString(a.getTicketId()), singletonList(modifications));
+            });
         return Result.success(true);
     }
 
@@ -259,7 +272,6 @@ public class AdminReservationManager {
         Set<String> keys = input.getTicketsInfo().stream().flatMap(ti -> ti.getAttendees().stream())
             .flatMap(a -> a.getAdditionalInfo().keySet().stream())
             .map(String::toLowerCase)
-            .distinct()
             .collect(toSet());
 
         if(keys.size() == 0) {
