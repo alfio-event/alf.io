@@ -58,6 +58,7 @@
         var init = function() {
             ctrl.createSingleReservations = false;
             ctrl.reassignmentForbidden = false;
+            ctrl.singleReservationsAllowed = true;
             var expiration = moment().add(1, 'days').endOf('day');
             ctrl.reservation = {
                 expiration: {
@@ -116,6 +117,12 @@
 
         ctrl.resetCategory = function(ticketInfo) {
             ticketInfo.category = {};
+            ctrl.singleReservationsAllowed = ctrl.reservation.ticketsInfo.every(function(ti) {
+                return ti.categoryType === 'existing';
+            });
+            if(!ctrl.singleReservationsAllowed) {
+                ctrl.createSingleReservations = false;
+            }
         };
 
         ctrl.removeTicketInfo = function(index) {
