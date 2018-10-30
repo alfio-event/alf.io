@@ -1,6 +1,6 @@
 {{>/event/page-top}}
 {{#includeStripe}}
-<script src="https://js.stripe.com/v2/"></script>
+<script src="https://checkout.stripe.com/checkout.js"></script>
 {{/includeStripe}}
 <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/h5f/h5f.min.js"></script>
@@ -25,6 +25,11 @@
     data-stripe-message-processing_error="{{#i18n}}error.STEP2_STRIPE_processing_error{{/i18n}}"
     data-stripe-message-abort="{{#i18n}}error.STEP2_STRIPE_abort{{/i18n}}"
     data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
+    data-stripe-title="{{event.displayName}}"
+    data-stripe-email="{{reservation.email}}"
+    data-price="{{orderSummary.priceInCents}}"
+    data-currency="{{event.currency}}"
+    data-stripe-description="{{orderSummary.descriptionForPayment}}"
 {{/includeStripe}}
 ></script>
 
@@ -209,7 +214,7 @@
     {{^orderSummary.free}}
         <div class="row">
             <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom">
-                <button type="submit" class="btn btn-success btn-block" id="continue-button">
+                <button type="button" class="btn btn-success btn-block" id="continue-button">
                 {{#paypalCheckoutConfirmation}}
                     {{#i18n}}reservation-page.paypal.confirm-button{{/i18n}}
                 {{/paypalCheckoutConfirmation}}

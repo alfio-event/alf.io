@@ -86,4 +86,12 @@ public class OrderSummary {
         }
         return MonetaryUtil.formatCents(originalTotalPrice.getPriceWithVAT() - originalTotalPrice.getVAT());
     }
+
+    public int getPriceInCents() {
+        return originalTotalPrice.getPriceWithVAT();
+    }
+
+    public String getDescriptionForPayment() {
+        return summary.stream().filter(r -> r.getType() != SummaryRow.SummaryType.PROMOTION_CODE).map(SummaryRow::getDescriptionForPayment).collect(Collectors.joining(", "));
+    }
 }

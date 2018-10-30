@@ -62,12 +62,6 @@
 
     var hasStripe = document.getElementById("stripe-key") != null;
 
-    if(hasStripe) {
-        // This identifies your website in the createToken call below
-        Stripe.setPublishableKey(document.getElementById("stripe-key").getAttribute('data-stripe-key'));
-    }
-
-
     jQuery(function() {
         //validity
         //ready for ECMAScript6?
@@ -120,16 +114,17 @@
             // Disable the submit button to prevent repeated clicks
             $form.find('button').prop('disabled', true);
 
+
             var selectedPaymentMethod = $form.find('input[name=paymentMethod]');
             if(hasStripe && (selectedPaymentMethod.length === 0 ||
                 (selectedPaymentMethod.length === 1 && selectedPaymentMethod.val() === 'STRIPE') ||
                 selectedPaymentMethod.filter(':checked').val() === 'STRIPE')) {
-                Stripe.card.createToken($form, stripeResponseHandler);
                 // Prevent the form from submitting with the default action
                 return false;
             }
             return true;
         }
+
         $('#payment-form').submit(submitForm);
 
 
@@ -257,7 +252,31 @@
             }
         };
 
+        var handler = StripeCheckout.configure({
+            key: document.getElementById("stripe-key").getAttribute('data-stripe-key'),
+            image: document.getElementById("event-logo").getAttribute('src'),
+            locale: $('html').attr('lang'),
+            token: function(token) {
+                // You can access the token ID with `token.id`.
+                // Get the token ID to your server-side code for use.
+                stripeResponseHandler(null, token)
+            }
+        });
 
+        var btn = document.getElementById('continue-button');
+        btn.addEventListener('click', function(e) {
+            var stripeEl = document.getElementById("stripe-key");
+            handler.open({
+                name: stripeEl.getAttribute('data-stripe-title'),
+                description: stripeEl.getAttribute('data-stripe-description'),
+                zipCode: false,
+                allowRememberMe: false,
+                amount: (stripeEl.getAttribute('data-price') || ''),
+                currency: stripeEl.getAttribute('data-currency'),
+                email: stripeEl.getAttribute('data-stripe-email')
+            });
+            e.preventDefault();
+        })
 
     });
 
