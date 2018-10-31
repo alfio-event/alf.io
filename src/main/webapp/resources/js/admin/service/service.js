@@ -667,6 +667,10 @@
         return {
             upload : function(file) {
                 return $http['post']('/admin/api/file/upload', file).error(HttpErrorHandler.handle);
+            },
+
+            uploadImageWithResize: function(file) {
+                return $http['post']('/admin/api/file/upload?resizeImage=true', file).error(HttpErrorHandler.handle);
             }
         };
     });
