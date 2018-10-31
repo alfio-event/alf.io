@@ -77,6 +77,10 @@ public class TicketFieldConfigurationDescriptionAndValue {
         return value;
     }
 
+    public boolean isBeforeStandardFields() {
+        return getOrder() < 0;
+    }
+
     private static boolean isFieldValueEnabled(TicketFieldConfiguration ticketFieldConfiguration, String value) {
         return !ticketFieldConfiguration.isSelectField()
             || CollectionUtils.isEmpty(ticketFieldConfiguration.getDisabledValues())

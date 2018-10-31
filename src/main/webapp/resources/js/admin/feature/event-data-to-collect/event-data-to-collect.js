@@ -25,6 +25,18 @@
                 closeWindow: '&',
                 eventName: '<'
             }
+        }).component('standardFields', {
+            template: '' +
+                '<div class="panel panel-primary">' +
+                '   <div class="panel-heading">' +
+                '       <div class="panel-title">Standard Fields</div>' +
+                '   </div>' +
+                '   <ul class="list-group">' +
+                '       <li class="list-group-item">First Name</li>' +
+                '       <li class="list-group-item">Last Name</li>' +
+                '       <li class="list-group-item">Email Address</li>' +
+                '   </ul>' +
+                '</div>'
         }).filter('fieldType', function() {
             return function(field) {
                 return FIELD_TYPES[field.type] || field.type;
@@ -44,7 +56,7 @@
     function errorHandler(error) {
         $log.error(error.data);
         alert(error.data);
-    };
+    }
 
 
     function EventDataToCollectCtrl($uibModal, $q, EventService, AdditionalServiceManager) {
@@ -98,7 +110,7 @@
                 ctrl.event.additionalServices = list;
             });
 
-        }
+        };
 
         ctrl.fieldUp = fieldUp;
         ctrl.fieldDown = fieldDown;
@@ -111,7 +123,12 @@
         function loadAll() {
             return EventService.getAdditionalFields(ctrl.event.shortName).then(function(result) {
                 ctrl.additionalFields = result.data;
+                ctrl.standardFieldsIndex = findStandardFieldsIndex(ctrl.additionalFields);
             });
+        }
+
+        function findStandardFieldsIndex(array) {
+            return _.findIndex(array, function(f) {return f.order >= 0;});
         }
 
         function getCategoryDescription(categoryId) {
@@ -121,16 +138,31 @@
 
         function fieldUp(index) {
             var targetId = ctrl.additionalFields[index].id;
-            var prevTargetId = ctrl.additionalFields[index-1].id;
-            EventService.swapFieldPosition(ctrl.event.shortName, targetId, prevTargetId).then(function() {
+            var targetPosition = ctrl.additionalFields[index].order;
+            var promise = null;
+            if(index > 0) {
+                var prevTargetId = ctrl.additionalFields[index-1].id;
+                promise = EventService.swapFieldPosition(ctrl.event.shortName, targetId, prevTargetId)
+            } else {
+                promise = EventService.moveField(ctrl.event.shortName, targetId, targetPosition - 1);
+            }
+            promise.then(function() {
                 loadAll();
             });
         }
 
         function fieldDown(index) {
-            var targetId = ctrl.additionalFields[index].id;
-            var nextTargetId = ctrl.additionalFields[index+1].id;
-            EventService.swapFieldPosition(ctrl.event.shortName, targetId, nextTargetId).then(function() {
+            var field = ctrl.additionalFields[index];
+            var other = ctrl.additionalFields[index+1];
+            var targetId = field.id;
+            var nextTargetId = other.id;
+            var promise;
+            if(field.order < 0 && other.order >= 0) {
+                promise = EventService.moveField(ctrl.event.shortName, targetId, 0);
+            } else {
+                promise = EventService.swapFieldPosition(ctrl.event.shortName, targetId, nextTargetId);
+            }
+            promise.then(function() {
                 loadAll();
             });
         }
@@ -247,7 +279,7 @@
                         var targetObj = $scope.field.restrictedValues[newIdx];
                         $scope.field.restrictedValues[newIdx] = selectedObj;
                         $scope.field.restrictedValues[currentIndex] = targetObj;
-                    }
+                    };
 
                     $scope.addRestrictedValue = function() {
                         var field = $scope.field;
@@ -269,7 +301,7 @@
                         } else {
                             var duplicate = false;
                             angular.forEach(ctrl.additionalFields, function (f) {
-                                if (f.name == field.name) {
+                                if (f.name === field.name) {
                                     form['name'].$setValidity(ERROR_CODES.DUPLICATE, false);
                                     form['name'].$setTouched();
                                     duplicate = true;
@@ -290,13 +322,13 @@
 
         function validationErrorHandler(result, form, fieldsContainer) {
             return $q(function(resolve, reject) {
-                if(result.data['errorCount'] == 0) {
+                if(result.data['errorCount'] === 0) {
                     resolve(result);
                 } else {
                     _.forEach(result.data.validationErrors, function(error) {
                         var field = fieldsContainer[error.fieldName];
                         if(angular.isDefined(field)) {
-                            if (error.code == ERROR_CODES.DUPLICATE) {
+                            if (error.code === ERROR_CODES.DUPLICATE) {
                                 field.$setValidity(ERROR_CODES.DUPLICATE, false);
                                 field.$setTouched();
                             } else {

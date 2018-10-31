@@ -197,7 +197,14 @@
             	return $http['delete']('/admin/api/events/'+eventName+'/additional-field/'+id);
             },
             swapFieldPosition: function(eventName, id1, id2) {
-            	return $http.post('/admin/api/events/'+eventName+'/additional-field/swap-position/'+id1+'/'+id2);
+            	return $http.post('/admin/api/events/'+eventName+'/additional-field/swap-position/'+id1+'/'+id2, null);
+            },
+            moveField: function(eventName, id, position) {
+                return $http.post('/admin/api/events/'+eventName+'/additional-field/set-position/'+id, null, {
+                    params: {
+                        newPosition: position
+                    }
+                });
             },
             getAllReservationStatus : function(eventName) {
                 return $http.get('/admin/api/reservation/event/'+eventName+'/reservations/all-status');
