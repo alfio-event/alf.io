@@ -869,6 +869,12 @@ public class EventManager {
 		ticketFieldRepository.updateFieldOrder(id1, field2.getOrder());
 		ticketFieldRepository.updateFieldOrder(id2, field1.getOrder());
 	}
+
+	public void setAdditionalFieldPosition(int eventId, int id, int newPosition) {
+        TicketFieldConfiguration field = ticketFieldRepository.findById(id);
+        Assert.isTrue(eventId == field.getEventId(), "eventId does not match field.eventId");
+        ticketFieldRepository.updateFieldOrder(id, newPosition);
+    }
 	
 	public void deleteEvent(int eventId, String username) {
 		final Event event = eventRepository.findById(eventId);

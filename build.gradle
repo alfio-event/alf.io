@@ -163,6 +163,7 @@ dependencies {
     compile 'com.github.scribejava:scribejava-core:5.0.0'
     compile 'ch.digitalfondue.vatchecker:vatchecker:1.1'
     compile 'org.apache.poi:poi-ooxml:3.17'
+    compile 'org.imgscalr:imgscalr-lib:4.2'
 
     annotationProcessor "org.projectlombok:lombok:1.18.2"
 

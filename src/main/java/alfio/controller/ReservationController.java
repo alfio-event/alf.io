@@ -120,7 +120,7 @@ public class ReservationController {
                     List<Ticket> ticketsInReservation = ticketReservationManager.findTicketsInReservation(reservationId);
 
                     model.addAttribute("postponeAssignment", false)
-                         .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1 && ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId()));
+                         .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1 && !ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId()));
 
 
                     addDelayForOffline(model, event);

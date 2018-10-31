@@ -516,6 +516,15 @@ public class EventApiController {
     	Event event = eventManager.getSingleEvent(eventName, principal.getName());
     	eventManager.swapAdditionalFieldPosition(event.getId(), id1, id2);
     }
+
+    @PostMapping("/events/{eventName}/additional-field/set-position/{id}")
+    public void setAdditionalFieldPosition(@PathVariable("eventName") String eventName,
+                                           @PathVariable("id") int id,
+                                           @RequestParam("newPosition") int newPosition,
+                                           Principal principal) {
+        Event event = eventManager.getSingleEvent(eventName, principal.getName());
+        eventManager.setAdditionalFieldPosition(event.getId(), id, newPosition);
+    }
     
     @RequestMapping(value = "/events/{eventName}/additional-field/{id}", method = DELETE)
     public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, Principal principal) {
