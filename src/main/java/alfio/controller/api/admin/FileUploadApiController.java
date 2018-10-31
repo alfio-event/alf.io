@@ -18,11 +18,18 @@ package alfio.controller.api.admin;
 
 import alfio.manager.FileUploadManager;
 import alfio.model.modification.UploadBase64FileModification;
+import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
@@ -38,8 +45,25 @@ public class FileUploadApiController {
     }
 
     @RequestMapping(value = "/file/upload", method = POST)
-    public ResponseEntity<String> uploadFile(@RequestBody UploadBase64FileModification upload) {
+    public ResponseEntity<String> uploadFile(@RequestParam(required = false, value = "resizeImage", defaultValue = "false") boolean resizeImage,
+                                             @RequestBody UploadBase64FileModification upload) {
         try {
+
+            if (resizeImage) {
+                UploadBase64FileModification resized = new UploadBase64FileModification();
+
+                BufferedImage image = ImageIO.read(new ByteArrayInputStream(upload.getFile()));
+                BufferedImage thumbImg = Scalr.resize(image, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, 500, 500, Scalr.OP_ANTIALIAS);
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(thumbImg, "png", baos);
+
+                resized.setFile(baos.toByteArray());
+                resized.setAttributes(upload.getAttributes());
+                resized.setName(upload.getName());
+                resized.setType("image/png");
+                upload = resized;
+            }
+
             return ResponseEntity.ok(fileUploadManager.insertFile(upload));
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();

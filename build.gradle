@@ -182,6 +182,7 @@ dependencies {
     compile 'de.danielbechler:java-object-diff:0.95'
     compile 'com.github.scribejava:scribejava-core:5.0.0'
     compile 'org.apache.poi:poi-ooxml:3.17'
+    compile 'org.imgscalr:imgscalr-lib:4.2'
 
     testCompile "org.springframework:spring-test:$springVersion"
     testCompile "com.insightfullogic:lambda-behave:0.3"
