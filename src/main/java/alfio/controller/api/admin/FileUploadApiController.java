@@ -50,18 +50,21 @@ public class FileUploadApiController {
         try {
 
             if (resizeImage) {
-                UploadBase64FileModification resized = new UploadBase64FileModification();
-
                 BufferedImage image = ImageIO.read(new ByteArrayInputStream(upload.getFile()));
-                BufferedImage thumbImg = Scalr.resize(image, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, 500, 500, Scalr.OP_ANTIALIAS);
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ImageIO.write(thumbImg, "png", baos);
+                //resize only if the image is bigger than 500px on one of the side
+                if(image.getWidth() > 500 || image.getHeight() > 500) {
+                    UploadBase64FileModification resized = new UploadBase64FileModification();
+                    BufferedImage thumbImg = Scalr.resize(image, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, 500, 500, Scalr.OP_ANTIALIAS);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-                resized.setFile(baos.toByteArray());
-                resized.setAttributes(upload.getAttributes());
-                resized.setName(upload.getName());
-                resized.setType("image/png");
-                upload = resized;
+                    ImageIO.write(thumbImg, "png", baos);
+
+                    resized.setFile(baos.toByteArray());
+                    resized.setAttributes(upload.getAttributes());
+                    resized.setName(upload.getName());
+                    resized.setType("image/png");
+                    upload = resized;
+                }
             }
 
             return ResponseEntity.ok(fileUploadManager.insertFile(upload));
