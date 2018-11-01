@@ -61,6 +61,7 @@ import java.util.stream.Collectors;
 import static alfio.manager.support.CheckInStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 @Component
 @Transactional
@@ -342,7 +343,9 @@ public class CheckInManager {
                 info.put("uuid", ticket.getUuid());
                 info.put("category", ticket.getTicketCategory().getName());
                 if (!additionalFields.isEmpty()) {
-                    Map<String, String> map = ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream()
+                    Map<String, String> fields = new HashMap<>();
+                    fields.put("company", trimToEmpty(ticket.getTicketReservation().getBillingAddressCompany()));
+                    fields.putAll(ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream()
                         .map(vd -> {
                             try {
                                 if(StringUtils.isNotBlank(vd.getDescription())) {
@@ -359,8 +362,8 @@ public class CheckInManager {
                             }
                             return Pair.of(vd.getName(), vd.getValue());
                         })
-                        .collect(toMap(Pair::getLeft, Pair::getRight));
-                    info.put("additionalInfoJson", Json.toJson(map));
+                        .collect(toMap(Pair::getLeft, Pair::getRight)));
+                    info.put("additionalInfoJson", Json.toJson(fields));
                 }
 
                 //
