@@ -436,9 +436,7 @@
 
                 $scope.$watch('droppedFile', function (droppedFile) {
                     if(angular.isDefined(droppedFile)) {
-                        if(droppedFile === null) {
-                            alert('File drag&drop is not working, please click on the element and select the file.')
-                        } else {
+                        if(droppedFile !== null) {
                             $scope.imageDropped([droppedFile]);
                         }
                     }
