@@ -22,6 +22,9 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
+
 @Data
 public class UpdateTicketOwnerForm implements Serializable {
     private String email;
@@ -32,4 +35,20 @@ public class UpdateTicketOwnerForm implements Serializable {
 
 
     private Map<String, List<String>> additional;
+
+    public void setEmail(String email) {
+        this.email = trimToEmpty(email);
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = trimToNull(fullName);
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = trimToNull(firstName);
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = trimToNull(lastName);
+    }
 }
