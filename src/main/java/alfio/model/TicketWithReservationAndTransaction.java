@@ -32,6 +32,7 @@ public class TicketWithReservationAndTransaction {
 
     private final Ticket ticket;
     private final TicketReservation ticketReservation;
+    private final BillingDetails billingDetails;
     private final Optional<Transaction> transaction;
 
 
@@ -80,7 +81,12 @@ public class TicketWithReservationAndTransaction {
                                                @Column("tr_vat_included") Boolean vatIncluded,
                                                @Column("tr_creation_ts") ZonedDateTime reservationCreationTimestamp,
                                                @Column("tr_customer_reference") String customerReference,
+
                                                @Column("tr_billing_address_company") String billingAddressCompany,
+                                               @Column("tr_billing_address_line1") String billingAddressLine1,
+                                               @Column("tr_billing_address_line2") String billingAddressLine2,
+                                               @Column("tr_billing_address_city") String billingAddressCity,
+                                               @Column("tr_billing_address_zip") String billingAddressZip,
                                                //
                                                @Column("bt_id") Integer btId,
                                                @Column("bt_gtw_tx_id") String transactionId,
@@ -105,7 +111,9 @@ public class TicketWithReservationAndTransaction {
             billingAddress, confirmationTimestamp, latestReminder, paymentMethod,
             reminderSent, promoCodeDiscountId, automatic, trUserLanguage,
             directAssignmentRequested, invoiceNumber, invoiceModel, vatStatus, vatNr, vatCountryCode, invoiceRequested,
-            usedVadPercent, vatIncluded, reservationCreationTimestamp, customerReference, billingAddressCompany);
+            usedVadPercent, vatIncluded, reservationCreationTimestamp, customerReference);
+
+        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountryCode, vatNr);
 
         if(btId != null) {
             this.transaction = Optional.of(new Transaction(btId, transactionId, paymentId, reservationId,

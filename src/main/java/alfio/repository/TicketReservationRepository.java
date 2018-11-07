@@ -17,7 +17,9 @@
 package alfio.repository;
 
 import alfio.model.*;
-import ch.digitalfondue.npjt.*;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
+import ch.digitalfondue.npjt.QueryRepository;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -222,4 +224,7 @@ public interface TicketReservationRepository {
 
     @Query("select count(b.id) from tickets_reservation a, ticket b where a.id = :reservationId and b.tickets_reservation_id = a.id")
     Integer countTicketsInReservationNoCategories(@Bind("reservationId") String reservationId);
+
+    @Query("select billing_address_company, billing_address_line1, billing_address_line2, billing_address_zip, billing_address_city, vat_nr, vat_country from tickets_reservation where id = :reservationId")
+    BillingDetails getBillingDetailsForReservation(@Bind("reservationId") String reservationId);
 }

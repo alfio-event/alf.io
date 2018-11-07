@@ -386,7 +386,7 @@ public class TicketReservationManager {
                 //
                 extensionManager.handleInvoiceGeneration(event, reservationId,
                     email, customerName, userLanguage, billingAddress, customerReference,
-                    reservationCost, invoiceRequested, vatCountryCode, vatNr, vatStatus).ifPresent(invoiceGeneration -> {
+                    reservationCost, invoiceRequested, ticketReservationRepository.getBillingDetailsForReservation(reservationId), vatStatus).ifPresent(invoiceGeneration -> {
                     if (invoiceGeneration.getInvoiceNumber() != null) {
                         ticketReservationRepository.setInvoiceNumber(reservationId, invoiceGeneration.getInvoiceNumber());
                     }
@@ -440,8 +440,10 @@ public class TicketReservationManager {
                 return false;
             }
             int currentTickets = ticketReservationRepository.countTicketsInReservationForCategories(reservationId, categoriesOrNull(promoCode));
-            return serializedTransactionTemplate.execute(status ->
-                promoCode.getMaxUsage() < currentTickets + promoCodeDiscountRepository.countConfirmedPromoCode(promoCode.getId(), categoriesOrNull(promoCode), reservationId, categoriesOrNull(promoCode) != null ? "X" : null));
+            return Boolean.TRUE.equals(serializedTransactionTemplate.execute(status -> {
+                Integer confirmedPromoCode = promoCodeDiscountRepository.countConfirmedPromoCode(promoCode.getId(), categoriesOrNull(promoCode), reservationId, categoriesOrNull(promoCode) != null ? "X" : null);
+                return promoCode.getMaxUsage() < currentTickets + confirmedPromoCode;
+            }));
         }
         return false;
     }
@@ -489,7 +491,7 @@ public class TicketReservationManager {
                 ticketsInReservation
                     .stream()
                     .filter(ticket -> linkedGroups.stream().anyMatch(c -> c.getTicketCategoryId() == null || c.getTicketCategoryId().equals(ticket.getCategoryId())))
-                    .map(t -> groupManager.acquireMemberForTicket(t))
+                    .map(groupManager::acquireMemberForTicket)
                     .reduce(true, Boolean::logicalAnd)));
         }
         return true;
@@ -519,7 +521,7 @@ public class TicketReservationManager {
         sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
 
         final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
-        extensionManager.handleReservationConfirmation(finalReservation, event.getId());
+        extensionManager.handleReservationConfirmation(finalReservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), event.getId());
     }
 
     void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
@@ -712,7 +714,7 @@ public class TicketReservationManager {
             AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
             acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, email, customerName, userLanguage.getLanguage(), billingAddress, customerReference, eventId);
             final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-            extensionManager.handleReservationConfirmation(reservation, eventId);
+            extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), eventId);
         }
         //cleanup unused special price codes...
         specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);

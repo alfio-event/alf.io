@@ -63,9 +63,18 @@ public class SimpleHttpClient {
     }
 
     public HttpClientResponse post(String url, Map<String, String> headers, Object body) throws IOException {
+        return postJSON(url, headers, body);
+    }
+
+    public HttpClientResponse postJSON(String url, Map<String, String> headers, Object body) throws IOException {
         return doRequest(url, headers, "POST", body);
     }
 
+    public HttpClientResponse postForm(String url, Map<String, String> headers, Map<String, String> params) throws IOException {
+        FormBody.Builder form = new FormBody.Builder();
+        params.forEach(form::add);
+        return callRemote(buildUrlAndHeader(url, headers).method("POST", form.build()).build());
+    }
 
     public HttpClientResponse delete(String url) throws IOException {
         return delete(url, Collections.emptyMap());
@@ -110,11 +119,12 @@ public class SimpleHttpClient {
     }
 
     private HttpClientResponse doRequest(String url, Map<String, String> headers, String method, Object requestBody) throws IOException {
-
         Request.Builder requestBuilder = buildUrlAndHeader(url, headers);
-
         Request req = requestBuilder.method(method,  NULL_REQUEST_BODY.contains(method)? null : buildRequestBody(requestBody)).build();
+        return callRemote(req);
+    }
 
+    private HttpClientResponse callRemote(Request req) throws IOException {
         try (Response response = okHttpClient.newCall(req).execute()) {
             ResponseBody body = response.body();
             return new HttpClientResponse(
@@ -134,9 +144,7 @@ public class SimpleHttpClient {
     private static Request.Builder buildUrlAndHeader(String url, Map<String, String> headers) {
         Request.Builder requestBuilder = new Request.Builder().url(url);
         if (headers != null) {
-            headers.forEach((k,v) -> {
-                requestBuilder.header(k,v);
-            });
+            headers.forEach(requestBuilder::header);
         }
         return requestBuilder;
     }

@@ -43,7 +43,6 @@ public class TicketReservation {
     private final String lastName;
     private final String email;
     private final String billingAddress;
-    private final String billingAddressCompany;
     private final ZonedDateTime confirmationTimestamp;
     private final ZonedDateTime latestReminder;
     private final PaymentProxy paymentMethod;
@@ -89,8 +88,7 @@ public class TicketReservation {
                              @Column("used_vat_percent") BigDecimal usedVatPercent,
                              @Column("vat_included") Boolean vatIncluded,
                              @Column("creation_ts") ZonedDateTime creationTimestamp,
-                             @Column("customer_reference") String customerReference,
-                             @Column("billing_address_company") String billingAddressCompany) {
+                             @Column("customer_reference") String customerReference) {
         this.id = id;
         this.validity = validity;
         this.status = status;
@@ -117,7 +115,6 @@ public class TicketReservation {
         this.vatIncluded = vatIncluded;
         this.creationTimestamp = creationTimestamp;
         this.customerReference = customerReference;
-        this.billingAddressCompany = billingAddressCompany;
     }
 
     public boolean isStuck() {
