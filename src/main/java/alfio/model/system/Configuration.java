@@ -49,7 +49,7 @@ public class Configuration implements Comparable<Configuration> {
         this.key = key;
         this.value = value;
         this.description = description;
-        this.configurationKey = ConfigurationKeys.valueOf(key);
+        this.configurationKey = ConfigurationKeys.safeValueOf(key);
         this.configurationPathLevel = configurationPathLevel;
         this.basic = this.configurationKey.isBasic();
     }

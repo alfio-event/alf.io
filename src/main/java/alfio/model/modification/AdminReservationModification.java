@@ -32,6 +32,7 @@ import java.util.Optional;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 @Getter
 public class AdminReservationModification implements Serializable {
@@ -78,9 +79,9 @@ public class AdminReservationModification implements Serializable {
                             @JsonProperty("customerReference") String customerReference,
                             @JsonProperty("vatNr") String vatNr,
                             @JsonProperty("vatCountryCode") String vatCountryCode) {
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.emailAddress = emailAddress;
+            this.firstName = trimToEmpty(firstName);
+            this.lastName = trimToEmpty(lastName);
+            this.emailAddress = trimToEmpty(emailAddress);
             this.billingAddress = billingAddress;
             this.userLanguage = userLanguage;
             this.customerReference = customerReference;
@@ -153,9 +154,9 @@ public class AdminReservationModification implements Serializable {
                         @JsonProperty("reference") String reference,
                         @JsonProperty("additionalInfo") Map<String, List<String>> additionalInfo) {
             this.ticketId = ticketId;
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.emailAddress = emailAddress;
+            this.firstName = trimToEmpty(firstName);
+            this.lastName = trimToEmpty(lastName);
+            this.emailAddress = trimToEmpty(emailAddress);
             this.language = language;
             this.reassignmentForbidden = Optional.ofNullable(reassignmentForbidden).orElse(false);
             this.reference = reference;

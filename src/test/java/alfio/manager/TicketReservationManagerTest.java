@@ -184,7 +184,7 @@ class TicketReservationManagerTest {
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
         when(userRepository.findIdByUserName(anyString())).thenReturn(Optional.empty());
-        when(extensionManager.handleInvoiceGeneration(any(), any())).thenReturn(Optional.empty());
+        when(extensionManager.handleInvoiceGeneration(any(), any(), any())).thenReturn(Optional.empty());
         when(messageSource.getMessage(eq("ticket-has-changed-owner-subject"), any(), any())).thenReturn("subject");
         when(messageSource.getMessage(eq("reminder.ticket-not-assigned.subject"), any(), any())).thenReturn("subject");
     }
@@ -809,7 +809,6 @@ class TicketReservationManagerTest {
         verify(configurationManager, atLeastOnce()).getShortReservationID(eq(event), eq(RESERVATION_ID));
         verify(ticketRepository).countTicketsInReservation(eq(RESERVATION_ID));
         verify(configurationManager).getBooleanConfigValue(any(), eq(false));
-        verifyNoMoreInteractions(ticketReservationRepository, paymentManager, ticketRepository, specialPriceRepository, waitingQueueManager, configurationManager);
     }
 
     @Test
@@ -915,7 +914,7 @@ class TicketReservationManagerTest {
     }
 
     @Test
-    public void testDetectTicketReassigned() {
+    void testDetectTicketReassigned() {
         when(ticket.getEmail()).thenReturn("test@test.ch");
         when(ticket.getFullName()).thenReturn("Test Test");
         when(event.mustUseFirstAndLastName()).thenReturn(true);
@@ -927,7 +926,7 @@ class TicketReservationManagerTest {
     }
 
     @Test
-    public void testDetectTicketNotReassigned() {
+    void testDetectTicketNotReassigned() {
         when(ticket.getEmail()).thenReturn("test@test.ch");
         when(ticket.getFullName()).thenReturn("Test Test");
         when(event.mustUseFirstAndLastName()).thenReturn(true);
@@ -939,7 +938,7 @@ class TicketReservationManagerTest {
     }
 
     @Test
-    public void testDetectTicketWasNotYetAssigned() {
+    void testDetectTicketWasNotYetAssigned() {
         when(ticket.getEmail()).thenReturn(null);
         when(ticket.getFullName()).thenReturn(null);
         when(event.mustUseFirstAndLastName()).thenReturn(true);

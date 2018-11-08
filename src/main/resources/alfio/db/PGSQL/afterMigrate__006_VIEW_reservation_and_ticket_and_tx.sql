@@ -44,6 +44,11 @@ create view reservation_and_ticket_and_tx as (select
     tickets_reservation.event_id_fk tr_event_id,
     tickets_reservation.creation_ts tr_creation_ts,
     tickets_reservation.customer_reference tr_customer_reference,
+    tickets_reservation.billing_address_company tr_billing_address_company,
+    tickets_reservation.billing_address_line1 tr_billing_address_line1,
+    tickets_reservation.billing_address_line2 tr_billing_address_line2,
+    tickets_reservation.billing_address_city tr_billing_address_city,
+    tickets_reservation.billing_address_zip tr_billing_address_zip,
 
     ticket.id t_id,
     ticket.uuid t_uuid,

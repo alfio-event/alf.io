@@ -28,6 +28,8 @@ import static java.util.stream.Collectors.toList;
 @Getter
 public enum ConfigurationKeys {
 
+    NOT_RECOGNIZED("option not recognized", true, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.noneOf(ConfigurationPathLevel.class), true),
+
     INIT_COMPLETED("init succeeded", true, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.noneOf(ConfigurationPathLevel.class), true),
     SUPPORTED_LANGUAGES("supported languages", false, SettingCategory.GENERAL, ComponentType.LIST, true, EnumSet.of(SYSTEM), true),
 
@@ -234,7 +236,7 @@ public enum ConfigurationKeys {
     }
 
     public static ConfigurationKeys fromString(String configurationKey) {
-        return valueOf(configurationKey);
+        return safeValueOf(configurationKey);
     }
 
     public static ConfigurationKeys[] visible() {
@@ -262,6 +264,13 @@ public enum ConfigurationKeys {
 
     public static List<ConfigurationKeys> byCategory(Set<SettingCategory> categorySet) {
         return visibleStream().filter(k -> categorySet.contains(k.category)).collect(toList());
+    }
+
+    public static ConfigurationKeys safeValueOf(String key) {
+        return Arrays.stream(values())
+            .filter(k -> k.name().equals(key))
+            .findFirst()
+            .orElse(ConfigurationKeys.NOT_RECOGNIZED);
     }
 
 }
