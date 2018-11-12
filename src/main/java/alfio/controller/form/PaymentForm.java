@@ -74,10 +74,6 @@ public class PaymentForm implements Serializable {
             || (StringUtils.isNotEmpty(event.getPrivacyPolicyUrl()) && (Objects.isNull(privacyPolicyAccepted) || !privacyPolicyAccepted))) {
             bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
         }
-
-        if (hasPaypalTokens() /*&& !PaypalManager.isValidHMAC(new CustomerName(fullName, firstName, lastName, event), email, billingAddress, hmac, event)*/) {
-            bindingResult.reject(ErrorsCode.STEP_2_INVALID_HMAC);
-        }
     }
 
     public Boolean shouldCancelReservation() {

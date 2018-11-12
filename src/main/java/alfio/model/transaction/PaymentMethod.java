@@ -14,26 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model;
+package alfio.model.transaction;
 
-import lombok.Data;
+import java.util.Arrays;
 
-@Data
-public class SummaryRow {
-    private final String name;
-    private final String price;
-    private final String priceBeforeVat;
-    private final int amount;
-    private final String subTotal;
-    private final String subTotalBeforeVat;
-    private final int originalSubTotal;
-    private final SummaryType type;
+public enum PaymentMethod {
 
-    public enum SummaryType {
-        TICKET, PROMOTION_CODE, ADDITIONAL_SERVICE
-    }
+    CREDIT_CARD, PAYPAL, IDEAL, BANK_TRANSFER, ON_SITE, NONE;
 
-    public String getDescriptionForPayment() {
-        return amount + " x " + name;
+    public static PaymentMethod safeParse(String asString) {
+        return Arrays.stream(PaymentMethod.values()).filter(v -> v.name().equals(asString)).findFirst().orElse(null);
     }
 }

@@ -89,6 +89,7 @@ public class ReservationController {
     private final TicketFieldRepository ticketFieldRepository;
     private final PaymentManager paymentManager;
     private final EuVatChecker vatChecker;
+    private final StripeCreditCardManager stripeCreditCardManager;
     private final RecaptchaService recaptchaService;
     private final TicketReservationRepository ticketReservationRepository;
 
@@ -125,6 +126,18 @@ public class ReservationController {
                     addDelayForOffline(model, event);
 
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
+                    List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
+                        .stream()
+                        .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
+                        .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)
+                        .collect(toList());
+
+                    if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
+                        boolean captchaForOfflinePaymentEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
+                        model.addAttribute("captchaRequestedForOffline", captchaForOfflinePaymentEnabled)
+                            .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null))
+                            .addAttribute("captchaRequestedFreeOfCharge", orderSummary.getFree() && captchaForOfflinePaymentEnabled);
+                    }
 
                     boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
                     boolean onlyInvoice = invoiceAllowed && configurationManager.getBooleanConfigValue(partialConfig.apply(ConfigurationKeys.GENERATE_ONLY_INVOICE), false);
@@ -353,13 +366,13 @@ public class ReservationController {
                     List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
                         .stream()
                         .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
-                        .map(PaymentManager.PaymentMethod::getPaymentProxy)
+                        .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)
                         .collect(toList());
 
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
                     model.addAttribute("includeStripe", includeStripe);
                     if (includeStripe) {
-                        model.addAttribute("stripe_p_key", paymentManager.getStripePublicKey(event));
+                        model.addAttribute("stripe_p_key", stripeCreditCardManager.getPublicKey(event));
                     }
 
                     if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
@@ -530,7 +543,7 @@ public class ReservationController {
             return redirectForFailure.get();
         }
 
-        Event event = eventOptional.get();
+        Event event = eventOptional.orElseThrow(IllegalStateException::new);
         Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
         if (!optionalReservation.isPresent()) {
             return redirectReservation(optionalReservation, eventName, reservationId);
@@ -568,30 +581,24 @@ public class ReservationController {
 
         CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event);
 
-        //handle paypal redirect!
-        boolean invoiceRequested = reservationCost.getPriceWithVAT() > 0 && ticketReservation.isInvoiceRequested();
-        if(paymentForm.getPaymentMethod() == PaymentProxy.PAYPAL && !paymentForm.hasPaypalTokens()) {
-            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
-            try {
-                String checkoutUrl = paymentManager.createPayPalCheckoutRequest(event, reservationId, orderSummary, customerName,
-                    ticketReservation.getEmail(), ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(), locale);
-                return "redirect:" + checkoutUrl;
-            } catch (Exception e) {
-                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
-                SessionUtil.addToFlash(bindingResult, redirectAttributes);
-                return redirectReservation(optionalReservation, eventName, reservationId);
-            }
-        }
-        //
+        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
 
-        final PaymentResult status = ticketReservationManager.confirm(paymentForm.getToken(), paymentForm.getPaypalPayerID(), event, reservationId, ticketReservation.getEmail(),
-            customerName, locale, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(), reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
-            Optional.ofNullable(paymentForm.getPaymentMethod()), invoiceRequested, ticketReservation.getVatCountryCode(),
-            ticketReservation.getVatNr(), ticketReservation.getVatStatus(), paymentForm.getTermAndConditionsAccepted(), Optional.ofNullable(paymentForm.getPrivacyPolicyAccepted()).orElse(false));
+        PaymentSpecification spec = new PaymentSpecification(reservationId, paymentForm.getToken(), reservationCost.getPriceWithVAT(),
+            event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
+            paymentForm.getPaypalPayerID(), locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),
+            orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
+            Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()), paymentForm.getHmac());
+
+        final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
+                Optional.ofNullable(paymentForm.getPaymentMethod()));
+
+        if (status.isRedirect()) {
+            return "redirect:" + status.getRedirectUrl();
+        }
 
         if(!status.isSuccessful()) {
-            String errorMessageCode = status.getErrorCode().get();
-            MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeManager.STRIPE_UNEXPECTED});
+            String errorMessageCode = status.getErrorCode().orElse(StripeCreditCardManager.STRIPE_UNEXPECTED);
+            MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
             bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
             return redirectReservation(optionalReservation, eventName, reservationId);
@@ -706,13 +713,10 @@ public class ReservationController {
     }
 
     private void addDelayForOffline(Model model, Event event) {
-        try {
-            model.addAttribute("delayForOfflinePayment", Math.max(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager)));
-        } catch (TicketReservationManager.OfflinePaymentException e) {
-            if(event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
-                log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName() , e);
-            }
-            model.addAttribute("delayForOfflinePayment", 0);
+        OptionalInt delay = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+        model.addAttribute("delayForOfflinePayment", Math.min(1, delay.orElse( 0 )));
+        if(!delay.isPresent() && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
+            log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());
         }
     }
 

@@ -16,7 +16,7 @@
  */
 package alfio.controller;
 
-import alfio.manager.StripeManager;
+import alfio.manager.StripeCreditCardManager;
 import alfio.manager.user.UserManager;
 import alfio.model.system.Configuration;
 import lombok.AllArgsConstructor;
@@ -33,7 +33,7 @@ import java.security.Principal;
 import java.util.Objects;
 import java.util.Optional;
 
-import static alfio.manager.StripeManager.CONNECT_REDIRECT_PATH;
+import static alfio.manager.StripeCreditCardManager.CONNECT_REDIRECT_PATH;
 
 @Controller
 @AllArgsConstructor
@@ -42,7 +42,7 @@ public class AdminConfigurationController {
 
     private static final String STRIPE_CONNECT_ORG = "stripe.connect.org";
     private static final String STRIPE_CONNECT_STATE_PREFIX = "stripe.connect.state.";
-    private final StripeManager stripeManager;
+    private final StripeCreditCardManager stripeCreditCardManager;
     private final UserManager userManager;
 
     @RequestMapping("/admin/configuration/payment/stripe/connect/{orgId}")
@@ -50,7 +50,7 @@ public class AdminConfigurationController {
                                           @PathVariable("orgId") Integer orgId,
                                           HttpSession session) {
         if(userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), orgId)) {
-            StripeManager.ConnectURL connectURL = stripeManager.getConnectURL(Configuration.from(orgId));
+            StripeCreditCardManager.ConnectURL connectURL = stripeCreditCardManager.getConnectURL(Configuration.from(orgId));
             session.setAttribute(STRIPE_CONNECT_STATE_PREFIX +orgId, connectURL.getState());
             session.setAttribute(STRIPE_CONNECT_ORG, orgId);
             return "redirect:" + connectURL.getAuthorizationURL();
@@ -77,7 +77,7 @@ public class AdminConfigurationController {
                 session.removeAttribute(STRIPE_CONNECT_STATE_PREFIX + orgId);
                 boolean stateVerified = Objects.equals(persistedState, state);
                 if(stateVerified && code != null) {
-                    StripeManager.ConnectResult connectResult = stripeManager.storeConnectedAccountId(code, Configuration.from(orgId));
+                    StripeCreditCardManager.ConnectResult connectResult = stripeCreditCardManager.storeConnectedAccountId(code, Configuration.from(orgId));
                     if(connectResult.isSuccess()) {
                         return "redirect:/admin/#/configuration/organization/"+orgId;
                     }

@@ -27,6 +27,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -34,6 +35,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.TemplateManager;
+import alfio.util.WorkingDaysAdjusters;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
@@ -43,12 +45,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
-import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -93,17 +93,9 @@ class TicketReservationManagerTest {
     private TicketCategoryRepository ticketCategoryRepository;
     private TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private PaymentManager paymentManager;
-    private PromoCodeDiscountRepository promoCodeDiscountRepository;
     private SpecialPriceRepository specialPriceRepository;
     private TransactionRepository transactionRepository;
-    private TemplateManager templateManager;
-    private PlatformTransactionManager transactionManager;
     private WaitingQueueManager waitingQueueManager;
-    private AdditionalServiceRepository additionalServiceRepository;
-    private AdditionalServiceTextRepository additionalServiceTextRepository;
-    private AdditionalServiceItemRepository additionalServiceItemRepository;
-    private InvoiceSequencesRepository invoiceSequencesRepository;
-    private AuditingRepository auditingRepository;
     private Event event;
     private SpecialPrice specialPrice;
     private TicketCategory ticketCategory;
@@ -111,10 +103,6 @@ class TicketReservationManagerTest {
     private TicketReservationWithOptionalCodeModification reservationModification;
     private TicketReservation ticketReservation;
     private Organization organization;
-    private UserRepository userRepository;
-    private ExtensionManager extensionManager;
-    private TicketSearchRepository ticketSearchRepository;
-    private GroupManager groupManager;
 
     @BeforeEach
     void init() {
@@ -129,17 +117,17 @@ class TicketReservationManagerTest {
         ticketCategoryRepository = mock(TicketCategoryRepository.class);
         ticketCategoryDescriptionRepository = mock(TicketCategoryDescriptionRepository.class);
         paymentManager = mock(PaymentManager.class);
-        promoCodeDiscountRepository = mock(PromoCodeDiscountRepository.class);
+        PromoCodeDiscountRepository promoCodeDiscountRepository = mock(PromoCodeDiscountRepository.class);
         specialPriceRepository = mock(SpecialPriceRepository.class);
         transactionRepository = mock(TransactionRepository.class);
-        templateManager = mock(TemplateManager.class);
-        transactionManager = mock(PlatformTransactionManager.class);
+        TemplateManager templateManager = mock(TemplateManager.class);
+        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
         waitingQueueManager = mock(WaitingQueueManager.class);
-        additionalServiceRepository = mock(AdditionalServiceRepository.class);
-        additionalServiceTextRepository = mock(AdditionalServiceTextRepository.class);
-        additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
-        invoiceSequencesRepository = mock(InvoiceSequencesRepository.class);
-        auditingRepository = mock(AuditingRepository.class);
+        AdditionalServiceRepository additionalServiceRepository = mock(AdditionalServiceRepository.class);
+        AdditionalServiceTextRepository additionalServiceTextRepository = mock(AdditionalServiceTextRepository.class);
+        AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
+        InvoiceSequencesRepository invoiceSequencesRepository = mock(InvoiceSequencesRepository.class);
+        AuditingRepository auditingRepository = mock(AuditingRepository.class);
         event = mock(Event.class);
         specialPrice = mock(SpecialPrice.class);
         ticketCategory = mock(TicketCategory.class);
@@ -147,10 +135,10 @@ class TicketReservationManagerTest {
         reservationModification = mock(TicketReservationWithOptionalCodeModification.class);
         ticketReservation = mock(TicketReservation.class);
         organization = mock(Organization.class);
-        userRepository = mock(UserRepository.class);
-        extensionManager = mock(ExtensionManager.class);
-        ticketSearchRepository = mock(TicketSearchRepository.class);
-        groupManager = mock(GroupManager.class);
+        TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
+        GroupManager groupManager = mock(GroupManager.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        ExtensionManager extensionManager = mock(ExtensionManager.class);
 
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -196,8 +184,7 @@ class TicketReservationManagerTest {
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
         when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
         when(userRepository.findIdByUserName(anyString())).thenReturn(Optional.empty());
-        when(extensionManager.handleInvoiceGeneration(any(), anyString(), anyString(), any(), any(), anyString(), anyString(), any(), anyBoolean(), any(), any()))
-            .thenReturn(Optional.empty());
+        when(extensionManager.handleInvoiceGeneration(any(), any(), any())).thenReturn(Optional.empty());
         when(messageSource.getMessage(eq("ticket-has-changed-owner-subject"), any(), any())).thenReturn("subject");
         when(messageSource.getMessage(eq("reminder.ticket-not-assigned.subject"), any(), any())).thenReturn("subject");
     }
@@ -421,52 +408,51 @@ class TicketReservationManagerTest {
     @Test
     void returnTheExpiredDateAsConfigured() {
         initOfflinePaymentTest();
-        ZonedDateTime from = ZonedDateTime.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
-        ZonedDateTime eventBegin = from.plusDays(2);
-        when(event.getBegin()).thenReturn(eventBegin);
-        ZonedDateTime now = from.with(ChronoField.HOUR_OF_DAY, 11);
-        ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(now, event, configurationManager);
-        assertEquals(2L, ChronoUnit.DAYS.between(now.toLocalDate(), offlinePaymentDeadline.toLocalDate()));
+        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
+        ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
+        ZonedDateTime expectedDate = ZonedDateTime.now().plusDays(2L).truncatedTo(ChronoUnit.HALF_DAYS).with(WorkingDaysAdjusters.defaultWorkingDays());
+        assertEquals(expectedDate, offlinePaymentDeadline);
     }
 
     @Test
     void returnTheConfiguredWaitingTime() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
-        assertEquals(2, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager));
+        OptionalInt offlinePaymentWaitingPeriod = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+        assertTrue(offlinePaymentWaitingPeriod.isPresent());
+        assertEquals(2, offlinePaymentWaitingPeriod.getAsInt());
     }
 
     @Test
     void considerEventBeginDateWhileCalculatingExpDate() {
         initOfflinePaymentTest();
-        ZonedDateTime from = ZonedDateTime.now().with(TemporalAdjusters.next(DayOfWeek.MONDAY));
-        ZonedDateTime now = from.with(ChronoField.HOUR_OF_DAY, 11);
-        when(event.getBegin()).thenReturn(now.plusDays(1));
-        ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(now, event, configurationManager);
-        assertEquals(1L, ChronoUnit.DAYS.between(now.toLocalDate(), offlinePaymentDeadline.toLocalDate()));
+        when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
+        ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
+        assertEquals(1L, ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()));
     }
 
     @Test
     void returnConfiguredWaitingTimeConsideringEventStart() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
-        assertEquals(1, TicketReservationManager.getOfflinePaymentWaitingPeriod(event, configurationManager));
+        assertEquals(1, BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager).getAsInt());
     }
 
     @Test
     void neverReturnADateInThePast() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now());
-        ZonedDateTime offlinePaymentDeadline = TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager);
+        ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
         assertTrue(offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
     }
 
-    @Test
-    void throwExceptionAfterEventStart() {
-        initOfflinePaymentTest();
-        when(event.getBegin()).thenReturn(ZonedDateTime.now().minusDays(1));
-        assertThrows(TicketReservationManager.OfflinePaymentException.class, () -> TicketReservationManager.getOfflinePaymentDeadline(event, configurationManager));
-    }
+//    FIXME implement test
+//    @Test
+//    void throwExceptionAfterEventStart() {
+//        initOfflinePaymentTest();
+//        when(event.getBegin()).thenReturn(ZonedDateTime.now().minusDays(1));
+//        assertThrows(BankTransactionManager.OfflinePaymentException.class, () -> BankTransactionManager.getOfflinePaymentDeadline(event, configurationManager));
+//    }
 
     //fix token
     @Test
@@ -686,7 +672,7 @@ class TicketReservationManagerTest {
         }
     }
 
-    //confirm reservation
+    //performPayment reservation
 
     private void initConfirmReservation() {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
@@ -696,22 +682,24 @@ class TicketReservationManagerTest {
     @Test
     void confirmPaidReservation() {
         initConfirmReservation();
-        when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), anyString())).thenReturn(1);
+        when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
-        when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), isNull(), eq(PaymentProxy.STRIPE.toString()), anyString())).thenReturn(1);
-        when(paymentManager.processStripePayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class),  anyString())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
-        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event),
-            Locale.ENGLISH, "", "", new TotalPrice(100, 0, 0, 0), Optional.empty(),
-            Optional.of(PaymentProxy.STRIPE), true, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+        when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
+        StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
+        when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.CREDIT_CARD), any())).thenReturn(Optional.of(stripeCreditCardManager));
+        when(stripeCreditCardManager.doPayment(any())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
+        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "test@email",
+            new CustomerName("Full Name", null, null, event), "", null, null, Locale.ENGLISH,
+            true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertTrue(result.isSuccessful());
-        assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayTransactionId());
-        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), anyString());
+        assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
+        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
-        verify(paymentManager).processStripePayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class), anyString());
         verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()));
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
-        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), anyString());
+        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
@@ -720,21 +708,21 @@ class TicketReservationManagerTest {
     }
 
     @Test
-    void returnFailureCodeIfPaymentNotSuccesful() {
+    void returnFailureCodeIfPaymentNotSuccessful() {
         initConfirmReservation();
-        when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), isNull(), eq(PaymentProxy.STRIPE.toString()), anyString())).thenReturn(1);
+        when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
         when(ticketReservationRepository.updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()))).thenReturn(1);
-        when(paymentManager.processStripePayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
-        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event), Locale.ENGLISH, "","",
-            new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE),
-            true, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false);
+        StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
+        when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.CREDIT_CARD), any())).thenReturn(Optional.of(stripeCreditCardManager));
+        when(stripeCreditCardManager.doPayment(any())).thenReturn(PaymentResult.failed("error-code"));
+        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "email@user", new CustomerName("Full Name", null, null, event), null, null, "", Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false, null);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertFalse(result.isSuccessful());
-        assertFalse(result.getGatewayTransactionId().isPresent());
+        assertFalse(result.getGatewayId().isPresent());
         assertEquals(Optional.of("error-code"), result.getErrorCode());
-        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), isNull(), eq(PaymentProxy.STRIPE.toString()), anyString());
+        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull());
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
-        verify(paymentManager).processStripePayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class), anyString());
         verify(ticketReservationRepository).updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()));
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("12345"), eq("IT"), eq(true), eq(RESERVATION_ID));
@@ -744,15 +732,19 @@ class TicketReservationManagerTest {
     void handleOnSitePaymentMethod() {
         initConfirmReservation();
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()))).thenReturn(1);
-        when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()), anyString())).thenReturn(1);
-        when(paymentManager.processStripePayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class), anyString())).thenReturn(PaymentResult.unsuccessful("error-code"));
+        when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()), isNull())).thenReturn(1);
+        OnSiteManager onSiteManager = mock(OnSiteManager.class);
+        when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.ON_SITE), any())).thenReturn(Optional.of(onSiteManager));
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
-        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event),
-            Locale.ENGLISH, "", "", new TotalPrice(100, 0, 0, 0), Optional.empty(),
-            Optional.of(PaymentProxy.ON_SITE), true, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+        when(onSiteManager.doPayment(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
+        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "test@email",
+            new CustomerName("Full Name", null, null, event),
+            "", null, "", Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
+        when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), anyString(), anyString(), anyString(), isNull(), isNull(), eq(Locale.ENGLISH.getLanguage()), isNull(), any(), any(), isNull())).thenReturn(1);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE));
         assertTrue(result.isSuccessful());
-        assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayTransactionId());
-        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()), anyString());
+        assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
+        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()), isNull());
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()));
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
@@ -766,17 +758,19 @@ class TicketReservationManagerTest {
     @Test
     void handleOfflinePaymentMethod() {
         initConfirmReservation();
-        when(ticketReservationRepository.postponePayment(any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(1);
+        when(ticketReservationRepository.postponePayment(eq(RESERVATION_ID), any(Date.class), anyString(), anyString(), isNull(), isNull(), anyString(), isNull())).thenReturn(1);
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
-        PaymentResult result = trm.confirm(GATEWAY_TOKEN, null, event, RESERVATION_ID, "", new CustomerName("Full Name", null, null, event),
-            Locale.ENGLISH, "", "", new TotalPrice(100, 0, 0, 0), Optional.empty(),
-            Optional.of(PaymentProxy.OFFLINE), true, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+        BankTransferManager bankTransferManager = mock(BankTransferManager.class);
+        when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.BANK_TRANSFER), any())).thenReturn(Optional.of(bankTransferManager));
+        when(bankTransferManager.doPayment(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
+        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "test@email",
+            new CustomerName("Full Name", null, null, event),
+            "", null, "", Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
-        assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayTransactionId());
+        assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
-        verify(ticketReservationRepository).postponePayment(eq(RESERVATION_ID), any(Date.class), any(), anyString(), isNull(), isNull(), anyString(), anyString());
-        verify(configurationManager).getIntConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_PAYMENT_DAYS)), eq(5));
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
     }

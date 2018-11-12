@@ -16,73 +16,101 @@
  */
 package alfio.manager;
 
+import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.CustomerName;
 import alfio.model.Event;
-import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
+import alfio.repository.AuditingRepository;
 import alfio.repository.TicketRepository;
-import com.stripe.exception.*;
-import com.stripe.net.RequestOptions;
+import alfio.repository.TransactionRepository;
+import alfio.repository.user.UserRepository;
+import com.stripe.exception.AuthenticationException;
+import com.stripe.exception.StripeException;
+import com.stripe.model.Charge;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.env.Environment;
 
+import java.time.ZonedDateTime;
+import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
-import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
-import static alfio.model.system.ConfigurationKeys.STRIPE_CONNECTED_ID;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class StripeManagerTest {
 
+    private TransactionRepository transactionRepository;
     private ConfigurationManager configurationManager;
+    private AuditingRepository auditingRepository;
+    private UserRepository userRepository;
     private TicketRepository ticketRepository;
     private Event event;
+    private CustomerName customerName;
 
-    private StripeManager stripeManager;
+    private final String paymentId = "customer#1";
+    private final String error = "errorCode";
 
     @BeforeEach
-    public void init() {
+    public void setUp() {
+        transactionRepository = mock(TransactionRepository.class);
         configurationManager = mock(ConfigurationManager.class);
+        auditingRepository = mock(AuditingRepository.class);
+        userRepository = mock(UserRepository.class);
         ticketRepository = mock(TicketRepository.class);
         event = mock(Event.class);
-        stripeManager = new StripeManager(configurationManager, ticketRepository, null, null);
+        customerName = mock(CustomerName.class);
+        when(customerName.getFullName()).thenReturn("ciccio");
     }
 
     @Test
-    public void testCardExceptionHandler() {
-        assertEquals("error.STEP2_STRIPE_houston_we_ve_a_problem", stripeManager.handleException(new CardException("", "abcd", "houston_we_ve_a_problem", "param", null, null, null, null)));
+    public void successFlow() throws StripeException {
+        StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager( configurationManager, ticketRepository, transactionRepository, null, mock(Environment.class ) ) {
+            @Override
+            protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) throws StripeException {
+                return Optional.of( new Charge() {{
+                    setId(paymentId);
+                    setDescription("description");
+                }});
+            }
+        };
+        PaymentSpecification spec = new PaymentSpecification( "", "", 100, event, "", customerName );
+        PaymentResult result = stripeCreditCardManager.doPayment(spec);
+        assertEquals(result, PaymentResult.successful(paymentId));
     }
 
     @Test
-    public void testInvalidRequestExceptionHandler() {
-        assertEquals("error.STEP2_STRIPE_invalid_param", stripeManager.handleException(new InvalidRequestException("abcd", "param", null, null, null)));
+    void stripeError() {
+        StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager( configurationManager, ticketRepository, transactionRepository, null, mock(Environment.class ) ) {
+            @Override
+            protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) throws StripeException {
+                throw new AuthenticationException("401", "42", "401", 401);
+            }
+        };
+        PaymentSpecification spec = new PaymentSpecification( "", "", 100, event, "", customerName );
+        PaymentResult result = stripeCreditCardManager.doPayment(spec);
+        assertEquals(result, PaymentResult.failed("error.STEP2_STRIPE_abort"));
     }
 
     @Test
-    public void testAuthenticationExceptionHandler() {
-        assertEquals("error.STEP2_STRIPE_abort", stripeManager.handleException(new AuthenticationException("abcd", null, 401)));
-    }
+    public void internalError() throws StripeException {
+        StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager( configurationManager, ticketRepository, transactionRepository, null, mock(Environment.class ) ) {
+            @Override
+            protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) throws StripeException {
+                return Optional.of( new Charge() {{
+                    setId(paymentId);
+                    setDescription("description");
+                }});
+            }
+        };
+        when(event.getCurrency()).thenReturn("CHF");
+        when(transactionRepository.insert(anyString(), isNull(), anyString(), any(ZonedDateTime.class), anyInt(), eq("CHF"), anyString(), anyString(), anyLong(), anyLong()))
+            .thenThrow(new NullPointerException());
 
-    @Test
-    public void testApiConnectionException() {
-        assertEquals("error.STEP2_STRIPE_abort", stripeManager.handleException(new APIConnectionException("abcd")));
-    }
-
-    @Test
-    public void testUnexpectedError() {
-        assertEquals("error.STEP2_STRIPE_unexpected", stripeManager.handleException(new StripeException("", null, 42) {}));
-    }
-
-    @Test
-    public void testMissingStripeConnectedId() {
-        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event.getOrganizationId(), event.getId());
-        when(configurationManager.getBooleanConfigValue(partial.apply(PLATFORM_MODE_ENABLED), false)).thenReturn(true);
-        when(configurationManager.getStringConfigValue(partial.apply(STRIPE_CONNECTED_ID))).thenReturn(Optional.empty());
-        Optional<RequestOptions> options = stripeManager.options(event);
-        assertNotNull(options);
-        assertFalse(options.isPresent());
+        PaymentSpecification spec = new PaymentSpecification( "", "", 100, event, "", customerName );
+        Assertions.assertThrows(IllegalStateException.class, () -> stripeCreditCardManager.doPayment(spec));
     }
 }

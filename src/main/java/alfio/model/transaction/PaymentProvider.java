@@ -14,26 +14,24 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model;
+package alfio.model.transaction;
 
-import lombok.Data;
+import alfio.manager.PaymentSpecification;
+import alfio.manager.support.PaymentResult;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 
-@Data
-public class SummaryRow {
-    private final String name;
-    private final String price;
-    private final String priceBeforeVat;
-    private final int amount;
-    private final String subTotal;
-    private final String subTotalBeforeVat;
-    private final int originalSubTotal;
-    private final SummaryType type;
+import java.util.UUID;
+import java.util.function.Function;
 
-    public enum SummaryType {
-        TICKET, PROMOTION_CODE, ADDITIONAL_SERVICE
+public interface PaymentProvider {
+
+    boolean accept(PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider);
+
+    default PaymentResult getToken(PaymentSpecification spec) {
+        return PaymentResult.initialized(UUID.randomUUID().toString());
     }
 
-    public String getDescriptionForPayment() {
-        return amount + " x " + name;
-    }
+    PaymentResult doPayment(PaymentSpecification spec);
+
 }

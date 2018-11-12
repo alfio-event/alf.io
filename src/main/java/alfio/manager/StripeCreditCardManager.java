@@ -18,14 +18,21 @@ package alfio.manager;
 
 
 import alfio.manager.support.FeeCalculator;
+import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.PaymentInformation;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.PaymentProvider;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
+import alfio.model.transaction.capabilities.PaymentInfo;
+import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.TicketRepository;
+import alfio.repository.TransactionRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
@@ -44,9 +51,11 @@ import com.stripe.net.Webhook;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
 
@@ -54,7 +63,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @Log4j2
-public class StripeManager {
+public class StripeCreditCardManager implements PaymentProvider, RefundRequest, PaymentInfo {
 
     public static final String STRIPE_UNEXPECTED = "error.STEP2_STRIPE_unexpected";
     public static final String CONNECT_REDIRECT_PATH = "/admin/configuration/payment/stripe/authorize";
@@ -63,15 +72,18 @@ public class StripeManager {
     private final TicketRepository ticketRepository;
     private final ConfigurationRepository configurationRepository;
     private final Environment environment;
+    private final TransactionRepository transactionRepository;
 
-    public StripeManager(ConfigurationManager configurationManager,
-                         TicketRepository ticketRepository,
-                         ConfigurationRepository configurationRepository,
-                         Environment environment) {
+    public StripeCreditCardManager( ConfigurationManager configurationManager,
+                                    TicketRepository ticketRepository,
+                                    TransactionRepository transactionRepository,
+                                    ConfigurationRepository configurationRepository,
+                                    Environment environment) {
         this.configurationManager = configurationManager;
         this.ticketRepository = ticketRepository;
         this.configurationRepository = configurationRepository;
         this.environment = environment;
+        this.transactionRepository = transactionRepository;
 
         handlers = new HashMap<>();
         handlers.put(CardException.class, this::handleCardException);
@@ -89,7 +101,7 @@ public class StripeManager {
         return configurationManager.getRequiredValue(Configuration.getSystemConfiguration(STRIPE_WEBHOOK_KEY));
     }
 
-    String getPublicKey(Event event) {
+    public String getPublicKey(Event event) {
         if(isConnectEnabled(event)) {
             return configurationManager.getRequiredValue(Configuration.getSystemConfiguration(STRIPE_PUBLIC_KEY));
         }
@@ -188,6 +200,10 @@ public class StripeManager {
         }
         chargeParams.put("metadata", initialMetadata);
 
+        return charge( event, chargeParams );
+    }
+
+    protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) throws StripeException {
         Optional<RequestOptions> opt = options(event);
         if(!opt.isPresent()) {
             return Optional.empty();
@@ -222,7 +238,8 @@ public class StripeManager {
         return Optional.of(builder.setApiKey(getSecretKey(event)).build());
     }
 
-    Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
+    @Override
+    public Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
         try {
             Optional<RequestOptions> requestOptionsOptional = options(event);
             if(requestOptionsOptional.isPresent()) {
@@ -239,7 +256,7 @@ public class StripeManager {
         }
     }
 
-    static String getFeeAmount(List<Fee> fees, String feeType) {
+    private static String getFeeAmount(List<Fee> fees, String feeType) {
         return fees.stream()
             .filter(f -> f.getType().equals(feeType))
             .findFirst()
@@ -249,7 +266,9 @@ public class StripeManager {
     }
 
     // https://stripe.com/docs/api#create_refund
-    public boolean refund(Transaction transaction, Event event, Optional<Integer> amount) {
+    @Override
+    public boolean refund(Transaction transaction, Event event, Integer amountToRefund) {
+        Optional<Integer> amount = Optional.ofNullable(amountToRefund);
         String chargeId = transaction.getTransactionId();
         try {
             String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
@@ -345,6 +364,36 @@ public class StripeManager {
         return STRIPE_UNEXPECTED;
     }
 
+    @Override
+    public boolean accept( PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider) {
+        return paymentMethod == PaymentMethod.CREDIT_CARD && configurationManager.getBooleanConfigValue( contextProvider.apply( STRIPE_CC_ENABLED ), false );
+    }
+
+    @Override
+    public PaymentResult doPayment( PaymentSpecification spec ) {
+        try {
+            final Optional<Charge> optionalCharge = chargeCreditCard(spec.getGatewayToken(), spec.getPriceWithVAT(),
+                spec.getEvent(), spec.getReservationId(), spec.getEmail(), spec.getCustomerName().getFullName(), spec.getBillingAddress());
+            return optionalCharge.map(charge -> {
+                log.info("transaction {} paid: {}", spec.getReservationId(), charge.getPaid());
+                Pair<Long, Long> fees = Optional.ofNullable(charge.getBalanceTransactionObject()).map( bt -> {
+                    List<Fee> feeDetails = bt.getFeeDetails();
+                    return Pair.of(Optional.ofNullable( StripeCreditCardManager.getFeeAmount(feeDetails, "application_fee")).map(Long::parseLong).orElse(0L),
+                        Optional.ofNullable( StripeCreditCardManager.getFeeAmount(feeDetails, "stripe_fee")).map(Long::parseLong).orElse(0L));
+                }).orElse(null);
+
+                transactionRepository.insert(charge.getId(), null, spec.getReservationId(),
+                    ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
+                    fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L);
+                return PaymentResult.successful(charge.getId());
+            }).orElseGet(() -> PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION"));
+        } catch (Exception e) {
+            if(e instanceof StripeException) {
+                return PaymentResult.failed( handleException((StripeException)e));
+            }
+            throw new IllegalStateException(e);
+        }
+    }
 
     @FunctionalInterface
     private interface StripeExceptionHandler {

@@ -14,26 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model;
+package alfio.model.transaction.capabilities;
 
-import lombok.Data;
+import alfio.model.Event;
 
-@Data
-public class SummaryRow {
-    private final String name;
-    private final String price;
-    private final String priceBeforeVat;
-    private final int amount;
-    private final String subTotal;
-    private final String subTotalBeforeVat;
-    private final int originalSubTotal;
-    private final SummaryType type;
+/**
+ * Indicates that the {@link alfio.model.transaction.PaymentProvider} supports Refunds.
+ */
+public interface RefundRequest {
 
-    public enum SummaryType {
-        TICKET, PROMOTION_CODE, ADDITIONAL_SERVICE
-    }
+    boolean refund(alfio.model.transaction.Transaction transaction, Event event, Integer amount);
 
-    public String getDescriptionForPayment() {
-        return amount + " x " + name;
-    }
 }

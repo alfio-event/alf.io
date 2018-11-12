@@ -58,7 +58,7 @@ public class FileDownloadManager {
                 return null;
             }
         } catch(IOException e) {
-            log.warn("error while downloading file");
+            log.warn("error while downloading file", e);
             return null;
         }
     }

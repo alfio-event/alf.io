@@ -259,8 +259,12 @@ public class AdminReservationManager {
 
     private Result<Triple<TicketReservation, List<Ticket>, Event>> performConfirmation(String reservationId, Event event, TicketReservation original) {
         try {
-            ticketReservationManager.completeReservation(event, reservationId, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event),
-                Locale.forLanguageTag(original.getUserLanguage()), original.getBillingAddress(), Optional.empty(), PaymentProxy.ADMIN, original.getCustomerReference(), false, false);
+            PaymentSpecification spec = new PaymentSpecification(reservationId, null, 0,
+                event, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event),
+                original.getBillingAddress(), original.getCustomerReference(), null, Locale.forLanguageTag(original.getUserLanguage()),
+                false, false, null, null, null, null, false, false, null);
+
+            ticketReservationManager.completeReservation(spec, Optional.empty(), PaymentProxy.ADMIN);
             return loadReservation(reservationId);
         } catch(Exception e) {
             return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);
@@ -561,7 +565,7 @@ public class AdminReservationManager {
 
             if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
                 //fully refund
-                paymentManager.refund(reservation, e, Optional.empty(), username);
+                paymentManager.refund(reservation, e, null, username);
             }
 
             markAsCancelled(reservation);
@@ -575,7 +579,7 @@ public class AdminReservationManager {
             TicketReservation reservation = res.getLeft();
             return reservation.getPaymentMethod() != null
                 && reservation.getPaymentMethod().isSupportRefund()
-                && paymentManager.refund(reservation, e, Optional.of(MonetaryUtil.unitToCents(refundAmount)), username);
+                && paymentManager.refund(reservation, e, MonetaryUtil.unitToCents(refundAmount), username);
         });
     }
 
@@ -639,7 +643,7 @@ public class AdminReservationManager {
         for(Integer toRefundId : toRefund) {
             int toBeRefunded = ticketsById.get(toRefundId).getFinalPriceCts();
             if(toBeRefunded > 0) {
-                paymentManager.refund(reservation, e, Optional.of(toBeRefunded), username);
+                paymentManager.refund(reservation, e, toBeRefunded, username);
             }
         }
         //

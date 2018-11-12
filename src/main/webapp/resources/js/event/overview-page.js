@@ -1,72 +1,14 @@
 (function() {
 
     'use strict';
+    var paymentHandlers = [];
 
-    function stripeResponseHandler(status, response) {
-        var $form = $('#payment-form');
-
-
-        //https://stripe.com/docs/api#errors codes from stripes
-
-        /*
-         * incorrect_number         The card number is incorrect.
-         * invalid_number           The card number is not a valid credit card number.
-         * invalid_expiry_month     The card's expiration month is invalid.
-         * invalid_expiry_year      The card's expiration year is invalid.
-         * invalid_cvc              The card's security code is invalid.
-         * expired_card             The card has expired.
-         * incorrect_cvc            The card's security code is incorrect.
-         * incorrect_zip            The card's zip code failed validation.
-         * card_declined            The card was declined.
-         * missing                  There is no card on a customer that is being charged.
-         * processing_error         An error occurred while processing the card.
-         * rate_limit               An error occurred due to requests hitting the API too quickly.
-         *
-         */
-
-        var errorCodeToSelectorMap = {
-            incorrect_number : '[data-stripe=number]',
-            invalid_number: '[data-stripe=number]',
-            invalid_expiry_month : '[data-stripe=exp-month]',
-            invalid_expiry_year : '[data-stripe=exp-year]',
-            invalid_cvc : '[data-stripe=cvc]',
-            expired_card : '[data-stripe]',
-            incorrect_cvc : '[data-stripe=cvc]',
-            card_declined : '[data-stripe]',
-            missing : '[data-stripe]',
-            processing_error : '[data-stripe]',
-            rate_limit : '[data-stripe]'
-        };
-
-        if (response.error) {
-            $(".payment-errors").removeClass('hide').empty();
-            $("[data-stripe]").parent().removeClass('has-error');
-
-
-            var attrValue = document.getElementById("stripe-key").getAttribute('data-stripe-message-'+response.error.code);
-
-            $form.find('.payment-errors').append("<p><strong>"+(attrValue || response.error.message)+"</strong></p>");
-            $form.find('button').prop('disabled', false);
-            $form.find(errorCodeToSelectorMap[response.error.code]).parent().addClass('has-error');
-
-        } else {
-            $(".payment-errors").addClass('hide');
-            // token contains id, last4, and card type
-            var token = response.id;
-            // Insert the token into the form so it gets submitted to the server
-            $form.append($('<input type="hidden" name="stripeToken" />').val(token));
-            // and re-submit
-            $form.get(0).submit();
+    window.alfio = {
+        registerPaymentHandler: function(handler) {
+            handler.init();
+            paymentHandlers.push(handler);
         }
-    }
-
-    var hasStripe = document.getElementById("stripe-key") != null;
-
-    if(hasStripe) {
-        // This identifies your website in the createToken call below
-        Stripe.setPublishableKey(document.getElementById("stripe-key").getAttribute('data-stripe-key'));
-    }
-
+    };
 
     jQuery(function() {
         //validity
@@ -98,40 +40,6 @@
         };
 
         displayMessage();
-
-        function submitForm(e) {
-            var $form = $(this);
-
-            if(!this.checkValidity()) {
-                return false;
-            }
-
-            //var vatCountry = $('#vatCountry');
-            // if(vatCountry.length && vatCountry.val() !== '') {
-            //     var vatNr = $('#vatNr');
-            //     markFieldAsError(vatNr);
-            //     $('#validation-result-container').removeClass(hiddenClasses);
-            //     var validationResult = $('#validation-result');
-            //     validationResult.html(validationResult.attr('data-validation-required-msg'));
-            //     vatNr.focus();
-            //     return false;
-            // }
-
-            // Disable the submit button to prevent repeated clicks
-            $form.find('button').prop('disabled', true);
-
-            var selectedPaymentMethod = $form.find('input[name=paymentMethod]');
-            if(hasStripe && (selectedPaymentMethod.length === 0 ||
-                (selectedPaymentMethod.length === 1 && selectedPaymentMethod.val() === 'STRIPE') ||
-                selectedPaymentMethod.filter(':checked').val() === 'STRIPE')) {
-                Stripe.card.createToken($form, stripeResponseHandler);
-                // Prevent the form from submitting with the default action
-                return false;
-            }
-            return true;
-        }
-        $('#payment-form').submit(submitForm);
-
 
         $("#cancel-reservation").click(function(e) {
             var $form = $('#payment-form');
@@ -257,7 +165,27 @@
             }
         };
 
-
+        var btn = $('#continue-button');
+        btn.on('click', function(e) {
+            var $form = $('#payment-form');
+            if($form.length === 0 || !$form.get(0).checkValidity()) {
+                return false;
+            }
+            var selectedPaymentMethod = $form.find('input[name=paymentMethod]:checked');
+            var filteredHandlers = paymentHandlers.filter(function(ph) {return ph.id === selectedPaymentMethod.val() && ph.active(); });
+            var paymentHandler = filteredHandlers ? filteredHandlers[0] : null;
+            if(paymentHandler) {
+                btn.hide();
+                paymentHandler.pay(function(res) {
+                    if(res) {
+                        $form.submit();
+                    }
+                }, function() {
+                    btn.show();
+                });
+            }
+            e.preventDefault();
+        })
 
     });
 

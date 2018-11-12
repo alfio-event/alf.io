@@ -26,9 +26,6 @@ import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Date;
 import java.util.Optional;
@@ -37,19 +34,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class CheckInManagerTest {
 
-    @Mock
     private EventRepository eventRepository;
-    @Mock
     private ConfigurationManager configurationManager;
-    @Mock
-    private OrganizationRepository organizationRepository;
-    @Mock
-    private Event event;
-    @Mock
-    private Organization organization;
     private CheckInManager checkInManager;
 
     private static final String EVENT_NAME = "eventName";
@@ -60,6 +48,11 @@ public class CheckInManagerTest {
 
     @Before
     public void setUp() {
+        eventRepository = mock(EventRepository.class);
+        configurationManager = mock(ConfigurationManager.class);
+        OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
+        Event event = mock(Event.class);
+        Organization organization = mock(Organization.class);
         when(eventRepository.findOptionalByShortName(EVENT_NAME)).thenReturn(Optional.of(event));
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORG_ID);
