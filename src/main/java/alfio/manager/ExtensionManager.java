@@ -141,7 +141,7 @@ public class ExtensionManager {
         syncCall(extensionEvent, event, organizationId, payload, Boolean.class);
     }
 
-    public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, BillingDetails billingDetails, TotalPrice reservationCost) {
+    public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost, BillingDetails billingDetails) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservationId", spec.getReservationId());
         payload.put("email", spec.getEmail());
@@ -151,10 +151,10 @@ public class ExtensionManager {
         payload.put("billingDetails", billingDetails);
         payload.put("customerReference", spec.getCustomerReference());
         payload.put("reservationCost", reservationCost);
-        payload.put("invoiceRequested", invoiceRequested);
+        payload.put("invoiceRequested", spec.isInvoiceRequested());
         payload.put("vatCountryCode", billingDetails.getCountry());
         payload.put("vatNr", billingDetails.getTaxId());
-        payload.put("vatStatus", vatStatus);
+        payload.put("vatStatus", spec.getVatStatus());
 
         return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getEvent(), spec.getEvent().getOrganizationId(), payload, InvoiceGeneration.class));
     }

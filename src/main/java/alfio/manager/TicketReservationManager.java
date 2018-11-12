@@ -376,7 +376,7 @@ public class TicketReservationManager {
                 ticketReservationRepository.updateBillingData(spec.getVatStatus(), spec.getVatNr(), spec.getVatCountryCode(), spec.isInvoiceRequested(), spec.getReservationId());
 
                 //
-                extensionManager.handleInvoiceGeneration(spec, reservationCost, ticketReservationRepository.getBillingDetailsForReservation(reservationId))
+                extensionManager.handleInvoiceGeneration(spec, reservationCost, ticketReservationRepository.getBillingDetailsForReservation(spec.getReservationId()))
                     .ifPresent(invoiceGeneration -> {
                         if (invoiceGeneration.getInvoiceNumber() != null) {
                             ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceGeneration.getInvoiceNumber());
@@ -417,7 +417,7 @@ public class TicketReservationManager {
             return Boolean.TRUE.equals(serializedTransactionTemplate.execute(status -> {
                 Integer confirmedPromoCode = promoCodeDiscountRepository.countConfirmedPromoCode(promoCode.getId(), categoriesOrNull(promoCode), reservationId, categoriesOrNull(promoCode) != null ? "X" : null);
                 return promoCode.getMaxUsage() < currentTickets + confirmedPromoCode;
-            })));
+            }));
         }
         return false;
     }
