@@ -153,14 +153,17 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
     };
 
     private static final Mustache.Lambda IS_PAYMENT_METHOD = (frag, out) -> {
-        String execution = frag.execute().trim();
-        Matcher matcher = ARG_PATTERN.matcher(execution);
+        String originalTemplate = frag.decompile();
+        Matcher matcher = ARG_PATTERN.matcher(originalTemplate);
         if(matcher.find()) {
-            String[] values = matcher.group(1).split(",");
-            Optional<PaymentProxy> first = PaymentProxy.safeValueOf(values[0]);
-            Optional<PaymentProxy> second = PaymentProxy.safeValueOf(values[1]);
+            String value = matcher.group(1);
+            Optional<PaymentProxy> first = PaymentProxy.safeValueOf(value);
+            Optional<PaymentProxy> second = Optional.ofNullable(frag.context()).map(PaymentProxy.class::cast);
             if(first.isPresent() && second.isPresent() && first.get().equals(second.get())) {
-                out.write(execution.substring(matcher.end(1) + 1));
+                String execution = frag.execute().trim();
+                Matcher executionMatcher = ARG_PATTERN.matcher(execution);
+                executionMatcher.find();
+                out.write(execution.substring(executionMatcher.end(1) + 1));
             }
         }
     };

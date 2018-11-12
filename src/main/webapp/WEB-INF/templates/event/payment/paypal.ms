@@ -4,3 +4,4 @@
         <p>{{#i18n}}reservation-page.paypal.demo [{{paypalTestUsername}}] [{{paypalTestPassword}}]{{/i18n}}</p>
     {{/demoModeEnabled}}
 </div>
+<script src="{{request.contextPath}}/resources/js/payment/paypal.js" defer async></script>

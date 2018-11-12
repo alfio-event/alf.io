@@ -114,11 +114,11 @@
                 {{#activePaymentMethods}}
                 <label class="btn btn-default tooltip-handler xs-payment-method" {{#is-payment-method}}[STRIPE,{{.}}]  title="Powered by Stripe"{{/is-payment-method}}>
                     <input type="radio" required name="paymentMethod" id="option-{{.}}" data-payment-method="{{.}}" autocomplete="off" value="{{.}}">
-                    {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-cc-stripe"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[MOLLIE,{{.}}] {{#i18n}}reservation-page.mollie{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[STRIPE]<i class="fa fa-cc-stripe"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[PAYPAL]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[MOLLIE] {{#i18n}}reservation-page.mollie{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[ON_SITE]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[OFFLINE]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
                 </label>
                 {{/activePaymentMethods}}
             </div>
@@ -126,22 +126,22 @@
         {{^multiplePaymentMethods}}
             {{#activePaymentMethods}}
                 <h4 class="wMarginTop">
-                {{#is-payment-method}}[STRIPE,{{.}}]<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[PAYPAL,{{.}}]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[MOLLIE,{{.}}] {{#i18n}}reservation-page.mollie{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[ON_SITE,{{.}}]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[OFFLINE,{{.}}]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[STRIPE]<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[PAYPAL]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[MOLLIE] {{#i18n}}reservation-page.mollie{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[ON_SITE]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[OFFLINE]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
                 </h4>
                 <input type="hidden" name="paymentMethod" value="{{.}}">
             {{/activePaymentMethods}}
         {{/multiplePaymentMethods}}
         {{#activePaymentMethods}}
             <div class="payment-method-detail" id="payment-method-{{.}}">
-                {{#is-payment-method}}[STRIPE,{{.}}]{{> /event/payment/stripe }}{{/is-payment-method}}
-                {{#is-payment-method}}[PAYPAL,{{.}}]{{> /event/payment/paypal }}{{/is-payment-method}}
-                {{#is-payment-method}}[MOLLIE,{{.}}]{{> /event/payment/mollie }}{{/is-payment-method}}
-                {{#is-payment-method}}[ON_SITE,{{.}}]{{> /event/payment/on-site }}{{/is-payment-method}}
-                {{#is-payment-method}}[OFFLINE,{{.}}]{{> /event/payment/offline }}{{/is-payment-method}}
+                {{#is-payment-method}}[STRIPE]{{> /event/payment/stripe }}{{/is-payment-method}}
+                {{#is-payment-method}}[PAYPAL]{{> /event/payment/paypal }}{{/is-payment-method}}
+                {{#is-payment-method}}[MOLLIE]{{> /event/payment/mollie }}{{/is-payment-method}}
+                {{#is-payment-method}}[ON_SITE]{{> /event/payment/on-site }}{{/is-payment-method}}
+                {{#is-payment-method}}[OFFLINE]{{> /event/payment/offline }}{{/is-payment-method}}
             </div>
         {{/activePaymentMethods}}
 
