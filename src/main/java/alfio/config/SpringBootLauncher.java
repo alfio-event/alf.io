@@ -46,9 +46,6 @@ public class SpringBootLauncher {
         if("true".equals(System.getenv("ALFIO_DEMO_ENABLED"))) {
             additionalProfiles.add(Initializer.PROFILE_DEMO);
         }
-        if("true".equals(System.getenv("ALFIO_JDBC_SESSION_ENABLED"))) {
-            additionalProfiles.add(Initializer.PROFILE_JDBC_SESSION);
-        }
         application.setAdditionalProfiles(additionalProfiles.toArray(new String[0]));
         ConfigurableApplicationContext applicationContext = application.run(args);
         ConfigurableEnvironment environment = applicationContext.getEnvironment();

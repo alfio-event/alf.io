@@ -145,4 +145,3 @@ It will expire the 02/07/23 (as https://www.apple.com/certificateauthority/).
  - spring-boot: added when launched by spring-boot
  - demo: enable demo mode, the accounts for the admin will be created on the fly
  - disable-jobs: disable jobs
- - jdbc-session: enable saving the http session in the database

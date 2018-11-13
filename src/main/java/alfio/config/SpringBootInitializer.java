@@ -18,15 +18,10 @@ package alfio.config;
 
 import com.openhtmltopdf.util.XRLog;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration;
-import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.server.ErrorPage;
 import org.springframework.boot.web.server.ErrorPageRegistrar;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
-import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -76,20 +71,6 @@ public class SpringBootInitializer {
         cef.setEncoding("UTF-8");
         cef.setForceEncoding(true);
         return cef;
-    }
-
-    @Bean
-    @Profile(Initializer.PROFILE_USE_WORKER_NAME)
-    public ConfigurableServletWebServerFactory jettyCustomizer() {
-        JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
-        factory.addServerCustomizers(server -> {
-            String workerName = Objects.requireNonNull(StringUtils.trimToNull(System.getProperty("alfio.worker.name")), "Invalid value for 'alfio.worker.name'.");
-            log.info("Configuring session manager using worker name {}", workerName);
-            DefaultSessionIdManager sessionIdManager = new DefaultSessionIdManager(server);
-            sessionIdManager.setWorkerName(workerName);
-            server.setSessionIdManager(sessionIdManager);
-        });
-        return factory;
     }
 
     @Bean
