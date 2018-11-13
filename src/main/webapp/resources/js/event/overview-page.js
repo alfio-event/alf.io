@@ -171,7 +171,10 @@
             if($form.length === 0 || !$form.get(0).checkValidity()) {
                 return false;
             }
-            var selectedPaymentMethod = $form.find('input[name=paymentMethod]:checked');
+            var selectedPaymentMethod = $form.find('input[name=paymentMethod]');
+            if(selectedPaymentMethod.length > 1) {
+                selectedPaymentMethod = selectedPaymentMethod.filter(":checked");
+            }
             var filteredHandlers = paymentHandlers.filter(function(ph) {return ph.id === selectedPaymentMethod.val() && ph.active(); });
             var paymentHandler = filteredHandlers ? filteredHandlers[0] : null;
             if(paymentHandler) {
