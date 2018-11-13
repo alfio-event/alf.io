@@ -82,16 +82,6 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
                                     .filter(p -> p.isHosting(environment))
                                     .findFirst()
                                     .orElse(PlatformProvider.DEFAULT);
-        String dialect = current.getDialect(environment);
-        log.info("Detected cloud provider: {}, database: {}", current, dialect);
-        if(PlatformProvider.MYSQL.equals(dialect)) {
-            log.warn("********************** WARNING! WARNING! WARNING!****************************");
-            log.warn("**                                                                         **");
-            log.warn("**         MYSQL SUPPORT WILL BE DROPPED IN ALF.IO V2 (exp. Q4 2018)       **");
-            log.warn("**                 Please consider switching to PostgreSql                 **");
-            log.warn("**                                                                         **");
-            log.warn("*****************************************************************************");
-        }
         return current;
     }
 
@@ -261,24 +251,8 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     @Bean
     @DependsOn("migrator")
     @Profile("!"+ Initializer.PROFILE_DISABLE_JOBS)
-    public SchedulerFactoryBean schedulerFactory(Environment env, PlatformProvider platform, DataSource dataSource, PlatformTransactionManager platformTransactionManager, ApplicationContext applicationContext) throws ParseException {
-
-        String dialect = platform.getDialect(env);
-        String quartzDriverDelegateClass;
-        switch (dialect) {
-            case "PGSQL":
-                quartzDriverDelegateClass = "org.quartz.impl.jdbcjobstore.PostgreSQLDelegate";
-                break;
-            case "HSQLDB":
-                quartzDriverDelegateClass = "org.quartz.impl.jdbcjobstore.HSQLDBDelegate";
-                break;
-            case "MYSQL":
-                quartzDriverDelegateClass = "org.quartz.impl.jdbcjobstore.StdJDBCDelegate";
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported dialect: " + dialect);
-        }
-
+    public SchedulerFactoryBean schedulerFactory(DataSource dataSource, PlatformTransactionManager platformTransactionManager, ApplicationContext applicationContext) throws ParseException {
+        String quartzDriverDelegateClass = "org.quartz.impl.jdbcjobstore.PostgreSQLDelegate";
         Properties properties = new Properties();
         properties.setProperty("org.quartz.jobStore.isClustered", "true");
         properties.setProperty("org.quartz.scheduler.instanceId", "AUTO");

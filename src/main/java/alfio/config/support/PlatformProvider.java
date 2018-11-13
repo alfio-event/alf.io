@@ -30,9 +30,9 @@ import static java.util.Optional.ofNullable;
  * Supported:
  * - Openshift : pgsql only
  * - ElephantDB: runs on Openshift and Cloud Foundry
- * - Cloud Foundry: postgres, mysql (injected)
+ * - Cloud Foundry: postgres
  * - Heroku
- * - AWS: mysql and postgres
+ * - AWS
  * - local use with system properties
  */
 public enum PlatformProvider {
@@ -61,16 +61,6 @@ public enum PlatformProvider {
         @Override
         public String getPassword(Environment env) {
             return isCloudFoundry(env) ? "" : resolveURI(env, "ELEPHANTSQL_URI").getUserInfo().split(":")[1];
-        }
-
-        @Override
-        public String getDialect(Environment env) {
-            return PGSQL;
-        }
-
-        @Override
-        public String getDriverClassName(Environment env) {
-            return POSTGRESQL_DRIVER;
         }
 
         @Override
@@ -110,16 +100,6 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDialect(Environment env) {
-            return PGSQL;
-        }
-
-        @Override
-        public String getDriverClassName(Environment env) {
-            return POSTGRESQL_DRIVER;
-        }
-
-        @Override
         public boolean isHosting(Environment env) {
             return ofNullable(env.getProperty("OPENSHIFT_APP_NAME")).isPresent();
         }
@@ -147,16 +127,6 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDialect(Environment env) {
-            return isMySql(env) ? MYSQL : PGSQL;
-        }
-
-        @Override
-        public String getDriverClassName(Environment env) {
-            return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
-        }
-
-        @Override
         public boolean isHosting(Environment env) {
             //check if json object for services is returned
             //example payload
@@ -169,10 +139,6 @@ public enum PlatformProvider {
             //        {
             //            "name": "alfio-db",
             return env.getProperty("VCAP_SERVICES") != null;
-        }
-
-        private boolean isMySql(Environment env) {
-            return ofNullable(env.getProperty("VCAP_SERVICES")).map(props -> props.contains("mysql://")).orElse(false);
         }
     },
 
@@ -193,16 +159,6 @@ public enum PlatformProvider {
         @Override
         public String getPassword(Environment env) {
             return resolveURI(env).getUserInfo().split(":")[1];
-        }
-
-        @Override
-        public String getDialect(Environment env) {
-            return PGSQL;
-        }
-
-        @Override
-        public String getDriverClassName(Environment env) {
-            return POSTGRESQL_DRIVER;
         }
 
         @Override
@@ -238,17 +194,6 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDialect(Environment env) {
-            return PGSQL;
-        }
-
-
-        @Override
-        public String getDriverClassName(Environment env) {
-            return POSTGRESQL_DRIVER;
-        }
-
-        @Override
         public boolean isHosting(Environment env) {
             return ofNullable(System.getenv("POSTGRES_ENV_POSTGRES_DB")).isPresent();
         }
@@ -258,7 +203,7 @@ public enum PlatformProvider {
 
         @Override
         public String getUrl(Environment env) {
-            String dbType = isMySql(env) ? "mysql" : "postgresql";
+            String dbType = "postgresql";
             String host = env.getRequiredProperty("RDS_HOSTNAME");
             String port = env.getRequiredProperty("RDS_PORT");
             String db = env.getRequiredProperty("RDS_DB_NAME");
@@ -276,22 +221,8 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDialect(Environment env) {
-            return isMySql(env) ? MYSQL : PGSQL;
-        }
-
-        @Override
         public boolean isHosting(Environment env) {
             return ofNullable(env.getProperty("RDS_HOSTNAME")).isPresent();
-        }
-
-        private boolean isMySql(Environment env) {
-            return ofNullable(env.getProperty("RDS_PORT")).filter("3306"::equals).isPresent();
-        }
-
-        @Override
-        public String getDriverClassName(Environment env) {
-            return isMySql(env) ? MYSQL_DRIVER : POSTGRESQL_DRIVER;
         }
 
     },
@@ -314,16 +245,6 @@ public enum PlatformProvider {
         }
 
         @Override
-        public String getDriverClassName(Environment env) {
-            return POSTGRESQL_DRIVER;
-        }
-
-        @Override
-        public String getDialect(Environment env) {
-            return PGSQL;
-        }
-
-        @Override
         public int getMaxActive(Environment env) {
             //default limit to 5, to be on the safe side
             return Integer.parseInt(env.getProperty("POSTGRESQL_ADDON_MAXCONN", "5"));
@@ -337,9 +258,6 @@ public enum PlatformProvider {
 
     private static final String POSTGRESQL_DRIVER = "org.postgresql.Driver";
     public static final String PGSQL = "PGSQL";
-
-    private static final String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
-    public static final String MYSQL = "MYSQL";
 
 
     public String getUrl(Environment env) {
@@ -355,11 +273,11 @@ public enum PlatformProvider {
     }
 
     public String getDriverClassName(Environment env) {
-        return env.getRequiredProperty("datasource.driver");
+        return POSTGRESQL_DRIVER;
     }
 
     public String getDialect(Environment env) {
-        return env.getRequiredProperty("datasource.dialect");
+        return PGSQL;
     }
 
     public int getMaxActive(Environment env) {

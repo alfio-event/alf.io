@@ -58,12 +58,9 @@ public class IntegrationTestUtil {
 
     public static Map<String, String> generateDBConfig(String url, String username, String password) {
         Map<String, String> c = new HashMap<>();
-        c.put("datasource.dialect", "PGSQL");
-        c.put("datasource.driver", "org.postgresql.Driver");
         c.put("datasource.url", url);
         c.put("datasource.username", username);
         c.put("datasource.password", password);
-        c.put("datasource.validationQuery", "SELECT 1");
         return c;
     }
 
