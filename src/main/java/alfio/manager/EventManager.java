@@ -51,6 +51,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.flywaydb.core.Flyway;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -177,7 +178,7 @@ public class EventManager {
         Event event = eventRepository.findById(id);
         checkOwnership(event, username, event.getOrganizationId());
 
-        if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
+        if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             throw new IllegalStateException("demo mode");
         }
         Event.Status status = activate ? Event.Status.PUBLIC : Event.Status.DRAFT;

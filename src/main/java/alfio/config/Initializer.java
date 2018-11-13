@@ -22,6 +22,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
@@ -86,7 +87,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
         
         Validate.notNull(environment, "environment cannot be null!");
         // set secure cookie only if current environment doesn't strictly need HTTP
-        config.setSecure(environment.acceptsProfiles(Initializer.PROFILE_LIVE));
+        config.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
 
         // FIXME and CHECKME what a mess, ouch: https://issues.jboss.org/browse/WFLY-3448 ?
         config.setPath(servletContext.getContextPath() + "/");

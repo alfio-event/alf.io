@@ -37,6 +37,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -96,7 +97,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         ResourceHandlerRegistration reg = registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
-        int cacheMinutes = environment.acceptsProfiles(Initializer.PROFILE_LIVE) ? 15 : 0;
+        int cacheMinutes = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)) ? 15 : 0;
         reg.setCachePeriod(cacheMinutes * 60);
     }
 
@@ -179,11 +180,11 @@ public class MvcConfiguration implements WebMvcConfigurer {
                         mv.addObject("request", request);
                         final ModelMap modelMap = mv.getModelMap();
 
-                        boolean demoModeEnabled = environment.acceptsProfiles(Initializer.PROFILE_DEMO);
+                        boolean demoModeEnabled = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO));
 
                         modelMap.put("demoModeEnabled", demoModeEnabled);
-                        modelMap.put("devModeEnabled", environment.acceptsProfiles(Initializer.PROFILE_DEV));
-                        modelMap.put("prodModeEnabled", environment.acceptsProfiles(Initializer.PROFILE_LIVE));
+                        modelMap.put("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
+                        modelMap.put("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
 
                         Optional.ofNullable(request.getAttribute("ALFIO_EVENT_NAME")).map(Object::toString).ifPresent(eventName -> {
 
@@ -236,7 +237,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
                         + " font-src 'self';"//
                         + " media-src blob: 'self';"//for loading camera api
                         + " connect-src 'self' https://checkout.stripe.com https://maps.googleapis.com/ https://geocoder.cit.api.here.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
-                        + (environment.acceptsProfiles(Initializer.PROFILE_DEBUG_CSP) ? " report-uri /report-csp-violation" : ""));
+                        + (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEBUG_CSP)) ? " report-uri /report-csp-violation" : ""));
             }
         };
     }
@@ -272,7 +273,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
         viewResolver.setTemplateFactory(getTemplateFactory());
         viewResolver.setOrder(1);
         //disable caching if we are in dev mode
-        viewResolver.setCache(env.acceptsProfiles(Initializer.PROFILE_LIVE));
+        viewResolver.setCache(env.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
         viewResolver.setContentType("text/html;charset=UTF-8");
         return viewResolver;
     }
