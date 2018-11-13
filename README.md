@@ -141,7 +141,6 @@ It will expire the 02/07/23 (as https://www.apple.com/certificateauthority/).
 ## Available spring profiles:
 
  - dev: enable dev mode
- - debug-csp: add report-uri and log csp violations
  - spring-boot: added when launched by spring-boot
  - demo: enable demo mode, the accounts for the admin will be created on the fly
  - disable-jobs: disable jobs

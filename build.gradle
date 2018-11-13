@@ -78,7 +78,7 @@ ext {
     datasourceUsername = 'postgres'
     datasourcePassword = 'password'
     datasourceValidationQuery = 'SELECT 1'
-    //springProfilesActive = 'dev,debug-csp' //enable csp report. FIXME For some reasons it doesn't work on Chrome
+    //springProfilesActive = 'dev
     //springProfilesActive = 'dev,demo'
     springProfilesActive = 'dev'
     port = "8080"
