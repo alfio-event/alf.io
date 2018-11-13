@@ -53,6 +53,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -147,7 +148,7 @@ public class StripeCreditCardManager implements PaymentProvider, RefundRequest, 
             com.stripe.model.Event event = Webhook.constructEvent(body, signature, getWebhookSignatureKey());
             if("account.application.deauthorized".equals(event.getType())
                 && event.getLivemode() != null
-                && event.getLivemode() == environment.acceptsProfiles("dev", "test", "demo")) {
+                && event.getLivemode() == environment.acceptsProfiles(Profiles.of("dev", "test", "demo"))) {
                 return Optional.of(revokeToken(event.getAccount()));
             }
             return Optional.of(true);

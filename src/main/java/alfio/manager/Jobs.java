@@ -32,6 +32,7 @@ import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -95,7 +96,7 @@ public class Jobs {
     }
 
     void cleanupForDemoMode() {
-        if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
+        if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             int expirationDate = configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS), 20);
             List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
             if(!userIds.isEmpty()) {

@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.authentication.AccountStatusException;
@@ -279,7 +280,7 @@ public class WebSecurityConfig {
         @Override
         protected void configure(HttpSecurity http) throws Exception {
 
-            if(environment.acceptsProfiles("!"+Initializer.PROFILE_DEV)) {
+            if(environment.acceptsProfiles(Profiles.of("!"+Initializer.PROFILE_DEV))) {
                 http.requiresChannel().antMatchers("/healthz").requiresInsecure()
                     .and()
                     .requiresChannel().mvcMatchers("/**").requiresSecure();
@@ -306,7 +307,7 @@ public class WebSecurityConfig {
 
             Pattern pattern = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
             Predicate<HttpServletRequest> csrfWhitelistPredicate = r -> r.getRequestURI().startsWith("/api/webhook/") || pattern.matcher(r.getMethod()).matches();
-            if(environment.acceptsProfiles(Initializer.PROFILE_DEBUG_CSP)) {
+            if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEBUG_CSP))) {
                 csrfWhitelistPredicate = csrfWhitelistPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
             }
             configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfWhitelistPredicate::test));
@@ -356,7 +357,7 @@ public class WebSecurityConfig {
 
             http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
 
-            if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
+            if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
                 http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, "/authenticate"), RecaptchaLoginFilter.class);
             }
         }

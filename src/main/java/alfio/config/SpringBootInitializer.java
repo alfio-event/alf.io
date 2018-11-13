@@ -30,6 +30,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
@@ -60,7 +61,7 @@ public class SpringBootInitializer {
             ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
             SessionCookieConfig config = servletContext.getSessionCookieConfig();
             config.setHttpOnly(true);
-            config.setSecure(environment.acceptsProfiles(Initializer.PROFILE_LIVE));
+            config.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
             // force log initialization, then disable it
             XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
             XRLog.setLoggingEnabled(false);
