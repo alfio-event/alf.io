@@ -21,6 +21,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration;
 import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.server.ErrorPage;
 import org.springframework.boot.web.server.ErrorPageRegistrar;
@@ -46,6 +47,7 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
         org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
         org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration.class,
         org.springframework.boot.autoconfigure.session.SessionAutoConfiguration.class,
         org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration.class})
 @Configuration
