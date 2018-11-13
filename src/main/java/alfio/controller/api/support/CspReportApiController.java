@@ -40,7 +40,7 @@ public class CspReportApiController {
 
     @RequestMapping(value = "/report-csp-violation", method = RequestMethod.POST)
     public boolean logCspViolation(HttpServletRequest request) throws IOException {
-        String report = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+
 
         boolean enabledReport = configurationManager.getBooleanConfigValue(
             Configuration.getSystemConfiguration(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED), false);
@@ -49,6 +49,7 @@ public class CspReportApiController {
             Configuration.getSystemConfiguration(ConfigurationKeys.SECURITY_CSP_REPORT_URI), "/report-csp-violation");
 
         if (enabledReport && "/report-csp-violation".equals(uri)) {
+            String report = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
             log.warn("found csp violation: {}", report);
         }
         return true;
