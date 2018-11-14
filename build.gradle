@@ -78,9 +78,8 @@ ext {
     datasourceUsername = 'postgres'
     datasourcePassword = 'password'
     datasourceValidationQuery = 'SELECT 1'
-    //springProfilesActive = 'dev,debug-csp' //enable csp report. FIXME For some reasons it doesn't work on Chrome
+    //springProfilesActive = 'dev
     //springProfilesActive = 'dev,demo'
-    //springProfilesActive = 'dev,demo,jdbc-session'
     springProfilesActive = 'dev'
     port = "8080"
 
@@ -262,7 +261,7 @@ bootRun {
     def externalConfig = new File("./custom.jvmargs")
     def opts = []
     opts += [
-        "-Dspring.profiles.active=${project.springProfilesActive},jdbc-session",
+        "-Dspring.profiles.active=${project.springProfilesActive}",
         "-Ddatasource.url=${project.datasourceUrl}",
         "-Ddatasource.username=${project.datasourceUsername}",
         "-Ddatasource.password=${project.datasourcePassword}",

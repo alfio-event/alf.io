@@ -307,9 +307,7 @@ public class WebSecurityConfig {
 
             Pattern pattern = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
             Predicate<HttpServletRequest> csrfWhitelistPredicate = r -> r.getRequestURI().startsWith("/api/webhook/") || pattern.matcher(r.getMethod()).matches();
-            if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEBUG_CSP))) {
-                csrfWhitelistPredicate = csrfWhitelistPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
-            }
+            csrfWhitelistPredicate = csrfWhitelistPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
             configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfWhitelistPredicate::test));
 
             String[] ownershipRequired = new String[] {

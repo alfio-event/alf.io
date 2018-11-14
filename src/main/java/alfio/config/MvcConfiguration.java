@@ -22,12 +22,15 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.system.Configuration.ConfigurationPathKey;
+import alfio.model.system.ConfigurationKeys;
 import alfio.util.MustacheCustomTagInterceptor;
 import alfio.util.TemplateManager;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.samskivert.mustache.Mustache;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +67,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -80,6 +84,9 @@ public class MvcConfiguration implements WebMvcConfigurer {
     private final I18nManager i18nManager;
     private final ConfigurationManager configurationManager;
     private final Environment environment;
+    private static final Cache<ConfigurationKeys, String> configurationCache = Caffeine.newBuilder()
+        .expireAfterWrite(15, TimeUnit.MINUTES)
+        .build();
 
     @Autowired
     public MvcConfiguration(MessageSource messageSource,
@@ -226,6 +233,22 @@ public class MvcConfiguration implements WebMvcConfigurer {
             @Override
             public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
                     ModelAndView modelAndView) throws Exception {
+
+                //
+                String reportUri = "";
+                boolean enabledReport = Boolean.parseBoolean(configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED,  (k) ->
+                    configurationManager.getStringConfigValue(
+                        alfio.model.system.Configuration.getSystemConfiguration(k), "false")
+                ));
+                if (enabledReport) {
+                    reportUri = " report-uri " + configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI, (k) ->
+                        configurationManager.getStringConfigValue(
+                            alfio.model.system.Configuration.getSystemConfiguration(k), "/report-csp-violation")
+                    );
+                }
+                //
+
+
                 // http://www.html5rocks.com/en/tutorials/security/content-security-policy/
                 // lockdown policy
                 response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
@@ -237,7 +260,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
                         + " font-src 'self';"//
                         + " media-src blob: 'self';"//for loading camera api
                         + " connect-src 'self' https://checkout.stripe.com https://maps.googleapis.com/ https://geocoder.cit.api.here.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
-                        + (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEBUG_CSP)) ? " report-uri /report-csp-violation" : ""));
+                        + reportUri);
             }
         };
     }

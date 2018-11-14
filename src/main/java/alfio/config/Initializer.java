@@ -40,13 +40,10 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 
     public static final String PROFILE_DEV = "dev";
     public static final String PROFILE_INTEGRATION_TEST = "integration-test";
-    public static final String PROFILE_DEBUG_CSP = "debug-csp";
     public static final String PROFILE_LIVE = "!dev";
     static final String PROFILE_SPRING_BOOT = "spring-boot";
     public static final String PROFILE_DEMO = "demo";
     public static final String PROFILE_DISABLE_JOBS = "disable-jobs";
-    public static final String PROFILE_JDBC_SESSION = "jdbc-session";
-    public static final String PROFILE_USE_WORKER_NAME = "use-worker-name";
     private Environment environment;
 
     @Override
