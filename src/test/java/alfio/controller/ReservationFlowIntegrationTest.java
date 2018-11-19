@@ -73,6 +73,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -566,13 +567,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         reservationController.validateToOverview(eventName, reservationIdentifier, contactAndTicketsForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
 
-        Assert.assertEquals("/event/overview", reservationController.showOverview(eventName, reservationIdentifier, null, null, null, null, Locale.ENGLISH, model));
+        Assert.assertEquals("/event/overview", reservationController.showOverview(eventName, reservationIdentifier, Locale.ENGLISH, model, new MockHttpSession()));
 
         PaymentForm paymentForm = new PaymentForm();
         paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
         paymentForm.setTermAndConditionsAccepted(true);
         paymentForm.setPrivacyPolicyAccepted(true);
-        return reservationController.handleReservation(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
+        return reservationController.handleReservation(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes, new MockHttpSession());
     }
 
     private String reserveTicket(String eventName) {

@@ -20,6 +20,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
+import alfio.model.transaction.token.StripeCreditCardToken;
 import alfio.repository.AuditingRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
@@ -77,7 +78,7 @@ public class StripeManagerTest {
                 }});
             }
         };
-        PaymentSpecification spec = new PaymentSpecification( "", "", 100, event, "", customerName );
+        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
         PaymentResult result = stripeCreditCardManager.doPayment(spec);
         assertEquals(result, PaymentResult.successful(paymentId));
     }
@@ -90,7 +91,7 @@ public class StripeManagerTest {
                 throw new AuthenticationException("401", "42", "401", 401);
             }
         };
-        PaymentSpecification spec = new PaymentSpecification( "", "", 100, event, "", customerName );
+        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
         PaymentResult result = stripeCreditCardManager.doPayment(spec);
         assertEquals(result, PaymentResult.failed("error.STEP2_STRIPE_abort"));
     }
@@ -110,7 +111,7 @@ public class StripeManagerTest {
         when(transactionRepository.insert(anyString(), isNull(), anyString(), any(ZonedDateTime.class), anyInt(), eq("CHF"), anyString(), anyString(), anyLong(), anyLong()))
             .thenThrow(new NullPointerException());
 
-        PaymentSpecification spec = new PaymentSpecification( "", "", 100, event, "", customerName );
+        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
         Assertions.assertThrows(IllegalStateException.class, () -> stripeCreditCardManager.doPayment(spec));
     }
 }

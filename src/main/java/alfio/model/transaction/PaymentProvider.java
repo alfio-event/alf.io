@@ -34,4 +34,12 @@ public interface PaymentProvider {
 
     PaymentResult doPayment(PaymentSpecification spec);
 
+    default PaymentResult getTokenAndPay(PaymentSpecification spec) {
+        PaymentResult tokenResult = getToken(spec);
+        if(tokenResult.isInitialized()) {
+            return doPayment(spec);
+        }
+        return tokenResult;
+    }
+
 }

@@ -32,6 +32,7 @@ import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.PaymentToken;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
@@ -61,6 +62,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -199,7 +201,7 @@ public class ReservationController {
             Optional<TicketReservation> tr = ticketReservationManager.findById(reservationId);
             return tr.filter(r -> r.getStatus() == TicketReservationStatus.COMPLETE)
                 .map(reservation -> {
-                    SessionUtil.removeSpecialPriceData(request);
+                    SessionUtil.cleanupSession(request);
                     model.addAttribute("reservationId", reservationId);
                     model.addAttribute("reservation", reservation);
                     model.addAttribute("confirmationEmailSent", confirmationEmailSent);
@@ -330,14 +332,12 @@ public class ReservationController {
     }
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/overview", method = RequestMethod.GET)
-    public String showOverview(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
-                               //paypal
-                               @RequestParam(value = "paymentId", required = false) String paypalPaymentId,
-                               @RequestParam(value = "PayerID", required = false) String paypalPayerID,
-                               @RequestParam(value = "paypal-success", required = false) Boolean isPaypalSuccess,
-                               @RequestParam(value = "paypal-error", required = false) Boolean isPaypalError,
-                               //
-                               Locale locale, Model model) {
+    public String showOverview(@PathVariable("eventName") String eventName,
+                               @PathVariable("reservationId") String reservationId,
+                               Locale locale,
+                               Model model,
+                               HttpSession session) {
+
         return eventRepository.findOptionalByShortName(eventName)
             .map(event -> ticketReservationManager.findById(reservationId)
                 .map(reservation -> {
@@ -349,26 +349,24 @@ public class ReservationController {
                         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
                     }
 
-                    if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null) {
-                        model.addAttribute("paypalPaymentId", paypalPaymentId)
-                            .addAttribute("paypalPayerID", paypalPayerID)
-                            .addAttribute("paypalCheckoutConfirmation", true);
-                    } else {
-                        model.addAttribute("paypalCheckoutConfirmation", false);
-                    }
-
-
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
+
+                    List<PaymentProxy> activePaymentMethods;
+                    if(session.getAttribute(PaymentManager.PAYMENT_TOKEN) != null) {
+                        model.addAttribute("tokenAcquired", true);
+                        activePaymentMethods = Collections.singletonList(((PaymentToken)session.getAttribute(PaymentManager.PAYMENT_TOKEN)).getPaymentProvider());
+                    } else {
+                        activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
+                            .stream()
+                            .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
+                            .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)
+                            .collect(toList());
+                    }
 
                     addDelayForOffline(model, event);
 
 
-                    List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
-                        .stream()
-                        .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
-                        .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)
-                        .collect(toList());
-
+                    //FIXME remove Stripe-specific code
                     boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
                     model.addAttribute("includeStripe", includeStripe);
                     if (includeStripe) {
@@ -534,8 +532,14 @@ public class ReservationController {
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
     public String handleReservation(@PathVariable("eventName") String eventName,
-                                    @PathVariable("reservationId") String reservationId, PaymentForm paymentForm, BindingResult bindingResult,
-                                    Model model, HttpServletRequest request, Locale locale, RedirectAttributes redirectAttributes) {
+                                    @PathVariable("reservationId") String reservationId, 
+                                    PaymentForm paymentForm, 
+                                    BindingResult bindingResult,
+                                    Model model, 
+                                    HttpServletRequest request, 
+                                    Locale locale, 
+                                    RedirectAttributes redirectAttributes,
+                                    HttpSession session) {
 
         Optional<Event> eventOptional = eventRepository.findOptionalByShortName(eventName);
         Optional<String> redirectForFailure = checkReservation(paymentForm.isBackFromOverview(), paymentForm.shouldCancelReservation(), eventName, reservationId, request, eventOptional);
@@ -550,7 +554,7 @@ public class ReservationController {
         }
         if (paymentForm.shouldCancelReservation()) {
             ticketReservationManager.cancelPendingReservation(reservationId, false);
-            SessionUtil.removeSpecialPriceData(request);
+            SessionUtil.cleanupSession(request);
             return "redirect:/event/" + eventName + "/";
         }
         if (!optionalReservation.get().getValidity().after(new Date())) {
@@ -572,22 +576,21 @@ public class ReservationController {
             bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
         }
 
-        if(paymentForm.getPaymentMethod() != PaymentProxy.PAYPAL || !paymentForm.hasPaypalTokens()) {
-            if (bindingResult.hasErrors()) {
-                SessionUtil.addToFlash(bindingResult, redirectAttributes);
-                return redirectReservation(Optional.of(ticketReservation), eventName, reservationId);
-            }
+        if (bindingResult.hasErrors()) {
+            SessionUtil.addToFlash(bindingResult, redirectAttributes);
+            return redirectReservation(Optional.of(ticketReservation), eventName, reservationId);
         }
 
         CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event);
 
         OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
 
-        PaymentSpecification spec = new PaymentSpecification(reservationId, paymentForm.getToken(), reservationCost.getPriceWithVAT(),
+        PaymentToken paymentToken = (PaymentToken) session.getAttribute(PaymentManager.PAYMENT_TOKEN);
+        PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
             event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
-            paymentForm.getPaypalPayerID(), locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),
+            locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),
             orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
-            Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()), paymentForm.getHmac());
+            Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
 
         final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()));
@@ -601,6 +604,7 @@ public class ReservationController {
             MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
             bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
+            SessionUtil.removePaymentToken(request);
             return redirectReservation(optionalReservation, eventName, reservationId);
         }
 
@@ -610,7 +614,7 @@ public class ReservationController {
         sendReservationCompleteEmailToOrganizer(request, event, reservation);
         //
 
-        SessionUtil.removeSpecialPriceData(request);
+        SessionUtil.cleanupSession(request);
 
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
     }
@@ -706,7 +710,7 @@ public class ReservationController {
 
         if (cancelReservation) {
             ticketReservationManager.cancelPendingReservation(reservationId, false);    //FIXME
-            SessionUtil.removeSpecialPriceData(request);
+            SessionUtil.cleanupSession(request);
             return Optional.of("redirect:/event/" + eventName + "/");
         }
         return Optional.empty();

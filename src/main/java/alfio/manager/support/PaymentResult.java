@@ -44,6 +44,10 @@ public final class PaymentResult {
         return type == Type.REDIRECT;
     }
 
+    public boolean isInitialized() {
+        return type == Type.INITIALIZED;
+    }
+
     public Optional<String> getErrorCode() {
         return errorCode;
     }

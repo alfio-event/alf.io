@@ -261,8 +261,8 @@ public class AdminReservationManager {
         try {
             PaymentSpecification spec = new PaymentSpecification(reservationId, null, 0,
                 event, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event),
-                original.getBillingAddress(), original.getCustomerReference(), null, Locale.forLanguageTag(original.getUserLanguage()),
-                false, false, null, null, null, null, false, false, null);
+                original.getBillingAddress(), original.getCustomerReference(), Locale.forLanguageTag(original.getUserLanguage()),
+                false, false, null, null, null, null, false, false);
 
             ticketReservationManager.completeReservation(spec, Optional.empty(), PaymentProxy.ADMIN);
             return loadReservation(reservationId);

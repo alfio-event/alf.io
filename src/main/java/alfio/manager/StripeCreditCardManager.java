@@ -34,6 +34,7 @@ import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.util.ErrorsCode;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -221,6 +222,14 @@ public class StripeCreditCardManager implements PaymentProvider, RefundRequest, 
         return Optional.of(charge);
     }
 
+    @Override
+    public PaymentResult getToken(PaymentSpecification spec) {
+        if(spec.getGatewayToken() != null && spec.getGatewayToken().getPaymentProvider() == PaymentProxy.STRIPE) {
+            return PaymentResult.initialized(spec.getGatewayToken().getToken());
+        }
+        return PaymentResult.failed(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
+    }
+
     private BalanceTransaction retrieveBalanceTransaction(String balanceTransaction, RequestOptions options) throws AuthenticationException, InvalidRequestException, APIConnectionException, CardException, APIException {
         return BalanceTransaction.retrieve(balanceTransaction, options);
     }
@@ -373,7 +382,7 @@ public class StripeCreditCardManager implements PaymentProvider, RefundRequest, 
     @Override
     public PaymentResult doPayment( PaymentSpecification spec ) {
         try {
-            final Optional<Charge> optionalCharge = chargeCreditCard(spec.getGatewayToken(), spec.getPriceWithVAT(),
+            final Optional<Charge> optionalCharge = chargeCreditCard(spec.getGatewayToken().getToken(), spec.getPriceWithVAT(),
                 spec.getEvent(), spec.getReservationId(), spec.getEmail(), spec.getCustomerName().getFullName(), spec.getBillingAddress());
             return optionalCharge.map(charge -> {
                 log.info("transaction {} paid: {}", spec.getReservationId(), charge.getPaid());

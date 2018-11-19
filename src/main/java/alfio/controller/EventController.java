@@ -61,10 +61,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.controller.support.SessionUtil.addToFlash;
+import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
 import static alfio.util.OptionalWrapper.optionally;
-import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 
 @Controller
 @AllArgsConstructor
@@ -133,7 +133,7 @@ public class EventController {
                                  Model model,
                                  HttpServletRequest request) {
         
-        SessionUtil.removeSpecialPriceData(request);
+        SessionUtil.cleanupSession(request);
 
         Optional<Event> optional = eventRepository.findOptionalByShortName(eventName);
         if(!optional.isPresent()) {
@@ -414,7 +414,7 @@ public class EventController {
                 } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
                     bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
                     addToFlash(bindingResult, redirectAttributes);
-                    SessionUtil.removeSpecialPriceData(request.getRequest());
+                    SessionUtil.cleanupSession(request.getRequest());
                     return redirectToEvent;
                 } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
                     bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);

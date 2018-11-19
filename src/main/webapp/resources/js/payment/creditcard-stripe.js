@@ -32,7 +32,7 @@
                         locale: $('html').attr('lang'),
                         token: function(token) {
                             var $form = $('#payment-form');
-                            $form.append($('<input type="hidden" name="stripeToken" />').val(token.id));
+                            $form.append($('<input type="hidden" name="gatewayToken" />').val(token.id));
                             confirmFn(true);
                         },
                         closed: function() {

@@ -43,6 +43,8 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class PaymentManager {
 
+    public static final String PAYMENT_TOKEN = "PAYMENT_TOKEN";
+
     private final TransactionRepository transactionRepository;
     private final ConfigurationManager configurationManager;
     private final AuditingRepository auditingRepository;

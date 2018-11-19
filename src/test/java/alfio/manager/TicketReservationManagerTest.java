@@ -29,6 +29,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.token.StripeCreditCardToken;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
@@ -688,10 +689,10 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
         StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.CREDIT_CARD), any())).thenReturn(Optional.of(stripeCreditCardManager));
-        when(stripeCreditCardManager.doPayment(any())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
-        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "test@email",
-            new CustomerName("Full Name", null, null, event), "", null, null, Locale.ENGLISH,
-            true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
+        when(stripeCreditCardManager.getTokenAndPay(any())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
+        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "test@email",
+            new CustomerName("Full Name", null, null, event), "", null, Locale.ENGLISH,
+            true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
@@ -715,8 +716,8 @@ class TicketReservationManagerTest {
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.CREDIT_CARD), any())).thenReturn(Optional.of(stripeCreditCardManager));
-        when(stripeCreditCardManager.doPayment(any())).thenReturn(PaymentResult.failed("error-code"));
-        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "email@user", new CustomerName("Full Name", null, null, event), null, null, "", Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false, null);
+        when(stripeCreditCardManager.getTokenAndPay(any())).thenReturn(PaymentResult.failed("error-code"));
+        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "email@user", new CustomerName("Full Name", null, null, event), null, null, Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertFalse(result.isSuccessful());
         assertFalse(result.getGatewayId().isPresent());
@@ -736,10 +737,10 @@ class TicketReservationManagerTest {
         OnSiteManager onSiteManager = mock(OnSiteManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.ON_SITE), any())).thenReturn(Optional.of(onSiteManager));
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
-        when(onSiteManager.doPayment(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
-        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "test@email",
+        when(onSiteManager.getTokenAndPay(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
+        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "test@email",
             new CustomerName("Full Name", null, null, event),
-            "", null, "", Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
+            "", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), anyString(), anyString(), anyString(), isNull(), isNull(), eq(Locale.ENGLISH.getLanguage()), isNull(), any(), any(), isNull())).thenReturn(1);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE));
         assertTrue(result.isSuccessful());
@@ -762,10 +763,10 @@ class TicketReservationManagerTest {
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         BankTransferManager bankTransferManager = mock(BankTransferManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.BANK_TRANSFER), any())).thenReturn(Optional.of(bankTransferManager));
-        when(bankTransferManager.doPayment(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
-        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, GATEWAY_TOKEN, 100, event, "test@email",
+        when(bankTransferManager.getTokenAndPay(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
+        PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "test@email",
             new CustomerName("Full Name", null, null, event),
-            "", null, "", Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false, null);
+            "", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());

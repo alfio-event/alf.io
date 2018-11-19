@@ -93,17 +93,6 @@
 </table>
 
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
-    {{#paypalCheckoutConfirmation}}
-        <input type="hidden" name="paymentMethod" value="PAYPAL">
-        <input type="hidden" name="paypalPaymentId" value="{{paypalPaymentId}}">
-        <input type="hidden" name="paypalPayerID" value="{{paypalPayerID}}">
-        <input type="hidden" name="termAndConditionsAccepted" value="true">
-        <div class="alert alert-success">
-            <h3><i class="fa fa-check"></i> {{#i18n}}reservation-page.paypal.confirm{{/i18n}}</h3>
-        </div>
-    {{/paypalCheckoutConfirmation}}
-    {{^paypalCheckoutConfirmation}}
-
 
     {{^orderSummary.free}}
         <div class="page-header wMarginTop">
@@ -168,9 +157,6 @@
         </label>
     </div>
 
-    {{/paypalCheckoutConfirmation}}
-
-
     {{#orderSummary.free}}
         {{#captchaRequestedFreeOfCharge}}
         <div class="row">
@@ -188,12 +174,12 @@
         <div class="row">
             <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom">
                 <button type="button" class="btn btn-success btn-block" id="continue-button">
-                {{#paypalCheckoutConfirmation}}
-                    {{#i18n}}reservation-page.paypal.confirm-button{{/i18n}}
-                {{/paypalCheckoutConfirmation}}
-                {{^paypalCheckoutConfirmation}}
+                {{#tokenAcquired}}
+                    {{#i18n}}reservation-page.confirm-button{{/i18n}}
+                {{/tokenAcquired}}
+                {{^tokenAcquired}}
                     {{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}
-                {{/paypalCheckoutConfirmation}}
+                {{/tokenAcquired}}
                 </button>
             </div>
             <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}common.back{{/i18n}}</button></div>

@@ -26,9 +26,11 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.PaymentToken;
 import alfio.model.transaction.capabilities.ExternalProcessing;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
+import alfio.model.transaction.token.PayPalToken;
 import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
@@ -153,16 +155,9 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         RedirectUrls redirectUrls = new RedirectUrls();
 
         String baseUrl = StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId(), ConfigurationKeys.BASE_URL)), "/");
-        String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/payment/"+PaymentMethod.PAYPAL.name()+"/{operation}";
+        String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/payment/paypal/{operation}";
 
         UriComponentsBuilder bookUrlBuilder = UriComponentsBuilder.fromUriString(bookUrl)
-            .queryParam("fullName", spec.getCustomerName().getFullName())
-            .queryParam("firstName", spec.getCustomerName().getFirstName())
-            .queryParam("lastName", spec.getCustomerName().getLastName())
-            .queryParam("email", spec.getEmail())
-            .queryParam("billingAddress", spec.getBillingAddress())
-            .queryParam("postponeAssignment", spec.isPostponeAssignment())
-            .queryParam("invoiceRequested", spec.isInvoiceRequested())
             .queryParam("hmac", computeHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getEvent()));
         String finalUrl = bookUrlBuilder.toUriString();
 
@@ -215,14 +210,14 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
     }
 
     private boolean hasTokens(Map<String, List<String>> params) {
-        return params.containsKey("paypalPayerID") && params.containsKey("paypalPaymentId");
+        return params.containsKey("payerId") && params.containsKey("paypalPaymentId");
     }
 
-    private Pair<String, String> commitPayment(String reservationId, String token, String payerId, Event event) throws PayPalRESTException {
+    private Pair<String, String> commitPayment(String reservationId, PayPalToken payPalToken, Event event) throws PayPalRESTException {
 
-        Payment payment = new Payment().setId(token);
+        Payment payment = new Payment().setId(payPalToken.getPaymentId());
         PaymentExecution paymentExecute = new PaymentExecution();
-        paymentExecute.setPayerId(payerId);
+        paymentExecute.setPayerId(payPalToken.getPayerId());
         Payment result;
         try {
             result = payment.execute(getApiContext(event), paymentExecute);
@@ -324,7 +319,10 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
 
     @Override
     public boolean accept( PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider) {
-        return paymentMethod == PaymentMethod.PAYPAL && configurationManager.getBooleanConfigValue( contextProvider.apply( PAYPAL_ENABLED ), false );
+        return paymentMethod == PaymentMethod.PAYPAL &&
+            configurationManager.getBooleanConfigValue( contextProvider.apply(PAYPAL_ENABLED), false )
+            && configurationManager.getStringConfigValue(contextProvider.apply(ConfigurationKeys.PAYPAL_CLIENT_ID)).isPresent()
+            && configurationManager.getStringConfigValue(contextProvider.apply(ConfigurationKeys.PAYPAL_CLIENT_SECRET)).isPresent();
     }
 
     @Override
@@ -333,12 +331,13 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
                                                                                                  TotalPrice reservationCost,
                                                                                                  OrderSummary orderSummary) {
         return map -> {
-            if(hasTokens(map) && hasExactlyOneElementFor(map, "paypalPaymentId", "paypalPayerID", "hmac")) {
-                return new PaymentSpecification(reservation.getId(), map.get("paypalPaymentId").get(0), reservationCost.getPriceWithVAT(),
+            if(hasTokens(map) && hasExactlyOneElementFor(map, "paypalPaymentId", "payerId", "hmac")) {
+                PayPalToken token = new PayPalToken(map.get("payerId").get(0), map.get("paypalPaymentId").get(0), map.get("hmac").get(0));
+                return new PaymentSpecification(reservation.getId(), token, reservationCost.getPriceWithVAT(),
                     event, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event),
-                    reservation.getBillingAddress(), reservation.getCustomerReference(), map.get("paypalPayerID").get(0), Locale.forLanguageTag(reservation.getUserLanguage()),
+                    reservation.getBillingAddress(), reservation.getCustomerReference(), Locale.forLanguageTag(reservation.getUserLanguage()),
                     reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
-                    reservation.getVatNr(), reservation.getVatStatus(), map.containsKey("termAndConditionsAccepted"), map.containsKey("privacyPolicyAccepted"), map.get("hmac").get(0));
+                    reservation.getVatNr(), reservation.getVatStatus(), map.containsKey("termAndConditionsAccepted"), map.containsKey("privacyPolicyAccepted"));
             }
             return null;
         };
@@ -351,6 +350,10 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
     @Override
     public PaymentResult getToken(PaymentSpecification spec) {
         try {
+            PaymentToken gatewayToken = spec.getGatewayToken();
+            if(gatewayToken != null && gatewayToken.getPaymentProvider() == PaymentProxy.PAYPAL) {
+                return PaymentResult.initialized(gatewayToken.getToken());
+            }
             return PaymentResult.redirect( createCheckoutRequest(spec) );
         } catch (Exception e) {
             return PaymentResult.failed( ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION );
@@ -360,10 +363,11 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
     @Override
     public PaymentResult doPayment(PaymentSpecification spec) {
         try {
-            if(!PayPalManager.isValidHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getValidationToken(), spec.getEvent())) {
+            PayPalToken gatewayToken = (PayPalToken) spec.getGatewayToken();
+            if(!isValidHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), gatewayToken.getHmac(), spec.getEvent())) {
                 return PaymentResult.failed(ErrorsCode.STEP_2_INVALID_HMAC);
             }
-            Pair<String, String> captureAndPaymentId = commitPayment(spec.getReservationId(), spec.getGatewayToken(), spec.getPayerId(), spec.getEvent());
+            Pair<String, String> captureAndPaymentId = commitPayment(spec.getReservationId(), gatewayToken, spec.getEvent());
             String captureId = captureAndPaymentId.getLeft();
             String paymentId = captureAndPaymentId.getRight();
             Supplier<String> feeSupplier = () -> FeeCalculator.getCalculator(spec.getEvent(), configurationManager)

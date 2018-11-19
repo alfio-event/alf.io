@@ -384,16 +384,16 @@ public class TicketReservationManager {
                     });
 
                 paymentResult = paymentManager.lookupProviderByMethod( paymentProxy.getPaymentMethod(), Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId()) )
-                    .map( paymentProvider -> paymentProvider.doPayment(spec) )
+                    .map( paymentProvider -> paymentProvider.getTokenAndPay(spec) )
                     .orElseGet( () -> PaymentResult.failed("error.STEP2_STRIPE_unexpected") );
 
             } else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
+
             if (paymentResult.isSuccessful()) {
-                //FIXME customerReference
                 completeReservation( spec, specialPriceSessionId, paymentProxy );
-            } else {
+            } else if(paymentResult.isFailed()) {
                 reTransitionToPending(spec.getReservationId());
             }
             return paymentResult;

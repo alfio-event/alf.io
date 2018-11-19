@@ -32,9 +32,8 @@ import java.util.Optional;
 @Data
 public class PaymentForm implements Serializable {
 
-    private String stripeToken;
-    private String paypalPaymentId;
-    private String paypalPayerID;
+    private String gatewayToken;
+    private String payerId;
     private PaymentProxy paymentMethod;
     private Boolean termAndConditionsAccepted;
     private Boolean privacyPolicyAccepted;
@@ -43,31 +42,14 @@ public class PaymentForm implements Serializable {
     private Boolean cancelReservation;
 
 
-    public String getToken() {
-        if (paymentMethod == PaymentProxy.STRIPE) {
-            return stripeToken;
-        } else if (paymentMethod == PaymentProxy.PAYPAL) {
-            return paypalPaymentId;
-        } else {
-            return null;
-        }
-    }
-
-    public boolean hasPaypalTokens() {
-        return StringUtils.isNotBlank(paypalPayerID) && StringUtils.isNotBlank(paypalPaymentId);
-    }
-
     public void validate(BindingResult bindingResult, Event event, TotalPrice reservationCost) {
         List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
 
         Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
-        PaymentProxy paymentProxy = paymentProxyOptional.filter(allowedPaymentMethods::contains).orElse(PaymentProxy.STRIPE);
         boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
         boolean multiplePaymentMethods = allowedPaymentMethods.size() > 1;
         if (multiplePaymentMethods && priceGreaterThanZero && !paymentProxyOptional.isPresent()) {
             bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
-        } else if (priceGreaterThanZero && (paymentProxy == PaymentProxy.STRIPE && StringUtils.isBlank(stripeToken))) {
-            bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
         }
 
         if (Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted
