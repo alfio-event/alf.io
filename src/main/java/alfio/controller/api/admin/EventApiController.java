@@ -39,6 +39,7 @@ import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.Validator;
+import ch.digitalfondue.basicxlsx.*;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import lombok.AllArgsConstructor;
@@ -50,11 +51,6 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -304,28 +300,19 @@ public class EventApiController {
     }
 
     private void exportExcel(String sheetName, String[] header, List<String[]> data, OutputStream out) throws IOException {
-        XSSFWorkbook workbook = new XSSFWorkbook();
-        XSSFSheet sheet = workbook.createSheet(sheetName);
-        int rowNum = 0;
-        Row rowHeadHeader = sheet.createRow(rowNum++);
-        int columnHeader = 0;
-        for (String title : header) {
-            Cell cell = rowHeadHeader.createCell(columnHeader++, CellType.STRING);
-            cell.setCellValue(title);
+        try (StreamingWorkbook workbook = new StreamingWorkbook(out)) {
+            Style boldFont = workbook.defineStyle().font().bold(true).build();
+
+            StreamingWorkbook.Row headerRow = StreamingWorkbook.row(Arrays.stream(header)
+                .map(v -> Cell.cell(v).withStyle(boldFont))
+                .collect(Collectors.toList()));
+
+            Stream<StreamingWorkbook.Row> dataStream = data.stream()
+                .map(rowData -> Arrays.stream(rowData).map(Cell::cell).collect(Collectors.toList()))
+                .map(StreamingWorkbook::row);
+
+            workbook.withSheet(sheetName, Stream.concat(Stream.of(headerRow), dataStream));
         }
-        for (String[] row : data) {
-            Row dataRow = sheet.createRow(rowNum++);
-            int dataColumn = 0;
-            for (String value : row) {
-                Cell cell = dataRow.createCell(dataColumn++, CellType.STRING);
-                cell.setCellValue(value);
-            }
-        }
-        for (int i = 0; i < columnHeader; i++) {
-            sheet.autoSizeColumn(i);
-        }
-        workbook.write(out);
-        workbook.close();
     }
 
     private void exportTicketCSV(String eventName, HttpServletResponse response,
