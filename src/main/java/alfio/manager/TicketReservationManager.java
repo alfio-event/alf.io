@@ -38,6 +38,7 @@ import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -383,7 +384,7 @@ public class TicketReservationManager {
                         }
                     });
 
-                paymentResult = paymentManager.lookupProviderByMethod( paymentProxy.getPaymentMethod(), Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId()) )
+                paymentResult = paymentManager.lookupProviderByMethod(paymentProxy.getPaymentMethod(), spec.getPaymentContext())
                     .map( paymentProvider -> paymentProvider.getTokenAndPay(spec) )
                     .orElseGet( () -> PaymentResult.failed("error.STEP2_STRIPE_unexpected") );
 
@@ -593,8 +594,8 @@ public class TicketReservationManager {
         });
     }
 
-    public static boolean hasValidOfflinePaymentWaitingPeriod(Event event, ConfigurationManager configurationManager) {
-        OptionalInt result = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+    public static boolean hasValidOfflinePaymentWaitingPeriod(PaymentContext context, ConfigurationManager configurationManager) {
+        OptionalInt result = BankTransferManager.getOfflinePaymentWaitingPeriod(context, configurationManager);
         return result.isPresent() && result.getAsInt() >= 0;
     }
 
@@ -606,8 +607,10 @@ public class TicketReservationManager {
      * @param configurationManager
      * @return
      */
-    public static boolean isValidPaymentMethod( PaymentManager.PaymentMethodDTO paymentMethodDTO, Event event, ConfigurationManager configurationManager) {
-        return paymentMethodDTO.isActive() && event.getAllowedPaymentProxies().contains( paymentMethodDTO.getPaymentProxy()) && (!paymentMethodDTO.getPaymentProxy().equals(PaymentProxy.OFFLINE) || hasValidOfflinePaymentWaitingPeriod(event, configurationManager));
+    public static boolean isValidPaymentMethod(PaymentManager.PaymentMethodDTO paymentMethodDTO, Event event, ConfigurationManager configurationManager) {
+        return paymentMethodDTO.isActive()
+            && event.getAllowedPaymentProxies().contains(paymentMethodDTO.getPaymentProxy())
+            && (!paymentMethodDTO.getPaymentProxy().equals(PaymentProxy.OFFLINE) || hasValidOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager));
     }
 
     private void reTransitionToPending(String reservationId) {

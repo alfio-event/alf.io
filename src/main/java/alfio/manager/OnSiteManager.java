@@ -18,15 +18,12 @@ package alfio.manager;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
-
-import java.util.function.Function;
 
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
 import static alfio.model.system.ConfigurationKeys.ON_SITE_ENABLED;
@@ -39,12 +36,12 @@ public class OnSiteManager implements PaymentProvider {
     private final ConfigurationManager configurationManager;
 
     @Override
-    public boolean accept( PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider ) {
-        return paymentMethod == PaymentMethod.ON_SITE && configurationManager.getBooleanConfigValue( contextProvider.apply( ON_SITE_ENABLED ), false );
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
+        return paymentMethod == PaymentMethod.ON_SITE && configurationManager.getBooleanConfigValue(context.narrow(ON_SITE_ENABLED), false);
     }
 
     @Override
-    public PaymentResult doPayment( PaymentSpecification spec ) {
+    public PaymentResult doPayment(PaymentSpecification spec) {
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }
 

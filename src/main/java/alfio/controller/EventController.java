@@ -34,7 +34,6 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
@@ -229,7 +228,6 @@ public class EventController {
             List<SaleableTicketCategory> validCategories = saleableTicketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
             List<SaleableAdditionalService> additionalServices = additionalServiceRepository.loadAllForEvent(event.getId()).stream().map((as) -> getSaleableAdditionalService(event, locale, as, promoCodeDiscount.orElse(null))).collect(Collectors.toList());
             Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
-            boolean validPaymentConfigured = isEventHasValidPaymentConfigurations(event, configurationManager);
 
             List<SaleableAdditionalService> notExpiredServices = additionalServices.stream().filter(SaleableAdditionalService::isNotExpired).collect(Collectors.toList());
 
@@ -258,9 +256,8 @@ public class EventController {
                 .addAttribute("showAdditionalServicesSupplements", !supplements.isEmpty())
                 .addAttribute("enabledAdditionalServicesDonations", donations)
                 .addAttribute("enabledAdditionalServicesSupplements", supplements)
-                .addAttribute("forwardButtonDisabled", (saleableTicketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable)) || !validPaymentConfigured)
+                .addAttribute("forwardButtonDisabled", saleableTicketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable))
                 .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
-                .addAttribute("validPaymentMethodAvailable", validPaymentConfigured)
                 .addAttribute("validityStart", event.getBegin())
                 .addAttribute("validityEnd", event.getEnd());
 
@@ -444,19 +441,6 @@ public class EventController {
     private static boolean shouldApplyDiscount(PromoCodeDiscount promoCodeDiscount, TicketCategory ticketCategory) {
         return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
     }
-
-    private boolean isEventHasValidPaymentConfigurations(Event event, ConfigurationManager configurationManager) {
-        if (event.isFreeOfCharge()) {
-            return true;
-        } else if (event.getAllowedPaymentProxies().size() == 0) {
-            return false;
-        } else {
-            //Check whether event already started and it has only PaymentProxy.OFFLINE as payment method
-            return !(event.getAllowedPaymentProxies().size() == 1 && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE) && !TicketReservationManager.hasValidOfflinePaymentWaitingPeriod(event, configurationManager));
-        }
-    }
-
-
 
     private boolean isCaptchaInvalid(HttpServletRequest request, Event event) {
         return configurationManager.isRecaptchaForTicketSelectionEnabled(event)

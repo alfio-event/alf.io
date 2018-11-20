@@ -22,6 +22,7 @@ import alfio.model.Event;
 import alfio.model.TicketReservation;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.repository.EventRepository;
@@ -38,7 +39,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import static alfio.model.system.ConfigurationKeys.MOLLIE_CC_ENABLED;
 
@@ -88,8 +88,8 @@ public class MollieCreditCardManager implements PaymentProvider {
     }
 
     @Override
-    public boolean accept( PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider) {
-        return paymentMethod == PaymentMethod.CREDIT_CARD && configurationManager.getBooleanConfigValue( contextProvider.apply( MOLLIE_CC_ENABLED ), false );
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
+        return paymentMethod == PaymentMethod.CREDIT_CARD && configurationManager.getBooleanConfigValue(context.narrow(MOLLIE_CC_ENABLED), false);
     }
 
     @Override

@@ -25,7 +25,7 @@ import alfio.model.Event;
 import alfio.model.OrderSummary;
 import alfio.model.TicketReservation;
 import alfio.model.TotalPrice;
-import alfio.model.system.Configuration;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.capabilities.ExternalProcessing;
@@ -77,11 +77,11 @@ public class PaymentCallbackController {
                 Event event = pair.getLeft();
                 TicketReservation reservation = pair.getRight();
                 int organizationId = event.getOrganizationId();
-                if(paymentManager.getActivePaymentMethods(organizationId).stream().anyMatch(dto -> dto.getPaymentProxy().getPaymentMethod() == paymentMethod)) {
+                if(paymentManager.getActivePaymentMethods(event).stream().anyMatch(dto -> dto.getPaymentProxy().getPaymentMethod() == paymentMethod)) {
                     log.warn("Payment method {} is not active for organization {}", method, organizationId);
                     return Optional.empty();
                 }
-                return paymentManager.lookupProviderByMethod(paymentMethod, Configuration.from(organizationId, event.getId()))
+                return paymentManager.lookupProviderByMethod(paymentMethod, new PaymentContext(event))
                     .filter(ExternalProcessing.class::isInstance)
                     .map(provider -> {
                         TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);

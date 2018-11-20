@@ -23,10 +23,7 @@ import alfio.model.*;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProvider;
-import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.PaymentToken;
+import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.ExternalProcessing;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
@@ -40,6 +37,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.paypal.api.payments.*;
 import com.paypal.api.payments.Currency;
+import com.paypal.api.payments.Transaction;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
 import lombok.AllArgsConstructor;
@@ -318,11 +316,11 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
     }
 
     @Override
-    public boolean accept( PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider) {
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
         return paymentMethod == PaymentMethod.PAYPAL &&
-            configurationManager.getBooleanConfigValue( contextProvider.apply(PAYPAL_ENABLED), false )
-            && configurationManager.getStringConfigValue(contextProvider.apply(ConfigurationKeys.PAYPAL_CLIENT_ID)).isPresent()
-            && configurationManager.getStringConfigValue(contextProvider.apply(ConfigurationKeys.PAYPAL_CLIENT_SECRET)).isPresent();
+            configurationManager.getBooleanConfigValue(context.narrow(PAYPAL_ENABLED), false )
+            && configurationManager.getStringConfigValue(context.narrow(ConfigurationKeys.PAYPAL_CLIENT_ID)).isPresent()
+            && configurationManager.getStringConfigValue(context.narrow(ConfigurationKeys.PAYPAL_CLIENT_SECRET)).isPresent();
     }
 
     @Override

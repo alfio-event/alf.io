@@ -20,7 +20,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.repository.TicketReservationRepository;
@@ -33,12 +33,12 @@ import org.springframework.stereotype.Component;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.OptionalInt;
-import java.util.function.Function;
 
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
-import static alfio.model.system.ConfigurationKeys.BANK_TRANSFER_ENABLED;
-import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @Log4j2
@@ -49,26 +49,46 @@ public class BankTransferManager implements PaymentProvider {
     private final TicketReservationRepository ticketReservationRepository;
 
     @Override
-    public boolean accept( PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider ) {
-        return paymentMethod == PaymentMethod.BANK_TRANSFER && configurationManager.getBooleanConfigValue( contextProvider.apply( BANK_TRANSFER_ENABLED ), false );
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext paymentContext) {
+        return paymentMethod == PaymentMethod.BANK_TRANSFER &&
+            configurationManager.getBooleanConfigValue( paymentContext.narrow(BANK_TRANSFER_ENABLED), false )
+            && (paymentContext.getEvent() == null || getOfflinePaymentWaitingPeriod(paymentContext, configurationManager).orElse(0) > 0);
     }
 
     @Override
-    public PaymentResult doPayment( PaymentSpecification spec ) {
+    public PaymentResult doPayment(PaymentSpecification spec) {
         transitionToOfflinePayment(spec);
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }
 
-    private void transitionToOfflinePayment( PaymentSpecification spec ) {
-        ZonedDateTime deadline = getOfflinePaymentDeadline(spec.getEvent(), configurationManager);
+    @Override
+    public Map<String, ?> getModelOptions(PaymentContext context) {
+        OptionalInt delay = getOfflinePaymentWaitingPeriod(context, configurationManager);
+        Event event = context.getEvent();
+        if(!delay.isPresent()) {
+            log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());
+        }
+        Map<String, Object> model = new HashMap<>();
+        model.put("delayForOfflinePayment", Math.min(1, delay.orElse( 0 )));
+        boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
+        model.put("captchaRequestedForOffline", recaptchaEnabled);
+        if(recaptchaEnabled) {
+            model.put("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null));
+        }
+        return model;
+    }
+
+    private void transitionToOfflinePayment(PaymentSpecification spec) {
+        ZonedDateTime deadline = getOfflinePaymentDeadline(spec.getPaymentContext(), configurationManager);
         int updatedReservation = ticketReservationRepository.postponePayment(spec.getReservationId(), Date.from(deadline.toInstant()), spec.getEmail(),
             spec.getCustomerName().getFullName(), spec.getCustomerName().getFirstName(), spec.getCustomerName().getLastName(), spec.getBillingAddress(), spec.getCustomerReference());
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
     }
 
-    static ZonedDateTime getOfflinePaymentDeadline(Event event, ConfigurationManager configurationManager) {
+    static ZonedDateTime getOfflinePaymentDeadline(PaymentContext context, ConfigurationManager configurationManager) {
+        Event event = context.getEvent();
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        int waitingPeriod = getOfflinePaymentWaitingPeriod(event, configurationManager).orElse( 0 );
+        int waitingPeriod = getOfflinePaymentWaitingPeriod(context, configurationManager).orElse( 0 );
         if(waitingPeriod == 0) {
             log.warn("accepting offline payments the same day is a very bad practice and should be avoided. Please set cash payment as payment method next time");
             //if today is the event start date, then we add a couple of hours.
@@ -78,14 +98,15 @@ public class BankTransferManager implements PaymentProvider {
         return now.plusDays(waitingPeriod).truncatedTo(ChronoUnit.HALF_DAYS).with(WorkingDaysAdjusters.defaultWorkingDays());
     }
 
-    public static OptionalInt getOfflinePaymentWaitingPeriod( Event event, ConfigurationManager configurationManager) {
+    static OptionalInt getOfflinePaymentWaitingPeriod(PaymentContext paymentContext, ConfigurationManager configurationManager) {
+        Event event = paymentContext.getEvent();
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         ZonedDateTime eventBegin = event.getBegin();
         int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), eventBegin.toLocalDate());
         if (daysToBegin < 0) {
             return OptionalInt.empty();
         }
-        int waitingPeriod = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_PAYMENT_DAYS), 5);
+        int waitingPeriod = configurationManager.getIntConfigValue(paymentContext.narrow(OFFLINE_PAYMENT_DAYS), 5);
         return OptionalInt.of( Math.min(daysToBegin, waitingPeriod) );
     }
 }

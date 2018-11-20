@@ -18,15 +18,14 @@ package alfio.model.transaction;
 
 import alfio.manager.PaymentSpecification;
 import alfio.manager.support.PaymentResult;
-import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 
 public interface PaymentProvider {
 
-    boolean accept(PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider);
+    boolean accept(PaymentMethod paymentMethod, PaymentContext context);
 
     default PaymentResult getToken(PaymentSpecification spec) {
         return PaymentResult.initialized(UUID.randomUUID().toString());
@@ -42,4 +41,7 @@ public interface PaymentProvider {
         return tokenResult;
     }
 
+    default Map<String, ?> getModelOptions(PaymentContext context) {
+        return Collections.emptyMap();
+    }
 }

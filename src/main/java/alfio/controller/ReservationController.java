@@ -91,7 +91,6 @@ public class ReservationController {
     private final TicketFieldRepository ticketFieldRepository;
     private final PaymentManager paymentManager;
     private final EuVatChecker vatChecker;
-    private final StripeCreditCardManager stripeCreditCardManager;
     private final RecaptchaService recaptchaService;
     private final TicketReservationRepository ticketReservationRepository;
 
@@ -125,21 +124,9 @@ public class ReservationController {
                          .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1 && !ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId()));
 
 
-                    addDelayForOffline(model, event);
-
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
-                    List<PaymentProxy> activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
-                        .stream()
-                        .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
-                        .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)
-                        .collect(toList());
 
-                    if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
-                        boolean captchaForOfflinePaymentEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
-                        model.addAttribute("captchaRequestedForOffline", captchaForOfflinePaymentEnabled)
-                            .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null))
-                            .addAttribute("captchaRequestedFreeOfCharge", orderSummary.getFree() && captchaForOfflinePaymentEnabled);
-                    }
+                    //FIXME recaptcha for free orders
 
                     boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
                     boolean onlyInvoice = invoiceAllowed && configurationManager.getBooleanConfigValue(partialConfig.apply(ConfigurationKeys.GENERATE_ONLY_INVOICE), false);
@@ -356,29 +343,14 @@ public class ReservationController {
                         model.addAttribute("tokenAcquired", true);
                         activePaymentMethods = Collections.singletonList(((PaymentToken)session.getAttribute(PaymentManager.PAYMENT_TOKEN)).getPaymentProvider());
                     } else {
-                        activePaymentMethods = paymentManager.getPaymentMethods(event.getOrganizationId())
+                        activePaymentMethods = paymentManager.getPaymentMethods(event)
                             .stream()
                             .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
                             .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)
                             .collect(toList());
                     }
 
-                    addDelayForOffline(model, event);
-
-
-                    //FIXME remove Stripe-specific code
-                    boolean includeStripe = !orderSummary.getFree() && activePaymentMethods.contains(PaymentProxy.STRIPE);
-                    model.addAttribute("includeStripe", includeStripe);
-                    if (includeStripe) {
-                        model.addAttribute("stripe_p_key", stripeCreditCardManager.getPublicKey(event));
-                    }
-
-                    if(orderSummary.getFree() || activePaymentMethods.stream().anyMatch(p -> p == PaymentProxy.OFFLINE || p == PaymentProxy.ON_SITE)) {
-                        boolean captchaForOfflinePaymentEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
-                        model.addAttribute("captchaRequestedForOffline", captchaForOfflinePaymentEnabled)
-                            .addAttribute("recaptchaApiKey", configurationManager.getStringConfigValue(getSystemConfiguration(RECAPTCHA_API_KEY), null))
-                            .addAttribute("captchaRequestedFreeOfCharge", orderSummary.getFree() && captchaForOfflinePaymentEnabled);
-                    }
+                    model.addAllAttributes(paymentManager.loadModelOptionsFor(activePaymentMethods, event));
 
                     model.addAttribute("multiplePaymentMethods" , activePaymentMethods.size() > 1 )
                         .addAttribute("activePaymentMethods", activePaymentMethods);
@@ -714,14 +686,6 @@ public class ReservationController {
             return Optional.of("redirect:/event/" + eventName + "/");
         }
         return Optional.empty();
-    }
-
-    private void addDelayForOffline(Model model, Event event) {
-        OptionalInt delay = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
-        model.addAttribute("delayForOfflinePayment", Math.min(1, delay.orElse( 0 )));
-        if(!delay.isPresent() && event.getAllowedPaymentProxies().contains(PaymentProxy.OFFLINE)) {
-            log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());
-        }
     }
 
     private boolean isEUCountry(String countryCode) {

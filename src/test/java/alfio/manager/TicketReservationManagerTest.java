@@ -27,6 +27,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.token.StripeCreditCardToken;
@@ -410,7 +411,7 @@ class TicketReservationManagerTest {
     void returnTheExpiredDateAsConfigured() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
-        ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
+        ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
         ZonedDateTime expectedDate = ZonedDateTime.now().plusDays(2L).truncatedTo(ChronoUnit.HALF_DAYS).with(WorkingDaysAdjusters.defaultWorkingDays());
         assertEquals(expectedDate, offlinePaymentDeadline);
     }
@@ -419,7 +420,7 @@ class TicketReservationManagerTest {
     void returnTheConfiguredWaitingTime() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(3));
-        OptionalInt offlinePaymentWaitingPeriod = BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager);
+        OptionalInt offlinePaymentWaitingPeriod = BankTransferManager.getOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager);
         assertTrue(offlinePaymentWaitingPeriod.isPresent());
         assertEquals(2, offlinePaymentWaitingPeriod.getAsInt());
     }
@@ -428,7 +429,7 @@ class TicketReservationManagerTest {
     void considerEventBeginDateWhileCalculatingExpDate() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
-        ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
+        ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
         assertEquals(1L, ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate()));
     }
 
@@ -436,14 +437,14 @@ class TicketReservationManagerTest {
     void returnConfiguredWaitingTimeConsideringEventStart() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
-        assertEquals(1, BankTransferManager.getOfflinePaymentWaitingPeriod(event, configurationManager).getAsInt());
+        assertEquals(1, BankTransferManager.getOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager).getAsInt());
     }
 
     @Test
     void neverReturnADateInThePast() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now());
-        ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(event, configurationManager);
+        ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
         assertTrue(offlinePaymentDeadline.isAfter(ZonedDateTime.now()));
     }
 

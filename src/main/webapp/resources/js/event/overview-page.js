@@ -136,20 +136,6 @@
                 var method = $(this).attr('data-payment-method');
                 $('.payment-method-detail').hide();
                 $('#payment-method-'+method).show();
-                if(method === 'STRIPE') {
-                    var inputFields = $('#payment-method-STRIPE').find('input');
-                    inputFields.attr('required', true);
-                    var fullName = $.trim($.trim($('#first-name').val()) + ' ' + $.trim($('#last-name').val()));
-                    if(fullName === '') {
-                        fullName = $.trim($('#full-name').val());
-                    }
-                    $('#card-name').val(fullName);
-                    inputFields.first().focus();
-
-                } else {
-                    $('#payment-method-STRIPE').find('input').val('').removeAttr('required');
-                    methodSelected(method);
-                }
             });
         }
 

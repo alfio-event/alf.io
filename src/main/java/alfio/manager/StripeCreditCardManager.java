@@ -24,11 +24,9 @@ import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.PaymentInformation;
 import alfio.model.system.Configuration;
+import alfio.model.system.Configuration.ConfigurationPathKey;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProvider;
-import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.Transaction;
+import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.TicketRepository;
@@ -103,14 +101,14 @@ public class StripeCreditCardManager implements PaymentProvider, RefundRequest, 
         return configurationManager.getRequiredValue(Configuration.getSystemConfiguration(STRIPE_WEBHOOK_KEY));
     }
 
-    public String getPublicKey(Event event) {
-        if(isConnectEnabled(event)) {
+    private String getPublicKey(PaymentContext context) {
+        if(isConnectEnabled(context)) {
             return configurationManager.getRequiredValue(Configuration.getSystemConfiguration(STRIPE_PUBLIC_KEY));
         }
-        return configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), STRIPE_PUBLIC_KEY));
+        return configurationManager.getRequiredValue(context.narrow(STRIPE_PUBLIC_KEY));
     }
 
-    public ConnectURL getConnectURL(Function<ConfigurationKeys, Configuration.ConfigurationPathKey> keyResolver) {
+    public ConnectURL getConnectURL(Function<ConfigurationKeys, ConfigurationPathKey> keyResolver) {
         String secret = configurationManager.getRequiredValue(keyResolver.apply(STRIPE_SECRET_KEY));
         String clientId = configurationManager.getRequiredValue(keyResolver.apply(STRIPE_CONNECT_CLIENT_ID));
         String callbackURL = configurationManager.getStringConfigValue(keyResolver.apply(STRIPE_CONNECT_CALLBACK), configurationManager.getRequiredValue(keyResolver.apply(BASE_URL)) + CONNECT_REDIRECT_PATH);
@@ -120,11 +118,11 @@ public class StripeCreditCardManager implements PaymentProvider, RefundRequest, 
         return new ConnectURL(new StripeConnectApi().getAuthorizationUrl(config, Collections.emptyMap()), state, code);
     }
 
-    private boolean isConnectEnabled(Event event) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PLATFORM_MODE_ENABLED), false);
+    private boolean isConnectEnabled(PaymentContext context) {
+        return configurationManager.getBooleanConfigValue(context.narrow(PLATFORM_MODE_ENABLED), false);
     }
 
-    public ConnectResult storeConnectedAccountId(String code, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> keyResolver) {
+    public ConnectResult storeConnectedAccountId(String code, Function<ConfigurationKeys, ConfigurationPathKey> keyResolver) {
         try {
             String clientSecret = getSystemApiKey();
             OAuth20Service service = new ServiceBuilder(clientSecret).apiSecret(clientSecret).build(new StripeConnectApi());
@@ -237,7 +235,7 @@ public class StripeCreditCardManager implements PaymentProvider, RefundRequest, 
 
     Optional<RequestOptions> options(Event event) {
         RequestOptions.RequestOptionsBuilder builder = RequestOptions.builder();
-        if(isConnectEnabled(event)) {
+        if(isConnectEnabled(new PaymentContext(event))) {
             return configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), STRIPE_CONNECTED_ID))
                 .map(connectedId -> {
                     //connected stripe account
@@ -286,7 +284,7 @@ public class StripeCreditCardManager implements PaymentProvider, RefundRequest, 
             Map<String, Object> params = new HashMap<>();
             params.put("charge", chargeId);
             amount.ifPresent(a -> params.put("amount", a));
-            if(isConnectEnabled(event)) {
+            if(isConnectEnabled(new PaymentContext(event))) {
                 params.put("refund_application_fee", true);
             }
 
@@ -307,6 +305,11 @@ public class StripeCreditCardManager implements PaymentProvider, RefundRequest, 
             log.warn("Stripe: was not able to refund payment with id " + chargeId, e);
             return false;
         }
+    }
+
+    @Override
+    public Map<String, ?> getModelOptions(PaymentContext context) {
+        return Collections.singletonMap("stripe_p_key", getPublicKey(context));
     }
 
     String handleException(StripeException exc) {
@@ -375,8 +378,9 @@ public class StripeCreditCardManager implements PaymentProvider, RefundRequest, 
     }
 
     @Override
-    public boolean accept( PaymentMethod paymentMethod, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> contextProvider) {
-        return paymentMethod == PaymentMethod.CREDIT_CARD && configurationManager.getBooleanConfigValue( contextProvider.apply( STRIPE_CC_ENABLED ), false );
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
+        return paymentMethod == PaymentMethod.CREDIT_CARD
+            && configurationManager.getBooleanConfigValue(context.narrow(STRIPE_CC_ENABLED), false);
     }
 
     @Override

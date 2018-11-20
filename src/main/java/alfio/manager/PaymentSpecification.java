@@ -20,6 +20,7 @@ import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.OrderSummary;
 import alfio.model.PriceContainer;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentToken;
 import lombok.Getter;
 
@@ -83,5 +84,9 @@ public class PaymentSpecification {
 
     PaymentSpecification( String reservationId, PaymentToken gatewayToken, int priceWithVAT, Event event, String email, CustomerName customerName ) {
         this(reservationId, gatewayToken, priceWithVAT, event, email, customerName, null, null, null, false, false, null, null, null, null, false, false);
+    }
+
+    public PaymentContext getPaymentContext() {
+        return new PaymentContext(event);
     }
 }
