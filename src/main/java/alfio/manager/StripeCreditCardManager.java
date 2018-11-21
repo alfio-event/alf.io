@@ -27,8 +27,10 @@ import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.ConfigurationPathKey;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
+import alfio.model.transaction.capabilities.ClientServerTokenRequest;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
+import alfio.model.transaction.token.StripeCreditCardToken;
 import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.system.ConfigurationRepository;
@@ -63,7 +65,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @Log4j2
-public class StripeCreditCardManager implements PaymentProvider, RefundRequest, PaymentInfo {
+public class StripeCreditCardManager implements PaymentProvider, ClientServerTokenRequest, RefundRequest, PaymentInfo {
 
     public static final String STRIPE_UNEXPECTED = "error.STEP2_STRIPE_unexpected";
     public static final String CONNECT_REDIRECT_PATH = "/admin/configuration/payment/stripe/authorize";
@@ -407,6 +409,11 @@ public class StripeCreditCardManager implements PaymentProvider, RefundRequest, 
             }
             throw new IllegalStateException(e);
         }
+    }
+
+    @Override
+    public PaymentToken buildPaymentToken(String clientToken) {
+        return new StripeCreditCardToken(clientToken);
     }
 
     @FunctionalInterface

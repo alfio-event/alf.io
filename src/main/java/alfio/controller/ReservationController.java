@@ -31,6 +31,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.PaymentToken;
 import alfio.model.user.Organization;
@@ -558,6 +559,9 @@ public class ReservationController {
         OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
 
         PaymentToken paymentToken = (PaymentToken) session.getAttribute(PaymentManager.PAYMENT_TOKEN);
+        if(paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {
+            paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentMethod(), new PaymentContext(event));
+        }
         PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
             event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
             locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),

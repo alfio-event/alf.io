@@ -21,6 +21,7 @@ import alfio.model.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
+import alfio.model.transaction.capabilities.ClientServerTokenRequest;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.AuditingRepository;
@@ -147,6 +148,14 @@ public class PaymentManager {
         return lookupProviderByMethod(pp.getPaymentMethod(), context)
             .map(it -> it.getModelOptions(context).entrySet().stream().filter(kv -> kv.getValue() != null))
             .orElse(Stream.empty());
+    }
+
+    public PaymentToken buildPaymentToken(String gatewayToken, PaymentProxy proxy, PaymentContext context) {
+        return lookupProviderByMethod(proxy.getPaymentMethod(), context)
+            .filter(ClientServerTokenRequest.class::isInstance)
+            .map(ClientServerTokenRequest.class::cast)
+            .map(pp -> pp.buildPaymentToken(gatewayToken))
+            .orElse(null);
     }
 
 

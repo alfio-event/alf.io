@@ -33,7 +33,6 @@ import java.util.Optional;
 public class PaymentForm implements Serializable {
 
     private String gatewayToken;
-    private String payerId;
     private PaymentProxy paymentMethod;
     private Boolean termAndConditionsAccepted;
     private Boolean privacyPolicyAccepted;
