@@ -135,7 +135,10 @@
         {{/activePaymentMethods}}
 
     {{/orderSummary.free}}
-
+    {{#orderSummary.free}}
+        <input type="hidden" name="paymentMethod" value="NONE">
+        <script src="{{request.contextPath}}/resources/js/payment/free-of-charge.js" defer async></script>
+    {{/orderSummary.free}}
 
 
 
