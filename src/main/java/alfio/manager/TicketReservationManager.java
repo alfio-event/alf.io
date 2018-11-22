@@ -1254,7 +1254,7 @@ public class TicketReservationManager {
 
     void sendReminderForTicketAssignment() {
         getNotifiableEventsStream()
-                .map(e -> Pair.of(e, ticketRepository.findAllReservationsConfirmedButNotAssigned(e.getId())))
+                .map(e -> Pair.of(e, ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
                 .forEach(p -> Wrappers.voidTransactionWrapper(this::sendAssignmentReminder, p));
     }
@@ -1263,7 +1263,7 @@ public class TicketReservationManager {
         getNotifiableEventsStream()
                 .filter(e -> configurationManager.getBooleanConfigValue(Configuration.from(e.getOrganizationId(), e.getId(), OPTIONAL_DATA_REMINDER_ENABLED), true))
                 .filter(e -> ticketFieldRepository.countAdditionalFieldsForEvent(e.getId()) > 0)
-                .map(e -> Pair.of(e, ticketRepository.findAllAssignedButNotYetNotified(e.getId())))
+                .map(e -> Pair.of(e, ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
                 .forEach(p -> Wrappers.voidTransactionWrapper(this::sendOptionalDataReminder, p));
     }
@@ -1297,7 +1297,7 @@ public class TicketReservationManager {
                 });
     }
 
-    private void sendAssignmentReminder(Pair<Event, List<String>> p) {
+    private void sendAssignmentReminder(Pair<Event, Set<String>> p) {
         try {
             requiresNewTransactionTemplate.execute(status -> {
                 Event event = p.getLeft();

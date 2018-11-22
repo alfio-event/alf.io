@@ -59,6 +59,7 @@ import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
 import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singleton;
 import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -320,7 +321,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findByReservationId("abcd")).thenReturn(event);
 
         when(eventRepository.findAll()).thenReturn(singletonList(event));
-        when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList("abcd"));
+        when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         trm.sendReminderForTicketAssignment();
         verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq("ciccio"), anyString(), any(TextTemplateGenerator.class));
     }
@@ -338,7 +339,7 @@ class TicketReservationManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(event.getBegin()).thenReturn(ZonedDateTime.now().minusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
-        when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList("abcd"));
+        when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         trm.sendReminderForTicketAssignment();
         verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
     }
@@ -359,7 +360,7 @@ class TicketReservationManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.of("GMT-4"));
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("GMT-4")).plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
-        when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList("abcd"));
+        when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         when(reservation.getEmail()).thenReturn("ciccio");
         trm.sendReminderForTicketAssignment();
         verify(notificationManager, times(1)).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
@@ -378,7 +379,7 @@ class TicketReservationManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.of("UTC-8"));
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("UTC-8")));//same day
         when(eventRepository.findAll()).thenReturn(singletonList(event));
-        when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList("abcd"));
+        when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         trm.sendReminderForTicketAssignment();
         verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
     }
@@ -396,7 +397,7 @@ class TicketReservationManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.of("UTC-8"));
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("UTC-8")).plusMonths(3).plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
-        when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList("abcd"));
+        when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         List<Event> events = trm.getNotifiableEventsStream().collect(Collectors.toList());
         assertEquals(0, events.size());
         verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
@@ -852,14 +853,14 @@ class TicketReservationManagerTest {
         when(ticket.getId()).thenReturn(ticketId);
         when(ticket.getUuid()).thenReturn("uuid");
         when(ticket.getEmail()).thenReturn("ciccio");
-        when(ticketRepository.findAllAssignedButNotYetNotified(EVENT_ID)).thenReturn(singletonList(ticket));
+        when(ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(EVENT_ID)).thenReturn(singletonList(ticket));
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
         when(eventRepository.findAll()).thenReturn(singletonList(event));
-        when(ticketRepository.findAllReservationsConfirmedButNotAssigned(anyInt())).thenReturn(singletonList(RESERVATION_ID));
+        when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton(RESERVATION_ID));
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(1);
         when(ticketRepository.findByUUID(anyString())).thenReturn(ticket);
         when(messageSource.getMessage(eq("reminder.ticket-additional-info.subject"), any(), any())).thenReturn("subject");
@@ -879,7 +880,7 @@ class TicketReservationManagerTest {
         when(ticket.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         int ticketId = 2;
         when(ticket.getId()).thenReturn(ticketId);
-        when(ticketRepository.findAllAssignedButNotYetNotified(EVENT_ID)).thenReturn(singletonList(ticket));
+        when(ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(EVENT_ID)).thenReturn(singletonList(ticket));
         when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(ticketReservation);
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
@@ -903,7 +904,7 @@ class TicketReservationManagerTest {
         when(ticket.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         int ticketId = 2;
         when(ticket.getId()).thenReturn(ticketId);
-        when(ticketRepository.findAllAssignedButNotYetNotified(EVENT_ID)).thenReturn(singletonList(ticket));
+        when(ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(EVENT_ID)).thenReturn(singletonList(ticket));
         when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(ticketReservation);
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);

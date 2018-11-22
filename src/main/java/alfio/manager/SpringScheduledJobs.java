@@ -123,4 +123,11 @@ public class SpringScheduledJobs {
         log.trace("running job sendOfflinePaymentReminder");
         ticketReservationManager.sendReminderForOfflinePayments();
     }
+
+    @Scheduled(fixedRate = THIRTY_SECONDS)
+    public void sendTicketAssignmentReminder() {
+        log.trace("running job sendTicketAssignmentReminder");
+        ticketReservationManager.sendReminderForTicketAssignment();
+        ticketReservationManager.sendReminderForOptionalData();
+    }
 }

@@ -32,8 +32,6 @@ import java.util.Date;
 @AllArgsConstructor
 public class Jobs {
 
-    private static final int ONE_MINUTE = 1000 * 60;
-    private static final int THIRTY_MINUTES = 30 * ONE_MINUTE;
     private static final int THIRTY_SECONDS = 1000 * 30;
 
     private final TicketReservationManager ticketReservationManager;
@@ -45,11 +43,6 @@ public class Jobs {
         ticketReservationManager.cleanupExpiredReservations(expirationDate);
         ticketReservationManager.cleanupExpiredOfflineReservations(expirationDate);
         ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
-    }
-
-    void sendTicketAssignmentReminder() {
-        ticketReservationManager.sendReminderForTicketAssignment();
-        ticketReservationManager.sendReminderForOptionalData();
     }
 
     void processReleasedTickets() {
@@ -69,22 +62,6 @@ public class Jobs {
         public void execute(JobExecutionContext context) throws JobExecutionException {
             log.trace("running job " + getClass().getSimpleName());
             jobs.cleanupExpiredPendingReservation();
-        }
-    }
-
-    @DisallowConcurrentExecution
-    @Log4j2
-    public static class SendTicketAssignmentReminder implements  Job {
-
-        public static long INTERVAL = THIRTY_MINUTES;
-
-        @Autowired
-        private Jobs jobs;
-
-        @Override
-        public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.trace("running job " + getClass().getSimpleName());
-            jobs.sendTicketAssignmentReminder();
         }
     }
 

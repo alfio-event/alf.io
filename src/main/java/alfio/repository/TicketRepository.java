@@ -26,10 +26,7 @@ import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.QueryType;
 
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @QueryRepository
 public interface TicketRepository {
@@ -218,11 +215,17 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where event_id = :eventId and status in(" + CONFIRMED + ") and full_name is not null and email_address is not null")
     Integer countAllAssigned(@Bind("eventId") int eventId);
 
-    @Query("select distinct tickets_reservation_id from ticket where event_id = :eventId and status in('ACQUIRED', 'TO_BE_PAID') and (full_name is null or email_address is null)")
-    List<String> findAllReservationsConfirmedButNotAssigned(@Bind("eventId") int eventId);
+    //
+    @Query("select tickets_reservation_id from ticket where event_id = :eventId and status in('ACQUIRED', 'TO_BE_PAID') and (full_name is null or email_address is null) for update skip locked")
+    List<String> internalFindAllReservationsConfirmedButNotAssignedForUpdate(@Bind("eventId") int eventId);
 
-    @Query("select * from ticket where event_id = :eventId  and status in('ACQUIRED', 'TO_BE_PAID') and full_name is not null and email_address is not null and reminder_sent = false")
-    List<Ticket> findAllAssignedButNotYetNotified(@Bind("eventId") int eventId);
+    default Set<String> findAllReservationsConfirmedButNotAssignedForUpdate(int eventId) {
+        return new TreeSet<>(internalFindAllReservationsConfirmedButNotAssignedForUpdate(eventId));
+    }
+    //
+
+    @Query("select * from ticket where event_id = :eventId  and status in('ACQUIRED', 'TO_BE_PAID') and full_name is not null and email_address is not null and reminder_sent = false for update skip locked")
+    List<Ticket> findAllAssignedButNotYetNotifiedForUpdate(@Bind("eventId") int eventId);
 
     @Query("update ticket set reminder_sent = true where id = :id and reminder_sent = false")
     int flagTicketAsReminderSent(@Bind("id") int ticketId);
