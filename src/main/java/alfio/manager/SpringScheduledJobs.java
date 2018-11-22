@@ -35,6 +35,11 @@ import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * <p>Scheduled jobs. Important: all the jobs should be able to run on multiple instance at the same time.</p>
+ * <p>Take great care in placing a select id ... for update skip locked to avoid multiple job execution for the same object</p>
+ *
+ */
 @Component
 @DependsOn("migrator")
 @Profile("!" + Initializer.PROFILE_DISABLE_JOBS)
@@ -65,7 +70,7 @@ public class SpringScheduledJobs {
 
 
     //run each hour
-    @Scheduled(cron = "0 0 0/1 1/1 * ? *")
+    @Scheduled(cron = "0 0 0/1 * * ?")
     public void cleanupForDemoMode() {
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             log.trace("running job cleanupForDemoMode");
@@ -85,7 +90,7 @@ public class SpringScheduledJobs {
 
 
     //run each hour
-    @Scheduled(cron = "0 0 0/1 1/1 * ? *")
+    @Scheduled(cron = "0 0 0/1 * * ?")
     public void sendOfflinePaymentReminderToEventOrganizers() {
         log.trace("running job sendOfflinePaymentReminderToEventOrganizers");
         ticketReservationManager.sendReminderForOfflinePaymentsToEventManagers();
