@@ -37,7 +37,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * <p>Scheduled jobs. Important: all the jobs should be able to run on multiple instance at the same time.</p>
+ * <p>Scheduled jobs. Important: all the jobs must be able to run on multiple instance at the same time.</p>
  * <p>Take great care in placing a select id ... for update skip locked to avoid multiple job execution for the same object</p>
  *
  */
@@ -46,7 +46,7 @@ import java.util.List;
 @Profile("!" + Initializer.PROFILE_DISABLE_JOBS)
 @AllArgsConstructor
 @Log4j2
-public class SpringScheduledJobs {
+public class Jobs {
 
 
     private static final int ONE_MINUTE = 1000 * 60;
