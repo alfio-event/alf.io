@@ -229,7 +229,6 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     public Trigger[] getTriggers() throws ParseException {
         return new Trigger[]{
             buildTrigger(CleanupExpiredPendingReservation.class, "CleanupExpiredPendingReservation", CleanupExpiredPendingReservation.INTERVAL),
-            buildTrigger(SendOfflinePaymentReminder.class, "SendOfflinePaymentReminder", SendOfflinePaymentReminder.INTERVAL),
             buildTrigger(SendTicketAssignmentReminder.class, "SendTicketAssignmentReminder", SendTicketAssignmentReminder.INTERVAL),
             buildTrigger(ProcessReleasedTickets.class, "ProcessReleasedTickets", ProcessReleasedTickets.INTERVAL),
         };

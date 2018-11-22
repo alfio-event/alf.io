@@ -47,10 +47,6 @@ public class Jobs {
         ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
     }
 
-    void sendOfflinePaymentReminder() {
-        ticketReservationManager.sendReminderForOfflinePayments();
-    }
-
     void sendTicketAssignmentReminder() {
         ticketReservationManager.sendReminderForTicketAssignment();
         ticketReservationManager.sendReminderForOptionalData();
@@ -73,22 +69,6 @@ public class Jobs {
         public void execute(JobExecutionContext context) throws JobExecutionException {
             log.trace("running job " + getClass().getSimpleName());
             jobs.cleanupExpiredPendingReservation();
-        }
-    }
-
-    @DisallowConcurrentExecution
-    @Log4j2
-    public static class SendOfflinePaymentReminder implements  Job {
-
-        public static long INTERVAL = THIRTY_MINUTES;
-
-        @Autowired
-        private Jobs jobs;
-
-        @Override
-        public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.trace("running job " + getClass().getSimpleName());
-            jobs.sendOfflinePaymentReminder();
         }
     }
 

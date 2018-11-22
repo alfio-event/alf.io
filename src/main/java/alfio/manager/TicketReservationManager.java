@@ -1207,7 +1207,7 @@ public class TicketReservationManager {
 
     void sendReminderForOfflinePayments() {
         Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE);
-        ticketReservationRepository.findAllOfflinePaymentReservationForNotification(expiration).stream()
+        ticketReservationRepository.findAllOfflinePaymentReservationForNotificationForUpdate(expiration).stream()
                 .map(reservation -> {
                     Optional<Ticket> ticket = ticketRepository.findFirstTicketInReservation(reservation.getId());
                     Optional<Event> event = ticket.map(t -> eventRepository.findById(t.getEventId()));

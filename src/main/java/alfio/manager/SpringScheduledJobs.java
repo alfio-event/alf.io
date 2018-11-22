@@ -48,9 +48,11 @@ import java.util.List;
 @Log4j2
 public class SpringScheduledJobs {
 
+
     private static final int ONE_MINUTE = 1000 * 60;
     private static final int THIRTY_SECONDS = 1000 * 30;
     private static final int FIVE_SECONDS = 1000 * 5;
+    private static final int THIRTY_MINUTES = 30 * ONE_MINUTE;
 
     private final ConfigurationManager configurationManager;
     private final Environment environment;
@@ -113,5 +115,12 @@ public class SpringScheduledJobs {
         if (result.getLeft() > 0 || result.getRight() > 0) {
             log.info("ProcessReservationRequests: got {} success and {} failures. Elapsed {} ms", result.getLeft(), result.getRight(), System.currentTimeMillis() - start);
         }
+    }
+
+
+    @Scheduled(fixedRate = THIRTY_MINUTES)
+    public void sendOfflinePaymentReminder() {
+        log.trace("running job sendOfflinePaymentReminder");
+        ticketReservationManager.sendReminderForOfflinePayments();
     }
 }
