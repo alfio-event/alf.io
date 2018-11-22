@@ -37,7 +37,7 @@ import java.util.List;
 
 @Component
 @DependsOn("migrator")
-@Profile("!"+ Initializer.PROFILE_DISABLE_JOBS)
+@Profile("!" + Initializer.PROFILE_DISABLE_JOBS)
 @AllArgsConstructor
 @Log4j2
 public class SpringScheduledJobs {
@@ -51,6 +51,7 @@ public class SpringScheduledJobs {
     private final FileUploadManager fileUploadManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
     private final UserManager userManager;
+    private final TicketReservationManager ticketReservationManager;
 
     //cron each minute: "0 0/1 * 1/1 * ? *"
 
@@ -64,11 +65,11 @@ public class SpringScheduledJobs {
     //run each hour
     @Scheduled(cron = "0 0 0/1 1/1 * ? *")
     public void cleanupForDemoMode() {
-        if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
+        if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             log.trace("running job cleanupForDemoMode");
             int expirationDate = configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS), 20);
             List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
-            if(!userIds.isEmpty()) {
+            if (!userIds.isEmpty()) {
                 eventManager.disableEventsFromUsers(userIds);
             }
         }
@@ -78,5 +79,13 @@ public class SpringScheduledJobs {
     public void generateSpecialPriceCodes() {
         log.trace("running job generateSpecialPriceCodes");
         specialPriceTokenGenerator.generatePendingCodes();
+    }
+
+
+    //run each hour
+    @Scheduled(cron = "0 0 0/1 1/1 * ? *")
+    public void sendOfflinePaymentReminderToEventOrganizers() {
+        log.trace("running job sendOfflinePaymentReminderToEventOrganizers");
+        ticketReservationManager.sendReminderForOfflinePaymentsToEventManagers();
     }
 }

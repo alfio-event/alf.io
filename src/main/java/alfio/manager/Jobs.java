@@ -55,10 +55,6 @@ public class Jobs {
         ticketReservationManager.sendReminderForOfflinePayments();
     }
 
-    void sendOfflinePaymentReminderToEventOrganizers() {
-        ticketReservationManager.sendReminderForOfflinePaymentsToEventManagers();
-    }
-
     void sendTicketAssignmentReminder() {
         ticketReservationManager.sendReminderForTicketAssignment();
         ticketReservationManager.sendReminderForOptionalData();
@@ -74,26 +70,6 @@ public class Jobs {
 
     Pair<Integer, Integer> processReservationRequests() {
         return adminReservationRequestManager.processPendingReservations();
-    }
-
-    @DisallowConcurrentExecution
-    @Log4j2
-    public static class SendOfflinePaymentReminderToEventOrganizers implements Job {
-
-        //run each hour
-        public static String CRON_EXPRESSION = "0 0 0/1 1/1 * ? *";
-
-        //run each minute
-        //public static String CRON_EXPRESSION = "0 0/1 * 1/1 * ? *";
-
-        @Autowired
-        private Jobs jobs;
-
-        @Override
-        public void execute(JobExecutionContext context) throws JobExecutionException {
-            jobs.sendOfflinePaymentReminderToEventOrganizers();
-            log.trace("running job " + getClass().getSimpleName());
-        }
     }
 
     @DisallowConcurrentExecution

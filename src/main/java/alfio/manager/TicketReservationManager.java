@@ -1237,7 +1237,7 @@ public class TicketReservationManager {
             return dateTimeForEvent.truncatedTo(ChronoUnit.HOURS).getHour() == 5; //only for the events at 5:00 local time
         }).forEachOrdered(event -> {
             ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId()).truncatedTo(ChronoUnit.DAYS).plusDays(1);
-            List<TicketReservationInfo> reservations = ticketReservationRepository.findAllOfflinePaymentReservationWithExpirationBefore(dateTimeForEvent, event.getId());
+            List<TicketReservationInfo> reservations = ticketReservationRepository.findAllOfflinePaymentReservationWithExpirationBeforeForUpdate(dateTimeForEvent, event.getId());
             log.info("for event {} there are {} pending offline payments to handle", event.getId(), reservations.size());
             if(!reservations.isEmpty()) {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
