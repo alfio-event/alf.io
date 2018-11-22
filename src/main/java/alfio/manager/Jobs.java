@@ -39,7 +39,6 @@ public class Jobs {
     private static final int FIVE_SECONDS = 1000 * 5;
 
     private final TicketReservationManager ticketReservationManager;
-    private final NotificationManager notificationManager;
     private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     private final AdminReservationRequestManager adminReservationRequestManager;
 
@@ -58,10 +57,6 @@ public class Jobs {
     void sendTicketAssignmentReminder() {
         ticketReservationManager.sendReminderForTicketAssignment();
         ticketReservationManager.sendReminderForOptionalData();
-    }
-
-    void sendEmails() {
-        notificationManager.sendWaitingMessages();
     }
 
     void processReleasedTickets() {
@@ -117,22 +112,6 @@ public class Jobs {
         public void execute(JobExecutionContext context) throws JobExecutionException {
             log.trace("running job " + getClass().getSimpleName());
             jobs.sendTicketAssignmentReminder();
-        }
-    }
-
-    @DisallowConcurrentExecution
-    @Log4j2
-    public static class SendEmails implements Job {
-
-        public static long INTERVAL = FIVE_SECONDS;
-
-        @Autowired
-        private Jobs jobs;
-
-        @Override
-        public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.trace("running job " + getClass().getSimpleName());
-            jobs.sendEmails();
         }
     }
 

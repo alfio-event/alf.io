@@ -44,11 +44,13 @@ public class SpringScheduledJobs {
 
     private static final int ONE_MINUTE = 1000 * 60;
     private static final int THIRTY_SECONDS = 1000 * 30;
+    private static final int FIVE_SECONDS = 1000 * 5;
 
     private final ConfigurationManager configurationManager;
     private final Environment environment;
     private final EventManager eventManager;
     private final FileUploadManager fileUploadManager;
+    private final NotificationManager notificationManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
     private final UserManager userManager;
     private final TicketReservationManager ticketReservationManager;
@@ -87,5 +89,12 @@ public class SpringScheduledJobs {
     public void sendOfflinePaymentReminderToEventOrganizers() {
         log.trace("running job sendOfflinePaymentReminderToEventOrganizers");
         ticketReservationManager.sendReminderForOfflinePaymentsToEventManagers();
+    }
+
+
+    @Scheduled(fixedRate = FIVE_SECONDS)
+    public void sendEmails() {
+        log.trace("running job sendEmails");
+        notificationManager.sendWaitingMessages();
     }
 }
