@@ -16,12 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.config.Initializer;
-import alfio.manager.system.ConfigurationManager;
-import alfio.manager.user.UserManager;
-import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
-import alfio.model.user.User;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.DateUtils;
@@ -31,12 +25,9 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
-import java.util.List;
 
 @Component
 @AllArgsConstructor
@@ -49,7 +40,6 @@ public class Jobs {
 
     private final TicketReservationManager ticketReservationManager;
     private final NotificationManager notificationManager;
-    private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
     private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     private final AdminReservationRequestManager adminReservationRequestManager;
 
@@ -72,10 +62,6 @@ public class Jobs {
     void sendTicketAssignmentReminder() {
         ticketReservationManager.sendReminderForTicketAssignment();
         ticketReservationManager.sendReminderForOptionalData();
-    }
-
-    void generateSpecialPriceCodes() {
-        specialPriceTokenGenerator.generatePendingCodes();
     }
 
     void sendEmails() {
@@ -155,23 +141,6 @@ public class Jobs {
         public void execute(JobExecutionContext context) throws JobExecutionException {
             log.trace("running job " + getClass().getSimpleName());
             jobs.sendTicketAssignmentReminder();
-        }
-    }
-
-
-    @DisallowConcurrentExecution
-    @Log4j2
-    public static class GenerateSpecialPriceCodes implements  Job {
-
-        public static long INTERVAL = THIRTY_SECONDS;
-
-        @Autowired
-        private Jobs jobs;
-
-        @Override
-        public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.trace("running job " + getClass().getSimpleName());
-            jobs.generateSpecialPriceCodes();
         }
     }
 
