@@ -18,7 +18,6 @@ package alfio.manager;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.time.DateUtils;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -26,43 +25,16 @@ import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
-
 @Component
 @AllArgsConstructor
 public class Jobs {
 
     private static final int THIRTY_SECONDS = 1000 * 30;
 
-    private final TicketReservationManager ticketReservationManager;
     private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
-
-    void cleanupExpiredPendingReservation() {
-        //cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
-        final Date expirationDate = DateUtils.addMinutes(new Date(), -10);
-        ticketReservationManager.cleanupExpiredReservations(expirationDate);
-        ticketReservationManager.cleanupExpiredOfflineReservations(expirationDate);
-        ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
-    }
 
     void processReleasedTickets() {
         waitingQueueSubscriptionProcessor.handleWaitingTickets();
-    }
-
-    @DisallowConcurrentExecution
-    @Log4j2
-    public static class CleanupExpiredPendingReservation implements Job {
-
-        public static long INTERVAL = THIRTY_SECONDS;
-
-        @Autowired
-        private Jobs jobs;
-
-        @Override
-        public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.trace("running job " + getClass().getSimpleName());
-            jobs.cleanupExpiredPendingReservation();
-        }
     }
 
     @DisallowConcurrentExecution

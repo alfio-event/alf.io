@@ -564,9 +564,9 @@ class TicketReservationManagerTest {
     @Test
     void doNothingIfNoReservations() {
         Date now = new Date();
-        when(ticketReservationRepository.findExpiredReservation(eq(now))).thenReturn(Collections.emptyList());
+        when(ticketReservationRepository.findExpiredReservationForUpdate(eq(now))).thenReturn(Collections.emptyList());
         trm.cleanupExpiredReservations(now);
-        verify(ticketReservationRepository).findExpiredReservation(eq(now));
+        verify(ticketReservationRepository).findExpiredReservationForUpdate(eq(now));
         verifyNoMoreInteractions(ticketReservationRepository, specialPriceRepository, ticketRepository, waitingQueueManager);
     }
 
@@ -574,9 +574,9 @@ class TicketReservationManagerTest {
     void cancelExpiredReservations() {
         Date now = new Date();
         List<String> reservationIds = singletonList("reservation-id");
-        when(ticketReservationRepository.findExpiredReservation(eq(now))).thenReturn(reservationIds);
+        when(ticketReservationRepository.findExpiredReservationForUpdate(eq(now))).thenReturn(reservationIds);
         trm.cleanupExpiredReservations(now);
-        verify(ticketReservationRepository).findExpiredReservation(eq(now));
+        verify(ticketReservationRepository).findExpiredReservationForUpdate(eq(now));
         verify(specialPriceRepository).resetToFreeAndCleanupForReservation(eq(reservationIds));
         verify(ticketRepository).resetCategoryIdForUnboundedCategories(eq(reservationIds));
         verify(ticketRepository).freeFromReservation(eq(reservationIds));

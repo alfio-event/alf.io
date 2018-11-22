@@ -718,7 +718,7 @@ public class TicketReservationManager {
 
     @Transactional
     void cleanupExpiredReservations(Date expirationDate) {
-        List<String> expiredReservationIds = ticketReservationRepository.findExpiredReservation(expirationDate);
+        List<String> expiredReservationIds = ticketReservationRepository.findExpiredReservationForUpdate(expirationDate);
         if(expiredReservationIds.isEmpty()) {
             return;
         }
@@ -743,7 +743,8 @@ public class TicketReservationManager {
     }
 
     void cleanupExpiredOfflineReservations(Date expirationDate) {
-        ticketReservationRepository.findExpiredOfflineReservations(expirationDate).forEach(this::cleanupOfflinePayment);
+        ticketReservationRepository.findExpiredOfflineReservationsForUpdate(expirationDate)
+            .forEach(this::cleanupOfflinePayment);
     }
 
     private void cleanupOfflinePayment(String reservationId) {
@@ -770,7 +771,7 @@ public class TicketReservationManager {
      * @param expirationDate expiration date
      */
     public void markExpiredInPaymentReservationAsStuck(Date expirationDate) {
-        List<String> stuckReservations = ticketReservationRepository.findStuckReservations(expirationDate);
+        List<String> stuckReservations = ticketReservationRepository.findStuckReservationsForUpdate(expirationDate);
         if(!stuckReservations.isEmpty()) {
             ticketReservationRepository.updateReservationsStatus(stuckReservations, TicketReservationStatus.STUCK.name());
 
