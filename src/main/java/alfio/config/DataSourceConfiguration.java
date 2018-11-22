@@ -28,7 +28,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
-import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.Trigger;
 import org.quartz.spi.TriggerFiredBundle;
@@ -225,18 +224,6 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         triggerFactoryBean.afterPropertiesSet();
 
         return triggerFactoryBean.getObject();
-    }
-
-    private static CronTrigger buildCron(Class<? extends Job> jobClass, String name, String cronExpression) throws ParseException {
-        JobDetailFactoryBean jobDetailFactory = jobDetailFactory(jobClass, name);
-
-        CronTriggerFactoryBean cronTriggerFactoryBean = new CronTriggerFactoryBean();
-        cronTriggerFactoryBean.setJobDetail(jobDetailFactory.getObject());
-        cronTriggerFactoryBean.setCronExpression(cronExpression);
-        cronTriggerFactoryBean.setName(name);
-        cronTriggerFactoryBean.afterPropertiesSet();
-
-        return cronTriggerFactoryBean.getObject();
     }
 
     public Trigger[] getTriggers() throws ParseException {
