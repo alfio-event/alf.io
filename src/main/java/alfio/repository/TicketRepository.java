@@ -287,13 +287,6 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where event_id = :eventId and category_id is not null and status <> 'INVALIDATED'")
     Integer countAllocatedTicketsForEvent(@Bind("eventId") int eventId);
 
-    @Query("select count(*) from ticket where tickets_reservation_id = :reservationId and uuid in (:uuids)")
-    Integer countFoundTicketsInReservation(@Bind("reservationId") String reservationId, @Bind("uuids") Set<String> uuids);
-
-    default boolean checkTicketUUIDs(String reservationId, Set<String> uuids) {
-        return countFoundTicketsInReservation(reservationId, uuids) == uuids.size();
-    }
-
     @Query("update ticket set status = 'FREE' where event_id = :eventId and category_id in(:categoryId) and status = '"+RELEASED+"'")
     int revertToFreeForRestrictedCategories(@Bind("eventId") int eventId, @Bind("categoryId") List<Integer> categoryId);
 }

@@ -112,10 +112,6 @@ public interface GroupRepository {
                                            @Bind("groupId") int groupId,
                                            @Bind("value") String value);
 
-    @Query("select * from whitelisted_ticket where a_group_id_fk = :itemId and group_link_id_fk = :configurationId")
-    Optional<WhitelistedTicket> findExistingWhitelistedTicket(@Bind("itemId") int itemId,
-                                                              @Bind("configurationId") int configurationId);
-
     @Query("select count(*) from whitelisted_ticket where group_member_id_fk = :itemId and group_link_id_fk = :configurationId")
     int countExistingWhitelistedTickets(@Bind("itemId") int itemId,
                                         @Bind("configurationId") int configurationId);
