@@ -36,7 +36,7 @@ public class SpringBootLauncher {
         Thread.setDefaultUncaughtExceptionHandler(new DefaultExceptionHandler());
         String profiles = System.getProperty("spring.profiles.active", "");
 
-        SpringApplication application = new SpringApplication(SpringBootInitializer.class, RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class, MvcConfiguration.class);
+        SpringApplication application = new SpringApplication(SpringBootInitializer.class, DataSourceConfiguration.class, WebSecurityConfig.class, MvcConfiguration.class);
         List<String> additionalProfiles = new ArrayList<>();
         additionalProfiles.add(Initializer.PROFILE_SPRING_BOOT);
         if("true".equals(System.getenv("ALFIO_LOG_STDOUT_ONLY"))) {

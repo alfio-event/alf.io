@@ -19,7 +19,6 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.config.RepositoryConfiguration;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.modification.DateTimeModification;
@@ -54,7 +53,7 @@ import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class UploadedResourceIntegrationTest extends BaseIntegrationTest {

@@ -19,7 +19,6 @@ package alfio.controller.api.v1;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.config.RepositoryConfiguration;
 import alfio.controller.ReservationFlowIntegrationTest;
 import alfio.controller.api.v1.admin.EventApiV1Controller;
 import alfio.manager.EventManager;
@@ -63,7 +62,7 @@ import static org.junit.Assert.assertTrue;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS})
 @Transactional
 public class EventApiV1IntegrationTest extends BaseIntegrationTest {

@@ -22,6 +22,7 @@ import alfio.manager.UploadedResourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.QueryFactory;
+import ch.digitalfondue.npjt.QueryRepositoryScanner;
 import ch.digitalfondue.npjt.mapper.ZonedDateTimeMapper;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
@@ -121,6 +122,11 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         qf.addColumnMapperFactory(new ZonedDateTimeMapper.Factory());
         qf.addParameterConverters(new ZonedDateTimeMapper.Converter());
         return qf;
+    }
+
+    @Bean
+    public static QueryRepositoryScanner queryRepositoryScanner(QueryFactory queryFactory) {
+        return new QueryRepositoryScanner(queryFactory, "alfio.repository");
     }
 
     @Bean

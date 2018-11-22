@@ -19,7 +19,6 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.config.RepositoryConfiguration;
 import alfio.config.WebSecurityConfig;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
@@ -58,7 +57,7 @@ import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, WebSecurityConfig.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {

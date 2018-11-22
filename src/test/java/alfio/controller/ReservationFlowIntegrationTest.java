@@ -19,7 +19,6 @@ package alfio.controller;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.config.RepositoryConfiguration;
 import alfio.controller.api.AttendeeApiController;
 import alfio.controller.api.ReservationApiController;
 import alfio.controller.api.admin.CheckInApiController;
@@ -106,7 +105,7 @@ import static org.mockito.Mockito.mock;
  *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
