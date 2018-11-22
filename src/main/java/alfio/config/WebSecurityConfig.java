@@ -206,56 +206,12 @@ public class WebSecurityConfig {
         return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
     }
 
-    /**
-     * Basic auth configuration for Public APIs.
-     * The rules are valid only if the Authorization header is present and if the context path starts with /api/v1/admin
-     */
-    @Configuration
-    @Order(1)
-    public static class APIBasicAuthWebSecurity extends BaseWebSecurity {
-
-        @Override
-        protected void configure(HttpSecurity http) throws Exception {
-            http.requestMatcher((request) -> request.getHeader("Authorization") != null && StringUtils.startsWith(request.getContextPath(), ADMIN_PUBLIC_API))
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and().csrf().disable()
-                .authorizeRequests()
-                .antMatchers(ADMIN_PUBLIC_API + "/**").hasRole(API_CLIENT)
-                .and().httpBasic();
-        }
-    }
-
-    /**
-     * Basic auth configuration for Mobile App.
-     * The rules are only valid if the header Authorization is present, otherwise it fallback to the
-     * FormBasedWebSecurity rules.
-     */
-    @Configuration
-    @Order(2)
-    public static class BasicAuthWebSecurity extends BaseWebSecurity {
-
-        @Override
-        protected void configure(HttpSecurity http) throws Exception {
-            http.requestMatcher((request) -> request.getHeader("Authorization") != null)
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and().csrf().disable()
-            .authorizeRequests()
-            .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
-            .antMatchers(HttpMethod.GET, ADMIN_API + "/user-type", ADMIN_API + "/user/details").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
-            .antMatchers(ADMIN_API + "/**").denyAll()
-            .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
-            .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR)
-            .antMatchers("/**").authenticated()
-            .and().httpBasic();
-        }
-    }
 
     /**
      * Default form based configuration.
      */
     @Configuration
-    @Order(3)
+    @Order(1)
     public static class FormBasedWebSecurity extends BaseWebSecurity {
 
         @Autowired
