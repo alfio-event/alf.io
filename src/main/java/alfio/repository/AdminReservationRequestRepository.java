@@ -33,7 +33,7 @@ public interface AdminReservationRequestRepository {
         type = QueryType.TEMPLATE)
     String insertRequest();
 
-    @Query("select id from admin_reservation_request where status = 'PENDING' order by request_id limit :limit for update")
+    @Query("select id from admin_reservation_request where status = 'PENDING' order by request_id limit :limit for update skip locked")
     List<Long> findPendingForUpdate(@Bind("limit") int limit);
 
     @Query("select * from admin_reservation_request where id = :id")

@@ -25,6 +25,7 @@ import alfio.model.user.User;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
@@ -59,8 +60,9 @@ public class SpringScheduledJobs {
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
     private final UserManager userManager;
     private final TicketReservationManager ticketReservationManager;
+    private final AdminReservationRequestManager adminReservationRequestManager;
 
-    //cron each minute: "0 0/1 * 1/1 * ? *"
+    //cron each minute: "0 0/1 * * * ?"
 
     @Scheduled(fixedRate = ONE_MINUTE * 60)
     public void cleanupUnreferencedBlobFiles() {
@@ -101,5 +103,15 @@ public class SpringScheduledJobs {
     public void sendEmails() {
         log.trace("running job sendEmails");
         notificationManager.sendWaitingMessages();
+    }
+
+    @Scheduled(fixedRate = FIVE_SECONDS)
+    public void processReservationRequests() {
+        log.trace("running job processReservationRequests");
+        long start = System.currentTimeMillis();
+        Pair<Integer, Integer> result = adminReservationRequestManager.processPendingReservations();
+        if (result.getLeft() > 0 || result.getRight() > 0) {
+            log.info("ProcessReservationRequests: got {} success and {} failures. Elapsed {} ms", result.getLeft(), result.getRight(), System.currentTimeMillis() - start);
+        }
     }
 }
