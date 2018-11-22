@@ -170,19 +170,13 @@ div.preformatted {
 .alfio-lang a {
 }
 
-html[lang=nl] .alfio-lang a[lang=nl] {
-    font-weight:bold;
-}
-
-html[lang=de] .alfio-lang a[lang=de] {
-    font-weight:bold;
-}
-
-html[lang=en] .alfio-lang a[lang=en] {
-    font-weight:bold;
-}
-
-html[lang=it] .alfio-lang a[lang=it] {
+html[lang=nl] .alfio-lang a[lang=nl],
+html[lang=de] .alfio-lang a[lang=de],
+html[lang=en] .alfio-lang a[lang=en],
+html[lang=it] .alfio-lang a[lang=it],
+html[lang=fr] .alfio-lang a[lang=fr],
+html[lang=ro] .alfio-lang a[lang=ro],
+html[lang=pt] .alfio-lang a[lang=pt] {
     font-weight:bold;
 }
 
