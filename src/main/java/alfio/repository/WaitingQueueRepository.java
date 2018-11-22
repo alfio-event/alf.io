@@ -28,6 +28,9 @@ public interface WaitingQueueRepository {
     @Query("select * from waiting_queue where event_id = :eventId and status = 'WAITING' order by creation")
     List<WaitingQueueSubscription> loadAllWaiting(@Bind("eventId") int eventId);
 
+    @Query("select * from waiting_queue where event_id = :eventId and status = 'WAITING' order by creation for update")
+    List<WaitingQueueSubscription> loadAllWaitingForUpdate(@Bind("eventId") int eventId);
+
     @Query("select * from waiting_queue where event_id = :eventId order by creation")
     List<WaitingQueueSubscription> loadAll(@Bind("eventId") int eventId);
 

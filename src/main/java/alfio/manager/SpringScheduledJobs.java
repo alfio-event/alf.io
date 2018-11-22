@@ -54,15 +54,17 @@ public class SpringScheduledJobs {
     private static final int FIVE_SECONDS = 1000 * 5;
     private static final int THIRTY_MINUTES = 30 * ONE_MINUTE;
 
+    private final AdminReservationRequestManager adminReservationRequestManager;
     private final ConfigurationManager configurationManager;
     private final Environment environment;
     private final EventManager eventManager;
     private final FileUploadManager fileUploadManager;
     private final NotificationManager notificationManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
-    private final UserManager userManager;
     private final TicketReservationManager ticketReservationManager;
-    private final AdminReservationRequestManager adminReservationRequestManager;
+    private final UserManager userManager;
+    private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
+
 
     //cron each minute: "0 0/1 * * * ?"
 
@@ -140,5 +142,12 @@ public class SpringScheduledJobs {
         ticketReservationManager.cleanupExpiredReservations(expirationDate);
         ticketReservationManager.cleanupExpiredOfflineReservations(expirationDate);
         ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
+    }
+
+
+    @Scheduled(fixedRate = THIRTY_SECONDS)
+    public void processReleasedTickets() {
+        log.trace("running job processReleasedTickets");
+        waitingQueueSubscriptionProcessor.handleWaitingTickets();
     }
 }

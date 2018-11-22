@@ -142,7 +142,7 @@ public class WaitingQueueManager {
 
     Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeSeats(Event event) {
         int eventId = event.getId();
-        List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAllWaiting(eventId);
+        List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAllWaitingForUpdate(eventId);
         int waitingPeople = subscriptions.size();
         int waitingTickets = ticketRepository.countWaiting(eventId);
 

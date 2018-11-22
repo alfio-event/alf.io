@@ -127,10 +127,6 @@ dependencies {
     compile "com.samskivert:jmustache:1.14"
     compile "com.github.sps.mustache:mustache-spring-view:1.4"
     compile "javax.mail:mail:1.5.0-b01"
-    compile "org.quartz-scheduler:quartz:2.3.0", {
-        exclude group: "com.zaxxer", module: "HikariCP-java6"
-        exclude group: "com.mchange", module: "c3p0"
-    }
     compile 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
     compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC17"
