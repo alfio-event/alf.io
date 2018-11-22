@@ -50,12 +50,7 @@ public class Jobs {
     private final TicketReservationManager ticketReservationManager;
     private final NotificationManager notificationManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
-    private final FileUploadManager fileUploadManager;
     private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
-    private final Environment environment;
-    private final UserManager userManager;
-    private final EventManager eventManager;
-    private final ConfigurationManager configurationManager;
     private final AdminReservationRequestManager adminReservationRequestManager;
 
     void cleanupExpiredPendingReservation() {
@@ -91,20 +86,6 @@ public class Jobs {
         waitingQueueSubscriptionProcessor.handleWaitingTickets();
     }
 
-    void cleanupUnreferencedBlobFiles() {
-        fileUploadManager.cleanupUnreferencedBlobFiles();
-    }
-
-    void cleanupForDemoMode() {
-        if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
-            int expirationDate = configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS), 20);
-            List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
-            if(!userIds.isEmpty()) {
-                eventManager.disableEventsFromUsers(userIds);
-            }
-        }
-    }
-
     Pair<Integer, Integer> processReservationRequests() {
         return adminReservationRequestManager.processPendingReservations();
     }
@@ -128,29 +109,6 @@ public class Jobs {
             log.trace("running job " + getClass().getSimpleName());
         }
     }
-
-
-    @DisallowConcurrentExecution
-    @Log4j2
-    public static class CleanupForDemoMode implements Job {
-        //run each hour
-        public static String CRON_EXPRESSION = "0 0 0/1 1/1 * ? *";
-
-        //run each minute
-        //public static String CRON_EXPRESSION = "0 0/1 * 1/1 * ? *";
-
-        @Autowired
-        private Jobs jobs;
-
-        @Override
-        public void execute(JobExecutionContext context) throws JobExecutionException {
-            jobs.cleanupForDemoMode();
-            log.trace("running job " + getClass().getSimpleName());
-        }
-
-    }
-
-
 
     @DisallowConcurrentExecution
     @Log4j2
@@ -268,21 +226,4 @@ public class Jobs {
             jobs.processReleasedTickets();
         }
     }
-
-    @DisallowConcurrentExecution
-    @Log4j2
-    public static class CleanupUnreferencedBlobFiles implements Job {
-
-        public static long INTERVAL = ONE_MINUTE * 60;
-
-        @Autowired
-        private Jobs jobs;
-
-        @Override
-        public void execute(JobExecutionContext context) throws JobExecutionException {
-            log.trace("running job " + getClass().getSimpleName());
-            jobs.cleanupUnreferencedBlobFiles();
-        }
-    }
-
 }
