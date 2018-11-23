@@ -4,13 +4,13 @@
 root = true
 
 # Unix-style newlines with a newline ending every file
-
-[*.properties]
-charset = latin1
-
 [*]
 end_of_line = lf
 insert_final_newline = false
 charset = utf-8
 indent_style = space
 indent_size = 4
+
+[*.properties]
+charset = latin1
+
