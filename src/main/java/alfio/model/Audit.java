@@ -52,7 +52,9 @@ public class Audit {
         PRIVACY_POLICY_ACCEPTED,
         VAT_VALIDATION_SUCCESSFUL,
         VAT_FORMAL_VALIDATION_SUCCESSFUL,
-        GROUP_MEMBER_ACQUIRED
+        GROUP_MEMBER_ACQUIRED,
+        CREDIT_NOTE_ISSUED,
+        BILLING_DOCUMENT_GENERATED
     }
 
     private final String reservationId;

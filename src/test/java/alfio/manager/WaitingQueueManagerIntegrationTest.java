@@ -230,7 +230,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH));
 
-        ticketReservationManager.deleteOfflinePayment(event, reservationIdSingle, false);
+        ticketReservationManager.deleteOfflinePayment(event, reservationIdSingle, false, false, null);
 
         List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
         assertEquals(1, subscriptions.size());
@@ -288,7 +288,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH));
 
-        ticketReservationManager.deleteOfflinePayment(event, reservationIdSingle, false);
+        ticketReservationManager.deleteOfflinePayment(event, reservationIdSingle, false, false, null);
 
         List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
         assertEquals(1, subscriptions.size());
@@ -341,8 +341,8 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", first.getId(), Locale.ENGLISH));
         assertTrue(waitingQueueManager.subscribe(event, new CustomerName("John Doe 2", "John", "Doe 2", event), "john@doe2.com", second.getId(), Locale.ENGLISH));
 
-        ticketReservationManager.deleteOfflinePayment(event, reservationIdSingleFirst, false);
-        ticketReservationManager.deleteOfflinePayment(event, reservationIdSingleSecond, false);
+        ticketReservationManager.deleteOfflinePayment(event, reservationIdSingleFirst, false, false, null);
+        ticketReservationManager.deleteOfflinePayment(event, reservationIdSingleSecond, false, false, null);
 
         List<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> subscriptions = waitingQueueManager.distributeSeats(event).collect(Collectors.toList());
         assertEquals(2, subscriptions.size());
@@ -440,7 +440,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         List<Integer> ticketIds = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
         assertEquals(2, ticketIds.size());
 
-        ticketReservationManager.deleteOfflinePayment(event, reservationId, false);
+        ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, null);
 
         List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(event.getId(), ZonedDateTime.now(event.getZoneId()));
         assertEquals(2, releasedButExpired.size());

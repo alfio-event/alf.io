@@ -526,7 +526,7 @@ public class ReservationController {
             return redirectReservation(optionalReservation, eventName, reservationId);
         }
         if (paymentForm.shouldCancelReservation()) {
-            ticketReservationManager.cancelPendingReservation(reservationId, false);
+            ticketReservationManager.cancelPendingReservation(reservationId, false, null);
             SessionUtil.cleanupSession(request);
             return "redirect:/event/" + eventName + "/";
         }
@@ -685,7 +685,7 @@ public class ReservationController {
         }
 
         if (cancelReservation) {
-            ticketReservationManager.cancelPendingReservation(reservationId, false);    //FIXME
+            ticketReservationManager.cancelPendingReservation(reservationId, false, null);    //FIXME
             SessionUtil.cleanupSession(request);
             return Optional.of("redirect:/event/" + eventName + "/");
         }

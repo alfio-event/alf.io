@@ -106,6 +106,7 @@ public class TicketReservationManagerUnitTest {
         userRepository = mock(UserRepository.class);
         extensionManager = mock(ExtensionManager.class);
         groupManager = mock(GroupManager.class);
+        BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
 
         manager = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -132,7 +133,8 @@ public class TicketReservationManagerUnitTest {
             userRepository,
             extensionManager,
             mock(TicketSearchRepository.class),
-            groupManager);
+            groupManager,
+            billingDocumentRepository);
 
     }
 

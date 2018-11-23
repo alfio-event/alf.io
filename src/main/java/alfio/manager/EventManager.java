@@ -909,6 +909,7 @@ public class EventManager {
 		eventDeleterRepository.deleteSponsorScan(eventId);
 		eventDeleterRepository.deleteTicket(eventId);
 		eventDeleterRepository.deleteTransactions(eventId);
+        eventDeleterRepository.deleteBillingDocuments(eventId);
 		eventDeleterRepository.deleteReservation(eventId);
 		
 		eventDeleterRepository.deletePromoCode(eventId);

@@ -46,6 +46,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
+import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import de.danielbechler.diff.ObjectDifferBuilder;
 import de.danielbechler.diff.node.DiffNode;
 import de.danielbechler.diff.node.Visit;
@@ -76,9 +77,11 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static alfio.model.Audit.EntityType.RESERVATION;
+import static alfio.model.BillingDocument.Type.INVOICE;
+import static alfio.model.BillingDocument.Type.RECEIPT;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
-import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
-import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
+import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.formatCents;
 import static alfio.util.MonetaryUtil.unitToCents;
@@ -127,6 +130,7 @@ public class TicketReservationManager {
     private final ExtensionManager extensionManager;
     private final TicketSearchRepository ticketSearchRepository;
     private final GroupManager groupManager;
+    private final BillingDocumentRepository billingDocumentRepository;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -166,7 +170,8 @@ public class TicketReservationManager {
                                     AuditingRepository auditingRepository,
                                     UserRepository userRepository,
                                     ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository,
-                                    GroupManager groupManager) {
+                                    GroupManager groupManager,
+                                    BillingDocumentRepository billingDocumentRepository) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -196,6 +201,7 @@ public class TicketReservationManager {
         this.extensionManager = extensionManager;
         this.ticketSearchRepository = ticketSearchRepository;
         this.groupManager = groupManager;
+        this.billingDocumentRepository = billingDocumentRepository;
     }
     
     /**
@@ -240,12 +246,6 @@ public class TicketReservationManager {
         });
 
         additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, discount.orElse(null)));
-
-        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-
-        OrderSummary orderSummary = orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
-        ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
-
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
         if(isDiscountCodeUsageExceeded(reservationId)) {
             throw new TooManyTicketsForDiscountCodeException();
@@ -491,9 +491,10 @@ public class TicketReservationManager {
 
         Locale language = findReservationLanguage(reservationId);
 
+        final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
+        createBillingDocumentModel(event, finalReservation, username);
         sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
 
-        final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
         extensionManager.handleReservationConfirmation(finalReservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), event.getId());
     }
 
@@ -523,18 +524,8 @@ public class TicketReservationManager {
 
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
         List<Mailer.Attachment> attachments = new ArrayList<>(1);
-        if(!summary.getCashPayment() && !summary.getFree()) { //#459 - include PDF invoice in reservation email
-            Map<String, String> model = new HashMap<>();
-            model.put("reservationId", reservationId);
-            model.put("eventId", Integer.toString(event.getId()));
-            model.put("language", Json.toJson(language));
-            model.put("reservationEmailModel", Json.toJson(reservationEmailModel));
-            if(ticketReservation.getHasInvoiceNumber()) {
-                attachments.add(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
-            } else if(!summary.getNotYetPaid()) {
-                attachments.add(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
-            }
-
+        if(mustGenerateBillingDocument(summary, ticketReservation)) { //#459 - include PDF invoice in reservation email
+            attachments =  generateReceiptOrInvoice(event, ticketReservation, language, reservationId, getOrCreateBillingDocumentModel(event, ticketReservation, null));
         }
 
         notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
@@ -542,20 +533,90 @@ public class TicketReservationManager {
             () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language), attachments);
     }
 
+    public static boolean mustGenerateBillingDocument(OrderSummary summary, TicketReservation ticketReservation) {
+        return !summary.getFree() && (!summary.getNotYetPaid() || (summary.getWaitingForPayment() && ticketReservation.isInvoiceRequested()));
+    }
+
+    public static List<Mailer.Attachment> generateReceiptOrInvoice(Event event, TicketReservation ticketReservation, Locale language, String reservationId, Map<String, Object> billingDocumentModel) {
+        Map<String, String> model = new HashMap<>();
+        model.put("reservationId", reservationId);
+        model.put("eventId", Integer.toString(event.getId()));
+        model.put("language", Json.toJson(language));
+        model.put("reservationEmailModel", Json.toJson(billingDocumentModel));
+        if(ticketReservation.getHasInvoiceNumber()) {
+            return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
+        } else {
+            return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+        }
+    }
+
     private Locale findReservationLanguage(String reservationId) {
         return ticketReservationRepository.findOptionalReservationById(reservationId).map(TicketReservation::getUserLanguage).map(Locale::forLanguageTag).orElse(Locale.ENGLISH);
     }
 
-    public void deleteOfflinePayment(Event event, String reservationId, boolean expired) {
+    public void deleteOfflinePayment(Event event, String reservationId, boolean expired, boolean credit, String username) {
         TicketReservation reservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
         Validate.isTrue(reservation.getStatus() == OFFLINE_PAYMENT, "Invalid reservation status");
+        if(credit) {
+            ensureBillingDocumentIsPresent(event, reservation, username);
+        }
         Map<String, Object> emailModel = prepareModelForReservationEmail(event, reservation);
         Locale reservationLanguage = findReservationLanguage(reservationId);
-        String subject = messageSource.getMessage("reservation-email-expired-subject", new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, reservationLanguage);
-        cancelReservation(reservationId, expired);
+        String subject = messageSource.getMessage(credit ? "credit-note-issued-email-subject" : "reservation-email-expired-subject", new Object[]{reservation.getInvoiceNumber(), event.getDisplayName()}, reservationLanguage);
+        cancelReservation(reservationId, expired, credit, username);
         notificationManager.sendSimpleEmail(event, reservation.getEmail(), subject,
-            () ->  templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
+            () ->  templateManager.renderTemplate(event, credit ? TemplateResource.CREDIT_NOTE_ISSUED_EMAIL : TemplateResource.OFFLINE_RESERVATION_EXPIRED_EMAIL, emailModel, reservationLanguage)
         );
+    }
+
+    @Transactional
+    void issueCreditNoteForReservation(Event event, String reservationId, String username) {
+        ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.CREDIT_NOTE_ISSUED.toString());
+        auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
+    }
+
+    /**
+     * Generates the billing document before updating the reservation, if needed.
+     * This will ease the migration to the new BillingDocument structure
+     *
+     * @param event
+     * @param reservation
+     */
+    @Transactional
+    void ensureBillingDocumentIsPresent(Event event, TicketReservation reservation, String username) {
+        if(reservation.getStatus() == PENDING || reservation.getStatus() == CANCELLED) {
+            return;
+        }
+        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
+        if(TicketReservationManager.mustGenerateBillingDocument(summary, reservation)) {
+            getOrCreateBillingDocumentModel(event, reservation, username);
+        }
+    }
+
+    @Transactional
+    Map<String, Object> createBillingDocumentModel(Event event, TicketReservation reservation, String username) {
+        Optional<String> vat = getVAT(event);
+        String existingModel = reservation.getInvoiceModel();
+        boolean existingModelPresent = StringUtils.isNotBlank(existingModel);
+        OrderSummary summary = existingModelPresent ? Json.fromJson(existingModel, OrderSummary.class) : orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage()));
+        Map<String, Object> model = prepareModelForReservationEmail(event, reservation, vat, summary);
+        String number = reservation.getHasInvoiceNumber() ? reservation.getInvoiceNumber() : UUID.randomUUID().toString();
+        if(!existingModelPresent) {
+            //we still save invoice/receipt model to tickets_reservation for backward compatibility
+            ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservation.getId(), Json.toJson(summary));
+        }
+        AffectedRowCountAndKey<Integer> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, reservation.getHasInvoiceNumber() ? INVOICE : RECEIPT, Json.toJson(model), ZonedDateTime.now());
+        auditingRepository.insert(reservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.BILLING_DOCUMENT_GENERATED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), singletonList(singletonMap("documentId", doc.getKey())));
+        return model;
+    }
+
+    @Transactional
+    public Map<String, Object> getOrCreateBillingDocumentModel(Event event, TicketReservation reservation, String username) {
+        Optional<BillingDocument> existing = billingDocumentRepository.findLatestByReservationId(reservation.getId());
+        if(existing.isPresent()) {
+            return existing.get().getModel();
+        }
+        return createBillingDocumentModel(event, reservation, username);
     }
 
     @Transactional(readOnly = true)
@@ -569,10 +630,19 @@ public class TicketReservationManager {
         Map<Integer, List<Ticket>> ticketsByCategory = ticketRepository.findTicketsInReservation(reservation.getId())
             .stream()
             .collect(groupingBy(Ticket::getCategoryId));
-        List<TicketWithCategory> ticketsWithCategory = ticketCategoryRepository.findByIds(ticketsByCategory.keySet())
-            .stream()
-            .flatMap(tc -> ticketsByCategory.get(tc.getId()).stream().map(t -> new TicketWithCategory(t, tc)))
-            .collect(Collectors.toList());
+        final List<TicketWithCategory> ticketsWithCategory;
+        if(!ticketsByCategory.isEmpty()) {
+            ticketsWithCategory = ticketCategoryRepository.findByIds(ticketsByCategory.keySet())
+                .stream()
+                .flatMap(tc -> ticketsByCategory.get(tc.getId()).stream().map(t -> new TicketWithCategory(t, tc)))
+                .collect(Collectors.toList());
+        } else {
+            ticketsWithCategory = Collections.emptyList();
+        }
+        //TODO euBusiness -> reverse charge applied
+//        boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
+//            && configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)).contains(reservation.getVatCountryCode())
+//            && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
         return TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, ticketsWithCategory, summary, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner);
     }
 
@@ -655,6 +725,7 @@ public class TicketReservationManager {
 
         Date eventTime = new Date();
         auditingRepository.insert(reservationId, null, eventId, Audit.EventType.RESERVATION_COMPLETE, eventTime, Audit.EntityType.RESERVATION, reservationId);
+        ticketReservationRepository.updateRegistrationTimestamp(reservationId, ZonedDateTime.now(spec.getEvent().getZoneId()));
         if(spec.isTcAccepted()) {
             auditingRepository.insert(reservationId, null, eventId, Audit.EventType.TERMS_CONDITION_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", spec.getEvent().getTermsAndConditionsUrl())));
         }
@@ -736,7 +807,9 @@ public class TicketReservationManager {
             .collect(Collectors.groupingBy(ReservationIdAndEventId::getEventId));
         reservationIdsByEvent.forEach((eventId, reservations) -> {
             Event event = eventRepository.findById(eventId);
-            extensionManager.handleReservationsExpiredForEvent(event, reservations.stream().map(ReservationIdAndEventId::getId).collect(Collectors.toList()));
+            List<String> reservationIds = reservations.stream().map(ReservationIdAndEventId::getId).collect(Collectors.toList());
+            extensionManager.handleReservationsExpiredForEvent(event, reservationIds);
+            billingDocumentRepository.deleteForReservations(reservationIds, eventId);
         });
         //
         ticketReservationRepository.remove(expiredReservationIds);
@@ -753,7 +826,7 @@ public class TicketReservationManager {
                 Event event = eventRepository.findByReservationId(reservationId);
                 boolean enabled = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT), true);
                 if(enabled) {
-                    deleteOfflinePayment(event, reservationId, true);
+                    deleteOfflinePayment(event, reservationId, true, false, null);
                 } else {
                     log.trace("Will not cleanup reservation with id {} because the automatic removal has been disabled", reservationId);
                 }
@@ -967,12 +1040,12 @@ public class TicketReservationManager {
                 .orElse(true);
     }
 
-    public void cancelPendingReservation(String reservationId, boolean expired) {
+    public void cancelPendingReservation(String reservationId, boolean expired, String username) {
         Validate.isTrue(ticketReservationRepository.findReservationById(reservationId).getStatus() == TicketReservationStatus.PENDING, "status is not PENDING");
-        cancelReservation(reservationId, expired);
+        cancelReservation(reservationId, expired, false, username);
     }
 
-    private void cancelReservation(String reservationId, boolean expired) {
+    private void cancelReservation(String reservationId, boolean expired, boolean credit, String username) {
         List<String> reservationIdsToRemove = singletonList(reservationId);
         specialPriceRepository.resetToFreeAndCleanupForReservation(reservationIdsToRemove);
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
@@ -983,23 +1056,37 @@ public class TicketReservationManager {
         Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
         waitingQueueManager.fireReservationExpired(reservationId);
         groupManager.deleteWhitelistedTicketsForReservation(reservationId);
-        deleteReservation(event, reservationId, expired);
-        auditingRepository.insert(reservationId, null, event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
+        deleteReservation(event, reservationId, expired, credit, username);
+        auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
 
-    private void deleteReservation(Event event, String reservationIdToRemove, boolean expired) {
+    private void deleteReservation(Event event, String reservationIdToRemove, boolean expired, boolean credit, String username) {
         //handle removal of ticket
         List<String> wrappedReservationIdToRemove = Collections.singletonList(reservationIdToRemove);
         waitingQueueManager.cleanExpiredReservations(wrappedReservationIdToRemove);
+        boolean deleteReservation = false;
+        if(!credit) {
+            int result = billingDocumentRepository.deleteForReservation(reservationIdToRemove, event.getId());
+            if(result > 0) {
+                log.warn("deleted {} documents for reservation id {}", result, reservationIdToRemove);
+            }
+            deleteReservation = true;
+        } else {
+            issueCreditNoteForReservation(event, reservationIdToRemove, username);
+        }
         //
         if(expired) {
             extensionManager.handleReservationsExpiredForEvent(event, wrappedReservationIdToRemove);
-        } else {
+        } else if(!credit) {
             extensionManager.handleReservationsCancelledForEvent(event, wrappedReservationIdToRemove);
+        } else {
+            extensionManager.handleReservationsCreditNoteIssuedForEvent(event, wrappedReservationIdToRemove);
         }
-        //
-        int removedReservation = ticketReservationRepository.remove(wrappedReservationIdToRemove);
-        Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
+
+        if(deleteReservation) {
+            int removedReservation = ticketReservationRepository.remove(wrappedReservationIdToRemove);
+            Validate.isTrue(removedReservation == 1, "expected exactly one removed reservation, got " + removedReservation);
+        }
     }
 
     public Optional<SpecialPrice> getSpecialPriceByCode(String code) {
@@ -1027,7 +1114,7 @@ public class TicketReservationManager {
         } else if(price.getStatus() == Status.PENDING) {
             Optional<Ticket> optionalTicket = ticketRepository.findBySpecialPriceId(price.getId());
             if(optionalTicket.isPresent()) {
-                cancelPendingReservation(optionalTicket.get().getTicketsReservationId(), false);
+                cancelPendingReservation(optionalTicket.get().getTicketsReservationId(), false, null);
                 return getSpecialPriceByCode(price.getCode());
             }
         }
@@ -1374,7 +1461,7 @@ public class TicketReservationManager {
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
 
         if(ticketRepository.countTicketsInReservation(reservationId) == 0 && !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
-            deleteReservation(event, reservationId, false);
+            deleteReservation(event, reservationId, false, false, null);
             auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
         } else {
             extensionManager.handleTicketCancelledForEvent(event, Collections.singletonList(ticket.getUuid()));
@@ -1408,8 +1495,12 @@ public class TicketReservationManager {
         return ticketReservationRepository.findAllReservationsWaitingForPaymentCountInEventId(eventId);
     }
 
-    public List<TicketReservation> findAllInvoices(int eventId) {
-        return ticketReservationRepository.findAllReservationsWithInvoices(eventId);
+    public List<Pair<TicketReservation, BillingDocument>> findAllInvoices(int eventId) {
+        List<BillingDocument> documents = billingDocumentRepository.findAllOfTypeForEvent(BillingDocument.Type.INVOICE, eventId);
+        Map<String, BillingDocument> documentsByReservationId = documents.stream().collect(toMap(BillingDocument::getReservationId, Function.identity()));
+        return ticketReservationRepository.findByIds(documentsByReservationId.keySet()).stream()
+            .map(r -> Pair.of(r, documentsByReservationId.get(r.getId())))
+            .collect(toList());
     }
 
     public Integer countInvoices(int eventId) {

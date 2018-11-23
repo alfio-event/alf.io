@@ -209,7 +209,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         PaymentResult confirm2 = ticketReservationManager.performPayment(specification2, totalPrice, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(confirm2.isSuccessful());
 
-        ticketReservationManager.deleteOfflinePayment(event, reservationId2, false);
+        ticketReservationManager.deleteOfflinePayment(event, reservationId2, false, false, null);
 
         Assert.assertFalse(ticketReservationManager.findById(reservationId2).isPresent());
     }
@@ -375,7 +375,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
-        ticketReservationManager.deleteOfflinePayment(event, reservationId, false);
+        ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, null);
         waitingQueueManager.distributeSeats(event);
 
         mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());

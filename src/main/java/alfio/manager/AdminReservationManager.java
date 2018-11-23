@@ -535,7 +535,7 @@ public class AdminReservationManager {
             handleTicketsRefund(toRefund, e, reservation, ticketsById, username);
 
             if(removeReservation) {
-                markAsCancelled(reservation);
+                markAsCancelled(reservation, username, e.getId());
                 additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
             }
         });
@@ -554,12 +554,23 @@ public class AdminReservationManager {
 
     @Transactional
     public void removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username) {
-        loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
+        removeReservation(eventName, reservationId, refund, notify, username, true)
+            .ifSuccess(pair -> markAsCancelled(pair.getRight(), username, pair.getLeft().getId()));
+    }
+
+    @Transactional
+    public void creditReservation(String eventName, String reservationId, boolean refund, boolean notify, String username) {
+        removeReservation(eventName, reservationId, refund, notify, username, false)
+            .ifSuccess(pair -> ticketReservationManager.issueCreditNoteForReservation(pair.getLeft(), pair.getRight().getId(), username));
+    }
+
+    private Result<Pair<Event, TicketReservation>> removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username, boolean removeReservation) {
+        return loadReservation(eventName, reservationId, username).map((res) -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
 
-            removeTicketsFromReservation(reservation, e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, true, false);
+            removeTicketsFromReservation(reservation, e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, false);
 
             additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
 
@@ -567,8 +578,7 @@ public class AdminReservationManager {
                 //fully refund
                 paymentManager.refund(reservation, e, null, username);
             }
-
-            markAsCancelled(reservation);
+            return Pair.of(e, reservation);
         });
     }
 
@@ -631,8 +641,10 @@ public class AdminReservationManager {
             () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
     }
 
-    private void markAsCancelled(TicketReservation ticketReservation) {
+    private void markAsCancelled(TicketReservation ticketReservation, String username, int eventId) {
         ticketReservationRepository.updateReservationStatus(ticketReservation.getId(), TicketReservationStatus.CANCELLED.toString());
+        auditingRepository.insert(ticketReservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null),
+            eventId, Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
     }
 
     private void handleTicketsRefund(List<Integer> toRefund, Event e, TicketReservation reservation, Map<Integer, Ticket> ticketsById, String username) {

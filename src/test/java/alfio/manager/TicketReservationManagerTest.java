@@ -38,6 +38,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.TemplateManager;
 import alfio.util.WorkingDaysAdjusters;
+import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
@@ -142,6 +143,7 @@ class TicketReservationManagerTest {
         GroupManager groupManager = mock(GroupManager.class);
         UserRepository userRepository = mock(UserRepository.class);
         ExtensionManager extensionManager = mock(ExtensionManager.class);
+        BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
 
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -166,7 +168,10 @@ class TicketReservationManagerTest {
             invoiceSequencesRepository,
             auditingRepository,
             userRepository,
-            extensionManager, ticketSearchRepository, groupManager);
+            extensionManager,
+            ticketSearchRepository,
+            groupManager,
+            billingDocumentRepository);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -190,6 +195,7 @@ class TicketReservationManagerTest {
         when(extensionManager.handleInvoiceGeneration(any(), any(), any())).thenReturn(Optional.empty());
         when(messageSource.getMessage(eq("ticket-has-changed-owner-subject"), any(), any())).thenReturn("subject");
         when(messageSource.getMessage(eq("reminder.ticket-not-assigned.subject"), any(), any())).thenReturn("subject");
+        when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(), anyString(), any())).thenReturn(new AffectedRowCountAndKey<>(1, 1));
     }
 
     private void initUpdateTicketOwner(Ticket original, Ticket modified, String ticketId, String originalEmail, String originalName, UpdateTicketOwnerForm form) {
@@ -794,12 +800,20 @@ class TicketReservationManagerTest {
         when(reservation.getFullName()).thenReturn("Full Name");
         when(reservation.getEmail()).thenReturn("ciccio");
         when(reservation.getValidity()).thenReturn(new Date());
-        when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(reservation));
+        when(reservation.getInvoiceModel()).thenReturn("{\"summary\":[], \"originalTotalPrice\":{\"priceWithVAT\":100}}");
+
+        TicketReservation copy = copy(reservation);
+        Event event = copy(this.event);
+        when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(copy));
+        when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(copy);
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), any(), eq(PaymentProxy.OFFLINE.toString()), isNull())).thenReturn(1);
         when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.of("vatnr"));
         when(ticketRepository.findTicketsInReservation(eq(RESERVATION_ID))).thenReturn(Collections.emptyList());
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
+        when(reservation.getUserLanguage()).thenReturn("en");
+        when(reservation.getPromoCodeDiscountId()).thenReturn(null);
+        when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(new Organization(1, "", "", ""));
 
         trm.confirmOfflinePayment(event, RESERVATION_ID, "username");
         verify(ticketReservationRepository, atLeastOnce()).findOptionalReservationById(RESERVATION_ID);
@@ -816,6 +830,67 @@ class TicketReservationManagerTest {
         verify(configurationManager, atLeastOnce()).getShortReservationID(eq(event), eq(RESERVATION_ID));
         verify(ticketRepository).countTicketsInReservation(eq(RESERVATION_ID));
         verify(configurationManager).getBooleanConfigValue(any(), eq(false));
+    }
+
+    private static Event copy(Event event) {
+        return new Event(
+            EVENT_ID,
+            event.getType(),
+            event.getShortName(),
+            event.getDisplayName(),
+            event.getLocation(),
+            event.getLatitude(),
+            event.getLongitude(),
+            Optional.ofNullable(event.getBegin()).orElse(ZonedDateTime.now().plusDays(2).minusHours(2)),
+            Optional.ofNullable(event.getEnd()).orElse(ZonedDateTime.now().plusDays(2)),
+            "UTC",
+            event.getWebsiteUrl(),
+            event.getExternalUrl(),
+            event.getFileBlobId(),
+            event.getTermsAndConditionsUrl(),
+            event.getPrivacyPolicyUrl(),
+            event.getImageUrl(),
+            event.getCurrency(),
+            event.getVat(),
+            event.getShortName(),
+            event.getPrivateKey(),
+            event.getOrganizationId(),
+            event.getLocales(),
+            event.getId(),
+            event.getVatStatus(),
+            event.getVersion(),
+            event.getStatus()
+        );
+    }
+
+    private static TicketReservation copy(TicketReservation reservation) {
+        return new TicketReservation(reservation.getId(),
+            reservation.getValidity(),
+            reservation.getStatus(),
+            reservation.getFullName(),
+            reservation.getFirstName(),
+            reservation.getLastName(),
+            reservation.getEmail(),
+            reservation.getBillingAddress(),
+            reservation.getConfirmationTimestamp(),
+            reservation.getLatestReminder(),
+            reservation.getPaymentMethod(),
+            reservation.getReminderSent(),
+            reservation.getPromoCodeDiscountId(),
+            reservation.isAutomatic(),
+            reservation.getUserLanguage(),
+            reservation.isDirectAssignmentRequested(),
+            reservation.getInvoiceNumber(),
+            reservation.getInvoiceModel(),
+            reservation.getVatStatus(),
+            reservation.getVatNr(),
+            reservation.getVatCountryCode(),
+            reservation.isInvoiceRequested(),
+            reservation.getUsedVatPercent(),
+            reservation.getVatIncluded(),
+            reservation.getCreationTimestamp(),
+            reservation.getCustomerReference(),
+            reservation.getRegistrationTimestamp());
     }
 
     @Test
