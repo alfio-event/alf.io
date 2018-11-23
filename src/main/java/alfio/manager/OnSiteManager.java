@@ -24,6 +24,7 @@ import alfio.model.transaction.PaymentProvider;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
 import static alfio.model.system.ConfigurationKeys.ON_SITE_ENABLED;
@@ -31,6 +32,7 @@ import static alfio.model.system.ConfigurationKeys.ON_SITE_ENABLED;
 @Component
 @Log4j2
 @AllArgsConstructor
+@Transactional(readOnly = true)
 public class OnSiteManager implements PaymentProvider {
 
     private final ConfigurationManager configurationManager;

@@ -30,6 +30,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -43,6 +44,7 @@ import static java.util.stream.Collectors.toMap;
 
 @Component
 @AllArgsConstructor
+@Transactional(readOnly = true)
 public class EventStatisticsManager {
 
     private final EventRepository eventRepository;
