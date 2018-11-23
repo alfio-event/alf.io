@@ -73,7 +73,7 @@ public class Jobs {
     @Scheduled(fixedRate = ONE_MINUTE * 60)
     public void cleanupUnreferencedBlobFiles() {
         log.trace("running job cleanupUnreferencedBlobFiles");
-        fileUploadManager.cleanupUnreferencedBlobFiles();
+        fileUploadManager.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), -1));
     }
 
 
