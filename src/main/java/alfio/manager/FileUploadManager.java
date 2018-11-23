@@ -27,7 +27,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -117,8 +116,8 @@ public class FileUploadManager {
         return digest;
     }
 
-    public void cleanupUnreferencedBlobFiles() {
-        int deleted = repository.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), -1));
+    public void cleanupUnreferencedBlobFiles(Date date) {
+        int deleted = repository.cleanupUnreferencedBlobFiles(date);
         log.debug("removed {} unused file_blob", deleted);
     }
 

@@ -74,11 +74,11 @@ public interface TicketReservationRepository {
     @Query("select count(id) from tickets_reservation where status = 'OFFLINE_PAYMENT' and event_id_fk = :eventId")
     Integer findAllReservationsWaitingForPaymentCountInEventId(@Bind("eventId") int eventId);
 
-    @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false")
-    List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
+    @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false for update skip locked")
+    List<TicketReservation> findAllOfflinePaymentReservationForNotificationForUpdate(@Bind("expiration") Date expiration);
 
-    @Query("select id, full_name, first_name, last_name, email_address, event_id_fk, validity from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and event_id_fk = :eventId")
-    List<TicketReservationInfo> findAllOfflinePaymentReservationWithExpirationBefore(@Bind("expiration") ZonedDateTime expiration, @Bind("eventId") int eventId);
+    @Query("select id, full_name, first_name, last_name, email_address, event_id_fk, validity from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and event_id_fk = :eventId for update skip locked")
+    List<TicketReservationInfo> findAllOfflinePaymentReservationWithExpirationBeforeForUpdate(@Bind("expiration") ZonedDateTime expiration, @Bind("eventId") int eventId);
 
     @Query("update tickets_reservation set offline_payment_reminder_sent = true where id = :reservationId")
     int flagAsOfflinePaymentReminderSent(@Bind("reservationId") String reservationId);
@@ -104,14 +104,14 @@ public interface TicketReservationRepository {
     @Query("select * from tickets_reservation where id = :id")
     Optional<TicketReservation> findOptionalReservationById(@Bind("id") String id);
 
-    @Query("select id from tickets_reservation where validity < :date and status = 'PENDING'")
-    List<String> findExpiredReservation(@Bind("date") Date date);
+    @Query("select id from tickets_reservation where validity < :date and status = 'PENDING' for update skip locked")
+    List<String> findExpiredReservationForUpdate(@Bind("date") Date date);
 
-    @Query("select id from tickets_reservation where validity < :date and status = 'OFFLINE_PAYMENT'")
-    List<String> findExpiredOfflineReservations(@Bind("date") Date date);
+    @Query("select id from tickets_reservation where validity < :date and status = 'OFFLINE_PAYMENT' for update skip locked")
+    List<String> findExpiredOfflineReservationsForUpdate(@Bind("date") Date date);
 
-    @Query("select id from tickets_reservation where validity < :date and status = 'IN_PAYMENT'")
-    List<String> findStuckReservations(@Bind("date") Date date);
+    @Query("select id from tickets_reservation where validity < :date and status = 'IN_PAYMENT' for update skip locked")
+    List<String> findStuckReservationsForUpdate(@Bind("date") Date date);
 
     @Query("delete from tickets_reservation where id in (:ids)")
     int remove(@Bind("ids") List<String> ids);

@@ -17,12 +17,14 @@
 package alfio.manager;
 
 import alfio.repository.EventRepository;
+import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Arrays;
 import java.util.Locale;
@@ -32,17 +34,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Component
+@AllArgsConstructor
+@Transactional(readOnly = true)
 public class EventNameManager {
 
     private static final Pattern NUMBER_MATCHER = Pattern.compile("^\\d+$");
     private static final String SPACES_AND_PUNCTUATION = "[\\s\\p{Punct}]";
     private static final String FIND_EVIL_CHARACTERS = "[^\\sA-Z\\-a-z0-9]";
     private final EventRepository eventRepository;
-
-    @Autowired
-    public EventNameManager(EventRepository eventRepository) {
-        this.eventRepository = eventRepository;
-    }
 
     /**
      * Generates and returns a short name based on the given display name.<br>

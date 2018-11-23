@@ -121,7 +121,7 @@ public class WaitingQueueManagerTest {
         when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(0);
         when(ticketRepository.countWaiting(eq(eventId))).thenReturn(1);
         manager.distributeSeats(event);
-        verify(waitingQueueRepository).loadAllWaiting(eq(eventId));
+        verify(waitingQueueRepository).loadAllWaitingForUpdate(eq(eventId));
         verify(ticketRepository).countWaiting(eq(eventId));
         verify(ticketRepository).revertToFree(eq(eventId));
     }
@@ -132,7 +132,7 @@ public class WaitingQueueManagerTest {
         when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(0);
         when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
         manager.distributeSeats(event);
-        verify(waitingQueueRepository).loadAllWaiting(eq(eventId));
+        verify(waitingQueueRepository).loadAllWaitingForUpdate(eq(eventId));
         verify(ticketRepository).countWaiting(eq(eventId));
         verify(ticketRepository, never()).revertToFree(eq(eventId));
     }
@@ -148,11 +148,11 @@ public class WaitingQueueManagerTest {
         when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
         when(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false)).thenReturn(true);
         when(ticketRepository.selectWaitingTicketsForUpdate(eventId, Ticket.TicketStatus.PRE_RESERVED.name(), 1)).thenReturn(Collections.singletonList(ticket));
-        when(waitingQueueRepository.loadAllWaiting(eventId)).thenReturn(Collections.singletonList(subscription));
+        when(waitingQueueRepository.loadAllWaitingForUpdate(eventId)).thenReturn(Collections.singletonList(subscription));
         when(waitingQueueRepository.loadWaiting(eventId, 1)).thenReturn(Collections.singletonList(subscription));
         Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> stream = manager.distributeSeats(event);
         assertEquals(1L, stream.count());
-        verify(waitingQueueRepository).loadAllWaiting(eq(eventId));
+        verify(waitingQueueRepository).loadAllWaitingForUpdate(eq(eventId));
         verify(waitingQueueRepository).loadWaiting(eq(eventId), eq(1));
         verify(ticketRepository).countWaiting(eq(eventId));
         verify(ticketRepository, never()).revertToFree(eq(eventId));

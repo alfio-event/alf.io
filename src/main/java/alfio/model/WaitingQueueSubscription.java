@@ -18,12 +18,14 @@ package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.time.ZonedDateTime;
 import java.util.Locale;
 import java.util.Optional;
 
 @Getter
+@ToString
 public class WaitingQueueSubscription {
 
     public enum Status {

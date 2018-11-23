@@ -23,12 +23,14 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
+@Transactional(readOnly = true)
 public class I18nManager {
 
     private final EventRepository eventRepository;

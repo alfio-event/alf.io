@@ -60,9 +60,6 @@ public interface PromoCodeDiscountRepository {
     @Query("select count(*) from promo_code where (event_id_fk = :eventId and organization_id_fk is null) or (event_id_fk is null and organization_id_fk = :organizationId)")
     Integer countByEventAndOrganizationId(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
 
-    @Query("select count(*) from tickets_reservation where promo_code_id_fk = :id")
-    Integer countAppliedPromoCode(@Bind("id") int id);
-
     @Query("select count(b.id) from tickets_reservation a, ticket b" +
         " where (:currentId is null or a.id <> :currentId) and a.status in ('OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and a.promo_code_id_fk = :id" +
         " and b.tickets_reservation_id = a.id and (:categoriesJson is null or b.category_id in (:categories))")

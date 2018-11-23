@@ -125,4 +125,9 @@ public class IntegrationTestUtil {
         userRepository.create(UserManager.ADMIN_USERNAME, "", "The", "Administrator", "admin@localhost", true, User.Type.INTERNAL, null, null);
         authorityRepository.create(UserManager.ADMIN_USERNAME, Role.ADMIN.getRoleName());
     }
+
+    public static void removeAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {
+        authorityRepository.revokeAll(UserManager.ADMIN_USERNAME);
+        userRepository.deleteUser(userRepository.findIdByUserName(UserManager.ADMIN_USERNAME).get());
+    }
 }

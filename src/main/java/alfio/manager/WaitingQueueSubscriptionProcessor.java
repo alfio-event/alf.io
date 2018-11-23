@@ -64,7 +64,7 @@ public class WaitingQueueSubscriptionProcessor {
     private final TicketRepository ticketRepository;
     private final PlatformTransactionManager transactionManager;
 
-    void handleWaitingTickets() {
+    public void handleWaitingTickets() {
         Map<Boolean, List<Event>> activeEvents = eventManager.getActiveEvents().stream()
             .collect(Collectors.partitioningBy(this::isWaitingListFormEnabled));
         activeEvents.get(true).forEach(event -> {
@@ -84,7 +84,7 @@ public class WaitingQueueSubscriptionProcessor {
         activeEvents.get(false).forEach(eventManager::resetReleasedTickets);
     }
 
-    void revertTicketToFreeIfCategoryIsExpired(Event event) {
+    public void revertTicketToFreeIfCategoryIsExpired(Event event) {
         int eventId = event.getId();
         List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(eventId, ZonedDateTime.now(event.getZoneId()));
         Map<TicketCategory, List<TicketInfo>> releasedByCategory = releasedButExpired.stream().collect(Collectors.groupingBy(TicketInfo::getTicketCategory));
@@ -105,7 +105,7 @@ public class WaitingQueueSubscriptionProcessor {
                 || configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false);
     }
 
-    void distributeAvailableSeats(Event event) {
+    public void distributeAvailableSeats(Event event) {
         waitingQueueManager.distributeSeats(event).forEach(triple -> {
             WaitingQueueSubscription subscription = triple.getLeft();
             Locale locale = subscription.getLocale();

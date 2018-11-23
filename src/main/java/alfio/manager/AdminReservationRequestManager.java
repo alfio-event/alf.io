@@ -90,7 +90,7 @@ public class AdminReservationRequestManager {
             .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED));
     }
 
-    Pair<Integer, Integer> processPendingReservations() {
+    public Pair<Integer, Integer> processPendingReservations() {
         Map<Boolean, List<MapSqlParameterSource>> result = adminReservationRequestRepository.findPendingForUpdate(1000)
             .stream()
             .map(id -> {
