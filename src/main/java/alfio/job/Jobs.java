@@ -14,9 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager;
+package alfio.job;
 
 import alfio.config.Initializer;
+import alfio.manager.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.system.Configuration;
@@ -39,6 +40,7 @@ import java.util.List;
 /**
  * <p>Scheduled jobs. Important: all the jobs must be able to run on multiple instance at the same time.</p>
  * <p>Take great care in placing a select id ... for update skip locked to avoid multiple job execution for the same object</p>
+ * <p>Note: it's a separate package, as we need to ensure that the called method are public (and possibly @Transactional!)</p>
  *
  */
 @Component

@@ -31,6 +31,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Class SpecialPriceTokenGenerator.
@@ -39,6 +40,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Log4j2
+@Transactional
 public class SpecialPriceTokenGenerator {
 
     private static final char[] ADMITTED_CHARACTERS = new char[]{
@@ -65,7 +67,7 @@ public class SpecialPriceTokenGenerator {
         this.eventRepository = eventRepository;
     }
 
-    void generatePendingCodes() {
+    public void generatePendingCodes() {
         StopWatch stopWatch = new StopWatch();
         log.trace("start pending codes generation");
         stopWatch.start();
@@ -74,7 +76,7 @@ public class SpecialPriceTokenGenerator {
         log.trace("end. Took {} ms", stopWatch.getTime());
     }
 
-    void generatePendingCodesForCategory(int categoryId) {
+    public void generatePendingCodesForCategory(int categoryId) {
         specialPriceRepository.findWaitingElementsForCategory(categoryId).forEach(this::generateCode);
     }
 

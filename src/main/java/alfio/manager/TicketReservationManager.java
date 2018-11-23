@@ -717,7 +717,7 @@ public class TicketReservationManager {
     }
 
     @Transactional
-    void cleanupExpiredReservations(Date expirationDate) {
+    public void cleanupExpiredReservations(Date expirationDate) {
         List<String> expiredReservationIds = ticketReservationRepository.findExpiredReservationForUpdate(expirationDate);
         if(expiredReservationIds.isEmpty()) {
             return;
@@ -742,7 +742,7 @@ public class TicketReservationManager {
         ticketReservationRepository.remove(expiredReservationIds);
     }
 
-    void cleanupExpiredOfflineReservations(Date expirationDate) {
+    public void cleanupExpiredOfflineReservations(Date expirationDate) {
         ticketReservationRepository.findExpiredOfflineReservationsForUpdate(expirationDate)
             .forEach(this::cleanupOfflinePayment);
     }
@@ -1206,7 +1206,7 @@ public class TicketReservationManager {
         });
     }
 
-    void sendReminderForOfflinePayments() {
+    public void sendReminderForOfflinePayments() {
         Date expiration = truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE);
         ticketReservationRepository.findAllOfflinePaymentReservationForNotificationForUpdate(expiration).stream()
                 .map(reservation -> {
@@ -1232,7 +1232,7 @@ public class TicketReservationManager {
     }
 
     //called each hour
-    void sendReminderForOfflinePaymentsToEventManagers() {
+    public void sendReminderForOfflinePaymentsToEventManagers() {
         eventRepository.findAllActives(ZonedDateTime.now(Clock.systemUTC())).stream().filter(event -> {
             ZonedDateTime dateTimeForEvent = ZonedDateTime.now(event.getZoneId());
             return dateTimeForEvent.truncatedTo(ChronoUnit.HOURS).getHour() == 5; //only for the events at 5:00 local time
@@ -1253,14 +1253,14 @@ public class TicketReservationManager {
         });
     }
 
-    void sendReminderForTicketAssignment() {
+    public void sendReminderForTicketAssignment() {
         getNotifiableEventsStream()
                 .map(e -> Pair.of(e, ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
                 .forEach(p -> Wrappers.voidTransactionWrapper(this::sendAssignmentReminder, p));
     }
 
-    void sendReminderForOptionalData() {
+    public void sendReminderForOptionalData() {
         getNotifiableEventsStream()
                 .filter(e -> configurationManager.getBooleanConfigValue(Configuration.from(e.getOrganizationId(), e.getId(), OPTIONAL_DATA_REMINDER_ENABLED), true))
                 .filter(e -> ticketFieldRepository.countAdditionalFieldsForEvent(e.getId()) > 0)
