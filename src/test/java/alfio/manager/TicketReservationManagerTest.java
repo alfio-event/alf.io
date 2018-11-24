@@ -47,6 +47,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.io.IOException;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -58,8 +59,8 @@ import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
 import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
 import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
@@ -433,16 +434,18 @@ class TicketReservationManagerTest {
         ZonedDateTime offlinePaymentDeadline = BankTransferManager.getOfflinePaymentDeadline(new PaymentContext(event), configurationManager);
 
         long days = ChronoUnit.DAYS.between(LocalDate.now(), offlinePaymentDeadline.toLocalDate());
-        assertTrue(days == 1 || days == 3 );
-        //FIXME, this test return 1 or 3 in function of when it's executed (normally, on friday -> 3), MON-THU -> 1, SAT-SUN -> ?
-        //
+        assertTrue("value must be 3 on Friday", LocalDate.now().getDayOfWeek() != DayOfWeek.FRIDAY || days == 3);
+        assertTrue("value must be 2 on Saturday",LocalDate.now().getDayOfWeek() != DayOfWeek.SATURDAY || days == 2);
+        assertTrue("value must be 1 on week days",!EnumSet.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY).contains(LocalDate.now().getDayOfWeek()) || days == 1);
     }
 
     @Test
     void returnConfiguredWaitingTimeConsideringEventStart() {
         initOfflinePaymentTest();
         when(event.getBegin()).thenReturn(ZonedDateTime.now().plusDays(1));
-        assertEquals(1, BankTransferManager.getOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager).getAsInt());
+        OptionalInt offlinePaymentWaitingPeriod = BankTransferManager.getOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager);
+        assertTrue(offlinePaymentWaitingPeriod.isPresent());
+        assertEquals(1, offlinePaymentWaitingPeriod.getAsInt());
     }
 
     @Test
