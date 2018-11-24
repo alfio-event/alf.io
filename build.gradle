@@ -156,8 +156,6 @@ dependencies {
     compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.0'
     compile 'org.imgscalr:imgscalr-lib:4.2'
 
-    annotationProcessor "org.projectlombok:lombok:1.18.2"
-
     testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.9"
 
     compileOnly "javax.servlet:javax.servlet-api:3.1.0"
@@ -290,9 +288,9 @@ jacoco {
 jacocoTestReport {
     group = 'Reporting'
     description = 'Generate Jacoco coverage reports after running tests.'
-    additionalSourceDirs.from(project.files(sourceSets.main.allSource.srcDirs))
-    sourceDirectories.from(project.files(sourceSets.main.allSource.srcDirs))
-    classDirectories.from(project.files(sourceSets.main.output))
+    additionalSourceDirs = project.files(sourceSets.main.allSource.srcDirs)
+    sourceDirectories = project.files(sourceSets.main.allSource.srcDirs)
+    classDirectories = project.files(sourceSets.main.output)
     reports {
         xml.enabled = true
         csv.enabled = false
@@ -365,4 +363,6 @@ release {
 }
 
 lombok {
+    version = '1.18.4'
+    sha256 = ""
 }
