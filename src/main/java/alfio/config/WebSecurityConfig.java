@@ -86,23 +86,6 @@ public class WebSecurityConfig {
     private static final String API_CLIENT = "API_CLIENT";
     private static final String X_REQUESTED_WITH = "X-Requested-With";
 
-
-    private static class BaseWebSecurity extends  WebSecurityConfigurerAdapter {
-
-        @Autowired
-        private DataSource dataSource;
-        @Autowired
-        private PasswordEncoder passwordEncoder;
-
-        @Override
-        public void configure(AuthenticationManagerBuilder auth) throws Exception {
-            auth.jdbcAuthentication().dataSource(dataSource)
-                    .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
-                    .authoritiesByUsernameQuery("select username, role from authority where username = ?")
-                    .passwordEncoder(passwordEncoder);
-        }
-    }
-
     private static class APIKeyAuthFilter extends AbstractPreAuthenticatedProcessingFilter {
 
         @Override
@@ -146,6 +129,14 @@ public class WebSecurityConfig {
         public WrongAccountTypeException(String msg) {
             super(msg);
         }
+    }
+
+    @Bean
+    public CsrfTokenRepository getCsrfTokenRepository() {
+        HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
+        repository.setSessionAttributeName(CSRF_SESSION_ATTRIBUTE);
+        repository.setParameterName(CSRF_PARAM_NAME);
+        return repository;
     }
 
     @Configuration
@@ -212,7 +203,7 @@ public class WebSecurityConfig {
      */
     @Configuration
     @Order(1)
-    public static class FormBasedWebSecurity extends BaseWebSecurity {
+    public static class FormBasedWebSecurity extends WebSecurityConfigurerAdapter {
 
         @Autowired
         private Environment environment;
@@ -222,15 +213,25 @@ public class WebSecurityConfig {
 
         @Autowired
         private RecaptchaService recaptchaService;
+
         @Autowired
         private ConfigurationManager configurationManager;
 
-        @Bean
-        public CsrfTokenRepository getCsrfTokenRepository() {
-            HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
-            repository.setSessionAttributeName(CSRF_SESSION_ATTRIBUTE);
-            repository.setParameterName(CSRF_PARAM_NAME);
-            return repository;
+        @Autowired
+        private CsrfTokenRepository csrfTokenRepository;
+
+        @Autowired
+        private DataSource dataSource;
+
+        @Autowired
+        private PasswordEncoder passwordEncoder;
+
+        @Override
+        public void configure(AuthenticationManagerBuilder auth) throws Exception {
+            auth.jdbcAuthentication().dataSource(dataSource)
+                .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
+                .authoritiesByUsernameQuery("select username, role from authority where username = ?")
+                .passwordEncoder(passwordEncoder);
         }
 
         @Override
@@ -284,7 +285,7 @@ public class WebSecurityConfig {
 
             };
 
-            configurer.csrfTokenRepository(getCsrfTokenRepository())
+            configurer.csrfTokenRepository(csrfTokenRepository)
                 .and()
                 .authorizeRequests()
                 .antMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
@@ -380,10 +381,4 @@ public class WebSecurityConfig {
             }
         }
     }
-
-
-
-
-
-
 }
