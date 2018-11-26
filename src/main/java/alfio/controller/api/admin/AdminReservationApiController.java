@@ -146,6 +146,11 @@ public class AdminReservationApiController {
         return Result.success(true);
     }
 
+    @PutMapping("/event/{eventName}/{reservationId}/regenerate-billing-document")
+    public Result<Boolean> regenerateBillingDocument(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+        return adminReservationManager.regenerateBillingDocument(eventName, reservationId, principal.getName());
+    }
+
     @RequestMapping(value = "/event/{eventName}/{reservationId}/refund", method = RequestMethod.POST)
     public Result<Boolean> refund(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @RequestBody RefundAmount amount, Principal principal) {
         return adminReservationManager.refund(eventName, reservationId, new BigDecimal(amount.amount), principal.getName());

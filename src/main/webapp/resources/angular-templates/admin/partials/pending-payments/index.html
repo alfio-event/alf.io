@@ -10,7 +10,7 @@
         </div>
         <div class="wMarginTop wMarginBottom" data-ng-if="pendingReservations.length > 0" data-nv-file-drop="" data-uploader="uploader">
             <div class="page-header">
-                <h3>Manual confirmation</h3>
+                <h2>Manual confirmation</h2>
                 <small class="text-muted">Review and confirm each transaction</small>
             </div>
 
@@ -31,19 +31,23 @@
                             <td data-ng-class-even="'active'">{{reservation.right.totalPrice}}</td>
                             <td data-ng-class-even="'active'">{{reservation.left.fullName}}</td>
                             <td data-ng-class-even="'active'">{{reservation.left.email}}</td>
-                            <td data-ng-class-even="'active'"><button class="btn btn-success btn-xs" data-ng-disabled="loading" data-ng-click="registerPayment(eventName, reservation.left.id)"><i class="fa fa-check"></i> confirm</button> <button data-ng-disabled="loading" data-ng-click="deletePayment(eventName, reservation.left.id)" class="btn btn-danger btn-xs"><i class="fa fa-trash-o"></i> delete</button></td>
+                            <td data-ng-class-even="'active'">
+                                <button class="btn btn-success btn-xs" data-ng-disabled="loading" data-ng-click="registerPayment(eventName, reservation.left.id)"><i class="fa fa-check"></i> confirm</button>
+                                <button data-ng-disabled="loading" data-ng-click="deletePayment(eventName, reservation.left.id, true)" class="btn btn-warning btn-xs" uib-tooltip="Issue a Credit Note for this Reservation"><i class="fa fa-undo"></i> credit</button>
+                                <button data-ng-disabled="loading" data-ng-click="deletePayment(eventName, reservation.left.id, false)" class="btn btn-danger btn-xs" uib-tooltip="Cancel the payment and delete the Reservation"><i class="fa fa-trash-o"></i> delete</button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
             <div class="page-header">
-                <h3>Bulk confirmation</h3>
+                <h2>Bulk confirmation</h2>
                 <small class="text-muted">Upload CSV file(s) with received payments</small>
             </div>
 
             <div>
-                <h2>File Specifications:</h2>
+                <h3>File Specifications:</h3>
                 <h3>General</h3>
                 <span>Please create a CSV file without header, using commas (<strong>,</strong>) as separator, double quotes (<strong>"</strong>)as quote character and backslash (<strong>\</strong>) as escaping character</span>
                 <h3>Row specification</h3>

@@ -59,7 +59,7 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th width="10%">Id</th>
+                        <th width="10%">Invoice Id</th>
                         <th width="30%">Customer's name</th>
                         <th width="30%">Customer's email</th>
                         <th width="10%">Payment</th>
@@ -68,7 +68,7 @@
                     </thead>
                     <tbody>
                     <tr ng-repeat="r in $ctrl.reservations">
-                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="$ctrl.truncateReservationId(r.id)"></a></td>
+                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="r.invoiceNumber || 'N/A'"></a></td>
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
@@ -147,13 +147,44 @@
         </uib-tab>
         <uib-tab index="4" select="$ctrl.onTabSelected(4)">
             <uib-tab-heading>
+                <i class="fa fa-undo"></i> Credit Note issued <span class="badge">{{$ctrl.foundCreditedReservations}}</span>
+            </uib-tab-heading>
+            <div class="table-responsive" ng-if="$ctrl.foundCreditedReservations > 0">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th width="10%">Invoice Id</th>
+                        <th width="30%">Customer's name</th>
+                        <th width="30%">Customer's email</th>
+                        <th width="10%">Payment</th>
+                        <th width="20%">Expiration</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="r in $ctrl.creditedReservations">
+                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="r.invoiceNumber"></a></td>
+                        <td ng-bind="$ctrl.formatFullName(r)"></td>
+                        <td ng-bind="r.email"></td>
+                        <td ng-bind="r.paymentMethod"></td>
+                        <td ng-bind="r.validity | formatDate"></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <div class="text-center wMarginBottom">
+                    <uib-pagination ng-change="$ctrl.updateFilteredData({credited:true})" total-items="$ctrl.foundCreditedReservations" ng-model="$ctrl.currentPageCredited" items-per-page="$ctrl.itemsPerPage" max-size="10" force-ellipses="true"></uib-pagination>
+                </div>
+            </div>
+            <div class="alert alert-info text-center wMarginTop10px" ng-if="$ctrl.foundCreditedReservations == 0"><i class="fa fa-info-circle"></i> No Credited Reservations have been found</div>
+        </uib-tab>
+        <uib-tab index="5" select="$ctrl.onTabSelected(5)">
+            <uib-tab-heading>
                 <i class="fa fa-ban"></i> Cancelled <span class="badge">{{$ctrl.foundCancelledReservations}}</span>
             </uib-tab-heading>
             <div class="table-responsive" ng-if="$ctrl.foundCancelledReservations > 0">
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th width="10%">Id</th>
+                        <th width="10%">Invoice Id</th>
                         <th width="30%">Customer's name</th>
                         <th width="30%">Customer's email</th>
                         <th width="10%">Payment</th>
@@ -162,7 +193,7 @@
                     </thead>
                     <tbody>
                     <tr ng-repeat="r in $ctrl.cancelledReservations">
-                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="$ctrl.truncateReservationId(r.id)"></a></td>
+                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="r.invoiceNumber || 'N/A'"></a></td>
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>

@@ -206,6 +206,7 @@ public class AdminReservationManager {
     }
 
     private Result<Boolean> performUpdate(String reservationId, Event event, TicketReservation r, AdminReservationModification arm, String username) {
+        ticketReservationManager.ensureBillingDocumentIsPresent(event, r, username);
         ticketReservationRepository.updateValidity(reservationId, Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant()));
         if(arm.isUpdateContactData()) {
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
@@ -334,15 +335,8 @@ public class AdminReservationManager {
                 .reduce(this::reduceReservationResults)
                 .orElseGet(() -> Result.error(ErrorCode.custom("", "unknown error")));
 
-            updateInvoiceReceiptModel(event, arm.getLanguage(), reservationId);
-
             return result.map(list -> Pair.of(ticketReservationRepository.findReservationById(reservationId), list));
         });
-    }
-
-    private void updateInvoiceReceiptModel(Event event, String language, String reservationId) {
-        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, Locale.forLanguageTag(language));
-        ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, Json.toJson(orderSummary));
     }
 
     private Result<List<Ticket>> reserveForTicketsInfo(Event event, AdminReservationModification arm, String reservationId, String specialPriceSessionId, Pair<TicketCategory, TicketsInfo> pair) {
@@ -593,6 +587,14 @@ public class AdminReservationManager {
         });
     }
 
+    @Transactional
+    public Result<Boolean> regenerateBillingDocument(String eventName, String reservationId, String username) {
+        return loadReservation(eventName, reservationId, username).map(res -> {
+            internalRegenerateBillingDocument(res.getRight(), reservationId, username);
+            return true;
+        });
+    }
+
     private void removeTicketsFromReservation(TicketReservation reservation, Event event, List<Integer> ticketIds, boolean notify, String username, boolean removeReservation, boolean forceInvoiceReceiptUpdate) {
         String reservationId = reservation.getId();
         if(notify && !ticketIds.isEmpty()) {
@@ -603,6 +605,8 @@ public class AdminReservationManager {
                 }
             });
         }
+
+        ticketReservationManager.ensureBillingDocumentIsPresent(event, reservation, username);
 
         Integer userId = userRepository.findIdByUserName(username).orElse(null);
         Date date = new Date();
@@ -621,16 +625,19 @@ public class AdminReservationManager {
         int[] results = jdbc.batchUpdate(ticketRepository.batchReleaseTickets(), args);
         Validate.isTrue(Arrays.stream(results).sum() == args.length, "Failed to update tickets");
         if(!removeReservation) {
-            //#407 update invoice/receipt model only if the reservation is still "PENDING", otherwise we could lead to accountancy problems
-            if(UPDATE_INVOICE_STATUSES.contains(reservation.getStatus()) || forceInvoiceReceiptUpdate) {
-                Audit.EventType eventType = forceInvoiceReceiptUpdate ? FORCED_UPDATE_INVOICE : UPDATE_INVOICE;
-                auditingRepository.insert(reservationId, userId, event.getId(), eventType, date, RESERVATION, reservationId);
-                updateInvoiceReceiptModel(event, reservation.getUserLanguage(), reservationId);
+            if(forceInvoiceReceiptUpdate) {
+                auditingRepository.insert(reservationId, userId, event.getId(), FORCED_UPDATE_INVOICE, date, RESERVATION, reservationId);
+                internalRegenerateBillingDocument(event, reservationId, username);
             }
             extensionManager.handleTicketCancelledForEvent(event, ticketUUIDs);
         } else {
             extensionManager.handleReservationsCancelledForEvent(event, reservationIds);
         }
+    }
+
+    private void internalRegenerateBillingDocument(Event event, String reservationId, String username) {
+        ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, null);
+        ticketReservationManager.createBillingDocumentModel(event, ticketReservationRepository.findReservationById(reservationId), username);
     }
 
     private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {

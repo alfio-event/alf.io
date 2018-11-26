@@ -132,8 +132,12 @@
             registerPayment: function(eventName, reservationId) {
                 return $http['post']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId+'/confirm').error(HttpErrorHandler.handle);
             },
-            cancelPayment: function(eventName, reservationId) {
-                return $http['delete']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId).error(HttpErrorHandler.handle);
+            cancelPayment: function(eventName, reservationId, credit) {
+                return $http['delete']('/admin/api/events/'+eventName+'/pending-payments/'+reservationId, {
+                    params: {
+                        credit: credit
+                    }
+                }).error(HttpErrorHandler.handle);
             },
             sendCodesByEmail: function(eventName, categoryId, pairs) {
                 return $http['post']('/admin/api/events/'+eventName+'/categories/'+categoryId+'/send-codes', pairs).error(HttpErrorHandler.handle);
