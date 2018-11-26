@@ -18,6 +18,9 @@ package alfio.util;
 
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.Base64;
+
 @ActiveProfiles(resolver = ActiveTravisProfileResolver.class)
 public class BaseIntegrationTest {
+    public static final byte[] ONE_PIXEL_BLACK_GIF = Base64.getDecoder().decode("R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=");
 }
