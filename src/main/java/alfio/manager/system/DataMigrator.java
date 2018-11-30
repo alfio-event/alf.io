@@ -156,8 +156,11 @@ public class DataMigrator {
 
     private void createBillingDocuments(Event event) {
         if(event.getEnd().isAfter(ZonedDateTime.now(event.getZoneId()))) {
-            log.info("creating BillingDocument(s) for event {}", event.getDisplayName());
             List<String> reservations = jdbc.queryForList("select id from tickets_reservation where event_id_fk = :eventId and status in ('OFFLINE_PAYMENT', 'COMPLETE') and invoice_number is not null and id not in(select distinct reservation_id_fk from billing_document where event_id_fk = :eventId)", new MapSqlParameterSource("eventId", event.getId()), String.class);
+            if(reservations.isEmpty()) {
+                return;
+            }
+            log.info("creating BillingDocument(s) for event {}", event.getDisplayName());
             for (String reservationId : reservations) {
                 TicketReservation reservation = ticketReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new);
                 ticketReservationManager.getOrCreateBillingDocumentModel(event, reservation, null);

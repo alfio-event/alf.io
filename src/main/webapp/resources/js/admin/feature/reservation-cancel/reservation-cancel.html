@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h3>Cancel reservation <small ng-bind="$ctrl.reservationId"></small></h3>
+    <h3>{{$ctrl.operation}} reservation <small ng-bind="$ctrl.reservationId"></small></h3>
 </div>
 <div class="modal-body form-horizontal">
 
@@ -36,7 +36,7 @@
 <div class="modal-footer">
     <div class="row">
         <div class="col-md-4 col-md-push-8 col-xs-12">
-            <button class="btn btn-lg btn-danger btn-block btn-block-xs" ng-disabled="$ctrl.submitted" type="button" data-ng-click="$ctrl.confirmRemove()">Cancel reservation</button>
+            <button class="btn btn-lg btn-block btn-block-xs" ng-class="{'btn-danger': !$ctrl.credit, 'btn-warning': $ctrl.credit}" ng-disabled="$ctrl.submitted" type="button" data-ng-click="$ctrl.confirmRemove()">{{$ctrl.operation}} reservation</button>
         </div>
         <div class="col-md-4 col-md-pull-4 col-xs-12">
             <button class="btn btn-lg btn-default btn-block btn-block-xs" type="button" data-ng-click="$ctrl.onCancel()">Close</button>

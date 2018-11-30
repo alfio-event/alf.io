@@ -202,4 +202,8 @@ public final class TemplateProcessor {
     public static Optional<byte[]> buildInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
         return buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, TemplateResource.INVOICE_PDF);
     }
+
+    public static Optional<byte[]> buildCreditNotePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
+        return buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, TemplateResource.CREDIT_NOTE_PDF);
+    }
 }

@@ -28,7 +28,8 @@
 
                 <div class="page-header">
                     <h3>Reservation details
-                        <button type="button" ng-click="$ctrl.cancelReservationModal()" ng-if="$ctrl.reservation.status !== 'CANCELLED'" class="btn btn-danger pull-right"><i class="fa fa-trash"></i> <span class="hidden-sm hidden-xs">Cancel reservation</span></button>
+                        <button type="button" ng-click="$ctrl.cancelReservationModal(false)" ng-if="$ctrl.reservation.showCreditCancel" class="btn btn-danger pull-right"><i class="fa fa-trash"></i> <span class="hidden-sm hidden-xs">Cancel reservation</span></button>
+                        <button type="button" ng-click="$ctrl.cancelReservationModal(true)" ng-if="$ctrl.reservation.showCreditCancel && $ctrl.reservation.status !== 'PENDING'" class="btn btn-warning pull-right" style="margin-right:10px;"><i class="fa fa-undo"></i> <span class="hidden-sm hidden-xs">Credit reservation</span></button>
                     </h3>
                 </div>
 

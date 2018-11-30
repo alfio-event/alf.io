@@ -59,7 +59,7 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th width="10%">Invoice Id</th>
+                        <th width="10%">Id</th>
                         <th width="30%">Customer's name</th>
                         <th width="30%">Customer's email</th>
                         <th width="10%">Payment</th>
@@ -68,7 +68,7 @@
                     </thead>
                     <tbody>
                     <tr ng-repeat="r in $ctrl.reservations">
-                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="r.invoiceNumber || 'N/A'"></a></td>
+                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="$ctrl.truncateReservationId(r.id)"></a></td>
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
@@ -153,7 +153,7 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th width="10%">Invoice Id</th>
+                        <th width="10%">Id</th>
                         <th width="30%">Customer's name</th>
                         <th width="30%">Customer's email</th>
                         <th width="10%">Payment</th>
@@ -162,7 +162,7 @@
                     </thead>
                     <tbody>
                     <tr ng-repeat="r in $ctrl.creditedReservations">
-                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="r.invoiceNumber"></a></td>
+                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="$ctrl.truncateReservationId(r.id)"></a></td>
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>
@@ -184,7 +184,7 @@
                 <table class="table table-striped">
                     <thead>
                     <tr>
-                        <th width="10%">Invoice Id</th>
+                        <th width="10%">Id</th>
                         <th width="30%">Customer's name</th>
                         <th width="30%">Customer's email</th>
                         <th width="10%">Payment</th>
@@ -193,7 +193,7 @@
                     </thead>
                     <tbody>
                     <tr ng-repeat="r in $ctrl.cancelledReservations">
-                        <td><a ui-sref="events.single.view-reservation({eventName : $ctrl.event.shortName,reservationId: r.id})" ng-bind="r.invoiceNumber || 'N/A'"></a></td>
+                        <td><a ui-sref="events.single.view-reservation({eventName: $ctrl.event.shortName,reservationId:r.id})" ng-bind="$ctrl.truncateReservationId(r.id)"></a></td>
                         <td ng-bind="$ctrl.formatFullName(r)"></td>
                         <td ng-bind="r.email"></td>
                         <td ng-bind="r.paymentMethod"></td>

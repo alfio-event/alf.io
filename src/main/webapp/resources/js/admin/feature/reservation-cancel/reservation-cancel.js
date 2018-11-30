@@ -7,6 +7,7 @@
         bindings: {
             event: '<',
             reservationId: '<',
+            credit: '<',
             onSuccess: '&',
             onCancel:'&'
         }
@@ -17,6 +18,7 @@
         var ctrl = this;
 
         ctrl.confirmRemove = confirmRemove;
+        ctrl.operation = ctrl.credit ? "Credit" : "Cancel";
 
         ctrl.$onInit = function() {
             ctrl.refund = true;
@@ -30,7 +32,7 @@
 
         function confirmRemove() {
             ctrl.submitted = true;
-            return EventService.cancelReservation(ctrl.event.shortName, ctrl.reservationId, ctrl.refund, ctrl.notify).then(function() {
+            return EventService.cancelReservation(ctrl.event.shortName, ctrl.reservationId, ctrl.refund, ctrl.notify, ctrl.credit).then(function() {
                 ctrl.onSuccess();
             }).finally(function() {
                 ctrl.submitted = false;

@@ -49,6 +49,7 @@
             ctrl.reservation = {
                 id: src.id,
                 status: src.status,
+                showCreditCancel: src.status !== 'CANCELLED' && src.status !== 'CREDIT_NOTE_ISSUED',
                 expirationStr: moment(src.validity).format('YYYY-MM-DD HH:mm'),
                 expiration: {
                     date: moment(src.validity).format('YYYY-MM-DD'),
@@ -156,8 +157,8 @@
             });
         };
 
-        ctrl.cancelReservationModal = function() {
-            EventService.cancelReservationModal(ctrl.event, ctrl.reservation.id).then(function() {
+        ctrl.cancelReservationModal = function(credit) {
+            EventService.cancelReservationModal(ctrl.event, ctrl.reservation.id, credit).then(function() {
                 $window.location.reload();
             });
         };

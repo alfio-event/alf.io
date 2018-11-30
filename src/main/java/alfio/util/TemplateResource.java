@@ -133,26 +133,21 @@ public enum TemplateResource {
     RECEIPT_PDF("/alfio/templates/receipt.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            Map<String, Object> model = prepareSampleDataForConfirmationEmail(organization, event);
-            imageData.ifPresent(iData -> {
-                model.put("eventImage", iData.getEventImage());
-                model.put("imageWidth", iData.getImageWidth());
-                model.put("imageHeight", iData.getImageHeight());
-            });
-            return model;
+            return sampleBillingDocument(imageData, organization, event);
         }
     },
 
     INVOICE_PDF("/alfio/templates/invoice.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            Map<String, Object> model = prepareSampleDataForConfirmationEmail(organization, event);
-            imageData.ifPresent(iData -> {
-                model.put("eventImage", iData.getEventImage());
-                model.put("imageWidth", iData.getImageWidth());
-                model.put("imageHeight", iData.getImageHeight());
-            });
-            return model;
+            return sampleBillingDocument(imageData, organization, event);
+        }
+    },
+
+    CREDIT_NOTE_PDF("/alfio/templates/credit-note.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return sampleBillingDocument(imageData, organization, event);
         }
     },
 
@@ -210,6 +205,16 @@ public enum TemplateResource {
 
     private static Ticket sampleTicket() {
         return sampleTicket("Firstname", "Lastname", "email@email.tld");
+    }
+
+    private static Map<String, Object> sampleBillingDocument(Optional<ImageData> imageData, Organization organization, Event event) {
+        Map<String, Object> model = prepareSampleDataForConfirmationEmail(organization, event);
+        imageData.ifPresent(iData -> {
+            model.put("eventImage", iData.getEventImage());
+            model.put("imageWidth", iData.getImageWidth());
+            model.put("imageHeight", iData.getImageHeight());
+        });
+        return model;
     }
 
     private static TicketCategory sampleCategory() {
@@ -274,8 +279,9 @@ public enum TemplateResource {
 
         model.put("hasRefund", StringUtils.isNotEmpty(orderSummary.getRefundedAmount()));
 
-        ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getCreationTimestamp(), reservation.getConfirmationTimestamp(), ZonedDateTime.now());
+        ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getRegistrationTimestamp(), reservation.getCreationTimestamp(), reservation.getConfirmationTimestamp(), ZonedDateTime.now());
         model.put("confirmationDate", creationTimestamp.withZoneSameInstant(event.getZoneId()));
+        model.put("now", ZonedDateTime.now(event.getZoneId()));
 
         if (reservation.getValidity() != null) {
             model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));
