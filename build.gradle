@@ -11,7 +11,7 @@ import java.util.regex.Pattern
 buildscript {
 
     dependencies {
-        classpath 'ru.yandex.qatools.embed:postgresql-embedded:+'
+        classpath 'ru.yandex.qatools.embed:postgresql-embedded:2.9'
     }
 
     repositories {
