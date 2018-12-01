@@ -885,9 +885,6 @@ public class EventManager {
 
 		eventDeleterRepository.deleteWhitelistedTickets(eventId);
 		eventDeleterRepository.deleteGroupLinks(eventId);
-
-		eventDeleterRepository.deletePluginLog(eventId);
-		eventDeleterRepository.deletePluginConfiguration(eventId);
 		
 		eventDeleterRepository.deleteConfigurationEvent(eventId);
 		eventDeleterRepository.deleteConfigurationTicketCategory(eventId);
