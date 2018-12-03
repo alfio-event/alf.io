@@ -21,6 +21,7 @@ import alfio.manager.FileDownloadManager;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.repository.GroupRepository;
+import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.QueryFactory;
@@ -174,9 +175,8 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 
     @Bean
     public RowLevelSecurity.RoleAndOrganizationsAspect getRoleAndOrganizationsAspect(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                                                                     GroupRepository groupRepository,
-                                                                                     UserRepository userRepository) {
-        return new RowLevelSecurity.RoleAndOrganizationsAspect(namedParameterJdbcTemplate, groupRepository, userRepository);
+                                                                                     OrganizationRepository organizationRepository) {
+        return new RowLevelSecurity.RoleAndOrganizationsAspect(namedParameterJdbcTemplate, organizationRepository);
     }
 
     @Override

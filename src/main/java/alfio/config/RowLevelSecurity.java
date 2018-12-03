@@ -16,33 +16,27 @@
  */
 package alfio.config;
 
-import alfio.repository.GroupRepository;
-import alfio.repository.user.UserRepository;
+import alfio.repository.user.OrganizationRepository;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
-import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.List;
 
 public class RowLevelSecurity {
-
-
-    private static final String IS_PUBLIC_URL_KEY = "alfio.config.RowLevelSecurity.IS_PUBLIC_API";
 
     private static final OrRequestMatcher IS_PUBLIC_URLS = new OrRequestMatcher(
         new AntPathRequestMatcher("/"),
@@ -53,26 +47,9 @@ public class RowLevelSecurity {
         new AntPathRequestMatcher("/file/**"),
         new AntPathRequestMatcher("/api/events/**"));
 
-
-    public static class PublicApiMarkingHandlerInterceptor extends HandlerInterceptorAdapter {
-
-        @Override
-        public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-            if (IS_PUBLIC_URLS.matches(request)) {
-                request.setAttribute(IS_PUBLIC_URL_KEY, Boolean.TRUE);
-            }
-            return true;
-        }
-
-        @Override
-        public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
-            request.removeAttribute(IS_PUBLIC_URL_KEY);
-        }
-    }
-
     private static boolean isCurrentlyInAPublicUrlRequest() {
-        RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
-        return requestAttributes != null && Boolean.TRUE == requestAttributes.getAttribute(IS_PUBLIC_URL_KEY, RequestAttributes.SCOPE_REQUEST);
+        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        return IS_PUBLIC_URLS.matches(request);
     }
 
     private static boolean isInAHttpRequest() {
@@ -87,19 +64,25 @@ public class RowLevelSecurity {
         return false;
     }
 
+    private static boolean isAdmin() {
+        if(isLoggedUser()) {
+            return SecurityContextHolder.getContext().getAuthentication()
+                .getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
+        }
+        return false;
+    }
+
     @Aspect
     public static class RoleAndOrganizationsAspect {
         private final NamedParameterJdbcTemplate jdbcTemplate;
 
-        private final GroupRepository groupRepository;
-        private final UserRepository userRepository;
-
+        private final OrganizationRepository organizationRepository;
         public RoleAndOrganizationsAspect(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                          GroupRepository groupRepository,
-                                          UserRepository userRepository) {
+                                          OrganizationRepository organizationRepository) {
             this.jdbcTemplate = namedParameterJdbcTemplate;
-            this.groupRepository = groupRepository;
-            this.userRepository = userRepository;
+            this.organizationRepository = organizationRepository;
         }
 
 
@@ -109,35 +92,49 @@ public class RowLevelSecurity {
 
 
             if(isInAHttpRequest()) {
-
                 HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-                System.err.println("URL IS " + request.getRequestURI());
-
-                //TODO: if is in a public api:
-                // set alfio.public_api = 'true'
-                // don't change role
-
-                // if it's not a public api
-                // change role, fetch group of user (or set a variable if admin)
-                //
-
-                System.err.println(joinPoint);
-                System.err.println("public url: " + isCurrentlyInAPublicUrlRequest());
-
-                if(SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().getAuthentication() != null) {
-                    System.err.println("auth is "+SecurityContextHolder.getContext().getAuthentication().getName());
-                } else {
-                    System.err.println("no user");
-                }
-
-
                 DataSource dataSource = jdbcTemplate.getJdbcTemplate().getDataSource();
                 Connection connection = DataSourceUtils.getConnection(dataSource);
                 if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
+                    System.err.println("-----------");
                     System.err.println("connection is transactional");
-                    jdbcTemplate.update("set local role application_user", new EmptySqlParameterSource());
+                    System.err.println("URL IS " + request.getRequestURI());
+                    System.err.println(request.getRequestURL());
+                    System.err.println(joinPoint);
+                    System.err.println("public url: " + isCurrentlyInAPublicUrlRequest());
+
+                    if(SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().getAuthentication() != null) {
+                        System.err.println("auth is "+SecurityContextHolder.getContext().getAuthentication().getName());
+                    } else {
+                        System.err.println("no user");
+                    }
+
+                    boolean mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
+
+                    System.err.println("must check row access: " + mustCheck);
+
+                    if (mustCheck) {
+                        jdbcTemplate.update("set local role application_user", new EmptySqlParameterSource());
+                        //cannot use bind variable when calling set local, it's ugly and potentially dangerous
+                        jdbcTemplate.update("set local alfio.checkRowAccess = " + mustCheck, new EmptySqlParameterSource());
+                        List<Integer> orgIds = organizationRepository.findAllOrganizationIdForUser(SecurityContextHolder.getContext().getAuthentication().getName());
+                        System.err.println("org ids are: " + orgIds);
+                        //fixme, set the orgIds
+                        jdbcTemplate.update("set local alfio.userGroup = false", new EmptySqlParameterSource());
+                    }
+
+                    // note, the policy will check if the variable alfio.checkRowAccess is present before doing anything
+                    //
+                    //
+
+                    System.err.println("-----------");
+                    //
                 } else {
-                    System.err.println("connection is not transactional");
+                    System.err.println("-----------");
+                    System.err.println("connection is NOT transactional so the check will not be done!");
+                    System.err.println("URL IS " + request.getRequestURI());
+                    System.err.println(joinPoint);
+                    System.err.println("-----------");
                 }
             }
 

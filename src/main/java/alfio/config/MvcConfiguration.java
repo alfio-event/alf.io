@@ -124,7 +124,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
         registry.addInterceptor(getCsrfInterceptor());
         registry.addInterceptor(getCSPInterceptor());
         registry.addInterceptor(getDefaultTemplateObjectsFiller());
-        registry.addInterceptor(new RowLevelSecurity.PublicApiMarkingHandlerInterceptor());
     }
 
     @Bean
