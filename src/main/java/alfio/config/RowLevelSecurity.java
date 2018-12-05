@@ -41,13 +41,14 @@ import java.util.stream.Collectors;
 public class RowLevelSecurity {
 
     private static final OrRequestMatcher IS_PUBLIC_URLS = new OrRequestMatcher(
-        new AntPathRequestMatcher("/"),
-        new AntPathRequestMatcher("/session-expired"),
-        new AntPathRequestMatcher("/authentication"),
         new AntPathRequestMatcher("/resources/**"),
         new AntPathRequestMatcher("/event/**"),
+        new AntPathRequestMatcher("/"),
         new AntPathRequestMatcher("/file/**"),
-        new AntPathRequestMatcher("/api/events/**"));
+        new AntPathRequestMatcher("/api/events/**"),
+        new AntPathRequestMatcher("/api/webhook/**"),
+        new AntPathRequestMatcher("/session-expired"),
+        new AntPathRequestMatcher("/authentication"));
 
     private static boolean isCurrentlyInAPublicUrlRequest() {
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
