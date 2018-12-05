@@ -27,8 +27,8 @@ returns boolean
 as
 $$
     select
-        current_setting('alfio.checkRowAccess')::boolean and
-        $1 = ANY(current_setting('alfio.currentUserOrgs')::integer[]) -- check if org_id is present in alfio.currentUserOrgs
+        coalesce(current_setting('alfio.checkRowAccess', true)::boolean, false) and
+        $1 = ANY(coalesce(current_setting('alfio.currentUserOrgs', true), '{}')::integer[]) -- check if org_id is present in alfio.currentUserOrgs
 $$ language sql;
 
 
