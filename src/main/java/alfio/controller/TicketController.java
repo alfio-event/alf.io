@@ -32,7 +32,6 @@ import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketFieldRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
@@ -146,7 +145,7 @@ public class TicketController {
         return "OK";
     }
 
-    private Ticket internalSendTicketByEmail(HttpServletRequest request, Triple<Event, TicketReservation, Ticket> data) throws IOException {
+    private Ticket internalSendTicketByEmail(HttpServletRequest request, Triple<Event, TicketReservation, Ticket> data) {
         Ticket ticket = data.getRight();
         Event event = data.getLeft();
         Locale locale = LocaleUtil.getTicketLanguage(ticket, request);
@@ -162,7 +161,7 @@ public class TicketController {
 
     @RequestMapping(value = "/event/{eventName}/ticket/{ticketIdentifier}/download-ticket", method = RequestMethod.GET)
     public void generateTicketPdf(@PathVariable("eventName") String eventName,
-            @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws IOException, WriterException {
+            @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         if(!oData.isPresent()) {
@@ -190,7 +189,7 @@ public class TicketController {
     
     @RequestMapping(value = "/event/{eventName}/ticket/{ticketIdentifier}/code.png", method = RequestMethod.GET)
     public void generateTicketCode(@PathVariable("eventName") String eventName,
-            @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException, WriterException {
+            @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException {
         
         Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
         if(!oData.isPresent()) {
