@@ -19,6 +19,19 @@ DO
 $$
 BEGIN
 
+-- revoke all grants
+EXECUTE (
+select 'revoke all on all tables in schema ' || (select string_agg(a.table_schema, ',') from (select table_schema from information_schema.tables where table_name = 'ticket') a)|| ' from application_user'
+);
+
+EXECUTE (
+select 'revoke all on all sequences in schema ' || (select string_agg(a.table_schema, ',') from (select table_schema from information_schema.tables where table_name = 'ticket') a)|| ' from application_user'
+);
+
+EXECUTE (
+select 'revoke all on all functions in schema ' || (select string_agg(a.table_schema, ',') from (select table_schema from information_schema.tables where table_name = 'ticket') a)|| ' from application_user'
+);
+
 
 -- we collect all the schema where a table 'ticket' is present
 -- and give grant
