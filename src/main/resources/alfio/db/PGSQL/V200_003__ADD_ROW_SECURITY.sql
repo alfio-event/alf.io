@@ -15,26 +15,28 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
+-- we need to switch from the "postgres" role so we can apply the policy
 create role application_user;
 
 
+-- this function return true if the paramenter $1 (which is the organization id)
+-- is present in the alfio.currentUserOrgs array OR simply
+-- alfio.checkRowAccess is not set
 create or replace function alfio_check_row_access(integer)
 returns boolean
 as
 $$
-    select current_setting('alfio.checkRowAccess', true) is null or (
-        coalesce(current_setting('alfio.checkRowAccess', true)::boolean, false)  and
+    select
+        coalesce(current_setting('alfio.checkRowAccess', true)::boolean, false) and
         $1 = ANY(coalesce(current_setting('alfio.currentUserOrgs', true), '{}')::integer[]) -- check if org_id is present in alfio.currentUserOrgs
-    )
 $$ language sql;
 
 
---
+-- enable row level security and create policy
 alter table organization enable row level security;
 create policy organization_access_policy on organization to application_user
     using (alfio_check_row_access(id))
     with check (alfio_check_row_access(id));
-
 
 alter table event enable row level security;
 create policy event_access_policy on event to application_user
