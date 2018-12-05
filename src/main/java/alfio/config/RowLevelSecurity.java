@@ -34,7 +34,9 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 public class RowLevelSecurity {
 
@@ -90,52 +92,50 @@ public class RowLevelSecurity {
             " @annotation(org.springframework.transaction.annotation.Transactional))")
         public Object setRoleAndVariable(ProceedingJoinPoint joinPoint) throws Throwable {
 
-
-            if(isInAHttpRequest()) {
+            if (isInAHttpRequest()) {
                 HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
                 DataSource dataSource = jdbcTemplate.getJdbcTemplate().getDataSource();
                 Connection connection = DataSourceUtils.getConnection(dataSource);
+                StringBuilder sb = new StringBuilder();
                 if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
-                    System.err.println("-----------");
-                    System.err.println("connection is transactional");
-                    System.err.println("URL IS " + request.getRequestURI());
-                    System.err.println(request.getRequestURL());
-                    System.err.println(joinPoint);
-                    System.err.println("public url: " + isCurrentlyInAPublicUrlRequest());
+                    sb.append("-----------\n");
+                    sb.append("connection is transactional\n");
+                    sb.append("URL IS ").append(request.getRequestURI()).append("\n");
+                    sb.append(request.getRequestURL()).append("\n");
+                    sb.append(joinPoint).append("\n");
+                    sb.append("public url: ").append(isCurrentlyInAPublicUrlRequest()).append("\n");
 
-                    if(SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().getAuthentication() != null) {
-                        System.err.println("auth is "+SecurityContextHolder.getContext().getAuthentication().getName());
+                    if (SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().getAuthentication() != null) {
+                        sb.append("auth is ").append(SecurityContextHolder.getContext().getAuthentication().getName()).append("\n");
                     } else {
-                        System.err.println("no user");
+                        sb.append("no user\n");
                     }
 
                     boolean mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
 
-                    System.err.println("must check row access: " + mustCheck);
+                    sb.append("must check row access: ").append(mustCheck).append("\n");
 
                     if (mustCheck) {
                         jdbcTemplate.update("set local role application_user", new EmptySqlParameterSource());
-                        //cannot use bind variable when calling set local, it's ugly and potentially dangerous
-                        jdbcTemplate.update("set local alfio.checkRowAccess = " + mustCheck, new EmptySqlParameterSource());
-                        List<Integer> orgIds = organizationRepository.findAllOrganizationIdForUser(SecurityContextHolder.getContext().getAuthentication().getName());
-                        System.err.println("org ids are: " + orgIds);
-                        //fixme, set the orgIds
-                        jdbcTemplate.update("set local alfio.userGroup = false", new EmptySqlParameterSource());
+                        jdbcTemplate.update("set local alfio.checkRowAccess = true", new EmptySqlParameterSource());
+                        Set<Integer> orgIds = new TreeSet<>(organizationRepository.findAllOrganizationIdForUser(SecurityContextHolder.getContext().getAuthentication().getName()));
+                        String formattedOrgIds = orgIds.stream().map(s -> Integer.toString(s)).collect(Collectors.joining(",", "'{", "}'"));
+                        sb.append("org ids are: ").append(formattedOrgIds).append("\n");
+                        //cannot use bind variable when calling set local, it's ugly :(
+                        jdbcTemplate.update("set local alfio.currentUserOrgs = " + formattedOrgIds, new EmptySqlParameterSource());
                     }
 
                     // note, the policy will check if the variable alfio.checkRowAccess is present before doing anything
-                    //
-                    //
-
-                    System.err.println("-----------");
+                    sb.append("-----------\n");
                     //
                 } else {
-                    System.err.println("-----------");
-                    System.err.println("connection is NOT transactional so the check will not be done!");
-                    System.err.println("URL IS " + request.getRequestURI());
-                    System.err.println(joinPoint);
-                    System.err.println("-----------");
+                    sb.append("-----------\n");
+                    sb.append("connection is NOT transactional so the check will not be done!\n");
+                    sb.append("URL IS ").append(request.getRequestURI()).append("\n");
+                    sb.append(joinPoint).append("\n");
+                    sb.append("-----------\n");
                 }
+                System.err.println(sb.toString());
             }
 
             return joinPoint.proceed();
