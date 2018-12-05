@@ -52,7 +52,6 @@ public class AdminReservationApiController {
 
     private final AdminReservationManager adminReservationManager;
     private final EventManager eventManager;
-    private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
     private final FileUploadManager fileUploadManager;
 

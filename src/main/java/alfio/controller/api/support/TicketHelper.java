@@ -65,7 +65,6 @@ public class TicketHelper {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
-    private final FileUploadManager fileUploadManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final EuVatChecker vatChecker;
