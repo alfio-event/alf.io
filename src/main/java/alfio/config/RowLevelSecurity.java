@@ -17,6 +17,7 @@
 package alfio.config;
 
 import alfio.repository.user.OrganizationRepository;
+import lombok.extern.log4j.Log4j2;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -38,6 +39,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+@Log4j2
 public class RowLevelSecurity {
 
     private static final OrRequestMatcher IS_PUBLIC_URLS = new OrRequestMatcher(
@@ -139,7 +141,8 @@ public class RowLevelSecurity {
                     sb.append(joinPoint).append("\n");
                     sb.append("-----------\n");
                 }
-                System.err.println(sb.toString());
+
+                log.debug(sb.toString());
             }
 
             return joinPoint.proceed();
