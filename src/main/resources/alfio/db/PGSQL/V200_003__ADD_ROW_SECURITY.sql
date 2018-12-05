@@ -38,6 +38,13 @@ create policy organization_access_policy on organization to application_user
     using (alfio_check_row_access(id))
     with check (alfio_check_row_access(id));
 
+
+alter table j_user_organization enable row level security;
+create policy j_user_organization_access_policy on j_user_organization to application_user
+    using (alfio_check_row_access(org_id))
+    with check (alfio_check_row_access(org_id));
+
+
 alter table event enable row level security;
 create policy event_access_policy on event to application_user
     using (alfio_check_row_access(org_id))
