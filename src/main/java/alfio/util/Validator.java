@@ -30,7 +30,6 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -44,7 +43,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 

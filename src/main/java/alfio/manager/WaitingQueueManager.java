@@ -234,7 +234,7 @@ public class WaitingQueueManager {
                 ticketReservation.setAmount(1);
                 Integer categoryId = Optional.ofNullable(pair.getValue().getCategoryId()).orElseGet(() -> findBestCategory(unboundedCategories, pair.getKey()).orElseThrow(RuntimeException::new).getId());
                 ticketReservation.setTicketCategoryId(categoryId);
-                return Pair.of(pair.getLeft(), new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.<SpecialPrice>empty()));
+                return Pair.of(pair.getLeft(), new TicketReservationWithOptionalCodeModification(ticketReservation, Optional.empty()));
             })
             .map(pair -> Triple.of(pair.getKey(), pair.getValue(), expiration));
     }

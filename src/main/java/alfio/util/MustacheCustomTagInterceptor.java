@@ -127,7 +127,7 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
         //
         String[] res = r.split("\\s+");
-        Optional<Locale> locale = Arrays.asList(res).stream().filter((s) -> s.startsWith(LOCALE_LABEL)).findFirst()
+        Optional<Locale> locale = Arrays.stream(res).filter((s) -> s.startsWith(LOCALE_LABEL)).findFirst()
                 .map((l) -> {
                     return Locale.forLanguageTag(substring(l, LOCALE_LABEL.length()));
                 });

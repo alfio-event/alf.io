@@ -67,7 +67,6 @@ public class TicketController {
     private final ConfigurationManager configurationManager;
     private final FileUploadManager fileUploadManager;
     private final TicketHelper ticketHelper;
-    private final TicketFieldRepository ticketFieldRepository;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
     public String showTicketOLD(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,

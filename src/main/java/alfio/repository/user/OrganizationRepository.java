@@ -27,9 +27,6 @@ import java.util.Optional;
 @QueryRepository
 public interface OrganizationRepository {
 
-    @Query("SELECT * FROM organization")
-    List<Organization> findAll();
-
     @Query("SELECT * FROM organization where id = :id")
     Organization getById(@Bind("id") int id);
 
