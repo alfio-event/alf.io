@@ -44,12 +44,12 @@ create policy j_user_organization_access_policy on j_user_organization to applic
     using (alfio_check_row_access(org_id))
     with check (alfio_check_row_access(org_id));
 
+--
 
 alter table event enable row level security;
 create policy event_access_policy on event to application_user
     using (alfio_check_row_access(org_id))
     with check (alfio_check_row_access(org_id));
-
 
 
 -- resources tables
@@ -80,6 +80,18 @@ create policy configuration_event_access_policy on configuration_event to applic
 
 alter table configuration_ticket_category enable row level security;
 create policy configuration_ticket_category_access_policy on configuration_ticket_category to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access(organization_id_fk));
+--
+
+--
+alter table invoice_sequences enable row level security;
+create policy invoice_sequences_access_policy on invoice_sequences to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access(organization_id_fk));
+--
+alter table a_group enable row level security;
+create policy a_group_access_policy on a_group to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 --
