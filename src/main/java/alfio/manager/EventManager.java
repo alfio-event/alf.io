@@ -41,13 +41,11 @@ import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.flywaydb.core.Flyway;
 import org.springframework.core.env.Environment;
@@ -786,6 +784,10 @@ public class EventManager {
         categoriesId = Optional.ofNullable(categoriesId).orElse(Collections.emptyList()).stream().filter(Objects::nonNull).collect(toList());
         //
 
+        if (organizationId == null) {
+            organizationId = eventRepository.findOrganizationIdByEventId(eventId);
+        }
+
         promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId), maxUsage);
     }
     
@@ -926,27 +928,4 @@ public class EventManager {
             eventRepository.disableEventsForUsers(userIds);
         }
     }
-
-    @Data
-    private static final class GeolocationResult {
-        private final Pair<String, String> coordinates;
-        private final TimeZone tz;
-
-        public String getLatitude() {
-            return coordinates.getLeft();
-        }
-
-        public String getLongitude() {
-            return coordinates.getRight();
-        }
-
-        public String getTimeZone() {
-            return tz.getID();
-        }
-
-        public ZoneId getZoneId() {
-            return tz.toZoneId();
-        }
-    }
-
 }

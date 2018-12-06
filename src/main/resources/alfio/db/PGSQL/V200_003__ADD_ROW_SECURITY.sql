@@ -95,3 +95,12 @@ create policy a_group_access_policy on a_group to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 --
+
+update promo_code set organization_id_fk = (select org_id from event where event.id = event_id_fk) where organization_id_fk is null;
+alter table promo_code alter column organization_id_fk set not null;
+
+alter table promo_code enable row level security;
+create policy promo_code_access_policy on promo_code to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access(organization_id_fk));
+--
