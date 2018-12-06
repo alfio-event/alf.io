@@ -49,3 +49,15 @@ alter table event enable row level security;
 create policy event_access_policy on event to application_user
     using (alfio_check_row_access(org_id))
     with check (alfio_check_row_access(org_id));
+
+
+alter table resource_organizer enable row level security;
+create policy resource_organizer_access_policy on resource_organizer to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access(organization_id_fk));
+
+
+alter table resource_event enable row level security;
+create policy resource_event_access_policy on resource_event to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access(organization_id_fk));
