@@ -104,3 +104,30 @@ create policy promo_code_access_policy on promo_code to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 --
+
+-- tables where event_id_fk is present
+
+
+create or replace function set_organization_id_fk_from_event_id() returns trigger
+as $$ begin
+    if new.organization_id_fk is null then
+      new.organization_id_fk = (select org_id from event where event.id = new.event_id);
+    end if;
+    return new;
+end;
+$$ language plpgsql;
+
+
+
+alter table ticket add column organization_id_fk integer;
+alter table ticket add foreign key(organization_id_fk) references organization(id);
+update ticket set organization_id_fk = (select org_id from event where event.id = event_id);
+alter table ticket alter column organization_id_fk set not null;
+
+create trigger ticket_insert_org_id_fk_trigger before insert on ticket for each row execute procedure set_organization_id_fk_from_event_id();
+
+alter table ticket enable row level security;
+create policy ticket_access_policy on ticket to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
+--
