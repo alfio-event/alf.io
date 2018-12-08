@@ -192,3 +192,19 @@ create policy admin_reservation_request_access_policy on admin_reservation_reque
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
+
+-- waiting_queue
+alter table waiting_queue add column organization_id_fk integer;
+alter table waiting_queue add foreign key(organization_id_fk) references organization(id);
+update waiting_queue set organization_id_fk = (select org_id from event where event.id = event_id);
+alter table waiting_queue alter column organization_id_fk set not null;
+
+create trigger waiting_queue_insert_org_id_fk_trigger
+    before insert on waiting_queue
+    for each row execute procedure set_organization_id_fk_from_event_id();
+
+alter table waiting_queue enable row level security;
+create policy waiting_queue_access_policy on waiting_queue to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
+--
