@@ -172,7 +172,23 @@ create trigger email_message_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id();
 
 alter table email_message enable row level security;
-create policy email_message_access_policy on ticket to application_user
+create policy email_message_access_policy on email_message to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
+--
+
+-- admin_reservation_request
+alter table admin_reservation_request add column organization_id_fk integer;
+alter table admin_reservation_request add foreign key(organization_id_fk) references organization(id);
+update admin_reservation_request set organization_id_fk = (select org_id from event where event.id = event_id);
+alter table admin_reservation_request alter column organization_id_fk set not null;
+
+create trigger admin_reservation_request_insert_org_id_fk_trigger
+    before insert on admin_reservation_request
+    for each row execute procedure set_organization_id_fk_from_event_id();
+
+alter table admin_reservation_request enable row level security;
+create policy admin_reservation_request_access_policy on admin_reservation_request to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
