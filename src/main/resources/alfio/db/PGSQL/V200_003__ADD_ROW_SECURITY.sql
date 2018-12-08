@@ -135,7 +135,9 @@ alter table ticket add foreign key(organization_id_fk) references organization(i
 update ticket set organization_id_fk = (select org_id from event where event.id = event_id);
 alter table ticket alter column organization_id_fk set not null;
 
-create trigger ticket_insert_org_id_fk_trigger before insert on ticket for each row execute procedure set_organization_id_fk_from_event_id();
+create trigger ticket_insert_org_id_fk_trigger
+    before insert on ticket
+    for each row execute procedure set_organization_id_fk_from_event_id();
 
 alter table ticket enable row level security;
 create policy ticket_access_policy on ticket to application_user
@@ -149,7 +151,28 @@ alter table tickets_reservation add foreign key(organization_id_fk) references o
 update tickets_reservation set organization_id_fk = (select org_id from event where event.id = event_id_fk);
 alter table tickets_reservation alter column organization_id_fk set not null;
 
-create trigger tickets_reservation_insert_org_id_fk_trigger before insert on tickets_reservation for each row execute procedure set_organization_id_fk_from_event_id_fk();
+create trigger tickets_reservation_insert_org_id_fk_trigger
+    before insert on tickets_reservation
+    for each row execute procedure set_organization_id_fk_from_event_id_fk();
+
+alter table tickets_reservation enable row level security;
 create policy tickets_reservation_access_policy on tickets_reservation to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
+--
+
+-- email_message
+alter table email_message add column organization_id_fk integer;
+alter table email_message add foreign key(organization_id_fk) references organization(id);
+update email_message set organization_id_fk = (select org_id from event where event.id = event_id);
+alter table email_message alter column organization_id_fk set not null;
+
+create trigger email_message_insert_org_id_fk_trigger
+    before insert on email_message
+    for each row execute procedure set_organization_id_fk_from_event_id();
+
+alter table email_message enable row level security;
+create policy email_message_access_policy on ticket to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
+--
