@@ -108,6 +108,7 @@ create policy promo_code_access_policy on promo_code to application_user
 -- tables where event_id_fk is present
 
 
+-- trigger for tables where the event fk is named event_id
 create or replace function set_organization_id_fk_from_event_id() returns trigger
 as $$ begin
     if new.organization_id_fk is null then
@@ -117,8 +118,18 @@ as $$ begin
 end;
 $$ language plpgsql;
 
+-- trigger for tables where the event fk is named event_id_fk
+create or replace function set_organization_id_fk_from_event_id_fk() returns trigger
+as $$ begin
+    if new.organization_id_fk is null then
+      new.organization_id_fk = (select org_id from event where event.id = new.event_id_fk);
+    end if;
+    return new;
+end;
+$$ language plpgsql;
 
 
+-- ticket table
 alter table ticket add column organization_id_fk integer;
 alter table ticket add foreign key(organization_id_fk) references organization(id);
 update ticket set organization_id_fk = (select org_id from event where event.id = event_id);
@@ -131,3 +142,14 @@ create policy ticket_access_policy on ticket to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
+
+-- tickets_reservation table
+alter table tickets_reservation add column organization_id_fk integer;
+alter table tickets_reservation add foreign key(organization_id_fk) references organization(id);
+update tickets_reservation set organization_id_fk = (select org_id from event where event.id = event_id_fk);
+alter table tickets_reservation alter column organization_id_fk set not null;
+
+create trigger tickets_reservation_insert_org_id_fk_trigger before insert on tickets_reservation for each row execute procedure set_organization_id_fk_from_event_id_fk();
+create policy tickets_reservation_access_policy on tickets_reservation to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
