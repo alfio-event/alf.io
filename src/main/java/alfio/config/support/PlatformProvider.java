@@ -16,6 +16,7 @@
  */
 package alfio.config.support;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 
 import java.net.URI;
@@ -223,7 +224,8 @@ public enum PlatformProvider {
             String dbHost = Objects.requireNonNull(System.getenv("POSTGRES_PORT_5432_TCP_ADDR"), "POSTGRES_PORT_5432_TCP_ADDR env variable is missing");
             String port = Objects.requireNonNull(System.getenv("POSTGRES_PORT_5432_TCP_PORT"), "POSTGRES_PORT_5432_TCP_PORT env variable is missing");
             String dbName = Objects.requireNonNull(System.getenv("POSTGRES_ENV_POSTGRES_DB"), "POSTGRES_ENV_POSTGRES_DB env variable is missing");
-            return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName;
+            String ssl = StringUtils.defaultIfEmpty(System.getenv("POSTGRES_ENV_USE_SSL"), "prefer");
+            return "jdbc:postgresql://" + dbHost + ":" + port + "/" + dbName+"?sslmode="+ssl;
         }
 
         @Override

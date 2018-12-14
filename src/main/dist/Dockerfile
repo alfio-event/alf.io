@@ -3,7 +3,7 @@
 #
 
 # Pull base image.
-FROM adoptopenjdk/openjdk8-openj9:jdk8u162-b12_openj9-0.8.0
+FROM adoptopenjdk/openjdk8-openj9:jdk8u192-b12_openj9-0.11.0
 
 RUN useradd -ms /bin/bash -u 1001 alfio
 RUN apt-get update \
@@ -12,7 +12,7 @@ RUN apt-get update \
  && apt-get install --assume-yes dconf-cli \
  && apt-get install --assume-yes fontconfig
 
-USER alfio
+USER 1001
 COPY ./alfio-@ALFIO_VERSION@-boot.war /home/alfio/alfio-boot.war
 
 # Define working directory.
