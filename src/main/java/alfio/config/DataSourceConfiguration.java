@@ -58,6 +58,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.EnumSet;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
@@ -142,10 +143,14 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         migration.setOutOfOrder(true);
 
         migration.setLocations("alfio/db/" + sqlDialect + "/");
+
+        Optional<String> baselineOnMigrate = Optional.ofNullable(env.getProperty("flyway.baseline-on-migrate"));
+        baselineOnMigrate.ifPresent(s -> migration.setBaselineOnMigrate(Boolean.valueOf(s)));
+
         migration.migrate();
         return migration;
     }
-    
+
     @Bean
     public PasswordEncoder getPasswordEncoder() {
          return new BCryptPasswordEncoder();
