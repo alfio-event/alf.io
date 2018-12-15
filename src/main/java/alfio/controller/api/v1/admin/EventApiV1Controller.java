@@ -50,9 +50,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static alfio.controller.api.admin.EventApiController.validateEvent;
+import static alfio.model.api.v1.admin.EventCreationRequest.orEmpty;
+import static alfio.util.OptionalWrapper.optionally;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
@@ -73,15 +76,24 @@ public class EventApiV1Controller {
     private final ExtensionService extensionService;
     private final ExtensionRepository extensionRepository;
 
+    @PostMapping("/validate")
+    public ResponseEntity<String> validate(@RequestBody EventCreationRequest request, Principal user) {
+        String imageRef = Optional.ofNullable(request.getImageUrl()).map(this::fetchImage).orElse(null);
+        return performIfValid(request, user, imageRef, () -> "OK");
+    }
+
     @PostMapping("/create")
     @Transactional
     public ResponseEntity<String> create(@RequestBody EventCreationRequest request, Principal user) {
-
-
         String imageRef = Optional.ofNullable(request.getImageUrl()).map(this::fetchImage).orElse(null);
+        Supplier<String> resultSupplier = () -> insertEvent(request, user, imageRef).map(Event::getShortName).orElseThrow(IllegalStateException::new);
+        return performIfValid(request, user, imageRef, resultSupplier);
+    }
+
+    private ResponseEntity<String> performIfValid(@RequestBody EventCreationRequest request, Principal user, String imageRef, Supplier<String> resultSupplier) {
         Organization organization = userManager.findUserOrganizations(user.getName()).get(0);
         AtomicReference<Errors> errorsContainer = new AtomicReference<>();
-        Result<String> result =  new Result.Builder<String>()
+        Result<String> result = new Result.Builder<String>()
             .checkPrecondition(() -> isNotBlank(request.getTitle()), ErrorCode.custom("invalid.title", "Invalid title"))
             .checkPrecondition(() -> isBlank(request.getSlug()) || eventNameManager.isUnique(request.getSlug()), ErrorCode.custom("invalid.slug", "Invalid slug"))
             .checkPrecondition(() -> isNotBlank(request.getWebsiteUrl()), ErrorCode.custom("invalid.websiteUrl", "Invalid Website URL"))
@@ -89,6 +101,7 @@ public class EventApiV1Controller {
             .checkPrecondition(() -> isNotBlank(request.getImageUrl()), ErrorCode.custom("invalid.imageUrl", "Invalid Image URL"))
             .checkPrecondition(() -> isNotBlank(request.getTimezone()), ErrorCode.custom("invalid.timezone", "Invalid Timezone"))
             .checkPrecondition(() -> isNotBlank(imageRef), ErrorCode.custom("invalid.image", "Image is either missing or too big (max 200kb)"))
+            .checkPrecondition(() -> ensureDoesNotContainLinks(request), ErrorCode.custom("invalid.additionalInfo", "Category link is not supported at event creation time"))
             .checkPrecondition(() -> {
                 EventModification eventModification = request.toEventModification(organization, eventNameManager::generateShortName, imageRef);
                 errorsContainer.set(new BeanPropertyBindingResult(eventModification, "event"));
@@ -100,14 +113,18 @@ public class EventApiV1Controller {
             }, ErrorCode.lazy(() -> toErrorCode(errorsContainer.get())))
             //TODO all location validation
             //TODO language validation, for all the description the same languages
-            .build(() -> insertEvent(request, user, imageRef).map(Event::getShortName).orElseThrow(IllegalStateException::new));
-
+            .build(resultSupplier);
         if(result.isSuccess()) {
             return ResponseEntity.ok(result.getData());
         } else {
             return ResponseEntity.badRequest().body(Json.toJson(result.getErrors()));
         }
+    }
 
+    private static boolean ensureDoesNotContainLinks(@RequestBody EventCreationRequest request) {
+        List<EventCreationRequest.AttendeeAdditionalInfoRequest> additionalInfo = request.getAdditionalInfo();
+        return CollectionUtils.isEmpty(additionalInfo)
+            || additionalInfo.stream().noneMatch(it -> CollectionUtils.isNotEmpty(it.getLinkedCategories()));
     }
 
     private ErrorCode toErrorCode(Errors errors) {
@@ -131,11 +148,13 @@ public class EventApiV1Controller {
 
     @DeleteMapping("/{slug}")
     public ResponseEntity<String> delete(@PathVariable("slug") String slug, Principal user) {
+        Optional<Event> event = eventManager.getOptionalByName(slug, user.getName());
         Result<String> result =  new Result.Builder<String>()
+            .checkPrecondition(event::isPresent, ErrorCode.EventError.NOT_FOUND)
             .build(() -> {
-                eventManager.getOptionalByName(slug,user.getName()).ifPresent( e -> eventManager.deleteEvent(e.getId(),user.getName()));
-                return "Ok";
-            });
+                    event.ifPresent(e -> eventManager.deleteEvent(e.getId(),user.getName()));
+                    return "OK";
+                });
         if(result.isSuccess()) {
             return ResponseEntity.ok(result.getData());
         } else {
@@ -145,34 +164,36 @@ public class EventApiV1Controller {
 
 
     @PostMapping("/update/{slug}")
+    @Transactional
     public ResponseEntity<String> update(@PathVariable("slug") String slug, @RequestBody EventCreationRequest request, Principal user) {
-
         String imageRef = fetchImage(request.getImageUrl());
-
-        Result<String> result =  new Result.Builder<String>()
-            .build(() -> updateEvent(slug, request, user, imageRef).map(Event::getShortName).get());
-
-        if(result.isSuccess()) {
-            return ResponseEntity.ok(result.getData());
-        } else {
-            return ResponseEntity.badRequest().build();
-        }
+        return updateEvent(slug, request, user, imageRef)
+            .map(Event::getShortName)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     private Optional<Event> updateEvent(String slug, EventCreationRequest request, Principal user, String imageRef) {
-        Organization organization = userManager.findUserOrganizations(user.getName()).get(0);
-        EventWithAdditionalInfo original = eventStatisticsManager.getEventWithAdditionalInfo(slug,user.getName());
+        Optional<Organization> optionalOrg = optionally(() -> userManager.findUserOrganizations(user.getName()).get(0));
+        if(!optionalOrg.isPresent()) {
+            return Optional.empty();
+        }
 
+        Optional<EventWithAdditionalInfo> existingEvent = optionally(() -> eventStatisticsManager.getEventWithAdditionalInfo(slug,user.getName()));
+        if(!existingEvent.isPresent()) {
+            return Optional.empty();
+        }
+
+        Organization organization = optionalOrg.get();
+        EventWithAdditionalInfo original = existingEvent.get();
         Event event = original.getEvent();
-
 
         EventModification em = request.toEventModificationUpdate(original,organization,imageRef);
 
         eventManager.updateEventHeader(event, em, user.getName());
         eventManager.updateEventPrices(event, em, user.getName());
 
-
-        if (em.getTicketCategories() != null && em.getTicketCategories().size() > 0) {
+        if (CollectionUtils.isNotEmpty(em.getTicketCategories())) {
             em.getTicketCategories().forEach(c ->
                 findCategoryByName(event, c.getName()).ifPresent(originalCategory ->
                     eventManager.updateCategory(originalCategory.getId(), event.getId(), c, user.getName())
@@ -180,6 +201,9 @@ public class EventApiV1Controller {
             );
         }
 
+        for(EventModification.AdditionalField field : orEmpty(em.getTicketFields())) {
+            eventManager.addAdditionalField(event, field);
+        }
 
         // TODO discusson about promocode needed
 

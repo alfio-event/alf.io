@@ -35,6 +35,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -58,7 +59,9 @@ public class EventCreationRequest{
     private List<ExtensionSetting> extensionSettings;
     private List<AttendeeAdditionalInfoRequest> additionalInfo;
 
-    public EventModification toEventModification(Organization organization, Function<String,String> slugGenerator, String imageRef) {
+    public EventModification toEventModification(Organization organization,
+                                                 Function<String,String> slugGenerator,
+                                                 String imageRef) {
         String slug = this.slug;
         if(StringUtils.isBlank(slug)) {
             slug = slugGenerator.apply(title);
@@ -99,7 +102,7 @@ public class EventCreationRequest{
             tickets.freeOfCharge,
             new LocationDescriptor(timezone, location.getCoordinate().getLatitude(), location.getCoordinate().getLongitude(), null),
             locales,
-            toAdditionalFields(orEmpty(additionalInfo)),
+            toAdditionalFields(orEmpty(additionalInfo), emptyList()),
             emptyList()  // TODO improve API
         );
     }
@@ -109,7 +112,9 @@ public class EventCreationRequest{
     }
 
 
-    public EventModification toEventModificationUpdate(EventWithAdditionalInfo original, Organization organization, String imageRef) {
+    public EventModification toEventModificationUpdate(EventWithAdditionalInfo original,
+                                                       Organization organization,
+                                                       String imageRef) {
 
         int locales = original.getLocales();
         if(description != null){
@@ -150,7 +155,7 @@ public class EventCreationRequest{
             tickets != null ? first(tickets.freeOfCharge,original.isFreeOfCharge()) : original.isFreeOfCharge(),
             null,
             locales,
-            toAdditionalFields(orEmpty(additionalInfo)),
+            toAdditionalFields(orEmpty(additionalInfo), original.getTicketCategories()),
             emptyList()  // TODO improve API
         );
     }
@@ -289,9 +294,10 @@ public class EventCreationRequest{
         private List<DescriptionRequest> placeholder;
         private List<RestrictedValueRequest> restrictedValues;
         private ContentLengthRequest contentLength;
+        private List<String> linkedCategories;
 
 
-        private EventModification.AdditionalField toAdditionalField(int ordinal) {
+        private EventModification.AdditionalField toAdditionalField(int ordinal, List<TicketCategoryWithAdditionalInfo> existingCategories) {
             int position = this.ordinal != null ? this.ordinal : ordinal;
             String code = type != null ? type.code : AdditionalInfoType.GENERIC_TEXT.code;
             Integer minLength = contentLength != null ? contentLength.min : null;
@@ -311,11 +317,20 @@ public class EventCreationRequest{
                 restrictedValues,
                 toDescriptionMap(orEmpty(label), orEmpty(placeholder), orEmpty(this.restrictedValues)),
                 null,//TODO: linkedAdditionalService
-                null);//TODO: linkedCategoryIds
+                findCategoryIds(existingCategories));
+        }
+
+        private List<Integer> findCategoryIds(List<TicketCategoryWithAdditionalInfo> existingCategories) {
+            return orEmpty(linkedCategories).stream()
+                .map(name -> existingCategories.stream().filter(c -> c.getName().equalsIgnoreCase(name)).findAny())
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .map(TicketCategoryWithAdditionalInfo::getId)
+                .collect(Collectors.toList());
         }
     }
 
-    private static <T> List<T> orEmpty(List<T> input) {
+    public static <T> List<T> orEmpty(List<T> input) {
         return isEmpty(input) ? emptyList() : input;
     }
 
@@ -341,12 +356,14 @@ public class EventCreationRequest{
     }
 
 
-    private static List<EventModification.AdditionalField> toAdditionalFields(List<AttendeeAdditionalInfoRequest> additionalInfoRequests) {
+    private static List<EventModification.AdditionalField> toAdditionalFields(List<AttendeeAdditionalInfoRequest> additionalInfoRequests, List<TicketCategoryWithAdditionalInfo> existingCategories) {
         if(isEmpty(additionalInfoRequests)) {
             return emptyList();
         }
         AtomicInteger counter = new AtomicInteger(1);
-        return additionalInfoRequests.stream().map(air -> air.toAdditionalField(counter.getAndIncrement())).collect(Collectors.toList());
+        return additionalInfoRequests.stream()
+            .map(air -> air.toAdditionalField(counter.getAndIncrement(), existingCategories))
+            .collect(Collectors.toList());
     }
 
     @Getter
