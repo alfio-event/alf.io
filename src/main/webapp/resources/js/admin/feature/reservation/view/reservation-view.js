@@ -90,28 +90,54 @@
                 ctrl.countries = countries;
             });
 
-            loadPaymentInfo();
-            loadAudit();
+            if(ctrl.event.visibleForCurrentUser) {
+                loadPaymentInfo();
+                loadAudit();
+                loadBillingDocuments();
+                ctrl.invalidateDocument = function(id) {
+                    AdminReservationService.invalidateDocument(ctrl.event.shortName, ctrl.reservation.id, id).then(function() {
+                        loadBillingDocuments();
+                    });
+                };
+                ctrl.restoreDocument = function(id) {
+                    AdminReservationService.restoreDocument(ctrl.event.shortName, ctrl.reservation.id, id).then(function() {
+                        loadBillingDocuments();
+                    });
+                }
+            }
+
         };
 
         function loadAudit() {
-            if(ctrl.event.visibleForCurrentUser) {
-                AdminReservationService.getAudit(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
-                    ctrl.audit = res.data.data;
-                });
-            }
+            ctrl.audit = [];
+            AdminReservationService.getAudit(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                ctrl.audit = res.data.data;
+            });
         }
 
         function loadPaymentInfo() {
-            if(ctrl.event.visibleForCurrentUser) {
-                ctrl.loadingPaymentInfo = true;
-                AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
-                    ctrl.paymentInfo = res.data.data;
-                    ctrl.loadingPaymentInfo = false;
-                }, function() {
-                    ctrl.loadingPaymentInfo = false;
-                });
-            }
+            ctrl.loadingPaymentInfo = true;
+            AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                ctrl.paymentInfo = res.data.data;
+                ctrl.loadingPaymentInfo = false;
+            }, function() {
+                ctrl.loadingPaymentInfo = false;
+            });
+        }
+
+        function loadBillingDocuments() {
+            ctrl.billingDocuments = {
+                count: 0,
+                valid: [],
+                notValid: []
+            };
+            AdminReservationService.loadAllBillingDocuments(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                ctrl.billingDocuments = {
+                    count: res.data.data.length,
+                    valid: res.data.data.filter(function(x) { return x.status === 'VALID'; }),
+                    notValid: res.data.data.filter(function(x) { return x.status === 'NOT_VALID'; })
+                };
+            });
         }
 
         ctrl.update = function(frm) {

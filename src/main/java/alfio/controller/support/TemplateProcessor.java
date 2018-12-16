@@ -194,6 +194,18 @@ public final class TemplateProcessor {
         }
     }
 
+    public static Optional<byte[]> buildBillingDocumentPdf(BillingDocument.Type documentType,Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
+        switch (documentType) {
+            case INVOICE:
+                return buildInvoicePdf(event, fileUploadManager, language, templateManager, model);
+            case RECEIPT:
+                return buildReceiptPdf(event, fileUploadManager, language, templateManager, model);
+            case CREDIT_NOTE:
+                return buildCreditNotePdf(event, fileUploadManager, language, templateManager, model);
+            default:
+                throw new IllegalStateException(documentType + " not supported");
+        }
+    }
 
     public static Optional<byte[]> buildReceiptPdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
         return buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, TemplateResource.RECEIPT_PDF);

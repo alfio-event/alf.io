@@ -28,14 +28,14 @@ import java.util.Map;
 public class BillingDocument {
 
     public enum Type {
-        INVOICE, RECEIPT
+        INVOICE, RECEIPT, CREDIT_NOTE
     }
 
     public enum Status {
         VALID, NOT_VALID
     }
 
-    private final int id;
+    private final long id;
     private final int eventId;
     private final String number;
     private final String reservationId;
@@ -44,7 +44,7 @@ public class BillingDocument {
     private final ZonedDateTime generationTimestamp;
     private final Status status;
 
-    public BillingDocument(@Column("id") int id,
+    public BillingDocument(@Column("id") long id,
                            @Column("event_id_fk") int eventId,
                            @Column("reservation_id_fk") String reservationId,
                            @Column("number") String number,

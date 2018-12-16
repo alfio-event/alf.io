@@ -20,10 +20,8 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.model.Event;
-import alfio.model.OrderSummary;
 import alfio.model.TicketReservation;
 import alfio.repository.EventRepository;
-import alfio.util.Json;
 import alfio.util.TemplateManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -33,12 +31,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
+import static alfio.util.FileUtil.sendPdf;
 
 @Controller
 @RequiredArgsConstructor
@@ -55,19 +54,6 @@ public class InvoiceReceiptController {
             ticketReservationManager.findById(reservationId).map(ticketReservation ->
                 with.apply(event, ticketReservation)).orElse(notFound)
         ).orElse(notFound);
-    }
-
-    private static boolean sendPdf(byte[] res, HttpServletResponse response, String eventName, String reservationId, String type) {
-        return Optional.ofNullable(res).map(pdf -> {
-            try {
-                response.setHeader("Content-Disposition", "attachment; filename=\"" + type+  "-" + eventName + "-" + reservationId + ".pdf\"");
-                response.setContentType("application/pdf");
-                response.getOutputStream().write(pdf);
-                return true;
-            } catch(IOException e) {
-                return false;
-            }
-        }).orElse(false);
     }
 
     @RequestMapping("/event/{eventName}/reservation/{reservationId}/receipt")

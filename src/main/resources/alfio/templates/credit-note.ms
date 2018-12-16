@@ -162,20 +162,20 @@
                     <td class="text-center">{{amount}}</td>
                     <td>{{name}}</td>
                     <td class="text-right">{{priceBeforeVat}}</td>
-                    <td class="text-right">{{subTotalBeforeVat}}</td>
+                    <td class="text-right">- {{subTotalBeforeVat}}</td>
                 </tr>
         {{/orderSummary.summary}}
             </tbody>
             <tfoot>
                 {{^orderSummary.free}}
                     {{#orderSummary.displayVat}}
-                        <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
+                        <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</th><th class="text-right">- {{orderSummary.totalVAT}}</th></tr>
                     {{/orderSummary.displayVat}}
                     {{^orderSummary.displayVat}}
                         <tr><th colspan="4" class="no-padding">{{#i18n}}invoice.vat-voided [{{vatTranslation}}]{{/i18n}}</th></tr>
                     {{/orderSummary.displayVat}}
                 {{/orderSummary.free}}
-                <tr><th colspan="3" class="strong" class="no-padding">{{#i18n}}reservation-page.total{{/i18n}} {{event.currency}}</th><th class="text-right strong">-{{orderSummary.totalPrice}}</th></tr>
+                <tr><th colspan="3" class="strong" class="no-padding">{{#i18n}}reservation-page.total{{/i18n}} {{event.currency}}</th><th class="text-right strong">- {{orderSummary.totalPrice}}</th></tr>
             </tfoot>
         </table>
 

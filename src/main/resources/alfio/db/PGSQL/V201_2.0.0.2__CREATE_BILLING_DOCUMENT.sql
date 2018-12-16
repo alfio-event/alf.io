@@ -16,7 +16,7 @@
 --
 
 CREATE TABLE if not exists billing_document (
-                                  id serial primary key not null,
+                                  id bigserial primary key not null,
                                   event_id_fk integer not null,
                                   number varchar(255) not null,
                                   reservation_id_fk character(36) not null,

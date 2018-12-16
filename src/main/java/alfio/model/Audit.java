@@ -54,7 +54,9 @@ public class Audit {
         VAT_FORMAL_VALIDATION_SUCCESSFUL,
         GROUP_MEMBER_ACQUIRED,
         CREDIT_NOTE_ISSUED,
-        BILLING_DOCUMENT_GENERATED
+        BILLING_DOCUMENT_GENERATED,
+        BILLING_DOCUMENT_INVALIDATED,
+        BILLING_DOCUMENT_RESTORED
     }
 
     private final String reservationId;

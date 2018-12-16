@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.controller.support.TemplateProcessor;
 import alfio.manager.support.DuplicateReferenceException;
 import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
@@ -34,7 +35,6 @@ import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.user.UserRepository;
-import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
@@ -98,6 +98,8 @@ public class AdminReservationManager {
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
     private final ExtensionManager extensionManager;
+    private final BillingDocumentRepository billingDocumentRepository;
+    private final FileUploadManager fileUploadManager;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
@@ -535,9 +537,44 @@ public class AdminReservationManager {
         });
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Result<List<Audit>> getAudit(String eventName, String reservationId, String username) {
         return loadReservation(eventName, reservationId, username).map((res) -> auditingRepository.findAllForReservation(reservationId));
+    }
+
+    @Transactional(readOnly = true)
+    public Result<List<BillingDocument>> getBillingDocuments(String eventName, String reservationId, String username) {
+        return loadReservation(eventName, reservationId, username).map((res) -> billingDocumentRepository.findAllByReservationId(reservationId));
+    }
+
+    @Transactional(readOnly = true)
+    public Result<Pair<BillingDocument, byte[]>> getSingleBillingDocumentAsPdf(String eventName, String reservationId, long documentId, String username) {
+        return loadReservation(eventName, reservationId, username).map(res -> {
+            BillingDocument billingDocument = billingDocumentRepository.findById(documentId, reservationId).orElseThrow(IllegalArgumentException::new);
+            Function<Map<String, Object>, Optional<byte[]>> pdfGenerator = model -> TemplateProcessor.buildBillingDocumentPdf(billingDocument.getType(), res.getRight(), fileUploadManager, new Locale(res.getLeft().getUserLanguage()), templateManager, model);
+            Map<String, Object> billingModel = billingDocument.getModel();
+            return Pair.of(billingDocument, pdfGenerator.apply(billingModel).orElse(null));
+        });
+    }
+
+    @Transactional
+    public Result<Boolean> invalidateBillingDocument(String eventName, String reservationId, long documentId, String username) {
+        return updateBillingDocumentStatus(eventName, reservationId, documentId, username, BillingDocument.Status.NOT_VALID, Audit.EventType.BILLING_DOCUMENT_INVALIDATED);
+    }
+
+    @Transactional
+    public Result<Boolean> restoreBillingDocument(String eventName, String reservationId, long documentId, String username) {
+        return updateBillingDocumentStatus(eventName, reservationId, documentId, username, BillingDocument.Status.VALID, Audit.EventType.BILLING_DOCUMENT_RESTORED);
+    }
+
+    private Result<Boolean> updateBillingDocumentStatus(String eventName, String reservationId, long documentId, String username, BillingDocument.Status status, Audit.EventType eventType) {
+        return loadReservation(eventName, reservationId, username).map(res -> {
+            Integer userId = userRepository.findIdByUserName(username).orElse(null);
+            auditingRepository.insert(reservationId, userId, res.getRight().getId(), eventType, new Date(), RESERVATION, String.valueOf(documentId));
+            return billingDocumentRepository.updateStatus(documentId, status, reservationId) == 1;
+        });
+
+
     }
 
     @Transactional

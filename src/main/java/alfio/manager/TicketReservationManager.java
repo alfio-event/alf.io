@@ -78,8 +78,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
-import static alfio.model.BillingDocument.Type.INVOICE;
-import static alfio.model.BillingDocument.Type.RECEIPT;
+import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -525,7 +524,8 @@ public class TicketReservationManager {
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
         List<Mailer.Attachment> attachments = new ArrayList<>(1);
         if(mustGenerateBillingDocument(summary, ticketReservation)) { //#459 - include PDF invoice in reservation email
-            attachments =  generateBillingDocumentAttachment(event, ticketReservation, language, getOrCreateBillingDocumentModel(event, ticketReservation, null));
+            BillingDocument.Type type = ticketReservation.getHasInvoiceNumber() ? INVOICE : RECEIPT;
+            attachments =  generateBillingDocumentAttachment(event, ticketReservation, language, getOrCreateBillingDocumentModel(event, ticketReservation, null), type);
         }
 
         notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), getReservationEmailSubject(event, language, "reservation-email-subject", getShortReservationID(event, reservationId)),
@@ -539,27 +539,22 @@ public class TicketReservationManager {
     private static List<Mailer.Attachment> generateBillingDocumentAttachment(Event event,
                                                                              TicketReservation ticketReservation,
                                                                              Locale language,
-                                                                             Map<String, Object> billingDocumentModel) {
-        return generateBillingDocumentAttachment(event, ticketReservation, language, billingDocumentModel, false);
-    }
-
-    private static List<Mailer.Attachment> generateBillingDocumentAttachment(Event event,
-                                                                             TicketReservation ticketReservation,
-                                                                             Locale language,
                                                                              Map<String, Object> billingDocumentModel,
-                                                                             boolean creditNote) {
+                                                                             BillingDocument.Type documentType) {
         Map<String, String> model = new HashMap<>();
         model.put("reservationId", ticketReservation.getId());
         model.put("eventId", Integer.toString(event.getId()));
         model.put("language", Json.toJson(language));
-        model.put("reservationEmailModel", Json.toJson(billingDocumentModel));
-        boolean hasInvoiceNumber = ticketReservation.getHasInvoiceNumber();
-        if(hasInvoiceNumber && creditNote) {
-            return Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
-        } else if(hasInvoiceNumber) {
-            return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
-        } else {
-            return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+        model.put("reservationEmailModel", Json.toJson(billingDocumentModel));//ticketReservation.getHasInvoiceNumber()
+        switch (documentType) {
+            case INVOICE:
+                return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
+            case RECEIPT:
+                return Collections.singletonList(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+            case CREDIT_NOTE:
+                return Collections.singletonList(new Mailer.Attachment("credit-note.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF));
+            default:
+                throw new IllegalStateException(documentType+" is not supported");
         }
     }
 
@@ -593,11 +588,12 @@ public class TicketReservationManager {
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.CREDIT_NOTE_ISSUED.toString());
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
         Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
+        Map<String, Object> billingDocumentModel = createBillingDocumentModel(event, reservation, username, BillingDocument.Type.CREDIT_NOTE);
         notificationManager.sendSimpleEmail(event,
             reservation.getEmail(),
             getReservationEmailSubject(event, getReservationLocale(reservation), "credit-note-issued-email-subject", reservation.getId()),
             () -> templateManager.renderTemplate(event, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
-            generateBillingDocumentAttachment(event, reservation, getReservationLocale(reservation), model, true)
+            generateBillingDocumentAttachment(event, reservation, getReservationLocale(reservation), billingDocumentModel, CREDIT_NOTE)
         );
     }
 
@@ -621,6 +617,10 @@ public class TicketReservationManager {
 
     @Transactional
     Map<String, Object> createBillingDocumentModel(Event event, TicketReservation reservation, String username) {
+        return createBillingDocumentModel(event, reservation, username, reservation.getHasInvoiceNumber() ? INVOICE : RECEIPT);
+    }
+
+    private Map<String, Object> createBillingDocumentModel(Event event, TicketReservation reservation, String username, BillingDocument.Type type) {
         Optional<String> vat = getVAT(event);
         String existingModel = reservation.getInvoiceModel();
         boolean existingModelPresent = StringUtils.isNotBlank(existingModel);
@@ -631,7 +631,7 @@ public class TicketReservationManager {
             //we still save invoice/receipt model to tickets_reservation for backward compatibility
             ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservation.getId(), Json.toJson(summary));
         }
-        AffectedRowCountAndKey<Integer> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, reservation.getHasInvoiceNumber() ? INVOICE : RECEIPT, Json.toJson(model), ZonedDateTime.now());
+        AffectedRowCountAndKey<Long> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, type, Json.toJson(model), ZonedDateTime.now());
         auditingRepository.insert(reservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.BILLING_DOCUMENT_GENERATED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), singletonList(singletonMap("documentId", doc.getKey())));
         return model;
     }
