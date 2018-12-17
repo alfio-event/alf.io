@@ -17,7 +17,9 @@
 package alfio;
 
 import alfio.config.support.PlatformProvider;
+import alfio.manager.FileDownloadManager;
 import alfio.test.util.IntegrationTestUtil;
+import alfio.util.BaseIntegrationTest;
 import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
@@ -103,5 +105,15 @@ public class TestConfiguration {
         PropertyPlaceholderConfigurer ppc =  new PropertyPlaceholderConfigurer();
         ppc.setLocation(new ByteArrayResource(out.toByteArray()));
         return ppc;
+    }
+
+    @Bean
+    public FileDownloadManager fileDownloadManager() {
+        return new FileDownloadManager() {
+            @Override
+            public DownloadedFile downloadFile(String url) {
+                return new DownloadedFile(BaseIntegrationTest.ONE_PIXEL_BLACK_GIF, "test", "image/gif");
+            }
+        };
     }
 }

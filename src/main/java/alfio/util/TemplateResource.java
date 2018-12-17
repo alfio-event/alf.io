@@ -62,6 +62,12 @@ public enum TemplateResource {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
+    CREDIT_NOTE_ISSUED_EMAIL("/alfio/templates/credit-note-issued-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
     OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER("/alfio/templates/offline-reservation-expiring-email-for-organizer-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
@@ -127,26 +133,21 @@ public enum TemplateResource {
     RECEIPT_PDF("/alfio/templates/receipt.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            Map<String, Object> model = prepareSampleDataForConfirmationEmail(organization, event);
-            imageData.ifPresent(iData -> {
-                model.put("eventImage", iData.getEventImage());
-                model.put("imageWidth", iData.getImageWidth());
-                model.put("imageHeight", iData.getImageHeight());
-            });
-            return model;
+            return sampleBillingDocument(imageData, organization, event);
         }
     },
 
     INVOICE_PDF("/alfio/templates/invoice.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            Map<String, Object> model = prepareSampleDataForConfirmationEmail(organization, event);
-            imageData.ifPresent(iData -> {
-                model.put("eventImage", iData.getEventImage());
-                model.put("imageWidth", iData.getImageWidth());
-                model.put("imageHeight", iData.getImageHeight());
-            });
-            return model;
+            return sampleBillingDocument(imageData, organization, event);
+        }
+    },
+
+    CREDIT_NOTE_PDF("/alfio/templates/credit-note.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return sampleBillingDocument(imageData, organization, event);
         }
     },
 
@@ -206,6 +207,16 @@ public enum TemplateResource {
         return sampleTicket("Firstname", "Lastname", "email@email.tld");
     }
 
+    private static Map<String, Object> sampleBillingDocument(Optional<ImageData> imageData, Organization organization, Event event) {
+        Map<String, Object> model = prepareSampleDataForConfirmationEmail(organization, event);
+        imageData.ifPresent(iData -> {
+            model.put("eventImage", iData.getEventImage());
+            model.put("imageWidth", iData.getImageWidth());
+            model.put("imageHeight", iData.getImageHeight());
+        });
+        return model;
+    }
+
     private static TicketCategory sampleCategory() {
         return new TicketCategory(0, ZonedDateTime.now().minusDays(1), ZonedDateTime.now().plusDays(1), 100, "test category", false, TicketCategory.Status.ACTIVE,
             0, true, 100, null, null, null, null, null);
@@ -222,7 +233,7 @@ public enum TemplateResource {
             "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
             PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456",
             "CH", false, new BigDecimal("8.00"), true,
-            ZonedDateTime.now().minusMinutes(1), "PO-1234");
+            ZonedDateTime.now().minusMinutes(1), "PO-1234", ZonedDateTime.now());
     }
 
     private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
@@ -268,8 +279,9 @@ public enum TemplateResource {
 
         model.put("hasRefund", StringUtils.isNotEmpty(orderSummary.getRefundedAmount()));
 
-        ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getCreationTimestamp(), reservation.getConfirmationTimestamp(), ZonedDateTime.now());
+        ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getRegistrationTimestamp(), reservation.getCreationTimestamp(), reservation.getConfirmationTimestamp(), ZonedDateTime.now());
         model.put("confirmationDate", creationTimestamp.withZoneSameInstant(event.getZoneId()));
+        model.put("now", ZonedDateTime.now(event.getZoneId()));
 
         if (reservation.getValidity() != null) {
             model.put("expirationDate", ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()));

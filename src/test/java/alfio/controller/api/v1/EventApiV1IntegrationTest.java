@@ -138,15 +138,15 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 new BigDecimal("7.7"),
                 true,
                 Arrays.asList(PaymentProxy.OFFLINE,PaymentProxy.STRIPE),
-                Arrays.asList(
+                Collections.singletonList(
                     new EventCreationRequest.CategoryRequest(
                         "standard",
-                        Arrays.asList(new EventCreationRequest.DescriptionRequest("en","desc")),
+                        Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
                         10,
                         false,
                         BigDecimal.TEN,
-                        LocalDateTime.of(2019,1,10,12, 0),
-                        LocalDateTime.of(2019,1,30,18, 0),
+                        LocalDateTime.of(2019, 1, 10, 12, 0),
+                        LocalDateTime.of(2019, 1, 30, 18, 0),
                         null,
                         null,
                         null
@@ -163,7 +163,7 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
 
     @Test
-    public void createTest() throws URISyntaxException, IOException {
+    public void createTest() {
 
         EventCreationRequest eventCreationRequest = creationRequest();
 
@@ -185,7 +185,7 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 assertEquals(1,requestCategories.size());
                 requestCategories.forEach((rtc) -> {
                         assertEquals(t.getMaxTickets(), rtc.getMaxTickets().intValue());
-                        assertTrue(t.getPrice().compareTo(rtc.getPrice()) == 0);
+                        assertEquals(0, t.getPrice().compareTo(rtc.getPrice()));
                     }
                 );
             }

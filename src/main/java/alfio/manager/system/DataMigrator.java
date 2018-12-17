@@ -16,12 +16,15 @@
  */
 package alfio.manager.system;
 
+import alfio.manager.TicketReservationManager;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.EventMigration;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.BillingDocumentRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.util.MonetaryUtil;
@@ -67,6 +70,9 @@ public class DataMigrator {
     private final TransactionTemplate transactionTemplate;
     private final ConfigurationRepository configurationRepository;
     private final NamedParameterJdbcTemplate jdbc;
+    private final TicketReservationManager ticketReservationManager;
+    private final BillingDocumentRepository billingDocumentRepository;
+    private final TicketReservationRepository ticketReservationRepository;
 
     static {
         PRICE_UPDATE_BY_KEY.put("event", "update event set src_price_cts = :srcPriceCts, vat_status = :vatStatus where id = :eventId");
@@ -84,7 +90,10 @@ public class DataMigrator {
                         @Value("${alfio.build-ts}") String buildTimestamp,
                         PlatformTransactionManager transactionManager,
                         ConfigurationRepository configurationRepository,
-                        NamedParameterJdbcTemplate jdbc) {
+                        NamedParameterJdbcTemplate jdbc,
+                        TicketReservationManager ticketReservationManager,
+                        BillingDocumentRepository billingDocumentRepository,
+                        TicketReservationRepository ticketReservationRepository) {
         this.eventMigrationRepository = eventMigrationRepository;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -94,6 +103,9 @@ public class DataMigrator {
         this.currentVersionAsString = currentVersion;
         this.buildTimestamp = ZonedDateTime.parse(buildTimestamp);
         this.transactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+        this.ticketReservationManager = ticketReservationManager;
+        this.billingDocumentRepository = billingDocumentRepository;
+        this.ticketReservationRepository = ticketReservationRepository;
     }
 
     public void migrateEventsToCurrentVersion() {
@@ -127,6 +139,7 @@ public class DataMigrator {
                 //migrate prices to new structure. This should be done for all events, regardless of the expiration date.
                 migratePrices(event.getId());
                 fixStuckTickets(event.getId());
+                createBillingDocuments(event);
 
                 if(alreadyDefined) {
                     EventMigration eventMigration = optional.get();
@@ -138,6 +151,21 @@ public class DataMigrator {
 
                 return null;
             });
+        }
+    }
+
+    private void createBillingDocuments(Event event) {
+        if(event.getEnd().isAfter(ZonedDateTime.now(event.getZoneId()))) {
+            List<String> reservations = jdbc.queryForList("select id from tickets_reservation where event_id_fk = :eventId and status in ('OFFLINE_PAYMENT', 'COMPLETE') and invoice_number is not null and id not in(select distinct reservation_id_fk from billing_document where event_id_fk = :eventId)", new MapSqlParameterSource("eventId", event.getId()), String.class);
+            if(reservations.isEmpty()) {
+                return;
+            }
+            log.info("creating BillingDocument(s) for event {}", event.getDisplayName());
+            for (String reservationId : reservations) {
+                TicketReservation reservation = ticketReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new);
+                ticketReservationManager.getOrCreateBillingDocumentModel(event, reservation, null);
+            }
+            log.info("checked {} BillingDocument(s) for event {}", reservations.size(), event.getDisplayName());
         }
     }
 

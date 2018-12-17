@@ -17,6 +17,7 @@
 package alfio.config;
 
 import alfio.config.support.PlatformProvider;
+import alfio.manager.FileDownloadManager;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.util.TemplateManager;
@@ -161,6 +162,12 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         loader.setSuffix(".ms");
         loader.setResourceLoader(resourceLoader);
         return loader;
+    }
+
+    @Bean
+    @Profile("!"+Initializer.PROFILE_INTEGRATION_TEST)
+    public FileDownloadManager fileDownloadManager() {
+        return new FileDownloadManager();
     }
 
     @Override

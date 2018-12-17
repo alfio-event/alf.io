@@ -30,6 +30,18 @@
                 },
                 getAudit: function(eventName, reservationId) {
                     return $http.get('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/audit').error(HttpErrorHandler.handle);
+                },
+                loadAllBillingDocuments: function(eventName, reservationId) {
+                    return $http.get('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/billing-documents').error(HttpErrorHandler.handle);
+                },
+                invalidateDocument: function(eventName, reservationId, documentId) {
+                    return $http['delete']('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/billing-document/'+documentId).error(HttpErrorHandler.handle);
+                },
+                restoreDocument: function(eventName, reservationId, documentId) {
+                    return $http['put']('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/billing-document/'+documentId+'/restore').error(HttpErrorHandler.handle);
+                },
+                regenerateBillingDocument: function(eventName, reservationId) {
+                    return $http.put('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/regenerate-billing-document', {}).error(HttpErrorHandler.handle);
                 }
             }
         }]).service('AdminImportService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {

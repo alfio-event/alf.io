@@ -38,6 +38,8 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 
+import static alfio.util.BaseIntegrationTest.ONE_PIXEL_BLACK_GIF;
+
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
@@ -49,8 +51,6 @@ public class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
     FileUploadManager fileUploadManager;
 
     private static final byte[] FILE = {1,2,3,4};
-
-    private static final byte[] ONE_PIXEL_BLACK_GIF = Base64.getDecoder().decode("R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=");
 
     @Test
     public void testInsert() {

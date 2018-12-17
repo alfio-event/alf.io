@@ -8,11 +8,6 @@ install:
 matrix:
     include:
         - jdk: oraclejdk8
-          env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql9.5"
-          dist: trusty
-          addons:
-              postgresql: "9.5"
-        - jdk: oraclejdk8
           env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql9.6"
           dist: trusty
           addons:

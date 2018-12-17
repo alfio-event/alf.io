@@ -35,11 +35,12 @@ import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.TicketFieldRepository;
-import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.Validator;
-import ch.digitalfondue.basicxlsx.*;
+import ch.digitalfondue.basicxlsx.Cell;
+import ch.digitalfondue.basicxlsx.StreamingWorkbook;
+import ch.digitalfondue.basicxlsx.Style;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import lombok.AllArgsConstructor;
@@ -553,8 +554,11 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}", method = DELETE)
-    public String deletePendingPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
-        ticketReservationManager.deleteOfflinePayment(loadEvent(eventName, principal), reservationId, false);
+    public String deletePendingPayment(@PathVariable("eventName") String eventName,
+                                       @PathVariable("reservationId") String reservationId,
+                                       @RequestParam(required = false, value = "credit", defaultValue = "false") Boolean creditReservation,
+                                       Principal principal) {
+        ticketReservationManager.deleteOfflinePayment(loadEvent(eventName, principal), reservationId, false, Boolean.TRUE.equals(creditReservation), principal.getName());
         return OK;
     }
 
@@ -609,14 +613,14 @@ public class EventApiController {
         response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-invoices.zip");
 
         try(OutputStream os = response.getOutputStream(); ZipOutputStream zipOS = new ZipOutputStream(os)) {
-            for (TicketReservation reservation : ticketReservationManager.findAllInvoices(event.getId())) {
-                OrderSummary orderSummary = Json.fromJson(reservation.getInvoiceModel(), OrderSummary.class);
-                Optional<String> vat = Optional.ofNullable(orderSummary.getVatPercentage());
-                Map<String, Object> reservationModel = ticketReservationManager.prepareModelForReservationEmail(event, reservation, vat, orderSummary);
+            for (Pair<TicketReservation, BillingDocument> pair : ticketReservationManager.findAllInvoices(event.getId())) {
+                TicketReservation reservation = pair.getLeft();
+                BillingDocument document = pair.getRight();
+                Map<String, Object> reservationModel = document.getModel();
                 Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, reservationModel);
 
                 if(pdf.isPresent()) {
-                    zipOS.putNextEntry(new ZipEntry("invoice-" + eventName + "-id-" + reservation.getId() + "-invoice-nr-" + reservation.getInvoiceNumber() + ".pdf"));
+                    zipOS.putNextEntry(new ZipEntry("invoice-" + eventName + "-id-" + reservation.getId() + "-invoice-nr-" + document.getNumber() + ".pdf"));
                     StreamUtils.copy(pdf.get(), zipOS);
                 }
             }

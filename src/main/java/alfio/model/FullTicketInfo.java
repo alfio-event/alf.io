@@ -83,6 +83,7 @@ public class FullTicketInfo {
                           @Column("tr_vat_included") Boolean vatIncluded,
                           @Column("tr_creation_ts") ZonedDateTime reservationCreationTimestamp,
                           @Column("tr_customer_reference") String customerReference,
+                          @Column("tr_registration_ts") ZonedDateTime reservationRegistrationTimestamp,
                           //
                           @Column("tr_billing_address_company") String billingAddressCompany,
                           @Column("tr_billing_address_line1") String billingAddressLine1,
@@ -111,7 +112,7 @@ public class FullTicketInfo {
             lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage,
-            directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent, vatIncluded, reservationCreationTimestamp, customerReference);
+            directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent, vatIncluded, reservationCreationTimestamp, customerReference, reservationRegistrationTimestamp);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
                 tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts, code, validCheckInFrom, validCheckInTo,
                 ticketValidityStart, ticketValidityEnd);

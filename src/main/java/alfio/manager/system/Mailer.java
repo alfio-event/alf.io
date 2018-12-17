@@ -65,7 +65,7 @@ public interface Mailer {
             public String contentType(String contentType) {
                 return "text/calendar";
             }
-        }, INVOICE_PDF, RECEIPT_PDF, PASSBOOK {
+        }, INVOICE_PDF, RECEIPT_PDF, CREDIT_NOTE_PDF, PASSBOOK {
             @Override
             public String fileName(String fileName) {
                 return "Passbook.pkpass";

@@ -19,16 +19,15 @@
 
 
         <uib-tabset active="active">
-            <uib-tab index="0">
+            <uib-tab>
                 <uib-tab-heading>
                     Info
                 </uib-tab-heading>
 
-
-
                 <div class="page-header">
                     <h3>Reservation details
-                        <button type="button" ng-click="$ctrl.cancelReservationModal()" ng-if="$ctrl.reservation.status !== 'CANCELLED'" class="btn btn-danger pull-right"><i class="fa fa-trash"></i> <span class="hidden-sm hidden-xs">Cancel reservation</span></button>
+                        <button type="button" ng-click="$ctrl.cancelReservationModal(false)" ng-if="$ctrl.reservation.showCreditCancel" class="btn btn-danger pull-right"><i class="fa fa-trash"></i> <span class="hidden-sm hidden-xs">Cancel reservation</span></button>
+                        <button type="button" ng-click="$ctrl.cancelReservationModal(true)" ng-if="$ctrl.reservation.showCreditCancel && $ctrl.reservation.status === 'OFFLINE_PAYMENT'" class="btn btn-warning pull-right" style="margin-right:10px;"><i class="fa fa-undo"></i> <span class="hidden-sm hidden-xs">Credit reservation</span></button>
                     </h3>
                 </div>
 
@@ -68,7 +67,7 @@
                 </div>
 
                 <div>
-                    <div ng-if="$ctrl.reservation.status !== 'PENDING'">
+                    <div ng-if="['PENDING', 'OFFLINE_PAYMENT'].indexOf($ctrl.reservation.status) === 0">
                         <div class="page-header">
                             <h3>Payment info</h3>
                         </div>
@@ -198,6 +197,31 @@
                             </div>
                         </div>
                     </div>
+                    <div ng-if="['PENDING', 'OFFLINE_PAYMENT'].indexOf($ctrl.reservation.status) > -1">
+
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <label><input type="checkbox" ng-model="$ctrl.reservation.updateAdvancedBillingOptions"> Edit advanced invoice data</label>
+                            </div>
+                        </div>
+                        <div class="panel panel-danger" uib-collapse="!$ctrl.reservation.updateAdvancedBillingOptions">
+                            <div class="panel-heading">
+                                <div class="panel-title">Danger zone!</div>
+                            </div>
+                            <div class="panel-body">
+                                <p class="text-danger">Please modify the following option with care, as they might affect the reservation total price and/or lead to inconsistencies.</p>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-6">
+                                        <div class="form-group">
+                                            <label ng-if="$ctrl.reservation.advancedBillingOptions.vatApplied"><input type="checkbox" ng-model="$ctrl.reservation.advancedBillingOptions.vatApplied" ng-true-value="'Y'" ng-false-value="'N'"> Apply VAT/GST</label>
+                                            <label ng-if="!$ctrl.reservation.advancedBillingOptions.vatApplied">VAT/GST Application</label>
+                                            <div class="form-control-static" ng-if="!$ctrl.reservation.advancedBillingOptions.vatApplied">VAT/GST not applicable</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <hr>
                     <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
                         <div class="panel-heading">
@@ -247,8 +271,6 @@
                         <div class="col-xs-12">
                             <button class="btn btn-sm btn-default btn-block-xs" ng-if="$ctrl.reservation.status === 'COMPLETE'" type="button" ng-click="$ctrl.notifyCustomer()"><i class="fa fa-envelope-o"></i> Send reservation via email</button>
                             <button class="btn btn-sm btn-default btn-block-xs" ng-if="$ctrl.reservation.status === 'COMPLETE'" type="button" ng-click="$ctrl.notifyAttendees()"><i class="fa fa-envelope-o"></i> Send tickets via email</button>
-                            <a class="btn btn-sm btn-default btn-block-xs pull-right-md" ng-if="$ctrl.reservationDescriptor.reservation.hasInvoiceNumber" href="../event/{{$ctrl.event.shortName}}/reservation/{{$ctrl.reservation.id}}/invoice" target="_blank"><i class="fa fa-download"></i> Download invoice</a>
-                            <a class="btn btn-sm btn-default btn-block-xs pull-right-md" ng-if="!$ctrl.reservationDescriptor.reservation.hasInvoiceNumber" href="../event/{{$ctrl.event.shortName}}/reservation/{{$ctrl.reservation.id}}/receipt" target="_blank"><i class="fa fa-download"></i> Download receipt</a>
                         </div>
                     </div>
                     <div class="clearfix wMarginBottom"></div>
@@ -266,8 +288,75 @@
                 </div>
             </uib-tab>
 
-            <uib-tab index="1">
-                <uib-tab-heading>Audit log</uib-tab-heading>
+            <uib-tab>
+                <uib-tab-heading>Billing Documents <span class="badge" ng-bind="$ctrl.billingDocuments.count"></span></uib-tab-heading>
+                <button type="button" class="btn btn-warning btn-block-xs pull-right-md" ng-if="$ctrl.reservationDescriptor.reservation.status !== 'CANCELLED'" ng-click="$ctrl.regenerateBillingDocument()"><i class="fa fa-refresh"></i> Regenerate</button>
+                <div class="page-header">
+                    <h3>Active</h3>
+                </div>
+                <div class="table-responsive wMarginTop10px">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Number</th>
+                            <th>Date</th>
+                            <th>&nbsp;</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-if="valid.length == 0">
+                            <td colspan="5" class="text-center">No documents found</td>
+                        </tr>
+
+                        <tr ng-repeat="doc in $ctrl.billingDocuments.valid">
+                            <td><i class="fa" uib-tooltip="{{doc.type}}" ng-class="{'fa-sticky-note-o': doc.type === 'RECEIPT', 'fa-file-text-o': doc.type === 'INVOICE', 'fa-undo': doc.type === 'CREDIT_NOTE'}"></i></td>
+                            <td ng-bind="doc.number"></td>
+                            <td ng-bind="doc.generationTimestamp | formatDate"></td>
+                            <td class="text-right">
+                              <a class="btn btn-sm btn-default" ng-href="/admin/api/reservation/event/{{$ctrl.event.shortName}}/{{$ctrl.reservation.id}}/billing-document/{{doc.id}}" target="_blank"><i class="fa fa-download"></i> Download</a>
+                              <button type="button" class="btn btn-sm btn-danger" ng-click="$ctrl.invalidateDocument(doc.id)"><i class="fa fa-ban"></i> Invalidate</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="page-header">
+                    <h3>Not Active</h3>
+                </div>
+
+                <div class="table-responsive wMarginTop10px">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Number</th>
+                            <th>Date</th>
+                            <th>&nbsp;</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-if="$ctrl.billingDocuments.notValid.length == 0">
+                            <td colspan="5" class="text-center">No documents found</td>
+                        </tr>
+
+                        <tr ng-repeat="doc in $ctrl.billingDocuments.notValid">
+                            <td><i class="fa" uib-tooltip="{{doc.type}}" ng-class="{'fa-sticky-note-o': doc.type === 'RECEIPT', 'fa-file-text-o': doc.type === 'INVOICE', 'fa-undo': doc.type === 'CREDIT_NOTE'}"></i></td>
+                            <td ng-bind="doc.number"></td>
+                            <td ng-bind="doc.generationTimestamp | formatDate"></td>
+                            <td class="text-right">
+                                <a class="btn btn-sm btn-default" ng-href="/admin/api/reservation/event/{{$ctrl.event.shortName}}/{{$ctrl.reservation.id}}/billing-document/{{doc.id}}" target="_blank"><i class="fa fa-download"></i> Download</a>
+                                <button type="button" class="btn btn-sm btn-warning" ng-click="$ctrl.restoreDocument(doc.id)"><i class="fa fa-redo"></i> Restore</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </uib-tab>
+
+            <uib-tab>
+                <uib-tab-heading>Audit log <span class="badge" ng-bind="$ctrl.audit.length"></span></uib-tab-heading>
                 <div class="table-responsive wMarginTop10px">
                     <table class="table table-striped">
                         <thead>

@@ -38,6 +38,7 @@ public class ExtensionManager {
     public enum ExtensionEvent {
         RESERVATION_CONFIRMED,
         RESERVATION_CANCELLED,
+        RESERVATION_CREDIT_NOTE_ISSUED,
         TICKET_CANCELLED,
         RESERVATION_EXPIRED,
         TICKET_ASSIGNED,
@@ -181,23 +182,34 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.TICKET_REVERT_CHECKED_IN, event, event.getOrganizationId(), payload);
     }
 
+    void handleReservationsCreditNoteIssuedForEvent(Event event, List<String> reservationIds) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("reservationIds", reservationIds);
+        payload.put("reservations", ticketReservationRepository.findByIds(reservationIds));
+
+        syncCall(ExtensionEvent.RESERVATION_CREDIT_NOTE_ISSUED, event, event.getOrganizationId(), payload, Boolean.class);
+    }
+
 
     private void asyncCall(ExtensionEvent extensionEvent, Event event, int organizationId, Map<String, Object> payload) {
-        Map<String, Object> payloadCopy = new HashMap<>(payload);
-        payloadCopy.put("event", event);
-        payloadCopy.put("eventId", event.getId());
-        payloadCopy.put("organizationId", organizationId);
-
         extensionService.executeScriptAsync(extensionEvent.name(),
-            toPath(organizationId, event.getId()), payloadCopy);
+            toPath(organizationId, event.getId()),
+            fillWithBasicInfo(payload, event, organizationId));
     }
 
     private <T> T syncCall(ExtensionEvent extensionEvent, Event event, int organizationId, Map<String, Object> payload, Class<T> clazz) {
+        return extensionService.executeScriptsForEvent(extensionEvent.name(),
+            toPath(event.getId(), organizationId),
+            fillWithBasicInfo(payload, event, organizationId),
+            clazz);
+    }
+
+    private Map<String, Object> fillWithBasicInfo(Map<String, Object> payload, Event event, int organizationId) {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
         payloadCopy.put("event", event);
         payloadCopy.put("eventId", event.getId());
         payloadCopy.put("organizationId", organizationId);
-        return extensionService.executeScriptsForEvent(extensionEvent.name(), toPath(event.getId(), organizationId), payloadCopy, clazz);
+        return payloadCopy;
     }
 
 
