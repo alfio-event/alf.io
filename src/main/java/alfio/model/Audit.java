@@ -56,7 +56,8 @@ public class Audit {
         CREDIT_NOTE_ISSUED,
         BILLING_DOCUMENT_GENERATED,
         BILLING_DOCUMENT_INVALIDATED,
-        BILLING_DOCUMENT_RESTORED
+        BILLING_DOCUMENT_RESTORED,
+        FORCE_VAT_APPLICATION
     }
 
     private final String reservationId;

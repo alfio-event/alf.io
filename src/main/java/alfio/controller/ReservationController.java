@@ -261,7 +261,7 @@ public class ReservationController {
 
         CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event, false);
 
-        ticketReservationRepository.resetVat(reservationId);
+        ticketReservationRepository.resetVat(reservationId, event.getVatStatus());
         if(contactAndTicketsForm.isBusiness()) {
             checkAndApplyVATRules(eventName, reservationId, contactAndTicketsForm, bindingResult, event);
         }

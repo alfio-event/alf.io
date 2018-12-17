@@ -40,6 +40,7 @@ import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -70,6 +71,7 @@ import static alfio.model.modification.DateTimeModification.fromZonedDateTime;
 import static alfio.util.EventUtil.generateEmptyTickets;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.*;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
@@ -222,6 +224,23 @@ public class AdminReservationManager {
             }
 
         }
+
+        if(arm.isUpdateAdvancedBillingOptions() && event.getVatStatus() != PriceContainer.VatStatus.NONE) {
+            boolean vatApplicationRequested = arm.getAdvancedBillingOptions().isVatApplied();
+            PriceContainer.VatStatus newVatStatus;
+            if(vatApplicationRequested) {
+                newVatStatus = event.getVatStatus();
+            } else {
+                newVatStatus = event.getVatStatus() == PriceContainer.VatStatus.INCLUDED ? PriceContainer.VatStatus.INCLUDED_EXEMPT : PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT;
+            }
+
+            if(newVatStatus != ObjectUtils.firstNonNull(r.getVatStatus(), event.getVatStatus())) {
+                auditingRepository.insert(reservationId, userRepository.getByUsername(username).getId(), event.getId(), Audit.EventType.FORCE_VAT_APPLICATION, new Date(), Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("vatStatus", newVatStatus)));
+                ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, null);
+                ticketReservationRepository.resetVat(reservationId, newVatStatus);
+            }
+        }
+
         Date d = new Date();
         arm.getTicketsInfo().stream()
             .filter(TicketsInfo::isUpdateAttendees)
@@ -627,7 +646,7 @@ public class AdminReservationManager {
     @Transactional
     public Result<Boolean> regenerateBillingDocument(String eventName, String reservationId, String username) {
         return loadReservation(eventName, reservationId, username).map(res -> {
-            internalRegenerateBillingDocument(res.getRight(), reservationId, username);
+            ticketReservationManager.createBillingDocumentModel(res.getRight(), res.getLeft(), username);
             return true;
         });
     }
@@ -704,4 +723,5 @@ public class AdminReservationManager {
         }
         //
     }
+
 }

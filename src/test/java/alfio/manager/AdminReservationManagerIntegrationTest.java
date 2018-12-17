@@ -168,7 +168,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
         Category category = new Category(null, "name", new BigDecimal("100.00"));
         int attendees = AVAILABLE_SEATS;
         List<TicketsInfo> ticketsInfoList = Collections.singletonList(new TicketsInfo(category, generateAttendees(attendees), true, false));
-        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false, null);
+        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false, false, null, null);
         Result<Pair<TicketReservation, List<Ticket>>> result = adminReservationManager.createReservation(modification, event.getShortName(), username);
         assertTrue(result.isSuccess());
         Pair<TicketReservation, List<Ticket>> data = result.getData();
@@ -207,7 +207,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
         Category resNewCategory = new Category(null, "name", new BigDecimal("100.00"));
         int attendees = 1;
         List<TicketsInfo> ticketsInfoList = Arrays.asList(new TicketsInfo(resExistingCategory, generateAttendees(attendees), false, false), new TicketsInfo(resNewCategory, generateAttendees(attendees), false, false),new TicketsInfo(resExistingCategory, generateAttendees(attendees), false, false));
-        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false, null);
+        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false,false, null, null);
         Result<Pair<TicketReservation, List<Ticket>>> result = adminReservationManager.createReservation(modification, event.getShortName(), username);
         assertTrue(result.isSuccess());
         Pair<TicketReservation, List<Ticket>> data = result.getData();
@@ -271,7 +271,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
                 allAttendees.addAll(attendees);
                 return new TicketsInfo(category, attendees, addSeatsIfNotAvailable, false);
             }).collect(toList());
-        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false, null);
+        AdminReservationModification modification = new AdminReservationModification(expiration, customerData, ticketsInfoList, "en", false,false, null, null);
 
         if(reservedTickets > 0) {
             TicketReservationModification trm = new TicketReservationModification();

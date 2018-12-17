@@ -32,8 +32,18 @@
 
         ctrl.amountToRefund = null;
         ctrl.refundInProgress = false;
+        ctrl.vatStatusDescriptions = {
+           /*
+           'NONE': 'VAT/GST not supported',
+           'INCLUDED': 'Included in the sale price',
+           'NOT_INCLUDED': 'Not included in the sale price',
+           'INCLUDED_EXEMPT': 'VAT/GST voided',
+           'NOT_INCLUDED_EXEMPT': '
+            */
+        };
 
         ctrl.displayCreationWarning = angular.isDefined($stateParams.fromCreation) && $stateParams.fromCreation;
+        ctrl.regenerateBillingDocument = regenerateBillingDocument;
 
         ctrl.hideCreationWarning = function() {
             ctrl.displayCreationWarning = false;
@@ -46,6 +56,12 @@
             var src = ctrl.reservationDescriptor.reservation;
             var currentURL = $window.location.href;
             ctrl.reservationUrl = (currentURL.substring(0, currentURL.indexOf('/admin')) + '/event/'+ ctrl.event.shortName + '/reservation/' + src.id+'?lang='+src.userLanguage);
+            var vatApplied = null;
+            if(['INCLUDED', 'NOT_INCLUDED'].indexOf(src.vatStatus) > -1) {
+                vatApplied = 'Y';
+            } else if(['INCLUDED_EXEMPT', 'NOT_INCLUDED_EXEMPT'].indexOf(src.vatStatus) > -1) {
+                vatApplied = 'N';
+            }
             ctrl.reservation = {
                 id: src.id,
                 status: src.status,
@@ -64,6 +80,9 @@
                     vatNr: src.vatNr,
                     vatCountryCode: src.vatCountryCode,
                     invoiceRequested: src.invoiceRequested
+                },
+                advancedBillingOptions: {
+                    vatApplied: vatApplied
                 },
                 language: src.userLanguage
             };
@@ -107,6 +126,16 @@
             }
 
         };
+
+        function regenerateBillingDocument() {
+            var eventName = ctrl.event.shortName;
+            var reservation = ctrl.reservationDescriptor.reservation;
+            var reservationId = reservation.id;
+            AdminReservationService.regenerateBillingDocument(eventName, reservationId).then(function(res) {
+                NotificationHandler.showSuccess("Billing Document regeneration succeeded");
+                loadBillingDocuments();
+            });
+        }
 
         function loadAudit() {
             ctrl.audit = [];

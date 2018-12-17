@@ -24,8 +24,6 @@
                     Info
                 </uib-tab-heading>
 
-
-
                 <div class="page-header">
                     <h3>Reservation details
                         <button type="button" ng-click="$ctrl.cancelReservationModal(false)" ng-if="$ctrl.reservation.showCreditCancel" class="btn btn-danger pull-right"><i class="fa fa-trash"></i> <span class="hidden-sm hidden-xs">Cancel reservation</span></button>
@@ -69,7 +67,7 @@
                 </div>
 
                 <div>
-                    <div ng-if="$ctrl.reservation.status !== 'PENDING'">
+                    <div ng-if="['PENDING', 'OFFLINE_PAYMENT'].indexOf($ctrl.reservation.status) === 0">
                         <div class="page-header">
                             <h3>Payment info</h3>
                         </div>
@@ -199,6 +197,31 @@
                             </div>
                         </div>
                     </div>
+                    <div ng-if="['PENDING', 'OFFLINE_PAYMENT'].indexOf($ctrl.reservation.status) > -1">
+
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <label><input type="checkbox" ng-model="$ctrl.reservation.updateAdvancedBillingOptions"> Edit advanced invoice data</label>
+                            </div>
+                        </div>
+                        <div class="panel panel-danger" uib-collapse="!$ctrl.reservation.updateAdvancedBillingOptions">
+                            <div class="panel-heading">
+                                <div class="panel-title">Danger zone!</div>
+                            </div>
+                            <div class="panel-body">
+                                <p class="text-danger">Please modify the following option with care, as they might affect the reservation total price and/or lead to inconsistencies.</p>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-6">
+                                        <div class="form-group">
+                                            <label ng-if="$ctrl.reservation.advancedBillingOptions.vatApplied"><input type="checkbox" ng-model="$ctrl.reservation.advancedBillingOptions.vatApplied" ng-true-value="'Y'" ng-false-value="'N'"> Apply VAT/GST</label>
+                                            <label ng-if="!$ctrl.reservation.advancedBillingOptions.vatApplied">VAT/GST Application</label>
+                                            <div class="form-control-static" ng-if="!$ctrl.reservation.advancedBillingOptions.vatApplied">VAT/GST not applicable</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <hr>
                     <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
                         <div class="panel-heading">
@@ -267,6 +290,7 @@
 
             <uib-tab>
                 <uib-tab-heading>Billing Documents <span class="badge" ng-bind="$ctrl.billingDocuments.count"></span></uib-tab-heading>
+                <button type="button" class="btn btn-warning btn-block-xs pull-right-md" ng-if="$ctrl.reservationDescriptor.reservation.status !== 'CANCELLED'" ng-click="$ctrl.regenerateBillingDocument()"><i class="fa fa-refresh"></i> Regenerate</button>
                 <div class="page-header">
                     <h3>Active</h3>
                 </div>

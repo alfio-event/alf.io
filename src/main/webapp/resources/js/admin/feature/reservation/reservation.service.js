@@ -39,6 +39,9 @@
                 },
                 restoreDocument: function(eventName, reservationId, documentId) {
                     return $http['put']('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/billing-document/'+documentId+'/restore').error(HttpErrorHandler.handle);
+                },
+                regenerateBillingDocument: function(eventName, reservationId) {
+                    return $http.put('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/regenerate-billing-document', {}).error(HttpErrorHandler.handle);
                 }
             }
         }]).service('AdminImportService', ['$http', 'HttpErrorHandler', function($http, HttpErrorHandler) {

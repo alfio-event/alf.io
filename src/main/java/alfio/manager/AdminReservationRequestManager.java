@@ -173,7 +173,7 @@ public class AdminReservationRequestManager {
                 AdminReservationModification.Attendee attendee = p.getLeft();
                 String language = StringUtils.defaultIfBlank(attendee.getLanguage(), src.getLanguage());
                 CustomerData cd = new CustomerData(attendee.getFirstName(), attendee.getLastName(), attendee.getEmailAddress(), null, language, null, null, null);
-                return new AdminReservationModification(src.getExpiration(), cd, singletonList(p.getRight()), language, src.isUpdateContactData(), src.getNotification());
+                return new AdminReservationModification(src.getExpiration(), cd, singletonList(p.getRight()), language, src.isUpdateContactData(), false, null, src.getNotification());
             });
     }
 
