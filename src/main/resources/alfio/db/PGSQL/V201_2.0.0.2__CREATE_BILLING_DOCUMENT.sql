@@ -24,7 +24,8 @@ CREATE TABLE if not exists billing_document (
                                   model TEXT,
                                   generation_ts timestamp with time zone not null,
                                   external_id varchar(255),
-                                  status varchar(255) not null
+                                  status varchar(255) not null,
+                                  organization_id_fk integer not null
 );
 
 ALTER TABLE billing_document DROP CONSTRAINT IF EXISTS "billing_document_event_id_fk";
@@ -32,5 +33,7 @@ alter table billing_document add constraint "billing_document_event_id_fk" forei
 
 ALTER TABLE billing_document DROP CONSTRAINT IF EXISTS "billing_document_reservation_id_fk";
 alter table billing_document add constraint "billing_document_reservation_id_fk" foreign key(reservation_id_fk) references tickets_reservation(id);
+
+alter table billing_document add constraint "billing_document_organization_id_fk" foreign key(organization_id_fk) references organization(id);
 
 alter table tickets_reservation add column IF NOT EXISTS registration_ts timestamp with time zone;

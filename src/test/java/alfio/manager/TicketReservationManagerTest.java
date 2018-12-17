@@ -196,7 +196,7 @@ class TicketReservationManagerTest {
         when(extensionManager.handleInvoiceGeneration(any(), any(), any())).thenReturn(Optional.empty());
         when(messageSource.getMessage(eq("ticket-has-changed-owner-subject"), any(), any())).thenReturn("subject");
         when(messageSource.getMessage(eq("reminder.ticket-not-assigned.subject"), any(), any())).thenReturn("subject");
-        when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(), anyString(), any())).thenReturn(new AffectedRowCountAndKey<>(1, 1L));
+        when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(), anyString(), any(), anyInt())).thenReturn(new AffectedRowCountAndKey<>(1, 1L));
     }
 
     private void initUpdateTicketOwner(Ticket original, Ticket modified, String ticketId, String originalEmail, String originalName, UpdateTicketOwnerForm form) {
