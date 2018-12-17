@@ -23,6 +23,7 @@ CREATE TABLE if not exists billing_document (
                                   type varchar(255) not null,
                                   model TEXT,
                                   generation_ts timestamp with time zone not null,
+                                  external_id varchar(255),
                                   status varchar(255) not null
 );
 

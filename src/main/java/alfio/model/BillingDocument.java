@@ -43,6 +43,7 @@ public class BillingDocument {
     private final Map<String, Object> model;
     private final ZonedDateTime generationTimestamp;
     private final Status status;
+    private final String externalId;
 
     public BillingDocument(@Column("id") long id,
                            @Column("event_id_fk") int eventId,
@@ -51,7 +52,8 @@ public class BillingDocument {
                            @Column("type") Type type,
                            @Column("model") String model,
                            @Column("generation_ts") ZonedDateTime generationTimestamp,
-                           @Column("status") Status status) {
+                           @Column("status") Status status,
+                           @Column("external_id") String externalId) {
         this.id = id;
         this.eventId = eventId;
         this.number = number;
@@ -60,5 +62,6 @@ public class BillingDocument {
         this.model = Json.fromJson(model, new TypeReference<Map<String, Object>>() {});
         this.generationTimestamp = generationTimestamp;
         this.status = status;
+        this.externalId = externalId;
     }
 }
