@@ -273,6 +273,8 @@ create policy scan_audit_access_policy on scan_audit to application_user
 alter table auditing add column organization_id_fk integer;
 alter table auditing add foreign key(organization_id_fk) references organization(id);
 update auditing set organization_id_fk = (select org_id from event where event.id = event_id);
+
+
 create trigger auditing_insert_org_id_fk_trigger
     before insert on auditing
     for each row execute procedure set_organization_id_fk_from_event_id();
@@ -282,7 +284,6 @@ create policy auditing_access_policy on auditing to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
-
 
 -- event_description_text
 alter table event_description_text add column organization_id_fk integer;
@@ -318,8 +319,6 @@ create policy additional_service_access_policy on additional_service to applicat
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
 
-
-
 -- additional_service_item
 alter table additional_service_item add column organization_id_fk integer;
 alter table additional_service_item add foreign key(organization_id_fk) references organization(id);
@@ -335,4 +334,38 @@ alter table additional_service_item enable row level security;
 create policy additional_service_item_access_policy on additional_service_item to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
+--
+
+-- group_link
+alter table group_link add column organization_id_fk integer;
+alter table group_link add foreign key(organization_id_fk) references organization(id);
+update group_link set organization_id_fk = (select org_id from event where event.id = event_id_fk);
+alter table group_link alter column organization_id_fk set not null;
+
+
+create trigger group_link_insert_org_id_fk_trigger
+    before insert on group_link
+    for each row execute procedure set_organization_id_fk_from_event_id_fk();
+
+alter table group_link enable row level security;
+create policy group_link_access_policy on group_link to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
+--
+
+-- sponsor_scan
+alter table sponsor_scan add column organization_id_fk integer;
+alter table sponsor_scan add foreign key(organization_id_fk) references organization(id);
+update sponsor_scan set organization_id_fk = (select org_id from event where event.id = event_id);
+alter table sponsor_scan alter column organization_id_fk set not null;
+
+
+create trigger sponsor_scan_insert_org_id_fk_trigger
+    before insert on sponsor_scan
+    for each row execute procedure set_organization_id_fk_from_event_id();
+
+alter table sponsor_scan enable row level security;
+create policy sponsor_scan_access_policy on sponsor_scan to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id)))
 --
