@@ -90,7 +90,6 @@ public class RowLevelSecurity {
             this.organizationRepository = organizationRepository;
         }
 
-
         @Around("within(alfio.manager..*) && (@target(org.springframework.transaction.annotation.Transactional) || " +
             " @annotation(org.springframework.transaction.annotation.Transactional))")
         public Object setRoleAndVariable(ProceedingJoinPoint joinPoint) throws Throwable {
@@ -99,54 +98,76 @@ public class RowLevelSecurity {
                 HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
                 DataSource dataSource = jdbcTemplate.getJdbcTemplate().getDataSource();
                 Connection connection = DataSourceUtils.getConnection(dataSource);
-                StringBuilder sb = new StringBuilder();
+
+                boolean mustCheck = false;
+                String formattedOrgIds = "";
                 if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
-                    sb.append("-----------\n");
-                    sb.append("connection is transactional\n");
-                    sb.append("URL IS ").append(request.getRequestURI()).append("\n");
-                    sb.append(request.getRequestURL()).append("\n");
-                    sb.append(joinPoint).append("\n");
-                    sb.append("public url: ").append(isCurrentlyInAPublicUrlRequest()).append("\n");
-
-                    if (SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().getAuthentication() != null) {
-                        sb.append("auth is ").append(SecurityContextHolder.getContext().getAuthentication().getName()).append("\n");
-                    } else {
-                        sb.append("no user\n");
-                    }
-
-                    boolean mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
-
-                    sb.append("must check row access: ").append(mustCheck).append("\n");
-
+                    mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
                     if (mustCheck) {
-
                         Set<Integer> orgIds = new TreeSet<>(organizationRepository.findAllOrganizationIdForUser(SecurityContextHolder.getContext().getAuthentication().getName()));
-                        String formattedOrgIds = orgIds.stream().map(s -> Integer.toString(s)).collect(Collectors.joining(",", "'{", "}'"));
-
+                        formattedOrgIds = orgIds.stream().map(s -> Integer.toString(s)).collect(Collectors.joining(",", "'{", "}'"));
                         jdbcTemplate.update("set local role application_user", new EmptySqlParameterSource());
                         jdbcTemplate.update("set local alfio.checkRowAccess = true", new EmptySqlParameterSource());
-
-                        sb.append("org ids are: ").append(formattedOrgIds).append("\n");
                         //cannot use bind variable when calling set local, it's ugly :(
                         jdbcTemplate.update("set local alfio.currentUserOrgs = " + formattedOrgIds, new EmptySqlParameterSource());
                     }
-
                     // note, the policy will check if the variable alfio.checkRowAccess is present before doing anything
-                    sb.append("-----------\n");
+
                     //
-                } else {
-                    sb.append("-----------\n");
-                    sb.append("connection is NOT transactional so the check will not be done!\n");
-                    sb.append("URL IS ").append(request.getRequestURI()).append("\n");
-                    sb.append(joinPoint).append("\n");
-                    sb.append("-----------\n");
                 }
 
+                StringBuilder sb = formatLogEntry(connection, dataSource, joinPoint, request, mustCheck, formattedOrgIds);
                 log.debug(sb.toString());
             }
 
             return joinPoint.proceed();
         }
 
+
+
+
+        private static StringBuilder formatLogEntry(Connection connection, DataSource dataSource,
+                                           ProceedingJoinPoint joinPoint,
+                                           HttpServletRequest request,
+                                           boolean mustCheck,
+                                           String formattedOrgIds) {
+
+            StringBuilder sb = new StringBuilder();
+
+            if(!log.isDebugEnabled()) {
+                return sb;
+            }
+
+            if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
+                sb.append("-----------\n");
+                sb.append("connection is transactional\n");
+                sb.append("URL IS ").append(request.getRequestURI()).append("\n");
+                sb.append(request.getRequestURL()).append("\n");
+                sb.append(joinPoint).append("\n");
+                sb.append("public url: ").append(isCurrentlyInAPublicUrlRequest()).append("\n");
+
+                if (SecurityContextHolder.getContext() != null && SecurityContextHolder.getContext().getAuthentication() != null) {
+                    sb.append("auth is ").append(SecurityContextHolder.getContext().getAuthentication().getName()).append("\n");
+                } else {
+                    sb.append("no user\n");
+                }
+
+                sb.append("must check row access: ").append(mustCheck).append("\n");
+
+                if(mustCheck) {
+                    sb.append("org ids are: ").append(formattedOrgIds).append("\n");
+                }
+                sb.append("-----------\n");
+
+            } else {
+                sb.append("-----------\n");
+                sb.append("connection is NOT transactional so the check will not be done!\n");
+                sb.append("URL IS ").append(request.getRequestURI()).append("\n");
+                sb.append(joinPoint).append("\n");
+                sb.append("-----------\n");
+            }
+
+            return sb;
+        }
     }
 }
