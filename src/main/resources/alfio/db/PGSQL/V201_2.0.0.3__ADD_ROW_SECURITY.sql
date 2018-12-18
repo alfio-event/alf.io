@@ -216,3 +216,38 @@ create policy waiting_queue_access_policy on waiting_queue to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
+
+
+-- ticket_category
+alter table ticket_category add column organization_id_fk integer;
+alter table ticket_category add foreign key(organization_id_fk) references organization(id);
+update ticket_category set organization_id_fk = (select org_id from event where event.id = event_id);
+alter table ticket_category alter column organization_id_fk set not null;
+
+
+create trigger ticket_category_insert_org_id_fk_trigger
+    before insert on ticket_category
+    for each row execute procedure set_organization_id_fk_from_event_id();
+
+alter table ticket_category enable row level security;
+create policy ticket_category_access_policy on ticket_category to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
+--
+
+-- ticket_field_configuration
+alter table ticket_field_configuration add column organization_id_fk integer;
+alter table ticket_field_configuration add foreign key(organization_id_fk) references organization(id);
+update ticket_field_configuration set organization_id_fk = (select org_id from event where event.id = event_id_fk);
+alter table ticket_field_configuration alter column organization_id_fk set not null;
+
+
+create trigger ticket_field_configuration_insert_org_id_fk_trigger
+    before insert on ticket_field_configuration
+    for each row execute procedure set_organization_id_fk_from_event_id_fk();
+
+alter table ticket_field_configuration enable row level security;
+create policy ticket_field_configuration_access_policy on ticket_field_configuration to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
+--
