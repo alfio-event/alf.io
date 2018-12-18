@@ -105,6 +105,14 @@ create policy promo_code_access_policy on promo_code to application_user
     with check (alfio_check_row_access(organization_id_fk));
 --
 
+
+--
+
+alter table billing_document enable row level security;
+create policy billing_document_access_policy on billing_document to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access(organization_id_fk));
+
 -- tables where event_id_fk is present
 
 
