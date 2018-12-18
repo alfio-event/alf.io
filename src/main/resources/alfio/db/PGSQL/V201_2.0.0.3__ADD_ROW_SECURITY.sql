@@ -268,3 +268,17 @@ create policy scan_audit_access_policy on scan_audit to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
+
+-- auditing: note: the event_id can be null
+alter table auditing add column organization_id_fk integer;
+alter table auditing add foreign key(organization_id_fk) references organization(id);
+update auditing set organization_id_fk = (select org_id from event where event.id = event_id);
+create trigger auditing_insert_org_id_fk_trigger
+    before insert on auditing
+    for each row execute procedure set_organization_id_fk_from_event_id();
+
+alter table auditing enable row level security;
+create policy auditing_access_policy on auditing to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
+--
