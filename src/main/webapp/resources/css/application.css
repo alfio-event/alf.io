@@ -219,24 +219,40 @@ html[lang=pt] .alfio-lang a[lang=pt] {
     align-items: center;
 }
 
+.wizard2 .badge {
+    display: inline-block;
+    min-width: 35px;
+    padding: 3px 7px;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 2;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: top;
+    background-color: #777;
+    border-radius: 17px;
+    min-height: 30px;
+}
+
 .wizard2 .wizard2-line {
-    top: 9px;
+    top: 17px;
     left: calc(50% + 20px);
     right: calc(-50% + 20px);
     position: absolute;
-    border-top:1px solid #bdbdbd
-}
-
-.wizard2 .badge {
-    margin-bottom: 1rem;
+    border-top: 1px solid #bdbdbd;
 }
 
 .badge-success {
-    background-color: #449d44;
+    background-color: #449d44 !important;
 }
 
 .wizard2 .wizard2-current .badge {
     background-color: #007ACC;
+}
+
+.wizard2 span:nth-child(2) {
+    margin-top: 1em;
 }
 
 .wizard2 .wizard2-current span:nth-child(2) {
