@@ -21,19 +21,19 @@
 
 <div class="wizard2 center text-muted">
     <div class="wizard2-current">
-        <div><span class="badge">1</span><span>{{#i18n}}breadcrumb.step1{{/i18n}}</span></div>
+        <div><span class="badge"><i class="fa fa-ticket"></i></span><span>{{#i18n}}breadcrumb.step1{{/i18n}}</span></div>
         <div class="wizard2-line"></div>
     </div>
     <div>
-        <div><span class="badge">2</span><span>{{#i18n}}breadcrumb.step2{{/i18n}}</span></div>
+        <div><span class="badge"><i class="fa fa-drivers-license"></i></span><span>{{#i18n}}breadcrumb.step2{{/i18n}}</span></div>
         <div class="wizard2-line"></div>
     </div>
     <div>
-        <div><span class="badge">3</span><span>{{#i18n}}breadcrumb.step3{{#event.free}}.free{{/event.free}}{{/i18n}}</span></div>
+        <div><span class="badge"><i class="fa {{#event.free}}fa-file-text{{/event.free}}{{^event.free}}fa-money{{/event.free}}"></i></span><span>{{#i18n}}breadcrumb.step3{{#event.free}}.free{{/event.free}}{{/i18n}}</span></div>
         <div class="wizard2-line"></div>
     </div>
     <div>
-        <div><span class="badge">4</span><span>{{#i18n}}breadcrumb.step4{{/i18n}}</span></div>
+        <div><span class="badge"><i class="fa fa-thumbs-up"></i></span><span>{{#i18n}}breadcrumb.step4{{/i18n}}</span></div>
     </div>
 </div>
 
