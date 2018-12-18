@@ -21,10 +21,8 @@ import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.EventMigration;
 import alfio.model.transaction.PaymentProxy;
-import alfio.repository.BillingDocumentRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.util.MonetaryUtil;
@@ -71,8 +69,6 @@ public class DataMigrator {
     private final ConfigurationRepository configurationRepository;
     private final NamedParameterJdbcTemplate jdbc;
     private final TicketReservationManager ticketReservationManager;
-    private final BillingDocumentRepository billingDocumentRepository;
-    private final TicketReservationRepository ticketReservationRepository;
 
     static {
         PRICE_UPDATE_BY_KEY.put("event", "update event set src_price_cts = :srcPriceCts, vat_status = :vatStatus where id = :eventId");
@@ -91,9 +87,7 @@ public class DataMigrator {
                         PlatformTransactionManager transactionManager,
                         ConfigurationRepository configurationRepository,
                         NamedParameterJdbcTemplate jdbc,
-                        TicketReservationManager ticketReservationManager,
-                        BillingDocumentRepository billingDocumentRepository,
-                        TicketReservationRepository ticketReservationRepository) {
+                        TicketReservationManager ticketReservationManager) {
         this.eventMigrationRepository = eventMigrationRepository;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -104,8 +98,6 @@ public class DataMigrator {
         this.buildTimestamp = ZonedDateTime.parse(buildTimestamp);
         this.transactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         this.ticketReservationManager = ticketReservationManager;
-        this.billingDocumentRepository = billingDocumentRepository;
-        this.ticketReservationRepository = ticketReservationRepository;
     }
 
     public void migrateEventsToCurrentVersion() {
