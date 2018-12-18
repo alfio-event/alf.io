@@ -103,6 +103,7 @@
 
     {{#onlyInvoice}}
         {{ > /event/invoice-fields }}
+        <input type="hidden" name="invoiceRequested" id="invoice-requested" value="true">
     {{/onlyInvoice}}
     {{^orderSummary.free}}
     {{#invoiceIsAllowed}}

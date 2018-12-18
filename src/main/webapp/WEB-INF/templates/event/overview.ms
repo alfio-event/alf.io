@@ -18,7 +18,7 @@
         <div class="wizard2-line"></div>
     </div>
     <div class="wizard2-current">
-        <div><i class="fa {{#event.free}}fa-lightbulb-o{{/event.free}}{{^event.free}}fa-money{{/event.free}}"></i></span><span>{{#i18n}}breadcrumb.step3{{#event.free}}.free{{/event.free}}{{/i18n}}</span></div>
+        <div><span class="badge"><i class="fa {{#event.free}}fa-lightbulb-o{{/event.free}}{{^event.free}}fa-money{{/event.free}}"></i></span><span>{{#i18n}}breadcrumb.step3{{#event.free}}.free{{/event.free}}{{/i18n}}</span></div>
         <div class="wizard2-line"></div>
     </div>
     <div>

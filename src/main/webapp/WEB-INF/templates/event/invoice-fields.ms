@@ -65,7 +65,6 @@
         </div>
     {{/customerReferenceEnabled}}
 </div>
-<input type="hidden" name="invoiceRequested" id="invoice-requested" value="true">
 <div class="row">
     <div id="vat-number-container">
         <div class="col-md-6">

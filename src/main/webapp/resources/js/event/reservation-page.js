@@ -190,7 +190,7 @@
 
             } else {
                 $(".invoice-details-section").addClass(hiddenClasses);
-                $(".invoice-details-section input").removeAttr('required');
+                $("#billingAddressLine1, #billingAddressZip, #billingAddressCity, #vatCountry").removeAttr('required');
             }
         });
 
