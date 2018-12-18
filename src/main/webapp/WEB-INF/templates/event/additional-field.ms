@@ -18,7 +18,7 @@
             >
         {{/euVat}}
         {{#textareaField}}
-            <textarea name="{{elementNamePrefix}}additional[{{name}}][{{fieldIndex}}]" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control"
+            <textarea name="{{elementNamePrefix}}additional[{{name}}][{{fieldIndex}}]" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control {{#isRequired}}field-required{{/isRequired}}"
                       {{#placeholderDescriptionDefined}}placeholder="{{placeholderDescription}}"{{/placeholderDescriptionDefined}}
                 {{#maxLengthDefined}}maxlength="{{maxLength}}"{{/maxLengthDefined}}
                 {{#minLengthDefined}}minlength="{{minLength}}"{{/minLengthDefined}}
@@ -26,7 +26,7 @@
             >{{fieldValue}}</textarea>
         {{/textareaField}}
         {{#countryField}}
-            <select name="{{elementNamePrefix}}additional[{{name}}][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control" {{#isRequired}}required{{/isRequired}}>
+            <select name="{{elementNamePrefix}}additional[{{name}}][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control {{#isRequired}}field-required{{/isRequired}}" {{#isRequired}}required{{/isRequired}}>
                 <option value=""></option>
                 {{#countries}}
                     <option value="{{left}}">{{right}}</option>
@@ -34,7 +34,7 @@
             </select>
         {{/countryField}}
         {{#selectField}}
-            <select name="{{elementNamePrefix}}additional[{{name}}][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control" {{#isRequired}}required{{/isRequired}}>
+            <select name="{{elementNamePrefix}}additional[{{name}}][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control {{#isRequired}}field-required{{/isRequired}}" {{#isRequired}}required{{/isRequired}}>
                 <option value=""></option>
                 {{#translatedRestrictedValue}}<option value="{{left}}" {{^right}}disabled{{/right}}>{{middle}}</option>{{/translatedRestrictedValue}}
             </select>
