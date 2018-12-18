@@ -251,3 +251,20 @@ create policy ticket_field_configuration_access_policy on ticket_field_configura
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
+
+-- scan_audit
+alter table scan_audit add column organization_id_fk integer;
+alter table scan_audit add foreign key(organization_id_fk) references organization(id);
+update scan_audit set organization_id_fk = (select org_id from event where event.id = event_id_fk);
+alter table scan_audit alter column organization_id_fk set not null;
+
+
+create trigger scan_audit_insert_org_id_fk_trigger
+    before insert on scan_audit
+    for each row execute procedure set_organization_id_fk_from_event_id_fk();
+
+alter table scan_audit enable row level security;
+create policy scan_audit_access_policy on scan_audit to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
+--
