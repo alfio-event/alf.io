@@ -18,7 +18,6 @@ package alfio.config;
 
 import alfio.util.DefaultExceptionHandler;
 import com.openhtmltopdf.util.XRLog;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
@@ -35,7 +34,6 @@ import javax.servlet.SessionCookieConfig;
 import java.util.Objects;
 import java.util.logging.Level;
 
-@Log4j2
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
     public static final String PROFILE_DEV = "dev";
