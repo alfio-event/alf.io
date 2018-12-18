@@ -317,3 +317,22 @@ create policy additional_service_access_policy on additional_service to applicat
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
+
+
+
+-- additional_service_item
+alter table additional_service_item add column organization_id_fk integer;
+alter table additional_service_item add foreign key(organization_id_fk) references organization(id);
+update additional_service_item set organization_id_fk = (select org_id from event where event.id = event_id_fk);
+alter table additional_service_item alter column organization_id_fk set not null;
+
+
+create trigger additional_service_item_insert_org_id_fk_trigger
+    before insert on additional_service_item
+    for each row execute procedure set_organization_id_fk_from_event_id_fk();
+
+alter table additional_service_item enable row level security;
+create policy additional_service_item_access_policy on additional_service_item to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
+--
