@@ -397,3 +397,30 @@ create policy additional_service_description_access_policy on additional_service
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select additional_service.organization_id_fk from additional_service where additional_service.id = additional_service_id_fk)));
 --
+
+-- b_transaction -> reservation_id -> tickets_reservation.id
+alter table b_transaction add column organization_id_fk integer;
+alter table b_transaction add foreign key(organization_id_fk) references organization(id);
+update b_transaction set organization_id_fk = (select tickets_reservation.organization_id_fk from tickets_reservation where tickets_reservation.id = reservation_id);
+alter table b_transaction alter column organization_id_fk set not null;
+
+
+create or replace function set_organization_id_fk_from_reservation_id() returns trigger
+as $$ begin
+    if new.organization_id_fk is null then
+      new.organization_id_fk = (select tickets_reservation.organization_id_fk from tickets_reservation where tickets_reservation.id = new.reservation_id);
+    end if;
+    return new;
+end;
+$$ language plpgsql;
+
+
+create trigger b_transaction_insert_org_id_fk_trigger
+    before insert on b_transaction
+    for each row execute procedure set_organization_id_fk_from_reservation_id();
+
+alter table b_transaction enable row level security;
+create policy b_transaction_access_policy on b_transaction to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select tickets_reservation.organization_id_fk from tickets_reservation where tickets_reservation.id = reservation_id)));
+--
