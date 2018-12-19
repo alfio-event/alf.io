@@ -367,5 +367,33 @@ create trigger sponsor_scan_insert_org_id_fk_trigger
 alter table sponsor_scan enable row level security;
 create policy sponsor_scan_access_policy on sponsor_scan to application_user
     using (alfio_check_row_access(organization_id_fk))
-    with check (alfio_check_row_access((select org_id from event where event.id = event_id)))
+    with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
+--
+
+
+-- additional_service_description -> additional_service_id_fk
+alter table additional_service_description add column organization_id_fk integer;
+alter table additional_service_description add foreign key(organization_id_fk) references organization(id);
+update additional_service_description set organization_id_fk = (select additional_service.organization_id_fk from additional_service where additional_service.id = additional_service_id_fk);
+alter table additional_service_description alter column organization_id_fk set not null;
+
+
+create or replace function set_organization_id_fk_from_additional_service_id_fk() returns trigger
+as $$ begin
+    if new.organization_id_fk is null then
+      new.organization_id_fk = (select additional_service.organization_id_fk from additional_service where additional_service.id = new.additional_service_id_fk);
+    end if;
+    return new;
+end;
+$$ language plpgsql;
+
+
+create trigger additional_service_description_insert_org_id_fk_trigger
+    before insert on additional_service_description
+    for each row execute procedure set_organization_id_fk_from_additional_service_id_fk();
+
+alter table additional_service_description enable row level security;
+create policy additional_service_description_access_policy on additional_service_description to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select additional_service.organization_id_fk from additional_service where additional_service.id = additional_service_id_fk)));
 --
