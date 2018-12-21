@@ -491,3 +491,35 @@ create policy ticket_field_value_access_policy on ticket_field_value to applicat
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select ticket_field_configuration.organization_id_fk from ticket_field_configuration where ticket_field_configuration.id = ticket_field_configuration_id_fk)));
 --
+
+-- ticket_category_text -> ticket_category_id_fk ->  ticket_category.organization_id_fk
+alter table ticket_category_text add column organization_id_fk integer;
+alter table ticket_category_text add foreign key(organization_id_fk) references organization(id);
+update ticket_category_text set organization_id_fk = (select ticket_category.organization_id_fk from ticket_category where ticket_category.id = ticket_category_id_fk);
+alter table ticket_category_text alter column organization_id_fk set not null;
+
+create or replace function set_organization_id_fk_from_ticket_category_id_fk() returns trigger
+as $$ begin
+    if new.organization_id_fk is null then
+      new.organization_id_fk = (select ticket_category.organization_id_fk from ticket_category where ticket_category.id = new.ticket_category_id_fk);
+    end if;
+    return new;
+end;
+$$ language plpgsql;
+
+
+create trigger ticket_category_text_insert_org_id_fk_trigger
+    before insert on ticket_category_text
+    for each row execute procedure set_organization_id_fk_from_ticket_category_id_fk();
+
+alter table ticket_category_text enable row level security;
+create policy ticket_category_text_access_policy on ticket_category_text to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select ticket_category.organization_id_fk from ticket_category where ticket_category.id = ticket_category_id_fk)));
+--
+
+-- whitelisted_ticket -> group_member_id_fk -> group_member.organization_id_fk
+--
+
+-- special_price -> ticket_category_id -> ticket_category.organization_id_fk
+--
