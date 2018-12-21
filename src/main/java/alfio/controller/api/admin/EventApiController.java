@@ -33,7 +33,6 @@ import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.SponsorScanRepository;
-import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
@@ -100,7 +99,6 @@ public class EventApiController {
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
-    private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final TicketFieldRepository ticketFieldRepository;
     private final DescriptionsLoader descriptionsLoader;
     private final TicketHelper ticketHelper;
