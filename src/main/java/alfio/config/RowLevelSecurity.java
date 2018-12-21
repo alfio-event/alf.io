@@ -116,8 +116,9 @@ public class RowLevelSecurity {
                     //
                 }
 
-                StringBuilder sb = formatLogEntry(connection, dataSource, joinPoint, request, mustCheck, formattedOrgIds);
-                log.debug(sb.toString());
+                if (log.isDebugEnabled()) {
+                    logEntry(connection, dataSource, joinPoint, request, mustCheck, formattedOrgIds);
+                }
             }
 
             return joinPoint.proceed();
@@ -126,7 +127,7 @@ public class RowLevelSecurity {
 
 
 
-        private static StringBuilder formatLogEntry(Connection connection, DataSource dataSource,
+        private static void logEntry(Connection connection, DataSource dataSource,
                                            ProceedingJoinPoint joinPoint,
                                            HttpServletRequest request,
                                            boolean mustCheck,
@@ -134,9 +135,6 @@ public class RowLevelSecurity {
 
             StringBuilder sb = new StringBuilder();
 
-            if(!log.isDebugEnabled()) {
-                return sb;
-            }
 
             if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
                 sb.append("-----------\n");
@@ -167,7 +165,7 @@ public class RowLevelSecurity {
                 sb.append("-----------\n");
             }
 
-            return sb;
+            log.debug(sb.toString());
         }
     }
 }
