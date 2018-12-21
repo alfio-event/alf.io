@@ -424,3 +424,29 @@ create policy b_transaction_access_policy on b_transaction to application_user
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select tickets_reservation.organization_id_fk from tickets_reservation where tickets_reservation.id = reservation_id)));
 --
+
+-- group_member -> a_group_id_fk -> a_group.organization_id_fk
+alter table group_member add column organization_id_fk integer;
+alter table group_member add foreign key(organization_id_fk) references organization(id);
+update group_member set organization_id_fk = (select a_group.organization_id_fk from a_group where a_group.id = a_group_id_fk);
+alter table group_member alter column organization_id_fk set not null;
+
+
+create or replace function set_organization_id_fk_from_a_group_id_fk() returns trigger
+as $$ begin
+    if new.organization_id_fk is null then
+      new.organization_id_fk = (select a_group.organization_id_fk from a_group where a_group.id = new.a_group_id_fk);
+    end if;
+    return new;
+end;
+$$ language plpgsql;
+
+create trigger group_member_insert_org_id_fk_trigger
+    before insert on group_member
+    for each row execute procedure set_organization_id_fk_from_a_group_id_fk();
+
+alter table group_member enable row level security;
+create policy group_member_access_policy on group_member to application_user
+    using (alfio_check_row_access(organization_id_fk))
+    with check (alfio_check_row_access((select a_group.organization_id_fk from a_group where a_group.id = a_group_id_fk)));
+--
