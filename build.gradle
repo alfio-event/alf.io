@@ -29,9 +29,9 @@ plugins {
     id 'jacoco'
     id 'com.github.kt3k.coveralls' version '2.8.2'
     id 'com.github.ben-manes.versions' version '0.20.0'
-    id 'com.github.hierynomus.license' version '0.14.0'
+    id 'com.github.hierynomus.license' version '0.15.0'
     id 'net.researchgate.release' version '2.7.0'
-    id 'org.springframework.boot' version '2.1.0.RELEASE'
+    id 'org.springframework.boot' version '2.1.1.RELEASE'
 }
 
 apply plugin: 'java'
@@ -105,6 +105,7 @@ configurations {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     jcenter()
 }
@@ -137,17 +138,17 @@ dependencies {
     compile "com.google.zxing:javase:3.3.3"
     compile "org.flywaydb:flyway-core:5.1.3"
     compile "org.postgresql:postgresql:42.2.5"
-    compile "com.zaxxer:HikariCP:2.7.7"
+    compile "com.zaxxer:HikariCP:3.2.0"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
-    compile "com.stripe:stripe-java:5.42.0"
+    compile "com.stripe:stripe-java:7.10.0"
     compile 'com.paypal.sdk:rest-api-sdk:1.14.0'
-    compile 'com.squareup.okhttp3:okhttp:3.11.0'
-    compile "org.apache.commons:commons-lang3:3.7"
-    compile "org.apache.commons:commons-text:1.2"
-    compile "com.opencsv:opencsv:4.2"
+    compile 'com.squareup.okhttp3:okhttp:3.12.1'
+    compile "org.apache.commons:commons-lang3:3.8.1"
+    compile "org.apache.commons:commons-text:1.6"
+    compile "com.opencsv:opencsv:4.4"
     compile 'commons-codec:commons-codec:1.11'
-    compile 'net.sf.biweekly:biweekly:0.6.2'
-    compile 'com.atlassian.commonmark:commonmark:0.11.0'
+    compile 'net.sf.biweekly:biweekly:0.6.3'
+    compile 'com.atlassian.commonmark:commonmark:0.12.1'
     compile 'com.ryantenney.passkit4j:passkit4j:2.0.1'
     compile 'com.github.ben-manes.caffeine:caffeine:2.6.2'
     compile 'de.danielbechler:java-object-diff:0.95'
@@ -156,18 +157,19 @@ dependencies {
     compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.0'
     compile 'org.imgscalr:imgscalr-lib:4.2'
 
-    testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.9"
+    testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.10"
 
-    compileOnly "javax.servlet:javax.servlet-api:3.1.0"
-    testCompile "javax.servlet:javax.servlet-api:3.1.0"
+    compileOnly "javax.servlet:javax.servlet-api:4.0.1"
+    testCompile "javax.servlet:javax.servlet-api:4.0.1"
     testCompile "org.springframework.boot:spring-boot-starter-test", {
         exclude module : 'spring-boot-starter-logging'
     }
-    testCompile "net.sourceforge.htmlunit:htmlunit:2.29"
+    testCompile "net.sourceforge.htmlunit:htmlunit:2.33"
     runtime "commons-fileupload:commons-fileupload:1.3.3"
     providedCompile "org.springframework.boot:spring-boot-starter-web", {
         exclude module : 'spring-boot-starter-logging'
         exclude group: "org.springframework.boot", module: 'spring-boot-starter-tomcat'
+        exclude group: "org.hibernate.validator"
     }
     providedCompile "org.springframework.boot:spring-boot-starter", {
         exclude module : 'spring-boot-starter-logging'
@@ -282,7 +284,7 @@ bootWar {
 // -- code-coverage
 
 jacoco {
-    toolVersion = '0.8.0'
+    toolVersion = '0.8.2'
 }
 
 jacocoTestReport {
@@ -305,9 +307,8 @@ task dockerize(type: Copy) {
 }
 
 task distribution(type: Copy) {
-    from new File(project.buildDir, "libs/alfio-${project.version}-boot.war")
+    from zipTree("${project.buildDir}/libs/alfio-${project.version}-boot.war")
     into "${buildDir}/dockerize"
-
     dependsOn build, dockerize
 }
 

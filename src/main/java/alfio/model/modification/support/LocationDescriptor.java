@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.text.StrSubstitutor;
+import org.apache.commons.text.StringSubstitutor;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -70,7 +70,7 @@ public class LocationDescriptor {
 
         fillParams(provider, geoConf, params);
 
-        return new StrSubstitutor(params).replace(mapUrl);
+        return new StringSubstitutor(params).replace(mapUrl);
     }
 
     // for backward compatibility reason, the logic is not straightforward

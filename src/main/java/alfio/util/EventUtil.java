@@ -30,7 +30,7 @@ import biweekly.io.text.ICalWriter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -153,7 +153,7 @@ public class EventUtil {
         VEvent vEvent = new VEvent();
         vEvent.setSummary(event.getDisplayName());
         vEvent.setDescription(description);
-        vEvent.setLocation(StringUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
+        vEvent.setLocation(RegExUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
         ZonedDateTime begin = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
         ZonedDateTime end = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());
         vEvent.setDateStart(Date.from(begin.toInstant()));

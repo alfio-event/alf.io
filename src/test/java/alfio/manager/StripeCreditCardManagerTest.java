@@ -67,7 +67,7 @@ public class StripeCreditCardManagerTest {
 
     @Test
     void testApiConnectionException() {
-        assertEquals("error.STEP2_STRIPE_abort", stripeCreditCardManager.handleException(new APIConnectionException("abcd")));
+        assertEquals("error.STEP2_STRIPE_abort", stripeCreditCardManager.handleException(new ApiConnectionException("abcd")));
     }
 
     @Test

@@ -45,7 +45,6 @@ import com.github.scribejava.core.oauth.OAuth20Service;
 import com.stripe.exception.*;
 import com.stripe.model.BalanceTransaction;
 import com.stripe.model.Charge;
-import com.stripe.model.Fee;
 import com.stripe.model.Refund;
 import com.stripe.net.RequestOptions;
 import com.stripe.net.Webhook;
@@ -91,7 +90,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
         handlers.put(CardException.class, this::handleCardException);
         handlers.put(InvalidRequestException.class, this::handleInvalidRequestException);
         handlers.put(AuthenticationException.class, this::handleAuthenticationException);
-        handlers.put(APIConnectionException.class, this::handleApiConnectionException);
+        handlers.put(ApiConnectionException.class, this::handleApiConnectionException);
         handlers.put(StripeException.class, this::handleGenericException);
     }
 
@@ -230,7 +229,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
         return PaymentResult.failed(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
     }
 
-    private BalanceTransaction retrieveBalanceTransaction(String balanceTransaction, RequestOptions options) throws AuthenticationException, InvalidRequestException, APIConnectionException, CardException, APIException {
+    private BalanceTransaction retrieveBalanceTransaction(String balanceTransaction, RequestOptions options) throws StripeException {
         return BalanceTransaction.retrieve(balanceTransaction, options);
     }
 
@@ -257,7 +256,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
                 Charge charge = Charge.retrieve(transaction.getTransactionId(), options);
                 String paidAmount = MonetaryUtil.formatCents(charge.getAmount());
                 String refundedAmount = MonetaryUtil.formatCents(charge.getAmountRefunded());
-                List<Fee> fees = retrieveBalanceTransaction(charge.getBalanceTransaction(), options).getFeeDetails();
+                List<BalanceTransaction.Fee> fees = retrieveBalanceTransaction(charge.getBalanceTransaction(), options).getFeeDetails();
                 return Optional.of(new PaymentInformation(paidAmount, refundedAmount, getFeeAmount(fees, "stripe_fee"), getFeeAmount(fees, "application_fee")));
             }
             return Optional.empty();
@@ -266,11 +265,11 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
         }
     }
 
-    private static String getFeeAmount(List<Fee> fees, String feeType) {
+    private static String getFeeAmount(List<BalanceTransaction.Fee> fees, String feeType) {
         return fees.stream()
             .filter(f -> f.getType().equals(feeType))
             .findFirst()
-            .map(Fee::getAmount)
+            .map(BalanceTransaction.Fee::getAmount)
             .map(String::valueOf)
             .orElse(null);
     }
@@ -393,7 +392,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
             return optionalCharge.map(charge -> {
                 log.info("transaction {} paid: {}", spec.getReservationId(), charge.getPaid());
                 Pair<Long, Long> fees = Optional.ofNullable(charge.getBalanceTransactionObject()).map( bt -> {
-                    List<Fee> feeDetails = bt.getFeeDetails();
+                    List<BalanceTransaction.Fee> feeDetails = bt.getFeeDetails();
                     return Pair.of(Optional.ofNullable( StripeCreditCardManager.getFeeAmount(feeDetails, "application_fee")).map(Long::parseLong).orElse(0L),
                         Optional.ofNullable( StripeCreditCardManager.getFeeAmount(feeDetails, "stripe_fee")).map(Long::parseLong).orElse(0L));
                 }).orElse(null);
