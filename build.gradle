@@ -124,7 +124,7 @@ dependencies {
     compile "org.springframework.security:spring-security-web:$springSecurityConfigVersion"
     compile "org.springframework.security:spring-security-config:$springSecurityConfigVersion"
     compile 'org.springframework.session:spring-session:1.3.4.RELEASE'
-    compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.4"
+    compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.5"
     compile "com.samskivert:jmustache:1.14"
     compile "com.github.sps.mustache:mustache-spring-view:1.4"
     compile "javax.mail:mail:1.5.0-b01"
@@ -157,7 +157,7 @@ dependencies {
     compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.0'
     compile 'org.imgscalr:imgscalr-lib:4.2'
 
-    testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.10"
+    testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.9" //we leave it to the v2.9 for now, since some user had issues on Windows
 
     compileOnly "javax.servlet:javax.servlet-api:4.0.1"
     testCompile "javax.servlet:javax.servlet-api:4.0.1"
