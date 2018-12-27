@@ -116,7 +116,7 @@ public class RowLevelSecurity {
                     //
                 }
 
-                if (log.isDebugEnabled()) {
+                if (log.isTraceEnabled()) {
                     logEntry(connection, dataSource, joinPoint, request, mustCheck, formattedOrgIds);
                 }
             }
@@ -165,7 +165,7 @@ public class RowLevelSecurity {
                 sb.append("-----------\n");
             }
 
-            log.debug(sb.toString());
+            log.trace(sb.toString());
         }
     }
 }
