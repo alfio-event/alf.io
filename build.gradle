@@ -156,6 +156,7 @@ dependencies {
     compile 'ch.digitalfondue.vatchecker:vatchecker:1.1'
     compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.0'
     compile 'org.imgscalr:imgscalr-lib:4.2'
+    compile 'org.aspectj:aspectjweaver:1.9.2'
 
     testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.9" //we leave it to the v2.9 for now, since some user had issues on Windows
 

@@ -135,9 +135,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     private EventRepository eventRepository;
 
     @Autowired
-    private EuVatChecker euVatChecker;
-
-    @Autowired
     private EventController eventController;
 
     @Autowired
@@ -210,7 +207,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         user = eventAndUser.getValue() + "_owner";
 
         //
-        reservationApiController = new ReservationApiController(eventRepository, ticketHelper, mock(TemplateManager.class), i18nManager, euVatChecker, ticketReservationRepository, ticketReservationManager);
+        reservationApiController = new ReservationApiController(eventRepository, ticketHelper, mock(TemplateManager.class), i18nManager, ticketReservationRepository, ticketReservationManager);
         invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager);
 
         //promo code at event level

@@ -40,8 +40,7 @@ class MailgunMailer implements Mailer {
 
     
     private RequestBody prepareBody(Event event, String to, List<String> cc, String subject, String text,
-                                    Optional<String> html, Attachment... attachments)
-            throws IOException {
+                                    Optional<String> html, Attachment... attachments) {
 
         String from = event.getDisplayName() + " <" + configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_FROM)) +">";
 

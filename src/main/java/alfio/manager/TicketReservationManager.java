@@ -64,7 +64,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.ZoneId;
@@ -1294,13 +1293,9 @@ public class TicketReservationManager {
     }
 
     void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
-        try {
-            TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
-            TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-            notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory);
-        } catch (IOException e) {
-            throw new IllegalStateException(e);
-        }
+        TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
+        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
+        notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory);
     }
 
     public Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, String ticketIdentifier) {

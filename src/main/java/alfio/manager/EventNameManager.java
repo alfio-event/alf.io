@@ -22,7 +22,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,10 +66,7 @@ public class EventNameManager {
             return dashedName.get();
         }
         Optional<String> croppedName = getCroppedName(cleanDisplayName);
-        if (croppedName.isPresent()) {
-            return croppedName.get();
-        }
-        return generateRandomName();
+        return croppedName.orElseGet(this::generateRandomName);
     }
 
     private String generateRandomName() {

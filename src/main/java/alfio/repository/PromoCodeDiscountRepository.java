@@ -32,7 +32,7 @@ public interface PromoCodeDiscountRepository {
     @Query("select * from promo_code where event_id_fk = :eventId order by promo_code asc")
     List<PromoCodeDiscount> findAllInEvent(@Bind("eventId") int eventId);
 
-    @Query("select * from promo_code where organization_id_fk = :organizationId order by promo_code asc")
+    @Query("select * from promo_code where organization_id_fk = :organizationId and event_id_fk is null order by promo_code asc")
     List<PromoCodeDiscount> findAllInOrganization(@Bind("organizationId") int organizationId);
 
     @Query("delete from promo_code where id = :id")
@@ -44,7 +44,7 @@ public interface PromoCodeDiscountRepository {
     @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage) "
             + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage)")
     int addPromoCode(@Bind("promoCode") String promoCode,
-            @Bind("eventId") Integer eventId, @Bind("organizationId") Integer organizationId, @Bind("start") ZonedDateTime start,
+            @Bind("eventId") Integer eventId, @Bind("organizationId") int organizationId, @Bind("start") ZonedDateTime start,
             @Bind("end") ZonedDateTime end,
             @Bind("discountAmount") int discountAmount,
             @Bind("discountType") String discountType,
@@ -52,12 +52,12 @@ public interface PromoCodeDiscountRepository {
             @Bind("maxUsage") Integer maxUsage);
 
     @Query("select * from promo_code where promo_code = :promoCode and ("
-        +" (event_id_fk = :eventId and organization_id_fk is null) or "
+        +" event_id_fk = :eventId or "
         +" (event_id_fk is null and organization_id_fk = (select org_id from event where id = :eventId))) "
         +" order by event_id_fk is null limit 1")
     Optional<PromoCodeDiscount> findPromoCodeInEventOrOrganization(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
 
-    @Query("select count(*) from promo_code where (event_id_fk = :eventId and organization_id_fk is null) or (event_id_fk is null and organization_id_fk = :organizationId)")
+    @Query("select count(*) from promo_code where event_id_fk = :eventId or (event_id_fk is null and organization_id_fk = :organizationId)")
     Integer countByEventAndOrganizationId(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
 
     @Query("select count(b.id) from tickets_reservation a, ticket b" +

@@ -17,7 +17,6 @@
 package alfio.config;
 
 import com.openhtmltopdf.util.XRLog;
-import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.web.server.ErrorPage;
 import org.springframework.boot.web.server.ErrorPageRegistrar;
@@ -33,7 +32,6 @@ import org.springframework.web.filter.CharacterEncodingFilter;
 
 import javax.servlet.Filter;
 import javax.servlet.SessionCookieConfig;
-import java.util.Objects;
 import java.util.logging.Level;
 
 import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
@@ -47,7 +45,6 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
         org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration.class})
 @Configuration
 @Profile(Initializer.PROFILE_SPRING_BOOT)
-@Log4j2
 public class SpringBootInitializer {
 
 

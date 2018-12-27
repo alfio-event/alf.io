@@ -19,7 +19,6 @@ package alfio.repository;
 import alfio.model.group.Group;
 import alfio.model.group.GroupMember;
 import alfio.model.group.LinkedGroup;
-import alfio.model.group.WhitelistedTicket;
 import ch.digitalfondue.npjt.*;
 
 import java.util.List;

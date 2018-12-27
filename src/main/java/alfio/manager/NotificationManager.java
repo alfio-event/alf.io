@@ -182,7 +182,7 @@ public class NotificationManager {
         };
     }
 
-    public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, TicketReservation reservation, TicketCategory ticketCategory) throws IOException {
+    public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, TicketReservation reservation, TicketCategory ticketCategory) {
 
         Organization organization = organizationRepository.getById(event.getOrganizationId());
 

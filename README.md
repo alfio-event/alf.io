@@ -33,7 +33,7 @@ You must specify a project property at the command line, such as
 ```
 The local "bootRun" task has the following prerequisites:
 
-- a PostgreSQL instance up and runnning on localhost:5432
+- a PostgreSQL (version 9.6 or later) instance up and runnning on localhost:5432
 - a _postgres_ user having password: _password_
 - a database named _alfio_
 
