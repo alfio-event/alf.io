@@ -22,17 +22,16 @@ RUN apk add --update ttf-dejavu && rm -rf /var/cache/apk/*
 
 USER 1001
 
+# Define working directory.
 RUN mkdir /home/alfio/app
 WORKDIR /home/alfio/app
 
+RUN mkdir logs
 ADD WEB-INF/lib lib
 ADD WEB-INF/lib-provided lib-provided
 ADD WEB-INF/classes classes
 ADD resources resources
 
-# Define working directory.
-
-RUN mkdir /home/alfio/logs
 ENV ALFIO_LOG_STDOUT_ONLY=true
 ENV ALFIO_JAVA_OPTS=""
 
