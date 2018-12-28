@@ -112,10 +112,10 @@ public class WaitingQueueManager {
     private WaitingQueueSubscription.Type getSubscriptionType(Event event) {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         return ticketCategoryRepository.findByEventId(event.getId()).stream()
+                .filter(tc -> now.isAfter(tc.getInception(event.getZoneId())))
                 .findFirst()
-                .filter(tc -> now.isBefore(tc.getInception(event.getZoneId())))
-                .map(tc -> WaitingQueueSubscription.Type.PRE_SALES)
-                .orElse(WaitingQueueSubscription.Type.SOLD_OUT);
+                .map(tc -> WaitingQueueSubscription.Type.SOLD_OUT)
+                .orElse(WaitingQueueSubscription.Type.PRE_SALES);
     }
 
     private void validateSubscriptionType(Event event, WaitingQueueSubscription.Type type) {
