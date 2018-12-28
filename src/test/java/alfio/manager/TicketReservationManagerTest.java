@@ -717,7 +717,7 @@ public class TicketReservationManagerTest {
     }
 
     @Test
-    public void returnFailureCodeIfPaymentNotSuccesful() {
+    public void returnFailureCodeIfPaymentNotSuccessful() {
         initConfirmReservation();
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), isNull(ZonedDateTime.class), eq(PaymentProxy.STRIPE.toString()), anyString())).thenReturn(1);
         when(ticketReservationRepository.updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()))).thenReturn(1);
@@ -731,7 +731,7 @@ public class TicketReservationManagerTest {
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(paymentManager).processStripePayment(eq(RESERVATION_ID), eq(GATEWAY_TOKEN), anyInt(), eq(event), anyString(), any(CustomerName.class), anyString());
         verify(ticketReservationRepository).updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()));
-        verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
+        verify(configurationManager, never()).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(any(), anyString(), anyString(), anyBoolean(), anyString());
     }
 
