@@ -34,8 +34,9 @@ ADD resources resources
 
 ENV ALFIO_LOG_STDOUT_ONLY=true
 ENV ALFIO_JAVA_OPTS=""
+ENV ALFIO_PERFORMANCE_OPTS="-Dspring.jmx.enabled=false -Dlog4j2.disableJmx=true"
 
-CMD /opt/jdk/bin/java $ALFIO_JAVA_OPTS -Dspring.jmx.enabled=false -Dlog4j2.disableJmx=true -XX:+UseContainerSupport \
+CMD /opt/jdk/bin/java $ALFIO_JAVA_OPTS $ALFIO_PERFORMANCE_OPTS -XX:+UseContainerSupport \
     --add-modules jdk.scripting.nashorn \
     -cp classes:resources:lib/*:lib-provided/* alfio.config.SpringBootLauncher
 
