@@ -52,12 +52,12 @@ public class AttendeeManager {
     public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String username) {
         int userId = userRepository.getByUsername(username).getId();
         Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventShortName);
-        if(!maybeEvent.isPresent()) {
+        if(maybeEvent.isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found"));
         }
         Event event = maybeEvent.get();
         Optional<Ticket> maybeTicket = ticketRepository.findOptionalByUUID(ticketUid);
-        if(!maybeTicket.isPresent()) {
+        if(maybeTicket.isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.TICKET_NOT_FOUND, "ticket not found"));
         }
         Ticket ticket = maybeTicket.get();
@@ -65,7 +65,7 @@ public class AttendeeManager {
             return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(CheckInStatus.INVALID_TICKET_STATE, "not checked-in"));
         }
         Optional<ZonedDateTime> existingRegistration = sponsorScanRepository.getRegistrationTimestamp(userId, event.getId(), ticket.getId());
-        if(!existingRegistration.isPresent()) {
+        if(existingRegistration.isEmpty()) {
             sponsorScanRepository.insert(userId, ZonedDateTime.now(event.getZoneId()), event.getId(), ticket.getId());
         }
         return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
@@ -75,7 +75,7 @@ public class AttendeeManager {
         Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventShortName)
             .filter(e -> userManager.findUserOrganizations(username).stream().anyMatch(o -> o.getId() == e.getOrganizationId()));
 
-        if(!maybeEvent.isPresent()) {
+        if(maybeEvent.isEmpty()) {
             return Result.error(ErrorCode.EventError.NOT_FOUND);
         }
 

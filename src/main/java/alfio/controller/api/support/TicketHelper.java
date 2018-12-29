@@ -20,7 +20,6 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EuVatChecker;
 import alfio.manager.EuVatChecker.SameCountryValidator;
-import alfio.manager.FileUploadManager;
 import alfio.manager.GroupManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketTextGenerator;

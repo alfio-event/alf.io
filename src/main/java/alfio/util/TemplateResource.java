@@ -296,9 +296,7 @@ public enum TemplateResource {
         });
 
         model.put("hasBankAccountNr", bankAccountNr.isPresent());
-        bankAccountNr.ifPresent(nr -> {
-            model.put("bankAccountNr", nr);
-        });
+        bankAccountNr.ifPresent(nr -> model.put("bankAccountNr", nr));
 
         model.put("isOfflinePayment", reservation.getStatus() == TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
         model.put("hasCustomerReference", StringUtils.isNotBlank(reservation.getCustomerReference()));

@@ -21,7 +21,6 @@ import lombok.Getter;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
-import java.util.Date;
 
 @Getter
 public class User implements Serializable {

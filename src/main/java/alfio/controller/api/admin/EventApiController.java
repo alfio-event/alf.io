@@ -437,7 +437,7 @@ public class EventApiController {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-sponsor-scan.xlsx");
         try (OutputStream os = response.getOutputStream()) {
-            exportExcel(eventName + " sponsor scan", header.toArray(new String[header.size()]), sponsorScans.collect(toList()), os);
+            exportExcel(eventName + " sponsor scan", header.toArray(new String[0]), sponsorScans.collect(toList()), os);
         }
     }
 
@@ -449,7 +449,7 @@ public class EventApiController {
             for (int marker : BOM_MARKERS) {
                 out.write(marker);
             }
-            writer.writeNext(header.toArray(new String[header.size()]));
+            writer.writeNext(header.toArray(new String[0]));
             sponsorScans.forEachOrdered(writer::writeNext);
             writer.flush();
             out.flush();
@@ -474,7 +474,7 @@ public class EventApiController {
 
     @RequestMapping("/events/{eventName}/additional-field/{id}/stats")
     public List<RestrictedValueStats> getStats(@PathVariable("eventName") String eventName, @PathVariable("id") Integer id, Principal principal) {
-        if(!eventManager.getOptionalByName(eventName, principal.getName()).filter(event -> ticketFieldRepository.findById(id).getEventId() == event.getId()).isPresent()) {
+        if(eventManager.getOptionalByName(eventName, principal.getName()).filter(event -> ticketFieldRepository.findById(id).getEventId() == event.getId()).isEmpty()) {
             return Collections.emptyList();
         }
         return ticketFieldRepository.retrieveStats(id);

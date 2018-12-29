@@ -25,7 +25,6 @@ import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -102,7 +101,7 @@ public class PromoCodeDiscountApiController {
     @RequestMapping(value = "/promo-code/{promoCodeId}/count-use", method = GET)
     public int countPromoCodeUse(@PathVariable("promoCodeId") int promoCodeId) {
         Optional<PromoCodeDiscount> code = optionally(() -> promoCodeRepository.findById(promoCodeId));
-        if(!code.isPresent()) {
+        if(code.isEmpty()) {
             return 0;
         }
         return promoCodeRepository.countConfirmedPromoCode(promoCodeId, categoriesOrNull(code.get()), null, categoriesOrNull(code.get()) != null ? "X" : null);

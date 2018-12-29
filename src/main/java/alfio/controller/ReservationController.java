@@ -240,7 +240,7 @@ public class ReservationController {
             return redirectForFailure.get();
         }
 
-        Event event = eventOptional.get();
+        Event event = eventOptional.orElseThrow();
 
 
         final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
@@ -374,14 +374,14 @@ public class ReservationController {
                                        @RequestParam(value = "ticket-email-sent", required = false, defaultValue = "false") boolean ticketEmailSent,
                                        Model model) {
         Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
-        if (!event.isPresent()) {
+        if (event.isEmpty()) {
             return "redirect:/";
         }
 
         Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
         Optional<TicketReservationStatus> status = reservation.map(TicketReservation::getStatus);
 
-        if(!status.isPresent()) {
+        if(status.isEmpty()) {
             return redirectReservation(reservation, eventName, reservationId);
         }
 
@@ -402,7 +402,7 @@ public class ReservationController {
                                       @PathVariable("reservationId") String reservationId,
                                       Model model) {
         Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
-        if (!event.isPresent()) {
+        if (event.isEmpty()) {
             return "redirect:/";
         }
 
@@ -415,13 +415,13 @@ public class ReservationController {
                                    Model model) {
 
         Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
-        if (!event.isPresent()) {
+        if (event.isEmpty()) {
             return "redirect:/";
         }
 
         Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
 
-        if(!reservation.isPresent()) {
+        if(reservation.isEmpty()) {
             model.addAttribute("reservationId", reservationId);
             model.addAttribute("pageTitle", "reservation-page-not-found.header.title");
             model.addAttribute("event", event.get());
@@ -437,7 +437,7 @@ public class ReservationController {
                                    Model model, Locale locale) {
 
         Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
-        if (!event.isPresent()) {
+        if (event.isEmpty()) {
             return "redirect:/";
         }
 
@@ -479,7 +479,7 @@ public class ReservationController {
 
     private String redirectReservation(Optional<TicketReservation> ticketReservation, String eventName, String reservationId) {
         String baseUrl = "redirect:/event/" + eventName + "/reservation/" + reservationId;
-        if(!ticketReservation.isPresent()) {
+        if(ticketReservation.isEmpty()) {
             return baseUrl + "/notfound";
         }
         TicketReservation reservation = ticketReservation.get();
@@ -522,7 +522,7 @@ public class ReservationController {
 
         Event event = eventOptional.orElseThrow(IllegalStateException::new);
         Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
-        if (!optionalReservation.isPresent()) {
+        if (optionalReservation.isEmpty()) {
             return redirectReservation(optionalReservation, eventName, reservationId);
         }
         if (paymentForm.shouldCancelReservation()) {
@@ -621,12 +621,12 @@ public class ReservationController {
             @PathVariable("reservationId") String reservationId, HttpServletRequest request) {
 
         Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
-        if (!event.isPresent()) {
+        if (event.isEmpty()) {
             return "redirect:/";
         }
 
         Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(reservationId);
-        if (!ticketReservation.isPresent()) {
+        if (ticketReservation.isEmpty()) {
             return "redirect:/event/" + eventName + "/";
         }
 
@@ -642,7 +642,7 @@ public class ReservationController {
                                        UpdateTicketOwnerForm updateTicketOwner,
                                        BindingResult bindingResult,
                                        HttpServletRequest request,
-                                       Model model) throws Exception {
+                                       Model model) {
 
         Optional<Triple<ValidationResult, Event, Ticket>> result = ticketHelper.assignTicket(eventName, ticketIdentifier, updateTicketOwner, Optional.of(bindingResult), request, model);
         return result.map(t -> "redirect:/event/"+t.getMiddle().getShortName()+"/reservation/"+t.getRight().getTicketsReservationId()+"/success").orElse("redirect:/");
@@ -670,12 +670,12 @@ public class ReservationController {
 
     private Optional<String> checkReservation(boolean backFromOverview, boolean cancelReservation, String eventName, String reservationId, HttpServletRequest request, Optional<Event> eventOptional) {
 
-        if (!eventOptional.isPresent()) {
+        if (eventOptional.isEmpty()) {
             return Optional.of("redirect:/");
         }
 
         Optional<TicketReservation> ticketReservation = ticketReservationManager.findById(reservationId);
-        if (!ticketReservation.isPresent() || ticketReservation.get().getStatus() != TicketReservationStatus.PENDING) {
+        if (ticketReservation.isEmpty() || ticketReservation.get().getStatus() != TicketReservationStatus.PENDING) {
             return Optional.of(redirectReservation(ticketReservation, eventName, reservationId));
         }
 

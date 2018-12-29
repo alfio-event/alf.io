@@ -19,7 +19,6 @@ package alfio.config;
 import alfio.util.DefaultExceptionHandler;
 import com.openhtmltopdf.util.XRLog;
 import org.apache.commons.lang3.Validate;
-import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
@@ -70,8 +69,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
     protected WebApplicationContext createRootApplicationContext() {
         ConfigurableWebApplicationContext ctx = ((ConfigurableWebApplicationContext) super.createRootApplicationContext());
         Objects.requireNonNull(ctx, "Something really bad is happening...");
-        ConfigurableEnvironment environment = ctx.getEnvironment();
-        this.environment = environment;
+        this.environment = ctx.getEnvironment();
         return ctx;
     }
 

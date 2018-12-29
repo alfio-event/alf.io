@@ -32,7 +32,10 @@ import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
@@ -49,7 +52,6 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 
 import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -69,12 +71,10 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     @Bean
     @Profile({"!"+Initializer.PROFILE_INTEGRATION_TEST, "travis"})
     public PlatformProvider getCloudProvider(Environment environment) {
-        PlatformProvider current = PLATFORM_PROVIDERS
-                                    .stream()
-                                    .filter(p -> p.isHosting(environment))
-                                    .findFirst()
-                                    .orElse(PlatformProvider.DEFAULT);
-        return current;
+        return PLATFORM_PROVIDERS.stream()
+                                 .filter(p -> p.isHosting(environment))
+                                 .findFirst()
+                                 .orElse(PlatformProvider.DEFAULT);
     }
 
     @Bean
@@ -187,12 +187,12 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
      */
     private static class FakeCFDataSource extends AbstractDataSource {
         @Override
-        public Connection getConnection() throws SQLException {
+        public Connection getConnection() {
             return null;
         }
 
         @Override
-        public Connection getConnection(String username, String password) throws SQLException {
+        public Connection getConnection(String username, String password) {
             return null;
         }
     }

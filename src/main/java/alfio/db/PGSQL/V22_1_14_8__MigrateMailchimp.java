@@ -42,9 +42,9 @@ import static alfio.util.OptionalWrapper.optionally;
 public class V22_1_14_8__MigrateMailchimp extends BaseSpringJdbcMigration {
 
     @Override
-    public void migrate(JdbcTemplate jdbcTemplate) throws Exception {
+    public void migrate(JdbcTemplate jdbcTemplate) {
         Integer enabledCount = jdbcTemplate.queryForObject("select count(*) from plugin_configuration where plugin_id = 'alfio.mailchimp' and conf_name = 'enabled' and conf_value = 'true'", Integer.class);
-        if (enabledCount == 0) {
+        if (enabledCount == null || enabledCount == 0) {
             return;
         }
 

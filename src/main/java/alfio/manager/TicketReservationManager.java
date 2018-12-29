@@ -327,7 +327,7 @@ public class TicketReservationManager {
 
         Optional<SpecialPrice> specialPrice = renewSpecialPrice(token, specialPriceSessionId);
 
-        if(token.isPresent() && !specialPrice.isPresent()) {
+        if(token.isPresent() && specialPrice.isEmpty()) {
             //there is a special price in the request but this isn't valid anymore
             throw new InvalidSpecialPriceTokenException();
         }
@@ -504,7 +504,7 @@ public class TicketReservationManager {
 
         //FIXME we must support multiple transactions for a reservation, otherwise we can't handle properly the case of ON_SITE payments
 
-        if(paymentProxy != PaymentProxy.ON_SITE || !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
+        if(paymentProxy != PaymentProxy.ON_SITE || transactionRepository.loadOptionalByReservationId(reservationId).isEmpty()) {
             String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
             transactionRepository.insert(transactionId, null, reservationId, ZonedDateTime.now(event.getZoneId()),
                 priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(), platformFee, 0L);
@@ -768,9 +768,7 @@ public class TicketReservationManager {
 
         List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
         Map<Integer, Ticket> postUpdateTicket = ticketsInReservation.stream().collect(toMap(Ticket::getId, Function.identity()));
-        postUpdateTicket.forEach((id, ticket) -> {
-            auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), eventId);
-        });
+        postUpdateTicket.forEach((id, ticket) -> auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), eventId));
 
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
@@ -1136,7 +1134,7 @@ public class TicketReservationManager {
 
         SpecialPrice price = specialPrice.get();
 
-        if(!specialPriceSessionId.isPresent()) {
+        if(specialPriceSessionId.isEmpty()) {
             log.warn("cannot renew special price {}: session identifier not found or not matching", price.getCode());
             return Optional.empty();
         }
@@ -1221,7 +1219,7 @@ public class TicketReservationManager {
         if(admin) {
             TicketReservation reservation = findById(ticket.getTicketsReservationId()).orElseThrow(IllegalStateException::new);
             //if the current user is admin, then it would be good to update also the name of the Reservation Owner
-            String username = userDetails.get().getUsername();
+            String username = userDetails.orElseThrow().getUsername();
             log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
             ticketReservationRepository.updateAssignee(reservation.getId(), username);
         }
@@ -1341,7 +1339,7 @@ public class TicketReservationManager {
                     Event event = p.getMiddle().get();
                     return truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE).compareTo(p.getLeft().getValidity()) >= 0;
                 })
-                .map(p -> Triple.of(p.getLeft(), p.getMiddle().get(), p.getRight().get()))
+                .map(p -> Triple.of(p.getLeft(), p.getMiddle().orElseThrow(), p.getRight().orElseThrow()))
                 .forEach(p -> {
                     TicketReservation reservation = p.getLeft();
                     Event event = p.getMiddle();
@@ -1494,7 +1492,7 @@ public class TicketReservationManager {
 
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
 
-        if(ticketRepository.countTicketsInReservation(reservationId) == 0 && !transactionRepository.loadOptionalByReservationId(reservationId).isPresent()) {
+        if(ticketRepository.countTicketsInReservation(reservationId) == 0 && transactionRepository.loadOptionalByReservationId(reservationId).isEmpty()) {
             removeReservation(event, ticketReservation, false, null);
             auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
         } else {

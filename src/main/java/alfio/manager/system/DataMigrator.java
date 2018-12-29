@@ -57,7 +57,7 @@ import static java.util.stream.Collectors.*;
 @Log4j2
 public class DataMigrator {
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile("(\\d\\.)([0-9\\.]*)(-SNAPSHOT)?");
+    private static final Pattern VERSION_PATTERN = Pattern.compile("(\\d\\.)([0-9.]*)(-SNAPSHOT)?");
     private static final Map<String, String> PRICE_UPDATE_BY_KEY = new LinkedHashMap<>();
     private final EventMigrationRepository eventMigrationRepository;
     private final EventRepository eventRepository;
@@ -108,8 +108,8 @@ public class DataMigrator {
 
     private void fillDefaultOptions() {
         transactionTemplate.execute(ts -> {
-            int count = jdbc.queryForObject("select count(*) from configuration where c_key = :key", new MapSqlParameterSource("key", ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE.getValue()), Integer.class);
-            if(count == 0) {
+            Integer count = jdbc.queryForObject("select count(*) from configuration where c_key = :key", new MapSqlParameterSource("key", ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE.getValue()), Integer.class);
+            if(count == null || count == 0) {
                 configurationRepository.insert(ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE.getValue(), "true", ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE.getDescription());
             }
             return null;

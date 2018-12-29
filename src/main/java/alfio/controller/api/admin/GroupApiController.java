@@ -167,7 +167,7 @@ public class GroupApiController {
                                                     @PathVariable("memberId") int memberId,
                                                     @PathVariable("organizationId") int organizationId,
                                                     Principal principal) {
-        if(notOwner(principal.getName(), organizationId) || !groupManager.findById(groupId, organizationId).isPresent()) {
+        if(notOwner(principal.getName(), organizationId) || groupManager.findById(groupId, organizationId).isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -179,7 +179,7 @@ public class GroupApiController {
     public ResponseEntity<Boolean> deactivateGroup(@PathVariable("groupId") int groupId,
                                                    @PathVariable("organizationId") int organizationId,
                                                    Principal principal) {
-        if(notOwner(principal.getName(), organizationId) || !groupManager.findById(groupId, organizationId).isPresent()) {
+        if(notOwner(principal.getName(), organizationId) || groupManager.findById(groupId, organizationId).isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -187,9 +187,9 @@ public class GroupApiController {
     }
 
     private boolean notOwner(String username, int organizationId) {
-        return !optionally(() -> userManager.findUserByUsername(username))
+        return optionally(() -> userManager.findUserByUsername(username))
             .filter(user -> userManager.isOwnerOfOrganization(user, organizationId))
-            .isPresent();
+            .isEmpty();
     }
 
 }

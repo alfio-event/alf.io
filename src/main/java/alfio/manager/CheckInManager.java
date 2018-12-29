@@ -197,15 +197,15 @@ public class CheckInManager {
 
     private TicketAndCheckInResult extractStatus(Optional<Event> maybeEvent, Optional<Ticket> maybeTicket, String ticketIdentifier, Optional<String> ticketCode) {
 
-        if (!maybeEvent.isPresent()) {
+        if (maybeEvent.isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(EVENT_NOT_FOUND, "Event not found"));
         }
 
-        if (!maybeTicket.isPresent()) {
+        if (maybeTicket.isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(TICKET_NOT_FOUND, "Ticket with uuid " + ticketIdentifier + " not found"));
         }
 
-        if(!ticketCode.filter(StringUtils::isNotEmpty).isPresent()) {
+        if(ticketCode.filter(StringUtils::isNotEmpty).isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(EMPTY_TICKET_CODE, "Missing ticket code"));
         }
 

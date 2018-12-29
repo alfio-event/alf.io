@@ -109,7 +109,7 @@ public class ResourceController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleSyntaxError(Exception ex) {
         Optional<String> cause = Optional.ofNullable(ex.getCause())
-            .filter(e -> MustacheException.class.isInstance(e) || TemplateProcessor.TemplateAccessException.class.isInstance(e))
+            .filter(e -> e instanceof MustacheException || e instanceof TemplateProcessor.TemplateAccessException)
             .map(Throwable::getMessage);
         return cause.orElse("Something went wrong. Please check the syntax and retry");
     }

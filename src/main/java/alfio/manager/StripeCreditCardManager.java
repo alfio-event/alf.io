@@ -127,7 +127,8 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
         try {
             String clientSecret = getSystemApiKey();
             OAuth20Service service = new ServiceBuilder(clientSecret).apiSecret(clientSecret).build(new StripeConnectApi());
-            Map<String, String> token = Json.fromJson(service.getAccessToken(code).getRawResponse(), new TypeReference<Map<String, String>>() {});
+            Map<String, String> token = Json.fromJson(service.getAccessToken(code).getRawResponse(), new TypeReference<>() {
+            });
             String accountId = token.get("stripe_user_id");
             if(accountId != null) {
                 configurationManager.saveConfig(keyResolver.apply(ConfigurationKeys.STRIPE_CONNECTED_ID), accountId);
@@ -206,7 +207,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
     protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) throws StripeException {
         Optional<RequestOptions> opt = options(event);
-        if(!opt.isPresent()) {
+        if(opt.isEmpty()) {
             return Optional.empty();
         }
         RequestOptions options = opt.get();
@@ -319,7 +320,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
     private StripeExceptionHandler findExceptionHandler(StripeException exc) {
         final Optional<StripeExceptionHandler> eh = Optional.ofNullable(handlers.get(exc.getClass()));
-        if(!eh.isPresent()) {
+        if(eh.isEmpty()) {
             log.warn("cannot find an ExceptionHandler for {}. Falling back to the default one.", exc.getClass());
         }
         return eh.orElseGet(() -> handlers.get(StripeException.class));

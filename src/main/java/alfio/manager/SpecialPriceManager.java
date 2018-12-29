@@ -67,14 +67,14 @@ public class SpecialPriceManager {
 
     private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, Event event, String username) {
         final TicketCategory category = checkOwnership(categoryId, event, username);
-        List<String> availableCodes = new ArrayList<>(specialPriceRepository.findActiveByCategoryId(category.getId())
+        List<String> availableCodes = specialPriceRepository.findActiveByCategoryId(category.getId())
             .stream()
             .filter(SpecialPrice::notSent)
-            .map(SpecialPrice::getCode).collect(toList()));
+            .map(SpecialPrice::getCode).collect(toList());
         Validate.isTrue(input.size() <= availableCodes.size(), "Requested codes: "+input.size()+ ", available: "+availableCodes.size()+".");
         List<String> requestedCodes = input.stream().filter(IS_CODE_PRESENT).map(SendCodeModification::getCode).collect(toList());
         Validate.isTrue(requestedCodes.stream().distinct().count() == requestedCodes.size(), "Cannot assign the same code twice. Please fix the input file.");
-        Validate.isTrue(requestedCodes.stream().allMatch(availableCodes::contains), "some requested codes don't exist.");
+        Validate.isTrue(availableCodes.containsAll(requestedCodes), "some requested codes don't exist.");
         return availableCodes;
     }
 

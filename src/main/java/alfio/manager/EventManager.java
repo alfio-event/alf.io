@@ -225,9 +225,7 @@ public class EventManager {
 
     private void createAdditionalFields(Event event, EventModification em) {
         if (!CollectionUtils.isEmpty(em.getTicketFields())) {
-            em.getTicketFields().forEach(f -> {
-                insertAdditionalField(event, f, f.getOrder());
-            });
+            em.getTicketFields().forEach(f -> insertAdditionalField(event, f, f.getOrder()));
         }
     }
 
@@ -397,13 +395,9 @@ public class EventManager {
                         // handle the case when the user try to shrink a category with tokens that are already sent
                         // we should fail if there are not enough free token left
                         int addedTicket = tcm.getMaxTickets() - existing.getMaxTickets();
-                        if(addedTicket < 0 &&
-                            existing.isAccessRestricted() &&
-                            specialPriceRepository.countNotSentToken(categoryId) < Math.abs(addedTicket)) {
-                            return false;
-                        } else {
-                            return true;
-                        }
+                        return addedTicket >= 0 ||
+                            !existing.isAccessRestricted() ||
+                            specialPriceRepository.countNotSentToken(categoryId) >= Math.abs(addedTicket);
                     }, ErrorCode.CategoryError.NOT_ENOUGH_FREE_TOKEN_FOR_SHRINK)
                     .checkPrecondition(() -> {
                         if(tcm.isBounded() && !existing.isBounded()) {

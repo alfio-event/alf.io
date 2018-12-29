@@ -130,14 +130,14 @@ public class MvcConfiguration implements WebMvcConfigurer {
     public HandlerInterceptor getEventLocaleSetterInterceptor() {
         return new HandlerInterceptorAdapter() {
             @Override
-            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
 
                 if(handler instanceof HandlerMethod) {
                     HandlerMethod handlerMethod = ((HandlerMethod) handler);
                     RequestMapping reqMapping = handlerMethod.getMethodAnnotation(RequestMapping.class);
 
                     //check if the request mapping value has the form "/event/{something}"
-                    Pattern eventPattern = Pattern.compile("^/event/\\{(\\w+)}/{0,1}.*");
+                    Pattern eventPattern = Pattern.compile("^/event/\\{(\\w+)}/?.*");
                     if (reqMapping != null && reqMapping.value().length == 1 && eventPattern.matcher(reqMapping.value()[0]).matches()) {
 
                         Matcher m = eventPattern.matcher(reqMapping.value()[0]);
@@ -158,7 +158,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
                                 String eventName = Optional.ofNullable(((Map<String, Object>)request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE)).get(val)).orElse("").toString();
 
 
-                                LocaleResolver resolver = RequestContextUtils.getLocaleResolver(request);
+                                LocaleResolver resolver = Objects.requireNonNull(RequestContextUtils.getLocaleResolver(request));
                                 Locale locale = resolver.resolveLocale(request);
                                 List<ContentLanguage> cl = i18nManager.getEventLanguages(eventName);
 
@@ -182,7 +182,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
     public HandlerInterceptorAdapter getDefaultTemplateObjectsFiller() {
         return new HandlerInterceptorAdapter() {
             @Override
-            public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+            public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
                 Optional.ofNullable(modelAndView)
                     .filter(mv -> !StringUtils.startsWith(mv.getViewName(), "redirect:"))
                     .ifPresent(mv -> {
@@ -217,7 +217,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
                             modelMap.putIfAbsent("paypalTestPassword", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_PASSWORD), "<missing>"));
                         }
 
-                        modelMap.putIfAbsent(TemplateManager.VAT_TRANSLATION_TEMPLATE_KEY, TemplateManager.getVATString(event, messageSource, RequestContextUtils.getLocaleResolver(request).resolveLocale(request), configurationManager));
+                        modelMap.putIfAbsent(TemplateManager.VAT_TRANSLATION_TEMPLATE_KEY, TemplateManager.getVATString(event, messageSource, Objects.requireNonNull(RequestContextUtils.getLocaleResolver(request)).resolveLocale(request), configurationManager));
                 });
             }
         };
@@ -234,7 +234,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
         return new HandlerInterceptorAdapter() {
             @Override
             public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
-                    ModelAndView modelAndView) throws Exception {
+                    ModelAndView modelAndView) {
 
                 //
                 String reportUri = "";
@@ -272,7 +272,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
     public HandlerInterceptor getCsrfInterceptor() {
         return new HandlerInterceptorAdapter() {
             @Override
-            public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+            public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
                 Optional.ofNullable(modelAndView).ifPresent(mv -> mv.addObject(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName())));
             }
         };

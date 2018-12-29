@@ -29,7 +29,7 @@ import java.util.List;
 @Getter
 public final class ValidationResult {
 
-    private static final ValidationResult SUCCESS = new ValidationResult(Collections.<ErrorDescriptor>emptyList());
+    private static final ValidationResult SUCCESS = new ValidationResult(Collections.emptyList());
 
     private final List<ErrorDescriptor> errorDescriptors;
     private final int errorCount;

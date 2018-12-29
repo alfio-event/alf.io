@@ -115,7 +115,7 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
         assertFalse("Group is empty, therefore no value is allowed", groupManager.isAllowed("test@test.ch", event.getId(), categoryId));
         Result<Integer> items = groupManager.insertMembers(group.getId(), Collections.singletonList(new GroupMemberModification(null,"test@test.ch", "description")));
         assertTrue(items.isSuccess());
-        assertEquals(new Integer(1), items.getData());
+        assertEquals(Integer.valueOf(1), items.getData());
         assertTrue("Value should be allowed", groupManager.isAllowed("test@test.ch", event.getId(), categoryId));
 
         TicketReservationModification ticketReservation = new TicketReservationModification();
