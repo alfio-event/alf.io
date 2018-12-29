@@ -241,19 +241,19 @@ public class ResourceController {
     @RequestMapping(value = "/resource/", method = POST)
     public void uploadFile(@RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(principal);
-        uploadedResourceManager.saveResource(upload);
+        uploadedResourceManager.saveResource(upload).orElseThrow(IllegalArgumentException::new);
     }
 
     @RequestMapping(value = "/resource-organization/{organizationId}/", method = POST)
     public void uploadFile(@PathVariable("organizationId") int organizationId, @RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(organizationId, principal);
-        uploadedResourceManager.saveResource(organizationId, upload);
+        uploadedResourceManager.saveResource(organizationId, upload).orElseThrow(IllegalArgumentException::new);
     }
 
     @RequestMapping(value = "/resource-event/{organizationId}/{eventId}/", method = POST)
     public void uploadFile(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(organizationId, eventId, principal);
-        uploadedResourceManager.saveResource(organizationId, eventId, upload);
+        uploadedResourceManager.saveResource(organizationId, eventId, upload).orElseThrow(IllegalArgumentException::new);
     }
 
     //------------------

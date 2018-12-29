@@ -119,7 +119,7 @@ public class UploadedResourceManager {
         });
     }
 
-    public int saveResource(UploadBase64FileModification file) {
+    public Optional<Integer> saveResource(UploadBase64FileModification file) {
         if (hasResource(file.getName())) {
             uploadedResourceRepository.delete(file.getName());
         }
@@ -130,11 +130,11 @@ public class UploadedResourceManager {
                 protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
                     setFileValues(ps, lobCreator, file, 1);
                 }
-            })).orElse(0);
+            }));
 
     }
 
-    public int saveResource(int organizationId, UploadBase64FileModification file) {
+    public Optional<Integer> saveResource(int organizationId, UploadBase64FileModification file) {
         if (hasResource(organizationId, file.getName())) {
             uploadedResourceRepository.delete(organizationId, file.getName());
         }
@@ -146,10 +146,10 @@ public class UploadedResourceManager {
                     ps.setInt(2, organizationId);
                     setFileValues(ps, lobCreator, file, 2);
                 }
-            })).orElse(0);
+            }));
     }
 
-    public int saveResource(int organizationId, int eventId, UploadBase64FileModification file) {
+    public Optional<Integer> saveResource(int organizationId, int eventId, UploadBase64FileModification file) {
         if (hasResource(organizationId, eventId, file.getName())) {
             uploadedResourceRepository.delete(organizationId, eventId, file.getName());
         }
@@ -162,7 +162,7 @@ public class UploadedResourceManager {
                     ps.setInt(3, eventId);
                     setFileValues(ps, lobCreator, file, 3);
                 }
-            })).orElse(0);
+            }));
 
     }
 
