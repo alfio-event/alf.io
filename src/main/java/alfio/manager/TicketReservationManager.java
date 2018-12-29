@@ -313,9 +313,9 @@ public class TicketReservationManager {
         TicketCategory category = ticketCategoryRepository.getByIdAndActive(categoryId, eventId);
         List<String> statusesAsString = requiredStatuses.stream().map(TicketStatus::name).collect(toList());
         if(category.isBounded()) {
-            return ticketRepository.selectTicketInCategoryForUpdate(eventId, categoryId, qty, statusesAsString);
+            return ticketRepository.selectTicketInCategoryForUpdateSkipLocked(eventId, categoryId, qty, statusesAsString);
         }
-        return ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, qty, statusesAsString);
+        return ticketRepository.selectNotAllocatedTicketsForUpdateSkipLocked(eventId, qty, statusesAsString);
     }
 
     Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, Optional<String> specialPriceSessionId, TicketReservationWithOptionalCodeModification ticketReservation) {
