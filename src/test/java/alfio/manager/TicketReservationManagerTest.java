@@ -528,7 +528,7 @@ class TicketReservationManagerTest {
     void reserveTicketsForBoundedCategories() {
         when(ticketCategory.isBounded()).thenReturn(true);
         List<Integer> ids = singletonList(1);
-        when(ticketRepository.selectTicketInCategoryForUpdate(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(1), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(ids);
+        when(ticketRepository.selectTicketInCategoryForUpdateSkipLocked(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(1), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(ids);
         when(reservationModification.getAmount()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
@@ -540,7 +540,7 @@ class TicketReservationManagerTest {
     void reserveTicketsForBoundedCategoriesWaitingQueue() {
         when(ticketCategory.isBounded()).thenReturn(true);
         List<Integer> ids = singletonList(1);
-        when(ticketRepository.selectTicketInCategoryForUpdate(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(1), eq(asList(TicketStatus.RELEASED.name(), TicketStatus.PRE_RESERVED.name())))).thenReturn(ids);
+        when(ticketRepository.selectTicketInCategoryForUpdateSkipLocked(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(1), eq(asList(TicketStatus.RELEASED.name(), TicketStatus.PRE_RESERVED.name())))).thenReturn(ids);
         when(reservationModification.getAmount()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
@@ -552,7 +552,7 @@ class TicketReservationManagerTest {
     void reserveTicketsForUnboundedCategories() {
         when(ticketCategory.isBounded()).thenReturn(false);
         List<Integer> ids = singletonList(1);
-        when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(EVENT_ID), eq(1), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(ids);
+        when(ticketRepository.selectNotAllocatedTicketsForUpdateSkipLocked(eq(EVENT_ID), eq(1), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(ids);
         when(reservationModification.getAmount()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
@@ -564,7 +564,7 @@ class TicketReservationManagerTest {
     void reserveTicketsForUnboundedCategoriesWaitingQueue() {
         when(ticketCategory.isBounded()).thenReturn(false);
         List<Integer> ids = singletonList(1);
-        when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(EVENT_ID), eq(1), eq(asList(TicketStatus.RELEASED.name(), TicketStatus.PRE_RESERVED.name())))).thenReturn(ids);
+        when(ticketRepository.selectNotAllocatedTicketsForUpdateSkipLocked(eq(EVENT_ID), eq(1), eq(asList(TicketStatus.RELEASED.name(), TicketStatus.PRE_RESERVED.name())))).thenReturn(ids);
         when(reservationModification.getAmount()).thenReturn(1);
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
