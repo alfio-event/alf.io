@@ -348,7 +348,10 @@ public class TicketReservationManager {
         return specialPrice;
     }
 
-    public PaymentResult performPayment( PaymentSpecification spec, TotalPrice reservationCost, Optional<String> specialPriceSessionId, Optional<PaymentProxy> method) {
+    public PaymentResult performPayment(PaymentSpecification spec,
+                                        TotalPrice reservationCost,
+                                        Optional<String> specialPriceSessionId,
+                                        Optional<PaymentProxy> method) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
 
         if(!acquireGroupMembers(spec.getReservationId(), spec.getEvent())) {
@@ -359,39 +362,26 @@ public class TicketReservationManager {
         if(!initPaymentProcess(reservationCost, paymentProxy, spec)) {
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
+
         try {
             PaymentResult paymentResult;
             ticketReservationRepository.lockReservationForUpdate(spec.getReservationId());
+            //save billing data in case we have to go back to PENDING
+            ticketReservationRepository.updateBillingData(spec.getVatStatus(), spec.getVatNr(), spec.getVatCountryCode(), spec.isInvoiceRequested(), spec.getReservationId());
             if(isDiscountCodeUsageExceeded(spec.getReservationId())) {
                 return PaymentResult.failed(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
             }
-            if(reservationCost.getPriceWithVAT() > 0) {
-                if(spec.isInvoiceRequested() && configurationManager.hasAllConfigurationsForInvoice(spec.getEvent())) {
-                    int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getEvent().getOrganizationId());
-                    invoiceSequencesRepository.incrementSequenceFor(spec.getEvent().getOrganizationId());
-                    String pattern = configurationManager.getStringConfigValue(Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
-                    ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), String.format(pattern, invoiceSequence));
-                }
-                ticketReservationRepository.updateBillingData(spec.getVatStatus(), spec.getVatNr(), spec.getVatCountryCode(), spec.isInvoiceRequested(), spec.getReservationId());
-
-                //
-                extensionManager.handleInvoiceGeneration(spec, reservationCost, ticketReservationRepository.getBillingDetailsForReservation(spec.getReservationId()))
-                    .ifPresent(invoiceGeneration -> {
-                        if (invoiceGeneration.getInvoiceNumber() != null) {
-                            ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceGeneration.getInvoiceNumber());
-                        }
-                    });
-
+            if(reservationCost.requiresPayment()) {
                 paymentResult = paymentManager.lookupProviderByMethod(paymentProxy.getPaymentMethod(), spec.getPaymentContext())
                     .map( paymentProvider -> paymentProvider.getTokenAndPay(spec) )
                     .orElseGet( () -> PaymentResult.failed("error.STEP2_STRIPE_unexpected") );
-
             } else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
 
             if (paymentResult.isSuccessful()) {
-                completeReservation( spec, specialPriceSessionId, paymentProxy );
+                generateInvoiceNumber(spec, reservationCost);
+                completeReservation(spec, specialPriceSessionId, paymentProxy);
             } else if(paymentResult.isFailed()) {
                 reTransitionToPending(spec.getReservationId());
             }
@@ -403,6 +393,23 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_STRIPE_unexpected");
         }
 
+    }
+
+    private void generateInvoiceNumber(PaymentSpecification spec, TotalPrice reservationCost) {
+        if(!reservationCost.requiresPayment() || !spec.isInvoiceRequested() || !configurationManager.hasAllConfigurationsForInvoice(spec.getEvent())) {
+            return;
+        }
+
+        String invoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, ticketReservationRepository.getBillingDetailsForReservation(spec.getReservationId()))
+            .flatMap(invoiceGeneration -> Optional.ofNullable(StringUtils.trimToNull(invoiceGeneration.getInvoiceNumber())))
+            .orElseGet(() -> {
+                int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getEvent().getOrganizationId());
+                invoiceSequencesRepository.incrementSequenceFor(spec.getEvent().getOrganizationId());
+                String pattern = configurationManager.getStringConfigValue(Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
+                return String.format(pattern, invoiceSequence);
+            });
+
+        ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceNumber);
     }
 
     private boolean isDiscountCodeUsageExceeded(String reservationId) {

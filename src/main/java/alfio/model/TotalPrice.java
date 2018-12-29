@@ -37,4 +37,8 @@ public class TotalPrice {
         this.discount = discount;
         this.discountAppliedCount = discountAppliedCount;
     }
+
+    public boolean requiresPayment() {
+        return this.priceWithVAT > 0;
+    }
 }
