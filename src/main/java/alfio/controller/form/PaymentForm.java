@@ -47,7 +47,7 @@ public class PaymentForm implements Serializable {
         Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
         boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
         boolean multiplePaymentMethods = allowedPaymentMethods.size() > 1;
-        if (multiplePaymentMethods && priceGreaterThanZero && !paymentProxyOptional.isPresent()) {
+        if (multiplePaymentMethods && priceGreaterThanZero && paymentProxyOptional.isEmpty()) {
             bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
         }
 

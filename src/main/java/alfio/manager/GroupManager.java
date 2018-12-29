@@ -187,7 +187,7 @@ public class GroupManager {
         }
         LinkedGroup configuration = configurations.get(0);
         Optional<GroupMember> optionalItem = getMatchingMember(configuration, ticket.getEmail());
-        if(!optionalItem.isPresent()) {
+        if(optionalItem.isEmpty()) {
             return false;
         }
         GroupMember item = optionalItem.get();
@@ -238,7 +238,7 @@ public class GroupManager {
     @Transactional
     public Optional<GroupModification> update(int listId, GroupModification modification) {
 
-        if(!groupRepository.getOptionalById(listId).isPresent() || CollectionUtils.isEmpty(modification.getItems())) {
+        if(groupRepository.getOptionalById(listId).isEmpty() || CollectionUtils.isEmpty(modification.getItems())) {
             return Optional.empty();
         }
 

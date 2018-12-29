@@ -166,7 +166,7 @@ public class ConfigurationManager {
     private void saveOrganizationConfiguration(int organizationId, String key, String optionValue) {
         Optional<String> value = evaluateValue(key, optionValue);
         Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, key);
-        if (!value.isPresent()) {
+        if (value.isEmpty()) {
             configurationRepository.deleteOrganizationLevelByKey(key, organizationId);
         } else if (existing.isPresent()) {
             configurationRepository.updateOrganizationLevel(organizationId, key, value.get());
@@ -185,7 +185,7 @@ public class ConfigurationManager {
     private void saveEventConfiguration(int eventId, int organizationId, String key, String optionValue) {
         Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, key);
         Optional<String> value = evaluateValue(key, optionValue);
-        if(!value.isPresent()) {
+        if(value.isEmpty()) {
             configurationRepository.deleteEventLevelByKey(key, eventId);
         } else if (existing.isPresent()) {
             configurationRepository.updateEventLevel(eventId, organizationId, key, value.get());
@@ -217,7 +217,7 @@ public class ConfigurationManager {
             .forEach(c -> {
                 Optional<Configuration> existing = configurationRepository.findByKeyAtCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey());
                 Optional<String> value = evaluateValue(c.getKey(), c.getValue());
-                if(!value.isPresent()) {
+                if(value.isEmpty()) {
                     configurationRepository.deleteCategoryLevelByKey(c.getKey(), eventId, categoryId);
                 } else if (existing.isPresent()) {
                     configurationRepository.updateCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey(), value.get());
@@ -253,7 +253,7 @@ public class ConfigurationManager {
             }
         } else {
             Optional<String> valueOpt = Optional.ofNullable(value);
-            if(!conf.isPresent()) {
+            if(conf.isEmpty()) {
                 valueOpt.ifPresent(v -> configurationRepository.insert(key.getValue(), v, key.getDescription()));
             } else {
                 configurationRepository.update(key.getValue(), value);
@@ -273,7 +273,7 @@ public class ConfigurationManager {
     public boolean isBasicConfigurationNeeded() {
         return ConfigurationKeys.basic().stream()
             .anyMatch(key -> {
-                boolean absent = !configurationRepository.findOptionalByKey(key.getValue()).isPresent();
+                boolean absent = configurationRepository.findOptionalByKey(key.getValue()).isEmpty();
                 if (absent) {
                     log.warn("cannot find a value for " + key.getValue());
                 }
@@ -365,9 +365,8 @@ public class ConfigurationManager {
     private Map<ConfigurationKeys.SettingCategory, List<Configuration>> groupByCategory(Map<ConfigurationKeys.SettingCategory, List<Configuration>> all, Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing) {
         return all.entrySet().stream()
             .map(e -> {
-                Set<Configuration> entries = new TreeSet<>();
                 ConfigurationKeys.SettingCategory key = e.getKey();
-                entries.addAll(e.getValue());
+                Set<Configuration> entries = new TreeSet<>(e.getValue());
                 if(existing.containsKey(key)) {
                     List<Configuration> configurations = existing.get(key);
                     entries.removeAll(configurations);

@@ -145,9 +145,8 @@ public class PaymentManager {
     }
 
     private Stream<? extends Map.Entry<String, ?>> getProviderOptions(PaymentContext context, PaymentProxy pp) {
-        return lookupProviderByMethod(pp.getPaymentMethod(), context)
-            .map(it -> it.getModelOptions(context).entrySet().stream().filter(kv -> kv.getValue() != null))
-            .orElse(Stream.empty());
+        return lookupProviderByMethod(pp.getPaymentMethod(), context).stream()
+            .flatMap(it -> it.getModelOptions(context).entrySet().stream().filter(kv -> kv.getValue() != null));
     }
 
     public PaymentToken buildPaymentToken(String gatewayToken, PaymentProxy proxy, PaymentContext context) {

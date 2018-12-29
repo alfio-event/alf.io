@@ -265,7 +265,7 @@ public class UserManager {
         Optional<User> existing = Optional.ofNullable(id)
             .flatMap(uid -> OptionalWrapper.optionally(() -> userRepository.findById(uid)));
 
-        if(!existing.filter(e -> e.getUsername().equals(username)).isPresent() && usernameExists(username)) {
+        if(existing.filter(e -> e.getUsername().equals(username)).isEmpty() && usernameExists(username)) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("username", "There is already another user with the same username."));
         }
         return ValidationResult.of(Stream.of(Pair.of(firstName, "firstName"), Pair.of(lastName, "lastName"), Pair.of(emailAddress, "emailAddress"))
@@ -279,7 +279,7 @@ public class UserManager {
             .map(u -> {
                 List<ValidationResult.ErrorDescriptor> errors = new ArrayList<>();
                 Optional<String> password = userRepository.findPasswordByUsername(username);
-                if(!password.filter(p -> passwordEncoder.matches(oldPassword, p)).isPresent()) {
+                if(password.filter(p -> passwordEncoder.matches(oldPassword, p)).isEmpty()) {
                     errors.add(new ValidationResult.ErrorDescriptor("alfio.old-password-invalid", "wrong password"));
                 }
                 if(!PasswordGenerator.isValid(newPassword)) {

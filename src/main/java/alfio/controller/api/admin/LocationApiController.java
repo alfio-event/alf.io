@@ -72,7 +72,7 @@ public class LocationApiController {
     }
 
     private Map<ConfigurationKeys, Optional<String>> getGeoConf() {
-        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder = (key) -> Configuration.getSystemConfiguration(key);
+        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> pathKeyBuilder = Configuration::getSystemConfiguration;
         return configurationManager.getStringConfigValueFrom(
                 pathKeyBuilder.apply(ConfigurationKeys.MAPS_PROVIDER),
                 pathKeyBuilder.apply(ConfigurationKeys.MAPS_CLIENT_API_KEY),
@@ -85,9 +85,7 @@ public class LocationApiController {
         Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf();
         ConfigurationKeys.GeoInfoProvider provider = LocationDescriptor.getProvider(geoInfoConfiguration);
         Map<ConfigurationKeys, String> apiKeys = new HashMap<>();
-        geoInfoConfiguration.forEach((k,v) -> {
-            v.ifPresent(value -> apiKeys.put(k, value));
-        });
+        geoInfoConfiguration.forEach((k,v) -> v.ifPresent(value -> apiKeys.put(k, value)));
         return new ProviderAndKeys(provider, apiKeys);
     }
 

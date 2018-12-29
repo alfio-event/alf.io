@@ -119,42 +119,42 @@ public class UploadedResourceManager {
         });
     }
 
-    public int saveResource(UploadBase64FileModification file) {
+    public Optional<Integer> saveResource(UploadBase64FileModification file) {
         if (hasResource(file.getName())) {
             uploadedResourceRepository.delete(file.getName());
         }
         LobHandler lobHandler = new DefaultLobHandler();
-        return jdbc.getJdbcOperations().execute(uploadedResourceRepository.uploadTemplate(file.getName()),
+        return Optional.ofNullable(jdbc.getJdbcOperations().execute(uploadedResourceRepository.uploadTemplate(file.getName()),
             new AbstractLobCreatingPreparedStatementCallback(lobHandler) {
                 @Override
                 protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
                     setFileValues(ps, lobCreator, file, 1);
                 }
-            });
+            }));
 
     }
 
-    public int saveResource(int organizationId, UploadBase64FileModification file) {
+    public Optional<Integer> saveResource(int organizationId, UploadBase64FileModification file) {
         if (hasResource(organizationId, file.getName())) {
             uploadedResourceRepository.delete(organizationId, file.getName());
         }
         LobHandler lobHandler = new DefaultLobHandler();
-        return jdbc.getJdbcOperations().execute(uploadedResourceRepository.uploadTemplate(organizationId, file.getName()),
+        return Optional.ofNullable(jdbc.getJdbcOperations().execute(uploadedResourceRepository.uploadTemplate(organizationId, file.getName()),
             new AbstractLobCreatingPreparedStatementCallback(lobHandler) {
                 @Override
                 protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
                     ps.setInt(2, organizationId);
                     setFileValues(ps, lobCreator, file, 2);
                 }
-            });
+            }));
     }
 
-    public int saveResource(int organizationId, int eventId, UploadBase64FileModification file) {
+    public Optional<Integer> saveResource(int organizationId, int eventId, UploadBase64FileModification file) {
         if (hasResource(organizationId, eventId, file.getName())) {
             uploadedResourceRepository.delete(organizationId, eventId, file.getName());
         }
         LobHandler lobHandler = new DefaultLobHandler();
-        return jdbc.getJdbcOperations().execute(uploadedResourceRepository.uploadTemplate(organizationId, eventId, file.getName()),
+        return Optional.ofNullable(jdbc.getJdbcOperations().execute(uploadedResourceRepository.uploadTemplate(organizationId, eventId, file.getName()),
             new AbstractLobCreatingPreparedStatementCallback(lobHandler) {
                 @Override
                 protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
@@ -162,7 +162,7 @@ public class UploadedResourceManager {
                     ps.setInt(3, eventId);
                     setFileValues(ps, lobCreator, file, 3);
                 }
-            });
+            }));
 
     }
 

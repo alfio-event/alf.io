@@ -30,9 +30,9 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ryantenney.passkit4j.Pass;
 import com.ryantenney.passkit4j.PassResource;
 import com.ryantenney.passkit4j.PassSerializer;
-import com.ryantenney.passkit4j.model.*;
 import com.ryantenney.passkit4j.model.Color;
 import com.ryantenney.passkit4j.model.TextField;
+import com.ryantenney.passkit4j.model.*;
 import com.ryantenney.passkit4j.sign.PassSigner;
 import com.ryantenney.passkit4j.sign.PassSignerImpl;
 import com.ryantenney.passkit4j.sign.PassSigningException;
@@ -51,8 +51,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
-import java.util.*;
 import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -86,7 +86,7 @@ class PassBookManager {
                 partial.apply(ConfigurationKeys.PASSBOOK_KEYSTORE_PASSWORD),
                 partial.apply(ConfigurationKeys.PASSBOOK_TEAM_IDENTIFIER));
             //check if all are set
-            if(pbookConf.values().stream().anyMatch(o -> !o.isPresent())) {
+            if(pbookConf.values().stream().anyMatch(Optional::isEmpty)) {
                 log.trace("Cannot generate Passbook. Missing configuration keys, check if all 4 are presents");
                 return null;
             }
@@ -161,7 +161,7 @@ class PassBookManager {
             }
         });
 
-        pass.files(passResources.toArray(new PassResource[passResources.size()]));
+        pass.files(passResources.toArray(new PassResource[0]));
 
         try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
             InputStream appleCert = new ClassPathResource("/alfio/certificates/AppleWWDRCA.cer").getInputStream()) {

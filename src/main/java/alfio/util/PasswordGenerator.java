@@ -54,7 +54,7 @@ public final class PasswordGenerator {
         chars.add(')');
         chars.add('=');
 
-        PASSWORD_CHARACTERS = ArrayUtils.toPrimitive(chars.toArray(new Character[chars.size()]));
+        PASSWORD_CHARACTERS = ArrayUtils.toPrimitive(chars.toArray(new Character[0]));
         DEV_MODE = Arrays.stream(Optional.ofNullable(System.getProperty("spring.profiles.active")).map(p -> p.split(",")).orElse(new String[0]))
             .map(StringUtils::trim)
             .anyMatch(Initializer.PROFILE_DEV::equals);

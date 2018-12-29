@@ -40,7 +40,7 @@ public class WebhookApiController {
     private final StripeCreditCardManager stripeCreditCardManager;
 
     @RequestMapping(value = "/mollie/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
-    public void handleMollie(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) throws Exception {
+    public void handleMollie(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
         // mollieManager.handleWebhook(eventName, reservationId, null);
         // call ticketReservationManager.performPayment... if handlewebhoook return status paid
     }

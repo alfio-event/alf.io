@@ -36,7 +36,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
-import com.google.zxing.WriterException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
@@ -107,7 +106,7 @@ public class TicketController {
             @PathVariable("ticketIdentifier") String ticketIdentifier, Model model, Locale locale) {
 
         Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
-        if(!oData.isPresent()) {
+        if(oData.isEmpty()) {
             return "redirect:/event/" + eventName;
         }
         Triple<Event, TicketReservation, Ticket> data = oData.get();
@@ -135,10 +134,10 @@ public class TicketController {
     @ResponseBody
     public String sendTicketByEmail(@PathVariable("eventName") String eventName,
                                     @PathVariable("ticketIdentifier") String ticketIdentifier,
-                                    HttpServletRequest request) throws Exception {
+                                    HttpServletRequest request) {
 
         Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
-        if(!oData.isPresent()) {
+        if(oData.isEmpty()) {
             return "redirect:/event/" + eventName;
         }
         internalSendTicketByEmail(request, oData.get());
@@ -164,7 +163,7 @@ public class TicketController {
             @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
-        if(!oData.isPresent()) {
+        if(oData.isEmpty()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -192,7 +191,7 @@ public class TicketController {
             @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException {
         
         Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
-        if(!oData.isPresent()) {
+        if(oData.isEmpty()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -219,7 +218,7 @@ public class TicketController {
 
     private String internalShowTicket(String eventName, String ticketIdentifier, boolean ticketEmailSent, Model model, String backSuffix, Locale locale) {
         Optional<Triple<Event, TicketReservation, Ticket>> oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
-        if(!oData.isPresent()) {
+        if(oData.isEmpty()) {
             return "redirect:/event/" + eventName;
         }
         Triple<Event, TicketReservation, Ticket> data = oData.get();

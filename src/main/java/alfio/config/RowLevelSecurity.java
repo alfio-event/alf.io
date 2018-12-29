@@ -35,6 +35,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -53,7 +54,7 @@ public class RowLevelSecurity {
         new AntPathRequestMatcher("/authentication"));
 
     private static boolean isCurrentlyInAPublicUrlRequest() {
-        HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+        HttpServletRequest request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
         return IS_PUBLIC_URLS.matches(request);
     }
 
@@ -95,8 +96,8 @@ public class RowLevelSecurity {
         public Object setRoleAndVariable(ProceedingJoinPoint joinPoint) throws Throwable {
 
             if (isInAHttpRequest()) {
-                HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-                DataSource dataSource = jdbcTemplate.getJdbcTemplate().getDataSource();
+                HttpServletRequest request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+                DataSource dataSource = Objects.requireNonNull(jdbcTemplate.getJdbcTemplate().getDataSource());
                 Connection connection = DataSourceUtils.getConnection(dataSource);
 
                 boolean mustCheck = false;

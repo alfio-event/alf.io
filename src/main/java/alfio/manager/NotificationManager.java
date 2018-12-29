@@ -170,12 +170,13 @@ public class NotificationManager {
             Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
             Locale language = Json.fromJson(model.get("language"), Locale.class);
 
-            Map<String, Object> reservationEmailModel = Json.fromJson(model.get("reservationEmailModel"), new TypeReference<Map<String, Object>>() {});
+            Map<String, Object> reservationEmailModel = Json.fromJson(model.get("reservationEmailModel"), new TypeReference<>() {
+            });
             //FIXME hack: reservationEmailModel should be a minimal and typed container
             reservationEmailModel.put("event", event);
             Optional<byte[]> receipt = pdfGenerator.apply(Triple.of(event, language, reservationEmailModel));
 
-            if(!receipt.isPresent()) {
+            if(receipt.isEmpty()) {
                 log.warn("was not able to generate the receipt for reservation id " + reservationId + " for locale " + language);
             }
             return receipt.orElse(null);
@@ -189,7 +190,7 @@ public class NotificationManager {
         List<Mailer.Attachment> attachments = new ArrayList<>();
         attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
 
-        String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
+        String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String subject = messageSource.getMessage("ticket-email-subject", new Object[]{event.getDisplayName()}, locale);
         String text = textBuilder.generate(ticket);
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
@@ -221,14 +222,14 @@ public class NotificationManager {
 
     public void sendSimpleEmail(Event event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
 
-        String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[attachments.size()]));
+        String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String encodedCC = Json.toJson(cc);
 
         String text = textBuilder.generate();
         String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
         //in order to minimize the database size, it is worth checking if there is already another message in the table
         Optional<EmailMessage> existing = emailMessageRepository.findByEventIdAndChecksum(event.getId(), checksum);
-        if(!existing.isPresent()) {
+        if(existing.isEmpty()) {
             emailMessageRepository.insert(event.getId(), recipient, encodedCC, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
         } else {
             emailMessageRepository.updateStatus(event.getId(), WAITING.name(), existing.get().getId());
@@ -275,12 +276,12 @@ public class NotificationManager {
 
 
         try {
-            int result = tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name())));
+            int result = Optional.ofNullable(tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name())))).orElse(0);
             if(result > 0) {
-                return tx.execute(status -> {
+                return Optional.ofNullable(tx.execute(status -> {
                     sendMessage(message);
                     return 1;
-                });
+                })).orElse(0);
             } else {
                 log.debug("no messages have been updated on DB for the following criteria: eventId: {}, checksum: {}", message.getEventId(), message.getChecksum());
             }
@@ -327,7 +328,7 @@ public class NotificationManager {
         );
 
         generated.addAll(reinterpreted.stream().filter(Objects::nonNull).collect(Collectors.toList()));
-        return generated.toArray(new Mailer.Attachment[generated.size()]);
+        return generated.toArray(new Mailer.Attachment[0]);
     }
 
     private Mailer.Attachment transformAttachment(Mailer.Attachment attachment, Mailer.AttachmentIdentifier identifier) {

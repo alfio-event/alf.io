@@ -103,10 +103,10 @@ public class TemplateManager {
     }
 
     public String renderTemplate(Event event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
-        Map<String, Object> updatedModel = modelEnricher(model, Optional.ofNullable(event), locale);
+        Map<String, Object> updatedModel = modelEnricher(model, Optional.of(event), locale);
         return uploadedResourceManager.findCascading(event.getOrganizationId(), event.getId(), templateResource.getSavedName(locale))
             .map(resource -> render(new ByteArrayResource(resource), updatedModel, locale, templateResource.getTemplateOutput()))
-            .orElseGet(() -> renderTemplate(Optional.ofNullable(event), templateResource, updatedModel, locale));
+            .orElseGet(() -> renderTemplate(Optional.of(event), templateResource, updatedModel, locale));
     }
 
     public String renderString(Event event, String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
@@ -123,9 +123,7 @@ public class TemplateManager {
 
     private Map<String, Object> modelEnricher(Map<String, Object> model, Optional<Event> event, Locale locale) {
         Map<String, Object> toEnrich = new HashMap<>(model);
-        event.ifPresent(ev -> {
-            toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, getVATString(ev, messageSource, locale, configurationManager));
-        });
+        event.ifPresent(ev -> toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, getVATString(ev, messageSource, locale, configurationManager)));
         return toEnrich;
     }
 
@@ -160,7 +158,7 @@ public class TemplateManager {
     }
 
     private static final Pattern KEY_PATTERN = Pattern.compile("(.*?)[\\s\\[]");
-    private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)\\]");
+    private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)]");
 
     /**
      * Split key from (optional) arguments.

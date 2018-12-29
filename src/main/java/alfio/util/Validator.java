@@ -38,10 +38,7 @@ import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 
 import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -197,7 +194,7 @@ public final class Validator {
                                                             Event event,
                                                             String baseField,
                                                             EuVatChecker.SameCountryValidator vatValidator) {
-        if(!errorsOptional.isPresent()) {
+        if(errorsOptional.isEmpty()) {
             return ValidationResult.success();//already validated
         }
 
@@ -324,7 +321,7 @@ public final class Validator {
     }
 
     public static ValidationResult validateAdditionalService(EventModification.AdditionalService additionalService, EventModification eventModification, Errors errors) {
-        if(additionalService.isFixPrice() && !Optional.ofNullable(additionalService.getPrice()).filter(p -> p.compareTo(BigDecimal.ZERO) >= 0).isPresent()) {
+        if(additionalService.isFixPrice() && Optional.ofNullable(additionalService.getPrice()).filter(p -> p.compareTo(BigDecimal.ZERO) >= 0).isEmpty()) {
             errors.rejectValue("additionalServices", "error.price");
         }
 
@@ -357,7 +354,7 @@ public final class Validator {
 
     private static boolean containsAllRequiredTranslations(EventModification eventModification, List<EventModification.AdditionalServiceText> descriptions) {
         Optional<EventModification> optional = Optional.ofNullable(eventModification);
-        return !optional.isPresent() ||
+        return optional.isEmpty() ||
             optional.map(e -> ContentLanguage.findAllFor(e.getLocales()))
                 .filter(l -> l.stream().allMatch(l1 -> descriptions.stream().anyMatch(d -> d.getLocale().equals(l1.getLanguage()))))
                 .isPresent();
@@ -390,11 +387,11 @@ public final class Validator {
                 .filter(f -> context.updateTicketOwnerForm.getAdditional() !=null && context.updateTicketOwnerForm.getAdditional().containsKey(f.getName()))
                 .findFirst();
 
-            Optional<String> vatNr = vatField.map(c -> context.updateTicketOwnerForm.getAdditional().get(c.getName()).get(0));
+            Optional<String> vatNr = vatField.map(c -> Objects.requireNonNull(context.updateTicketOwnerForm.getAdditional()).get(c.getName()).get(0));
             String vatFieldName = vatField.map(TicketFieldConfiguration::getName).orElse("");
 
             return new Result.Builder<Void>()
-                .checkPrecondition(() -> !vatNr.isPresent() || vatValidator.test(vatNr.get()), ErrorCode.custom(ErrorsCode.STEP_2_INVALID_VAT, "additional['"+vatFieldName+"']"))
+                .checkPrecondition(() -> vatNr.isEmpty() || vatValidator.test(vatNr.get()), ErrorCode.custom(ErrorsCode.STEP_2_INVALID_VAT, "additional['"+vatFieldName+"']"))
                 .checkPrecondition(() -> whitelistValidator.test(new GroupManager.WhitelistValidationItem(context.categoryId, context.updateTicketOwnerForm.getEmail())), ErrorCode.custom(ErrorsCode.STEP_2_WHITELIST_CHECK_FAILED, "email"))
                 .build(() -> null);
         }

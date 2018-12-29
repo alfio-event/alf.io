@@ -51,12 +51,8 @@ public class LocationDescriptor {
     }
 
     public static LocationDescriptor fromGeoData(Pair<String, String> coordinates, TimeZone timeZone, Map<ConfigurationKeys, Optional<String>> geoConf) {
-        Map<String, String> params = new HashMap<>();
         String lat = coordinates.getLeft();
         String lng = coordinates.getRight();
-        params.put("latitude", lat);
-        params.put("longitude", lng);
-
         return new LocationDescriptor(timeZone.getID(), coordinates.getLeft(), coordinates.getRight(), getMapUrl(lat, lng, geoConf));
     }
 
@@ -75,7 +71,7 @@ public class LocationDescriptor {
 
     // for backward compatibility reason, the logic is not straightforward
     public static ConfigurationKeys.GeoInfoProvider getProvider(Map<ConfigurationKeys, Optional<String>> geoConf) {
-        if((!geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) || !geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isPresent()) &&
+        if((!geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) || geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isEmpty()) &&
             (geoConf.containsKey(ConfigurationKeys.MAPS_CLIENT_API_KEY) && geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).isPresent())) {
             return ConfigurationKeys.GeoInfoProvider.GOOGLE;
         } else if (geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) && geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isPresent()) {

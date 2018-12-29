@@ -63,7 +63,7 @@ public class WaitingQueueApiController {
 
         Optional<Event> optional = eventRepository.findOptionalByShortName(eventName);
         Map<String, Object> result = new HashMap<>();
-        if(!optional.isPresent()) {
+        if(optional.isEmpty()) {
             bindingResult.reject("");
             result.put("validationResult", ValidationResult.failed(new ValidationResult.ErrorDescriptor("shortName", "error.shortName")));
             return result;

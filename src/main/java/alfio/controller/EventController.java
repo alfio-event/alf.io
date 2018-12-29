@@ -135,17 +135,17 @@ public class EventController {
         SessionUtil.cleanupSession(request);
 
         Optional<Event> optional = eventRepository.findOptionalByShortName(eventName);
-        if(!optional.isPresent()) {
+        if(optional.isEmpty()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("event", ""));
         }
         Event event = optional.get();
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
-        Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> specialPriceRepository.getByCode(trimmedCode));
+        Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
         Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
         
         if(specialCode.isPresent()) {
-            if (!optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isPresent()) {
+            if (optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isEmpty()) {
                 return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
             }
             
@@ -157,14 +157,14 @@ public class EventController {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
         } else if (promotionCodeDiscount.isPresent() && isDiscountCodeUsageExceeded(promotionCodeDiscount.get())){
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("usage", ""));
-        } else if(!specialCode.isPresent() && !promotionCodeDiscount.isPresent()) {
+        } else if(promotionCodeDiscount.isEmpty()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
         }
 
-        if(maybeSpecialCode.isPresent() && !model.asMap().containsKey("hasErrors")) {
+        if(!model.asMap().containsKey("hasErrors")) {
             if(specialCode.isPresent()) {
                 SessionUtil.saveSpecialPriceCode(maybeSpecialCode.get(), request);
-            } else if (promotionCodeDiscount.isPresent()) {
+            } else {
                 SessionUtil.savePromotionCodeDiscount(maybeSpecialCode.get(), request);
             }
             return ValidationResult.success();
@@ -182,7 +182,7 @@ public class EventController {
 
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
             Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
-            Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap((trimmedCode) -> specialPriceRepository.getByCode(trimmedCode));
+            Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
 
             Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
                 .flatMap((code) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), code));
@@ -302,19 +302,19 @@ public class EventController {
             if(res.isSuccess() && codeType == CodeType.PROMO_CODE_DISCOUNT) {
                 return redirectToEvent;
             } else if (codeType == CodeType.TICKET_CATEGORY_CODE) {
-                TicketCategory category = ticketCategoryRepository.findCodeInEvent(event.getId(), trimmedCode).get();
+                TicketCategory category = ticketCategoryRepository.findCodeInEvent(event.getId(), trimmedCode).orElseThrow();
                 if(!category.isAccessRestricted()) {
                     return makeSimpleReservation(eventName, request, redirectAttributes, locale, null, event, category.getId());
                 } else {
                     Optional<SpecialPrice> specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
-                    if(!specialPrice.isPresent()) {
+                    if(specialPrice.isEmpty()) {
                         return redirectToEvent;
                     }
                     savePromoCode(eventName, specialPrice.get().getCode(), model, request.getRequest());
                     return makeSimpleReservation(eventName, request, redirectAttributes, locale, specialPrice.get().getCode(), event, category.getId());
                 }
             } else if (res.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
-                int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).get().getTicketCategoryId();
+                int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).orElseThrow().getTicketCategoryId();
                 return makeSimpleReservation(eventName, request, redirectAttributes, locale, trimmedCode, event, ticketCategoryId);
             } else {
                 return redirectToEvent;
@@ -339,7 +339,7 @@ public class EventController {
                          @RequestParam(value = "ticketId", required = false) String ticketId,
                          HttpServletResponse response) throws IOException {
         Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
-        if (!event.isPresent()) {
+        if (event.isEmpty()) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }

@@ -231,9 +231,9 @@ public class Configuration implements Comparable<Configuration> {
             case ORGANIZATION:
                 return getOrganizationConfiguration(organizationId.get(), key);
             case EVENT:
-                return getEventConfiguration(organizationId.get(), eventId.get(), key);
+                return getEventConfiguration(organizationId.get(), eventId.orElseThrow(), key);
             case TICKET_CATEGORY:
-                return getTicketCategoryConfiguration(organizationId.get(), eventId.get(), ticketCategoryId.get(), key);
+                return getTicketCategoryConfiguration(organizationId.get(), eventId.orElseThrow(), ticketCategoryId.orElseThrow(), key);
         }
         return getSystemConfiguration(key);
     }

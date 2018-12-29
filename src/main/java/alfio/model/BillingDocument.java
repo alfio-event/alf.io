@@ -59,7 +59,8 @@ public class BillingDocument {
         this.number = number;
         this.reservationId = reservationId;
         this.type = type;
-        this.model = Json.fromJson(model, new TypeReference<Map<String, Object>>() {});
+        this.model = Json.fromJson(model, new TypeReference<>() {
+        });
         this.generationTimestamp = generationTimestamp;
         this.status = status;
         this.externalId = externalId;

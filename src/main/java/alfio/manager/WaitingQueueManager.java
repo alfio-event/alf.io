@@ -166,7 +166,7 @@ public class WaitingQueueManager {
         int ticketsNeeded = Math.min(waitingPeople, eventRepository.countExistingTickets(event.getId()));
         if(ticketsNeeded > 0) {
             preReserveIfNeeded(event, ticketsNeeded);
-            if(!categoryWithInceptionInFuture.isPresent()) {
+            if(categoryWithInceptionInFuture.isEmpty()) {
                 return distributeAvailableSeats(event, Ticket.TicketStatus.PRE_RESERVED, () -> ticketsNeeded);
             }
         }

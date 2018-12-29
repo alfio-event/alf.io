@@ -7,7 +7,7 @@ install:
     - TERM=dumb ./gradlew -q assemble
 matrix:
     include:
-        - jdk: oraclejdk8
+        - jdk: oraclejdk11
           env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql9.6"
           dist: trusty
           addons:

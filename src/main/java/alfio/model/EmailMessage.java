@@ -18,7 +18,6 @@ package alfio.model;
 
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -74,7 +73,7 @@ public class EmailMessage implements Comparable<EmailMessage> {
         this.checksum = checksum;
         this.attempts = attempts;
 
-        if(emailCC != null && StringUtils.isNotBlank(emailCC)) {
+        if(StringUtils.isNotBlank(emailCC)) {
             this.cc = Json.GSON.fromJson(emailCC, new TypeToken<List<String>>(){}.getType());
         } else {
             this.cc = new ArrayList<>();

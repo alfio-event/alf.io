@@ -53,13 +53,13 @@ public class PayPalCallbackController {
                                 HttpSession session) {
 
         Optional<Event> optionalEvent = eventRepository.findOptionalByShortName(eventName);
-        if(!optionalEvent.isPresent()) {
+        if(optionalEvent.isEmpty()) {
             return "redirect:/";
         }
 
         Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
 
-        if(!optionalReservation.isPresent()) {
+        if(optionalReservation.isEmpty()) {
             return "redirect:/event/"+eventName;
         }
 

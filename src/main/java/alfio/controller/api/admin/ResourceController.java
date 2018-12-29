@@ -109,7 +109,7 @@ public class ResourceController {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleSyntaxError(Exception ex) {
         Optional<String> cause = Optional.ofNullable(ex.getCause())
-            .filter(e -> MustacheException.class.isInstance(e) || TemplateProcessor.TemplateAccessException.class.isInstance(e))
+            .filter(e -> e instanceof MustacheException || e instanceof TemplateProcessor.TemplateAccessException)
             .map(Throwable::getMessage);
         return cause.orElse("Something went wrong. Please check the syntax and retry");
     }
@@ -241,19 +241,19 @@ public class ResourceController {
     @RequestMapping(value = "/resource/", method = POST)
     public void uploadFile(@RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(principal);
-        uploadedResourceManager.saveResource(upload);
+        uploadedResourceManager.saveResource(upload).orElseThrow(IllegalArgumentException::new);
     }
 
     @RequestMapping(value = "/resource-organization/{organizationId}/", method = POST)
     public void uploadFile(@PathVariable("organizationId") int organizationId, @RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(organizationId, principal);
-        uploadedResourceManager.saveResource(organizationId, upload);
+        uploadedResourceManager.saveResource(organizationId, upload).orElseThrow(IllegalArgumentException::new);
     }
 
     @RequestMapping(value = "/resource-event/{organizationId}/{eventId}/", method = POST)
     public void uploadFile(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(organizationId, eventId, principal);
-        uploadedResourceManager.saveResource(organizationId, eventId, upload);
+        uploadedResourceManager.saveResource(organizationId, eventId, upload).orElseThrow(IllegalArgumentException::new);
     }
 
     //------------------

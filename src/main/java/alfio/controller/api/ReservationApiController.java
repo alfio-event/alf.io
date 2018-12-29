@@ -20,7 +20,9 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.I18nManager;
-import alfio.model.*;
+import alfio.model.ContentLanguage;
+import alfio.model.Event;
+import alfio.model.Ticket;
 import alfio.model.result.ValidationResult;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
@@ -35,7 +37,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -58,7 +63,7 @@ public class ReservationApiController {
                                                     BindingResult bindingResult,
                                                     HttpServletRequest request,
                                                     Model model,
-                                                    Authentication authentication) throws Exception {
+                                                    Authentication authentication) {
 
         Optional<UserDetails> userDetails = Optional.ofNullable(authentication)
                 .map(Authentication::getPrincipal)

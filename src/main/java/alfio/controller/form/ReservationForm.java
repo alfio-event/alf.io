@@ -131,8 +131,8 @@ public class ReservationForm implements Serializable {
 
         List<TicketReservationWithOptionalCodeModification> res = new ArrayList<>();
         //
-        Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode)).flatMap(
-                (trimmedCode) -> tickReservationManager.getSpecialPriceByCode(trimmedCode));
+        Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode))
+            .flatMap(tickReservationManager::getSpecialPriceByCode);
         //
         final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         maxTicketsByTicketReservation.forEach((pair) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));

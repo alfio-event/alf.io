@@ -19,8 +19,8 @@ package alfio.manager;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.*;
 import alfio.model.Event;
+import alfio.model.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
@@ -35,9 +35,9 @@ import alfio.util.ErrorsCode;
 import alfio.util.MonetaryUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.paypal.api.payments.*;
 import com.paypal.api.payments.Currency;
 import com.paypal.api.payments.Transaction;
+import com.paypal.api.payments.*;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
 import lombok.AllArgsConstructor;
@@ -196,7 +196,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         }
     }
 
-    private static final Set<String> MAPPED_ERROR = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("FAILED_TO_CHARGE_CC", "INSUFFICIENT_FUNDS", "EXPIRED_CREDIT_CARD", "INSTRUMENT_DECLINED")));
+    private static final Set<String> MAPPED_ERROR = Set.of("FAILED_TO_CHARGE_CC", "INSUFFICIENT_FUNDS", "EXPIRED_CREDIT_CARD", "INSTRUMENT_DECLINED");
 
     private static Optional<String> mappedException(PayPalRESTException e) {
         //https://developer.paypal.com/docs/api/#errors

@@ -28,7 +28,6 @@ import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -85,7 +84,6 @@ public class EventStatisticsManager {
     }
 
 
-    @Cacheable
     public List<EventStatistic> getAllEventsWithStatistics(String username) {
         return getAllEventsWithStatisticsFilteredBy(username, (e) -> true);
     }

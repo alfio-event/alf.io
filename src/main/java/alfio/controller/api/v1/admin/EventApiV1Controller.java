@@ -245,7 +245,7 @@ public class EventApiV1Controller {
                         List<ExtensionMetadataValue> values = settings.stream()
                             .map(es -> Pair.of(es, metadata.stream().filter(mm -> mm.getName().equals(es.getKey())).findFirst()))
                             .filter(pair -> {
-                                if (!pair.getRight().isPresent()) {
+                                if (pair.getRight().isEmpty()) {
                                     log.warn("ignoring non-existent extension setting key {}", pair.getLeft().getKey());
                                 }
                                 return pair.getRight().isPresent();

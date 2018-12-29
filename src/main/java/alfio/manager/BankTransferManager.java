@@ -65,7 +65,7 @@ public class BankTransferManager implements PaymentProvider {
     public Map<String, ?> getModelOptions(PaymentContext context) {
         OptionalInt delay = getOfflinePaymentWaitingPeriod(context, configurationManager);
         Event event = context.getEvent();
-        if(!delay.isPresent()) {
+        if(delay.isEmpty()) {
             log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());
         }
         Map<String, Object> model = new HashMap<>();

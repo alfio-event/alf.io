@@ -114,17 +114,14 @@ public final class TemplateProcessor {
         }
 
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(parsedDocument), "");
-        PdfBoxRenderer renderer = builder.buildPdfRenderer();
-        try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream()) {
-            renderer.getFontResolver().addFont(() -> is, "DejaVu Sans Mono", null, null, false);
-        } catch(IOException e) {
-            log.warn("error while loading DejaVuSansMono.ttf font", e);
-        }
-        try {
+        try (PdfBoxRenderer renderer = builder.buildPdfRenderer()) {
+            try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream()) {
+                renderer.getFontResolver().addFont(() -> is, "DejaVu Sans Mono", null, null, false);
+            } catch (IOException e) {
+                log.warn("error while loading DejaVuSansMono.ttf font", e);
+            }
             renderer.layout();
             renderer.createPDF();
-        } finally {
-            renderer.close();
         }
     }
 
