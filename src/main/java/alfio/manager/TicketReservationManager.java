@@ -418,7 +418,7 @@ public class TicketReservationManager {
                 return paymentResult;
             }
             if(toBePaid) {
-                handleBillingDocumentGeneration(event, reservationId, email, customerName, userLanguage, billingAddress, customerReference, reservationCost, invoiceRequested, vatCountryCode, vatNr, vatStatus);
+                generateInvoiceNumber(event, reservationId, email, customerName, userLanguage, billingAddress, customerReference, reservationCost, invoiceRequested, vatCountryCode, vatNr, vatStatus);
             }
             completeReservation(event, reservationId, email, customerName, userLanguage, billingAddress, specialPriceSessionId, paymentProxy, customerReference, tcAccepted, privacyPolicyAccepted);
             return paymentResult;
@@ -431,7 +431,7 @@ public class TicketReservationManager {
 
     }
 
-    private void handleBillingDocumentGeneration(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress, String customerReference, TotalPrice reservationCost, boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
+    private void generateInvoiceNumber(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage, String billingAddress, String customerReference, TotalPrice reservationCost, boolean invoiceRequested, String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
 
         if(!invoiceRequested || !configurationManager.hasAllConfigurationsForInvoice(event)) {
             return;
