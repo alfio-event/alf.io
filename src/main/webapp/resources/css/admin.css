@@ -225,11 +225,7 @@ td.cell-wrap {
 @media screen and (min-width: 991px) {
 
     .setting input[type="text"], .setting input:not([type]), .setting textarea, .setting select {
-        padding-left: 85px;
-    }
-
-    .setting select { /* Enable Padding on Select on OSX */
-        -webkit-appearance: none;
+        text-indent:85px;
     }
 
     .settings-label {
