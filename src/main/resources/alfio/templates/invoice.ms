@@ -189,6 +189,16 @@
             {{/hasRefund}}
         </div>
 
+        {{#ticketReservation.invoicingAdditionalInfo}}
+        <pre>{{#italianEInvoicing}}
+{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}}: {{ticketReservation.vatNr}}
+{{#i18n}}invoice-fields.fiscalCode{{/i18n}}: {{fiscalCode}}
+{{#i18n}}invoice-fields.addresseeItalyEInvoice{{/i18n}}: {{referenceType}}
+{{#i18n}}invoice-fields.addressee-code{{/i18n}}: {{addresseeCode}}
+PEC: {{pec}}{{/italianEInvoicing}}
+        </pre>
+        {{/ticketReservation.invoicingAdditionalInfo}}
+
         {{#isOfflinePayment}}
             <div class="mb" style="margin-top: 1em">
                 <p>{{#i18n}}invoice.payment-instruction-no-later-than [{{#format-date}}{{expirationDate}} {{#i18n}}datetime.pattern{{/i18n}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</p>

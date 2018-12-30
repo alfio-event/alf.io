@@ -200,7 +200,7 @@ public interface TicketReservationRepository {
 
 
     @Query("select billing_address_company, billing_address_line1, billing_address_line2, " +
-        " billing_address_zip, billing_address_city, validated_for_overview, skip_vat_nr from tickets_reservation where id = :id")
+        " billing_address_zip, billing_address_city, validated_for_overview, skip_vat_nr, invoicing_additional_information from tickets_reservation where id = :id")
     TicketReservationAdditionalInfo getAdditionalInfo(@Bind("id") String reservationId);
 
     @Query("update tickets_reservation set validated_for_overview = :validated where id = :reservationId")
@@ -227,4 +227,7 @@ public interface TicketReservationRepository {
 
     @Query("select billing_address_company, billing_address_line1, billing_address_line2, billing_address_zip, billing_address_city, vat_nr, vat_country from tickets_reservation where id = :reservationId")
     BillingDetails getBillingDetailsForReservation(@Bind("reservationId") String reservationId);
+
+    @Query("update tickets_reservation set invoicing_additional_information = :info::json where id = :id")
+    int updateInvoicingAdditionalInformation(@Bind("id") String reservationId, @Bind("info") String info);
 }

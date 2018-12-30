@@ -218,6 +218,8 @@ public class AdminReservationManager {
                 ticketReservationRepository.updateBillingData(r.getVatStatus(), customerData.getVatNr(), customerData.getVatCountryCode(), r.isInvoiceRequested(), reservationId);
             }
 
+            ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, Json.toJson(arm.getCustomerData().getInvoicingAdditionalInfo()));
+
         }
         Date d = new Date();
         arm.getTicketsInfo().stream()

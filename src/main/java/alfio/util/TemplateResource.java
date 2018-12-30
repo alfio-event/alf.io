@@ -222,7 +222,7 @@ public enum TemplateResource {
             "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
             PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456",
             "CH", false, new BigDecimal("8.00"), true,
-            ZonedDateTime.now().minusMinutes(1), "PO-1234");
+            ZonedDateTime.now().minusMinutes(1), "PO-1234", null);
     }
 
     private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {

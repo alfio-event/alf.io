@@ -16,6 +16,8 @@
  */
 package alfio.model.modification;
 
+import alfio.model.BillingDetails;
+import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -69,6 +71,7 @@ public class AdminReservationModification implements Serializable {
         private final String customerReference;
         private final String vatNr;
         private final String vatCountryCode;
+        private final TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo;
 
         @JsonCreator
         public CustomerData(@JsonProperty("firstName") String firstName,
@@ -78,7 +81,8 @@ public class AdminReservationModification implements Serializable {
                             @JsonProperty("userLanguage") String userLanguage,
                             @JsonProperty("customerReference") String customerReference,
                             @JsonProperty("vatNr") String vatNr,
-                            @JsonProperty("vatCountryCode") String vatCountryCode) {
+                            @JsonProperty("vatCountryCode") String vatCountryCode,
+                            @JsonProperty("invoicingAdditionalInfo") TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo) {
             this.firstName = trimToEmpty(firstName);
             this.lastName = trimToEmpty(lastName);
             this.emailAddress = trimToEmpty(emailAddress);
@@ -87,6 +91,7 @@ public class AdminReservationModification implements Serializable {
             this.customerReference = customerReference;
             this.vatNr = vatNr;
             this.vatCountryCode = vatCountryCode;
+            this.invoicingAdditionalInfo = invoicingAdditionalInfo;
         }
 
         public String getFullName() {
@@ -220,7 +225,8 @@ public class AdminReservationModification implements Serializable {
                 placeholderIfNotEmpty(in.userLanguage),
                 placeholderIfNotEmpty(in.customerReference),
                 placeholderIfNotEmpty(in.vatNr),
-                placeholderIfNotEmpty(in.vatCountryCode));
+                placeholderIfNotEmpty(in.vatCountryCode),
+                in.invoicingAdditionalInfo);
         }
         else return null;
     }

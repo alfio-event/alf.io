@@ -19,21 +19,28 @@ package alfio.controller;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.OrderSummary;
 import alfio.model.TicketReservation;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.Principal;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -41,23 +48,14 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @Controller
+@AllArgsConstructor
 public class InvoiceReceiptController {
 
     private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
     private final FileUploadManager fileUploadManager;
     private final TemplateManager templateManager;
-
-    @Autowired
-    public InvoiceReceiptController(EventRepository eventRepository,
-                                    TicketReservationManager ticketReservationManager,
-                                    FileUploadManager fileUploadManager,
-                                    TemplateManager templateManager) {
-        this.eventRepository = eventRepository;
-        this.ticketReservationManager = ticketReservationManager;
-        this.fileUploadManager = fileUploadManager;
-        this.templateManager = templateManager;
-    }
+    private final ConfigurationManager configurationManager;
 
     private ResponseEntity<Void> handleReservationWith(String eventName, String reservationId, BiFunction<Event, TicketReservation, ResponseEntity<Void>> with) {
         ResponseEntity<Void> notFound = ResponseEntity.notFound().build();
@@ -87,13 +85,23 @@ public class InvoiceReceiptController {
         }).orElse(false);
     }
 
+    private boolean isAnonymous(Authentication authentication) {
+        return authentication == null ||
+            authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).anyMatch("ROLE_ANONYMOUS"::equals);
+    }
+
     @RequestMapping("/event/{eventName}/reservation/{reservationId}/receipt")
     public ResponseEntity<Void> getReceipt(@PathVariable("eventName") String eventName,
-                                     @PathVariable("reservationId") String reservationId,
-                                     HttpServletResponse response) {
+                                           @PathVariable("reservationId") String reservationId,
+                                           HttpServletResponse response,
+                                           Authentication authentication) {
         return handleReservationWith(eventName, reservationId, (event, reservation) -> {
             if(reservation.getInvoiceNumber() != null || !reservation.getHasInvoiceOrReceiptDocument() || reservation.isCancelled()) {
                 return ResponseEntity.notFound().build();
+            }
+
+            if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) && isAnonymous(authentication)) {
+                return ResponseEntity.badRequest().build();
             }
 
             Optional<byte[]> res = buildDocument(event, reservation, model -> TemplateProcessor.buildReceiptPdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, model));
@@ -104,11 +112,16 @@ public class InvoiceReceiptController {
 
     @RequestMapping("/event/{eventName}/reservation/{reservationId}/invoice")
     public ResponseEntity<Void> getInvoice(@PathVariable("eventName") String eventName,
-                           @PathVariable("reservationId") String reservationId,
-                           HttpServletResponse response) {
+                                           @PathVariable("reservationId") String reservationId,
+                                           HttpServletResponse response,
+                                           Authentication authentication) {
         return handleReservationWith(eventName, reservationId, (event, reservation) -> {
             if(reservation.getInvoiceNumber() == null || !reservation.getHasInvoiceOrReceiptDocument() || reservation.isCancelled()) {
                 return ResponseEntity.notFound().build();
+            }
+
+            if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) && isAnonymous(authentication)) {
+                return ResponseEntity.badRequest().build();
             }
 
             Optional<byte[]> res = buildDocument(event, reservation, model -> TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, model));
