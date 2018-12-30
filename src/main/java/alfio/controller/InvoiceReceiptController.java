@@ -19,12 +19,16 @@ package alfio.controller;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.OrderSummary;
 import alfio.model.TicketReservation;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
+import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,23 +45,14 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 @Controller
+@AllArgsConstructor
 public class InvoiceReceiptController {
 
     private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
     private final FileUploadManager fileUploadManager;
     private final TemplateManager templateManager;
-
-    @Autowired
-    public InvoiceReceiptController(EventRepository eventRepository,
-                                    TicketReservationManager ticketReservationManager,
-                                    FileUploadManager fileUploadManager,
-                                    TemplateManager templateManager) {
-        this.eventRepository = eventRepository;
-        this.ticketReservationManager = ticketReservationManager;
-        this.fileUploadManager = fileUploadManager;
-        this.templateManager = templateManager;
-    }
+    private final ConfigurationManager configurationManager;
 
     private ResponseEntity<Void> handleReservationWith(String eventName, String reservationId, BiFunction<Event, TicketReservation, ResponseEntity<Void>> with) {
         ResponseEntity<Void> notFound = ResponseEntity.notFound().build();
@@ -96,6 +91,10 @@ public class InvoiceReceiptController {
                 return ResponseEntity.notFound().build();
             }
 
+            if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event)) {
+                return ResponseEntity.badRequest().build();
+            }
+
             Optional<byte[]> res = buildDocument(event, reservation, model -> TemplateProcessor.buildReceiptPdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, model));
             boolean success = sendPdf(res, response, eventName, reservationId, "receipt");
             return success ? ResponseEntity.ok(null) : ResponseEntity.<Void>status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -109,6 +108,10 @@ public class InvoiceReceiptController {
         return handleReservationWith(eventName, reservationId, (event, reservation) -> {
             if(reservation.getInvoiceNumber() == null || !reservation.getHasInvoiceOrReceiptDocument() || reservation.isCancelled()) {
                 return ResponseEntity.notFound().build();
+            }
+
+            if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event)) {
+                return ResponseEntity.badRequest().build();
             }
 
             Optional<byte[]> res = buildDocument(event, reservation, model -> TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, model));

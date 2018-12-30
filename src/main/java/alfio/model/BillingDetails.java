@@ -17,6 +17,7 @@
 package alfio.model;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
@@ -44,5 +45,24 @@ public class BillingDetails {
         this.city = city;
         this.country = country;
         this.taxId = taxId;
+    }
+
+
+    //
+    // https://github.com/alfio-event/alf.io/issues/573
+    //
+    @Getter
+    @AllArgsConstructor
+    public static class ItalianEInvoicing {
+
+        public enum ReferenceType {
+            ADDRESSEE_CODE, /* Codice destinatario */
+            PEC, /* (pec = email) */
+            NONE
+        }
+
+        private final String fiscalCode;
+        private final ReferenceType referenceType;
+        private final String reference;
     }
 }

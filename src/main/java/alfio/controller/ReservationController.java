@@ -127,7 +127,7 @@ public class ReservationController {
                     OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
 
                     boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
-                    boolean onlyInvoice = invoiceAllowed && configurationManager.getBooleanConfigValue(partialConfig.apply(ConfigurationKeys.GENERATE_ONLY_INVOICE), false);
+                    boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
 
 
                     ContactAndTicketsForm contactAndTicketsForm = ContactAndTicketsForm.fromExistingReservation(reservation, additionalInfo);
@@ -220,6 +220,7 @@ public class ReservationController {
                     model.addAttribute("pageTitle", "reservation-page-complete.header.title");
                     model.addAttribute("event", ev);
                     model.addAttribute("useFirstAndLastName", ev.mustUseFirstAndLastName());
+                    model.addAttribute("userCanDownloadReceiptOrInvoice", configurationManager.canGenerateReceiptOrInvoiceToCustomer(ev));
                     model.asMap().putIfAbsent("validationResult", ValidationResult.success());
                     return "/event/reservation-page-complete";
                 }).orElseGet(() -> redirectReservation(tr, eventName, reservationId));
@@ -248,8 +249,7 @@ public class ReservationController {
             contactAndTicketsForm.setPostponeAssignment(false);
         }
 
-        Configuration.ConfigurationPathKey invoiceOnlyKey = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.GENERATE_ONLY_INVOICE);
-        boolean invoiceOnly = configurationManager.getBooleanConfigValue(invoiceOnlyKey, false);
+        boolean invoiceOnly = configurationManager.isInvoiceOnly(event);
 
         if(invoiceOnly && reservationCost.getPriceWithVAT() > 0) {
             //override, that's why we save it
@@ -477,6 +477,7 @@ public class ReservationController {
 
             model.addAttribute("expires", ZonedDateTime.ofInstant(ticketReservation.getValidity().toInstant(), ev.getZoneId()));
             model.addAttribute("event", ev);
+            model.addAttribute("userCanDownloadReceiptOrInvoice", configurationManager.canGenerateReceiptOrInvoiceToCustomer(ev));
             return "/event/reservation-waiting-for-payment";
         }
 
@@ -667,14 +668,8 @@ public class ReservationController {
     }
 
     private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
-
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
-        List<String> cc = notificationManager.getCCForEventOrganizer(event);
-
-        notificationManager.sendSimpleEmail(event, organization.getEmail(), cc, "Reservation complete " + reservation.getId(), () ->
-            templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),
-                RequestContextUtils.getLocale(request))
-        );
+        Locale locale = RequestContextUtils.getLocale(request);
+        ticketReservationManager.sendReservationCompleteEmailToOrganizer(event, reservation, locale);
     }
 
     private boolean isExpressCheckoutEnabled(Event event, OrderSummary orderSummary) {

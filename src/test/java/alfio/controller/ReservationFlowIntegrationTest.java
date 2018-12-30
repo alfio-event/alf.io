@@ -36,6 +36,7 @@ import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.audit.ScanAudit;
@@ -187,6 +188,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private TemplateManager templateManager;
 
+    @Autowired
+    private ConfigurationManager configurationManager;
+
     private ReservationApiController reservationApiController;
     private InvoiceReceiptController invoiceReceiptController;
 
@@ -211,7 +215,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         //
         reservationApiController = new ReservationApiController(eventRepository, ticketHelper, mock(TemplateManager.class), i18nManager, euVatChecker, ticketReservationRepository, ticketReservationManager);
-        invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager);
+        invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager, configurationManager);
 
         //promo code at event level
         eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3);
