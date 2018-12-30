@@ -35,6 +35,7 @@ import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.audit.ScanAudit;
@@ -73,7 +74,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -184,6 +188,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private TemplateManager templateManager;
 
+    @Autowired
+    private ConfigurationManager configurationManager;
+
     private ReservationApiController reservationApiController;
     private InvoiceReceiptController invoiceReceiptController;
 
@@ -207,8 +214,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         user = eventAndUser.getValue() + "_owner";
 
         //
+
         reservationApiController = new ReservationApiController(eventRepository, ticketHelper, mock(TemplateManager.class), i18nManager, ticketReservationRepository, ticketReservationManager);
-        invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager);
+        invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager, configurationManager);
 
         //promo code at event level
         eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3);
@@ -293,9 +301,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         //check receipt/invoice
         MockHttpServletResponse responseForReceipt = new MockHttpServletResponse();
         // no invoice
-        Assert.assertEquals(404, invoiceReceiptController.getInvoice(eventName, reservationIdentifier, new MockHttpServletResponse()).getStatusCodeValue());
+
+        Authentication anon = new AnonymousAuthenticationToken("key", "anonymous",
+            AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"));
+
+        Assert.assertEquals(404, invoiceReceiptController.getInvoice(eventName, reservationIdentifier, new MockHttpServletResponse(), anon).getStatusCodeValue());
         // we got a receipt
-        Assert.assertEquals(200, invoiceReceiptController.getReceipt(eventName, reservationIdentifier, responseForReceipt).getStatusCodeValue());
+        Assert.assertEquals(200, invoiceReceiptController.getReceipt(eventName, reservationIdentifier, responseForReceipt, anon).getStatusCodeValue());
         Assert.assertEquals("attachment; filename=\"receipt-" + eventName + "-" + reservationIdentifier + ".pdf\"", responseForReceipt.getHeader("Content-Disposition"));
         //
 

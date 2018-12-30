@@ -79,7 +79,8 @@
                     userLanguage: src.userLanguage,
                     vatNr: src.vatNr,
                     vatCountryCode: src.vatCountryCode,
-                    invoiceRequested: src.invoiceRequested
+                    invoiceRequested: src.invoiceRequested,
+                    invoicingAdditionalInfo: angular.copy(src.invoicingAdditionalInfo)
                 },
                 advancedBillingOptions: {
                     vatApplied: vatApplied

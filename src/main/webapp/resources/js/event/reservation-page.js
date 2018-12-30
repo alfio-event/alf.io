@@ -194,8 +194,42 @@
             }
         });
 
+
+        var enabledItalyEInvoicing = $("#italyEInvoicing").length === 1;
+
+        $("#italyEInvoicing").hide();
+
         $("#vatCountry").change(function() {
-            $("#selected-country-code").text($("#vatCountry").val());
+            var vatCountryValue = $("#vatCountry").val();
+            $("#selected-country-code").text(vatCountryValue);
+
+            if(enabledItalyEInvoicing && vatCountryValue === 'IT') {
+                $("#italyEInvoicing").show();
+                $("#italyEInvoicingFiscalCode").attr('required', true);
+            } else {
+                $("#italyEInvoicing").hide();
+                $("#italyEInvoicingFiscalCode").removeAttr('required');
+            }
+        });
+
+        $("input[name=italyEInvoicingReferenceType]").change(function() {
+            var referenceType = $("input[name=italyEInvoicingReferenceType]:checked").val();
+
+            $("input[name=italyEInvoicingReferenceAddresseeCode]").attr('disabled', true);
+            $("input[name=italyEInvoicingReferencePEC]").attr('disabled', true);
+
+            if(referenceType === 'ADDRESSEE_CODE') {
+                $("input[name=italyEInvoicingReferencePEC]").val('')
+                $("input[name=italyEInvoicingReferenceAddresseeCode]").removeAttr('disabled');
+            }
+            else if(referenceType === 'PEC') {
+                $("input[name=italyEInvoicingReferenceAddresseeCode]").val('')
+                $("input[name=italyEInvoicingReferencePEC]").removeAttr('disabled');
+            }
+            else if(referenceType === 'NONE') {
+                $("input[name=italyEInvoicingReferenceAddresseeCode]").val('')
+                $("input[name=italyEInvoicingReferencePEC]").val('')
+            }
         });
 
         function canSkipVatNr() {
@@ -218,6 +252,7 @@
         //
         $("#vatCountry").change();
         $("#invoice-requested").change();
+        $("input[name=italyEInvoicingReferenceType]").change();
 
 
         $("form").each(createAllErrors);

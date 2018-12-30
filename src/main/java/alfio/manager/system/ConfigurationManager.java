@@ -451,4 +451,14 @@ public class ConfigurationManager {
         return getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_CAPTCHA_FOR_TICKET_SELECTION), false)
             && getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null) != null;
     }
+
+    // https://github.com/alfio-event/alf.io/issues/573
+    public boolean canGenerateReceiptOrInvoiceToCustomer(Event event) {
+        return !getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+    }
+
+    public boolean isInvoiceOnly(Event event) {
+        return getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), GENERATE_ONLY_INVOICE), false) ||
+            getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+    }
 }

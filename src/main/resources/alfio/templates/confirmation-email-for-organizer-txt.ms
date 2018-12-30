@@ -11,6 +11,16 @@ Total: {{orderSummary.totalPrice}} {{event.currency}} {{^orderSummary.displayVat
 
 Reservation id: {{ticketReservation.id}}.
 
+{{#ticketReservation.invoicingAdditionalInfo}}
+    {{#italianEInvoicing}}
+VAT Nr.: {{ticketReservation.vatNr}}
+Fiscal Code: {{fiscalCode}}
+Reference Type: {{referenceType}}
+Addressee Code: {{addresseeCode}}
+PEC: {{pec}}
+    {{/italianEInvoicing}}
+{{/ticketReservation.invoicingAdditionalInfo}}
+
 Ticket identifier:
 {{#tickets}} - {{uuid}}
 {{/tickets}}

@@ -528,14 +528,67 @@ public class TicketReservationManager {
         OrderSummary summary = orderSummaryForReservationId(reservationId, event, language);
 
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
-        List<Mailer.Attachment> attachments = new ArrayList<>(1);
+        List<Mailer.Attachment> attachments = Collections.emptyList();
+
+        if (configurationManager.canGenerateReceiptOrInvoiceToCustomer(event)) { // https://github.com/alfio-event/alf.io/issues/573
+            attachments = generateAttachmentForConfirmationEmail(event, ticketReservation, language, reservationId, summary, reservationEmailModel);
+        }
+
+        notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
+                new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, language),
+            () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language),
+            attachments);
+    }
+
+    private List<Mailer.Attachment> generateAttachmentForConfirmationEmail(Event event,
+                                                                           TicketReservation ticketReservation,
+                                                                           Locale language,
+                                                                           String reservationId,
+                                                                           OrderSummary summary,
+                                                                           Map<String, Object> reservationEmailModel) {
+        final List<Mailer.Attachment> attachments = new ArrayList<>(1);
         if(mustGenerateBillingDocument(summary, ticketReservation)) { //#459 - include PDF invoice in reservation email
             BillingDocument.Type type = ticketReservation.getHasInvoiceNumber() ? INVOICE : RECEIPT;
-            attachments =  generateBillingDocumentAttachment(event, ticketReservation, language, getOrCreateBillingDocumentModel(event, ticketReservation, null), type);
+            attachments.addAll(generateBillingDocumentAttachment(event, ticketReservation, language, getOrCreateBillingDocumentModel(event, ticketReservation, null), type));
         }
 
         notificationManager.sendSimpleEmail(event, ticketReservation.getEmail(), getReservationEmailSubject(event, language, "reservation-email-subject", getShortReservationID(event, reservationId)),
             () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language), attachments);
+        if(!summary.getCashPayment() && !summary.getFree()) { //#459 - include PDF invoice in reservation email
+            Map<String, String> model = new HashMap<>();
+            model.put("reservationId", reservationId);
+            model.put("eventId", Integer.toString(event.getId()));
+            model.put("language", Json.toJson(language));
+            model.put("reservationEmailModel", Json.toJson(reservationEmailModel));
+
+            if (ticketReservation.getHasInvoiceNumber()) {
+                attachments.add(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
+            } else if (!summary.getNotYetPaid()) {
+                attachments.add(new Mailer.Attachment("receipt.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.RECEIPT_PDF));
+            }
+        }
+        return attachments;
+    }
+
+    public void sendReservationCompleteEmailToOrganizer(Event event, TicketReservation ticketReservation, Locale language) {
+        Organization organization = organizationRepository.getById(event.getOrganizationId());
+        List<String> cc = notificationManager.getCCForEventOrganizer(event);
+
+        Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
+
+        String reservationId = ticketReservation.getId();
+        OrderSummary summary = orderSummaryForReservationId(reservationId, event, language);
+
+        List<Mailer.Attachment> attachments = Collections.emptyList();
+
+        if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event)) { // https://github.com/alfio-event/alf.io/issues/573
+            attachments = generateAttachmentForConfirmationEmail(event, ticketReservation, language, reservationId, summary, reservationEmailModel);
+        }
+
+
+        notificationManager.sendSimpleEmail(event, organization.getEmail(), cc, "Reservation complete " + ticketReservation.getId(),
+            () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, reservationEmailModel, language),
+            attachments);
     }
 
     private static boolean mustGenerateBillingDocument(OrderSummary summary, TicketReservation ticketReservation) {
@@ -1583,7 +1636,13 @@ public class TicketReservationManager {
         ticketReservationRepository.updateTicketReservationWithValidation(reservationId,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(),
             email, billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip,
-            billingAddressCity, completeBillingAddress, vatCountryCode, vatNr, isInvoiceRequested, skipVatNr, customerReference, validated);
+            billingAddressCity, completeBillingAddress, vatCountryCode, vatNr, isInvoiceRequested, skipVatNr,
+            customerReference,
+            validated);
+    }
+
+    public void updateReservationInvoicingAdditionalInformation(String reservationId, TicketReservationInvoicingAdditionalInfo ticketReservationInvoicingAdditionalInfo) {
+        ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, Json.toJson(ticketReservationInvoicingAdditionalInfo));
     }
 
     private static Locale getReservationLocale(TicketReservation reservation) {

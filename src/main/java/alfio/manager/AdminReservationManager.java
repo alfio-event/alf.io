@@ -35,6 +35,7 @@ import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.user.UserRepository;
+import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
@@ -222,6 +223,8 @@ public class AdminReservationManager {
             if(StringUtils.isNotBlank(customerData.getVatNr()) || StringUtils.isNotBlank(customerData.getVatCountryCode())) {
                 ticketReservationRepository.updateBillingData(r.getVatStatus(), customerData.getVatNr(), customerData.getVatCountryCode(), r.isInvoiceRequested(), reservationId);
             }
+
+            ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, Json.toJson(arm.getCustomerData().getInvoicingAdditionalInfo()));
 
         }
 

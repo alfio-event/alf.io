@@ -193,6 +193,12 @@ html[lang=pt] .alfio-lang a[lang=pt] {
     font-weight:normal;
 }
 
+.label-after-radio {
+    padding-left: 6px;
+    position: relative;
+    bottom: 2px;
+}
+
 .show-event.g-recaptcha, .overview.g-recaptcha {
     text-align:center;
 }

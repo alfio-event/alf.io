@@ -34,14 +34,12 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.PaymentToken;
-import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
-import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -130,7 +128,7 @@ public class ReservationController {
                     //FIXME recaptcha for free orders
 
                     boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
-                    boolean onlyInvoice = invoiceAllowed && configurationManager.getBooleanConfigValue(partialConfig.apply(ConfigurationKeys.GENERATE_ONLY_INVOICE), false);
+                    boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
 
 
                     ContactAndTicketsForm contactAndTicketsForm = ContactAndTicketsForm.fromExistingReservation(reservation, additionalInfo);
@@ -150,7 +148,8 @@ public class ReservationController {
                         .addAttribute("vatNrIsLinked", orderSummary.isVatExempt() || contactAndTicketsForm.getHasVatCountryCode())
                         .addAttribute("attendeeAutocompleteEnabled", ticketsInReservation.size() == 1 && configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ATTENDEE_AUTOCOMPLETE), true))
                         .addAttribute("billingAddressLabel", invoiceAllowed ? "reservation-page.billing-address" : "reservation-page.receipt-address")
-                        .addAttribute("customerReferenceEnabled", configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_CUSTOMER_REFERENCE), false));
+                        .addAttribute("customerReferenceEnabled", configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_CUSTOMER_REFERENCE), false))
+                        .addAttribute("enabledItalyEInvoicing", configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ITALY_E_INVOICING), false));
 
                     Map<String, Object> modelMap = model.asMap();
                     modelMap.putIfAbsent("paymentForm", contactAndTicketsForm);
@@ -223,6 +222,7 @@ public class ReservationController {
                     model.addAttribute("pageTitle", "reservation-page-complete.header.title");
                     model.addAttribute("event", ev);
                     model.addAttribute("useFirstAndLastName", ev.mustUseFirstAndLastName());
+                    model.addAttribute("userCanDownloadReceiptOrInvoice", configurationManager.canGenerateReceiptOrInvoiceToCustomer(ev));
                     model.asMap().putIfAbsent("validationResult", ValidationResult.success());
                     return "/event/reservation-page-complete";
                 }).orElseGet(() -> redirectReservation(tr, eventName, reservationId));
@@ -251,8 +251,7 @@ public class ReservationController {
             contactAndTicketsForm.setPostponeAssignment(false);
         }
 
-        Configuration.ConfigurationPathKey invoiceOnlyKey = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.GENERATE_ONLY_INVOICE);
-        boolean invoiceOnly = configurationManager.getBooleanConfigValue(invoiceOnlyKey, false);
+        boolean invoiceOnly = configurationManager.isInvoiceOnly(event);
 
         if(invoiceOnly && reservationCost.getPriceWithVAT() > 0) {
             //override, that's why we save it
@@ -272,11 +271,24 @@ public class ReservationController {
             contactAndTicketsForm.getBillingAddressZip(), contactAndTicketsForm.getBillingAddressCity(), contactAndTicketsForm.getVatCountryCode(),
             contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
             contactAndTicketsForm.canSkipVatNrCheck(), false);
+        ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId,
+            new TicketReservationInvoicingAdditionalInfo(
+                new BillingDetails.ItalianEInvoicing(contactAndTicketsForm.getItalyEInvoicingFiscalCode(),
+                    contactAndTicketsForm.getItalyEInvoicingReferenceType(),
+                    contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
+                    contactAndTicketsForm.getItalyEInvoicingReferencePEC())
+            )
+        );
         assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, request, true, true);
         //
 
+        boolean italyEInvoicing = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_ITALY_E_INVOICING), false);
+        Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);
         //
-        contactAndTicketsForm.validate(bindingResult, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()), new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId));
+        contactAndTicketsForm.validate(bindingResult, event,
+            ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()),
+            new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId),
+            formValidationParameters);
         //
 
         if(bindingResult.hasErrors()) {
@@ -461,6 +473,7 @@ public class ReservationController {
 
             model.addAttribute("expires", ZonedDateTime.ofInstant(ticketReservation.getValidity().toInstant(), ev.getZoneId()));
             model.addAttribute("event", ev);
+            model.addAttribute("userCanDownloadReceiptOrInvoice", configurationManager.canGenerateReceiptOrInvoiceToCustomer(ev));
             return "/event/reservation-waiting-for-payment";
         }
 
@@ -654,14 +667,8 @@ public class ReservationController {
     }
 
     private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
-
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
-        List<String> cc = notificationManager.getCCForEventOrganizer(event);
-
-        notificationManager.sendSimpleEmail(event, organization.getEmail(), cc, "Reservation complete " + reservation.getId(), () ->
-            templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL_FOR_ORGANIZER, ticketReservationManager.prepareModelForReservationEmail(event, reservation),
-                RequestContextUtils.getLocale(request))
-        );
+        Locale locale = RequestContextUtils.getLocale(request);
+        ticketReservationManager.sendReservationCompleteEmailToOrganizer(event, reservation, locale);
     }
 
     private boolean isExpressCheckoutEnabled(Event event, OrderSummary orderSummary) {
