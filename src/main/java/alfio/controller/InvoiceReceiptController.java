@@ -33,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -85,7 +86,8 @@ public class InvoiceReceiptController {
     }
 
     private boolean isAnonymous(Authentication authentication) {
-        return authentication == null || authentication.getAuthorities().contains("ROLE_ANONYMOUS");
+        return authentication == null ||
+            authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).anyMatch("ROLE_ANONYMOUS"::equals);
     }
 
     @RequestMapping("/event/{eventName}/reservation/{reservationId}/receipt")

@@ -74,7 +74,10 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -300,9 +303,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         //check receipt/invoice
         MockHttpServletResponse responseForReceipt = new MockHttpServletResponse();
         // no invoice
-        Assert.assertEquals(404, invoiceReceiptController.getInvoice(eventName, reservationIdentifier, new MockHttpServletResponse()).getStatusCodeValue());
+
+        Authentication anon = new AnonymousAuthenticationToken("key", "anonymous",
+            AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"));
+
+        Assert.assertEquals(404, invoiceReceiptController.getInvoice(eventName, reservationIdentifier, new MockHttpServletResponse(), anon).getStatusCodeValue());
         // we got a receipt
-        Assert.assertEquals(200, invoiceReceiptController.getReceipt(eventName, reservationIdentifier, responseForReceipt).getStatusCodeValue());
+        Assert.assertEquals(200, invoiceReceiptController.getReceipt(eventName, reservationIdentifier, responseForReceipt, anon).getStatusCodeValue());
         Assert.assertEquals("attachment; filename=\"receipt-" + eventName + "-" + reservationIdentifier + ".pdf\"", responseForReceipt.getHeader("Content-Disposition"));
         //
 
