@@ -32,12 +32,14 @@ import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.Principal;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -82,16 +84,21 @@ public class InvoiceReceiptController {
         }).orElse(false);
     }
 
+    private boolean isAnonymous(Authentication authentication) {
+        return authentication == null || authentication.getAuthorities().contains("ROLE_ANONYMOUS");
+    }
+
     @RequestMapping("/event/{eventName}/reservation/{reservationId}/receipt")
     public ResponseEntity<Void> getReceipt(@PathVariable("eventName") String eventName,
-                                     @PathVariable("reservationId") String reservationId,
-                                     HttpServletResponse response) {
+                                           @PathVariable("reservationId") String reservationId,
+                                           HttpServletResponse response,
+                                           Authentication authentication) {
         return handleReservationWith(eventName, reservationId, (event, reservation) -> {
             if(reservation.getInvoiceNumber() != null || !reservation.getHasInvoiceOrReceiptDocument() || reservation.isCancelled()) {
                 return ResponseEntity.notFound().build();
             }
 
-            if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event)) {
+            if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) && isAnonymous(authentication)) {
                 return ResponseEntity.badRequest().build();
             }
 
@@ -103,14 +110,15 @@ public class InvoiceReceiptController {
 
     @RequestMapping("/event/{eventName}/reservation/{reservationId}/invoice")
     public ResponseEntity<Void> getInvoice(@PathVariable("eventName") String eventName,
-                           @PathVariable("reservationId") String reservationId,
-                           HttpServletResponse response) {
+                                           @PathVariable("reservationId") String reservationId,
+                                           HttpServletResponse response,
+                                           Authentication authentication) {
         return handleReservationWith(eventName, reservationId, (event, reservation) -> {
             if(reservation.getInvoiceNumber() == null || !reservation.getHasInvoiceOrReceiptDocument() || reservation.isCancelled()) {
                 return ResponseEntity.notFound().build();
             }
 
-            if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event)) {
+            if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) && isAnonymous(authentication)) {
                 return ResponseEntity.badRequest().build();
             }
 
