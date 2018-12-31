@@ -63,6 +63,7 @@ public class BillingDetails {
 
         private final String fiscalCode;
         private final ReferenceType referenceType;
-        private final String reference;
+        private final String addresseeCode;
+        private final String pec;
     }
 }

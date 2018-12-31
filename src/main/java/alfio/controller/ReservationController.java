@@ -270,6 +270,14 @@ public class ReservationController {
             contactAndTicketsForm.getBillingAddressZip(), contactAndTicketsForm.getBillingAddressCity(), contactAndTicketsForm.getVatCountryCode(),
             contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
             contactAndTicketsForm.canSkipVatNrCheck(), false);
+        ticketReservationManager.updateReservationInvoicingAdditionalInformations(reservationId,
+            new TicketReservationInvoicingAdditionalInfo(
+                new BillingDetails.ItalianEInvoicing(contactAndTicketsForm.getItalyEInvoicingFiscalCode(),
+                    contactAndTicketsForm.getItalyEInvoicingReferenceType(),
+                    contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
+                    contactAndTicketsForm.getItalyEInvoicingReferencePEC())
+            )
+        );
         assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, request, true, true);
         //
 

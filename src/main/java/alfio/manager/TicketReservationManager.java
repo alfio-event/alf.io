@@ -1568,6 +1568,12 @@ public class TicketReservationManager {
         ticketReservationRepository.updateTicketReservationWithValidation(reservationId,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(),
             email, billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip,
-            billingAddressCity, completeBillingAddress, vatCountryCode, vatNr, isInvoiceRequested, skipVatNr, customerReference, validated);
+            billingAddressCity, completeBillingAddress, vatCountryCode, vatNr, isInvoiceRequested, skipVatNr,
+            customerReference,
+            validated);
+    }
+
+    public void updateReservationInvoicingAdditionalInformations(String reservationId, TicketReservationInvoicingAdditionalInfo ticketReservationInvoicingAdditionalInfo) {
+        ticketReservationRepository.updateInvoicingAdditionalInformations(reservationId, Json.toJson(ticketReservationInvoicingAdditionalInfo));
     }
 }

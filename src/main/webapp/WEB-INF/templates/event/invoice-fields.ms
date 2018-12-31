@@ -95,7 +95,7 @@
         <div class="col-md-12">
             <div class="form-group {{#field-has-error}}[italyEInvoicingFiscalCode] has-error{{/field-has-error}}">
                 <label for="italyEInvoicingFiscalCode">{{#i18n}}invoice-fields.fiscalCode{{/i18n}}</label>
-                <input id="italyEInvoicingFiscalCode" type="text" name="italyEInvoicingFiscalCode" class="form-control">
+                <input id="italyEInvoicingFiscalCode" type="text" name="italyEInvoicingFiscalCode" value="{{paymentForm.italyEInvoicingFiscalCode}}" class="form-control">
             </div>
         </div>
         <div class="col-md-12">
@@ -107,19 +107,19 @@
         </div>
         <div class="col-md-12">
             <div class="form-group {{#field-has-error}}[italyEInvoicingReferenceAddresseeCode] has-error{{/field-has-error}}">
-                <label><input type="radio" name="italyEInvoicingReferenceType"><span class="label-after-radio">{{#i18n}}invoice-fields.addressee-code{{/i18n}}</span></label>
-                <input type="text" class="form-control" name="italyEInvoicingReferenceAddresseeCode">
+                <label><input {{#paymentForm.italyEInvoicingTypeAddresseeCode}}checked{{/paymentForm.italyEInvoicingTypeAddresseeCode}} type="radio" value="ADDRESSEE_CODE" name="italyEInvoicingReferenceType"><span class="label-after-radio">{{#i18n}}invoice-fields.addressee-code{{/i18n}}</span></label>
+                <input type="text" class="form-control" name="italyEInvoicingReferenceAddresseeCode" value="{{paymentForm.italyEInvoicingReferenceAddresseeCode}}">
             </div>
         </div>
         <div class="col-md-12">
             <div class="form-group {{#field-has-error}}[italyEInvoicingReferencePEC] has-error{{/field-has-error}}">
-                <label><input type="radio" name="italyEInvoicingReferenceType"><span class="label-after-radio">{{#i18n}}invoice-fields.pec{{/i18n}}</span></label>
-                <input type="text" class="form-control" name="italyEInvoicingReferencePEC">
+                <label><input {{#paymentForm.italyEInvoicingTypePEC}}checked{{/paymentForm.italyEInvoicingTypePEC}} type="radio" value="PEC"  name="italyEInvoicingReferenceType"><span class="label-after-radio">{{#i18n}}invoice-fields.pec{{/i18n}}</span></label>
+                <input type="text" class="form-control" name="italyEInvoicingReferencePEC" value="{{paymentForm.italyEInvoicingReferencePEC}}">
             </div>
         </div>
         <div class="col-md-12">
             <div class="form-group">
-                <label><input type="radio" name="italyEInvoicingReferenceType"><span class="label-after-radio">{{#i18n}}invoice.fields.neither{{/i18n}}</span></label>
+                <label><input {{#paymentForm.italyEInvoicingTypeAddresseeNone}}checked{{/paymentForm.italyEInvoicingTypeAddresseeNone}} type="radio" value="NONE"  name="italyEInvoicingReferenceType"><span class="label-after-radio">{{#i18n}}invoice.fields.neither{{/i18n}}</span></label>
             </div>
         </div>
     </div>

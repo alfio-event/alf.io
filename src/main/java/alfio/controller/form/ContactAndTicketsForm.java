@@ -17,10 +17,7 @@
 package alfio.controller.form;
 
 import alfio.manager.EuVatChecker;
-import alfio.model.Event;
-import alfio.model.TicketFieldConfiguration;
-import alfio.model.TicketReservation;
-import alfio.model.TicketReservationAdditionalInfo;
+import alfio.model.*;
 import alfio.model.result.ValidationResult;
 import alfio.util.ErrorsCode;
 import alfio.util.Validator;
@@ -67,6 +64,14 @@ public class ContactAndTicketsForm implements Serializable {
 
     private Boolean skipVatNr;
     private Boolean backFromOverview;
+    //
+
+    // https://github.com/alfio-event/alf.io/issues/573
+    private String italyEInvoicingFiscalCode;
+    private BillingDetails.ItalianEInvoicing.ReferenceType italyEInvoicingReferenceType;
+    private String italyEInvoicingReferenceAddresseeCode;
+    private String italyEInvoicingReferencePEC;
+    //
 
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
             String value, int maxLength) {
@@ -177,6 +182,18 @@ public class ContactAndTicketsForm implements Serializable {
         form.setBillingAddressZip(additionalInfo.getBillingAddressZip());
         form.setBillingAddressCity(additionalInfo.getBillingAddressCity());
         form.setSkipVatNr(additionalInfo.getSkipVatNr());
+
+        //todo: simplify code, can avoid a level with map
+        //https://github.com/alfio-event/alf.io/issues/573
+        Optional.ofNullable(additionalInfo.getInvoicingAdditionalInfo()).ifPresent(i ->
+            Optional.ofNullable(i.getItalianEInvoicing()).ifPresent(iei -> {
+                form.setItalyEInvoicingFiscalCode(iei.getFiscalCode());
+                form.setItalyEInvoicingReferenceType(iei.getReferenceType());
+                form.setItalyEInvoicingReferenceAddresseeCode(iei.getAddresseeCode());
+                form.setItalyEInvoicingReferencePEC(iei.getPec());
+            })
+        );
+
         return form;
     }
 
@@ -195,4 +212,18 @@ public class ContactAndTicketsForm implements Serializable {
     public boolean isBusiness() {
         return StringUtils.isNotBlank(billingAddressCompany) && !canSkipVatNrCheck() && invoiceRequested;
     }
+
+    // https://github.com/alfio-event/alf.io/issues/573
+    public boolean getItalyEInvoicingTypeAddresseeCode() {
+        return italyEInvoicingReferenceType == BillingDetails.ItalianEInvoicing.ReferenceType.ADDRESSEE_CODE;
+    }
+
+    public boolean getItalyEInvoicingTypePEC() {
+        return italyEInvoicingReferenceType == BillingDetails.ItalianEInvoicing.ReferenceType.PEC;
+    }
+
+    public boolean getItalyEInvoicingTypeNone() {
+        return italyEInvoicingReferenceType == BillingDetails.ItalianEInvoicing.ReferenceType.NONE;
+    }
+    //
 }
