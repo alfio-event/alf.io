@@ -1573,7 +1573,7 @@ public class TicketReservationManager {
             validated);
     }
 
-    public void updateReservationInvoicingAdditionalInformations(String reservationId, TicketReservationInvoicingAdditionalInfo ticketReservationInvoicingAdditionalInfo) {
-        ticketReservationRepository.updateInvoicingAdditionalInformations(reservationId, Json.toJson(ticketReservationInvoicingAdditionalInfo));
+    public void updateReservationInvoicingAdditionalInformation(String reservationId, TicketReservationInvoicingAdditionalInfo ticketReservationInvoicingAdditionalInfo) {
+        ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, Json.toJson(ticketReservationInvoicingAdditionalInfo));
     }
 }

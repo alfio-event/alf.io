@@ -32,14 +32,12 @@ import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
-import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.TemplateManager;
-import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -270,7 +268,7 @@ public class ReservationController {
             contactAndTicketsForm.getBillingAddressZip(), contactAndTicketsForm.getBillingAddressCity(), contactAndTicketsForm.getVatCountryCode(),
             contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
             contactAndTicketsForm.canSkipVatNrCheck(), false);
-        ticketReservationManager.updateReservationInvoicingAdditionalInformations(reservationId,
+        ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId,
             new TicketReservationInvoicingAdditionalInfo(
                 new BillingDetails.ItalianEInvoicing(contactAndTicketsForm.getItalyEInvoicingFiscalCode(),
                     contactAndTicketsForm.getItalyEInvoicingReferenceType(),

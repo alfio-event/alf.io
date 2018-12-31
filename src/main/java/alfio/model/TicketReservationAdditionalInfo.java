@@ -41,7 +41,7 @@ public class TicketReservationAdditionalInfo {
                                            @Column("billing_address_city") String billingAddressCity,
                                            @Column("validated_for_overview") Boolean validated,
                                            @Column("skip_vat_nr") Boolean skipVatNr,
-                                           @Column("invoicing_additional_informations") String invoicingAdditionalInformations) {
+                                           @Column("invoicing_additional_information") String invoicingAdditionalInformation) {
         this.billingAddressCompany = billingAddressCompany;
         this.billingAddressLine1 = billingAddressLine1;
         this.billingAddressLine2 = billingAddressLine2;
@@ -49,8 +49,8 @@ public class TicketReservationAdditionalInfo {
         this.billingAddressCity = billingAddressCity;
         this.validated = validated;
         this.skipVatNr = skipVatNr;
-        this.invoicingAdditionalInfo = invoicingAdditionalInformations == null ? new TicketReservationInvoicingAdditionalInfo(null) :
-            Json.fromJson(invoicingAdditionalInformations, TicketReservationInvoicingAdditionalInfo.class);
+        this.invoicingAdditionalInfo = invoicingAdditionalInformation == null ? new TicketReservationInvoicingAdditionalInfo(null) :
+            Json.fromJson(invoicingAdditionalInformation, TicketReservationInvoicingAdditionalInfo.class);
     }
 
 

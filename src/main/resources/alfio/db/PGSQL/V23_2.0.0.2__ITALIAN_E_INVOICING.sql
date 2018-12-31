@@ -17,4 +17,4 @@
 
 
 --
-alter table tickets_reservation add column invoicing_additional_informations jsonb;
+alter table tickets_reservation add column invoicing_additional_information jsonb;
