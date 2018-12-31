@@ -87,6 +87,7 @@ public class TicketWithReservationAndTransaction {
                                                @Column("tr_billing_address_line2") String billingAddressLine2,
                                                @Column("tr_billing_address_city") String billingAddressCity,
                                                @Column("tr_billing_address_zip") String billingAddressZip,
+                                               @Column("tr_invoicing_additional_information") String invoicingAdditionalInfo,
                                                //
                                                @Column("bt_id") Integer btId,
                                                @Column("bt_gtw_tx_id") String transactionId,
@@ -111,7 +112,8 @@ public class TicketWithReservationAndTransaction {
             billingAddress, confirmationTimestamp, latestReminder, paymentMethod,
             reminderSent, promoCodeDiscountId, automatic, trUserLanguage,
             directAssignmentRequested, invoiceNumber, invoiceModel, vatStatus, vatNr, vatCountryCode, invoiceRequested,
-            usedVadPercent, vatIncluded, reservationCreationTimestamp, customerReference);
+            usedVadPercent, vatIncluded, reservationCreationTimestamp, customerReference,
+            invoicingAdditionalInfo);
 
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountryCode, vatNr);
 
