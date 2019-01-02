@@ -149,6 +149,16 @@ public class ContactAndTicketsForm implements Serializable {
             //
             if (BillingDetails.ItalianEInvoicing.ReferenceType.ADDRESSEE_CODE == italyEInvoicingReferenceType) {
                 ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferenceAddresseeCode", "error.emptyField");
+                italyEInvoicingReferenceAddresseeCode = StringUtils.trim(italyEInvoicingReferenceAddresseeCode);
+                if (italyEInvoicingReferenceAddresseeCode != null) {
+                    if (italyEInvoicingReferenceAddresseeCode.length() != 7) {
+                        bindingResult.rejectValue("italyEInvoicingReferenceAddresseeCode", "error.lengthMustBe7");
+                    }
+
+                    if (!StringUtils.isAlphanumeric(italyEInvoicingReferenceAddresseeCode)) {
+                        bindingResult.rejectValue("italyEInvoicingReferenceAddresseeCode", "error.alphanumeric");
+                    }
+                }
             }
             if (BillingDetails.ItalianEInvoicing.ReferenceType.PEC == italyEInvoicingReferenceType) {
                 ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferencePEC", "error.emptyField");
