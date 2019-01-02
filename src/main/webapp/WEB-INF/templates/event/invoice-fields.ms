@@ -116,7 +116,7 @@
         <div class="col-md-12">
             <div class="form-group {{#field-has-error}}[italyEInvoicingReferencePEC] has-error{{/field-has-error}}">
                 <label><input {{#paymentForm.italyEInvoicingTypePEC}}checked{{/paymentForm.italyEInvoicingTypePEC}} type="radio" value="PEC"  name="italyEInvoicingReferenceType"><span class="label-after-radio">{{#i18n}}invoice-fields.pec{{/i18n}}</span></label>
-                <input type="text" class="form-control" name="italyEInvoicingReferencePEC" value="{{paymentForm.italyEInvoicingReferencePEC}}">
+                <input type="email" class="form-control" name="italyEInvoicingReferencePEC" value="{{paymentForm.italyEInvoicingReferencePEC}}">
                 {{#field-has-error}}[italyEInvoicingReferencePEC]<span class="help-block text-danger">{{#i18n}}{{#field-error}}italyEInvoicingReferencePEC{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
             </div>
         </div>
