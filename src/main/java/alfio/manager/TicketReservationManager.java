@@ -800,21 +800,19 @@ public class TicketReservationManager {
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString(), customerReference);
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
         waitingQueueManager.fireReservationConfirmed(reservationId);
-        if(paymentProxy == PaymentProxy.PAYPAL || paymentProxy == PaymentProxy.ADMIN) {
-            //we must notify the plugins about ticket assignment and send them by email
-            Event event = eventRepository.findByReservationId(reservationId);
-            TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
-            findTicketsInReservation(reservationId).stream()
-                .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
-                .forEach(ticket -> {
-                    Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
-                    if(paymentProxy == PaymentProxy.PAYPAL) {
-                        sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
-                    }
-                    extensionManager.handleTicketAssignment(ticket);
-                });
+        //we must notify the plugins about ticket assignment and send them by email
+        Event event = eventRepository.findByReservationId(reservationId);
+        TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
+        findTicketsInReservation(reservationId).stream()
+            .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
+            .forEach(ticket -> {
+                Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
+                if(paymentProxy != PaymentProxy.ADMIN) {
+                    sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
+                }
+                extensionManager.handleTicketAssignment(ticket);
+            });
 
-        }
     }
 
     PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation reservation, Locale locale) {
@@ -1558,7 +1556,7 @@ public class TicketReservationManager {
                                   boolean skipVatNr,
                                   boolean validated) {
 
-        String completeBillingAddress = StringUtils.trimToEmpty(billingAddressCompany)+"\n"+
+        String completeBillingAddress = StringUtils.defaultString(StringUtils.trimToNull(billingAddressCompany), customerName.getFullName())+"\n"+
             StringUtils.trimToEmpty(billingAddressLine1)+"\n"+
             StringUtils.trimToEmpty(billingAddressLine2)+"\n"+
             StringUtils.trimToEmpty(StringUtils.trimToEmpty(billingAddressZip)+" "+StringUtils.trimToEmpty(billingAddressCity));
