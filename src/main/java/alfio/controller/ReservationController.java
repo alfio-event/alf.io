@@ -279,8 +279,13 @@ public class ReservationController {
         assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, request, true, true);
         //
 
+        boolean italyEInvoicing = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_ITALY_E_INVOICING), false);
+        Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);
         //
-        contactAndTicketsForm.validate(bindingResult, event, ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()), new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId));
+        contactAndTicketsForm.validate(bindingResult, event,
+            ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()),
+            new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId),
+            formValidationParameters);
         //
 
         if(bindingResult.hasErrors()) {

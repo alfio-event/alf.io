@@ -194,8 +194,23 @@
             }
         });
 
+
+        var enabledItalyEInvoicing = $("#italyEInvoicing").length === 1;
+
+        $("#italyEInvoicing").hide();
+
         $("#vatCountry").change(function() {
-            $("#selected-country-code").text($("#vatCountry").val());
+            var vatCountryValue = $("#vatCountry").val();
+            $("#selected-country-code").text(vatCountryValue);
+
+            if(enabledItalyEInvoicing && vatCountryValue === 'IT') {
+                $("#italyEInvoicing").show();
+                $("#italyEInvoicingFiscalCode").attr('required', true);
+            } else {
+                $("#italyEInvoicing").hide();
+                $("#italyEInvoicingFiscalCode").removeAttr('required');
+            }
+
         });
 
         function canSkipVatNr() {

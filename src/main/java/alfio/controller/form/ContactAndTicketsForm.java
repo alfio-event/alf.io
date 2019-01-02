@@ -19,6 +19,7 @@ package alfio.controller.form;
 import alfio.manager.EuVatChecker;
 import alfio.model.*;
 import alfio.model.result.ValidationResult;
+import alfio.model.system.ConfigurationKeys;
 import alfio.util.ErrorsCode;
 import alfio.util.Validator;
 import lombok.Data;
@@ -82,7 +83,7 @@ public class ContactAndTicketsForm implements Serializable {
 
 
 
-    public void validate(BindingResult bindingResult, Event event, List<TicketFieldConfiguration> fieldConf, EuVatChecker.SameCountryValidator vatValidator) {
+    public void validate(BindingResult bindingResult, Event event, List<TicketFieldConfiguration> fieldConf, EuVatChecker.SameCountryValidator vatValidator, Map<ConfigurationKeys, Boolean> formValidationParameters) {
 
 
         
@@ -130,6 +131,27 @@ public class ContactAndTicketsForm implements Serializable {
 
             if(StringUtils.trimToNull(billingAddressCompany) != null && !canSkipVatNrCheck()) {
                 ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
+            }
+
+        }
+
+        // https://github.com/alfio-event/alf.io/issues/573
+        // only for IT and only if enabled!
+        if (formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false) && "IT".equals(vatCountryCode)) {
+
+            // mandatory
+            ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingFiscalCode", "error.emptyField");
+            rejectIfOverLength(bindingResult, "italyEInvoicingFiscalCode", "error.tooLong", italyEInvoicingFiscalCode, 256);
+            //
+
+            //
+            ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferenceType", "error.italyEInvoicingReferenceTypeSelectValue");
+            //
+            if (BillingDetails.ItalianEInvoicing.ReferenceType.ADDRESSEE_CODE == italyEInvoicingReferenceType) {
+                ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferenceAddresseeCode", "error.emptyField");
+            }
+            if (BillingDetails.ItalianEInvoicing.ReferenceType.PEC == italyEInvoicingReferenceType) {
+                ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferencePEC", "error.emptyField");
             }
 
         }
