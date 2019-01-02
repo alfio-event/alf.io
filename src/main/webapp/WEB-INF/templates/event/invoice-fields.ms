@@ -101,7 +101,7 @@
         <div class="col-md-12">
             <div class="form-group {{#field-has-error}}[italyEInvoicingReferenceType] has-error{{/field-has-error}}">
                 <label for="">
-                    {{#i18n}}invoice-fields.i-have{{/i18n}}
+                    {{#i18n}}invoice-fields.addresseeItalyEInvoice{{/i18n}}
                 </label>
                 {{#field-has-error}}[italyEInvoicingReferenceType]<span class="help-block text-danger">{{#i18n}}{{#field-error}}italyEInvoicingReferenceType{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
             </div>
@@ -122,7 +122,7 @@
         </div>
         <div class="col-md-12">
             <div class="form-group">
-                <label><input {{#paymentForm.italyEInvoicingTypeAddresseeNone}}checked{{/paymentForm.italyEInvoicingTypeAddresseeNone}} type="radio" value="NONE"  name="italyEInvoicingReferenceType"><span class="label-after-radio">{{#i18n}}invoice.fields.neither{{/i18n}}</span></label>
+                <label><input {{#paymentForm.italyEInvoicingTypeNone}}checked{{/paymentForm.italyEInvoicingTypeNone}} type="radio" value="NONE"  name="italyEInvoicingReferenceType"><span class="label-after-radio">{{#i18n}}invoice.fields.neither{{/i18n}}</span></label>
             </div>
         </div>
     </div>
