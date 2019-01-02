@@ -239,7 +239,7 @@ td.cell-wrap {
     .category-conf .setting input:not([type]),
     .category-conf .setting textarea,
     .category-conf .setting select {
-        padding-left: 110px;
+        text-indent: 110px;
     }
 
     .category-conf .settings-label {
