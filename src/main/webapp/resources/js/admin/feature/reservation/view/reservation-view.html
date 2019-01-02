@@ -195,19 +195,29 @@
                             <div class="form-group">
                                 <div class="form-group">
                                     <label>Codice Fiscale</label>
-                                    <div class="form-control-static" ng-bind="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.fiscalCode"></div>
+                                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData" ng-bind="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.fiscalCode"></div>
+                                    <input class="form-control" ng-if="$ctrl.reservation.updateContactData" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.fiscalCode">
                                 </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-12" ng-if="$ctrl.reservation.updateContactData">
+                            <div class="form-group">
+                                <label><input type="radio" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType" value="ADDRESSEE_CODE"> Codice destinatario</label>
+                                <label><input type="radio" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType" value="PEC"> PEC</label>
+                                <label><input type="radio" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType" value="NONE"> Nessun codice destinatario o PEC</label>
                             </div>
                         </div>
                         <div class="col-xs-12 col-sm-6">
                             <div class="form-group">
                                 <div class="form-group" data-ng-if="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType === 'ADDRESSEE_CODE'">
                                     <label>Codice destinatario</label>
-                                    <div class="form-control-static" ng-bind="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.addresseeCode"></div>
+                                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData" ng-bind="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.addresseeCode"></div>
+                                    <input class="form-control" ng-if="$ctrl.reservation.updateContactData" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.addresseeCode">
                                 </div>
                                 <div class="form-group" data-ng-if="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType === 'PEC'">
                                     <label>PEC</label>
-                                    <div class="form-control-static" ng-bind="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.pec"></div>
+                                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData" ng-bind="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.pec"></div>
+                                    <input class="form-control" ng-if="$ctrl.reservation.updateContactData" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.pec">
                                 </div>
                                 <div class="form-group" data-ng-if="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType === 'NONE'">
                                     <label>Nessun codice destinatario o PEC</label>
