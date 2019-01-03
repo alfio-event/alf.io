@@ -15,10 +15,6 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
--- we need to switch from the "postgres" role so we can apply the policy
-create role application_user;
-
-
 -- this function return true if the paramenter $1 (which is the organization id)
 -- is present in the alfio.currentUserOrgs array OR simply
 -- alfio.checkRowAccess is not set
@@ -27,71 +23,82 @@ returns boolean
 as
 $$
     select
-        coalesce(current_setting('alfio.checkRowAccess', true)::boolean, false) and
-        $1 = ANY(coalesce(current_setting('alfio.currentUserOrgs', true), '{}')::integer[]) -- check if org_id is present in alfio.currentUserOrgs
+        (current_setting('alfio.checkRowAccess', true) is null) or
+        (coalesce(current_setting('alfio.checkRowAccess', true), 'false')::boolean and
+            $1 = ANY(coalesce(current_setting('alfio.currentUserOrgs', true), '{}')::integer[])) -- check if org_id is present in alfio.currentUserOrgs
 $$ language sql;
 
 
 -- enable row level security and create policy
 alter table organization enable row level security;
-create policy organization_access_policy on organization to application_user
+alter table organization force row level security;
+create policy organization_access_policy on organization to public
     using (alfio_check_row_access(id))
     with check (alfio_check_row_access(id));
 
 
 alter table j_user_organization enable row level security;
-create policy j_user_organization_access_policy on j_user_organization to application_user
+alter table j_user_organization force row level security;
+create policy j_user_organization_access_policy on j_user_organization to public
     using (alfio_check_row_access(org_id))
     with check (alfio_check_row_access(org_id));
 
 --
 
 alter table event enable row level security;
-create policy event_access_policy on event to application_user
+alter table event force row level security;
+create policy event_access_policy on event to public
     using (alfio_check_row_access(org_id))
     with check (alfio_check_row_access(org_id));
 
 
 -- resources tables
 alter table resource_organizer enable row level security;
-create policy resource_organizer_access_policy on resource_organizer to application_user
+alter table resource_organizer force row level security;
+create policy resource_organizer_access_policy on resource_organizer to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 
 
 alter table resource_event enable row level security;
-create policy resource_event_access_policy on resource_event to application_user
+alter table resource_event force row level security;
+create policy resource_event_access_policy on resource_event to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 --
 
 -- configuration tables
 alter table configuration_organization enable row level security;
-create policy configuration_organization_access_policy on configuration_organization to application_user
+alter table configuration_organization force row level security;
+create policy configuration_organization_access_policy on configuration_organization to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 
 
 alter table configuration_event enable row level security;
-create policy configuration_event_access_policy on configuration_event to application_user
+alter table configuration_event force row level security;
+create policy configuration_event_access_policy on configuration_event to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 
 
 alter table configuration_ticket_category enable row level security;
-create policy configuration_ticket_category_access_policy on configuration_ticket_category to application_user
+alter table configuration_ticket_category force row level security;
+create policy configuration_ticket_category_access_policy on configuration_ticket_category to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 --
 
 --
 alter table invoice_sequences enable row level security;
-create policy invoice_sequences_access_policy on invoice_sequences to application_user
+alter table invoice_sequences force row level security;
+create policy invoice_sequences_access_policy on invoice_sequences to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 --
 alter table a_group enable row level security;
-create policy a_group_access_policy on a_group to application_user
+alter table a_group force row level security;
+create policy a_group_access_policy on a_group to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 --
@@ -100,7 +107,8 @@ update promo_code set organization_id_fk = (select org_id from event where event
 alter table promo_code alter column organization_id_fk set not null;
 
 alter table promo_code enable row level security;
-create policy promo_code_access_policy on promo_code to application_user
+alter table promo_code force row level security;
+create policy promo_code_access_policy on promo_code to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 --
@@ -109,7 +117,8 @@ create policy promo_code_access_policy on promo_code to application_user
 --
 
 alter table billing_document enable row level security;
-create policy billing_document_access_policy on billing_document to application_user
+alter table billing_document force row level security;
+create policy billing_document_access_policy on billing_document to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access(organization_id_fk));
 
@@ -148,7 +157,8 @@ create trigger ticket_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id();
 
 alter table ticket enable row level security;
-create policy ticket_access_policy on ticket to application_user
+alter table ticket force row level security;
+create policy ticket_access_policy on ticket to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
@@ -164,7 +174,8 @@ create trigger tickets_reservation_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id_fk();
 
 alter table tickets_reservation enable row level security;
-create policy tickets_reservation_access_policy on tickets_reservation to application_user
+alter table tickets_reservation force row level security;
+create policy tickets_reservation_access_policy on tickets_reservation to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
@@ -180,7 +191,8 @@ create trigger email_message_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id();
 
 alter table email_message enable row level security;
-create policy email_message_access_policy on email_message to application_user
+alter table email_message force row level security;
+create policy email_message_access_policy on email_message to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
@@ -196,7 +208,8 @@ create trigger admin_reservation_request_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id();
 
 alter table admin_reservation_request enable row level security;
-create policy admin_reservation_request_access_policy on admin_reservation_request to application_user
+alter table admin_reservation_request force row level security;
+create policy admin_reservation_request_access_policy on admin_reservation_request to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
@@ -212,7 +225,8 @@ create trigger waiting_queue_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id();
 
 alter table waiting_queue enable row level security;
-create policy waiting_queue_access_policy on waiting_queue to application_user
+alter table waiting_queue force row level security;
+create policy waiting_queue_access_policy on waiting_queue to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
@@ -230,7 +244,8 @@ create trigger ticket_category_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id();
 
 alter table ticket_category enable row level security;
-create policy ticket_category_access_policy on ticket_category to application_user
+alter table ticket_category force row level security;
+create policy ticket_category_access_policy on ticket_category to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
@@ -247,7 +262,8 @@ create trigger ticket_field_configuration_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id_fk();
 
 alter table ticket_field_configuration enable row level security;
-create policy ticket_field_configuration_access_policy on ticket_field_configuration to application_user
+alter table ticket_field_configuration force row level security;
+create policy ticket_field_configuration_access_policy on ticket_field_configuration to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
@@ -264,7 +280,8 @@ create trigger scan_audit_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id_fk();
 
 alter table scan_audit enable row level security;
-create policy scan_audit_access_policy on scan_audit to application_user
+alter table scan_audit force row level security;
+create policy scan_audit_access_policy on scan_audit to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
@@ -280,7 +297,8 @@ create trigger auditing_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id();
 
 alter table auditing enable row level security;
-create policy auditing_access_policy on auditing to application_user
+alter table auditing force row level security;
+create policy auditing_access_policy on auditing to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
@@ -297,7 +315,8 @@ create trigger event_description_text_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id_fk();
 
 alter table event_description_text enable row level security;
-create policy event_description_text_access_policy on event_description_text to application_user
+alter table event_description_text force row level security;
+create policy event_description_text_access_policy on event_description_text to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
@@ -314,7 +333,8 @@ create trigger additional_service_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id_fk();
 
 alter table additional_service enable row level security;
-create policy additional_service_access_policy on additional_service to application_user
+alter table additional_service force row level security;
+create policy additional_service_access_policy on additional_service to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
@@ -331,7 +351,8 @@ create trigger additional_service_item_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id_fk();
 
 alter table additional_service_item enable row level security;
-create policy additional_service_item_access_policy on additional_service_item to application_user
+alter table additional_service_item force row level security;
+create policy additional_service_item_access_policy on additional_service_item to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
@@ -348,7 +369,8 @@ create trigger group_link_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id_fk();
 
 alter table group_link enable row level security;
-create policy group_link_access_policy on group_link to application_user
+alter table group_link force row level security;
+create policy group_link_access_policy on group_link to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id_fk)));
 --
@@ -365,7 +387,8 @@ create trigger sponsor_scan_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_event_id();
 
 alter table sponsor_scan enable row level security;
-create policy sponsor_scan_access_policy on sponsor_scan to application_user
+alter table sponsor_scan force row level security;
+create policy sponsor_scan_access_policy on sponsor_scan to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select org_id from event where event.id = event_id)));
 --
@@ -393,7 +416,8 @@ create trigger additional_service_description_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_additional_service_id_fk();
 
 alter table additional_service_description enable row level security;
-create policy additional_service_description_access_policy on additional_service_description to application_user
+alter table additional_service_description force row level security;
+create policy additional_service_description_access_policy on additional_service_description to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select additional_service.organization_id_fk from additional_service where additional_service.id = additional_service_id_fk)));
 --
@@ -420,7 +444,8 @@ create trigger b_transaction_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_reservation_id();
 
 alter table b_transaction enable row level security;
-create policy b_transaction_access_policy on b_transaction to application_user
+alter table b_transaction force row level security;
+create policy b_transaction_access_policy on b_transaction to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select tickets_reservation.organization_id_fk from tickets_reservation where tickets_reservation.id = reservation_id)));
 --
@@ -446,7 +471,8 @@ create trigger group_member_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_a_group_id_fk();
 
 alter table group_member enable row level security;
-create policy group_member_access_policy on group_member to application_user
+alter table group_member force row level security;
+create policy group_member_access_policy on group_member to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select a_group.organization_id_fk from a_group where a_group.id = a_group_id_fk)));
 --
@@ -471,7 +497,8 @@ create trigger ticket_field_description_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_ticket_field_configuration_id_fk();
 
 alter table ticket_field_description enable row level security;
-create policy ticket_field_description_access_policy on ticket_field_description to application_user
+alter table ticket_field_description force row level security;
+create policy ticket_field_description_access_policy on ticket_field_description to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select ticket_field_configuration.organization_id_fk from ticket_field_configuration where ticket_field_configuration.id = ticket_field_configuration_id_fk)));
 --
@@ -487,7 +514,8 @@ create trigger ticket_field_value_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_ticket_field_configuration_id_fk();
 
 alter table ticket_field_value enable row level security;
-create policy ticket_field_value_access_policy on ticket_field_value to application_user
+alter table ticket_field_value force row level security;
+create policy ticket_field_value_access_policy on ticket_field_value to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select ticket_field_configuration.organization_id_fk from ticket_field_configuration where ticket_field_configuration.id = ticket_field_configuration_id_fk)));
 --
@@ -513,7 +541,8 @@ create trigger ticket_category_text_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_ticket_category_id_fk();
 
 alter table ticket_category_text enable row level security;
-create policy ticket_category_text_access_policy on ticket_category_text to application_user
+alter table ticket_category_text force row level security;
+create policy ticket_category_text_access_policy on ticket_category_text to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select ticket_category.organization_id_fk from ticket_category where ticket_category.id = ticket_category_id_fk)));
 --
@@ -539,7 +568,8 @@ create trigger whitelisted_ticket_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_group_member_id_fk();
 
 alter table whitelisted_ticket enable row level security;
-create policy whitelisted_ticket_access_policy on whitelisted_ticket to application_user
+alter table whitelisted_ticket force row level security;
+create policy whitelisted_ticket_access_policy on whitelisted_ticket to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select group_member.organization_id_fk from group_member where group_member.id = group_member_id_fk)));
 --
@@ -565,7 +595,8 @@ create trigger special_price_insert_org_id_fk_trigger
     for each row execute procedure set_organization_id_fk_from_ticket_category_id();
 
 alter table special_price enable row level security;
-create policy special_price_access_policy on special_price to application_user
+alter table special_price force row level security;
+create policy special_price_access_policy on special_price to public
     using (alfio_check_row_access(organization_id_fk))
     with check (alfio_check_row_access((select ticket_category.organization_id_fk from ticket_category where ticket_category.id = ticket_category_id)));
 --

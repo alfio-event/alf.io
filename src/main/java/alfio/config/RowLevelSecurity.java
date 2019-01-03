@@ -107,7 +107,6 @@ public class RowLevelSecurity {
                     if (mustCheck) {
                         Set<Integer> orgIds = new TreeSet<>(organizationRepository.findAllOrganizationIdForUser(SecurityContextHolder.getContext().getAuthentication().getName()));
                         formattedOrgIds = orgIds.stream().map(s -> Integer.toString(s)).collect(Collectors.joining(",", "'{", "}'"));
-                        jdbcTemplate.update("set local role application_user", new EmptySqlParameterSource());
                         jdbcTemplate.update("set local alfio.checkRowAccess = true", new EmptySqlParameterSource());
                         //cannot use bind variable when calling set local, it's ugly :(
                         jdbcTemplate.update("set local alfio.currentUserOrgs = " + formattedOrgIds, new EmptySqlParameterSource());
