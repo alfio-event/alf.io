@@ -39,6 +39,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.AbstractDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -92,6 +93,18 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
             dataSource.setMinimumIdle(platform.getMinIdle(env));
 
             log.debug("Connection pool properties: max active {}, initial size {}", dataSource.getMaximumPoolSize(), dataSource.getMinimumIdle());
+
+            // check
+            boolean isSuperAdmin = new NamedParameterJdbcTemplate(dataSource)
+                .queryForObject("select usesuper from pg_user where usename = CURRENT_USER",
+                    new EmptySqlParameterSource(),
+                    Boolean.class);
+
+            if (isSuperAdmin) {
+                log.warn("You're accessing the database using a superuser. This is highly discouraged since it will disable the row security policy checks.");
+            }
+
+            //
             return dataSource;
         }
     }
