@@ -224,8 +224,16 @@ td.cell-wrap {
 
 @media screen and (min-width: 991px) {
 
-    .setting input[type="text"], .setting input:not([type]), .setting textarea, .setting select {
+    .setting input[type="text"], .setting input:not([type]) {
         text-indent:85px;
+    }
+
+    .setting select {
+        text-indent: 85px;
+    }
+
+    .setting textarea {
+        padding-left: 85px;
     }
 
     .settings-label {
@@ -237,9 +245,21 @@ td.cell-wrap {
 
     .category-conf .setting input[type="text"],
     .category-conf .setting input:not([type]),
-    .category-conf .setting textarea,
     .category-conf .setting select {
         text-indent: 110px;
+    }
+
+    .category-conf .setting textarea {
+        padding-left: 110px;
+    }
+
+    @-moz-document url-prefix() {
+        .category-conf .setting select {
+            text-indent: 50px;
+        }
+        .setting select {
+            text-indent: 40px;
+        }
     }
 
     .category-conf .settings-label {
