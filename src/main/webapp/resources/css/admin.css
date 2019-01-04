@@ -262,19 +262,6 @@ td.cell-wrap {
         }
     }
 
-    .category-conf .setting textarea {
-        padding-left: 110px;
-    }
-
-    @-moz-document url-prefix() {
-        .category-conf .setting select {
-            text-indent: 50px;
-        }
-        .setting select {
-            text-indent: 40px;
-        }
-    }
-
     .category-conf .settings-label {
         width: 90px;
     }
