@@ -132,10 +132,11 @@
                 $(this).removeClass('untouched');
             });
 
-        $('#copy-from-contact-data').click(function() {
+        $('.copy-from-contact-data').click(function() {
             var firstOrFullName = $('#first-name').val() || $('#full-name').val();
-            fillAttendeeData(firstOrFullName, $('#last-name').val());
-            $('#attendeesData').find('.attendee-email').first().val($('#email').val());
+            var ticket = $(this).attr('data-ticket');
+            fillAttendeeData(firstOrFullName, $('#last-name').val(), ticket);
+            getTargetTicketData(ticket).find('.attendee-email').first().val($('#email').val());
         });
 
         var postponeAssignment = $('#postpone-assignment');
@@ -155,15 +156,20 @@
             $('#attendeesData').find('.field-required').attr('required', false);
         }
 
-        function fillAttendeeData(firstOrFullName, lastName) {
+        function fillAttendeeData(firstOrFullName, lastName, ticketUUID) {
             var useFullName = (typeof lastName === "undefined");
-            var element = $('#attendeesData');
+            var element = getTargetTicketData(ticketUUID);
             if(useFullName) {
                 updateIfNotTouched(element.find('.attendee-full-name').first(), firstOrFullName);
             } else {
                 updateIfNotTouched(element.find('.attendee-first-name').first(), firstOrFullName);
                 updateIfNotTouched(element.find('.attendee-last-name').first(), lastName);
             }
+        }
+
+        function getTargetTicketData(ticketUUID) {
+            var id = ticketUUID ? '#attendee-data-'+ticketUUID : '#attendeesData';
+            return $(id);
         }
 
         function updateIfNotTouched(element, newValue) {
