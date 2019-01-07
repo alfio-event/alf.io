@@ -262,6 +262,41 @@
                             </div>
                         </div>
                     </div>
+                    <div>
+                        <div class="page-header">
+                            <h3>Order summary</h3>
+                        </div>
+                        <div class="panel-body">
+                            <p>
+                                Payment method: {{$ctrl.reservationDescriptor.reservation.paymentMethod}}
+                            </p>
+                            <table class="table table-striped">
+                                <thead>
+                                    <th>Category</th>
+                                    <th>Type</th>
+                                    <th class="text-center">Amount</th>
+                                    <th class="text-right">Price</th>
+                                    <th class="text-right">Subtotal</th>
+                                </thead>
+                                <tbody>
+                                    <tr data-ng-repeat="summaryRow in $ctrl.reservationDescriptor.orderSummary.summary">
+                                        <td>{{summaryRow.name}}</td>
+                                        <td>{{summaryRow.type}}</td>
+                                        <td class="text-center">{{summaryRow.amount}}</td>
+                                        <td class="text-right">{{summaryRow.price}}</td>
+                                        <td class="text-right">{{summaryRow.subTotal}}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Total</th>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <th class="text-right">{{$ctrl.orderSummary.totalPrice}}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                     <hr>
                     <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
                         <div class="panel-heading">
