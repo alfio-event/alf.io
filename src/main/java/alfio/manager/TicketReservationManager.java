@@ -1354,7 +1354,7 @@ public class TicketReservationManager {
             ZonedDateTime dateTimeForEvent = now.plusDays(1);
             List<TicketReservationInfo> reservations = ticketReservationRepository.findAllOfflinePaymentReservationWithExpirationBefore(dateTimeForEvent, event.getId());
             log.debug("for event {} there are {} pending offline payments to handle", event.getId(), reservations.size());
-            if(!reservations.isEmpty() && reservations.stream().anyMatch(r -> ZonedDateTime.from(r.getValidity().toInstant()).isAfter(now))) {
+            if(!reservations.isEmpty() && reservations.stream().anyMatch(r -> ZonedDateTime.ofInstant(r.getValidity().toInstant(), event.getZoneId()).isAfter(now))) {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 List<String> cc = notificationManager.getCCForEventOrganizer(event);
                 String subject = String.format("There are %d pending offline payments that will expire in event: %s", reservations.size(), event.getDisplayName());
