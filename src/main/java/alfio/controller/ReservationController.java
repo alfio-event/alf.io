@@ -271,18 +271,23 @@ public class ReservationController {
             contactAndTicketsForm.getBillingAddressZip(), contactAndTicketsForm.getBillingAddressCity(), contactAndTicketsForm.getVatCountryCode(),
             contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
             contactAndTicketsForm.canSkipVatNrCheck(), false);
-        ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId,
-            new TicketReservationInvoicingAdditionalInfo(
-                new BillingDetails.ItalianEInvoicing(contactAndTicketsForm.getItalyEInvoicingFiscalCode(),
-                    contactAndTicketsForm.getItalyEInvoicingReferenceType(),
-                    contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
-                    contactAndTicketsForm.getItalyEInvoicingReferencePEC())
-            )
-        );
+
+        boolean italyEInvoicing = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_ITALY_E_INVOICING), false);
+
+        if(italyEInvoicing) {
+            ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId,
+                new TicketReservationInvoicingAdditionalInfo(
+                    new BillingDetails.ItalianEInvoicing(contactAndTicketsForm.getItalyEInvoicingFiscalCode(),
+                        contactAndTicketsForm.getItalyEInvoicingReferenceType(),
+                        contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
+                        contactAndTicketsForm.getItalyEInvoicingReferencePEC())
+                )
+            );
+        }
+
         assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, request, true, true);
         //
 
-        boolean italyEInvoicing = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_ITALY_E_INVOICING), false);
         Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);
         //
         contactAndTicketsForm.validate(bindingResult, event,
