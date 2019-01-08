@@ -73,7 +73,11 @@ public class Jobs {
     @Scheduled(fixedRate = ONE_MINUTE * 60)
     public void cleanupUnreferencedBlobFiles() {
         log.trace("running job cleanupUnreferencedBlobFiles");
-        fileUploadManager.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), -1));
+        try {
+            fileUploadManager.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), -1));
+        } finally {
+            log.trace("end job cleanupUnreferencedBlobFiles");
+        }
     }
 
 
@@ -82,10 +86,14 @@ public class Jobs {
     public void cleanupForDemoMode() {
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             log.trace("running job cleanupForDemoMode");
-            int expirationDate = configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS), 20);
-            List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
-            if (!userIds.isEmpty()) {
-                eventManager.disableEventsFromUsers(userIds);
+            try {
+                int expirationDate = configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS), 20);
+                List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
+                if (!userIds.isEmpty()) {
+                    eventManager.disableEventsFromUsers(userIds);
+                }
+            } finally {
+                log.trace("end job cleanupForDemoMode");
             }
         }
     }
@@ -93,7 +101,11 @@ public class Jobs {
     @Scheduled(fixedRate = THIRTY_SECONDS)
     public void generateSpecialPriceCodes() {
         log.trace("running job generateSpecialPriceCodes");
-        specialPriceTokenGenerator.generatePendingCodes();
+        try {
+            specialPriceTokenGenerator.generatePendingCodes();
+        } finally {
+            log.trace("end job generateSpecialPriceCodes");
+        }
     }
 
 
@@ -101,23 +113,35 @@ public class Jobs {
     @Scheduled(cron = "0 0 0/1 * * ?")
     public void sendOfflinePaymentReminderToEventOrganizers() {
         log.trace("running job sendOfflinePaymentReminderToEventOrganizers");
-        ticketReservationManager.sendReminderForOfflinePaymentsToEventManagers();
+        try {
+            ticketReservationManager.sendReminderForOfflinePaymentsToEventManagers();
+        } finally {
+            log.trace("end job sendOfflinePaymentReminderToEventOrganizers");
+        }
     }
 
 
     @Scheduled(fixedRate = FIVE_SECONDS)
     public void sendEmails() {
         log.trace("running job sendEmails");
-        notificationManager.sendWaitingMessages();
+        try {
+            notificationManager.sendWaitingMessages();
+        } finally {
+            log.trace("end job sendEmails");
+        }
     }
 
     @Scheduled(fixedRate = FIVE_SECONDS)
     public void processReservationRequests() {
         log.trace("running job processReservationRequests");
-        long start = System.currentTimeMillis();
-        Pair<Integer, Integer> result = adminReservationRequestManager.processPendingReservations();
-        if (result.getLeft() > 0 || result.getRight() > 0) {
-            log.info("ProcessReservationRequests: got {} success and {} failures. Elapsed {} ms", result.getLeft(), result.getRight(), System.currentTimeMillis() - start);
+        try {
+            long start = System.currentTimeMillis();
+            Pair<Integer, Integer> result = adminReservationRequestManager.processPendingReservations();
+            if (result.getLeft() > 0 || result.getRight() > 0) {
+                log.info("ProcessReservationRequests: got {} success and {} failures. Elapsed {} ms", result.getLeft(), result.getRight(), System.currentTimeMillis() - start);
+            }
+        } finally {
+            log.trace("end job processReservationRequests");
         }
     }
 
@@ -125,31 +149,47 @@ public class Jobs {
     @Scheduled(fixedRate = THIRTY_MINUTES)
     public void sendOfflinePaymentReminder() {
         log.trace("running job sendOfflinePaymentReminder");
-        ticketReservationManager.sendReminderForOfflinePayments();
+        try {
+            ticketReservationManager.sendReminderForOfflinePayments();
+        } finally {
+            log.trace("end job sendOfflinePaymentReminder");
+        }
     }
 
     @Scheduled(fixedRate = THIRTY_SECONDS)
     public void sendTicketAssignmentReminder() {
         log.trace("running job sendTicketAssignmentReminder");
-        ticketReservationManager.sendReminderForTicketAssignment();
-        ticketReservationManager.sendReminderForOptionalData();
+        try {
+            ticketReservationManager.sendReminderForTicketAssignment();
+            ticketReservationManager.sendReminderForOptionalData();
+        } finally {
+            log.trace("end job sendTicketAssignmentReminder");
+        }
     }
 
 
     @Scheduled(fixedRate = THIRTY_SECONDS)
     public void cleanupExpiredPendingReservation() {
         log.trace("running job cleanupExpiredPendingReservation");
-        //cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
-        final Date expirationDate = DateUtils.addMinutes(new Date(), -10);
-        ticketReservationManager.cleanupExpiredReservations(expirationDate);
-        ticketReservationManager.cleanupExpiredOfflineReservations(expirationDate);
-        ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
+        try {
+            //cleanup reservation that have a expiration older than "now minus 10 minutes": this give some additional slack.
+            final Date expirationDate = DateUtils.addMinutes(new Date(), -10);
+            ticketReservationManager.cleanupExpiredReservations(expirationDate);
+            ticketReservationManager.cleanupExpiredOfflineReservations(expirationDate);
+            ticketReservationManager.markExpiredInPaymentReservationAsStuck(expirationDate);
+        } finally {
+            log.trace("end job cleanupExpiredPendingReservation");
+        }
     }
 
 
     @Scheduled(fixedRate = THIRTY_SECONDS)
     public void processReleasedTickets() {
         log.trace("running job processReleasedTickets");
-        waitingQueueSubscriptionProcessor.handleWaitingTickets();
+        try {
+            waitingQueueSubscriptionProcessor.handleWaitingTickets();
+        } finally {
+            log.trace("end job processReleasedTickets");
+        }
     }
 }
