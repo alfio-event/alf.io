@@ -88,7 +88,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.*;
-import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.*;
 import static org.apache.commons.lang3.time.DateUtils.addHours;
 import static org.apache.commons.lang3.time.DateUtils.truncate;
 
@@ -1503,7 +1503,7 @@ public class TicketReservationManager {
     public TicketReservation findByPartialID(String reservationId) {
         Validate.notBlank(reservationId, "invalid reservationId");
         Validate.matchesPattern(reservationId, "^[^%]*$", "invalid character found");
-        List<TicketReservation> results = ticketReservationRepository.findByPartialID(StringUtils.trimToEmpty(reservationId).toLowerCase() + "%");
+        List<TicketReservation> results = ticketReservationRepository.findByPartialID(trimToEmpty(reservationId).toLowerCase() + "%");
         Validate.isTrue(results.size() > 0, "reservation not found");
         Validate.isTrue(results.size() == 1, "multiple results found. Try handling this reservation manually.");
         return results.get(0);
@@ -1626,10 +1626,10 @@ public class TicketReservationManager {
                                   boolean skipVatNr,
                                   boolean validated) {
 
-        String completeBillingAddress = StringUtils.trimToEmpty(billingAddressCompany)+"\n"+
-            StringUtils.trimToEmpty(billingAddressLine1)+"\n"+
-            StringUtils.trimToEmpty(billingAddressLine2)+"\n"+
-            StringUtils.trimToEmpty(StringUtils.trimToEmpty(billingAddressZip)+" "+StringUtils.trimToEmpty(billingAddressCity));
+        String completeBillingAddress = defaultString(StringUtils.trimToNull(billingAddressCompany), trimToEmpty(customerName.getFullName()))+"\n"+
+            trimToEmpty(billingAddressLine1)+"\n"+
+            trimToEmpty(billingAddressLine2)+"\n"+
+            trimToEmpty(trimToEmpty(billingAddressZip)+" "+ trimToEmpty(billingAddressCity));
 
         completeBillingAddress = completeBillingAddress.replace("\n\n", "\n");
 
