@@ -905,16 +905,13 @@ public class TicketReservationManager {
 
     private void cleanupOfflinePayment(String reservationId) {
         try {
-            requiresNewTransactionTemplate.execute((tc) -> {
-                Event event = eventRepository.findByReservationId(reservationId);
-                boolean enabled = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT), true);
-                if(enabled) {
-                    deleteOfflinePayment(event, reservationId, true, false, null);
-                } else {
-                    log.trace("Will not cleanup reservation with id {} because the automatic removal has been disabled", reservationId);
-                }
-                return null;
-            });
+            Event event = eventRepository.findByReservationId(reservationId);
+            boolean enabled = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT), true);
+            if(enabled) {
+                deleteOfflinePayment(event, reservationId, true, false, null);
+            } else {
+                log.trace("Will not cleanup reservation with id {} because the automatic removal has been disabled", reservationId);
+            }
         } catch (Exception e) {
             log.error("error during reservation cleanup (id "+reservationId+")", e);
         }
@@ -1449,22 +1446,19 @@ public class TicketReservationManager {
     }
 
     private void sendOptionalDataReminder(Pair<Event, List<Ticket>> eventAndTickets) {
-        requiresNewTransactionTemplate.execute(ts -> {
-            Event event = eventAndTickets.getLeft();
-            int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
-            List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
-            Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
-            tickets.stream()
-                    .filter(t -> notYetNotifiedReservations.contains(t.getTicketsReservationId()))
-                    .forEach(t -> {
-                        int result = ticketRepository.flagTicketAsReminderSent(t.getId());
-                        Validate.isTrue(result == 1);
-                        Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ticketUpdateUrl(event, t.getUuid()));
-                        Locale locale = Optional.ofNullable(t.getUserLanguage()).map(Locale::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
-                        notificationManager.sendSimpleEmail(event, t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
-                    });
-            return null;
-        });
+        Event event = eventAndTickets.getLeft();
+        int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
+        List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
+        Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
+        tickets.stream()
+                .filter(t -> notYetNotifiedReservations.contains(t.getTicketsReservationId()))
+                .forEach(t -> {
+                    int result = ticketRepository.flagTicketAsReminderSent(t.getId());
+                    Validate.isTrue(result == 1);
+                    Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ticketUpdateUrl(event, t.getUuid()));
+                    Locale locale = Optional.ofNullable(t.getUserLanguage()).map(Locale::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
+                    notificationManager.sendSimpleEmail(event, t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
+                });
     }
 
     Stream<Event> getNotifiableEventsStream() {
@@ -1479,22 +1473,19 @@ public class TicketReservationManager {
 
     private void sendAssignmentReminder(Pair<Event, Set<String>> p) {
         try {
-            requiresNewTransactionTemplate.execute(status -> {
-                Event event = p.getLeft();
-                ZoneId eventZoneId = event.getZoneId();
-                int quietPeriod = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL), 3);
-                p.getRight().stream()
-                        .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .forEach(reservation -> {
-                            Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
-                            ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
-                            Locale locale = findReservationLanguage(reservation.getId());
-                            notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
-                        });
-                return null;
-            });
+            Event event = p.getLeft();
+            ZoneId eventZoneId = event.getZoneId();
+            int quietPeriod = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL), 3);
+            p.getRight().stream()
+                .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .forEach(reservation -> {
+                    Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
+                    ticketReservationRepository.updateLatestReminderTimestamp(reservation.getId(), ZonedDateTime.now(eventZoneId));
+                    Locale locale = findReservationLanguage(reservation.getId());
+                    notificationManager.sendSimpleEmail(event, reservation.getEmail(), messageSource.getMessage("reminder.ticket-not-assigned.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKETS_ASSIGNMENT_EMAIL, model, locale));
+                });
         } catch (Exception ex) {
             log.warn("cannot send reminder message", ex);
         }
