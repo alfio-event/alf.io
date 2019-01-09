@@ -18,7 +18,7 @@
                         description: stripeEl.getAttribute('data-stripe-description'),
                         zipCode: false,
                         allowRememberMe: false,
-                        amount: (stripeEl.getAttribute('data-price') || ''),
+                        amount: parseInt(stripeEl.getAttribute('data-price') || '0', 10),
                         currency: stripeEl.getAttribute('data-currency'),
                         email: stripeEl.getAttribute('data-stripe-email')
                     });
@@ -26,6 +26,7 @@
                     closeFn = cancelHandler;
                 },
                 init: function() {
+                    var confirmCalled = false;
                     stripeHandler = StripeCheckout.configure({
                         key: stripeEl.getAttribute('data-stripe-key'),
                         image: doc.getElementById("event-logo").getAttribute('src'),
@@ -34,9 +35,10 @@
                             var $form = $('#payment-form');
                             $form.append($('<input type="hidden" name="gatewayToken" />').val(token.id));
                             confirmFn(true);
+                            confirmCalled = true;
                         },
                         closed: function() {
-                            if(closeFn) {
+                            if(closeFn && !confirmCalled) {
                                 closeFn();
                             }
                         }

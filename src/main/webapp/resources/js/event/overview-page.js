@@ -163,13 +163,13 @@
             var filteredHandlers = paymentHandlers.filter(function(ph) {return ph.id === selectedPaymentMethod.val() && ph.active(); });
             var paymentHandler = filteredHandlers ? filteredHandlers[0] : null;
             if(paymentHandler) {
-                btn.hide();
+                btn.addClass("hidden");
                 paymentHandler.pay(function(res) {
                     if(res) {
                         $form.submit();
                     }
                 }, function() {
-                    btn.show();
+                    btn.removeClass("hidden");
                 });
             }
             e.preventDefault();
