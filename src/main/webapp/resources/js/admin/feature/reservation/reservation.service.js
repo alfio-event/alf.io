@@ -16,6 +16,9 @@
                 notify: function(eventName, reservationId, notification) {
                     return $http['put']('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/notify', notification).error(HttpErrorHandler.handle);
                 },
+                notifyAttendees: function(eventName, reservationId, ids) {
+                    return $http['put']('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/notify-attendees', ids).error(HttpErrorHandler.handle);
+                },
                 load: function(eventName, reservationId) {
                     return $http.get('/admin/api/reservation/event/'+eventName+'/'+reservationId+'/').error(HttpErrorHandler.handle);
                 },

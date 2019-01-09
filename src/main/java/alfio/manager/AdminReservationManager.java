@@ -62,6 +62,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -183,13 +184,20 @@ public class AdminReservationManager {
     //end - the public / package protected methods below must be annotated with @Transactional
 
     @Transactional
+    public Result<Boolean> notifyAttendees(String eventName, String reservationId, List<Integer> ids, String username) {
+        return getEventTicketReservationPair(eventName, reservationId, username)
+            .map(pair -> {
+                Event event = pair.getLeft();
+                TicketReservation reservation = pair.getRight();
+                sendTicketToAttendees(event, reservation, t -> t.getAssigned() && ids.contains(t.getId()));
+                return Result.success(true);
+            }).orElseGet(() -> Result.error(ErrorCode.EventError.NOT_FOUND));
+    }
+
+    @Transactional
     public Result<Boolean> notify(String eventName, String reservationId, AdminReservationModification arm, String username) {
         AdminReservationModification.Notification notification = arm.getNotification();
-        return eventRepository.findOptionalByShortName(eventName)
-            .flatMap(e -> optionally(() -> {
-                eventManager.checkOwnership(e, username, e.getOrganizationId());
-                return e;
-            }).flatMap(ev -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r))))
+        return getEventTicketReservationPair(eventName, reservationId, username)
             .map(pair -> {
                 Event event = pair.getLeft();
                 TicketReservation reservation = pair.getRight();
@@ -197,17 +205,29 @@ public class AdminReservationManager {
                     ticketReservationManager.sendConfirmationEmail(event, reservation, Locale.forLanguageTag(reservation.getUserLanguage()));
                 }
                 if(notification.isAttendees()) {
-                    ticketRepository.findTicketsInReservation(reservationId)
-                        .stream()
-                        .filter(Ticket::getAssigned)
-                        .forEach(t -> {
-                            Locale locale = Locale.forLanguageTag(t.getUserLanguage());
-                            ticketReservationManager.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale));
-                        });
+                    sendTicketToAttendees(event, reservation, Ticket::getAssigned);
                 }
                 return Result.success(true);
             }).orElseGet(() -> Result.error(ErrorCode.EventError.NOT_FOUND));
 
+    }
+
+    private Optional<Pair<Event, TicketReservation>> getEventTicketReservationPair(String eventName, String reservationId, String username) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .flatMap(e -> optionally(() -> {
+                eventManager.checkOwnership(e, username, e.getOrganizationId());
+                return e;
+            }).flatMap(ev -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r))));
+    }
+
+    private void sendTicketToAttendees(Event event, TicketReservation reservation, Predicate<Ticket> matcher) {
+        ticketRepository.findTicketsInReservation(reservation.getId())
+            .stream()
+            .filter(matcher)
+            .forEach(t -> {
+                Locale locale = Locale.forLanguageTag(t.getUserLanguage());
+                ticketReservationManager.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale));
+            });
     }
 
     private Result<Boolean> performUpdate(String reservationId, Event event, TicketReservation r, AdminReservationModification arm, String username) {

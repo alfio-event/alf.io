@@ -9,12 +9,12 @@
             onClose: '<',
             onConfirm: '<'
         },
-        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', ReservationViewCtrl],
+        controller: ['AdminReservationService', 'EventService', '$window', '$stateParams', 'NotificationHandler', 'CountriesService', '$uibModal', ReservationViewCtrl],
         templateUrl: '../resources/js/admin/feature/reservation/view/reservation-view.html'
     });
 
 
-    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler, CountriesService) {
+    function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal) {
         var ctrl = this;
 
         ctrl.notification = {
@@ -178,23 +178,26 @@
             }
         };
 
+        var notifyError = function(message) {
+            ctrl.loading = false;
+            NotificationHandler.showError(message || 'An unexpected error has occurred. Please retry');
+        };
+
+        var evaluateNotificationResponse = function(r) {
+            var result = r.data;
+            ctrl.loading = false;
+            if(result.success) {
+                NotificationHandler.showSuccess('Success!');
+            } else {
+                notifyError(result.errors.map(function (e) {
+                    return e.description;
+                }).join(', '));
+            }
+        };
+
         var notify = function(customer) {
             ctrl.loading = true;
-            var notifyError = function(message) {
-                ctrl.loading = false;
-                NotificationHandler.showError(message || 'An unexpected error has occurred. Please retry');
-            };
-            AdminReservationService.notify(ctrl.event.shortName, ctrl.reservation.id, {notification: {customer: customer, attendees:(!customer)}}).then(function(r) {
-                var result = r.data;
-                ctrl.loading = false;
-                if(result.success) {
-                    NotificationHandler.showSuccess('Success!');
-                } else {
-                    notifyError(result.errors.map(function (e) {
-                        return e.description;
-                    }).join(', '));
-                }
-            }, function() {
+            AdminReservationService.notify(ctrl.event.shortName, ctrl.reservation.id, {notification: {customer: customer, attendees:(!customer)}}).then(evaluateNotificationResponse, function() {
                 notifyError();
             });
         };
@@ -204,7 +207,49 @@
         };
 
         ctrl.notifyAttendees = function() {
-            notify(false);
+            var m = $uibModal.open({
+                size: 'lg',
+                templateUrl: '../resources/js/admin/feature/reservation/view/send-ticket-email.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    $scope.cancel = function() {$scope.$dismiss('canceled');};
+                    $scope.ticketsInfo = ctrl.reservation.ticketsInfo.map(function(ti) {
+                        var nTi = _.cloneDeep(ti);
+                        _.forEach(nTi.attendees, function(a) { a.selected = true; });
+                        return nTi;
+                    });
+                    $scope.sendEmail = function() {
+                        var flatten = _.flatten(_.map($scope.ticketsInfo, 'attendees'));
+                        $scope.$close(_.pluck(_.filter(flatten, {'selected': true}), 'ticketId'));
+                    }
+
+                    var updateSelection = function(select) {
+                        $scope.ticketsInfo.forEach(function(ti) {
+                            _.forEach(ti.attendees, function(a) {
+                                a.selected = select;
+                            });
+                        });
+                    };
+
+                    $scope.selectAll = function() {
+                        updateSelection(true);
+                    };
+
+                    $scope.selectNone = function() {
+                        updateSelection(false);
+                    };
+
+
+
+                }
+            });
+            m.result.then(function(ids) {
+                if(ids.length > 0) {
+                    AdminReservationService.notifyAttendees(ctrl.event.shortName, ctrl.reservation.id, ids).then(evaluateNotificationResponse, function() {
+                        notifyError();
+                    });
+                }
+            });
         };
 
         ctrl.confirm = function() {

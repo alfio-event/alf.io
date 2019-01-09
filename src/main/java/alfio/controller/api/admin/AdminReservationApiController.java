@@ -96,6 +96,14 @@ public class AdminReservationApiController {
         return adminReservationManager.notify(eventName, reservationId, arm, principal.getName());
     }
 
+    @PutMapping("/event/{eventName}/{reservationId}/notify-attendees")
+    public Result<Boolean> notifyAttendees(@PathVariable("eventName") String eventName,
+                                           @PathVariable("reservationId") String reservationId,
+                                           @RequestBody List<Integer> ids,
+                                           Principal principal) {
+        return adminReservationManager.notifyAttendees(eventName, reservationId, ids, principal.getName());
+    }
+
     @RequestMapping(value = "/event/{eventName}/{reservationId}/audit", method = RequestMethod.GET)
     public Result<List<Audit>> getAudit(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.getAudit(eventName, reservationId, principal.getName());

@@ -1,0 +1,50 @@
+<div class="modal-header">
+    <h3>Select Attendees to notify</h3>
+</div>
+
+<div class="modal-body">
+    <div class="panel panel-default" ng-repeat="ticketInfo in ticketsInfo">
+        <div class="panel-heading">
+            <div class="panel-title">Attendees for Category {{ticketInfo.category.name}}</div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <tbody>
+                <tr ng-repeat="attendee in ticketInfo.attendees">
+                    <td width="10%">
+                        <input type="checkbox" ng-model="attendee.selected">
+                    </td>
+                    <td width="30%">
+                        {{attendee.firstName}}
+                    </td>
+                    <td width="30%">
+                        {{attendee.lastName}}
+                    </td>
+                    <td width="30%">
+                        {{attendee.emailAddress}}
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <button class="btn btn-sm btn-default btn-block-xs" ng-click="selectAll()"><i class="fa fa-eye"></i> Select all</button>
+            <button class="btn btn-sm btn-default btn-block-xs" ng-click="selectNone()"><i class="fa fa-eye-slash"></i> Select none</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <div class="row">
+        <div class="col-md-4 col-md-push-8 col-xs-12">
+            <button class="btn btn-lg btn-warning btn-block" data-ng-click="sendEmail()" style="margin-bottom: 10px">Send</button>
+        </div>
+        <div class="col-md-4 col-md-pull-4 col-xs-12">
+            <button type="button" class="btn btn-lg btn-default btn-block" data-ng-click="cancel()" style="margin-bottom: 10px">Cancel</button>
+        </div>
+    </div>
+    <div>
+    </div>
+</div>
