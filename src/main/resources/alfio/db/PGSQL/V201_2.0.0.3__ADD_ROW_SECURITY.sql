@@ -578,7 +578,7 @@ create policy whitelisted_ticket_access_policy on whitelisted_ticket to public
 alter table special_price add column organization_id_fk integer;
 alter table special_price add foreign key(organization_id_fk) references organization(id);
 update special_price set organization_id_fk = (select ticket_category.organization_id_fk from ticket_category where ticket_category.id = ticket_category_id);
-alter table special_price alter column organization_id_fk set not null;
+--alter table special_price alter column organization_id_fk set not null;
 
 create or replace function set_organization_id_fk_from_ticket_category_id() returns trigger
 as $$ begin
@@ -597,6 +597,6 @@ create trigger special_price_insert_org_id_fk_trigger
 alter table special_price enable row level security;
 alter table special_price force row level security;
 create policy special_price_access_policy on special_price to public
-    using (alfio_check_row_access(organization_id_fk))
-    with check (alfio_check_row_access((select ticket_category.organization_id_fk from ticket_category where ticket_category.id = ticket_category_id)));
+    using (organization_id_fk is null or alfio_check_row_access(organization_id_fk))
+    with check (ticket_category_id is null or alfio_check_row_access((select ticket_category.organization_id_fk from ticket_category where ticket_category.id = ticket_category_id)));
 --
