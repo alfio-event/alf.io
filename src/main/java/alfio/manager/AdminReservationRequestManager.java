@@ -115,20 +115,21 @@ public class AdminReservationRequestManager {
     }
 
     private Result<Triple<TicketReservation, List<Ticket>, Event>> processReservation(AdminReservationRequest request, Pair<Event, User> p) {
-        DefaultTransactionDefinition definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED);
         TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
         return template.execute(status -> {
+            var savepoint = status.createSavepoint();
             try {
                 String eventName = p.getLeft().getShortName();
                 String username = p.getRight().getUsername();
                 Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.createReservation(request.getBody(), eventName, username)
                     .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username));
                 if(!result.isSuccess()) {
-                    status.setRollbackOnly();
+                    status.rollbackToSavepoint(savepoint);
                 }
                 return result;
             } catch(Exception ex) {
-                status.setRollbackOnly();
+                status.rollbackToSavepoint(savepoint);
                 return Result.error(singletonList(ErrorCode.custom("", ex.getMessage())));
             }
         });
