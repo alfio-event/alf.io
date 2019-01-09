@@ -24,6 +24,7 @@ import static java.math.RoundingMode.*;
 public final class MonetaryUtil {
 
     public static final BigDecimal HUNDRED = new BigDecimal("100.00");
+    public static final int ROUNDING_SCALE = 10;
 
     private MonetaryUtil() {
     }
@@ -33,11 +34,11 @@ public final class MonetaryUtil {
     }
 
     public static BigDecimal addVAT(BigDecimal price, BigDecimal vat) {
-        return price.add(price.multiply(vat.divide(HUNDRED, 5, UP))).setScale(0, HALF_UP);
+        return price.add(price.multiply(vat.divide(HUNDRED, ROUNDING_SCALE, UP))).setScale(0, HALF_UP);
     }
 
     public static BigDecimal extractVAT(BigDecimal price, BigDecimal vat) {
-        return price.subtract(price.divide(BigDecimal.ONE.add(vat.divide(HUNDRED, 5, UP)), 5, HALF_DOWN));
+        return price.subtract(price.divide(BigDecimal.ONE.add(vat.divide(HUNDRED, ROUNDING_SCALE, UP)), ROUNDING_SCALE, HALF_DOWN));
     }
 
     public static int calcPercentage(int priceInCents, BigDecimal vat) {
@@ -45,13 +46,13 @@ public final class MonetaryUtil {
     }
 
     public static <T extends Number> T calcPercentage(long priceInCents, BigDecimal vat, Function<BigDecimal, T> converter) {
-        BigDecimal result = new BigDecimal(priceInCents).multiply(vat.divide(HUNDRED, 5, UP))
+        BigDecimal result = new BigDecimal(priceInCents).multiply(vat.divide(HUNDRED, ROUNDING_SCALE, UP))
             .setScale(0, HALF_UP);
         return converter.apply(result);
     }
 
     public static BigDecimal calcVat(BigDecimal price, BigDecimal percentage) {
-        return price.multiply(percentage.divide(HUNDRED, 5, HALF_UP));
+        return price.multiply(percentage.divide(HUNDRED, ROUNDING_SCALE, HALF_UP));
     }
 
     public static BigDecimal centsToUnit(int cents) {
