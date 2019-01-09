@@ -31,8 +31,8 @@ import static java.math.RoundingMode.UNNECESSARY;
 
 public interface PriceContainer {
 
-    BiFunction<BigDecimal, BigDecimal, BigDecimal> includedVatExtractor = (price, vatPercentage) -> MonetaryUtil.extractVAT(price, vatPercentage).setScale(2, RoundingMode.HALF_UP);
-    BiFunction<BigDecimal, BigDecimal, BigDecimal> notIncludedVatCalculator = (price, vatPercentage) -> MonetaryUtil.calcVat(price, vatPercentage).setScale(2, RoundingMode.HALF_UP);
+    BiFunction<BigDecimal, BigDecimal, BigDecimal> includedVatExtractor = MonetaryUtil::extractVAT;
+    BiFunction<BigDecimal, BigDecimal, BigDecimal> notIncludedVatCalculator = MonetaryUtil::calcVat;
 
     enum VatStatus {
         NONE((price, vatPercentage) -> BigDecimal.ZERO, UnaryOperator.identity()),
@@ -51,6 +51,10 @@ public interface PriceContainer {
         }
 
         public BigDecimal extractVat(BigDecimal price, BigDecimal vatPercentage) {
+            return this.extractRawVAT(price, vatPercentage).setScale(2, RoundingMode.HALF_UP);
+        }
+
+        public BigDecimal extractRawVAT(BigDecimal price, BigDecimal vatPercentage) {
             return this.extractor.andThen(transformer).apply(price, vatPercentage);
         }
 
@@ -122,6 +126,18 @@ public interface PriceContainer {
         final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts());
         return getVAT(price.subtract(getAppliedDiscount()), getVatStatus(), getVatPercentageOrZero());
     }
+
+
+    /**
+     * Returns the VAT, with a reasonable, less error-prone, rounding
+     * @return vat
+     * @see MonetaryUtil#ROUNDING_SCALE
+     */
+    default BigDecimal getRawVAT() {
+        final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts());
+        return getVatStatus().extractRawVAT(price.subtract(getAppliedDiscount()), getVatPercentageOrZero());
+    }
+
 
     /**
      * @return the discount applied, if any

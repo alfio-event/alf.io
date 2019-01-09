@@ -73,11 +73,6 @@ public class TicketPriceContainer implements SummaryPriceContainer {
     }
 
     @Override
-    public Integer getVatCts() {
-        return ticket.getVatCts();
-    }
-
-    @Override
     public Integer getFinalPriceCts() {
         return ticket.getFinalPriceCts();
     }

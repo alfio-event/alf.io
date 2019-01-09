@@ -951,9 +951,9 @@ public class TicketReservationManager {
                                                           Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
 
         List<TicketPriceContainer> ticketPrices = tickets.stream().map(t -> TicketPriceContainer.from(t, reservationVatStatus, event, promoCodeDiscount)).collect(toList());
-        BigDecimal totalVAT = sum(ticketPrices, TicketPriceContainer::getVAT);
-        BigDecimal totalDiscount = sum(ticketPrices, TicketPriceContainer::getAppliedDiscount);
-        BigDecimal totalNET = sum(ticketPrices, TicketPriceContainer::getFinalPrice);
+        BigDecimal totalVAT = calcTotal(ticketPrices, PriceContainer::getRawVAT);
+        BigDecimal totalDiscount = calcTotal(ticketPrices, PriceContainer::getAppliedDiscount);
+        BigDecimal totalNET = calcTotal(ticketPrices, PriceContainer::getFinalPrice);
         int discountedTickets = (int) ticketPrices.stream().filter(t -> t.getAppliedDiscount().compareTo(BigDecimal.ZERO) > 0).count();
         int discountAppliedCount = discountedTickets <= 1 || promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT ? discountedTickets : 1;
 
@@ -961,14 +961,14 @@ public class TicketReservationManager {
             .flatMap(generateASIPriceContainers(event, null))
             .collect(toList());
 
-        BigDecimal asTotalVAT = asPrices.stream().map(AdditionalServiceItemPriceContainer::getVAT).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal asTotalVAT = calcTotal(asPrices, PriceContainer::getRawVAT);
         //FIXME discount is not applied to donations, as it wouldn't make sense. Must be implemented for #111
-        BigDecimal asTotalNET = asPrices.stream().map(AdditionalServiceItemPriceContainer::getFinalPrice).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal asTotalNET = calcTotal(asPrices, PriceContainer::getFinalPrice);
         return new TotalPrice(unitToCents(totalNET.add(asTotalNET)), unitToCents(totalVAT.add(asTotalVAT)), -(MonetaryUtil.unitToCents(totalDiscount)), discountAppliedCount);
     }
 
-    private static BigDecimal sum(List<TicketPriceContainer> ticketPrices, Function<TicketPriceContainer, BigDecimal> propertyExtractor) {
-        return ticketPrices.stream().map(propertyExtractor).reduce(BigDecimal.ZERO, BigDecimal::add);
+    private static BigDecimal calcTotal(List<? extends PriceContainer> elements, Function<? super PriceContainer, BigDecimal> operator) {
+        return elements.stream().map(operator).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private static Function<Pair<AdditionalService, List<AdditionalServiceItem>>, Stream<? extends AdditionalServiceItemPriceContainer>> generateASIPriceContainers(Event event, PromoCodeDiscount discount) {
@@ -1042,10 +1042,10 @@ public class TicketReservationManager {
             .collect(Collectors.groupingBy(TicketPriceContainer::getCategoryId))
             .forEach((categoryId, ticketsByCategory) -> {
                 final int subTotal = ticketsByCategory.stream().mapToInt(TicketPriceContainer::getSummarySrcPriceCts).sum();
-                final int subTotalBeforeVat = ticketsByCategory.stream().mapToInt(TicketPriceContainer::getSummaryPriceBeforeVatCts).sum();
+                final int subTotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(ticketsByCategory);
                 TicketPriceContainer firstTicket = ticketsByCategory.get(0);
                 final int ticketPriceCts = firstTicket.getSummarySrcPriceCts();
-                final int priceBeforeVat = firstTicket.getSummaryPriceBeforeVatCts();
+                final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(firstTicket));
                 String categoryName = ticketCategoryRepository.getByIdAndActive(categoryId, event.getId()).getName();
                 summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts), formatCents(priceBeforeVat), ticketsByCategory.size(), formatCents(subTotal), formatCents(subTotalBeforeVat), subTotal, SummaryRow.SummaryType.TICKET));
             });
@@ -1060,8 +1060,8 @@ public class TicketReservationManager {
                 List<AdditionalServiceItemPriceContainer> prices = generateASIPriceContainers(event, null).apply(entry).collect(toList());
                 AdditionalServiceItemPriceContainer first = prices.get(0);
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
-                final int subtotalBeforeVat = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSummaryPriceBeforeVatCts).sum();
-                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts()), formatCents(first.getSummaryPriceBeforeVatCts()), prices.size(), formatCents(subtotal), formatCents(subtotalBeforeVat), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE);
+                final int subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(prices);
+                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts()), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first))), prices.size(), formatCents(subtotal), formatCents(subtotalBeforeVat), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE);
             }).collect(Collectors.toList()));
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
