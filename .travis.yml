@@ -16,4 +16,4 @@ matrix:
 script:
     - TERM=dumb ./gradlew build jacocoTestReport $PROFILE
 after_success:
-    ./gradlew coveralls
+    ./gradlew -Djdk.tls.client.protocols="TLSv1,TLSv1.1,TLSv1.2" coveralls
