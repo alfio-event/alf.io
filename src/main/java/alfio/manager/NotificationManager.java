@@ -43,7 +43,9 @@ import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.ByteArrayOutputStream;
@@ -100,7 +102,8 @@ public class NotificationManager {
         this.emailMessageRepository = emailMessageRepository;
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
-        this.tx = new TransactionTemplate(transactionManager);
+        DefaultTransactionDefinition definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED);
+        this.tx = new TransactionTemplate(transactionManager, definition);
         this.configurationManager = configurationManager;
         GsonBuilder builder = new GsonBuilder();
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());

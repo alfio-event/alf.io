@@ -36,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -46,6 +47,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
@@ -87,6 +89,9 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     private EventRepository eventRepository;
     @Autowired
     private AdditionalServiceRepository additionalServiceRepository;
+
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
 
     @Before
     public void ensureConfiguration() {
@@ -386,5 +391,95 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         result = ticketReservationManager.performPayment(specification2, reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
+    }
+
+
+    @Test
+    public void testCleanupExpiredReservations() {
+        List<TicketCategoryModification> categories = Arrays.asList(
+            new TicketCategoryModification(null, "default", 10,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventAndUsername.getKey();
+
+        TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+
+
+        TicketReservationModification tr = new TicketReservationModification();
+        tr.setAmount(10);
+        tr.setTicketCategoryId(bounded.getId());
+
+        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+
+
+
+        Date now = new Date();
+
+        final Supplier<List<String>> idsPendingQuery = () -> jdbcTemplate.queryForList("select id from tickets_reservation where validity < :date and status = 'PENDING'", Collections.singletonMap("date", now), String.class);
+
+        Assert.assertTrue(idsPendingQuery.get().isEmpty());
+
+        String reservationId = ticketReservationManager.createTicketReservation(event, Arrays.asList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), -2), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+
+        List<String> reservationIdPending = idsPendingQuery.get();
+        Assert.assertEquals(1, reservationIdPending.size());
+        Assert.assertEquals(reservationId, reservationIdPending.get(0));
+
+        ticketReservationManager.cleanupExpiredReservations(now);
+
+        Assert.assertTrue(idsPendingQuery.get().isEmpty());
+    }
+
+    @Test
+    public void testCleanupOfflineExpiredReservations() {
+        List<TicketCategoryModification> categories = Arrays.asList(
+            new TicketCategoryModification(null, "default", 10,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventAndUsername.getKey();
+
+        TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+
+
+        TicketReservationModification tr = new TicketReservationModification();
+        tr.setAmount(10);
+        tr.setTicketCategoryId(bounded.getId());
+
+        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+
+        Date past = DateUtils.addDays(new Date(), -2);
+        Date now = new Date();
+
+        String reservationId = ticketReservationManager.createTicketReservation(event, Arrays.asList(mod), Collections.emptyList(), past, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+
+        final Supplier<List<String>> idsOfflinePayment = () -> jdbcTemplate.queryForList("select id from tickets_reservation where validity < :date and status = 'OFFLINE_PAYMENT'", Collections.singletonMap("date", now), String.class);
+
+        Assert.assertTrue(idsOfflinePayment.get().isEmpty());
+
+        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+            event, "email@example.com", new CustomerName("full name", "full", "name", event),
+            "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+        PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
+        assertTrue(result.isSuccessful());
+
+
+        //
+        Assert.assertEquals(1, jdbcTemplate.update("update tickets_reservation set validity = :date where id = :id", Map.of("date", past, "id", reservationId)));
+
+        //
+        List<String> idsOffline = idsOfflinePayment.get();
+
+        Assert.assertEquals(1, idsOffline.size());
+        Assert.assertEquals(reservationId, idsOffline.get(0));
+
+        ticketReservationManager.cleanupExpiredOfflineReservations(now);
+
+        Assert.assertTrue(idsOfflinePayment.get().isEmpty());
+
     }
 }
