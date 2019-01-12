@@ -23,7 +23,9 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.TicketReservation;
 import alfio.repository.EventRepository;
+import alfio.util.FileUtil;
 import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,13 +36,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-
-import static alfio.util.FileUtil.sendPdf;
 
 @Controller
 @RequiredArgsConstructor
@@ -101,11 +100,15 @@ public class InvoiceReceiptController {
                 return ResponseEntity.notFound().build();
             }
 
-            Function<Map<String, Object>, Optional<byte[]>> pdfGenerator = model -> TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, model);
             Map<String, Object> billingModel = ticketReservationManager.getOrCreateBillingDocumentModel(event, reservation, null);
-            byte[] res = pdfGenerator.apply(billingModel).orElse(null);
-            boolean success = sendPdf(res, response, event.getShortName(), reservation.getId(), forInvoice ? "invoice" : "receipt");
-            return success ? ResponseEntity.ok(null) : ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+
+            try {
+                FileUtil.sendHeaders(response, event.getShortName(), reservation.getId(), forInvoice ? "invoice" : "receipt");
+                TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, billingModel, forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF, response.getOutputStream());
+                return ResponseEntity.ok(null);
+            } catch (IOException ioe) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
         };
     }
 }

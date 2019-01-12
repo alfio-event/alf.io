@@ -24,8 +24,7 @@ public class FileUtil {
     public static boolean sendPdf(byte[] res, HttpServletResponse response, String eventName, String reservationId, String type) {
         return Optional.ofNullable(res).map(pdf -> {
             try {
-                response.setHeader("Content-Disposition", "attachment; filename=\"" + type+  "-" + eventName + "-" + reservationId + ".pdf\"");
-                response.setContentType("application/pdf");
+                sendHeaders(response, eventName, reservationId, type);
                 response.getOutputStream().write(pdf);
                 return true;
             } catch(IOException e) {
@@ -34,5 +33,10 @@ public class FileUtil {
         }).orElse(false);
     }
 
+
+    public static void sendHeaders(HttpServletResponse response, String eventName, String reservationId, String type) {
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + type+  "-" + eventName + "-" + reservationId + ".pdf\"");
+        response.setContentType("application/pdf");
+    }
 
 }
