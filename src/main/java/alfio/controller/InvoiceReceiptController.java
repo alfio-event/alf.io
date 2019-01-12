@@ -26,8 +26,10 @@ import alfio.model.TicketReservation;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
+import alfio.util.FileUtil;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -65,26 +67,6 @@ public class InvoiceReceiptController {
         ).orElse(notFound);
     }
 
-    private Optional<byte[]> buildDocument(Event event, TicketReservation reservation, Function<Map<String, Object>, Optional<byte[]>> documentGenerator) {
-        OrderSummary orderSummary = Json.fromJson(reservation.getInvoiceModel(), OrderSummary.class);
-        Optional<String> vat = Optional.ofNullable(orderSummary.getVatPercentage());
-        Map<String, Object> reservationModel = ticketReservationManager.prepareModelForReservationEmail(event, reservation, vat, orderSummary);
-        return documentGenerator.apply(reservationModel);
-    }
-
-    private static boolean sendPdf(Optional<byte[]> res, HttpServletResponse response, String eventName, String reservationId, String type) {
-        return res.map(pdf -> {
-            try {
-                response.setHeader("Content-Disposition", "attachment; filename=\"" + type+  "-" + eventName + "-" + reservationId + ".pdf\"");
-                response.setContentType("application/pdf");
-                response.getOutputStream().write(pdf);
-                return true;
-            } catch(IOException e) {
-                return false;
-            }
-        }).orElse(false);
-    }
-
     private boolean isAnonymous(Authentication authentication) {
         return authentication == null ||
             authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).anyMatch("ROLE_ANONYMOUS"::equals);
@@ -104,9 +86,7 @@ public class InvoiceReceiptController {
                 return ResponseEntity.badRequest().build();
             }
 
-            Optional<byte[]> res = buildDocument(event, reservation, model -> TemplateProcessor.buildReceiptPdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, model));
-            boolean success = sendPdf(res, response, eventName, reservationId, "receipt");
-            return success ? ResponseEntity.ok(null) : ResponseEntity.<Void>status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return handleReservationWith(eventName, reservationId, generatePdfFunction(false, response));
         });
     }
 
@@ -124,9 +104,27 @@ public class InvoiceReceiptController {
                 return ResponseEntity.badRequest().build();
             }
 
-            Optional<byte[]> res = buildDocument(event, reservation, model -> TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, model));
-            boolean success = sendPdf(res, response, eventName, reservationId, "invoice");
-            return success ? ResponseEntity.ok(null) : ResponseEntity.<Void>status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return handleReservationWith(eventName, reservationId, generatePdfFunction(true, response));
         });
+    }
+
+    private BiFunction<Event, TicketReservation, ResponseEntity<Void>> generatePdfFunction(boolean forInvoice, HttpServletResponse response) {
+        return (event, reservation) -> {
+            if(forInvoice ^ reservation.getInvoiceNumber() != null || reservation.isCancelled()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            OrderSummary orderSummary = Json.fromJson(reservation.getInvoiceModel(), OrderSummary.class);
+            Optional<String> vat = Optional.ofNullable(orderSummary.getVatPercentage());
+            Map<String, Object> reservationModel = ticketReservationManager.prepareModelForReservationEmail(event, reservation, vat, orderSummary);
+
+            try {
+                FileUtil.sendHeaders(response, event.getShortName(), reservation.getId(), forInvoice ? "invoice" : "receipt");
+                TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, reservationModel, forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF, response.getOutputStream());
+                return ResponseEntity.ok(null);
+            } catch (IOException ioe) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        };
     }
 }

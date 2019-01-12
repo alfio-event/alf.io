@@ -177,29 +177,34 @@ public final class TemplateProcessor {
         }
     }
 
-    private static Optional<byte[]> buildReceiptOrInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
+    public static boolean buildReceiptOrInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource, OutputStream os) {
         extractImageModel(event, fileUploadManager).ifPresent(imageData -> {
             model.put("eventImage", imageData.getEventImage());
             model.put("imageWidth", imageData.getImageWidth());
             model.put("imageHeight", imageData.getEventImage());
         });
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
         String page = templateManager.renderTemplate(event, templateResource, model, language);
         try {
-            renderToPdf(page, baos);
-            return Optional.of(baos.toByteArray());
+            renderToPdf(page, os);
+            return true;
         } catch (IOException ioe) {
-            return Optional.empty();
+            return false;
         }
     }
 
 
     public static Optional<byte[]> buildReceiptPdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
-        return buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, TemplateResource.RECEIPT_PDF);
+        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.RECEIPT_PDF);
     }
 
     public static Optional<byte[]> buildInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
-        return buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, TemplateResource.INVOICE_PDF);
+        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.INVOICE_PDF);
+    }
+
+    private static Optional<byte[]> buildFrom(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        boolean res = buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, templateResource, baos);
+        return res ? Optional.of(baos.toByteArray()) : Optional.empty();
     }
 }
