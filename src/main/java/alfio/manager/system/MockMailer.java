@@ -16,7 +16,6 @@
  */
 package alfio.manager.system;
 
-import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
 import lombok.AllArgsConstructor;

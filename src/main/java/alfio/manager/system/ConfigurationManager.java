@@ -17,7 +17,6 @@
 package alfio.manager.system;
 
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
@@ -198,7 +197,7 @@ public class ConfigurationManager {
     public void saveAllEventConfiguration(int eventId, int organizationId, List<ConfigurationModification> list, String username) {
         User user = userManager.findUserByUsername(username);
         Validate.isTrue(userManager.isOwnerOfOrganization(user, organizationId), "Cannot update settings, user is not owner");
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "event does not exist");
         if(organizationId != event.getOrganizationId()) {
             Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
@@ -210,7 +209,7 @@ public class ConfigurationManager {
 
     public void saveCategoryConfiguration(int categoryId, int eventId, List<ConfigurationModification> list, String username) {
         User user = userManager.findUserByUsername(username);
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "event does not exist");
         Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
         list.stream()
@@ -312,7 +311,7 @@ public class ConfigurationManager {
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfig(int eventId, String username) {
         User user = userManager.findUserByUsername(username);
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         int organizationId = event.getOrganizationId();
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
@@ -354,7 +353,7 @@ public class ConfigurationManager {
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfig(int eventId, int categoryId, String username) {
         User user = userManager.findUserByUsername(username);
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         int organizationId = event.getOrganizationId();
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
@@ -413,14 +412,14 @@ public class ConfigurationManager {
     }
 
     public void deleteEventLevelByKey(String key, int eventId, String username) {
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "Wrong event id");
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
         configurationRepository.deleteEventLevelByKey(key, eventId);
     }
 
     public void deleteCategoryLevelByKey(String key, int eventId, int categoryId, String username) {
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "Wrong event id");
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
         configurationRepository.deleteCategoryLevelByKey(key, eventId, categoryId);
