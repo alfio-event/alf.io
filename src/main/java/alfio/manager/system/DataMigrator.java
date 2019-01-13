@@ -172,7 +172,7 @@ public class DataMigrator {
         }
     }
 
-    void fixCategoriesSize(Event event) {
+    void fixCategoriesSize(EventAndOrganizationId event) {
         ticketCategoryRepository.findByEventId(event.getId()).stream()
             .filter(TicketCategory::isBounded)
             .forEach(tc -> {

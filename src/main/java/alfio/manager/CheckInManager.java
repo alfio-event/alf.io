@@ -294,7 +294,7 @@ public class CheckInManager {
         }
     }
 
-    public List<Integer> getAttendeesIdentifiers(Event ev, Date changedSince, String username) {
+    public List<Integer> getAttendeesIdentifiers(EventAndOrganizationId ev, Date changedSince, String username) {
         return Optional.ofNullable(ev)
             .filter(EventManager.checkOwnership(username, organizationRepository))
             .filter(isOfflineCheckInEnabled())

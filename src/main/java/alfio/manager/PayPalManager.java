@@ -76,7 +76,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
     private final TicketRepository ticketRepository;
     private final TransactionRepository transactionRepository;
 
-    private APIContext getApiContext(Event event) {
+    private APIContext getApiContext(EventAndOrganizationId event) {
         int orgId = event.getOrganizationId();
         boolean isLive = configurationManager.getBooleanConfigValue(Configuration.from(orgId, ConfigurationKeys.PAYPAL_LIVE_MODE), false);
         String clientId = configurationManager.getRequiredValue(Configuration.from(orgId, ConfigurationKeys.PAYPAL_CLIENT_ID));
@@ -211,7 +211,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         return params.containsKey("payerId") && params.containsKey("paypalPaymentId");
     }
 
-    private Pair<String, String> commitPayment(String reservationId, PayPalToken payPalToken, Event event) throws PayPalRESTException {
+    private Pair<String, String> commitPayment(String reservationId, PayPalToken payPalToken, EventAndOrganizationId event) throws PayPalRESTException {
 
         Payment payment = new Payment().setId(payPalToken.getPaymentId());
         PaymentExecution paymentExecute = new PaymentExecution();
@@ -247,7 +247,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         return Pair.of(captureId, payment.getId());
     }
 
-    private Optional<PaymentInformation> getInfo(String paymentId, String transactionId, Event event, Supplier<String> platformFeeSupplier) {
+    private Optional<PaymentInformation> getInfo(String paymentId, String transactionId, EventAndOrganizationId event, Supplier<String> platformFeeSupplier) {
         try {
             String refund = null;
 

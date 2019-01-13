@@ -120,12 +120,12 @@ public class EventManager {
             .orElseThrow(IllegalStateException::new);
     }
 
-    public void checkOwnership(Event event, String username, int organizationId) {
+    public void checkOwnership(EventAndOrganizationId event, String username, int organizationId) {
         Validate.isTrue(organizationId == event.getOrganizationId(), "invalid organizationId");
         Validate.isTrue(checkOwnership(username, organizationRepository).test(event), "User is not authorized");
     }
 
-    public static Predicate<Event> checkOwnership(String username, OrganizationRepository organizationRepository) {
+    public static Predicate<EventAndOrganizationId> checkOwnership(String username, OrganizationRepository organizationRepository) {
         return event -> checkOwnership(organizationRepository, username, event.getOrganizationId());
     }
 
@@ -137,11 +137,11 @@ public class EventManager {
         return orgId != null && organizationRepository.findOrganizationForUser(username, orgId).isPresent();
     }
 
-    public List<TicketCategory> loadTicketCategories(Event event) {
+    public List<TicketCategory> loadTicketCategories(EventAndOrganizationId event) {
         return ticketCategoryRepository.findByEventId(event.getId());
     }
 
-    public Organization loadOrganizer(Event event, String username) {
+    public Organization loadOrganizer(EventAndOrganizationId event, String username) {
         return userManager.findOrganizationById(event.getOrganizationId(), username);
     }
 
@@ -149,7 +149,7 @@ public class EventManager {
      * Internal method used by automated jobs
      * @return
      */
-    Organization loadOrganizerUsingSystemPrincipal(Event event) {
+    Organization loadOrganizerUsingSystemPrincipal(EventAndOrganizationId event) {
         return loadOrganizer(event, UserManager.ADMIN_USERNAME);
     }
 
@@ -157,8 +157,9 @@ public class EventManager {
         return eventRepository.findById(ticketCategory.getEventId());
     }
 
-    public Event findEventByAdditionalService(AdditionalService additionalService) {
-        return eventRepository.findById(additionalService.getEventId());
+    //FIXME: can be removed, as it's only used to check if the event exists given an additional service
+    public Optional<Event> findEventByAdditionalService(AdditionalService additionalService) {
+        return eventRepository.findOptionalById(additionalService.getEventId());
     }
 
     public void createEvent(EventModification em) {
@@ -299,7 +300,7 @@ public class EventManager {
         }
     }
 
-    public void updateEventPrices(Event original, EventModification em, String username) {
+    public void updateEventPrices(EventAndOrganizationId original, EventModification em, String username) {
         Validate.notNull(em.getAvailableSeats(), "Available Seats cannot be null");
         checkOwnership(original, username, em.getOrganizationId());
         int eventId = original.getId();

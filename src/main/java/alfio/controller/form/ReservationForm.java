@@ -121,7 +121,7 @@ public class ReservationForm implements Serializable {
                 as.getExpiration(event.getZoneId()).isAfter(now) &&
                 asm.getQuantity() >= 0 &&
                 ((as.isFixPrice() && asm.isQuantityValid(as, selectionCount)) || (!as.isFixPrice() && asm.getAmount() != null && asm.getAmount().compareTo(BigDecimal.ZERO) >= 0)) &&
-                OptionalWrapper.optionally(() -> eventManager.findEventByAdditionalService(as)).isPresent();
+                eventManager.findEventByAdditionalService(as).isPresent();
         });
 
         if(!validCategorySelection || !validAdditionalServiceSelected) {

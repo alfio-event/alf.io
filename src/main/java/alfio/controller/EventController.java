@@ -442,7 +442,7 @@ public class EventController {
         return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
     }
 
-    private boolean isCaptchaInvalid(HttpServletRequest request, Event event) {
+    private boolean isCaptchaInvalid(HttpServletRequest request, EventAndOrganizationId event) {
         return configurationManager.isRecaptchaForTicketSelectionEnabled(event)
             && !recaptchaService.checkRecaptcha(request);
     }

@@ -202,11 +202,11 @@ public class NotificationManager {
         tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
     }
 
-    public void sendSimpleEmail(Event event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
         sendSimpleEmail(event, recipient, cc, subject, textBuilder, Collections.emptyList());
     }
 
-    public List<String> getCCForEventOrganizer(Event event) {
+    public List<String> getCCForEventOrganizer(EventAndOrganizationId event) {
         Configuration.ConfigurationPathKey key = Configuration.from(event, ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC);
         return Stream.of(StringUtils.split(configurationManager.getStringConfigValue(key, ""), ','))
             .filter(Objects::nonNull)
@@ -215,15 +215,15 @@ public class NotificationManager {
             .collect(Collectors.toList());
     }
 
-    public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, String subject, TextTemplateGenerator textBuilder) {
         sendSimpleEmail(event, recipient, Collections.emptyList(), subject, textBuilder);
     }
 
-    public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
         sendSimpleEmail(event, recipient, Collections.emptyList(), subject, textBuilder, attachments);
     }
 
-    public void sendSimpleEmail(Event event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
 
         String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String encodedCC = Json.toJson(cc);

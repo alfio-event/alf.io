@@ -613,7 +613,7 @@ public class ReservationController {
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
     }
 
-    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, HttpServletRequest request, Event event) {
+    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, HttpServletRequest request, EventAndOrganizationId event) {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
                 && configurationManager.isRecaptchaForOfflinePaymentEnabled(event)
                 && !recaptchaService.checkRecaptcha(request);

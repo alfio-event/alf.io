@@ -48,7 +48,6 @@ public class EventStatisticsManager {
 
     private final EventRepository eventRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
-    private final TicketRepository ticketRepository;
     private final TicketSearchRepository ticketSearchRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
@@ -79,7 +78,7 @@ public class EventStatisticsManager {
         }
     }
 
-    private boolean displayStatisticsForEvent(Event event) {
+    private boolean displayStatisticsForEvent(EventAndOrganizationId event) {
         return configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.DISPLAY_STATS_IN_EVENT_DETAIL), true);
     }
 
@@ -110,7 +109,7 @@ public class EventStatisticsManager {
         return new EventWithAdditionalInfo(event, tWithInfo, eventStatistic, description, grossIncome);
     }
 
-    private List<TicketCategory> loadTicketCategories(Event event) {
+    private List<TicketCategory> loadTicketCategories(EventAndOrganizationId event) {
         return ticketCategoryRepository.findByEventId(event.getId());
     }
 

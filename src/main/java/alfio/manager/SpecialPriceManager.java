@@ -17,10 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.i18n.I18nManager;
-import alfio.model.ContentLanguage;
-import alfio.model.Event;
-import alfio.model.SpecialPrice;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
@@ -65,7 +62,7 @@ public class SpecialPriceManager {
         this.i18nManager = i18nManager;
     }
 
-    private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, Event event, String username) {
+    private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, EventAndOrganizationId event, String username) {
         final TicketCategory category = checkOwnership(categoryId, event, username);
         List<String> availableCodes = specialPriceRepository.findActiveByCategoryId(category.getId())
             .stream()
@@ -78,7 +75,7 @@ public class SpecialPriceManager {
         return availableCodes;
     }
 
-    private TicketCategory checkOwnership(int categoryId, Event event, String username) {
+    private TicketCategory checkOwnership(int categoryId, EventAndOrganizationId event, String username) {
         eventManager.checkOwnership(event, username, event.getOrganizationId());
         final List<TicketCategory> categories = eventManager.loadTicketCategories(event);
         final TicketCategory category = categories.stream().filter(tc -> tc.getId() == categoryId).findFirst().orElseThrow(IllegalArgumentException::new);
