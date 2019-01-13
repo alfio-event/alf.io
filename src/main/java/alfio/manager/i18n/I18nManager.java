@@ -51,8 +51,8 @@ public class I18nManager {
     }
 
     public List<ContentLanguage> getEventLanguages(String eventName) {
-        return eventRepository.findOptionalByShortName(eventName)
-            .map(event -> getEventLanguages(event.getLocales()))
+        return eventRepository.findLocalesByShortName(eventName)
+            .map(locales -> getEventLanguages(locales))
             .orElse(Collections.emptyList());
     }
 

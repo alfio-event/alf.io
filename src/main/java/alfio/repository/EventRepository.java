@@ -54,6 +54,9 @@ public interface EventRepository {
     @Query("select * from event where short_name = :eventName")
     Optional<Event> findOptionalByShortName(@Bind("eventName") String eventName);
 
+    @Query("select locales from event where short_name = :eventName")
+    Optional<Integer> findLocalesByShortName(@Bind("eventName") String eventName);
+
     @Query("select * from event order by start_ts asc")
     List<Event> findAll();
 
