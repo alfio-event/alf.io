@@ -269,9 +269,8 @@ public class NotificationManager {
 
     private int processMessage(int messageId) {
         EmailMessage message = emailMessageRepository.findById(messageId);
-        int eventId = message.getEventId();
-        int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
-        if(message.getAttempts() >= configurationManager.getIntConfigValue(Configuration.from(new EventAndOrganizationId(eventId, organizationId), ConfigurationKeys.MAIL_ATTEMPTS_COUNT), 10)) {
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(message.getEventId());
+        if(message.getAttempts() >= configurationManager.getIntConfigValue(Configuration.from(event, ConfigurationKeys.MAIL_ATTEMPTS_COUNT), 10)) {
             tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(messageId, ERROR.name(), message.getAttempts(), Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("Message with id " + messageId + " will be discarded");
             return 0;
@@ -282,7 +281,7 @@ public class NotificationManager {
             int result = Optional.ofNullable(tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name())))).orElse(0);
             if(result > 0) {
                 return Optional.ofNullable(tx.execute(status -> {
-                    sendMessage(message);
+                    sendMessage(event, message);
                     return 1;
                 })).orElse(0);
             } else {
@@ -295,9 +294,9 @@ public class NotificationManager {
         return 0;
     }
 
-    private void sendMessage(EmailMessage message) {
-        Event event = eventRepository.findById(message.getEventId());
-        mailer.send(event, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
+    private void sendMessage(EventAndOrganizationId event, EmailMessage message) {
+        String displayName = eventRepository.getDisplayNameById(message.getEventId());
+        mailer.send(event, displayName, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
         emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
 

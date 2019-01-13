@@ -16,7 +16,7 @@
  */
 package alfio.manager.system;
 
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -52,13 +52,13 @@ class SmtpMailer implements Mailer {
     private final ConfigurationManager configurationManager;
 
     @Override
-    public void send(Event event, String to, List<String> cc, String subject, String text,
+    public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text,
                      Optional<String> html, Attachment... attachments) {
         MimeMessagePreparator preparator = (mimeMessage) -> {
             MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
                     : new MimeMessageHelper(mimeMessage, "UTF-8");
             message.setSubject(subject);
-            message.setFrom(configurationManager.getRequiredValue(Configuration.from(event, SMTP_FROM_EMAIL)), event.getDisplayName());
+            message.setFrom(configurationManager.getRequiredValue(Configuration.from(event, SMTP_FROM_EMAIL)), fromName);
             String replyTo = configurationManager.getStringConfigValue(Configuration.from(event, MAIL_REPLY_TO), "");
             if(StringUtils.isNotBlank(replyTo)) {
                 message.setReplyTo(replyTo);
@@ -85,7 +85,7 @@ class SmtpMailer implements Mailer {
         toMailSender(event).send(preparator);
     }
     
-    private JavaMailSender toMailSender(Event event) {
+    private JavaMailSender toMailSender(EventAndOrganizationId event) {
         JavaMailSenderImpl r = new CustomJavaMailSenderImpl();
         r.setDefaultEncoding("UTF-8");
 

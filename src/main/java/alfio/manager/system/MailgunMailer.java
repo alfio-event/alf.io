@@ -16,7 +16,7 @@
  */
 package alfio.manager.system;
 
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -39,10 +39,10 @@ class MailgunMailer implements Mailer {
     private final ConfigurationManager configurationManager;
 
     
-    private RequestBody prepareBody(Event event, String to, List<String> cc, String subject, String text,
+    private RequestBody prepareBody(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text,
                                     Optional<String> html, Attachment... attachments) {
 
-        String from = event.getDisplayName() + " <" + configurationManager.getRequiredValue(Configuration.from(event, MAILGUN_FROM)) +">";
+        String from = fromName + " <" + configurationManager.getRequiredValue(Configuration.from(event, MAILGUN_FROM)) +">";
 
         if (ArrayUtils.isEmpty(attachments)) {
             FormBody.Builder builder = new FormBody.Builder()
@@ -88,7 +88,7 @@ class MailgunMailer implements Mailer {
     }
 
     @Override
-    public void send(Event event, String to, List<String> cc, String subject, String text,
+    public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text,
                      Optional<String> html, Attachment... attachment) {
 
         String apiKey = configurationManager.getRequiredValue(Configuration.from(event, MAILGUN_KEY));
@@ -98,7 +98,7 @@ class MailgunMailer implements Mailer {
         String baseUrl = useEU ? "https://api.eu.mailgun.net/v3/" : "https://api.mailgun.net/v3/";
         try {
 
-            RequestBody formBody = prepareBody(event, to, cc, subject, text, html,
+            RequestBody formBody = prepareBody(event, fromName, to, cc, subject, text, html,
                     attachment);
 
             Request request = new Request.Builder()

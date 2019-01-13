@@ -17,7 +17,7 @@
 package alfio.manager.system;
 
 import alfio.config.Initializer;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import lombok.Data;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -26,7 +26,7 @@ import java.util.*;
 
 public interface Mailer {
 
-    void send(Event event, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment);
+    void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment);
 
     @Data
     class Attachment {

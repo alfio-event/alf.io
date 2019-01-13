@@ -17,6 +17,7 @@
 package alfio.manager.system;
 
 import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
@@ -47,7 +48,7 @@ public class DefaultMailer implements Mailer {
     }
 
     @Override
-    public void send(Event event, String to, List<String> cc, String subject, String text,
+    public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text,
                      Optional<String> html, Attachment... attachments) {
 
         subject = decorateSubjectIfDemo(subject, environment);
@@ -55,7 +56,7 @@ public class DefaultMailer implements Mailer {
         String mailerType = configurationManager.getStringConfigValue(Configuration.from(event, MAILER_TYPE), "disabled").toLowerCase(Locale.ENGLISH);
 
         mailers.getOrDefault(mailerType, defaultMailer)
-                .send(event, to, cc, subject, text, html, attachments);
+                .send(event, fromName, to, cc, subject, text, html, attachments);
     }
 
 }

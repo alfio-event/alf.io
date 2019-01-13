@@ -16,7 +16,7 @@
  */
 package alfio.manager.system;
 
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
@@ -40,7 +40,7 @@ public class MailjetMailer implements Mailer  {
     }
 
     @Override
-    public void send(Event event, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment) {
+    public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment) {
         String apiKeyPublic = configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.MAILJET_APIKEY_PUBLIC));
         String apiKeyPrivate = configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.MAILJET_APIKEY_PRIVATE));
 
@@ -56,7 +56,7 @@ public class MailjetMailer implements Mailer  {
         }
 
         mailPayload.put("FromEmail", fromEmail);
-        mailPayload.put("FromName", event.getDisplayName());
+        mailPayload.put("FromName", fromName);
         mailPayload.put("Subject", subject);
         mailPayload.put("Text-part", text);
         html.ifPresent(h -> mailPayload.put("Html-part", h));
