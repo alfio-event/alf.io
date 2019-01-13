@@ -186,15 +186,17 @@ public class NotificationManager {
         };
     }
 
-    public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, TicketReservation reservation, TicketCategory ticketCategory) {
+    public void sendTicketByEmail(Ticket ticket, EventAndOrganizationId event, Locale locale, PartialTicketTextGenerator textBuilder, TicketReservation reservation, TicketCategory ticketCategory) {
 
         Organization organization = organizationRepository.getById(event.getOrganizationId());
 
         List<Mailer.Attachment> attachments = new ArrayList<>();
         attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
 
+        String displayName = eventRepository.getDisplayNameById(event.getId());
+
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
-        String subject = messageSource.getMessage("ticket-email-subject", new Object[]{event.getDisplayName()}, locale);
+        String subject = messageSource.getMessage("ticket-email-subject", new Object[]{displayName}, locale);
         String text = textBuilder.generate(ticket);
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
         String recipient = ticket.getEmail();

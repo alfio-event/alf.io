@@ -20,7 +20,7 @@ import alfio.controller.decorator.EventDescriptor;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration.ConfigurationPathKey;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.MustacheCustomTagInterceptor;
@@ -205,7 +205,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
                         modelMap.putIfAbsent("event", null);
                         modelMap.putIfAbsent("pageTitle", "empty");
-                        Event event = modelMap.get("event") == null ? null : modelMap.get("event") instanceof Event ? (Event) modelMap.get("event") : ((EventDescriptor) modelMap.get("event")).getEvent();
+                        EventAndOrganizationId event = modelMap.get("event") == null ? null : modelMap.get("event") instanceof EventAndOrganizationId ? (EventAndOrganizationId) modelMap.get("event") : ((EventDescriptor) modelMap.get("event")).getEvent();
                         ConfigurationPathKey googleAnalyticsKey = Optional.ofNullable(event)
                             .map(e -> alfio.model.system.Configuration.from(e, GOOGLE_ANALYTICS_KEY))
                             .orElseGet(() -> alfio.model.system.Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_KEY));

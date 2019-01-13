@@ -1351,7 +1351,7 @@ public class TicketReservationManager {
         return userDetails.flatMap(u -> u.getAuthorities().stream().map(a -> Role.fromRoleName(a.getAuthority())).filter(Role.ADMIN::equals).findFirst()).isPresent();
     }
 
-    void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
+    void sendTicketByEmail(Ticket ticket, Locale locale, EventAndOrganizationId event, PartialTicketTextGenerator confirmationTextBuilder) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory);
