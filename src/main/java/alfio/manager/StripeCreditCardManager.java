@@ -95,7 +95,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     }
 
     private String getSecretKey(Event event) {
-        return configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), STRIPE_SECRET_KEY));
+        return configurationManager.getRequiredValue(Configuration.from(event, STRIPE_SECRET_KEY));
     }
 
     private String getWebhookSignatureKey() {
@@ -238,7 +238,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     Optional<RequestOptions> options(Event event) {
         RequestOptions.RequestOptionsBuilder builder = RequestOptions.builder();
         if(isConnectEnabled(new PaymentContext(event))) {
-            return configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), STRIPE_CONNECTED_ID))
+            return configurationManager.getStringConfigValue(Configuration.from(event, STRIPE_CONNECTED_ID))
                 .map(connectedId -> {
                     //connected stripe account
                     builder.setStripeAccount(connectedId);

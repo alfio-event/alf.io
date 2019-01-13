@@ -112,7 +112,7 @@ public class ReservationController {
                         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/overview";
                     }
 
-                    Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partialConfig = Configuration.from(event.getOrganizationId(), event.getId());
+                    Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partialConfig = Configuration.from(event);
 
                     Configuration.ConfigurationPathKey forceAssignmentKey = partialConfig.apply(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
                     boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
@@ -244,7 +244,7 @@ public class ReservationController {
 
 
         final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        Configuration.ConfigurationPathKey forceAssignmentKey = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
+        Configuration.ConfigurationPathKey forceAssignmentKey = Configuration.from(event, ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
         boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
 
         if(forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
@@ -272,7 +272,7 @@ public class ReservationController {
             contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
             contactAndTicketsForm.canSkipVatNrCheck(), false);
 
-        boolean italyEInvoicing = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_ITALY_E_INVOICING), false);
+        boolean italyEInvoicing = configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_ITALY_E_INVOICING), false);
 
         if(italyEInvoicing) {
             ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId,
@@ -469,10 +469,10 @@ public class ReservationController {
             model.addAttribute("reservation", ticketReservation);
             model.addAttribute("paymentReason", ev.getShortName() + " " + ticketReservationManager.getShortReservationID(ev, reservationId));
             model.addAttribute("pageTitle", "reservation-page-waiting.header.title");
-            model.addAttribute("bankAccount", configurationManager.getStringConfigValue(Configuration.from(ev.getOrganizationId(), ev.getId(), BANK_ACCOUNT_NR)).orElse(""));
+            model.addAttribute("bankAccount", configurationManager.getStringConfigValue(Configuration.from(ev, BANK_ACCOUNT_NR)).orElse(""));
 
 
-            Optional<String> maybeAccountOwner = configurationManager.getStringConfigValue(Configuration.from(ev.getOrganizationId(), ev.getId(), BANK_ACCOUNT_OWNER));
+            Optional<String> maybeAccountOwner = configurationManager.getStringConfigValue(Configuration.from(ev, BANK_ACCOUNT_OWNER));
             model.addAttribute("hasBankAccountOwnerSet", maybeAccountOwner.isPresent());
             model.addAttribute("bankAccountOwner", Arrays.asList(maybeAccountOwner.orElse("").split("\n")));
 

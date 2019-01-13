@@ -42,7 +42,7 @@ class MailgunMailer implements Mailer {
     private RequestBody prepareBody(Event event, String to, List<String> cc, String subject, String text,
                                     Optional<String> html, Attachment... attachments) {
 
-        String from = event.getDisplayName() + " <" + configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_FROM)) +">";
+        String from = event.getDisplayName() + " <" + configurationManager.getRequiredValue(Configuration.from(event, MAILGUN_FROM)) +">";
 
         if (ArrayUtils.isEmpty(attachments)) {
             FormBody.Builder builder = new FormBody.Builder()
@@ -54,7 +54,7 @@ class MailgunMailer implements Mailer {
                 builder.add("cc", StringUtils.join(cc, ','));
             }
 
-            String replyTo = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAIL_REPLY_TO), "");
+            String replyTo = configurationManager.getStringConfigValue(Configuration.from(event, MAIL_REPLY_TO), "");
             if(StringUtils.isNotBlank(replyTo)) {
                 builder.add("h:Reply-To", replyTo);
             }
@@ -91,9 +91,9 @@ class MailgunMailer implements Mailer {
     public void send(Event event, String to, List<String> cc, String subject, String text,
                      Optional<String> html, Attachment... attachment) {
 
-        String apiKey = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_KEY));
-        String domain = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_DOMAIN));
-        boolean useEU = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILGUN_EU), false);
+        String apiKey = configurationManager.getRequiredValue(Configuration.from(event, MAILGUN_KEY));
+        String domain = configurationManager.getRequiredValue(Configuration.from(event, MAILGUN_DOMAIN));
+        boolean useEU = configurationManager.getBooleanConfigValue(Configuration.from(event, MAILGUN_EU), false);
 
         String baseUrl = useEU ? "https://api.eu.mailgun.net/v3/" : "https://api.mailgun.net/v3/";
         try {

@@ -70,7 +70,7 @@ public class EventUtilTest {
     @DisplayName("display the waiting queue form if the last category is not expired and sold-out")
     void displayWaitingQueueFormIfSoldOut() {
         List<SaleableTicketCategory> categories = asList(first, last);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
         assertTrue(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE));
     }
 
@@ -78,7 +78,7 @@ public class EventUtilTest {
     @DisplayName("display the waiting queue form if the last category is not expired and sold-out (reversed)")
     void displayWaitingQueueFormIfSoldOutReversed() {
         List<SaleableTicketCategory> categories = asList(last, first);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
         assertTrue(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE));
     }
 
@@ -86,7 +86,7 @@ public class EventUtilTest {
     @DisplayName("display the waiting queue form if the only category is not expired and sold-out")
     void displayWaitingQueueFormIfSingleCategorySoldOut() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
         assertTrue(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE));
     }
 
@@ -95,7 +95,7 @@ public class EventUtilTest {
     void doNotDisplayWaitingQueueFormIfAvailableSeats() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
         when(last.getAvailableTickets()).thenReturn(1);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_AVAILABLE));
     }
 
@@ -111,7 +111,7 @@ public class EventUtilTest {
         when(first.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
         when(first.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(2));
         when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now().minusDays(1).minusHours(1));
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE));
     }
 
@@ -124,7 +124,7 @@ public class EventUtilTest {
         when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
         when(last.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(2));
         when(last.getAvailableTickets()).thenReturn(0);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE));
     }
 
@@ -132,7 +132,7 @@ public class EventUtilTest {
     @DisplayName("do not display the waiting queue form if the category list is empty")
     void doNotDisplayWaitingQueueFormIfNoCategories() {
         List<SaleableTicketCategory> categories = Collections.emptyList();
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE));
     }
 
@@ -144,7 +144,7 @@ public class EventUtilTest {
         when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now().minusDays(1));
         when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(2));
         when(last.getUtcInception()).thenReturn(ZonedDateTime.now().minusDays(2));
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(false);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(false);
         assertFalse(EventUtil.displayWaitingQueueForm(event, categories, configurationManager, TICKETS_NOT_AVAILABLE));
     }
 
@@ -152,7 +152,7 @@ public class EventUtilTest {
     @DisplayName("display the waiting queue form before sales start")
     void displayWaitingQueueFormBeforeSalesStart() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
         when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
         when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
         when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
@@ -165,7 +165,7 @@ public class EventUtilTest {
     @DisplayName("display the waiting queue form before sales start (2 categories)")
     void displayWaitingQueueFormBeforeSalesStart2() {
         List<SaleableTicketCategory> categories = asList(first, last);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
         when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
         when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
         when(first.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
@@ -183,7 +183,7 @@ public class EventUtilTest {
     @DisplayName("not display the waiting queue form before sales start if pre-registration is not enabled")
     void doNotDisplayFormBeforeStartIfPreRegistrationDisabled() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(false);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(false);
         when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
         when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
         when(last.getZonedInception()).thenReturn(ZonedDateTime.now().plusDays(1));
@@ -196,7 +196,7 @@ public class EventUtilTest {
     @DisplayName("not display the waiting queue form after sales start")
     void doNotDisplayWaitingQueueFormAfterSalesStart() {
         List<SaleableTicketCategory> categories = Collections.singletonList(last);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
         when(last.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
         when(last.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
         when(last.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));
@@ -209,7 +209,7 @@ public class EventUtilTest {
     @DisplayName("not display the waiting queue form after sales start (two categories)")
     void doNotDisplayWaitingQueueFormAfterSalesStart2() {
         List<SaleableTicketCategory> categories = asList(first, last);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_PRE_REGISTRATION)), eq(false))).thenReturn(true);
         when(first.getZonedExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
         when(first.getUtcExpiration()).thenReturn(ZonedDateTime.now().plusDays(2));
         when(first.getZonedInception()).thenReturn(ZonedDateTime.now().minusDays(1));

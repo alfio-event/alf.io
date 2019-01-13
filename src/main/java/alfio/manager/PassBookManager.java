@@ -77,9 +77,8 @@ class PassBookManager {
             int eventId = ticket.getEventId();
             Event event = eventRepository.findById(eventId);
             Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
-            int organizationId = organization.getId();
 
-            Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(organizationId, eventId);
+            Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event);
             Map<ConfigurationKeys, Optional<String>> pbookConf = configurationManager.getStringConfigValueFrom(
                 partial.apply(ConfigurationKeys.PASSBOOK_TYPE_IDENTIFIER),
                 partial.apply(ConfigurationKeys.PASSBOOK_KEYSTORE),

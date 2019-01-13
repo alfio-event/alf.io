@@ -52,7 +52,7 @@ public class DefaultMailer implements Mailer {
 
         subject = decorateSubjectIfDemo(subject, environment);
 
-        String mailerType = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAILER_TYPE), "disabled").toLowerCase(Locale.ENGLISH);
+        String mailerType = configurationManager.getStringConfigValue(Configuration.from(event, MAILER_TYPE), "disabled").toLowerCase(Locale.ENGLISH);
 
         mailers.getOrDefault(mailerType, defaultMailer)
                 .send(event, to, cc, subject, text, html, attachments);

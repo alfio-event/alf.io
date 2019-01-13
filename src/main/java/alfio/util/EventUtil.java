@@ -72,7 +72,7 @@ public class EventUtil {
         .toFormatter(Locale.ROOT);
 
     public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<Event> noTicketsAvailable) {
-        return !configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), STOP_WAITING_QUEUE_SUBSCRIPTIONS), false)
+        return !configurationManager.getBooleanConfigValue(Configuration.from(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS), false)
             && checkWaitingQueuePreconditions(event, categories, configurationManager, noTicketsAvailable);
     }
 
@@ -80,8 +80,8 @@ public class EventUtil {
         return findLastCategory(categories).map(lastCategory -> {
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             if(isPreSales(event, categories)) {
-                return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false);
-            } else if(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE), false)) {
+                return configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_PRE_REGISTRATION), false);
+            } else if(configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_WAITING_QUEUE), false)) {
                 return now.isBefore(lastCategory.getZonedExpiration()) && noTicketsAvailable.test(event);
             }
             return false;

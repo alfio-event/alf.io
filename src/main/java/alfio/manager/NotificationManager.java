@@ -207,7 +207,7 @@ public class NotificationManager {
     }
 
     public List<String> getCCForEventOrganizer(Event event) {
-        Configuration.ConfigurationPathKey key = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC);
+        Configuration.ConfigurationPathKey key = Configuration.from(event, ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC);
         return Stream.of(StringUtils.split(configurationManager.getStringConfigValue(key, ""), ','))
             .filter(Objects::nonNull)
             .map(String::trim)
@@ -271,7 +271,7 @@ public class NotificationManager {
         EmailMessage message = emailMessageRepository.findById(messageId);
         int eventId = message.getEventId();
         int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
-        if(message.getAttempts() >= configurationManager.getIntConfigValue(Configuration.from(organizationId, eventId, ConfigurationKeys.MAIL_ATTEMPTS_COUNT), 10)) {
+        if(message.getAttempts() >= configurationManager.getIntConfigValue(Configuration.from(new EventAndOrganizationId(eventId, organizationId), ConfigurationKeys.MAIL_ATTEMPTS_COUNT), 10)) {
             tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(messageId, ERROR.name(), message.getAttempts(), Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("Message with id " + messageId + " will be discarded");
             return 0;

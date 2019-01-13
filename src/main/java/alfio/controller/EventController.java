@@ -210,14 +210,14 @@ public class EventController {
             final int orgId = event.getOrganizationId();
             final int eventId = event.getId();
             Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = configurationManager.getStringConfigValueFrom(
-                Configuration.from(orgId, eventId, ConfigurationKeys.MAPS_PROVIDER),
-                Configuration.from(orgId, eventId, ConfigurationKeys.MAPS_CLIENT_API_KEY),
-                Configuration.from(orgId, eventId, ConfigurationKeys.MAPS_HERE_APP_ID),
-                Configuration.from(orgId, eventId, ConfigurationKeys.MAPS_HERE_APP_CODE));
+                Configuration.from(event, ConfigurationKeys.MAPS_PROVIDER),
+                Configuration.from(event, ConfigurationKeys.MAPS_CLIENT_API_KEY),
+                Configuration.from(event, ConfigurationKeys.MAPS_HERE_APP_ID),
+                Configuration.from(event, ConfigurationKeys.MAPS_HERE_APP_CODE));
 
             LocationDescriptor ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
 
-            final boolean hasAccessPromotions = configurationManager.getBooleanConfigValue(Configuration.from(orgId, eventId, ConfigurationKeys.DISPLAY_DISCOUNT_CODE_BOX), true) &&
+            final boolean hasAccessPromotions = configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.DISPLAY_DISCOUNT_CODE_BOX), true) &&
                 (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
                 promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
 

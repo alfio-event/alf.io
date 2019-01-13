@@ -80,7 +80,7 @@ public class EventStatisticsManager {
     }
 
     private boolean displayStatisticsForEvent(Event event) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.DISPLAY_STATS_IN_EVENT_DETAIL), true);
+        return configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.DISPLAY_STATS_IN_EVENT_DETAIL), true);
     }
 
 

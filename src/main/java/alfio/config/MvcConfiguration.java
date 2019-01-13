@@ -207,7 +207,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
                         modelMap.putIfAbsent("pageTitle", "empty");
                         Event event = modelMap.get("event") == null ? null : modelMap.get("event") instanceof Event ? (Event) modelMap.get("event") : ((EventDescriptor) modelMap.get("event")).getEvent();
                         ConfigurationPathKey googleAnalyticsKey = Optional.ofNullable(event)
-                            .map(e -> alfio.model.system.Configuration.from(e.getOrganizationId(), e.getId(), GOOGLE_ANALYTICS_KEY))
+                            .map(e -> alfio.model.system.Configuration.from(e, GOOGLE_ANALYTICS_KEY))
                             .orElseGet(() -> alfio.model.system.Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_KEY));
                         modelMap.putIfAbsent("analyticsEnabled", StringUtils.isNotBlank(configurationManager.getStringConfigValue(googleAnalyticsKey, "")));
 

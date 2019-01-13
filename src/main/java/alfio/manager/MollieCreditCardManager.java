@@ -102,7 +102,7 @@ public class MollieCreditCardManager implements PaymentProvider {
         try {
             String eventName = spec.getEvent().getShortName();
 
-            String baseUrl = StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId(), ConfigurationKeys.BASE_URL)), "/");
+            String baseUrl = StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(spec.getEvent(), ConfigurationKeys.BASE_URL)), "/");
 
             String bookUrl = baseUrl + "/event/" + eventName + "/reservation/" + spec.getReservationId() + "/book";
 

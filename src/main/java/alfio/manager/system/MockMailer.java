@@ -50,7 +50,7 @@ public class MockMailer implements Mailer {
 
         log.info("Email: from: {}, replyTo: {}, to: {}, cc: {}, subject: {}, text: {}, html: {}, attachments: {}",
             event.getDisplayName(),
-            configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), MAIL_REPLY_TO), ""),
+            configurationManager.getStringConfigValue(Configuration.from(event, MAIL_REPLY_TO), ""),
             to, cc, subject, text,
             html.orElse("no html"), printedAttachments);
     }

@@ -18,6 +18,7 @@ package alfio.manager.system;
 
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
@@ -322,9 +323,9 @@ public class ConfigurationManager {
         return removeAlfioPISettingsIfNeeded(offlineCheckInEnabled, groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing));
     }
 
-    public Predicate<Event> areBooleanSettingsEnabledForEvent(ConfigurationKeys... keys) {
+    public Predicate<EventAndOrganizationId> areBooleanSettingsEnabledForEvent(ConfigurationKeys... keys) {
         return event -> Arrays.stream(keys)
-            .allMatch(k -> getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId()).apply(k), false));
+            .allMatch(k -> getBooleanConfigValue(Configuration.from(event).apply(k), false));
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
@@ -433,32 +434,32 @@ public class ConfigurationManager {
             .collect(groupByCategory());
     }
 
-    public String getShortReservationID(Event event, String reservationId) {
-        return StringUtils.substring(reservationId, 0, getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
+    public String getShortReservationID(EventAndOrganizationId event, String reservationId) {
+        return StringUtils.substring(reservationId, 0, getIntConfigValue(Configuration.from(event, PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
     }
 
-    public boolean hasAllConfigurationsForInvoice(Event event) {
-        return getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_ADDRESS)).isPresent() &&
-            getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.VAT_NR)).isPresent();
+    public boolean hasAllConfigurationsForInvoice(EventAndOrganizationId event) {
+        return getStringConfigValue(Configuration.from(event, ConfigurationKeys.INVOICE_ADDRESS)).isPresent() &&
+            getStringConfigValue(Configuration.from(event, ConfigurationKeys.VAT_NR)).isPresent();
     }
 
-    public boolean isRecaptchaForOfflinePaymentEnabled(Event event) {
-        return getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), false)
+    public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
+        return getBooleanConfigValue(Configuration.from(event, ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), false)
             && getStringConfigValue(Configuration.getSystemConfiguration(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), null) != null;
     }
 
-    public boolean isRecaptchaForTicketSelectionEnabled(Event event) {
-        return getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_CAPTCHA_FOR_TICKET_SELECTION), false)
+    public boolean isRecaptchaForTicketSelectionEnabled(EventAndOrganizationId event) {
+        return getBooleanConfigValue(Configuration.from(event, ENABLE_CAPTCHA_FOR_TICKET_SELECTION), false)
             && getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null) != null;
     }
 
     // https://github.com/alfio-event/alf.io/issues/573
-    public boolean canGenerateReceiptOrInvoiceToCustomer(Event event) {
-        return !getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+    public boolean canGenerateReceiptOrInvoiceToCustomer(EventAndOrganizationId event) {
+        return !getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
     }
 
-    public boolean isInvoiceOnly(Event event) {
-        return getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), GENERATE_ONLY_INVOICE), false) ||
-            getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+    public boolean isInvoiceOnly(EventAndOrganizationId event) {
+        return getBooleanConfigValue(Configuration.from(event, GENERATE_ONLY_INVOICE), false) ||
+            getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
     }
 }

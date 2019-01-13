@@ -77,7 +77,7 @@ public class StripeCreditCardManagerTest {
 
     @Test
     void testMissingStripeConnectedId() {
-        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event.getOrganizationId(), event.getId());
+        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event);
         when(configurationManager.getBooleanConfigValue(partial.apply(PLATFORM_MODE_ENABLED), false)).thenReturn(true);
         when(configurationManager.getStringConfigValue(partial.apply(STRIPE_CONNECTED_ID))).thenReturn(Optional.empty());
         Optional<RequestOptions> options = stripeCreditCardManager.options(event);
