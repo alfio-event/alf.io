@@ -118,7 +118,7 @@ public class WaitingQueueManager {
                 .orElse(WaitingQueueSubscription.Type.PRE_SALES);
     }
 
-    private void validateSubscriptionType(Event event, WaitingQueueSubscription.Type type) {
+    private void validateSubscriptionType(EventAndOrganizationId event, WaitingQueueSubscription.Type type) {
         if(type == WaitingQueueSubscription.Type.PRE_SALES) {
             Validate.isTrue(configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_PRE_REGISTRATION), false), "PRE_SALES Waiting queue is not active");
         } else {

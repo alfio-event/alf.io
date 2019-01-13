@@ -462,9 +462,8 @@ public class TicketReservationManager {
         return true;
     }
 
-    private boolean acquireGroupMembers(String reservationId, Event event) {
-        int eventId = event.getId();
-        List<LinkedGroup> linkedGroups = groupManager.getLinksForEvent(eventId);
+    private boolean acquireGroupMembers(String reservationId, EventAndOrganizationId event) {
+        List<LinkedGroup> linkedGroups = groupManager.getLinksForEvent(event.getId());
         if(!linkedGroups.isEmpty()) {
             List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
             return Boolean.TRUE.equals(requiresNewTransactionTemplate.execute(status ->
@@ -1515,7 +1514,7 @@ public class TicketReservationManager {
         return configurationManager.getShortReservationID(event, reservationId);
     }
 
-    public int countAvailableTickets(Event event, TicketCategory category) {
+    public int countAvailableTickets(EventAndOrganizationId event, TicketCategory category) {
         if(category.isBounded()) {
             return ticketRepository.countFreeTickets(event.getId(), category.getId());
         }

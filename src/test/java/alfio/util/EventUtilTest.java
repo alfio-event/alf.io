@@ -19,6 +19,7 @@ package alfio.util;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,8 +39,8 @@ import static org.mockito.Mockito.*;
 
 public class EventUtilTest {
 
-    private static final Predicate<Event> TICKETS_AVAILABLE = (ev) -> false;
-    private static final Predicate<Event> TICKETS_NOT_AVAILABLE = (ev) -> true;
+    private static final Predicate<EventAndOrganizationId> TICKETS_AVAILABLE = (ev) -> false;
+    private static final Predicate<EventAndOrganizationId> TICKETS_NOT_AVAILABLE = (ev) -> true;
 
     private Event event;
     private SaleableTicketCategory first;

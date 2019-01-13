@@ -139,7 +139,7 @@ public class EventStatisticsManager {
         return ticketSearchRepository.countAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId, toSearch);
     }
 
-    public Predicate<Event> noSeatsAvailable() {
+    public Predicate<EventAndOrganizationId> noSeatsAvailable() {
         return event -> {
             Map<Integer, TicketCategoryStatisticView> stats = ticketCategoryRepository.findStatisticsForEventIdByCategoryId(event.getId());
             EventStatisticView eventStatisticView = eventRepository.findStatisticsFor(event.getId());
