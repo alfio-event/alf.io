@@ -17,7 +17,6 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.SpecialPrice;
 import alfio.model.TicketCategory;
@@ -42,7 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Log4j2
 @Transactional
-public class SpecialPriceTokenGenerator {
+    public class SpecialPriceTokenGenerator {
 
     private static final char[] ADMITTED_CHARACTERS = new char[]{
             'A', 'B', 'C', 'D', 'E', 'F',
@@ -81,10 +80,10 @@ public class SpecialPriceTokenGenerator {
         specialPriceRepository.findWaitingElementsForCategory(categoryId).forEach(this::generateCode);
     }
 
-    private void generateCode(SpecialPrice specialPrice) {
+    private void generateCode(SpecialPrice.SpecialPriceTicketCategoryId specialPrice) {
 
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(specialPrice.getTicketCategoryId()).orElseThrow(IllegalStateException::new);
-        EventAndOrganizationId event = eventRepository.findById(ticketCategory.getEventId());
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(ticketCategory.getEventId());
         int maxLength = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ConfigurationKeys.SPECIAL_PRICE_CODE_LENGTH), 6);
 
         while (true) {

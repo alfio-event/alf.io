@@ -88,11 +88,11 @@ public interface SpecialPriceRepository {
     @Query("update special_price set status = 'CANCELLED' where id in (:ids)")
     int cancelTokens(@Bind("ids") List<Integer> ids);
 
-    @Query("select * from special_price where status = 'WAITING' for update skip locked")
-    List<SpecialPrice> findWaitingElements();
+    @Query("select id, ticket_category_id from special_price where status = 'WAITING' for update skip locked")
+    List<SpecialPrice.SpecialPriceTicketCategoryId> findWaitingElements();
 
-    @Query("select * from special_price where status = 'WAITING' and ticket_category_id = :categoryId for update skip locked")
-    List<SpecialPrice> findWaitingElementsForCategory(@Bind("categoryId") int categoryId);
+    @Query("select id, ticket_category_id from special_price where status = 'WAITING' and ticket_category_id = :categoryId for update skip locked")
+    List<SpecialPrice.SpecialPriceTicketCategoryId> findWaitingElementsForCategory(@Bind("categoryId") int categoryId);
 
 
     default Map<Integer,List<SpecialPrice>> findAllByCategoriesIdsMapped(Collection<Integer> ticketCategoriesIds) {
