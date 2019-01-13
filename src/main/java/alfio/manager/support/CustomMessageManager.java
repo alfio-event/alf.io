@@ -20,10 +20,7 @@ import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.Mailer;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.model.modification.MessageModification;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
@@ -151,7 +148,7 @@ public class CustomMessageManager {
         return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
     }
 
-    private static String renderResource(String template, Event event, Model model, Locale locale, TemplateManager templateManager) {
+    private static String renderResource(String template, EventAndOrganizationId event, Model model, Locale locale, TemplateManager templateManager) {
         return templateManager.renderString(event, template, model.asMap(), locale, TemplateManager.TemplateOutput.TEXT);
     }
 }
