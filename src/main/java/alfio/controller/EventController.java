@@ -54,6 +54,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
@@ -133,12 +134,13 @@ public class EventController {
         
         SessionUtil.cleanupSession(request);
 
-        Optional<Event> optional = eventRepository.findOptionalByShortName(eventName);
+        Optional<EventAndOrganizationId> optional = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName);
         if(optional.isEmpty()) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("event", ""));
         }
-        Event event = optional.get();
-        ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+        EventAndOrganizationId event = optional.get();
+        ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
+        ZonedDateTime now = ZonedDateTime.now(eventZoneId);
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
         Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
@@ -152,7 +154,7 @@ public class EventController {
                 return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
             }
             
-        } else if (promotionCodeDiscount.isPresent() && !promotionCodeDiscount.get().isCurrentlyValid(event.getZoneId(), now)) {
+        } else if (promotionCodeDiscount.isPresent() && !promotionCodeDiscount.get().isCurrentlyValid(eventZoneId, now)) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
         } else if (promotionCodeDiscount.isPresent() && isDiscountCodeUsageExceeded(promotionCodeDiscount.get())){
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("usage", ""));

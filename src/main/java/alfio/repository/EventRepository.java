@@ -24,11 +24,9 @@ import alfio.model.PriceContainer;
 import ch.digitalfondue.npjt.*;
 
 import java.math.BigDecimal;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @QueryRepository
 public interface EventRepository {
@@ -50,6 +48,13 @@ public interface EventRepository {
     
     @Query("select org_id from event where id = :eventId")
     int findOrganizationIdByEventId(@Bind("eventId") int eventId);
+
+    default ZoneId getZoneIdByEventId(int eventId) {
+        return TimeZone.getTimeZone(getTimeZoneByEventId(eventId)).toZoneId();
+    }
+
+    @Query("select time_zone from event where id = :eventId")
+    String getTimeZoneByEventId(@Bind("eventId") int eventId);
 
     @Query("select * from event where short_name = :eventName")
     Event findByShortName(@Bind("eventName") String eventName);
