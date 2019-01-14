@@ -407,7 +407,7 @@ public class TicketReservationManager {
             .orElseGet(() -> {
                 int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getEvent().getOrganizationId());
                 invoiceSequencesRepository.incrementSequenceFor(spec.getEvent().getOrganizationId());
-                String pattern = configurationManager.getStringConfigValue(Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
+                String pattern = configurationManager.getStringConfigValue(Configuration.from(spec.getEvent(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
                 return String.format(pattern, invoiceSequence);
             });
 
@@ -462,9 +462,8 @@ public class TicketReservationManager {
         return true;
     }
 
-    private boolean acquireGroupMembers(String reservationId, Event event) {
-        int eventId = event.getId();
-        List<LinkedGroup> linkedGroups = groupManager.getLinksForEvent(eventId);
+    private boolean acquireGroupMembers(String reservationId, EventAndOrganizationId event) {
+        List<LinkedGroup> linkedGroups = groupManager.getLinksForEvent(event.getId());
         if(!linkedGroups.isEmpty()) {
             List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
             return Boolean.TRUE.equals(requiresNewTransactionTemplate.execute(status ->
@@ -711,9 +710,9 @@ public class TicketReservationManager {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String reservationUrl = reservationUrl(reservation.getId());
         String reservationShortID = getShortReservationID(event, reservation.getId());
-        Optional<String> invoiceAddress = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_ADDRESS));
-        Optional<String> bankAccountNr = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BANK_ACCOUNT_NR));
-        Optional<String> bankAccountOwner = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BANK_ACCOUNT_OWNER));
+        Optional<String> invoiceAddress = configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.INVOICE_ADDRESS));
+        Optional<String> bankAccountNr = configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.BANK_ACCOUNT_NR));
+        Optional<String> bankAccountOwner = configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.BANK_ACCOUNT_OWNER));
         Map<Integer, List<Ticket>> ticketsByCategory = ticketRepository.findTicketsInReservation(reservation.getId())
             .stream()
             .collect(groupingBy(Ticket::getCategoryId));
@@ -909,7 +908,7 @@ public class TicketReservationManager {
         try {
             nestedTransactionTemplate.execute((tc) -> {
                 Event event = eventRepository.findByReservationId(reservationId);
-                boolean enabled = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT), true);
+                boolean enabled = configurationManager.getBooleanConfigValue(Configuration.from(event, AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT), true);
                 if (enabled) {
                     deleteOfflinePayment(event, reservationId, true, false, null);
                 } else {
@@ -1095,19 +1094,19 @@ public class TicketReservationManager {
 
     public String reservationUrl(String reservationId, Event event) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.BASE_URL)), "/")
                 + "/event/" + event.getShortName() + "/reservation/" + reservationId + "?lang="+reservation.getUserLanguage();
     }
 
     String ticketUrl(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.BASE_URL)), "/")
                 + "/event/" + event.getShortName() + "/ticket/" + ticketId + "?lang=" + ticket.getUserLanguage();
     }
 
     public String ticketUpdateUrl(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.BASE_URL)), "/")
+        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.BASE_URL)), "/")
             + "/event/" + event.getShortName() + "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
     }
 
@@ -1230,8 +1229,8 @@ public class TicketReservationManager {
             .collect(Collectors.toList());
     }
 
-    public Optional<String> getVAT(Event event) {
-        return configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.VAT_NR));
+    public Optional<String> getVAT(EventAndOrganizationId event) {
+        return configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.VAT_NR));
     }
 
     public void updateTicketOwner(Ticket ticket,
@@ -1352,7 +1351,7 @@ public class TicketReservationManager {
         return userDetails.flatMap(u -> u.getAuthorities().stream().map(a -> Role.fromRoleName(a.getAuthority())).filter(Role.ADMIN::equals).findFirst()).isPresent();
     }
 
-    void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
+    void sendTicketByEmail(Ticket ticket, Locale locale, EventAndOrganizationId event, PartialTicketTextGenerator confirmationTextBuilder) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory);
@@ -1399,7 +1398,7 @@ public class TicketReservationManager {
                 .filter(p -> p.getMiddle().isPresent())
                 .filter(p -> {
                     Event event = p.getMiddle().get();
-                    return truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE).compareTo(p.getLeft().getValidity()) >= 0;
+                    return truncate(addHours(new Date(), configurationManager.getIntConfigValue(Configuration.from(event, OFFLINE_REMINDER_HOURS), 24)), Calendar.DATE).compareTo(p.getLeft().getValidity()) >= 0;
                 })
                 .map(p -> Triple.of(p.getLeft(), p.getMiddle().orElseThrow(), p.getRight().orElseThrow()))
                 .forEach(p -> {
@@ -1425,7 +1424,7 @@ public class TicketReservationManager {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 List<String> cc = notificationManager.getCCForEventOrganizer(event);
                 String subject = String.format("There are %d pending offline payments that will expire in event: %s", reservations.size(), event.getDisplayName());
-                String baseUrl = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), BASE_URL));
+                String baseUrl = configurationManager.getRequiredValue(Configuration.from(event, BASE_URL));
                 Map<String, Object> model = TemplateResource.prepareModelForOfflineReservationExpiringEmailForOrganizer(event, reservations, baseUrl);
                 notificationManager.sendSimpleEmail(event, organization.getEmail(), cc, subject, () ->
                     templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER, model, Locale.ENGLISH));
@@ -1443,7 +1442,7 @@ public class TicketReservationManager {
 
     public void sendReminderForOptionalData() {
         getNotifiableEventsStream()
-                .filter(e -> configurationManager.getBooleanConfigValue(Configuration.from(e.getOrganizationId(), e.getId(), OPTIONAL_DATA_REMINDER_ENABLED), true))
+                .filter(e -> configurationManager.getBooleanConfigValue(Configuration.from(e, OPTIONAL_DATA_REMINDER_ENABLED), true))
                 .filter(e -> ticketFieldRepository.countAdditionalFieldsForEvent(e.getId()) > 0)
                 .map(e -> Pair.of(e, ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
@@ -1453,7 +1452,7 @@ public class TicketReservationManager {
     private void sendOptionalDataReminder(Pair<Event, List<Ticket>> eventAndTickets) {
         nestedTransactionTemplate.execute(ts -> {
             Event event = eventAndTickets.getLeft();
-            int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
+            int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(event, ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
             List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
             Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
             tickets.stream()
@@ -1472,7 +1471,7 @@ public class TicketReservationManager {
     Stream<Event> getNotifiableEventsStream() {
         return eventRepository.findAll().stream()
                 .filter(e -> {
-                    int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(e.getOrganizationId(), e.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
+                    int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(e, ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
                     //we don't want to define events SO far away, don't we?
                     int days = (int) ChronoUnit.DAYS.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate());
                     return days > 0 && days <= daysBeforeStart;
@@ -1484,7 +1483,7 @@ public class TicketReservationManager {
             nestedTransactionTemplate.execute(ts -> {
                 Event event = p.getLeft();
                 ZoneId eventZoneId = event.getZoneId();
-                int quietPeriod = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL), 3);
+                int quietPeriod = configurationManager.getIntConfigValue(Configuration.from(event, ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL), 3);
                 p.getRight().stream()
                     .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
                     .filter(Optional::isPresent)
@@ -1515,7 +1514,7 @@ public class TicketReservationManager {
         return configurationManager.getShortReservationID(event, reservationId);
     }
 
-    public int countAvailableTickets(Event event, TicketCategory category) {
+    public int countAvailableTickets(EventAndOrganizationId event, TicketCategory category) {
         if(category.isBounded()) {
             return ticketRepository.countFreeTickets(event.getId(), category.getId());
         }
@@ -1562,8 +1561,8 @@ public class TicketReservationManager {
         }
     }
 
-    public int getReservationTimeout(Event event) {
-        return configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), RESERVATION_TIMEOUT), 25);
+    public int getReservationTimeout(EventAndOrganizationId event) {
+        return configurationManager.getIntConfigValue(Configuration.from(event, RESERVATION_TIMEOUT), 25);
     }
 
     public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigDecimal paidAmount, String username) {

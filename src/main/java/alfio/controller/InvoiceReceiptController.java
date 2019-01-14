@@ -21,6 +21,7 @@ import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.TicketReservation;
 import alfio.repository.EventRepository;
 import alfio.util.FileUtil;
@@ -68,7 +69,7 @@ public class InvoiceReceiptController {
         ).orElse(notFound);
     }
 
-    private boolean canAccessReceiptOrInvoice(Event event, Authentication authentication) {
+    private boolean canAccessReceiptOrInvoice(EventAndOrganizationId event, Authentication authentication) {
         return configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) || !isAnonymous(authentication);
     }
 

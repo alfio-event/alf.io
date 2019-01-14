@@ -294,7 +294,7 @@ public class CheckInManager {
         }
     }
 
-    public List<Integer> getAttendeesIdentifiers(Event ev, Date changedSince, String username) {
+    public List<Integer> getAttendeesIdentifiers(EventAndOrganizationId ev, Date changedSince, String username) {
         return Optional.ofNullable(ev)
             .filter(EventManager.checkOwnership(username, organizationRepository))
             .filter(isOfflineCheckInEnabled())
@@ -316,11 +316,11 @@ public class CheckInManager {
             .orElse(Collections.emptyList());
     }
 
-    public Predicate<Event> isOfflineCheckInEnabled() {
+    public Predicate<EventAndOrganizationId> isOfflineCheckInEnabled() {
         return configurationManager.areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED);
     }
 
-    public Predicate<Event> isOfflineCheckInAndLabelPrintingEnabled() {
+    public Predicate<EventAndOrganizationId> isOfflineCheckInAndLabelPrintingEnabled() {
         return isOfflineCheckInEnabled().and(configurationManager.areBooleanSettingsEnabledForEvent(LABEL_PRINTING_ENABLED));
     }
 
@@ -406,8 +406,8 @@ public class CheckInManager {
             .orElse(null);
     }
 
-    private boolean areStatsEnabled(Event event) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), CHECK_IN_STATS), true);
+    private boolean areStatsEnabled(EventAndOrganizationId event) {
+        return configurationManager.getBooleanConfigValue(Configuration.from(event, CHECK_IN_STATS), true);
     }
 
     @Getter

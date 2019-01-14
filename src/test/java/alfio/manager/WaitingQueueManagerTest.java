@@ -146,7 +146,7 @@ public class WaitingQueueManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(1);
         when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
-        when(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false)).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_PRE_REGISTRATION), false)).thenReturn(true);
         when(ticketRepository.selectWaitingTicketsForUpdate(eventId, Ticket.TicketStatus.PRE_RESERVED.name(), 1)).thenReturn(Collections.singletonList(ticket));
         when(waitingQueueRepository.loadAllWaitingForUpdate(eventId)).thenReturn(Collections.singletonList(subscription));
         when(waitingQueueRepository.loadWaiting(eventId, 1)).thenReturn(Collections.singletonList(subscription));

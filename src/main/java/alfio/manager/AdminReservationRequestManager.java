@@ -143,7 +143,7 @@ public class AdminReservationRequestManager {
             .addValue("failureCode", success ? null : ofNullable(result.getFirstErrorOrNull()).map(ErrorCode::getCode).orElse(null));
     }
 
-    private Result<String> insertRequest(AdminReservationModification body, Event event, boolean singleReservation, String username) {
+    private Result<String> insertRequest(AdminReservationModification body, EventAndOrganizationId event, boolean singleReservation, String username) {
         try {
             String requestId = UUID.randomUUID().toString();
             long userId = userRepository.findIdByUserName(username).orElseThrow(IllegalArgumentException::new);

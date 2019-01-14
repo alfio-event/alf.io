@@ -17,7 +17,7 @@
 package alfio.manager.support;
 
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
 import alfio.util.MonetaryUtil;
 
@@ -47,18 +47,18 @@ public class FeeCalculator {
         return Math.max(result, minFee);
     }
 
-    public static BiFunction<Integer, Long, Optional<Long>> getCalculator(Event event, ConfigurationManager configurationManager) {
+    public static BiFunction<Integer, Long, Optional<Long>> getCalculator(EventAndOrganizationId event, ConfigurationManager configurationManager) {
         return (numTickets, amountInCent) -> {
             if(isPlatformModeEnabled(event, configurationManager)) {
-                String feeAsString = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PLATFORM_FEE), "0");
-                String minimumFee = configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PLATFORM_MINIMUM_FEE), "0");
+                String feeAsString = configurationManager.getStringConfigValue(Configuration.from(event, PLATFORM_FEE), "0");
+                String minimumFee = configurationManager.getStringConfigValue(Configuration.from(event, PLATFORM_MINIMUM_FEE), "0");
                 return Optional.of(new FeeCalculator(feeAsString, minimumFee, numTickets).calculate(amountInCent));
             }
             return Optional.empty();
         };
     }
 
-    private static boolean isPlatformModeEnabled(Event event, ConfigurationManager configurationManager) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PLATFORM_MODE_ENABLED), false);
+    private static boolean isPlatformModeEnabled(EventAndOrganizationId event, ConfigurationManager configurationManager) {
+        return configurationManager.getBooleanConfigValue(Configuration.from(event, PLATFORM_MODE_ENABLED), false);
     }
 }

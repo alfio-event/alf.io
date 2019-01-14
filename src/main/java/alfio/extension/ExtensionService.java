@@ -18,7 +18,7 @@
 package alfio.extension;
 
 import alfio.manager.ExtensionManager;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.*;
@@ -168,7 +168,7 @@ public class ExtensionService {
     }
 
     @Transactional
-    public void bulkUpdateEventSettings(Organization org, Event event, List<ExtensionMetadataValue> toUpdate) {
+    public void bulkUpdateEventSettings(Organization org, EventAndOrganizationId event, List<ExtensionMetadataValue> toUpdate) {
         String path = "-" + org.getId() + "-" + event.getId();
         deleteAndInsertSetting("EVENT", path, toUpdate);
     }
@@ -211,7 +211,7 @@ public class ExtensionService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<ExtensionSupport> getSingle(Organization organization, Event event, String name) {
+    public Optional<ExtensionSupport> getSingle(Organization organization, EventAndOrganizationId event, String name) {
         Set<String> paths = generatePossiblePath(ExtensionManager.toPath(organization.getId(), event.getId()), Comparator.reverseOrder());
         return extensionRepository.getSingle(paths, name);
     }

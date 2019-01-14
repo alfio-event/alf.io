@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.TicketReservation;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -82,7 +83,7 @@ public class MollieCreditCardManager implements PaymentProvider {
         }
     }
 
-    private Request.Builder requestFor(String url, Event event) {
+    private Request.Builder requestFor(String url, EventAndOrganizationId event) {
         String mollieAPIKey = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), ConfigurationKeys.MOLLIE_API_KEY));
         return new Request.Builder().url(url).header("Authorization", "Bearer " + mollieAPIKey);
     }
@@ -102,7 +103,7 @@ public class MollieCreditCardManager implements PaymentProvider {
         try {
             String eventName = spec.getEvent().getShortName();
 
-            String baseUrl = StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(spec.getEvent().getOrganizationId(), spec.getEvent().getId(), ConfigurationKeys.BASE_URL)), "/");
+            String baseUrl = StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(spec.getEvent(), ConfigurationKeys.BASE_URL)), "/");
 
             String bookUrl = baseUrl + "/event/" + eventName + "/reservation/" + spec.getReservationId() + "/book";
 

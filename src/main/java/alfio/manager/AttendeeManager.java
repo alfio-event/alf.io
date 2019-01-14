@@ -22,6 +22,7 @@ import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.Ticket;
 import alfio.model.TicketWithCategory;
 import alfio.model.result.ErrorCode;
@@ -93,7 +94,7 @@ public class AttendeeManager {
         return maybeEvent.map(event -> loadAttendeesData(event, userId, start));
     }
 
-    private List<SponsorAttendeeData> loadAttendeesData(Event event, int userId, ZonedDateTime start) {
+    private List<SponsorAttendeeData> loadAttendeesData(EventAndOrganizationId event, int userId, ZonedDateTime start) {
         return sponsorScanRepository.loadSponsorData(event.getId(), userId, start).stream()
             .map(scan -> {
                 Ticket ticket = scan.getTicket();

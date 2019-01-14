@@ -17,7 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.VatDetail;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -66,7 +66,7 @@ public class EuVatChecker {
         return reverseChargeEnabled(configurationManager, organizationId) && validationEnabled(configurationManager, organizationId);
     }
 
-    public Optional<VatDetail> checkVat(String vatNr, String countryCode, Event event) {
+    public Optional<VatDetail> checkVat(String vatNr, String countryCode, EventAndOrganizationId event) {
         Optional<VatDetail> res = performCheck(vatNr, countryCode, event.getOrganizationId()).apply(configurationManager, client);
         res.map(detail -> {
            if(!detail.isValid()) {

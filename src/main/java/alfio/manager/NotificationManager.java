@@ -186,15 +186,17 @@ public class NotificationManager {
         };
     }
 
-    public void sendTicketByEmail(Ticket ticket, Event event, Locale locale, PartialTicketTextGenerator textBuilder, TicketReservation reservation, TicketCategory ticketCategory) {
+    public void sendTicketByEmail(Ticket ticket, EventAndOrganizationId event, Locale locale, PartialTicketTextGenerator textBuilder, TicketReservation reservation, TicketCategory ticketCategory) {
 
         Organization organization = organizationRepository.getById(event.getOrganizationId());
 
         List<Mailer.Attachment> attachments = new ArrayList<>();
         attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
 
+        String displayName = eventRepository.getDisplayNameById(event.getId());
+
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
-        String subject = messageSource.getMessage("ticket-email-subject", new Object[]{event.getDisplayName()}, locale);
+        String subject = messageSource.getMessage("ticket-email-subject", new Object[]{displayName}, locale);
         String text = textBuilder.generate(ticket);
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
         String recipient = ticket.getEmail();
@@ -202,12 +204,12 @@ public class NotificationManager {
         tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
     }
 
-    public void sendSimpleEmail(Event event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
         sendSimpleEmail(event, recipient, cc, subject, textBuilder, Collections.emptyList());
     }
 
-    public List<String> getCCForEventOrganizer(Event event) {
-        Configuration.ConfigurationPathKey key = Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC);
+    public List<String> getCCForEventOrganizer(EventAndOrganizationId event) {
+        Configuration.ConfigurationPathKey key = Configuration.from(event, ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC);
         return Stream.of(StringUtils.split(configurationManager.getStringConfigValue(key, ""), ','))
             .filter(Objects::nonNull)
             .map(String::trim)
@@ -215,15 +217,15 @@ public class NotificationManager {
             .collect(Collectors.toList());
     }
 
-    public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, String subject, TextTemplateGenerator textBuilder) {
         sendSimpleEmail(event, recipient, Collections.emptyList(), subject, textBuilder);
     }
 
-    public void sendSimpleEmail(Event event, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
         sendSimpleEmail(event, recipient, Collections.emptyList(), subject, textBuilder, attachments);
     }
 
-    public void sendSimpleEmail(Event event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
 
         String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String encodedCC = Json.toJson(cc);
@@ -269,9 +271,8 @@ public class NotificationManager {
 
     private int processMessage(int messageId) {
         EmailMessage message = emailMessageRepository.findById(messageId);
-        int eventId = message.getEventId();
-        int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
-        if(message.getAttempts() >= configurationManager.getIntConfigValue(Configuration.from(organizationId, eventId, ConfigurationKeys.MAIL_ATTEMPTS_COUNT), 10)) {
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(message.getEventId());
+        if(message.getAttempts() >= configurationManager.getIntConfigValue(Configuration.from(event, ConfigurationKeys.MAIL_ATTEMPTS_COUNT), 10)) {
             tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(messageId, ERROR.name(), message.getAttempts(), Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("Message with id " + messageId + " will be discarded");
             return 0;
@@ -282,7 +283,7 @@ public class NotificationManager {
             int result = Optional.ofNullable(tx.execute(status -> emailMessageRepository.updateStatus(message.getEventId(), message.getChecksum(), IN_PROCESS.name(), Arrays.asList(WAITING.name(), RETRY.name())))).orElse(0);
             if(result > 0) {
                 return Optional.ofNullable(tx.execute(status -> {
-                    sendMessage(message);
+                    sendMessage(event, message);
                     return 1;
                 })).orElse(0);
             } else {
@@ -295,9 +296,9 @@ public class NotificationManager {
         return 0;
     }
 
-    private void sendMessage(EmailMessage message) {
-        Event event = eventRepository.findById(message.getEventId());
-        mailer.send(event, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
+    private void sendMessage(EventAndOrganizationId event, EmailMessage message) {
+        String displayName = eventRepository.getDisplayNameById(message.getEventId());
+        mailer.send(event, displayName, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
         emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
 

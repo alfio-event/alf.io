@@ -61,4 +61,18 @@ public class SpecialPrice {
     public boolean notSent() {
         return sentTimestamp == null;
     }
+
+
+    @Getter
+    public static class SpecialPriceTicketCategoryId {
+        private final int id;
+        private final int ticketCategoryId;
+
+
+        public SpecialPriceTicketCategoryId(@Column("id") int id,
+                                            @Column("ticket_category_id") int ticketCategoryId) {
+            this.id = id;
+            this.ticketCategoryId = ticketCategoryId;
+        }
+    }
 }

@@ -22,6 +22,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.PaymentInformation;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.ConfigurationPathKey;
@@ -94,8 +95,8 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
         handlers.put(StripeException.class, this::handleGenericException);
     }
 
-    private String getSecretKey(Event event) {
-        return configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), event.getId(), STRIPE_SECRET_KEY));
+    private String getSecretKey(EventAndOrganizationId event) {
+        return configurationManager.getRequiredValue(Configuration.from(event, STRIPE_SECRET_KEY));
     }
 
     private String getWebhookSignatureKey() {
@@ -238,7 +239,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     Optional<RequestOptions> options(Event event) {
         RequestOptions.RequestOptionsBuilder builder = RequestOptions.builder();
         if(isConnectEnabled(new PaymentContext(event))) {
-            return configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), STRIPE_CONNECTED_ID))
+            return configurationManager.getStringConfigValue(Configuration.from(event, STRIPE_CONNECTED_ID))
                 .map(connectedId -> {
                     //connected stripe account
                     builder.setStripeAccount(connectedId);

@@ -30,7 +30,7 @@ public class PaymentContext {
 
 
     public PaymentContext(Event event) {
-        this(event, Configuration.from(event.getOrganizationId(), event.getId()));
+        this(event, Configuration.from(event));
     }
 
     public PaymentContext(Event event, Function<ConfigurationKeys, ConfigurationPathKey> configurationProvider) {

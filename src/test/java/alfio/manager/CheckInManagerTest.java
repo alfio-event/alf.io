@@ -44,6 +44,7 @@ public class CheckInManagerTest {
     private static final String USERNAME = "username";
     private static final int EVENT_ID = 0;
     private static final int ORG_ID = 1;
+    private Event event;
 
 
     @Before
@@ -51,7 +52,7 @@ public class CheckInManagerTest {
         eventRepository = mock(EventRepository.class);
         configurationManager = mock(ConfigurationManager.class);
         OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
-        Event event = mock(Event.class);
+        event = mock(Event.class);
         Organization organization = mock(Organization.class);
         when(eventRepository.findOptionalByShortName(EVENT_NAME)).thenReturn(Optional.of(event));
         when(event.getId()).thenReturn(EVENT_ID);
@@ -65,7 +66,7 @@ public class CheckInManagerTest {
 
     @Test
     public void getStatistics() {
-        when(configurationManager.getBooleanConfigValue(Configuration.from(ORG_ID, EVENT_ID, ConfigurationKeys.CHECK_IN_STATS), true)).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.CHECK_IN_STATS), true)).thenReturn(true);
         CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
         assertNotNull(statistics);
         verify(eventRepository).retrieveCheckInStatisticsForEvent(EVENT_ID);
@@ -73,7 +74,7 @@ public class CheckInManagerTest {
 
     @Test
     public void getStatisticsDisabled() {
-        when(configurationManager.getBooleanConfigValue(Configuration.from(ORG_ID, EVENT_ID, ConfigurationKeys.CHECK_IN_STATS), true)).thenReturn(false);
+        when(configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.CHECK_IN_STATS), true)).thenReturn(false);
         CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
         assertNull(statistics);
         verify(eventRepository, never()).retrieveCheckInStatisticsForEvent(EVENT_ID);

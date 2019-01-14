@@ -17,10 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.i18n.I18nManager;
-import alfio.model.ContentLanguage;
-import alfio.model.Event;
-import alfio.model.SpecialPrice;
-import alfio.model.TicketCategory;
+import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
@@ -65,7 +62,7 @@ public class SpecialPriceManager {
         this.i18nManager = i18nManager;
     }
 
-    private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, Event event, String username) {
+    private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, EventAndOrganizationId event, String username) {
         final TicketCategory category = checkOwnership(categoryId, event, username);
         List<String> availableCodes = specialPriceRepository.findActiveByCategoryId(category.getId())
             .stream()
@@ -78,7 +75,7 @@ public class SpecialPriceManager {
         return availableCodes;
     }
 
-    private TicketCategory checkOwnership(int categoryId, Event event, String username) {
+    private TicketCategory checkOwnership(int categoryId, EventAndOrganizationId event, String username) {
         eventManager.checkOwnership(event, username, event.getOrganizationId());
         final List<TicketCategory> categories = eventManager.loadTicketCategories(event);
         final TicketCategory category = categories.stream().filter(tc -> tc.getId() == categoryId).findFirst().orElseThrow(IllegalArgumentException::new);
@@ -87,7 +84,7 @@ public class SpecialPriceManager {
     }
 
     public List<SendCodeModification> linkAssigneeToCode(List<SendCodeModification> input, String eventName, int categoryId, String username) {
-        final Event event = eventManager.getSingleEvent(eventName, username);
+        final EventAndOrganizationId event = eventManager.getSingleEvent(eventName, username);
         Set<SendCodeModification> set = new LinkedHashSet<>(input);
         List<String> availableCodes = checkCodeAssignment(set, categoryId, event, username);
         final Iterator<String> codes = availableCodes.iterator();
@@ -97,14 +94,14 @@ public class SpecialPriceManager {
     }
 
     public List<SpecialPrice> loadSentCodes(String eventName, int categoryId, String username) {
-        final Event event = eventManager.getSingleEvent(eventName, username);
+        final EventAndOrganizationId event = eventManager.getSingleEvent(eventName, username);
         checkOwnership(categoryId, event, username);
         Predicate<SpecialPrice> p = SpecialPrice::notSent;
         return specialPriceRepository.findAllByCategoryId(categoryId).stream().filter(p.negate()).collect(toList());
     }
 
     public boolean clearRecipientData(String eventName, int categoryId, int codeId, String username) {
-        final Event event = eventManager.getSingleEvent(eventName, username);
+        final EventAndOrganizationId event = eventManager.getSingleEvent(eventName, username);
         checkOwnership(categoryId, event, username);
         int result = specialPriceRepository.clearRecipientData(codeId, categoryId);
         Validate.isTrue(result <= 1, "too many records affected");

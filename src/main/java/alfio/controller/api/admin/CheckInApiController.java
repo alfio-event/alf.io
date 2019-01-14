@@ -21,7 +21,7 @@ import alfio.manager.EventManager;
 import alfio.manager.support.CheckInStatistics;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.FullTicketInfo;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -229,14 +229,14 @@ public class CheckInApiController {
         Validate.isTrue(ids.size() <= 200, "Cannot ask more than 200 ids");
     }
 
-    private ResponseEntity<LabelLayout> parseLabelLayout(Event event) {
+    private ResponseEntity<LabelLayout> parseLabelLayout(EventAndOrganizationId event) {
         return loadLabelLayout(event)
             .map(ResponseEntity::ok)
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.NO_CONTENT));
     }
 
-    private Optional<LabelLayout> loadLabelLayout(Event event) {
-        return configurationManager.getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.LABEL_LAYOUT))
+    private Optional<LabelLayout> loadLabelLayout(EventAndOrganizationId event) {
+        return configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.LABEL_LAYOUT))
             .flatMap(str -> optionally(() -> Json.fromJson(str, LabelLayout.class)));
     }
 

@@ -521,7 +521,7 @@ public class AdminReservationManager {
         return modified;
     }
 
-    private int getNotAllocatedTickets(Event event) {
+    private int getNotAllocatedTickets(EventAndOrganizationId event) {
         return ticketRepository.countFreeTicketsForUnbounded(event.getId());
     }
 
