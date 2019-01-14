@@ -754,7 +754,7 @@ public class EventManager {
     }
 
     public boolean toggleTicketLocking(String eventName, int categoryId, int ticketId, String username) {
-        Event event = getSingleEvent(eventName, username);
+        EventAndOrganizationId event = getSingleEvent(eventName, username);
         checkOwnership(event, username, event.getOrganizationId());
         ticketCategoryRepository.findByEventId(event.getId()).stream().filter(tc -> tc.getId() == categoryId).findFirst().orElseThrow(IllegalArgumentException::new);
         Ticket ticket = ticketRepository.findById(ticketId, categoryId);
