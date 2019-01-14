@@ -28,14 +28,14 @@ public class CustomerName {
 
     private final boolean hasFirstAndLastName;
 
-    public CustomerName(String fullName, String firstName, String lastName, Event event) {
-        this(fullName, firstName, lastName, event, true);
+    public CustomerName(String fullName, String firstName, String lastName, boolean mustUseFirstAndLastName) {
+        this(fullName, firstName, lastName, mustUseFirstAndLastName, true);
     }
 
-    public CustomerName(String fullName, String firstName, String lastName, Event event, boolean validate) {
+    public CustomerName(String fullName, String firstName, String lastName, boolean mustUseFirstAndLastName, boolean validate) {
         this.firstName = StringUtils.trimToNull(firstName);
         this.lastName = StringUtils.trimToNull(lastName);
-        hasFirstAndLastName = event.mustUseFirstAndLastName();
+        hasFirstAndLastName = mustUseFirstAndLastName;
         fullName = StringUtils.trimToNull(fullName);
         if(hasFirstAndLastName) {
             if(validate) {

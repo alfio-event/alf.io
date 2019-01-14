@@ -110,8 +110,8 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
                     DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
             Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
             event = pair.getKey();
-            waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event), "peppino@garibaldi.com", null, Locale.ENGLISH);
-            waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event), "bixio@mille.org", null, Locale.ITALIAN);
+            waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event.mustUseFirstAndLastName()), "peppino@garibaldi.com", null, Locale.ENGLISH);
+            waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event.mustUseFirstAndLastName()), "bixio@mille.org", null, Locale.ITALIAN);
             assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
 
 

@@ -258,7 +258,7 @@ public class ReservationController {
             contactAndTicketsForm.setInvoiceRequested(true);
         }
 
-        CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event, false);
+        CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event.mustUseFirstAndLastName(), false);
 
         ticketReservationRepository.resetVat(reservationId, event.getVatStatus());
         if(contactAndTicketsForm.isBusiness()) {
@@ -572,7 +572,7 @@ public class ReservationController {
             return redirectReservation(Optional.of(ticketReservation), eventName, reservationId);
         }
 
-        CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event);
+        CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
 
         OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
 
