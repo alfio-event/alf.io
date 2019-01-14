@@ -38,7 +38,6 @@ import java.util.Optional;
 import java.util.TimeZone;
 
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
-import static alfio.util.OptionalWrapper.optionally;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
@@ -100,7 +99,7 @@ public class PromoCodeDiscountApiController {
     
     @RequestMapping(value = "/promo-code/{promoCodeId}/count-use", method = GET)
     public int countPromoCodeUse(@PathVariable("promoCodeId") int promoCodeId) {
-        Optional<PromoCodeDiscount> code = optionally(() -> promoCodeRepository.findById(promoCodeId));
+        Optional<PromoCodeDiscount> code = promoCodeRepository.findOptionalById(promoCodeId);
         if(code.isEmpty()) {
             return 0;
         }

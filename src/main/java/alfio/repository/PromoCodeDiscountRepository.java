@@ -41,6 +41,9 @@ public interface PromoCodeDiscountRepository {
     @Query("select * from promo_code where id = :id")
     PromoCodeDiscount findById(@Bind("id") int id);
 
+    @Query("select * from promo_code where id = :id")
+    Optional<PromoCodeDiscount> findOptionalById(@Bind("id") int id);
+
     @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage) "
             + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage)")
     int addPromoCode(@Bind("promoCode") String promoCode,
