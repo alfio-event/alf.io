@@ -109,18 +109,29 @@ public class EventManager {
         return getOptionalByName(eventName, username).orElseThrow(IllegalStateException::new);
     }
 
+    public EventAndOrganizationId getEventAndOrganizationId(String eventName, String username) {
+        return getOptionalEventAndOrganizationIdByName(eventName, username).orElseThrow(IllegalStateException::new);
+    }
+
     public Optional<Event> getOptionalByName(String eventName, String username) {
         return eventRepository.findOptionalByShortName(eventName)
             .filter(checkOwnership(username, organizationRepository));
     }
 
-    public Optional<Event> getOptionalEventById(int eventId, String username) {
-        return eventRepository.findOptionalById(eventId)
+    public Optional<EventAndOrganizationId> getOptionalEventAndOrganizationIdByName(String eventName, String username) {
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .filter(checkOwnership(username, organizationRepository));
+    }
+
+    public Optional<EventAndOrganizationId> getOptionalEventIdAndOrganizationIdById(int eventId, String username) {
+        return eventRepository.findOptionalEventAndOrganizationIdById(eventId)
             .filter(checkOwnership(username, organizationRepository));
     }
 
     public Event getSingleEventById(int eventId, String username) {
-        return getOptionalEventById(eventId, username).orElseThrow(IllegalStateException::new);
+        return eventRepository.findOptionalById(eventId)
+            .filter(checkOwnership(username, organizationRepository))
+            .orElseThrow(IllegalStateException::new);
     }
 
     public void checkOwnership(EventAndOrganizationId event, String username, int organizationId) {
@@ -425,7 +436,7 @@ public class EventManager {
     }
 
     void fixOutOfRangeCategories(EventModification em, String username, ZoneId zoneId, ZonedDateTime end) {
-        Event event = getSingleEvent(em.getShortName(), username);
+        EventAndOrganizationId event = getEventAndOrganizationId(em.getShortName(), username);
         ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
             .map(tc -> Triple.of(tc, tc.getInception(zoneId), tc.getExpiration(zoneId)))
             .filter(t -> t.getRight().isAfter(end))
@@ -440,7 +451,7 @@ public class EventManager {
     }
 
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
-        EventAndOrganizationId event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         reallocateTickets(ticketCategoryRepository.findStatisticWithId(srcCategoryId, eventId), Optional.of(ticketCategoryRepository.getByIdAndActive(targetCategoryId, event.getId())), event);
     }
 
@@ -474,7 +485,7 @@ public class EventManager {
     }
 
     public void unbindTickets(String eventName, int categoryId, String username) {
-        EventAndOrganizationId event = getSingleEvent(eventName, username);
+        EventAndOrganizationId event = getEventAndOrganizationId(eventName, username);
         Validate.isTrue(ticketCategoryRepository.countUnboundedCategoriesByEventId(event.getId()) > 0, "cannot unbind tickets: there aren't any unbounded categories");
         TicketCategoryStatisticView ticketCategory = ticketCategoryRepository.findStatisticWithId(categoryId, event.getId());
         Validate.isTrue(ticketCategory.isBounded(), "cannot unbind tickets from an unbounded category!");
@@ -757,7 +768,7 @@ public class EventManager {
     }
 
     public boolean toggleTicketLocking(String eventName, int categoryId, int ticketId, String username) {
-        EventAndOrganizationId event = getSingleEvent(eventName, username);
+        EventAndOrganizationId event = getEventAndOrganizationId(eventName, username);
         checkOwnership(event, username, event.getOrganizationId());
         ticketCategoryRepository.findByEventId(event.getId()).stream().filter(tc -> tc.getId() == categoryId).findFirst().orElseThrow(IllegalArgumentException::new);
         Ticket ticket = ticketRepository.findById(ticketId, categoryId);
@@ -813,7 +824,7 @@ public class EventManager {
     }
 
     public List<TicketWithReservationAndTransaction> findAllConfirmedTicketsForCSV(String eventName, String username) {
-        Event event = getSingleEvent(eventName, username);
+        EventAndOrganizationId event = getEventAndOrganizationId(eventName, username);
         checkOwnership(event, username, event.getOrganizationId());
         return ticketRepository.findAllConfirmedForCSV(event.getId());
     }

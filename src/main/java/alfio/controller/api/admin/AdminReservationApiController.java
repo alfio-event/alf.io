@@ -71,7 +71,7 @@ public class AdminReservationApiController {
                                                           @RequestParam(value = "search", required = false) String search,
                                                           @RequestParam(value = "status", required = false) List<TicketReservation.TicketReservationStatus> status,
                                                           Principal principal) {
-        return eventManager.getOptionalByName(eventName, principal.getName())
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> {
                 Pair<List<TicketReservation>, Integer> res = ticketReservationManager.findAllReservationsInEvent(event.getId(), page, search, status);
                 return new PageAndContent<>(res.getLeft(), res.getRight());

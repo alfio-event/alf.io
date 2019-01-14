@@ -84,7 +84,7 @@ public class SpecialPriceManager {
     }
 
     public List<SendCodeModification> linkAssigneeToCode(List<SendCodeModification> input, String eventName, int categoryId, String username) {
-        final EventAndOrganizationId event = eventManager.getSingleEvent(eventName, username);
+        final EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, username);
         Set<SendCodeModification> set = new LinkedHashSet<>(input);
         List<String> availableCodes = checkCodeAssignment(set, categoryId, event, username);
         final Iterator<String> codes = availableCodes.iterator();
@@ -94,14 +94,14 @@ public class SpecialPriceManager {
     }
 
     public List<SpecialPrice> loadSentCodes(String eventName, int categoryId, String username) {
-        final EventAndOrganizationId event = eventManager.getSingleEvent(eventName, username);
+        final EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, username);
         checkOwnership(categoryId, event, username);
         Predicate<SpecialPrice> p = SpecialPrice::notSent;
         return specialPriceRepository.findAllByCategoryId(categoryId).stream().filter(p.negate()).collect(toList());
     }
 
     public boolean clearRecipientData(String eventName, int categoryId, int codeId, String username) {
-        final EventAndOrganizationId event = eventManager.getSingleEvent(eventName, username);
+        final EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, username);
         checkOwnership(categoryId, event, username);
         int result = specialPriceRepository.clearRecipientData(codeId, categoryId);
         Validate.isTrue(result <= 1, "too many records affected");

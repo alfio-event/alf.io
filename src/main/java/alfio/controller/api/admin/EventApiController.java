@@ -474,7 +474,7 @@ public class EventApiController {
 
     @RequestMapping("/events/{eventName}/additional-field/{id}/stats")
     public List<RestrictedValueStats> getStats(@PathVariable("eventName") String eventName, @PathVariable("id") Integer id, Principal principal) {
-        if(eventManager.getOptionalByName(eventName, principal.getName()).filter(event -> ticketFieldRepository.findById(id).getEventId() == event.getId()).isEmpty()) {
+        if(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName()).filter(event -> ticketFieldRepository.findById(id).getEventId() == event.getId()).isEmpty()) {
             return Collections.emptyList();
         }
         return ticketFieldRepository.retrieveStats(id);
@@ -499,7 +499,7 @@ public class EventApiController {
     
     @RequestMapping(value = "/events/{eventName}/additional-field/swap-position/{id1}/{id2}", method = POST)
     public void swapAdditionalFieldPosition(@PathVariable("eventName") String eventName, @PathVariable("id1") int id1, @PathVariable("id2") int id2, Principal principal) {
-        EventAndOrganizationId event = eventManager.getSingleEvent(eventName, principal.getName());
+        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
     	eventManager.swapAdditionalFieldPosition(event.getId(), id1, id2);
     }
 
@@ -508,19 +508,19 @@ public class EventApiController {
                                            @PathVariable("id") int id,
                                            @RequestParam("newPosition") int newPosition,
                                            Principal principal) {
-        EventAndOrganizationId event = eventManager.getSingleEvent(eventName, principal.getName());
+        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         eventManager.setAdditionalFieldPosition(event.getId(), id, newPosition);
     }
     
     @RequestMapping(value = "/events/{eventName}/additional-field/{id}", method = DELETE)
     public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, Principal principal) {
-        eventManager.getSingleEvent(eventName, principal.getName());
+        eventManager.getEventAndOrganizationId(eventName, principal.getName());
     	eventManager.deleteAdditionalField(id);
     }
 
     @RequestMapping(value = "/events/{eventName}/additional-field/{id}", method = POST)
     public void updateAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, @RequestBody EventModification.UpdateAdditionalField field, Principal principal) {
-        eventManager.getSingleEvent(eventName, principal.getName());
+        eventManager.getEventAndOrganizationId(eventName, principal.getName());
         eventManager.updateAdditionalField(id, field);
     }
 
@@ -533,12 +533,9 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/pending-payments-count")
     public Integer getPendingPaymentsCount(@PathVariable("eventName") String eventName, Principal principal) {
-        Optional<Event> maybeEvent = eventManager.getOptionalByName(eventName, principal.getName());
-        if(maybeEvent.isPresent()) {
-            return ticketReservationManager.getPendingPaymentsCount(maybeEvent.get().getId());
-        } else {
-            return 0;
-        }
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(e -> ticketReservationManager.getPendingPaymentsCount(e.getId()))
+            .orElse(0);
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
@@ -598,7 +595,7 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/invoices/count", method = GET)
     public Integer countInvoicesForEvent(@PathVariable("eventName") String eventName, Principal principal) {
-        return eventManager.getOptionalByName(eventName, principal.getName())
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.countInvoices(e.getId()))
             .orElse(0);
     }

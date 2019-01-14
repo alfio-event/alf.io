@@ -44,6 +44,9 @@ public interface EventRepository {
 
     @Query("select * from event where id = :eventId")
     Optional<Event> findOptionalById(@Bind("eventId") int eventId);
+
+    @Query("select id, org_id from event where id = :eventId")
+    Optional<EventAndOrganizationId> findOptionalEventAndOrganizationIdById(@Bind("eventId") int eventId);
     
     @Query("select org_id from event where id = :eventId")
     int findOrganizationIdByEventId(@Bind("eventId") int eventId);
@@ -53,6 +56,9 @@ public interface EventRepository {
 
     @Query("select * from event where short_name = :eventName")
     Optional<Event> findOptionalByShortName(@Bind("eventName") String eventName);
+
+    @Query("select id, org_id from event where short_name = :eventName")
+    Optional<EventAndOrganizationId> findOptionalEventAndOrganizationIdByShortName(@Bind("eventName") String eventName);
 
     @Query("select locales from event where short_name = :eventName")
     Optional<Integer> findLocalesByShortName(@Bind("eventName") String eventName);

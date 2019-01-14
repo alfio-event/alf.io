@@ -71,6 +71,7 @@ public class SpecialPriceManagerTest {
         when(i18nManager.getEventLanguages(anyInt())).thenReturn(Collections.singletonList(ContentLanguage.ITALIAN));
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("text");
         when(eventManager.getSingleEvent(anyString(), anyString())).thenReturn(event);
+        when(eventManager.getEventAndOrganizationId(anyString(), anyString())).thenReturn(event);
         when(eventManager.loadTicketCategories(eq(event))).thenReturn(Collections.singletonList(ticketCategory));
         when(ticketCategory.getId()).thenReturn(0);
         when(specialPriceRepository.findActiveByCategoryId(eq(0))).thenReturn(specialPrices);

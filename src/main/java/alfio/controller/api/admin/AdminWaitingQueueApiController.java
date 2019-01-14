@@ -90,7 +90,8 @@ public class AdminWaitingQueueApiController {
 
     @RequestMapping(value = "/count", method = RequestMethod.GET)
     public Integer countWaitingPeople(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
-        Optional<Integer> count = eventManager.getOptionalByName(eventName, principal.getName()).map(e -> waitingQueueManager.countSubscribers(e.getId()));
+        Optional<Integer> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(e -> waitingQueueManager.countSubscribers(e.getId()));
         if(count.isPresent()) {
             return count.get();
         }
@@ -100,7 +101,8 @@ public class AdminWaitingQueueApiController {
 
     @RequestMapping(value = "/load", method = RequestMethod.GET)
     public List<WaitingQueueSubscription> loadAllSubscriptions(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
-        Optional<List<WaitingQueueSubscription>> count = eventManager.getOptionalByName(eventName, principal.getName()).map(e -> waitingQueueManager.loadAllSubscriptionsForEvent(e.getId()));
+        Optional<List<WaitingQueueSubscription>> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(e -> waitingQueueManager.loadAllSubscriptionsForEvent(e.getId()));
         if(count.isPresent()) {
             return count.get();
         }
@@ -125,7 +127,7 @@ public class AdminWaitingQueueApiController {
     private ResponseEntity<Map<String, Object>> performStatusModification(String eventName, int subscriberId,
                                                                                Principal principal, WaitingQueueSubscription.Status newStatus,
                                                                                WaitingQueueSubscription.Status currentStatus) {
-        return eventManager.getOptionalByName(eventName, principal.getName())
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .flatMap(e -> waitingQueueManager.updateSubscriptionStatus(subscriberId, newStatus, currentStatus).map(s -> Pair.of(s, e)))
             .map(pair -> {
                 Map<String, Object> out = new HashMap<>();

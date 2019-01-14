@@ -66,7 +66,7 @@ public class AdminReservationRequestManager {
     private final PlatformTransactionManager transactionManager;
 
     public Result<AdminReservationRequestStats> getRequestStatus(String requestId, String eventName, String username) {
-        return eventManager.getOptionalByName(eventName, username)
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, username)
             .flatMap(e -> adminReservationRequestRepository.findStatsByRequestIdAndEventId(requestId, e.getId()))
             .map(Result::success)
             .orElseGet(() -> Result.error(ErrorCode.EventError.ACCESS_DENIED));
