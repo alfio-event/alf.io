@@ -17,7 +17,6 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.EventManager;
-import alfio.model.Event;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.modification.PromoCodeDiscountModification;
@@ -35,7 +34,6 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.TimeZone;
 
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
@@ -70,8 +68,7 @@ public class PromoCodeDiscountApiController {
 
     private ZoneId zoneIdFromEventId(Integer eventId, Integer utcOffset) {
         if(eventId != null) {
-            Event event = eventRepository.findById(eventId);
-            return TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
+            return eventRepository.getZoneIdByEventId(eventId);
         } else {
             return ZoneId.ofOffset("UTC", ZoneOffset.ofTotalSeconds(utcOffset != null ? utcOffset : 0));
         }

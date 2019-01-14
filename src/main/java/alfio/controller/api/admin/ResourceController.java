@@ -333,6 +333,6 @@ public class ResourceController {
     }
 
     private void checkAccess(int organizationId, int eventId, Principal principal) {
-        Validate.isTrue(eventRepository.findById(eventId).getOrganizationId() == organizationId && userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), organizationId));
+        Validate.isTrue(eventRepository.findEventAndOrganizationIdById(eventId).getOrganizationId() == organizationId && userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), organizationId));
     }
 }
