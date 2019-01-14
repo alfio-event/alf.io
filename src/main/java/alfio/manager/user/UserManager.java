@@ -99,6 +99,10 @@ public class UserManager {
         return userRepository.findEnabledByUsername(username).orElseThrow(IllegalArgumentException::new);
     }
 
+    public Optional<User> findOptionalEnabledUserByUsername(String username) {
+        return userRepository.findEnabledByUsername(username);
+    }
+
     public boolean usernameExists(String username) {
         return userRepository.findIdByUserName(username).isPresent();
     }

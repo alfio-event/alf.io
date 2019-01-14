@@ -129,7 +129,7 @@ public class UsersApiController {
 
     @PostMapping(value = "/api-keys/bulk")
     public ResponseEntity<String> bulkCreate(@RequestBody BulkApiKeyCreation request, Principal principal) {
-        Optional<User> userOptional = OptionalWrapper.optionally(() -> userManager.findUserByUsername(principal.getName()))
+        Optional<User> userOptional = userManager.findOptionalEnabledUserByUsername(principal.getName())
             .filter(u -> userManager.isOwnerOfOrganization(u, request.organizationId));
         if(userOptional.isPresent()) {
             userManager.bulkInsertApiKeys(request.organizationId, request.role, request.descriptions);

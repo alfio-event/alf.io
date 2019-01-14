@@ -155,7 +155,7 @@ public class GroupApiController {
 
     @DeleteMapping("/for/{organizationId}/link/{configurationId}")
     public ResponseEntity<String> unlinkGroup(@PathVariable("organizationId") int organizationId, @PathVariable("configurationId") int configurationId, Principal principal) {
-        if(optionally(() -> userManager.findUserByUsername(principal.getName())).filter(u -> userManager.isOwnerOfOrganization(u, organizationId)).isPresent()) {
+        if(userManager.findOptionalEnabledUserByUsername(principal.getName()).filter(u -> userManager.isOwnerOfOrganization(u, organizationId)).isPresent()) {
             groupManager.disableLink(configurationId);
             return ResponseEntity.ok("OK");
         }
@@ -187,7 +187,7 @@ public class GroupApiController {
     }
 
     private boolean notOwner(String username, int organizationId) {
-        return optionally(() -> userManager.findUserByUsername(username))
+        return userManager.findOptionalEnabledUserByUsername(username)
             .filter(user -> userManager.isOwnerOfOrganization(user, organizationId))
             .isEmpty();
     }

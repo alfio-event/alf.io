@@ -96,8 +96,8 @@ public class AdminReservationRequestManager {
             .map(id -> {
                 AdminReservationRequest request = adminReservationRequestRepository.fetchCompleteById(id);
 
-                Result<Triple<TicketReservation, List<Ticket>, Event>> reservationResult = Result.fromNullable(optionally(() -> eventRepository.findById((int) request.getEventId())).orElse(null), ErrorCode.EventError.NOT_FOUND)
-                    .flatMap(e -> Result.fromNullable(optionally(() -> userRepository.findById((int) request.getUserId())).map(u -> Pair.of(e, u)).orElse(null), ErrorCode.EventError.ACCESS_DENIED))
+                Result<Triple<TicketReservation, List<Ticket>, Event>> reservationResult = Result.fromNullable(eventRepository.findOptionalById((int) request.getEventId()).orElse(null), ErrorCode.EventError.NOT_FOUND)
+                    .flatMap(e -> Result.fromNullable(userRepository.findOptionalById((int) request.getUserId()).map(u -> Pair.of(e, u)).orElse(null), ErrorCode.EventError.ACCESS_DENIED))
                     .flatMap(p -> processReservation(request, p));
                 return buildParameterSource(id, reservationResult);
             }).collect(Collectors.partitioningBy(ps -> AdminReservationRequest.Status.SUCCESS.name().equals(ps.getValue("status"))));
