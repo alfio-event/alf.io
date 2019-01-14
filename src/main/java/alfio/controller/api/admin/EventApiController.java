@@ -389,7 +389,7 @@ public class EventApiController {
 
     @RequestMapping("/events/{eventName}/sponsor-scan/export")
     public void downloadSponsorScanExport(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
-        Event event = loadEvent(eventName, principal);
+        EventAndOrganizationId event = loadEvent(eventName, principal);
         List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
 
         List<String> header = new ArrayList<>();
@@ -499,7 +499,7 @@ public class EventApiController {
     
     @RequestMapping(value = "/events/{eventName}/additional-field/swap-position/{id1}/{id2}", method = POST)
     public void swapAdditionalFieldPosition(@PathVariable("eventName") String eventName, @PathVariable("id1") int id1, @PathVariable("id2") int id2, Principal principal) {
-    	Event event = eventManager.getSingleEvent(eventName, principal.getName());
+        EventAndOrganizationId event = eventManager.getSingleEvent(eventName, principal.getName());
     	eventManager.swapAdditionalFieldPosition(event.getId(), id1, id2);
     }
 
@@ -508,7 +508,7 @@ public class EventApiController {
                                            @PathVariable("id") int id,
                                            @RequestParam("newPosition") int newPosition,
                                            Principal principal) {
-        Event event = eventManager.getSingleEvent(eventName, principal.getName());
+        EventAndOrganizationId event = eventManager.getSingleEvent(eventName, principal.getName());
         eventManager.setAdditionalFieldPosition(event.getId(), id, newPosition);
     }
     
@@ -646,7 +646,7 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/ticket-sold-statistics", method = GET)
     public TicketsStatistics getTicketsStatistics(@PathVariable("eventName") String eventName, @RequestParam(value = "from", required = false) String f, @RequestParam(value = "to", required = false) String t, Principal principal) throws ParseException {
-        Event event = loadEvent(eventName, principal);
+        EventAndOrganizationId event = loadEvent(eventName, principal);
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         //TODO: cleanup
         Date from = DateUtils.truncate(f == null ? new Date(0) : format.parse(f), Calendar.HOUR);

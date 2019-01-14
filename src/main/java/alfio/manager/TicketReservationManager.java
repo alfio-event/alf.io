@@ -596,7 +596,7 @@ public class TicketReservationManager {
         return !summary.getFree() && (!summary.getNotYetPaid() || (summary.getWaitingForPayment() && ticketReservation.isInvoiceRequested()));
     }
 
-    private static List<Mailer.Attachment> generateBillingDocumentAttachment(Event event,
+    private static List<Mailer.Attachment> generateBillingDocumentAttachment(EventAndOrganizationId event,
                                                                              TicketReservation ticketReservation,
                                                                              Locale language,
                                                                              Map<String, Object> billingDocumentModel,
@@ -1153,7 +1153,7 @@ public class TicketReservationManager {
         extensionManager.handleReservationsCreditNoteIssuedForEvent(event, Collections.singletonList(reservationId));
     }
 
-    private void cleanupReferencesToReservation(boolean expired, String username, String reservationId, Event event) {
+    private void cleanupReferencesToReservation(boolean expired, String username, String reservationId, EventAndOrganizationId event) {
         List<String> reservationIdsToRemove = singletonList(reservationId);
         specialPriceRepository.resetToFreeAndCleanupForReservation(reservationIdsToRemove);
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
@@ -1510,7 +1510,7 @@ public class TicketReservationManager {
         return results.get(0);
     }
 
-    public String getShortReservationID(Event event, String reservationId) {
+    public String getShortReservationID(EventAndOrganizationId event, String reservationId) {
         return configurationManager.getShortReservationID(event, reservationId);
     }
 

@@ -437,11 +437,11 @@ public class EventManager {
     }
 
     public void reallocateTickets(int srcCategoryId, int targetCategoryId, int eventId) {
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findById(eventId);
         reallocateTickets(ticketCategoryRepository.findStatisticWithId(srcCategoryId, eventId), Optional.of(ticketCategoryRepository.getByIdAndActive(targetCategoryId, event.getId())), event);
     }
 
-    void reallocateTickets(TicketCategoryStatisticView src, Optional<TicketCategory> target, Event event) {
+    void reallocateTickets(TicketCategoryStatisticView src, Optional<TicketCategory> target, EventAndOrganizationId event) {
         int notSoldTickets = src.getNotSoldTicketsCount();
         if(notSoldTickets == 0) {
             log.debug("since all the ticket have been sold, ticket moving is not needed anymore.");
@@ -471,7 +471,7 @@ public class EventManager {
     }
 
     public void unbindTickets(String eventName, int categoryId, String username) {
-        Event event = getSingleEvent(eventName, username);
+        EventAndOrganizationId event = getSingleEvent(eventName, username);
         Validate.isTrue(ticketCategoryRepository.countUnboundedCategoriesByEventId(event.getId()) > 0, "cannot unbind tickets: there aren't any unbounded categories");
         TicketCategoryStatisticView ticketCategory = ticketCategoryRepository.findStatisticWithId(categoryId, event.getId());
         Validate.isTrue(ticketCategory.isBounded(), "cannot unbind tickets from an unbounded category!");
@@ -622,7 +622,7 @@ public class EventManager {
 
     }
 
-    private void handleTicketAllocationStrategyChange(Event event, TicketCategory original, TicketCategoryModification updated) {
+    private void handleTicketAllocationStrategyChange(EventAndOrganizationId event, TicketCategory original, TicketCategoryModification updated) {
         if(updated.isBounded()) {
             //the ticket allocation strategy has been changed to "bounded",
             //therefore we have to link the tickets which have not yet been acquired to this category
@@ -640,7 +640,7 @@ public class EventManager {
         ticketCategoryRepository.updateBoundedFlag(original.getId(), updated.isBounded());
     }
 
-    void handlePriceChange(Event event, TicketCategory original, TicketCategory updated) {
+    void handlePriceChange(EventAndOrganizationId event, TicketCategory original, TicketCategory updated) {
         if(original.getSrcPriceCts() == updated.getSrcPriceCts() || !original.isBounded()) {
             return;
         }
@@ -832,7 +832,7 @@ public class EventManager {
         return CategoryEvaluator.ticketCancellationAvailabilityChecker(ticketCategoryRepository);
     }
 
-    void resetReleasedTickets(Event event) {
+    void resetReleasedTickets(EventAndOrganizationId event) {
         int reverted = ticketRepository.revertToFree(event.getId());
         if(reverted > 0) {
             log.debug("Reverted {} tickets to FREE for event {}", reverted, event.getId());
