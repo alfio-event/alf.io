@@ -51,6 +51,9 @@ public interface TicketCategoryRepository {
     @Query("select * from ticket_category where id = :id and event_id = :eventId and tc_status = 'ACTIVE'")
     TicketCategory getByIdAndActive(@Bind("id") int id, @Bind("eventId") int eventId);
 
+    @Query("select * from ticket_category where id = :id and event_id = :eventId and tc_status = 'ACTIVE'")
+    Optional<TicketCategory> getOptionalByIdAndActive(@Bind("id") int id, @Bind("eventId") int eventId);
+
     @Query("select * from ticket_category where id = :id and tc_status = 'ACTIVE'")
     Optional<TicketCategory> getByIdAndActive(@Bind("id") int id);
 

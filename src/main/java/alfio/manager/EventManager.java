@@ -114,10 +114,13 @@ public class EventManager {
             .filter(checkOwnership(username, organizationRepository));
     }
 
+    public Optional<Event> getOptionalEventById(int eventId, String username) {
+        return eventRepository.findOptionalById(eventId)
+            .filter(checkOwnership(username, organizationRepository));
+    }
+
     public Event getSingleEventById(int eventId, String username) {
-        return optionally(() -> eventRepository.findById(eventId))
-            .filter(checkOwnership(username, organizationRepository))
-            .orElseThrow(IllegalStateException::new);
+        return getOptionalEventById(eventId, username).orElseThrow(IllegalStateException::new);
     }
 
     public void checkOwnership(EventAndOrganizationId event, String username, int organizationId) {
@@ -922,5 +925,9 @@ public class EventManager {
         if(!userIds.isEmpty()) {
             eventRepository.disableEventsForUsers(userIds);
         }
+    }
+
+    public Optional<TicketCategory> getOptionalByIdAndActive(int ticketCategoryId, int eventId) {
+        return ticketCategoryRepository.getOptionalByIdAndActive(ticketCategoryId, eventId);
     }
 }

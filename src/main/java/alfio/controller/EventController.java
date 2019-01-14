@@ -63,7 +63,6 @@ import static alfio.controller.support.SessionUtil.addToFlash;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
-import static alfio.util.OptionalWrapper.optionally;
 
 @Controller
 @AllArgsConstructor
@@ -145,7 +144,7 @@ public class EventController {
         Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
         
         if(specialCode.isPresent()) {
-            if (optionally(() -> eventManager.getTicketCategoryById(specialCode.get().getTicketCategoryId(), event.getId())).isEmpty()) {
+            if (eventManager.getOptionalByIdAndActive(specialCode.get().getTicketCategoryId(), event.getId()).isEmpty()) {
                 return ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ""));
             }
             

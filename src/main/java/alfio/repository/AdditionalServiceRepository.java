@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.*;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @QueryRepository
 public interface AdditionalServiceRepository {
@@ -31,6 +32,9 @@ public interface AdditionalServiceRepository {
 
     @Query("select * from additional_service where id = :id and event_id_fk = :eventId")
     AdditionalService getById(@Bind("id") int id, @Bind("eventId") int eventId);
+
+    @Query("select * from additional_service where id = :id and event_id_fk = :eventId")
+    Optional<AdditionalService> getOptionalById(@Bind("id") int id, @Bind("eventId") int eventId);
 
     @Query("delete from additional_service where id = :id and event_id_fk = :eventId")
     int delete(@Bind("id") int id, @Bind("eventId") int eventId);

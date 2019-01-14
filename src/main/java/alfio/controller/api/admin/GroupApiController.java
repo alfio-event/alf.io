@@ -136,7 +136,7 @@ public class GroupApiController {
             return ResponseEntity.badRequest().build();
         }
 
-        return optionally(() -> eventManager.getSingleEventById(body.getEventId(), principal.getName()))
+        return eventManager.getOptionalEventById(body.getEventId(), principal.getName())
             .map(event -> {
                 Optional<LinkedGroup> existing = groupManager.getLinksForEvent(event.getId())
                     .stream()

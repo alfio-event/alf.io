@@ -598,7 +598,7 @@ public class EventApiController {
 
     @RequestMapping(value = "/events/{eventName}/invoices/count", method = GET)
     public Integer countInvoicesForEvent(@PathVariable("eventName") String eventName, Principal principal) {
-        return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
+        return eventManager.getOptionalByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.countInvoices(e.getId()))
             .orElse(0);
     }
@@ -658,7 +658,7 @@ public class EventApiController {
     }
 
     private Event loadEvent(String eventName, Principal principal) {
-        Optional<Event> singleEvent = optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()));
+        Optional<Event> singleEvent = eventManager.getOptionalByName(eventName, principal.getName());
         Validate.isTrue(singleEvent.isPresent(), "event not found");
         return singleEvent.get();
     }

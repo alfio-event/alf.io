@@ -176,7 +176,7 @@ public class CheckInApiController {
 
     @RequestMapping(value = "/check-in/{eventName}/label-layout", method = GET)
     public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable("eventName") String eventName, Principal principal) {
-        return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
+        return eventManager.getOptionalByName(eventName, principal.getName())
             .filter(checkInManager.isOfflineCheckInAndLabelPrintingEnabled())
             .map(this::parseLabelLayout)
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED));
@@ -188,7 +188,7 @@ public class CheckInApiController {
                                               HttpServletResponse resp,
                                               Principal principal) {
         Date since = changedSince == null ? new Date(0) : DateUtils.addSeconds(new Date(changedSince), -1);
-        Optional<List<Integer>> ids = optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
+        Optional<List<Integer>> ids = eventManager.getOptionalByName(eventName, principal.getName())
             .filter(checkInManager.isOfflineCheckInEnabled())
             .map(event -> checkInManager.getAttendeesIdentifiers(event, since, principal.getName()));
 
@@ -203,7 +203,7 @@ public class CheckInApiController {
                                                        Principal principal) {
 
         validateIdList(ids);
-        return optionally(() -> eventManager.getSingleEvent(eventName, principal.getName()))
+        return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
                 Set<String> addFields = loadLabelLayout(event)
                     .map(layout -> {
