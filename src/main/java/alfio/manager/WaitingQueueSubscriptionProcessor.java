@@ -84,15 +84,18 @@ public class WaitingQueueSubscriptionProcessor {
     public void revertTicketToFreeIfCategoryIsExpired(Event event) {
         int eventId = event.getId();
         List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(eventId, ZonedDateTime.now(event.getZoneId()));
-        Map<TicketCategory, List<TicketInfo>> releasedByCategory = releasedButExpired.stream().collect(Collectors.groupingBy(TicketInfo::getTicketCategory));
-        for (Map.Entry<TicketCategory, List<TicketInfo>> entry : releasedByCategory.entrySet()) {
-            TicketCategory category = entry.getKey();
-            List<Integer> ids = entry.getValue().stream().map(ft -> ft.getTicket().getId()).collect(Collectors.toList());
-            if(category.isBounded()) {
-                ticketRepository.revertToFree(eventId, category.getId(), ids);
-            } else {
-                ticketRepository.unbindTicketsFromCategory(eventId, category.getId(), ids);
-            }
+        Map<Integer, List<TicketInfo>> releasedByCategory = releasedButExpired.stream().collect(Collectors.groupingBy(TicketInfo::getTicketCategoryId));
+        for (Map.Entry<Integer, List<TicketInfo>> entry : releasedByCategory.entrySet()) {
+            entry.getValue().stream().findFirst().ifPresent(ticketInfo -> {
+                List<Integer> ids = entry.getValue().stream().map(TicketInfo::getTicketId).collect(Collectors.toList());
+                if(!ids.isEmpty()) {
+                    if (ticketInfo.isTicketCategoryBounded()) {
+                        ticketRepository.revertToFree(eventId, ticketInfo.getTicketCategoryId(), ids);
+                    } else {
+                        ticketRepository.unbindTicketsFromCategory(eventId, ticketInfo.getTicketCategoryId(), ids);
+                    }
+                }
+            });
         }
 
     }
