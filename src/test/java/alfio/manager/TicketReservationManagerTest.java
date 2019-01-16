@@ -495,9 +495,10 @@ class TicketReservationManagerTest {
     @Test
     void cancelPendingReservationAndRenewCode() {
         String RESERVATION_ID = "rid";
-        when(ticketRepository.releaseExpiredTicket(eq(RESERVATION_ID), anyInt(), anyInt())).thenReturn(1);
+        when(ticketRepository.releaseExpiredTicket(eq(RESERVATION_ID), anyInt(), anyInt(), anyString())).thenReturn(1);
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
         when(ticketRepository.findTicketsInReservation(eq(RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
+        when(ticketRepository.findTicketIdsInReservation(eq(RESERVATION_ID))).thenReturn(Collections.singletonList(TICKET_ID));
         when(ticket.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         when(ticketRepository.findBySpecialPriceId(eq(SPECIAL_PRICE_ID))).thenReturn(Optional.of(ticket));
         TicketReservation reservation = mock(TicketReservation.class);
@@ -512,7 +513,7 @@ class TicketReservationManagerTest {
         Optional<SpecialPrice> renewed = trm.renewSpecialPrice(Optional.of(specialPrice), Optional.of(SPECIAL_PRICE_SESSION_ID));
         verify(specialPriceRepository).resetToFreeAndCleanupForReservation(eq(singletonList(RESERVATION_ID)));
         verify(ticketRepository).resetCategoryIdForUnboundedCategories(eq(singletonList(RESERVATION_ID)));
-        verify(ticketRepository).releaseExpiredTicket(RESERVATION_ID, EVENT_ID, TICKET_ID);
+        verify(ticketRepository).releaseExpiredTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID), anyString());
         verify(ticketReservationRepository).remove(eq(singletonList(RESERVATION_ID)));
         verify(waitingQueueManager).fireReservationExpired(eq(RESERVATION_ID));
         assertTrue(renewed.isPresent());
