@@ -21,12 +21,11 @@ import alfio.model.Ticket;
 import alfio.model.TicketInfo;
 import alfio.model.TicketWithReservationAndTransaction;
 import ch.digitalfondue.npjt.*;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @QueryRepository
 public interface TicketRepository {
@@ -123,6 +122,9 @@ public interface TicketRepository {
 
     @Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc")
     List<Ticket> findTicketsInReservation(@Bind("reservationId") String reservationId);
+
+    @Query("select id from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc")
+    List<Integer> findTicketIdsInReservation(@Bind("reservationId") String reservationId);
 
     @Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc LIMIT 1 OFFSET 0")
     Optional<Ticket> findFirstTicketInReservation(@Bind("reservationId") String reservationId);
@@ -238,11 +240,15 @@ public interface TicketRepository {
     @Query(value = RELEASE_TICKET_QUERY, type = QueryType.TEMPLATE)
     String batchReleaseTickets();
 
-    @Query("update ticket set status = 'RELEASED', " + RESET_TICKET + " where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
-    int releaseExpiredTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
+    @Query("update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
+    int releaseExpiredTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId, @Bind("newUuid") String newUuid);
 
-    @Query("update ticket set status = 'RELEASED', " + RESET_TICKET + " where id in (:ticketIds)")
-    int resetTickets(@Bind("ticketIds") List<Integer> ticketIds);
+    NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
+
+    default void resetTickets(List<Integer> ticketIds) {
+        MapSqlParameterSource[] params = ticketIds.stream().map(ticketId -> new MapSqlParameterSource("ticketId", ticketId).addValue("newUuid", UUID.randomUUID().toString())).toArray(MapSqlParameterSource[]::new);
+        getNamedParameterJdbcTemplate().batchUpdate("update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId", params);
+    }
 
     @Query("select count(*) from ticket where status = 'RELEASED' and event_id = :eventId")
     Integer countWaiting(@Bind("eventId") int eventId);
