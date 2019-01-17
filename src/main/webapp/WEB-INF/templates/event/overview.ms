@@ -119,7 +119,11 @@
         <input type="hidden" name="paymentMethod" value="PAYPAL">
         <input type="hidden" name="paypalPaymentId" value="{{paypalPaymentId}}">
         <input type="hidden" name="paypalPayerID" value="{{paypalPayerID}}">
+        <input type="hidden" name="hmac" value="{{paypalHMAC}}">
         <input type="hidden" name="termAndConditionsAccepted" value="true">
+        {{#event.privacyPolicyLinkOrNull}}
+        <input type="hidden" name="privacyPolicyAccepted" value="true">
+        {{/event.privacyPolicyLinkOrNull}}
         <div class="alert alert-success">
             <h3><i class="fa fa-check"></i> {{#i18n}}reservation-page.paypal.confirm{{/i18n}}</h3>
         </div>

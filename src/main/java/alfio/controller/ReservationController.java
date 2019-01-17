@@ -340,6 +340,7 @@ public class ReservationController {
                                @RequestParam(value = "PayerID", required = false) String paypalPayerID,
                                @RequestParam(value = "paypal-success", required = false) Boolean isPaypalSuccess,
                                @RequestParam(value = "paypal-error", required = false) Boolean isPaypalError,
+                               @RequestParam(value = "hmac", required = false) String payPalHmac,
                                //
                                Locale locale, Model model) {
         return eventRepository.findOptionalByShortName(eventName)
@@ -353,9 +354,10 @@ public class ReservationController {
                         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
                     }
 
-                    if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null) {
+                    if (Boolean.TRUE.equals(isPaypalSuccess) && paypalPayerID != null && paypalPaymentId != null && payPalHmac != null) {
                         model.addAttribute("paypalPaymentId", paypalPaymentId)
                             .addAttribute("paypalPayerID", paypalPayerID)
+                            .addAttribute("paypalHMAC", payPalHmac)
                             .addAttribute("paypalCheckoutConfirmation", true);
                     } else {
                         model.addAttribute("paypalCheckoutConfirmation", false);
@@ -566,7 +568,7 @@ public class ReservationController {
 
         final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
 
-        paymentForm.validate(bindingResult, event, reservationCost);
+        paymentForm.validate(bindingResult, event, reservationCost, ticketReservation);
         if (bindingResult.hasErrors()) {
             SessionUtil.addToFlash(bindingResult, redirectAttributes);
             return redirectReservation(optionalReservation, eventName, reservationId);

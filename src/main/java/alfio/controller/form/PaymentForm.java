@@ -16,7 +16,10 @@
  */
 package alfio.controller.form;
 
+import alfio.manager.PaypalManager;
+import alfio.model.CustomerName;
 import alfio.model.Event;
+import alfio.model.TicketReservation;
 import alfio.model.TotalPrice;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ErrorsCode;
@@ -57,7 +60,7 @@ public class PaymentForm implements Serializable {
         return StringUtils.isNotBlank(paypalPayerID) && StringUtils.isNotBlank(paypalPaymentId);
     }
 
-    public void validate(BindingResult bindingResult, Event event, TotalPrice reservationCost) {
+    public void validate(BindingResult bindingResult, Event event, TotalPrice reservationCost, TicketReservation reservation) {
         List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
 
         Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
@@ -75,7 +78,7 @@ public class PaymentForm implements Serializable {
             bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
         }
 
-        if (hasPaypalTokens() /*&& !PaypalManager.isValidHMAC(new CustomerName(fullName, firstName, lastName, event), email, billingAddress, hmac, event)*/) {
+        if (hasPaypalTokens() && !PaypalManager.isValidHMAC(new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event), reservation.getEmail(), reservation.getBillingAddress(), hmac, event)) {
             bindingResult.reject(ErrorsCode.STEP_2_INVALID_HMAC);
         }
     }

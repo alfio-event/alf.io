@@ -577,7 +577,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         reservationController.validateToOverview(eventName, reservationIdentifier, contactAndTicketsForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
 
-        Assert.assertEquals("/event/overview", reservationController.showOverview(eventName, reservationIdentifier, null, null, null, null, Locale.ENGLISH, model));
+        Assert.assertEquals("/event/overview", reservationController.showOverview(eventName, reservationIdentifier, null, null, null, null, null, Locale.ENGLISH, model));
 
         PaymentForm paymentForm = new PaymentForm();
         paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
