@@ -157,7 +157,7 @@ public class WaitingQueueManagerTest {
         verify(ticketRepository).countWaiting(eq(eventId));
         verify(ticketRepository, never()).revertToFree(eq(eventId));
         verify(ticketRepository).countPreReservedTickets(eq(eventId));
-        verify(ticketRepository).preReserveTicket();
+        verify(ticketRepository).preReserveTicket(anyList());
         verify(ticketRepository).selectWaitingTicketsForUpdate(eq(eventId), anyString(), anyInt());
     }
 }

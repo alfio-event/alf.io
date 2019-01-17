@@ -23,21 +23,16 @@ import alfio.repository.TicketRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -47,7 +42,6 @@ public class EventManagerHandleTicketModificationTest {
     private TicketCategory original;
     private TicketCategory updated;
     private TicketRepository ticketRepository;
-    private NamedParameterJdbcTemplate jdbc;
     private EventManager eventManager;
     private final int eventId = 10;
     private int originalCategoryId = 20;
@@ -60,9 +54,9 @@ public class EventManagerHandleTicketModificationTest {
         original = mock(TicketCategory.class);
         updated = mock(TicketCategory.class);
         ticketRepository = mock(TicketRepository.class);
-        jdbc = mock(NamedParameterJdbcTemplate.class);
+
         when(event.getId()).thenReturn(eventId);
-        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, jdbc, null, null, null, null, null, null, null, null, null, null, null);
+        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null);
         when(original.getId()).thenReturn(originalCategoryId);
         when(updated.getId()).thenReturn(updatedCategoryId);
         when(original.getSrcPriceCts()).thenReturn(1000);
@@ -71,7 +65,6 @@ public class EventManagerHandleTicketModificationTest {
         when(updated.getMaxTickets()).thenReturn(11);
         when(original.isBounded()).thenReturn(true);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
-        when(ticketRepository.bulkTicketUpdate()).thenReturn("bulk");
     }
 
     @DisplayName("throw exception if there are tickets already sold")
@@ -96,7 +89,7 @@ public class EventManagerHandleTicketModificationTest {
     void doNothingIfZero() {
         eventManager.handleTicketNumberModification(event, original, updated, 0, false);
         verify(ticketRepository, never()).invalidateTickets(anyList());
-        verify(jdbc, never()).batchUpdate(anyString(), any(SqlParameterSource[].class));
+        verify(ticketRepository, never()).bulkTicketUpdate(any(), any());
     }
 
     @Test
@@ -105,9 +98,7 @@ public class EventManagerHandleTicketModificationTest {
         when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(eventId), eq(1), eq(Arrays.asList(Ticket.TicketStatus.FREE.name(), Ticket.TicketStatus.RELEASED.name())))).thenReturn(singletonList(1));
         eventManager.handleTicketNumberModification(event, original, updated, 1, false);
         verify(ticketRepository, never()).invalidateTickets(anyList());
-        ArgumentCaptor<SqlParameterSource[]> captor = ArgumentCaptor.forClass(SqlParameterSource[].class);
-        verify(jdbc, times(1)).batchUpdate(anyString(), captor.capture());
-        assertEquals(1, captor.getValue().length);
+        verify(ticketRepository, times(1)).bulkTicketUpdate(any(), any());
     }
 
     @Test

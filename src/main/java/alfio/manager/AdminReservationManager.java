@@ -49,7 +49,6 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -88,7 +87,6 @@ public class AdminReservationManager {
     private final TicketReservationManager ticketReservationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
-    private final NamedParameterJdbcTemplate jdbc;
     private final SpecialPriceRepository specialPriceRepository;
     private final TicketReservationRepository ticketReservationRepository;
     private final EventRepository eventRepository;
@@ -552,7 +550,7 @@ public class AdminReservationManager {
 
     private void createMissingTickets(Event event, int tickets) {
         final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), tickets, Ticket.TicketStatus.FREE).toArray(MapSqlParameterSource[]::new);
-        jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
+        ticketRepository.bulkTicketInitialization(params);
     }
 
     @Transactional
@@ -696,15 +694,11 @@ public class AdminReservationManager {
 
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
         ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
-        MapSqlParameterSource[] args = ticketIds.stream().map(id -> new MapSqlParameterSource("ticketId", id)
-            .addValue("reservationId", reservationId)
-            .addValue("eventId", event.getId())
-            .addValue("newUuid", UUID.randomUUID().toString())
-        ).toArray(MapSqlParameterSource[]::new);
+
         List<String> reservationIds = ticketRepository.findReservationIds(ticketIds);
         List<String> ticketUUIDs = ticketRepository.findUUIDs(ticketIds);
-        int[] results = jdbc.batchUpdate(ticketRepository.batchReleaseTickets(), args);
-        Validate.isTrue(Arrays.stream(results).sum() == args.length, "Failed to update tickets");
+        int[] results = ticketRepository.batchReleaseTickets(reservationId, ticketIds, event);
+        Validate.isTrue(Arrays.stream(results).sum() == ticketIds.size(), "Failed to update tickets");
         if(!removeReservation) {
             if(forceInvoiceReceiptUpdate) {
                 auditingRepository.insert(reservationId, userId, event.getId(), FORCED_UPDATE_INVOICE, date, RESERVATION, reservationId);

@@ -51,7 +51,6 @@ import org.flywaydb.core.Flyway;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -91,7 +90,6 @@ public class EventManager {
     private final TicketRepository ticketRepository;
     private final SpecialPriceRepository specialPriceRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
-    private final NamedParameterJdbcTemplate jdbc;
     private final ConfigurationManager configurationManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final EventDeleterRepository eventDeleterRepository;
@@ -339,7 +337,7 @@ public class EventManager {
             Event modified = eventRepository.findById(eventId);
             if(seatsDifference > 0) {
                 final MapSqlParameterSource[] params = generateEmptyTickets(modified, Date.from(ZonedDateTime.now(modified.getZoneId()).toInstant()), seatsDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
-                jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
+                ticketRepository.bulkTicketInitialization(params);
             } else {
                 List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, Math.abs(seatsDifference), singletonList(TicketStatus.FREE.name()));
                 Validate.isTrue(ids.size() == Math.abs(seatsDifference), "cannot lock enough tickets for deletion.");
@@ -570,7 +568,7 @@ public class EventManager {
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
-            jdbc.batchUpdate(ticketRepository.bulkTicketUpdate(), lockedTickets.stream().map(id -> new MapSqlParameterSource("id", id).addValue("categoryId", ticketCategory.getId()).addValue("srcPriceCts", ticketCategory.getSrcPriceCts())).toArray(MapSqlParameterSource[]::new));
+            ticketRepository.bulkTicketUpdate(lockedTickets, ticketCategory);
             if(tc.isTokenGenerationRequested()) {
                 insertTokens(ticketCategory);
                 ticketRepository.revertToFree(eventId, ticketCategory.getId(), lockedTickets);
@@ -699,9 +697,7 @@ public class EventManager {
             //the updated category contains more tickets than the older one
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), addedTickets, asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
             Validate.isTrue(addedTickets == lockedTickets.size(), "Cannot add %d tickets. There are only %d free tickets.", addedTickets, lockedTickets.size());
-            jdbc.batchUpdate(ticketRepository.bulkTicketUpdate(), lockedTickets.stream()
-                    .map(id -> new MapSqlParameterSource("id", id).addValue("categoryId", updated.getId()).addValue("srcPriceCts", updated.getSrcPriceCts()))
-                    .toArray(MapSqlParameterSource[]::new));
+            ticketRepository.bulkTicketUpdate(lockedTickets, updated);
             if(updated.isAccessRestricted()) {
                 //since the updated category is not public, the tickets shouldn't be distributed to waiting people.
                 ticketRepository.revertToFree(event.getId(), updated.getId(), lockedTickets);
@@ -718,14 +714,14 @@ public class EventManager {
             }
             ticketRepository.invalidateTickets(ids);
             final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), absDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
-            jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
+            ticketRepository.bulkTicketInitialization(params);
         }
     }
 
     private void createAllTicketsForEvent(Event event, EventModification em) {
         Validate.notNull(em.getAvailableSeats());
         final MapSqlParameterSource[] params = prepareTicketsBulkInsertParameters(ZonedDateTime.now(event.getZoneId()), event, em.getAvailableSeats(), TicketStatus.FREE);
-        jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
+        ticketRepository.bulkTicketInitialization(params);
     }
 
     private int insertEvent(EventModification em) {

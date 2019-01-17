@@ -16,10 +16,7 @@
  */
 package alfio.repository;
 
-import alfio.model.FullTicketInfo;
-import alfio.model.Ticket;
-import alfio.model.TicketInfo;
-import alfio.model.TicketWithReservationAndTransaction;
+import alfio.model.*;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -39,12 +36,19 @@ public interface TicketRepository {
     String REVERT_TO_FREE = "update ticket set status = 'FREE' where status = 'RELEASED' and event_id = :eventId";
 
 
-    @Query(type = QueryType.TEMPLATE, value = "insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, src_price_cts)"
-            + "values(:uuid, :creation, :categoryId, :eventId, :status, 0, 0, :srcPriceCts)")
-    String bulkTicketInitialization();
+    //TODO: refactor, try to move the MapSqlParameterSource inside the default method!
+    default void bulkTicketInitialization(MapSqlParameterSource[] args) {
+        getNamedParameterJdbcTemplate().batchUpdate("insert into ticket (uuid, creation, category_id, event_id, status, original_price_cts, paid_price_cts, src_price_cts)"
+            + "values(:uuid, :creation, :categoryId, :eventId, :status, 0, 0, :srcPriceCts)", args);
+    }
 
-    @Query(type = QueryType.TEMPLATE, value = "update ticket set category_id = :categoryId, src_price_cts = :srcPriceCts where id = :id")
-    String bulkTicketUpdate();
+    default void bulkTicketUpdate(List<Integer> ids, TicketCategory ticketCategory) {
+        MapSqlParameterSource[] params = ids.stream().map(id -> new MapSqlParameterSource("id", id)
+            .addValue("categoryId", ticketCategory.getId())
+            .addValue("srcPriceCts", ticketCategory.getSrcPriceCts()))
+            .toArray(MapSqlParameterSource[]::new);
+        getNamedParameterJdbcTemplate().batchUpdate("update ticket set category_id = :categoryId, src_price_cts = :srcPriceCts where id = :id", params);
+    }
 
     @Query("select id from ticket where status in (:requiredStatuses) and category_id = :categoryId and event_id = :eventId and tickets_reservation_id is null order by id limit :amount for update")
     List<Integer> selectTicketInCategoryForUpdate(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId, @Bind("amount") int amount, @Bind("requiredStatuses") List<String> requiredStatus);
@@ -247,8 +251,14 @@ public interface TicketRepository {
     @Query(RELEASE_TICKET_QUERY)
     int releaseTicket(@Bind("reservationId") String reservationId, @Bind("newUuid") String newUuid, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId);
 
-    @Query(value = RELEASE_TICKET_QUERY, type = QueryType.TEMPLATE)
-    String batchReleaseTickets();
+    default int[] batchReleaseTickets(String reservationId, List<Integer> ticketIds, Event event) {
+        MapSqlParameterSource[] args = ticketIds.stream().map(id -> new MapSqlParameterSource("ticketId", id)
+            .addValue("reservationId", reservationId)
+            .addValue("eventId", event.getId())
+            .addValue("newUuid", UUID.randomUUID().toString())
+        ).toArray(MapSqlParameterSource[]::new);
+        return getNamedParameterJdbcTemplate().batchUpdate(RELEASE_TICKET_QUERY, args);
+    }
 
     @Query("update ticket set status = 'RELEASED', uuid = :newUuid, " + RESET_TICKET + " where id = :ticketId and status = 'PENDING' and tickets_reservation_id = :reservationId and event_id = :eventId")
     int releaseExpiredTicket(@Bind("reservationId") String reservationId, @Bind("eventId") int eventId, @Bind("ticketId") int ticketId, @Bind("newUuid") String newUuid);
@@ -289,8 +299,12 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status = 'PRE_RESERVED'")
     Integer countPreReservedTickets(@Bind("eventId") int eventId);
 
-    @Query(type = QueryType.TEMPLATE, value = "update ticket set status = 'PRE_RESERVED' where id = :id")
-    String preReserveTicket();
+    default void preReserveTicket(List<Integer> ids) {
+        MapSqlParameterSource[] params = ids.stream()
+            .map(id -> new MapSqlParameterSource().addValue("id", id))
+            .toArray(MapSqlParameterSource[]::new);
+        getNamedParameterJdbcTemplate().batchUpdate("update ticket set status = 'PRE_RESERVED' where id = :id", params);
+    }
 
     @Query("select * from ticket where status = 'FREE' and event_id = :eventId")
     List<Ticket> findFreeByEventId(@Bind("eventId") int eventId);

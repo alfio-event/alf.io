@@ -46,6 +46,7 @@ import org.springframework.stereotype.Component;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
@@ -190,11 +191,11 @@ public class WaitingQueueManager {
                 .sorted(Comparator.comparing(t -> t.getExpiration(event.getZoneId())))
                 .map(tc -> Pair.of(determineAvailableSeats(ticketCategoriesStats.get(tc.getId()), eventStatisticView), ticketCategoriesStats.get(tc.getId())))
                 .collect(new PreReservedTicketDistributor(toBeGenerated));
-        MapSqlParameterSource[] candidates = collectedTickets.stream()
+        List<Integer> ids = collectedTickets.stream()
                 .flatMap(p -> selectTicketsForPreReservation(eventId, p).stream())
-                .map(id -> new MapSqlParameterSource().addValue("id", id))
-                .toArray(MapSqlParameterSource[]::new);
-        jdbc.batchUpdate(ticketRepository.preReserveTicket(), candidates);
+                .collect(Collectors.toList());
+
+        ticketRepository.preReserveTicket(ids);
     }
 
     private List<Integer> selectTicketsForPreReservation(int eventId, Pair<Integer, TicketCategoryStatisticView> p) {
