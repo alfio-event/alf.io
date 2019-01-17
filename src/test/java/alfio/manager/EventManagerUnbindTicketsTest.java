@@ -85,7 +85,7 @@ public class EventManagerUnbindTicketsTest {
             eventDescriptionRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
             ticketRepository, specialPriceRepository, null, null, null,
             null, null, null,
-            null, null, null, organizationRepository,
+            null, null, organizationRepository,
             null, null, null);
     }
 

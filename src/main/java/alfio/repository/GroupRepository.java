@@ -19,10 +19,14 @@ package alfio.repository;
 import alfio.model.group.Group;
 import alfio.model.group.GroupMember;
 import alfio.model.group.LinkedGroup;
+import alfio.model.modification.GroupMemberModification;
 import ch.digitalfondue.npjt.*;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @QueryRepository
 public interface GroupRepository {
@@ -57,9 +61,15 @@ public interface GroupRepository {
                                                         @Bind("matchType") LinkedGroup.MatchType matchType,
                                                         @Bind("maxAllocation") Integer maxAllocation);
 
-    @Query(type = QueryType.TEMPLATE,
-        value = "insert into group_member(a_group_id_fk, value, description) values(:groupId, :value, :description)")
-    String insertItemTemplate();
+    default int[] insert(int groupId, List<GroupMemberModification> members) {
+        MapSqlParameterSource[] params = members.stream()
+            .map(i -> new MapSqlParameterSource("groupId", groupId).addValue("value", i.getValue().toLowerCase()).addValue("description", i.getDescription()))
+            .toArray(MapSqlParameterSource[]::new);
+
+        return getNamedParameterJdbcTemplate().batchUpdate("insert into group_member(a_group_id_fk, value, description) values(:groupId, :value, :description)", params);
+    }
+
+    NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
 
     @Query("select * from group_member_active where a_group_id_fk = :groupId order by value")
     List<GroupMember> getItems(@Bind("groupId") int groupId);
@@ -118,8 +128,14 @@ public interface GroupRepository {
     @Query("delete from whitelisted_ticket where ticket_id_fk in (:ticketIds)")
     int deleteExistingWhitelistedTickets(@Bind("ticketIds") List<Integer> ticketIds);
 
-    @Query(type = QueryType.TEMPLATE, value = "update group_member set active = false, value = 'DISABLED-' || :disabledPlaceholder where id = :memberId and a_group_id_fk = :groupId")
-    String deactivateGroupMember();
+    default void deactivateGroupMember(List<Integer> memberIds, int groupId) {
+        MapSqlParameterSource[] params = memberIds.stream().map(memberId ->
+                new MapSqlParameterSource("groupId", groupId)
+                    .addValue("memberId", memberId)
+                    .addValue("disabledPlaceholder", UUID.randomUUID().toString())
+            ).toArray(MapSqlParameterSource[]::new);
+        getNamedParameterJdbcTemplate().batchUpdate("update group_member set active = false, value = 'DISABLED-' || :disabledPlaceholder where id = :memberId and a_group_id_fk = :groupId", params);
+    }
 
 
     @Query("update a_group set active = false where id = :groupId")

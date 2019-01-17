@@ -25,7 +25,6 @@ import alfio.model.user.User;
 import alfio.repository.AdminReservationRequestRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.user.UserRepository;
-import alfio.util.Json;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
@@ -33,7 +32,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -47,7 +45,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 
@@ -59,7 +56,6 @@ public class AdminReservationRequestManager {
 
     private final AdminReservationManager adminReservationManager;
     private final EventManager eventManager;
-    private final NamedParameterJdbcTemplate jdbc;
     private final UserRepository userRepository;
     private final AdminReservationRequestRepository adminReservationRequestRepository;
     private final EventRepository eventRepository;
@@ -90,6 +86,7 @@ public class AdminReservationRequestManager {
             .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED));
     }
 
+    //TODO: rewrite, and add test!
     public Pair<Integer, Integer> processPendingReservations() {
         Map<Boolean, List<MapSqlParameterSource>> result = adminReservationRequestRepository.findPendingForUpdate(1000)
             .stream()
@@ -98,13 +95,13 @@ public class AdminReservationRequestManager {
 
                 Result<Triple<TicketReservation, List<Ticket>, Event>> reservationResult = Result.fromNullable(eventRepository.findOptionalById((int) request.getEventId()).orElse(null), ErrorCode.EventError.NOT_FOUND)
                     .flatMap(e -> Result.fromNullable(userRepository.findOptionalById((int) request.getUserId()).map(u -> Pair.of(e, u)).orElse(null), ErrorCode.EventError.ACCESS_DENIED))
-                    .flatMap(p -> processReservation(request, p));
+                    .flatMap(p -> processReservation(request, p.getLeft(), p.getRight()));
                 return buildParameterSource(id, reservationResult);
             }).collect(Collectors.partitioningBy(ps -> AdminReservationRequest.Status.SUCCESS.name().equals(ps.getValue("status"))));
 
         result.values().forEach(list -> {
             try {
-                jdbc.batchUpdate(adminReservationRequestRepository.updateStatus(), list.toArray(new MapSqlParameterSource[0]));
+                adminReservationRequestRepository.updateStatus(list);
             } catch(Exception e) {
                 log.fatal("cannot update the status of "+list.size()+" reservations", e);
             }
@@ -114,14 +111,14 @@ public class AdminReservationRequestManager {
 
     }
 
-    private Result<Triple<TicketReservation, List<Ticket>, Event>> processReservation(AdminReservationRequest request, Pair<Event, User> p) {
+    private Result<Triple<TicketReservation, List<Ticket>, Event>> processReservation(AdminReservationRequest request, Event event, User user) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED);
         TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
         return template.execute(status -> {
             var savepoint = status.createSavepoint();
             try {
-                String eventName = p.getLeft().getShortName();
-                String username = p.getRight().getUsername();
+                String eventName = event.getShortName();
+                String username = user.getUsername();
                 Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.createReservation(request.getBody(), eventName, username)
                     .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username));
                 if(!result.isSuccess()) {
@@ -147,15 +144,7 @@ public class AdminReservationRequestManager {
         try {
             String requestId = UUID.randomUUID().toString();
             long userId = userRepository.findIdByUserName(username).orElseThrow(IllegalArgumentException::new);
-            MapSqlParameterSource[] requests = spread(body, singleReservation)
-                .map(res -> new MapSqlParameterSource("userId", userId)
-                    .addValue("requestId", requestId)
-                    .addValue("requestType", AdminReservationRequest.RequestType.IMPORT.name())
-                    .addValue("status", AdminReservationRequest.Status.PENDING.name())
-                    .addValue("eventId", event.getId())
-                    .addValue("body", Json.toJson(res)))
-                .toArray(MapSqlParameterSource[]::new);
-            jdbc.batchUpdate(adminReservationRequestRepository.insertRequest(), requests);
+            adminReservationRequestRepository.insertRequest(requestId, userId, event, spread(body, singleReservation));
             return Result.success(requestId);
         } catch (Exception e) {
             log.error("can't insert reservation request", e);
