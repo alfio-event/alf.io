@@ -552,8 +552,7 @@ public class EventManager {
 
             if (tc.isTokenGenerationRequested()) {
                 final TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), event.getId());
-                final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategory, ticketCategory.getMaxTickets());
-                jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
+                specialPriceRepository.bulkInsert(ticketCategory, ticketCategory.getMaxTickets());
             }
         });
     }
@@ -589,8 +588,7 @@ public class EventManager {
     }
 
     private void insertTokens(TicketCategory ticketCategory, int requiredTokens) {
-        final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(ticketCategory, requiredTokens);
-        jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
+        specialPriceRepository.bulkInsert(ticketCategory, requiredTokens);
     }
 
     private void insertOrUpdateTicketCategoryDescription(int tcId, TicketCategoryModification tc, Event event) {
@@ -672,14 +670,13 @@ public class EventManager {
     void handleTokenModification(TicketCategory original, TicketCategory updated, int addedTickets) {
         if(original.isAccessRestricted() ^ updated.isAccessRestricted()) {
             if(updated.isAccessRestricted()) {
-                final MapSqlParameterSource[] args = prepareTokenBulkInsertParameters(updated, updated.getMaxTickets());
-                jdbc.batchUpdate(specialPriceRepository.bulkInsert(), args);
+                specialPriceRepository.bulkInsert(updated, updated.getMaxTickets());
             } else {
                 specialPriceRepository.cancelExpiredTokens(updated.getId());
             }
         } else if(updated.isAccessRestricted() && addedTickets != 0) {
             if(addedTickets > 0) {
-                jdbc.batchUpdate(specialPriceRepository.bulkInsert(), prepareTokenBulkInsertParameters(updated, addedTickets));
+                specialPriceRepository.bulkInsert(updated, addedTickets);
             } else {
                 int absDifference = Math.abs(addedTickets);
                 final List<Integer> ids = specialPriceRepository.lockNotSentTokens(updated.getId(), absDifference);
@@ -723,17 +720,6 @@ public class EventManager {
             final MapSqlParameterSource[] params = generateEmptyTickets(event, Date.from(ZonedDateTime.now(event.getZoneId()).toInstant()), absDifference, TicketStatus.RELEASED).toArray(MapSqlParameterSource[]::new);
             jdbc.batchUpdate(ticketRepository.bulkTicketInitialization(), params);
         }
-    }
-
-    private MapSqlParameterSource[] prepareTokenBulkInsertParameters(TicketCategory tc, int limit) {
-        return generateStreamForTicketCreation(limit)
-                .peek(ps -> {
-                    ps.addValue("code", UUID.randomUUID().toString());
-                    ps.addValue("priceInCents", tc.getSrcPriceCts());
-                    ps.addValue("ticketCategoryId", tc.getId());
-                    ps.addValue("status", SpecialPrice.Status.WAITING.name());
-                })
-                .toArray(MapSqlParameterSource[]::new);
     }
 
     private void createAllTicketsForEvent(Event event, EventModification em) {

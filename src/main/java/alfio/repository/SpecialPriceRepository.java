@@ -17,14 +17,18 @@
 package alfio.repository;
 
 import alfio.model.SpecialPrice;
+import alfio.model.TicketCategory;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 import ch.digitalfondue.npjt.QueryType;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @QueryRepository
 public interface SpecialPriceRepository {
@@ -71,9 +75,22 @@ public interface SpecialPriceRepository {
     @Query("update special_price set code = :code, status = 'FREE', sent_ts = null where id = :id")
     int updateCode(@Bind("code") String code, @Bind("id") int id);
 
-    @Query(type = QueryType.TEMPLATE, value = "insert into special_price (code, price_cts, ticket_category_id, status, sent_ts) " +
-            "values(:code, :priceInCents, :ticketCategoryId, :status, null)")
-    String bulkInsert();
+    NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
+
+    default void bulkInsert(TicketCategory ticketCategory, int requiredTokens) {
+
+        MapSqlParameterSource[] params = Stream.generate(MapSqlParameterSource::new)
+            .limit(requiredTokens)
+            .peek(ps -> {
+                ps.addValue("code", UUID.randomUUID().toString());
+                ps.addValue("priceInCents", ticketCategory.getSrcPriceCts());
+                ps.addValue("ticketCategoryId", ticketCategory.getId());
+                ps.addValue("status", SpecialPrice.Status.WAITING.name());
+            }).toArray(MapSqlParameterSource[]::new);
+
+        getNamedParameterJdbcTemplate()
+            .batchUpdate("insert into special_price (code, price_cts, ticket_category_id, status, sent_ts) values(:code, :priceInCents, :ticketCategoryId, :status, null)", params);
+    }
 
 
     @Query("update special_price set status = 'CANCELLED' where ticket_category_id = :categoryId and status in ('FREE', 'WAITING')")
