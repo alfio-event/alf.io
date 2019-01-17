@@ -35,8 +35,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -57,18 +55,15 @@ import static java.util.Collections.singletonList;
 public class GroupManager {
 
     private final GroupRepository groupRepository;
-    private final NamedParameterJdbcTemplate jdbcTemplate;
     private final TicketRepository ticketRepository;
     private final AuditingRepository auditingRepository;
     private final TransactionTemplate requiresNewTransactionTemplate;
 
     public GroupManager(GroupRepository groupRepository,
-                        NamedParameterJdbcTemplate jdbcTemplate,
                         TicketRepository ticketRepository,
                         AuditingRepository auditingRepository,
                         PlatformTransactionManager transactionManager) {
         this.groupRepository = groupRepository;
-        this.jdbcTemplate = jdbcTemplate;
         this.ticketRepository = ticketRepository;
         this.auditingRepository = auditingRepository;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
@@ -171,12 +166,7 @@ public class GroupManager {
 
         return new Result.Builder<Integer>()
             .checkPrecondition(duplicates::isEmpty, ErrorCode.lazy(() -> ErrorCode.custom("value.duplicate", String.join(", ", duplicates))))
-            .build(() -> {
-                MapSqlParameterSource[] params = members.stream()
-                    .map(i -> new MapSqlParameterSource("groupId", groupId).addValue("value", i.getValue().toLowerCase()).addValue("description", i.getDescription()))
-                    .toArray(MapSqlParameterSource[]::new);
-                return Arrays.stream(jdbcTemplate.batchUpdate(groupRepository.insertItemTemplate(), params)).sum();
-            });
+            .build(() -> Arrays.stream(groupRepository.insert(groupId, members)).sum());
     }
 
     @Transactional
@@ -258,8 +248,7 @@ public class GroupManager {
         if(memberIds.isEmpty()) {
             return false;
         }
-        MapSqlParameterSource[] params = memberIds.stream().map(i -> toParameterSource(groupId, i)).toArray(MapSqlParameterSource[]::new);
-        jdbcTemplate.batchUpdate(groupRepository.deactivateGroupMember(), params);
+        groupRepository.deactivateGroupMember(memberIds, groupId);
         return true;
     }
 
@@ -272,12 +261,6 @@ public class GroupManager {
         groupRepository.disableAllLinks(groupId);
         Validate.isTrue(groupRepository.deactivateGroup(groupId) == 1, "unexpected error while disabling group");
         return true;
-    }
-
-    private static MapSqlParameterSource toParameterSource(int groupId, Integer itemId) {
-        return new MapSqlParameterSource("groupId", groupId)
-            .addValue("memberId", itemId)
-            .addValue("disabledPlaceholder", UUID.randomUUID().toString());
     }
 
     @RequiredArgsConstructor
