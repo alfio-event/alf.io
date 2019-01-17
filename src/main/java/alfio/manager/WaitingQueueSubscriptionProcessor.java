@@ -27,6 +27,7 @@ import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -43,6 +44,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
 import static alfio.model.system.ConfigurationKeys.ENABLE_WAITING_QUEUE;
+import static java.util.stream.Collectors.toList;
 
 @Component
 @Transactional
@@ -84,20 +86,21 @@ public class WaitingQueueSubscriptionProcessor {
     public void revertTicketToFreeIfCategoryIsExpired(Event event) {
         int eventId = event.getId();
         List<TicketInfo> releasedButExpired = ticketRepository.findReleasedBelongingToExpiredCategories(eventId, ZonedDateTime.now(event.getZoneId()));
-        Map<Integer, List<TicketInfo>> releasedByCategory = releasedButExpired.stream().collect(Collectors.groupingBy(TicketInfo::getTicketCategoryId));
-        for (Map.Entry<Integer, List<TicketInfo>> entry : releasedByCategory.entrySet()) {
-            entry.getValue().stream().findFirst().ifPresent(ticketInfo -> {
-                List<Integer> ids = entry.getValue().stream().map(TicketInfo::getTicketId).collect(Collectors.toList());
-                if(!ids.isEmpty()) {
-                    if (ticketInfo.isTicketCategoryBounded()) {
-                        ticketRepository.revertToFree(eventId, ticketInfo.getTicketCategoryId(), ids);
-                    } else {
-                        ticketRepository.unbindTicketsFromCategory(eventId, ticketInfo.getTicketCategoryId(), ids);
-                    }
+        Map<Pair<Integer, Boolean>, List<Integer>> releasedByCategory = releasedButExpired.stream().collect(Collectors.groupingBy(
+            t-> Pair.of(t.getTicketCategoryId(), t.isTicketCategoryBounded()),
+            Collectors.mapping(TicketInfo::getTicketId, toList())
+        ));
+        releasedByCategory.forEach((ticketCategory, ticketIds) -> {
+            int ticketCategoryId = ticketCategory.getKey();
+            boolean isTicketCategoryBounded = ticketCategory.getRight();
+            if(!ticketIds.isEmpty()) {
+                if (isTicketCategoryBounded) {
+                    ticketRepository.revertToFree(eventId, ticketCategoryId, ticketIds);
+                } else {
+                    ticketRepository.unbindTicketsFromCategory(eventId, ticketCategoryId, ticketIds);
                 }
-            });
-        }
-
+            }
+        });
     }
 
     private boolean isWaitingListFormEnabled(EventAndOrganizationId event) {
