@@ -22,5 +22,27 @@ package alfio.v2.manager;
 // -> the user create a reservation request, that may or may not be fulfilled -> (if not fulfilled -> waiting queue).
 // -> this state manager is partially the current WaitingQueue.
 
+
+// -> add InvoiceRequest table + job for async invoice generation support (for handling external system failures)
+
+import alfio.v2.model.ReservationIdentifier;
+
+import java.util.Optional;
+
 public class ReservationRequestStateManager {
+
+    public ReservationResult createRequest() {
+        return  null;
+    }
+
+    public static class ReservationResult {
+
+        // identifier
+        // status
+        // reservation request detail
+
+        public Optional<ReservationIdentifier> getReservation() {
+            return Optional.empty();
+        }
+    }
 }
