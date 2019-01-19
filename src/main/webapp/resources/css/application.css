@@ -40,6 +40,10 @@ div.header img.img-responsive {
     color:#bbb;
 }
 
+.like-pre {
+    white-space: pre;
+}
+
 p.ticket-info {
     padding:15px;
     margin-top:10px;

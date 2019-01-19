@@ -30,5 +30,11 @@
                 $(this).val(value);
             }
         });
+
+
+        $(".read-only-select").map(function() {
+            var optionText = $(this).find("option:selected").text();
+            $(this).parent().find('.select-placeholder').text(optionText);
+        });
     });
 })();

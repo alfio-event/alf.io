@@ -44,9 +44,11 @@
     <!-- -->
     <div class="form-group" id="buttons-bar-{{uuid}}">
         <div class="col-sm-offset-3 col-sm-9">
+            {{^lockedAssignment}}
             <button type="submit" class="btn btn-success pull-right submit-assignee-data">
                 {{#i18n}}{{#assigned}}reservation-page-complete.update{{/assigned}}{{^assigned}}reservation-page-complete.assign{{/assigned}}{{/i18n}}
             </button>
+            {{/lockedAssignment}}
 
             {{#assigned}}
                 <button type="button" class="btn btn-default pull-left cancel-update" data-for-form="ticket-{{uuid}}">{{#i18n}}reservation-page-complete.cancel{{/i18n}}</button>
