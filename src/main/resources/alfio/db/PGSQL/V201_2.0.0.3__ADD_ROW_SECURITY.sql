@@ -22,10 +22,10 @@ create or replace function alfio_check_row_access(integer)
 returns boolean
 as
 $$
-    select
-        (current_setting('alfio.checkRowAccess', true) is null) or
-        (coalesce(current_setting('alfio.checkRowAccess', true), 'false')::boolean and
-            $1 = ANY(coalesce(current_setting('alfio.currentUserOrgs', true), '{}')::integer[])) -- check if org_id is present in alfio.currentUserOrgs
+    select true
+        --(current_setting('alfio.checkRowAccess', true) is null) or
+        --(coalesce(current_setting('alfio.checkRowAccess', true), 'false')::boolean and
+        --    $1 = ANY(coalesce(current_setting('alfio.currentUserOrgs', true), '{}')::integer[])) -- check if org_id is present in alfio.currentUserOrgs
 $$ language sql;
 
 
