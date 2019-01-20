@@ -106,10 +106,14 @@ public class RowLevelSecurity {
                     mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
                     if (mustCheck) {
                         Set<Integer> orgIds = new TreeSet<>(organizationRepository.findAllOrganizationIdForUser(SecurityContextHolder.getContext().getAuthentication().getName()));
-                        formattedOrgIds = orgIds.stream().map(s -> Integer.toString(s)).collect(Collectors.joining(",", "'{", "}'"));
-                        jdbcTemplate.update("set local alfio.checkRowAccess = true", new EmptySqlParameterSource());
-                        //cannot use bind variable when calling set local, it's ugly :(
-                        jdbcTemplate.update("set local alfio.currentUserOrgs = " + formattedOrgIds, new EmptySqlParameterSource());
+                        if (orgIds.isEmpty()) {
+                            log.warn("orgIds is empty, was not able to apply currentUserOrgs at join point: {}", joinPoint);
+                        } else {
+                            formattedOrgIds = orgIds.stream().map(s -> Integer.toString(s)).collect(Collectors.joining(",", "'{", "}'"));
+                            jdbcTemplate.update("set local alfio.checkRowAccess = true", new EmptySqlParameterSource());
+                            //cannot use bind variable when calling set local, it's ugly :(
+                            jdbcTemplate.update("set local alfio.currentUserOrgs = " + formattedOrgIds, new EmptySqlParameterSource());
+                        }
                     }
                     // note, the policy will check if the variable alfio.checkRowAccess is present before doing anything
 
