@@ -105,11 +105,11 @@ public class RowLevelSecurity {
                 if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
                     mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
                     if (mustCheck) {
-                        //jdbcTemplate.update("reset alfio.checkRowAccess", new EmptySqlParameterSource());
-                        //jdbcTemplate.update("reset alfio.currentUserOrgs", new EmptySqlParameterSource());
-                        //System.err.println(joinPoint+" LOCAL VALUES ARE: alfio.checkRowAccess: " + jdbcTemplate.queryForObject("select current_setting('alfio.checkRowAccess', true)", new EmptySqlParameterSource(), String.class));
-                        //System.err.println(joinPoint+" LOCAL VALUES ARE: alfio.currentUserOrgs: " + jdbcTemplate.queryForObject("select current_setting('alfio.currentUserOrgs', true)", new EmptySqlParameterSource(), String.class));
-                        //System.err.println(joinPoint+" result from function call is:" + jdbcTemplate.queryForObject("select alfio_check_row_access(null)", new EmptySqlParameterSource(), Boolean.class));
+                        jdbcTemplate.update("reset alfio.checkRowAccess", new EmptySqlParameterSource());
+                        jdbcTemplate.update("reset alfio.currentUserOrgs", new EmptySqlParameterSource());
+                        //System.err.println(request.getRequestURL()+" - "+joinPoint+" LOCAL VALUES ARE: alfio.checkRowAccess: " + jdbcTemplate.queryForObject("select current_setting('alfio.checkRowAccess', true)", new EmptySqlParameterSource(), String.class));
+                        //System.err.println(request.getRequestURL()+" - "+joinPoint+" LOCAL VALUES ARE: alfio.currentUserOrgs: " + jdbcTemplate.queryForObject("select current_setting('alfio.currentUserOrgs', true)", new EmptySqlParameterSource(), String.class));
+                        //System.err.println(request.getRequestURL()+" - "+joinPoint+" result from function call is:" + jdbcTemplate.queryForObject("select alfio_check_row_access(null)", new EmptySqlParameterSource(), Boolean.class));
                         Set<Integer> orgIds = new TreeSet<>(organizationRepository.findAllOrganizationIdForUser(SecurityContextHolder.getContext().getAuthentication().getName()));
                         //System.err.println(joinPoint+" org ids are " + orgIds);
                         if (orgIds.isEmpty()) {
