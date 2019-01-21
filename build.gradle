@@ -1,4 +1,5 @@
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.springframework.jdbc.core.JdbcTemplate
 
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -6,12 +7,13 @@ import java.time.Year
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.regex.Pattern
 
 buildscript {
 
     dependencies {
         classpath 'ru.yandex.qatools.embed:postgresql-embedded:2.9'
+        classpath 'org.postgresql:postgresql:42.2.5'
+        classpath "org.springframework:spring-jdbc:$springVersion"
     }
 
     repositories {
@@ -316,6 +318,7 @@ task clever(type: Copy) {
 
 import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres
 import ru.yandex.qatools.embed.postgresql.distribution.Version.Main
+import org.postgresql.ds.PGSimpleDataSource
 
 task startEmbeddedPgSQL {
     doLast {
@@ -324,12 +327,25 @@ task startEmbeddedPgSQL {
         final tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data")
         final postgres = new EmbeddedPostgres(Main.PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString())
         postgres.start(EmbeddedPostgres.cachedRuntimeConfig(Paths.get(System.getProperty("java.io.tmpdir"), "pgembed")),
-            "localhost", 5432, "alfio", "postgres", "password", Arrays.asList("-E", "SQL_ASCII", "--locale=C", "--lc-collate=C", "--lc-ctype=C"))
+            "localhost", 5432, "alfio", "admin", "password", Arrays.asList("-E", "SQL_ASCII", "--locale=C", "--lc-collate=C", "--lc-ctype=C"))
 
         postgres.getProcess().ifPresent({
             final pid = it.getProcessId()
             Files.write(Paths.get(".", "alfio-itest", "pgsql-pid"), Arrays.asList(Long.toString(pid)))
             System.out.println("Launched pgsql with pid " + pid)
+
+            final dataSource = new PGSimpleDataSource()
+            dataSource.setUrl("jdbc:postgresql://localhost:5432/postgres");
+            dataSource.setUser("admin")
+            dataSource.setPassword("password")
+            final jdbc = new JdbcTemplate(dataSource);
+            jdbc.execute("CREATE ROLE postgres LOGIN PASSWORD 'password' NOSUPERUSER INHERIT CREATEDB CREATEROLE REPLICATION")
+            //todo: check if the following grants are necessary
+            jdbc.execute("GRANT pg_monitor TO postgres")
+            jdbc.execute("GRANT pg_read_all_settings TO postgres")
+            jdbc.execute("GRANT pg_read_all_stats TO postgres")
+            jdbc.execute("GRANT pg_signal_backend TO postgres")
+            jdbc.execute("GRANT pg_stat_scan_tables TO postgres")
         })
     }
 }
