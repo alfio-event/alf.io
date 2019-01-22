@@ -76,6 +76,9 @@ public interface EmailMessageRepository {
     @Query("select * from (" + FIND_MAILS +"limit :pageSize offset :page) as d_tbl")
     List<LightweightMailMessage> findByEventId(@Bind("eventId") int eventId, @Bind("page") int page, @Bind("pageSize") int pageSize, @Bind("search") String search);
 
+    @Query("select id, event_id, status, recipient, subject, message, checksum, request_ts, sent_ts, attempts, email_cc from email_message where event_id = :eventId and reservation_id = :reservationId order by sent_ts desc, id")
+    List<LightweightMailMessage> findByEventIdAndReservationId(@Bind("eventId") int eventId, @Bind("reservationId") String reservationId);
+
     @Query("select count(*) from (" + FIND_MAILS + ") as d_tbl")
     Integer countFindByEventId(@Bind("eventId") int eventId, @Bind("search") String search);
 

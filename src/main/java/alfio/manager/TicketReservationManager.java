@@ -552,9 +552,6 @@ public class TicketReservationManager {
             BillingDocument.Type type = ticketReservation.getHasInvoiceNumber() ? INVOICE : RECEIPT;
             attachments.addAll(generateBillingDocumentAttachment(event, ticketReservation, language, getOrCreateBillingDocumentModel(event, ticketReservation, null), type));
         }
-
-        notificationManager.sendSimpleEmail(event, ticketReservation.getId(), ticketReservation.getEmail(), getReservationEmailSubject(event, language, "reservation-email-subject", getShortReservationID(event, reservationId)),
-            () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language), attachments);
         if(!summary.getCashPayment() && !summary.getFree()) { //#459 - include PDF invoice in reservation email
             Map<String, String> model = new HashMap<>();
             model.put("reservationId", reservationId);

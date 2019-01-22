@@ -222,7 +222,7 @@ public class NotificationManager {
     }
 
     public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
-        sendSimpleEmail(event, recipient, reservationId, Collections.emptyList(), subject, textBuilder, attachments);
+        sendSimpleEmail(event, reservationId, recipient, Collections.emptyList(), subject, textBuilder, attachments);
     }
 
     public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
@@ -247,6 +247,10 @@ public class NotificationManager {
         String toSearch = StringUtils.trimToNull(search);
         toSearch = toSearch == null ? null : ("%" + toSearch + "%");
         return Pair.of(emailMessageRepository.countFindByEventId(eventId, toSearch), emailMessageRepository.findByEventId(eventId, offset, pageSize, toSearch));
+    }
+
+    public List<LightweightMailMessage> loadAllMessagesForReservationId(int eventId, String reservationId) {
+        return emailMessageRepository.findByEventIdAndReservationId(eventId, reservationId);
     }
 
     public Optional<EmailMessage> loadSingleMessageForEvent(int eventId, int messageId) {

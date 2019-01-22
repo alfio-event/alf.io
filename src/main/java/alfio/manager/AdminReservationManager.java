@@ -674,6 +674,12 @@ public class AdminReservationManager {
         });
     }
 
+
+    public Result<List<LightweightMailMessage>> getEmailsForReservation(String eventName, String reservationId, String username) {
+        return loadReservation(eventName, reservationId, username)
+            .map(res -> notificationManager.loadAllMessagesForReservationId(res.getRight().getId(), reservationId));
+    }
+
     private void removeTicketsFromReservation(TicketReservation reservation, Event event, List<Integer> ticketIds, boolean notify, String username, boolean removeReservation, boolean forceInvoiceReceiptUpdate) {
         String reservationId = reservation.getId();
         if(notify && !ticketIds.isEmpty()) {
@@ -742,5 +748,4 @@ public class AdminReservationManager {
         }
         //
     }
-
 }

@@ -214,6 +214,11 @@ public class AdminReservationApiController {
         return adminReservationManager.refund(eventName, reservationId, new BigDecimal(amount.amount), principal.getName());
     }
 
+    @GetMapping("/event/{eventName}/{reservationId}/email-list")
+    public Result<List<LightweightMailMessage>> getEmailList(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+        return adminReservationManager.getEmailsForReservation(eventName, reservationId, principal.getName());
+    }
+
     private TicketReservationDescriptor toReservationDescriptor(String reservationId, Triple<TicketReservation, List<Ticket>, Event> triple) {
         List<SerializablePair<TicketCategory, List<Ticket>>> tickets = triple.getMiddle().stream().collect(Collectors.groupingBy(Ticket::getCategoryId)).entrySet().stream()
             .map(entry -> SerializablePair.of(eventManager.getTicketCategoryById(entry.getKey(), triple.getRight().getId()), entry.getValue()))
