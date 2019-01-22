@@ -34,7 +34,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -56,7 +55,6 @@ public class WaitingQueueManagerTest {
     private TicketRepository ticketRepository;
     private TicketCategoryRepository ticketCategoryRepository;
     private ConfigurationManager configurationManager;
-    private NamedParameterJdbcTemplate jdbc;
     private NotificationManager notificationManager;
     private TemplateManager templateManager;
     private MessageSource messageSource;
@@ -76,7 +74,6 @@ public class WaitingQueueManagerTest {
         ticketRepository = mock(TicketRepository.class);
         ticketCategoryRepository = mock(TicketCategoryRepository.class);
         configurationManager = mock(ConfigurationManager.class);
-        jdbc = mock(NamedParameterJdbcTemplate.class);
         notificationManager = mock(NotificationManager.class);
         templateManager = mock(TemplateManager.class);
         messageSource = mock(MessageSource.class);
@@ -85,7 +82,7 @@ public class WaitingQueueManagerTest {
         extensionManager = mock(ExtensionManager.class);
         event = mock(Event.class);
         when(event.getId()).thenReturn(eventId);
-        manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, jdbc, notificationManager, templateManager, messageSource, organizationRepository, eventRepository, extensionManager);
+        manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, notificationManager, templateManager, messageSource, organizationRepository, eventRepository, extensionManager);
     }
 
     @AfterEach

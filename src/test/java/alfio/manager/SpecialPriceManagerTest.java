@@ -121,14 +121,14 @@ public class SpecialPriceManagerTest {
     @Test
     public void sendAllCodes() throws Exception {
         assertTrue(specialPriceManager.sendCodeToAssignee(CODES_REQUESTED, "", 0, ""));
-        verify(notificationManager, times(CODES_REQUESTED.size())).sendSimpleEmail(eq(event), anyString(), anyString(), any());
+        verify(notificationManager, times(CODES_REQUESTED.size())).sendSimpleEmail(eq(event), isNull(), anyString(), anyString(), any());
     }
 
     @Test
     public void sendSuccessfulComplete() throws Exception {
         assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", "it")), "", 0, ""));
         ArgumentCaptor<TextTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TextTemplateGenerator.class);
-        verify(notificationManager).sendSimpleEmail(eq(event), eq("me@domain.com"), anyString(), templateCaptor.capture());
+        verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq("me@domain.com"), anyString(), templateCaptor.capture());
         templateCaptor.getValue().generate();
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(templateManager).renderTemplate(any(Event.class), eq(TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
@@ -145,7 +145,7 @@ public class SpecialPriceManagerTest {
     public void trimLanguageTag() throws Exception {
         assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", " it")), "", 0, ""));
         ArgumentCaptor<TextTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TextTemplateGenerator.class);
-        verify(notificationManager).sendSimpleEmail(eq(event), eq("me@domain.com"), anyString(), templateCaptor.capture());
+        verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq("me@domain.com"), anyString(), templateCaptor.capture());
         templateCaptor.getValue().generate();
         ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
         verify(templateManager).renderTemplate(any(Event.class), eq(TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));

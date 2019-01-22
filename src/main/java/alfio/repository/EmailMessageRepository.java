@@ -39,8 +39,9 @@ public interface EmailMessageRepository {
     @Query("select id, event_id, status, recipient, subject, message, null as attachments, checksum, request_ts, sent_ts, attempts, email_cc from email_message where event_id = :eventId and checksum = :checksum limit 1")
     Optional<EmailMessage> findByEventIdAndChecksum(@Bind("eventId") int eventId, @Bind("checksum") String checksum);
 
-    @Query("insert into email_message (event_id, status, recipient, subject, message, attachments, checksum, request_ts, email_cc) values(:eventId, 'WAITING', :recipient, :subject, :message, :attachments, :checksum, :timestamp, :emailCC)")
+    @Query("insert into email_message (event_id, reservation_id, status, recipient, subject, message, attachments, checksum, request_ts, email_cc) values(:eventId, :reservationId, 'WAITING', :recipient, :subject, :message, :attachments, :checksum, :timestamp, :emailCC)")
     int insert(@Bind("eventId") int eventId,
+               @Bind("reservationId") String reservationId,
                @Bind("recipient") String recipient,
                @Bind("emailCC") String cc,
                @Bind("subject") String subject,

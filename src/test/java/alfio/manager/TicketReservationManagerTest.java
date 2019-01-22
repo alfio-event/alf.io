@@ -236,8 +236,10 @@ class TicketReservationManagerTest {
         final String originalName = "First Last";
         Ticket original = mock(Ticket.class);
         when(original.getStatus()).thenReturn(TicketStatus.ACQUIRED);
+        when(original.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         Ticket modified = mock(Ticket.class);
         when(modified.getStatus()).thenReturn(TicketStatus.ACQUIRED);
+        when(modified.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
         when(event.getShortName()).thenReturn("short-name");
         initUpdateTicketOwner(original, modified, ticketId, originalEmail, originalName, form);
@@ -246,7 +248,7 @@ class TicketReservationManagerTest {
         when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
         verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
     }
 
     @Test
@@ -256,8 +258,10 @@ class TicketReservationManagerTest {
         final String originalName = "First Last";
         Ticket original = mock(Ticket.class);
         when(original.getStatus()).thenReturn(TicketStatus.ACQUIRED);
+        when(original.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         Ticket modified = mock(Ticket.class);
         when(modified.getStatus()).thenReturn(TicketStatus.ACQUIRED);
+        when(modified.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
         when(event.getShortName()).thenReturn("short-name");
         initUpdateTicketOwner(original, modified, ticketId, originalEmail, originalName, form);
@@ -267,8 +271,8 @@ class TicketReservationManagerTest {
         when(event.getBegin()).thenReturn(ZonedDateTime.now().minusSeconds(1));
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
         verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(ORG_EMAIL), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(null), eq(ORG_EMAIL), anyString(), any(TextTemplateGenerator.class));
     }
 
     // check we don't send the ticket-has-changed-owner email if the originalEmail and name are present and the status is not ACQUIRED
@@ -296,9 +300,11 @@ class TicketReservationManagerTest {
         final String originalEmail = "me@myaddress.com";
         final String originalName = "First Last";
         Ticket original = mock(Ticket.class);
+        when(original.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         when(original.getStatus()).thenReturn(TicketStatus.ACQUIRED);
         Ticket modified = mock(Ticket.class);
         when(modified.getStatus()).thenReturn(TicketStatus.ACQUIRED);
+        when(modified.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         UpdateTicketOwnerForm form = new UpdateTicketOwnerForm();
         when(event.getShortName()).thenReturn("short-name");
         initUpdateTicketOwner(original, modified, ticketId, originalEmail, originalName, form);
@@ -309,7 +315,7 @@ class TicketReservationManagerTest {
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
         verify(messageSource, times(1)).getMessage(eq("ticket-has-changed-owner-subject"), any(), eq(Locale.ITALIAN));
         verify(notificationManager, times(1)).sendTicketByEmail(eq(modified), eq(event), eq(Locale.ENGLISH), any(), any(), any());
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(originalEmail), anyString(), any(TextTemplateGenerator.class));
     }
 
     @Test
@@ -330,7 +336,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         trm.sendReminderForTicketAssignment();
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq("ciccio"), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq("abcd"), eq("ciccio"), anyString(), any(TextTemplateGenerator.class));
     }
 
     @Test
@@ -348,7 +354,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         trm.sendReminderForTicketAssignment();
-        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TextTemplateGenerator.class));
     }
 
     @Test
@@ -370,7 +376,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         when(reservation.getEmail()).thenReturn("ciccio");
         trm.sendReminderForTicketAssignment();
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq("abcd"), anyString(), anyString(), any(TextTemplateGenerator.class));
     }
 
     @Test
@@ -388,7 +394,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         trm.sendReminderForTicketAssignment();
-        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TextTemplateGenerator.class));
     }
 
     @Test
@@ -407,7 +413,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         List<Event> events = trm.getNotifiableEventsStream().collect(Collectors.toList());
         assertEquals(0, events.size());
-        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TextTemplateGenerator.class));
     }
 
     private void initOfflinePaymentTest() {
@@ -641,8 +647,8 @@ class TicketReservationManagerTest {
         when(transactionRepository.loadOptionalByReservationId(anyString())).thenReturn(Optional.empty());
         trm.releaseTicket(event, ticketReservation, ticket);
         verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
-        verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_EMAIL), any(), any(TextTemplateGenerator.class));
-        verify(notificationManager).sendSimpleEmail(eq(event), eq(organizationEmail), any(), any(TextTemplateGenerator.class));
+        verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(RESERVATION_EMAIL), any(), any(TextTemplateGenerator.class));
+        verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq(organizationEmail), any(), any(TextTemplateGenerator.class));
         verify(organizationRepository).getById(eq(ORGANIZATION_ID));
         verify(ticketReservationRepository).remove(eq(expectedReservations));
     }
@@ -671,7 +677,7 @@ class TicketReservationManagerTest {
         trm.releaseTicket(event, ticketReservation, ticket);
         verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
         verify(ticketRepository).unbindTicketsFromCategory(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(singletonList(TICKET_ID)));
-        verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_EMAIL), any(), any(TextTemplateGenerator.class));
+        verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(RESERVATION_EMAIL), any(), any(TextTemplateGenerator.class));
         verify(organizationRepository).getById(eq(ORGANIZATION_ID));
         verify(ticketReservationRepository).remove(eq(expectedReservations));
     }
@@ -685,7 +691,7 @@ class TicketReservationManagerTest {
             fail();
         } catch (IllegalArgumentException e) {
             verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
-            verify(notificationManager, never()).sendSimpleEmail(any(), any(), any(), any(TextTemplateGenerator.class));
+            verify(notificationManager, never()).sendSimpleEmail(any(), any(), any(), any(), any(TextTemplateGenerator.class));
         }
     }
 
@@ -950,7 +956,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.findByUUID(anyString())).thenReturn(ticket);
         when(messageSource.getMessage(eq("reminder.ticket-additional-info.subject"), any(), any())).thenReturn("subject");
         trm.sendReminderForOptionalData();
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq("ciccio"), eq("subject"), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq("ciccio"), eq("subject"), any(TextTemplateGenerator.class));
     }
 
     @Test
@@ -974,7 +980,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(1);
         trm.sendReminderForOptionalData();
-        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TextTemplateGenerator.class));
     }
 
     @Test
@@ -998,7 +1004,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(0);
         trm.sendReminderForOptionalData();
-        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TextTemplateGenerator.class));
     }
 
     @Test
