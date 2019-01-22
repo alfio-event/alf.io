@@ -1,24 +1,27 @@
-version: "3"
+version: "3.7"
 services:
   alfio:
     image: alfio/alf.io
     environment:
-      POSTGRES_PORT_5432_TCP_PORT: "5432"
-      POSTGRES_PORT_5432_TCP_ADDR: postgres
+      POSTGRES_PORT_5432_TCP_PORT: 5432
+      POSTGRES_PORT_5432_TCP_ADDR: db
       POSTGRES_ENV_POSTGRES_DB: alfio
       POSTGRES_ENV_POSTGRES_USERNAME: alfio
       POSTGRES_ENV_POSTGRES_PASSWORD: alfio
       SPRING_PROFILES_ACTIVE: dev,jdbc-session
     ports:
       - "8080:8080"
-    links:
-      - db:postgres
   db:
     image: postgres:10
     environment:
       POSTGRES_DB: alfio
       POSTGRES_USER: alfio
       POSTGRES_PASSWORD: alfio
+    ports:
+      - target: 5432
+        published: 5432
+        protocol: tcp
+        mode: host
     volumes:
       - data-volume:/var/lib/postgresql/data
 volumes:
