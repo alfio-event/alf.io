@@ -201,11 +201,11 @@ public class NotificationManager {
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
         String recipient = ticket.getEmail();
         //TODO handle HTML
-        tx.execute(status -> emailMessageRepository.insert(event.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
+        tx.execute(status -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
-        sendSimpleEmail(event, recipient, cc, subject, textBuilder, Collections.emptyList());
+    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
+        sendSimpleEmail(event, reservationId, recipient, cc, subject, textBuilder, Collections.emptyList());
     }
 
     public List<String> getCCForEventOrganizer(EventAndOrganizationId event) {
@@ -217,15 +217,15 @@ public class NotificationManager {
             .collect(Collectors.toList());
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, String subject, TextTemplateGenerator textBuilder) {
-        sendSimpleEmail(event, recipient, Collections.emptyList(), subject, textBuilder);
+    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, String subject, TextTemplateGenerator textBuilder) {
+        sendSimpleEmail(event, reservationId, recipient, Collections.emptyList(), subject, textBuilder);
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
-        sendSimpleEmail(event, recipient, Collections.emptyList(), subject, textBuilder, attachments);
+    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+        sendSimpleEmail(event, reservationId, recipient, Collections.emptyList(), subject, textBuilder, attachments);
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
 
         String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String encodedCC = Json.toJson(cc);
@@ -235,7 +235,7 @@ public class NotificationManager {
         //in order to minimize the database size, it is worth checking if there is already another message in the table
         Optional<EmailMessage> existing = emailMessageRepository.findByEventIdAndChecksum(event.getId(), checksum);
         if(existing.isEmpty()) {
-            emailMessageRepository.insert(event.getId(), recipient, encodedCC, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
+            emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
         } else {
             emailMessageRepository.updateStatus(event.getId(), WAITING.name(), existing.get().getId());
         }
@@ -247,6 +247,10 @@ public class NotificationManager {
         String toSearch = StringUtils.trimToNull(search);
         toSearch = toSearch == null ? null : ("%" + toSearch + "%");
         return Pair.of(emailMessageRepository.countFindByEventId(eventId, toSearch), emailMessageRepository.findByEventId(eventId, offset, pageSize, toSearch));
+    }
+
+    public List<LightweightMailMessage> loadAllMessagesForReservationId(int eventId, String reservationId) {
+        return emailMessageRepository.findByEventIdAndReservationId(eventId, reservationId);
     }
 
     public Optional<EmailMessage> loadSingleMessageForEvent(int eventId, int messageId) {

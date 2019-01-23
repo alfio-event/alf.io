@@ -39,8 +39,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -62,7 +60,6 @@ public class WaitingQueueManager {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final ConfigurationManager configurationManager;
     private final EventStatisticsManager eventStatisticsManager;
-    private final NamedParameterJdbcTemplate jdbc;
     private final NotificationManager notificationManager;
     private final TemplateManager templateManager;
     private final MessageSource messageSource;
@@ -98,12 +95,12 @@ public class WaitingQueueManager {
     private void notifySubscription(Event event, CustomerName name, String email, Locale userLanguage, WaitingQueueSubscription.Type subscriptionType) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<String, Object> model = TemplateResource.buildModelForWaitingQueueJoined(organization, event, name);
-        notificationManager.sendSimpleEmail(event, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),
+        notificationManager.sendSimpleEmail(event, null, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),
                 () -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_JOINED, model, userLanguage));
         if(configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_WAITING_QUEUE_NOTIFICATION), false)) {
             String adminTemplate = messageSource.getMessage("email-waiting-queue.subscribed.admin.text",
                     new Object[] {subscriptionType, event.getDisplayName()}, Locale.ENGLISH);
-            notificationManager.sendSimpleEmail(event, organization.getEmail(), messageSource.getMessage("email-waiting-queue.subscribed.admin.subject",
+            notificationManager.sendSimpleEmail(event, null, organization.getEmail(), messageSource.getMessage("email-waiting-queue.subscribed.admin.subject",
                             new Object[]{event.getDisplayName()}, Locale.ENGLISH),
                     () -> templateManager.renderString(event, adminTemplate, model, Locale.ENGLISH, TemplateManager.TemplateOutput.TEXT));
         }

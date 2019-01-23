@@ -112,6 +112,6 @@ public class WaitingQueueSubscriptionProcessorTest {
         processor.handleWaitingTickets();
         verify(configurationManager).getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false));
         verify(ticketReservationManager).createTicketReservation(eq(event), eq(Collections.singletonList(reservation)), anyList(), eq(Date.from(expiration.toInstant())), eq(Optional.empty()), eq(Optional.empty()), eq(Locale.ENGLISH), eq(true));
-        verify(notificationManager).sendSimpleEmail(eq(event), eq("me"), eq("subject"), any(TextTemplateGenerator.class));
+        verify(notificationManager).sendSimpleEmail(eq(event), eq(reservationId), eq("me"), eq("subject"), any(TextTemplateGenerator.class));
     }
 }

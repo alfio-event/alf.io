@@ -674,6 +674,12 @@ public class AdminReservationManager {
         });
     }
 
+
+    public Result<List<LightweightMailMessage>> getEmailsForReservation(String eventName, String reservationId, String username) {
+        return loadReservation(eventName, reservationId, username)
+            .map(res -> notificationManager.loadAllMessagesForReservationId(res.getRight().getId(), reservationId));
+    }
+
     private void removeTicketsFromReservation(TicketReservation reservation, Event event, List<Integer> ticketIds, boolean notify, String username, boolean removeReservation, boolean forceInvoiceReceiptUpdate) {
         String reservationId = reservation.getId();
         if(notify && !ticketIds.isEmpty()) {
@@ -718,7 +724,7 @@ public class AdminReservationManager {
     private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {
         Map<String, Object> model = TemplateResource.buildModelForTicketHasBeenCancelled(organization, event, ticket);
         Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
-        notificationManager.sendSimpleEmail(event, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
+        notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
             new Object[]{event.getDisplayName()}, locale),
             () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
     }
@@ -742,5 +748,4 @@ public class AdminReservationManager {
         }
         //
     }
-
 }

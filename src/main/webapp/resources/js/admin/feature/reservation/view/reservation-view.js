@@ -110,6 +110,8 @@
                 ctrl.countries = countries;
             });
 
+            loadEmails();
+
             if(ctrl.event.visibleForCurrentUser) {
                 loadPaymentInfo();
                 loadAudit();
@@ -167,6 +169,12 @@
                     valid: res.data.data.filter(function(x) { return x.status === 'VALID'; }),
                     notValid: res.data.data.filter(function(x) { return x.status === 'NOT_VALID'; })
                 };
+            });
+        }
+
+        function loadEmails() {
+            AdminReservationService.emailList(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
+                ctrl.emails = res.data.data;
             });
         }
 

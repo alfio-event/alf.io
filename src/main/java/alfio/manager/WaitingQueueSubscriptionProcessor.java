@@ -119,6 +119,7 @@ public class WaitingQueueSubscriptionProcessor {
             String reservationUrl = ticketReservationManager.reservationUrl(reservationId, event);
             Map<String, Object> model = TemplateResource.buildModelForWaitingQueueReservationEmail(organization, event, subscription, reservationUrl, expiration);
             notificationManager.sendSimpleEmail(event,
+                    reservationId,
                     subscription.getEmailAddress(),
                     subject,
                     () -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_RESERVATION_EMAIL, model, locale));

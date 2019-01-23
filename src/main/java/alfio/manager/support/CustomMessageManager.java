@@ -117,7 +117,7 @@ public class CustomMessageManager {
                         });
                     }
                     counter.incrementAndGet();
-                    notificationManager.sendSimpleEmail(event, triple.getMiddle(), subject, () -> text, attachments);
+                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject, () -> text, attachments);
                 });
         });
 
