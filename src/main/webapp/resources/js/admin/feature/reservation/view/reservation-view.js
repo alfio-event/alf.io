@@ -45,6 +45,8 @@
         ctrl.displayCreationWarning = angular.isDefined($stateParams.fromCreation) && $stateParams.fromCreation;
         ctrl.regenerateBillingDocument = regenerateBillingDocument;
 
+        ctrl.openCheckInLog = openCheckInLog;
+
         ctrl.hideCreationWarning = function() {
             ctrl.displayCreationWarning = false;
         };
@@ -98,6 +100,8 @@
                     attendees: entry.value.map(function(ticket) {
                         return {
                             ticketId: ticket.id,
+                            uuid: ticket.uuid,
+                            status: ticket.status,
                             firstName: ticket.firstName,
                             lastName: ticket.lastName,
                             emailAddress: ticket.email
@@ -140,10 +144,23 @@
             });
         }
 
+        function loadCheckInLog() {
+            var checkInEvents = [
+                'CHECK_IN',
+                'MANUAL_CHECK_IN',
+                'REVERT_CHECK_IN'
+            ];
+            return ctrl.audit.filter(function(a) {
+                return a.entityType === 'TICKET' && checkInEvents.indexOf(a.eventType) > -1;
+            });
+        }
+
         function loadAudit() {
             ctrl.audit = [];
+            ctrl.checkInLog = {};
             AdminReservationService.getAudit(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
                 ctrl.audit = res.data.data;
+                ctrl.checkInLog = _.groupBy(loadCheckInLog(), 'entityId');
             });
         }
 
@@ -214,13 +231,40 @@
             notify(true);
         };
 
+        function openCheckInLog(attendee) {
+            $uibModal.open({
+                size: 'md',
+                templateUrl: '../resources/js/admin/feature/reservation/view/check-in-log-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    $scope.cancel = function() {$scope.$dismiss('cancelled');};
+                    $scope.attendee = attendee;
+                    $scope.entries = ctrl.checkInLog[attendee.ticketId];
+
+                    $scope.translateType = function(type) {
+                        switch (type) {
+                            case "MANUAL_CHECK_IN":
+                                return "Manual check-in";
+                            case "CHECK_IN":
+                                return "Check-in";
+                            case "REVERT_CHECK_IN":
+                                return "Check-in Reverted";
+                            default:
+                                return type;
+                        }
+                    };
+
+                }
+            })
+        }
+
         ctrl.notifyAttendees = function() {
             var m = $uibModal.open({
                 size: 'lg',
                 templateUrl: '../resources/js/admin/feature/reservation/view/send-ticket-email.html',
                 backdrop: 'static',
                 controller: function($scope) {
-                    $scope.cancel = function() {$scope.$dismiss('canceled');};
+                    $scope.cancel = function() {$scope.$dismiss('cancelled');};
                     $scope.ticketsInfo = ctrl.reservation.ticketsInfo.map(function(ti) {
                         var nTi = _.cloneDeep(ti);
                         _.forEach(nTi.attendees, function(a) { a.selected = true; });

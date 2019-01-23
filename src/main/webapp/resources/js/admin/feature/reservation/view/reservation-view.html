@@ -308,7 +308,6 @@
                             </div>
                         </div>
                         <div class="table-responsive wMarginTop10px">
-
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
@@ -316,6 +315,7 @@
                                         <th>First name</th>
                                         <th>Last name</th>
                                         <th>E-Mail</th>
+                                        <th>Check-in</th>
                                         <th><span class="hidden-xs hidden-sm">Actions</span></th>
                                     </tr>
                                 </thead>
@@ -333,6 +333,14 @@
                                         <td>
                                             <input type="text" ng-if="ticketInfo.updateAttendees" class="form-control" id="attendee-{{$index}}-emailAddress" required name="attendee-{{$index}}-emailAddress" ng-model="attendee.emailAddress">
                                             <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.emailAddress}}</div>
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn"
+                                                    ng-class="{'btn-success': attendee.status === 'CHECKED_IN', 'btn-default': attendee.status !== 'CHECKED_IN'}"
+                                                    ng-if="!ticketInfo.updateAttendees && $ctrl.checkInLog[attendee.ticketId]"
+                                                    ng-click="$ctrl.openCheckInLog(attendee)">
+                                                <i class="fa" ng-class="{'fa-check': attendee.status === 'CHECKED_IN', 'fa-question-circle-o': attendee.status !== 'CHECKED_IN'}"></i>
+                                            </button>
                                         </td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-danger" ng-click="$ctrl.removeTicket(attendee)"><i class="fa fa-trash"></i> <span class="hidden-xs hidden-sm">Remove</span></button>
