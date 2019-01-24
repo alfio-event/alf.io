@@ -490,10 +490,9 @@ public class TicketReservationManager {
         auditingRepository.insert(reservationId, userRepository.findIdByUserName(username).orElse(null), event.getId(), Audit.EventType.RESERVATION_OFFLINE_PAYMENT_CONFIRMED, new Date(), Audit.EntityType.RESERVATION, ticketReservation.getId());
 
         CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
-        acquireItems(TicketStatus.ACQUIRED, AdditionalServiceItemStatus.ACQUIRED,
-            PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), customerName,
+        acquireItems(PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), customerName,
             ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress(),
-            ticketReservation.getCustomerReference(), event.getId());
+            ticketReservation.getCustomerReference(), event);
 
         Locale language = findReservationLanguage(reservationId);
 
@@ -798,9 +797,7 @@ public class TicketReservationManager {
         String reservationId = spec.getReservationId();
         int eventId = spec.getEvent().getId();
         if(paymentProxy != PaymentProxy.OFFLINE) {
-            TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
-            AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
-            acquireItems(ticketStatus, asStatus, paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), eventId);
+            acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent());
             final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
             extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), eventId);
         }
@@ -819,15 +816,18 @@ public class TicketReservationManager {
         }
     }
 
-    private void acquireItems(TicketStatus ticketStatus, AdditionalServiceItemStatus asStatus, PaymentProxy paymentProxy,
-                              String reservationId, String email, CustomerName customerName,
-                              String userLanguage, String billingAddress, String customerReference, int eventId) {
+    private void acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
+                              String userLanguage, String billingAddress, String customerReference, Event event) {
+
+        TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
+        AdditionalServiceItemStatus asStatus = paymentProxy.isDeskPaymentRequired() ? AdditionalServiceItemStatus.TO_BE_PAID : AdditionalServiceItemStatus.ACQUIRED;
+
         Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
         int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
 
         List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
         Map<Integer, Ticket> postUpdateTicket = ticketsInReservation.stream().collect(toMap(Ticket::getId, Function.identity()));
-        postUpdateTicket.forEach((id, ticket) -> auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), eventId));
+        postUpdateTicket.forEach((id, ticket) -> auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId()));
 
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, asStatus);
         Validate.isTrue(updatedTickets + updatedAS > 0, "no items have been updated");
@@ -837,21 +837,18 @@ public class TicketReservationManager {
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(), userLanguage, billingAddress, timestamp, paymentProxy.toString(), customerReference);
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
         waitingQueueManager.fireReservationConfirmed(reservationId);
-        if(paymentProxy == PaymentProxy.PAYPAL || paymentProxy == PaymentProxy.ADMIN) {
-            //we must notify the plugins about ticket assignment and send them by email
-            Event event = eventRepository.findByReservationId(reservationId);
-            TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
-            findTicketsInReservation(reservationId).stream()
-                .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
-                .forEach(ticket -> {
-                    Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
-                    if(paymentProxy == PaymentProxy.PAYPAL) {
-                        sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
-                    }
-                    extensionManager.handleTicketAssignment(ticket);
-                });
+        //we must notify the plugins about ticket assignment and send them by email
+        TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
+        findTicketsInReservation(reservationId).stream()
+            .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
+            .forEach(ticket -> {
+                Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
+                if(paymentProxy != PaymentProxy.ADMIN && configurationManager.getBooleanConfigValue(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY), true)) {
+                    sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
+                }
+                extensionManager.handleTicketAssignment(ticket);
+            });
 
-        }
     }
 
     PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation reservation, Locale locale) {

@@ -57,8 +57,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
-import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
-import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
+import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
@@ -704,12 +703,28 @@ class TicketReservationManagerTest {
 
     @Test
     void confirmPaidReservation() {
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(true);
+        testPaidReservation();
+        verify(notificationManager).sendTicketByEmail(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void confirmPaidReservationButDoNotSendEmail() {
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(false);
+        testPaidReservation();
+        verify(notificationManager, never()).sendTicketByEmail(any(), any(), any(), any(), any(), any());
+    }
+
+    private void testPaidReservation() {
         initConfirmReservation();
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
-
+        when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
+        when(ticketRepository.findTicketsInReservation(eq(RESERVATION_ID))).thenReturn(List.of(ticket));
+        when(ticket.getFullName()).thenReturn("Giuseppe Garibaldi");
+        when(ticket.getUserLanguage()).thenReturn("en");
         StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.CREDIT_CARD), any())).thenReturn(Optional.of(stripeCreditCardManager));
         when(stripeCreditCardManager.getTokenAndPay(any())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
@@ -757,6 +772,7 @@ class TicketReservationManagerTest {
         initConfirmReservation();
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()), isNull())).thenReturn(1);
+        when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
         OnSiteManager onSiteManager = mock(OnSiteManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.ON_SITE), any())).thenReturn(Optional.of(onSiteManager));
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
