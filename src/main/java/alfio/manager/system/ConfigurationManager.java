@@ -454,11 +454,15 @@ public class ConfigurationManager {
 
     // https://github.com/alfio-event/alf.io/issues/573
     public boolean canGenerateReceiptOrInvoiceToCustomer(EventAndOrganizationId event) {
-        return !getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+        return !isItalianEInvoicingEnabled(event);
     }
 
     public boolean isInvoiceOnly(EventAndOrganizationId event) {
         return getBooleanConfigValue(Configuration.from(event, GENERATE_ONLY_INVOICE), false) ||
             getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+    }
+
+    public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
+        return getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
     }
 }

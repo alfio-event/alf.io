@@ -546,7 +546,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         Principal principal = mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(user);
         MockHttpServletResponse response = new MockHttpServletResponse();
-        List<SerializablePair<String, String>> fields = eventApiController.getAllFields(eventName);
+        List<SerializablePair<String, String>> fields = eventApiController.getAllFields(eventName, principal);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setParameter("fields", fields.stream().map(SerializablePair::getKey).toArray(String[]::new));
         eventApiController.downloadAllTicketsCSV(eventName, "csv", request, response, principal);
