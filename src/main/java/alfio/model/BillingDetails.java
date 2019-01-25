@@ -65,5 +65,9 @@ public class BillingDetails {
         private final ReferenceType referenceType;
         private final String addresseeCode;
         private final String pec;
+
+        public String getReferenceTypeAsString() {
+            return referenceType == null ? "" : referenceType.toString();
+        }
     }
 }

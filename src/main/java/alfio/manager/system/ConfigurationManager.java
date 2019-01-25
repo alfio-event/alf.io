@@ -318,13 +318,13 @@ public class ConfigurationManager {
         }
         boolean isAdmin = userManager.isAdmin(user);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().filter(checkActualConfigurationLevel(isAdmin, EVENT)).sorted().collect(groupByCategory());
-        boolean offlineCheckInEnabled = areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED).test(event);
+        boolean offlineCheckInEnabled = areBooleanSettingsEnabledForEvent(true, ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED).test(event);
         return removeAlfioPISettingsIfNeeded(offlineCheckInEnabled, groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing));
     }
 
-    public Predicate<Event> areBooleanSettingsEnabledForEvent(ConfigurationKeys... keys) {
+    public Predicate<Event> areBooleanSettingsEnabledForEvent(boolean defaultValue, ConfigurationKeys... keys) {
         return event -> Arrays.stream(keys)
-            .allMatch(k -> getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId()).apply(k), false));
+            .allMatch(k -> getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId()).apply(k), defaultValue));
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
@@ -365,9 +365,8 @@ public class ConfigurationManager {
     private Map<ConfigurationKeys.SettingCategory, List<Configuration>> groupByCategory(Map<ConfigurationKeys.SettingCategory, List<Configuration>> all, Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing) {
         return all.entrySet().stream()
             .map(e -> {
-                Set<Configuration> entries = new TreeSet<>();
                 ConfigurationKeys.SettingCategory key = e.getKey();
-                entries.addAll(e.getValue());
+                Set<Configuration> entries = new TreeSet<>(e.getValue());
                 if(existing.containsKey(key)) {
                     List<Configuration> configurations = existing.get(key);
                     entries.removeAll(configurations);
@@ -455,11 +454,15 @@ public class ConfigurationManager {
 
     // https://github.com/alfio-event/alf.io/issues/573
     public boolean canGenerateReceiptOrInvoiceToCustomer(Event event) {
-        return !getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+        return !isItalianEInvoicingEnabled(event);
     }
 
     public boolean isInvoiceOnly(Event event) {
         return getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), GENERATE_ONLY_INVOICE), false) ||
             getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+    }
+
+    public boolean isItalianEInvoicingEnabled(Event event) {
+        return getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
     }
 }

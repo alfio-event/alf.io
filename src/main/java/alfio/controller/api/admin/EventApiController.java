@@ -23,6 +23,7 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
@@ -113,6 +114,7 @@ public class EventApiController {
     private final PaymentManager paymentManager;
     private final TemplateManager templateManager;
     private final FileUploadManager fileUploadManager;
+    private final ConfigurationManager configurationManager;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -278,6 +280,8 @@ public class EventApiController {
     }
 
     private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Payment ID", "Payment Method");
+    private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
+    private static final List<String> ITALIAN_E_INVOICING_FIELDS = Arrays.asList("Fiscal Code", "Reference Type", "Addressee Code", "PEC");
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
     @RequestMapping("/events/{eventName}/export")
@@ -357,7 +361,10 @@ public class EventApiController {
     }
 
     private Stream<String[]> exportLines(String eventName, Principal principal, List<String> fields, Map<Integer, TicketCategory> categoriesMap, ZoneId eventZoneId) {
-        return eventManager.findAllConfirmedTicketsForCSV(eventName, principal.getName()).stream().map(trs -> {
+        String username = principal.getName();
+        boolean eInvoicingEnabled = configurationManager.isItalianEInvoicingEnabled(eventManager.getSingleEvent(eventName, username));
+
+        return eventManager.findAllConfirmedTicketsForCSV(eventName, username).stream().map(trs -> {
             Ticket t = trs.getTicket();
             TicketReservation reservation = trs.getTicketReservation();
             List<String> line = new ArrayList<>();
@@ -385,6 +392,14 @@ public class EventApiController {
                 Optional<Transaction> transaction = trs.getTransaction();
                 if(paymentIdRequested) { line.add(defaultString(transaction.map(Transaction::getPaymentId).orElse(null), transaction.map(Transaction::getTransactionId).orElse(""))); }
                 if(paymentGatewayRequested) { line.add(transaction.map(tr -> tr.getPaymentProxy().name()).orElse("")); }
+            }
+
+            if(eInvoicingEnabled) {
+                Optional<BillingDetails.ItalianEInvoicing> eInvoicingData = Optional.ofNullable(reservation.getInvoicingAdditionalInfo()).map(TicketReservationInvoicingAdditionalInfo::getItalianEInvoicing);
+                if(fields.contains("Fiscal Code")) {line.add(eInvoicingData.map(BillingDetails.ItalianEInvoicing::getFiscalCode).orElse(""));}
+                if(fields.contains("Reference Type")) {line.add(eInvoicingData.map(BillingDetails.ItalianEInvoicing::getReferenceTypeAsString).orElse(""));}
+                if(fields.contains("Addressee Code")) {line.add(eInvoicingData.map(BillingDetails.ItalianEInvoicing::getAddresseeCode).orElse(""));}
+                if(fields.contains("PEC")) {line.add(eInvoicingData.map(BillingDetails.ItalianEInvoicing::getPec).orElse(""));}
             }
 
             //obviously not optimized
@@ -471,9 +486,12 @@ public class EventApiController {
     }
 
     @RequestMapping("/events/{eventName}/fields")
-    public List<SerializablePair<String, String>> getAllFields(@PathVariable("eventName") String eventName) {
-        List<SerializablePair<String, String>> fields = new ArrayList<>();
-        fields.addAll(FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList()));
+    public List<SerializablePair<String, String>> getAllFields(@PathVariable("eventName") String eventName, Principal principal) {
+        Event event = eventManager.getSingleEvent(eventName, principal.getName());
+        List<SerializablePair<String, String>> fields = new ArrayList<>(FIXED_PAIRS);
+        if(configurationManager.isItalianEInvoicingEnabled(event)) {
+            fields.addAll(ITALIAN_E_INVOICING_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList()));
+        }
         fields.addAll(ticketFieldRepository.findFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).collect(toList()));
         return fields;
     }

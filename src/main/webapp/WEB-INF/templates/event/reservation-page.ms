@@ -3,7 +3,7 @@
 <script src="{{request.contextPath}}/resources/js/h5f/h5f.min.js"></script>
 <script src="{{request.contextPath}}/resources/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
 <script src="{{request.contextPath}}/resources/js/event/bootstrap-handler.js"></script>
-<script src="{{request.contextPath}}/resources/js/event/reservation-page.js"
+<script src="{{request.contextPath}}/resources/js/event/reservation-page.js"></script>
 <script src="{{request.contextPath}}/resources/js/event/attendee-form.js"></script>
 <script src="{{request.contextPath}}/resources/js/countdownjs/countdown.min.js"></script>
 {{>/event/header}}
