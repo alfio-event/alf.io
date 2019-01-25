@@ -25,6 +25,7 @@ import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.BillingDetails.ItalianEInvoicing;
 import alfio.model.*;
 import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
@@ -381,11 +382,11 @@ public class EventApiController {
             }
 
             if(eInvoicingEnabled) {
-                var eInvoicingData = reservation.getInvoicingAdditionalInfo().getItalianEInvoicing();
-                if(fields.contains("Fiscal Code")) {line.add(eInvoicingData.getFiscalCode());}
-                if(fields.contains("Reference Type")) {line.add(eInvoicingData.getReferenceType().toString());}
-                if(fields.contains("Addressee Code")) {line.add(eInvoicingData.getAddresseeCode());}
-                if(fields.contains("PEC")) {line.add(eInvoicingData.getPec());}
+                var optionalInvoicingData = Optional.ofNullable(reservation.getInvoicingAdditionalInfo()).map(TicketReservationInvoicingAdditionalInfo::getItalianEInvoicing);
+                if(fields.contains("Fiscal Code")) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getFiscalCode).orElse(""));}
+                if(fields.contains("Reference Type")) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getReferenceTypeAsString).orElse(""));}
+                if(fields.contains("Addressee Code")) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getAddresseeCode).orElse(""));}
+                if(fields.contains("PEC")) {line.add(optionalInvoicingData.map(ItalianEInvoicing::getPec).orElse(""));}
             }
 
             //obviously not optimized
