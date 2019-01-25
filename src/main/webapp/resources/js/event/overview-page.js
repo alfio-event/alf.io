@@ -166,6 +166,8 @@
                 btn.addClass("hidden");
                 paymentHandler.pay(function(res) {
                     if(res) {
+                        $('#confirm-buttons').addClass('hidden');
+                        $('#wait-message').removeClass('hidden');
                         $form.submit();
                     }
                 }, function() {

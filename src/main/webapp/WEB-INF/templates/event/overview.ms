@@ -168,13 +168,13 @@
             </div>
         </div>
         {{/captchaRequestedFreeOfCharge}}
-        <div class="row">
+        <div class="row" id="confirm-buttons">
             <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom"><button type="submit" class="btn btn-success btn-block" id="continue-button">{{#i18n}}reservation-page.continue{{/i18n}}</button></div>
             <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}common.back{{/i18n}}</button></div>
         </div>
     {{/orderSummary.free}}
     {{^orderSummary.free}}
-        <div class="row">
+        <div class="row" id="confirm-buttons">
             <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom">
                 <button type="button" class="btn btn-success btn-block" id="continue-button">
                 {{#tokenAcquired}}
@@ -188,6 +188,9 @@
             <div class="col-md-4 col-md-pull-4 col-xs-12"><button type="submit" class="btn btn-default btn-block" id="cancel-reservation">{{#i18n}}common.back{{/i18n}}</button></div>
         </div>
     {{/orderSummary.free}}
+    <div class="hidden alert alert-info text-center" id="wait-message">
+        <strong>{{#i18n}}reservation.payment-in-progress{{/i18n}}<span class="dots"><span>.</span><span>.</span><span>.</span></span></strong>
+    </div>
     <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">
 </form>
 {{#captchaRequestedForOffline}}
