@@ -1,19 +1,19 @@
 language: java
-before_script:
-  - psql -c 'create database alfio;' -U postgres
 dist: trusty
 sudo: required
 install:
-    - TERM=dumb ./gradlew -q assemble
+  - TERM=dumb ./gradlew -q assemble
 matrix:
-    include:
-        - jdk: oraclejdk11
-          env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql9.6"
-          dist: trusty
-          addons:
-              postgresql: "9.6"
+  include:
+    - jdk: oraclejdk11
+      env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql9.6"
+      dist: trusty
+      addons:
+        postgresql: "9.6"
 
+before_script:
+  - psql -c 'create database alfio;' -U postgres
 script:
-    - TERM=dumb ./gradlew build jacocoTestReport $PROFILE
+  - TERM=dumb ./gradlew build jacocoTestReport $PROFILE
 after_success:
-    ./gradlew -Djdk.tls.client.protocols="TLSv1,TLSv1.1,TLSv1.2" coveralls
+  ./gradlew -Djdk.tls.client.protocols="TLSv1,TLSv1.1,TLSv1.2" coveralls
