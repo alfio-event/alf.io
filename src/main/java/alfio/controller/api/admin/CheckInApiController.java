@@ -292,8 +292,8 @@ public class CheckInApiController {
                             @JsonProperty("checkbox") Boolean checkbox) {
                 this.firstRow = firstRow;
                 this.secondRow = secondRow;
-                this.thirdRow = thirdRow;
-                this.additionalRows = additionalRows;
+                this.thirdRow = thirdRow != null ? thirdRow : List.of();
+                this.additionalRows = additionalRows != null ? additionalRows : List.of();
                 this.checkbox = checkbox;
             }
         }
