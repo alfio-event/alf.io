@@ -1,14 +1,20 @@
 language: java
-dist: trusty
+dist: xenial
 sudo: required
 install:
   - TERM=dumb ./gradlew -q assemble
 matrix:
   include:
-    - jdk: oraclejdk11
+    - name: postgresql 9.6
+      jdk: oraclejdk11
       env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql9.6"
       addons:
         postgresql: "9.6"
+    - name: postgresql 10
+      jdk: oraclejdk11
+      env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql10"
+      addons:
+        postgresql: "10"
 
 before_script:
   - psql -c 'create database alfio;' -U postgres
