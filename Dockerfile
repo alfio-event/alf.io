@@ -12,7 +12,7 @@ RUN export ZULU_FOLDER=`ls /usr/lib/jvm/` \
     --add-modules jdk.scripting.nashorn,java.desktop,java.logging,java.sql,java.management,java.naming,jdk.unsupported \
     --output /jlinked
 
-FROM alpine:latest
+FROM alpine:3.8
 
 COPY --from=zulu /jlinked /opt/jdk/
 
