@@ -103,12 +103,16 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testEventGeneration() {
+
+        assertFalse(eventManager.eventExistsById(-9000));
+
         List<TicketCategoryModification> categories = Collections.singletonList(
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
+        assertTrue(eventManager.eventExistsById(event.getId()));
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
         assertNotNull(tickets);
         assertFalse(tickets.isEmpty());
