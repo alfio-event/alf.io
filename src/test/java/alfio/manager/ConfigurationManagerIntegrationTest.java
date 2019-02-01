@@ -38,7 +38,6 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.BaseIntegrationTest;
-import alfio.util.OptionalWrapper;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -304,7 +303,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         assertNotNull(nFalse);
         assertEquals("false", nFalse.getValue());
 
-        Optional<Configuration> opt = OptionalWrapper.optionally(() -> configurationRepository.findByKey(GOOGLE_ANALYTICS_ANONYMOUS_MODE.getValue()));
+        Optional<Configuration> opt = configurationRepository.findOptionalByKey(GOOGLE_ANALYTICS_ANONYMOUS_MODE.getValue());
         assertFalse(opt.isPresent());
 
     }
