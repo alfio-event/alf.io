@@ -291,7 +291,7 @@ public class TicketReservationManager {
 
     private void reserveAdditionalServicesForReservation(int eventId, String transactionId, ASReservationWithOptionalCodeModification additionalServiceReservation, PromoCodeDiscount discount) {
         Optional.ofNullable(additionalServiceReservation.getAdditionalServiceId())
-            .flatMap(id -> optionally(() -> additionalServiceRepository.getById(id, eventId)))
+            .flatMap(id -> additionalServiceRepository.getOptionalById(id, eventId))
             .filter(as -> additionalServiceReservation.getQuantity() > 0 && (as.isFixPrice() || Optional.ofNullable(additionalServiceReservation.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))
             .map(as -> Pair.of(eventRepository.findById(eventId), as))
             .ifPresent(pair -> {
@@ -773,21 +773,16 @@ public class TicketReservationManager {
     
     //check internal consistency between the 3 values
     public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
-        return optionally(() -> Triple.of(eventRepository.findByShortName(eventName), 
-                ticketReservationRepository.findReservationById(reservationId), 
-                ticketRepository.findByUUID(ticketIdentifier))).flatMap((x) -> {
-                    
-                    Ticket t = x.getRight();
-                    Event e = x.getLeft();
-                    TicketReservation tr = x.getMiddle();
-                    
-                    if(tr.getId().equals(t.getTicketsReservationId()) && e.getId() == t.getEventId()) {
-                        return Optional.of(x);
-                    } else {
-                        return Optional.empty();
-                    }
-                    
-                });
+
+        return eventRepository.findOptionalByShortName(eventName).flatMap(event ->
+            ticketReservationRepository.findOptionalReservationById(reservationId).flatMap(reservation ->
+                ticketRepository.findOptionalByUUID(ticketIdentifier).flatMap(ticket -> Optional.of(Triple.of(event, reservation, ticket)))))
+        .filter(x -> {
+            Ticket t = x.getRight();
+            Event e = x.getLeft();
+            TicketReservation tr = x.getMiddle();
+            return tr.getId().equals(t.getTicketsReservationId()) && e.getId() == t.getEventId();
+        });
     }
 
     /**
