@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.DuplicateReferenceException;
 import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;

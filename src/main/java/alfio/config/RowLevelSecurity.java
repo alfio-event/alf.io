@@ -50,6 +50,7 @@ public class RowLevelSecurity {
         new AntPathRequestMatcher("/file/**"),
         new AntPathRequestMatcher("/api/events/**"),
         new AntPathRequestMatcher("/api/webhook/**"),
+        new AntPathRequestMatcher("/api/payment/**"),
         new AntPathRequestMatcher("/session-expired"),
         new AntPathRequestMatcher("/authentication"));
 

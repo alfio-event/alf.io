@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager;
+package alfio.manager.payment;
 
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
@@ -379,7 +379,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
             }).orElseGet(() -> Pair.of(0L, 0L));
             transactionRepository.insert(captureId, paymentId, spec.getReservationId(),
                 ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
-                fees.getLeft(), fees.getRight());
+                fees.getLeft(), fees.getRight(), alfio.model.transaction.Transaction.Status.COMPLETE);
             return PaymentResult.successful(captureId);
         } catch (Exception e) {
             log.warn("errow while processing paypal payment: " + e.getMessage(), e);

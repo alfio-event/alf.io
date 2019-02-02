@@ -27,8 +27,8 @@ import java.util.Optional;
 @QueryRepository
 public interface TransactionRepository {
 
-    @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy, plat_fee, gtw_fee) " +
-            "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy, :platformFee, :gatewayFee)")
+    @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy, plat_fee, gtw_fee, status) " +
+            "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy, :platformFee, :gatewayFee, :status)")
     int insert(@Bind("transactionId") String transactionId,
                @Bind("paymentId") String paymentId,
                @Bind("reservationId") String reservationId,
@@ -38,7 +38,8 @@ public interface TransactionRepository {
                @Bind("description") String description,
                @Bind("paymentProxy") String paymentProxy,
                @Bind("platformFee") long platformFee,
-               @Bind("gatewayFee") long gatewayFee);
+               @Bind("gatewayFee") long gatewayFee,
+               @Bind("status") Transaction.Status status);
 
     @Query("select * from b_transaction where reservation_id = :reservationId")
     Transaction loadByReservationId(@Bind("reservationId") String reservationId);

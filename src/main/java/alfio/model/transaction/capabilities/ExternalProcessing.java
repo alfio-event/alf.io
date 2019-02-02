@@ -16,7 +16,7 @@
  */
 package alfio.model.transaction.capabilities;
 
-import alfio.manager.PaymentSpecification;
+import alfio.manager.payment.PaymentSpecification;
 import alfio.model.Event;
 import alfio.model.OrderSummary;
 import alfio.model.TicketReservation;

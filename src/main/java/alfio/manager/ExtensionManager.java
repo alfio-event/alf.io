@@ -18,6 +18,7 @@
 package alfio.manager;
 
 import alfio.extension.ExtensionService;
+import alfio.manager.payment.PaymentSpecification;
 import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
 import alfio.repository.EventRepository;

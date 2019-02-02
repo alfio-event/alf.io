@@ -45,7 +45,10 @@
                     });
                 },
                 active: function() {
-                    return doc.getElementById("stripe-key") != null;
+                    var attr;
+                    var stripe = doc.getElementById("stripe-key");
+                    //checkout is the default
+                    return stripe != null && (attr = stripe.attributes.getNamedItem("data-stripe-mode")) == null || attr.value === 'checkout';
                 }
             });
         } else {

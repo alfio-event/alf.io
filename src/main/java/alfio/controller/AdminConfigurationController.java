@@ -16,7 +16,9 @@
  */
 package alfio.controller;
 
-import alfio.manager.StripeCreditCardManager;
+import alfio.manager.payment.StripeCreditCardManager;
+import alfio.manager.payment.stripe.StripeConnectResult;
+import alfio.manager.payment.stripe.StripeConnectURL;
 import alfio.manager.user.UserManager;
 import alfio.model.system.Configuration;
 import lombok.AllArgsConstructor;
@@ -33,7 +35,7 @@ import java.security.Principal;
 import java.util.Objects;
 import java.util.Optional;
 
-import static alfio.manager.StripeCreditCardManager.CONNECT_REDIRECT_PATH;
+import static alfio.manager.payment.stripe.StripeConnectURL.CONNECT_REDIRECT_PATH;
 
 @Controller
 @AllArgsConstructor
@@ -50,7 +52,7 @@ public class AdminConfigurationController {
                                           @PathVariable("orgId") Integer orgId,
                                           HttpSession session) {
         if(userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), orgId)) {
-            StripeCreditCardManager.ConnectURL connectURL = stripeCreditCardManager.getConnectURL(Configuration.from(orgId));
+            StripeConnectURL connectURL = stripeCreditCardManager.getConnectURL(Configuration.from(orgId));
             session.setAttribute(STRIPE_CONNECT_STATE_PREFIX +orgId, connectURL.getState());
             session.setAttribute(STRIPE_CONNECT_ORG, orgId);
             return "redirect:" + connectURL.getAuthorizationURL();
@@ -77,7 +79,7 @@ public class AdminConfigurationController {
                 session.removeAttribute(STRIPE_CONNECT_STATE_PREFIX + orgId);
                 boolean stateVerified = Objects.equals(persistedState, state);
                 if(stateVerified && code != null) {
-                    StripeCreditCardManager.ConnectResult connectResult = stripeCreditCardManager.storeConnectedAccountId(code, Configuration.from(orgId));
+                    StripeConnectResult connectResult = stripeCreditCardManager.storeConnectedAccountId(code, Configuration.from(orgId));
                     if(connectResult.isSuccess()) {
                         return "redirect:/admin/#/configuration/organization/"+orgId;
                     }

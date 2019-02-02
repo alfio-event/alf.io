@@ -24,6 +24,10 @@ import java.time.ZonedDateTime;
 @Getter
 public class Transaction {
 
+    public enum Status {
+        PENDING, COMPLETE, CANCELLED
+    }
+
     private final int id;
     private final String transactionId;
     private final String paymentId;
@@ -35,6 +39,7 @@ public class Transaction {
     private final PaymentProxy paymentProxy;
     private final long platformFee;
     private final long gatewayFee;
+    private final Status status;
 
 
     public Transaction(@Column("id") int id,
@@ -47,7 +52,8 @@ public class Transaction {
                        @Column("description") String description,
                        @Column("payment_proxy") String paymentProxy,
                        @Column("plat_fee") long platformFee,
-                       @Column("gtw_fee") long gatewayFee) {
+                       @Column("gtw_fee") long gatewayFee,
+                       @Column("status") Status status) {
         this.id = id;
         this.transactionId = transactionId;
         this.paymentId = paymentId;
@@ -59,5 +65,6 @@ public class Transaction {
         this.paymentProxy = PaymentProxy.valueOf(paymentProxy);
         this.platformFee = platformFee;
         this.gatewayFee = gatewayFee;
+        this.status = status;
     }
 }

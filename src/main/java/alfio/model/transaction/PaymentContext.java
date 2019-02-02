@@ -28,6 +28,9 @@ public class PaymentContext {
     private final Event event;
     private final Function<ConfigurationKeys, ConfigurationPathKey> configurationProvider;
 
+    public PaymentContext() {
+        this(null, Configuration::getSystemConfiguration);
+    }
 
     public PaymentContext(Event event) {
         this(event, Configuration.from(event));

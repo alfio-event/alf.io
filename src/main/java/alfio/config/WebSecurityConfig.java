@@ -263,7 +263,9 @@ public class WebSecurityConfig {
                     .csrf();
 
             Pattern pattern = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
-            Predicate<HttpServletRequest> csrfWhitelistPredicate = r -> r.getRequestURI().startsWith("/api/webhook/") || pattern.matcher(r.getMethod()).matches();
+            Predicate<HttpServletRequest> csrfWhitelistPredicate = r -> r.getRequestURI().startsWith("/api/webhook/")
+                || r.getRequestURI().startsWith("/api/payment/webhook/")
+                || pattern.matcher(r.getMethod()).matches();
             csrfWhitelistPredicate = csrfWhitelistPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
             configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfWhitelistPredicate::test));
 

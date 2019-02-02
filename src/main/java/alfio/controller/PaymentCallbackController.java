@@ -18,8 +18,8 @@ package alfio.controller;
 
 import alfio.controller.support.SessionUtil;
 import alfio.manager.PaymentManager;
-import alfio.manager.PaymentSpecification;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.PaymentResult;
 import alfio.model.Event;
 import alfio.model.OrderSummary;

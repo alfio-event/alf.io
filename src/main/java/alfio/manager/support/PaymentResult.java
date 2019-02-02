@@ -17,10 +17,12 @@
 package alfio.manager.support;
 
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.Optional;
 
 @EqualsAndHashCode
+@ToString
 public final class PaymentResult {
 
     public enum Type { SUCCESSFUL, INITIALIZED, PENDING, REDIRECT, FAILED }

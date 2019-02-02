@@ -17,6 +17,8 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.payment.BankTransferManager;
+import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.CategoryEvaluator;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PartialTicketTextGenerator;
@@ -38,8 +40,8 @@ import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.*;
+import alfio.model.transaction.capabilities.SignedWebhookHandler;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
@@ -97,9 +99,9 @@ import static org.apache.commons.lang3.time.DateUtils.truncate;
 @Log4j2
 public class TicketReservationManager {
     
+    public static final String NOT_YET_PAID_TRANSACTION_ID = "not-paid";
     private static final String STUCK_TICKETS_MSG = "there are stuck tickets for the event %s. Please check admin area.";
     private static final String STUCK_TICKETS_SUBJECT = "warning: stuck tickets found";
-    static final String NOT_YET_PAID_TRANSACTION_ID = "not-paid";
 
     private final EventRepository eventRepository;
     private final OrganizationRepository organizationRepository;
@@ -514,7 +516,8 @@ public class TicketReservationManager {
         if(paymentProxy != PaymentProxy.ON_SITE || transactionRepository.loadOptionalByReservationId(reservationId).isEmpty()) {
             String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
             transactionRepository.insert(transactionId, null, reservationId, ZonedDateTime.now(event.getZoneId()),
-                priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(), platformFee, 0L);
+                priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(),
+                platformFee, 0L, Transaction.Status.COMPLETE);
         } else {
             log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", reservationId);
         }
@@ -1645,5 +1648,46 @@ public class TicketReservationManager {
 
     private static Locale getReservationLocale(TicketReservation reservation) {
         return StringUtils.isEmpty(reservation.getUserLanguage()) ? Locale.ENGLISH : Locale.forLanguageTag(reservation.getUserLanguage());
+    }
+
+    public Optional<Boolean> processTransactionWebhook(String body, String signature, PaymentMethod paymentMethod) {
+        //load the payment provider using system configuration
+        var paymentProviderOptional = paymentManager.lookupProviderByMethod(paymentMethod, new PaymentContext())
+            .filter(pp -> pp instanceof SignedWebhookHandler);
+        if(paymentProviderOptional.isEmpty()) {
+            return Optional.empty();
+        }
+
+        var paymentProvider = paymentProviderOptional.get();
+        var optionalTransactionWebhookPayload = ((SignedWebhookHandler) paymentProvider).parseTransactionPayload(body, signature);
+        if(optionalTransactionWebhookPayload.isEmpty()) {
+            return Optional.empty();
+        }
+        var transactionPayload = optionalTransactionWebhookPayload.get();
+
+        var optionalReservation = ticketReservationRepository.findOptionalReservationById(transactionPayload.getReservationId());
+        if(optionalReservation.isEmpty()) {
+            return Optional.empty();
+        }
+        var reservation = optionalReservation.get();
+        var transaction = transactionRepository.loadByReservationId(reservation.getId());
+
+        if(reservation.getStatus() != IN_PAYMENT || transaction.getStatus() != Transaction.Status.PENDING) {
+            log.debug("discarding transaction webhook for reservation id {} ({}). Transaction status is: {}", reservation.getId(), reservation.getStatus(), transaction.getStatus());
+            return Optional.of(false);
+        }
+
+
+        //reload the payment provider, this time within a more sensible context
+        return paymentManager.lookupProviderByMethod(paymentMethod, new PaymentContext(eventRepository.findByReservationId(reservation.getId())))
+            .filter(pp -> pp instanceof SignedWebhookHandler)
+            .map(provider -> {
+                if(transactionPayload.getStatus() == TransactionWebhookPayload.Status.SUCCESS) {
+                    return ((SignedWebhookHandler) provider).confirm(transactionPayload, transaction).isSuccessful();
+                } else {
+                    reTransitionToPending(reservation.getId());
+                    return false;
+                }
+            });
     }
 }
