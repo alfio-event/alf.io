@@ -16,13 +16,17 @@
  */
 package alfio.model.transaction.capabilities;
 
+import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.PaymentResult;
+import alfio.model.transaction.PaymentToken;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.TransactionWebhookPayload;
 
 import java.util.Optional;
 
 public interface SignedWebhookHandler {
+
+    PaymentToken initTransaction(PaymentSpecification paymentSpecification);
 
     String getWebhookSignatureKey();
 

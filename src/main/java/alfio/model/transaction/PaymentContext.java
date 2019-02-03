@@ -21,11 +21,13 @@ import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.ConfigurationPathKey;
 import alfio.model.system.ConfigurationKeys;
 
+import java.util.Optional;
 import java.util.function.Function;
 
 public class PaymentContext {
 
     private final Event event;
+    private final String reservationId;
     private final Function<ConfigurationKeys, ConfigurationPathKey> configurationProvider;
 
     public PaymentContext() {
@@ -36,9 +38,18 @@ public class PaymentContext {
         this(event, Configuration.from(event));
     }
 
+    public PaymentContext(Event event, String reservationId) {
+        this(event, Configuration.from(event), reservationId);
+    }
+
     public PaymentContext(Event event, Function<ConfigurationKeys, ConfigurationPathKey> configurationProvider) {
+        this(event, configurationProvider, null);
+    }
+
+    public PaymentContext(Event event, Function<ConfigurationKeys, ConfigurationPathKey> configurationProvider, String reservationId) {
         this.event = event;
         this.configurationProvider = configurationProvider;
+        this.reservationId = reservationId;
     }
 
     /**
@@ -47,6 +58,10 @@ public class PaymentContext {
      */
     public Event getEvent() {
         return event;
+    }
+
+    public Optional<String> getReservationId() {
+        return Optional.ofNullable(reservationId);
     }
 
     public ConfigurationPathKey narrow(ConfigurationKeys key) {

@@ -21,26 +21,36 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.PaymentInformation;
 import alfio.model.transaction.*;
+import alfio.model.transaction.capabilities.ClientServerTokenRequest;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.model.transaction.capabilities.SignedWebhookHandler;
+import alfio.model.transaction.token.StripeSCACreditCardToken;
 import alfio.model.transaction.webhook.StripeChargeTransactionWebhookPayload;
+import alfio.model.transaction.webhook.StripePaymentIntentWebhookPayload;
 import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.system.ConfigurationRepository;
+import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
+import com.stripe.model.PaymentIntent;
 import com.stripe.net.Webhook;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
+import static alfio.model.system.ConfigurationKeys.STRIPE_WEBHOOK_KEY;
 
 @Log4j2
 @Component
-public class StripeWebhookPaymentManager implements PaymentProvider, RefundRequest, PaymentInfo, SignedWebhookHandler {
+@Transactional
+public class StripeWebhookPaymentManager implements PaymentProvider, RefundRequest, PaymentInfo, SignedWebhookHandler, ClientServerTokenRequest {
 
 
     private final ConfigurationManager configurationManager;
@@ -58,6 +68,36 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     @Override
+    public PaymentToken initTransaction(PaymentSpecification paymentSpecification) {
+        var reservationId = paymentSpecification.getReservationId();
+        return transactionRepository.loadOptionalByReservationId(reservationId)
+            .map(this::buildTokenFromTransaction)
+            .orElseGet(() -> createNewToken(paymentSpecification));
+    }
+
+    private StripeSCACreditCardToken buildTokenFromTransaction(Transaction transaction) {
+        return new StripeSCACreditCardToken(transaction.getPaymentId(), transaction.getTransactionId(), null);
+    }
+
+    private StripeSCACreditCardToken createNewToken(PaymentSpecification paymentSpecification) {
+        var paymentIntentParams = baseStripeManager.createParams(paymentSpecification);
+        paymentIntentParams.put("allowed_source_types", List.of("card"));
+        try {
+            var intent = PaymentIntent.create(paymentIntentParams, baseStripeManager.options(paymentSpecification.getEvent()).orElseThrow());
+            var clientSecret = intent.getClientSecret();
+            long platformFee = paymentIntentParams.containsKey("application_fee") ? (long) paymentIntentParams.get("application_fee") : 0L;
+            transactionRepository.insert(null, intent.getId(),
+                paymentSpecification.getReservationId(), ZonedDateTime.now(paymentSpecification.getEvent().getZoneId()),
+                paymentSpecification.getPriceWithVAT(), paymentSpecification.getEvent().getCurrency(), "Payment Intent",
+                PaymentProxy.STRIPE.name(), platformFee,0L, Transaction.Status.PENDING);
+            return new StripeSCACreditCardToken(intent.getId(), null, clientSecret);
+
+        } catch (StripeException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    @Override
     public String getWebhookSignatureKey() {
         return baseStripeManager.getWebhookSignatureKey();
     }
@@ -68,7 +108,9 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             var stripeEvent = Webhook.constructEvent(body, signature, getWebhookSignatureKey());
             String eventType = stripeEvent.getType();
             if(eventType.startsWith("charge.")) {
-                return Optional.of(new StripeChargeTransactionWebhookPayload(eventType, (Charge)stripeEvent.getData().getObject()));
+                return Optional.of(new StripeChargeTransactionWebhookPayload(eventType, (Charge) stripeEvent.getData().getObject()));
+            } else if(eventType.startsWith("payment_intent.")) {
+                return Optional.of(new StripePaymentIntentWebhookPayload(eventType, (PaymentIntent) stripeEvent.getData().getObject()));
             }
             return Optional.empty();
         } catch (Exception e) {
@@ -85,7 +127,15 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
         return baseStripeManager.accept(paymentMethod, context)
-            && configurationManager.getBooleanConfigValue(context.narrow(STRIPE_ENABLE_SCA), false);
+            && configurationManager.getBooleanConfigValue(context.narrow(STRIPE_ENABLE_SCA), false)
+            && isWebhookKeyDefined(context);
+    }
+
+    private boolean isWebhookKeyDefined(PaymentContext context) {
+        return !configurationManager.getStringConfigValue(context.narrow(STRIPE_WEBHOOK_KEY))
+            .map(String::strip)
+            .orElse("")
+            .isEmpty();
     }
 
     @Override
@@ -101,5 +151,12 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     @Override
     public boolean refund(Transaction transaction, Event event, Integer amount) {
         return baseStripeManager.refund(transaction, event, amount);
+    }
+
+    @Override
+    public PaymentToken buildPaymentToken(String clientToken, PaymentContext paymentContext) {
+        var reservationId = paymentContext.getReservationId().orElseThrow();
+        var optionalTransaction = transactionRepository.loadOptionalByReservationId(reservationId);
+        return new StripeSCACreditCardToken(optionalTransaction.map(Transaction::getPaymentId).orElse(null), clientToken, null);
     }
 }

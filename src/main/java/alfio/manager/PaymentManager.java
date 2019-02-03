@@ -153,7 +153,7 @@ public class PaymentManager {
         return lookupProviderByMethod(proxy.getPaymentMethod(), context)
             .filter(ClientServerTokenRequest.class::isInstance)
             .map(ClientServerTokenRequest.class::cast)
-            .map(pp -> pp.buildPaymentToken(gatewayToken))
+            .map(pp -> pp.buildPaymentToken(gatewayToken, context))
             .orElse(null);
     }
 

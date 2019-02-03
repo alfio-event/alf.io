@@ -49,7 +49,6 @@ import com.stripe.net.RequestOptions;
 import com.stripe.net.Webhook;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 
@@ -170,28 +169,23 @@ class BaseStripeManager {
      * @return
      * @throws StripeException
      */
-    Optional<Charge> chargeCreditCard(String stripeToken, long amountInCent, Event event,
-                                      String reservationId, String email, String fullName, String billingAddress) throws StripeException {
+    Optional<Charge> chargeCreditCard(PaymentSpecification spec) throws StripeException {
+        var chargeParams = createParams(spec);
+        chargeParams.put("card", spec.getGatewayToken().getToken());
+        return charge( spec.getEvent(), chargeParams );
+    }
 
-        int tickets = ticketRepository.countTicketsInReservation(reservationId);
+    protected Map<String, Object> createParams(PaymentSpecification spec) {
+        int tickets = ticketRepository.countTicketsInReservation(spec.getReservationId());
         Map<String, Object> chargeParams = new HashMap<>();
-        chargeParams.put("amount", amountInCent);
-        FeeCalculator.getCalculator(event, configurationManager).apply(tickets, amountInCent).ifPresent(fee -> chargeParams.put("application_fee", fee));
-        chargeParams.put("currency", event.getCurrency());
-        chargeParams.put("card", stripeToken);
+        chargeParams.put("amount", spec.getPriceWithVAT());
+        FeeCalculator.getCalculator(spec.getEvent(), configurationManager).apply(tickets, (long) spec.getPriceWithVAT()).ifPresent(fee -> chargeParams.put("application_fee", fee));
+        chargeParams.put("currency", spec.getEvent().getCurrency());
 
-        chargeParams.put("description", String.format("%d ticket(s) for event %s", tickets, event.getDisplayName()));
+        chargeParams.put("description", String.format("%d ticket(s) for event %s", tickets, spec.getEvent().getDisplayName()));
 
-        Map<String, String> initialMetadata = new HashMap<>();
-        initialMetadata.put("reservationId", reservationId);
-        initialMetadata.put("email", email);
-        initialMetadata.put("fullName", fullName);
-        if (StringUtils.isNotBlank(billingAddress)) {
-            initialMetadata.put("billingAddress", billingAddress);
-        }
-        chargeParams.put("metadata", initialMetadata);
-
-        return charge( event, chargeParams );
+        chargeParams.put("metadata", MetadataBuilder.buildMetadata(spec));
+        return chargeParams;
     }
 
     protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) throws StripeException {

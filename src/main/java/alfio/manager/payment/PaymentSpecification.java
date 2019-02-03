@@ -86,6 +86,10 @@ public class PaymentSpecification {
         this(reservationId, gatewayToken, priceWithVAT, event, email, customerName, null, null, null, false, false, null, null, null, null, false, false);
     }
 
+    public String getCurrencyCode() {
+        return event.getCurrency();
+    }
+
     public PaymentContext getPaymentContext() {
         return new PaymentContext(event);
     }

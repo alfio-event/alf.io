@@ -121,8 +121,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     @Override
     public PaymentResult doPayment( PaymentSpecification spec ) {
         try {
-            final Optional<Charge> optionalCharge = baseStripeManager.chargeCreditCard(spec.getGatewayToken().getToken(), spec.getPriceWithVAT(),
-                spec.getEvent(), spec.getReservationId(), spec.getEmail(), spec.getCustomerName().getFullName(), spec.getBillingAddress());
+            final Optional<Charge> optionalCharge = baseStripeManager.chargeCreditCard(spec);
             return optionalCharge.map(charge -> {
                 log.info("transaction {} paid: {}", spec.getReservationId(), charge.getPaid());
                 Pair<Long, Long> fees = Optional.ofNullable(charge.getBalanceTransactionObject()).map( bt -> {
@@ -145,7 +144,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     }
 
     @Override
-    public PaymentToken buildPaymentToken(String clientToken) {
+    public PaymentToken buildPaymentToken(String clientToken, PaymentContext context) {
         return new StripeCreditCardToken(clientToken);
     }
 
