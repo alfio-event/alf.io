@@ -165,13 +165,8 @@ public class EventManager {
         return loadOrganizer(event, UserManager.ADMIN_USERNAME);
     }
 
-    public Event findEventByTicketCategory(TicketCategory ticketCategory) {
-        return eventRepository.findById(ticketCategory.getEventId());
-    }
-
-    //FIXME: can be removed, as it's only used to check if the event exists given an additional service
-    public Optional<Event> findEventByAdditionalService(AdditionalService additionalService) {
-        return eventRepository.findOptionalById(additionalService.getEventId());
+    public boolean eventExistsById(int eventId) {
+        return eventRepository.existsById(eventId);
     }
 
     public void createEvent(EventModification em) {

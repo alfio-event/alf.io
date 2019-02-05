@@ -18,11 +18,14 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.EventDescription;
 import alfio.model.Ticket;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
+import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -38,23 +41,24 @@ import com.ryantenney.passkit4j.sign.PassSignerImpl;
 import com.ryantenney.passkit4j.sign.PassSigningException;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.imgscalr.Scalr;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @AllArgsConstructor
@@ -69,6 +73,8 @@ class PassBookManager {
     private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
     private final FileUploadManager fileUploadManager;
+    private final EventDescriptionRepository eventDescriptionRepository;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
 
     byte[] getPassBook(Map<String, String> model) {
@@ -80,46 +86,52 @@ class PassBookManager {
 
             Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event);
             Map<ConfigurationKeys, Optional<String>> pbookConf = configurationManager.getStringConfigValueFrom(
-                partial.apply(ConfigurationKeys.PASSBOOK_TYPE_IDENTIFIER),
-                partial.apply(ConfigurationKeys.PASSBOOK_KEYSTORE),
-                partial.apply(ConfigurationKeys.PASSBOOK_KEYSTORE_PASSWORD),
-                partial.apply(ConfigurationKeys.PASSBOOK_TEAM_IDENTIFIER));
+                partial.apply(PASSBOOK_TYPE_IDENTIFIER),
+                partial.apply(PASSBOOK_KEYSTORE),
+                partial.apply(PASSBOOK_KEYSTORE_PASSWORD),
+                partial.apply(PASSBOOK_TEAM_IDENTIFIER),
+                partial.apply(PASSBOOK_PRIVATE_KEY_ALIAS));
             //check if all are set
             if(pbookConf.values().stream().anyMatch(Optional::isEmpty)) {
-                log.trace("Cannot generate Passbook. Missing configuration keys, check if all 4 are presents");
+                log.trace("Cannot generate Passbook. Missing configuration keys, check if all 5 are presents");
                 return null;
             }
 
             //
-            String teamIdentifier = pbookConf.get(ConfigurationKeys.PASSBOOK_TEAM_IDENTIFIER).orElseThrow(IllegalStateException::new);
-            String typeIdentifier = pbookConf.get(ConfigurationKeys.PASSBOOK_TYPE_IDENTIFIER).orElseThrow(IllegalStateException::new);
-            byte[] keystoreRaw = Base64.getDecoder().decode(pbookConf.get(ConfigurationKeys.PASSBOOK_KEYSTORE).orElseThrow(IllegalStateException::new));
-            String keystorePwd = pbookConf.get(ConfigurationKeys.PASSBOOK_KEYSTORE_PASSWORD).orElseThrow(IllegalStateException::new);
+            String teamIdentifier = pbookConf.get(PASSBOOK_TEAM_IDENTIFIER).orElseThrow();
+            String typeIdentifier = pbookConf.get(PASSBOOK_TYPE_IDENTIFIER).orElseThrow();
+            byte[] keystoreRaw = Base64.getDecoder().decode(pbookConf.get(PASSBOOK_KEYSTORE).orElseThrow());
+            String keystorePwd = pbookConf.get(PASSBOOK_KEYSTORE_PASSWORD).orElseThrow();
+            String privateKeyAlias = pbookConf.get(PASSBOOK_PRIVATE_KEY_ALIAS).orElseThrow();
 
-            //ugly, find an alternative way?
-            Optional<KeyStore> ksJks = loadKeyStore(keystoreRaw);
-            if(ksJks.isPresent()) {
-                return buildPass(ticket, event, organization, teamIdentifier, typeIdentifier, keystorePwd, ksJks.get());
-            } else {
-                log.warn("Cannot generate Passbook. Not able to load keystore. Please check configuration.");
-                return null;
-            }
+            return buildPass(ticket, event, organization, teamIdentifier, typeIdentifier, keystorePwd, privateKeyAlias, new ByteArrayInputStream(keystoreRaw));
         } catch (Exception ex) {
             log.warn("Got Exception while generating Passbook. Please check configuration.", ex);
             return null;
         }
     }
 
-    private byte[] buildPass(Ticket ticket, Event event, Organization organization, String teamIdentifier, String typeIdentifier, String keystorePwd, KeyStore keyStore) throws IOException, PassSigningException {
+    private byte[] buildPass(Ticket ticket,
+                             Event event,
+                             Organization organization,
+                             String teamIdentifier,
+                             String typeIdentifier,
+                             String keystorePwd,
+                             String privateKeyAlias,
+                             InputStream keyStore) throws IOException, PassSigningException {
 
         // from example: https://github.com/ryantenney/passkit4j/blob/master/src/test/java/com/ryantenney/passkit4j/EventTicketExample.java
+        // specification: https://developer.apple.com/library/archive/documentation/UserExperience/Conceptual/PassKit_PG/Creating.html#//apple_ref/doc/uid/TP40012195-CH4-SW6
 
-        Location loc = new Location(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude())).altitude(0.0);
+        var ticketLocale = Locale.forLanguageTag(ticket.getUserLanguage());
 
+        Location loc = new Location(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude())).altitude(0D);
+        String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, ticket.getUserLanguage()).orElse("");
         Pass pass = new Pass()
             .teamIdentifier(teamIdentifier)
             .passTypeIdentifier(typeIdentifier)
             .organizationName(organization.getName())
+            .groupingIdentifier(organization.getEmail())
             .description(event.getDisplayName())
             .serialNumber(ticket.getUuid())
             .relevantDate(Date.from(event.getBegin().toInstant()))
@@ -131,19 +143,29 @@ class PassBookManager {
             .backgroundColor(Color.WHITE)
             .passInformation(
                 new EventTicket()
-                    .primaryFields(new TextField("event", "EVENT", event.getDisplayName()))
-                    .secondaryFields(new TextField("loc", "LOCATION", event.getLocation()))
+                    .headerFields(List.of(
+                        new TextField("eventStartDate", "Date", event.getBegin().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(ticketLocale)))
+                    ))
+                    .primaryFields(List.of(
+                        new TextField("categoryId", event.getDisplayName(), ticketCategoryRepository.getById(ticket.getCategoryId()).getName())
+                    ))
+                    .secondaryFields(
+                        new TextField("location", "Venue", event.getLocation())
+                    )
+                    .auxiliaryFields(
+                        getAuxiliaryFields(ticket)
+                    )
+                    .backFields(
+                        new TextField("desc", "Event Description", eventDescription),
+                        new TextField("credits", "Powered by", "Alf.io, the Open Source ticket reservation System.")
+                    )
             );
 
-        List<PassResource> passResources = new ArrayList<>(4);
-        try(InputStream icon = new ClassPathResource("/alfio/icon/icon.png").getInputStream();
-            InputStream icon2 = new ClassPathResource("/alfio/icon/icon@2x.png").getInputStream()) {
-            passResources.add(new PassResource("icon.png", StreamUtils.copyToByteArray(icon)));
-            passResources.add(new PassResource("icon@2x.png", StreamUtils.copyToByteArray(icon2)));
-        } catch (IOException e) {
-            //
-        }
+        List<PassResource> passResources = new ArrayList<>(6);
 
+        passResources.add(new PassResource("icon.png", () -> new ClassPathResource("/alfio/icon/icon.png").getInputStream()));
+        passResources.add(new PassResource("icon@2x.png", () -> new ClassPathResource("/alfio/icon/icon@2x.png").getInputStream()));
+        passResources.add(new PassResource("icon@3x.png", () -> new ClassPathResource("/alfio/icon/icon@3x.png").getInputStream()));
 
         fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(metadata -> {
             if(metadata.getContentType().equals("image/png") || metadata.getContentType().equals("image/jpeg")) {
@@ -153,9 +175,7 @@ class PassBookManager {
                     return readAndConvertImage(baos);
                 });
                 if(cachedLogo != null && cachedLogo.isPresent()) {
-                    byte[] logo = cachedLogo.get();
-                    passResources.add(new PassResource("logo.png", logo));
-                    passResources.add(new PassResource("logo@2x.png", logo));
+                    addLogoResources(cachedLogo.get(), passResources);
                 }
             }
         });
@@ -166,6 +186,7 @@ class PassBookManager {
             InputStream appleCert = new ClassPathResource("/alfio/certificates/AppleWWDRCA.cer").getInputStream()) {
             PassSigner signer = PassSignerImpl.builder()
                 .keystore(keyStore, keystorePwd)
+                .alias(privateKeyAlias)
                 .intermediateCertificate(appleCert)
                 .build();
             PassSerializer.writePkPassArchive(pass, signer, baos);
@@ -173,34 +194,39 @@ class PassBookManager {
         }
     }
 
-    //"jks"
-    // -> "pkcs12" don't work ;(
-    private static Optional<KeyStore> loadKeyStore(byte[] k) {
+    private void addLogoResources(byte[] logo, List<PassResource> passResources) {
         try {
-            KeyStore ks = KeyStore.getInstance("jks");
-            ks.load(new ByteArrayInputStream(k), null);
-            return Optional.of(ks);
-        } catch (GeneralSecurityException | IOException e) {
-            return Optional.empty();
+            var srcImage = ImageIO.read(new ByteArrayInputStream(logo));
+            passResources.add(new PassResource("logo.png", scaleLogo(srcImage, 1)));
+            passResources.add(new PassResource("logo@2x.png", scaleLogo(srcImage, 2)));
+            passResources.add(new PassResource("logo@3x.png", logo));
+        } catch (IOException e) {
+            log.warn("Error during image conversion", e);
         }
+    }
+
+    private List<Field<?>> getAuxiliaryFields(Ticket ticket) {
+        //TODO add additional options here.
+        return null;
     }
 
     private static Optional<byte[]> readAndConvertImage(ByteArrayOutputStream baos) {
         try {
             BufferedImage sourceImage = ImageIO.read(new ByteArrayInputStream(baos.toByteArray()));
-            boolean isWider = sourceImage.getWidth() > sourceImage.getHeight();
-            // as defined in https://developer.apple.com/library/content/documentation/UserExperience/Conceptual/PassKit_PG/Creating.html#//apple_ref/doc/uid/TP40012195-CH4-SW8
-            // logo max 160*50
-            int finalWidth = isWider ? 160 : -1;
-            int finalHeight = !isWider ? 50 : -1;
-            Image thumb = sourceImage.getScaledInstance(finalWidth, finalHeight, Image.SCALE_SMOOTH);
-            BufferedImage bufferedThumbnail = new BufferedImage(thumb.getWidth(null), thumb.getHeight(null), BufferedImage.TYPE_INT_RGB);
-            bufferedThumbnail.getGraphics().drawImage(thumb, 0, 0, null);
-            ByteArrayOutputStream logoPng = new ByteArrayOutputStream();
-            ImageIO.write(bufferedThumbnail, "png", logoPng);
-            return Optional.of(logoPng.toByteArray());
+            return Optional.of(scaleLogo(sourceImage, 3));
         } catch (IOException e) {
             return Optional.empty();
         }
+    }
+
+    private static byte[] scaleLogo(BufferedImage sourceImage, int factor) throws IOException {
+        // base image is 160 x 50 points.
+        // On retina displays, a point can be two or three pixels, depending on the device model
+        int finalWidth = 160 * factor;
+        int finalHeight = 50 * factor;
+        var thumbImg = Scalr.resize(sourceImage, Scalr.Method.QUALITY, Scalr.Mode.AUTOMATIC, finalWidth, finalHeight, Scalr.OP_ANTIALIAS);
+        var outputStream = new ByteArrayOutputStream();
+        ImageIO.write(thumbImg, "png", outputStream);
+        return outputStream.toByteArray();
     }
 }

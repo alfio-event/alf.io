@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.model.system.ConfigurationPathLevel.*;
-import static alfio.util.OptionalWrapper.optionally;
 
 @Component
 @Transactional
@@ -65,9 +64,9 @@ public class ConfigurationManager {
     private final EventRepository eventRepository;
 
     //TODO: refactor, not the most beautiful code, find a better solution...
-    private Configuration findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
+    private Optional<Configuration> findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
         switch (path.pathLevel()) {
-            case SYSTEM: return configurationRepository.findByKey(key.getValue());
+            case SYSTEM: return configurationRepository.findOptionalByKey(key.getValue());
             case ORGANIZATION: {
                 OrganizationConfigurationPath o = from(path);
                 return selectPath(configurationRepository.findByOrganizationAndKey(o.getId(), key.getValue()));
@@ -92,8 +91,8 @@ public class ConfigurationManager {
      * @param conf
      * @return
      */
-    private Configuration selectPath(List<Configuration> conf) {
-        return conf.size() == 1 ? conf.get(0) : conf.stream().max(Comparator.comparing(Configuration::getConfigurationPathLevel)).orElse(null);
+    private Optional<Configuration> selectPath(List<Configuration> conf) {
+        return conf.size() == 1 ? Optional.of(conf.get(0)) : conf.stream().max(Comparator.comparing(Configuration::getConfigurationPathLevel));
     }
 
     //meh
@@ -104,7 +103,7 @@ public class ConfigurationManager {
 
     public int getIntConfigValue(ConfigurationPathKey pathKey, int defaultValue) {
         try {
-            return Optional.ofNullable(findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()))
+            return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())
                 .map(Configuration::getValue)
                 .map(Integer::parseInt).orElse(defaultValue);
         } catch (NumberFormatException | EmptyResultDataAccessException e) {
@@ -124,7 +123,7 @@ public class ConfigurationManager {
     }
 
     public Optional<String> getStringConfigValue(ConfigurationPathKey pathKey) {
-        return optionally(() -> findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())).map(Configuration::getValue);
+        return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()).map(Configuration::getValue);
     }
 
     public Map<ConfigurationKeys, Optional<String>> getStringConfigValueFrom(ConfigurationPathKey... keys) {
@@ -239,7 +238,7 @@ public class ConfigurationManager {
     }
 
     public void saveSystemConfiguration(ConfigurationKeys key, String value) {
-        Optional<Configuration> conf = optionally(() -> findByConfigurationPathAndKey(Configuration.system(), key));
+        Optional<Configuration> conf = findByConfigurationPathAndKey(Configuration.system(), key);
         if(key.isBooleanComponentType()) {
             Optional<Boolean> state = getThreeStateValue(value);
             if(conf.isPresent()) {
