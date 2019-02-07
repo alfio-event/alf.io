@@ -33,3 +33,7 @@ NB: This does NOT use the Docker images (below) from DockerHub, but instead buil
 ## HTTPS Security
 
 To use TLS on a Route with a custom Hostname, [use openshift-acme](https://github.com/tnozicka/openshift-acme/tree/master/deploy/letsencrypt-live/single-namespace) which will automagically add a Cert from [Let's Encrypt](https://letsencrypt.org) as soon as you add the `metadata: annotations: kubernetes.io/tls-acme: "true"` to your Route.
+
+## Postgres database alternative
+
+Instead of the containerized Postgres which the YAML (above) sets up on your OpenShift, you could also consider using an external managed Postgres as a Service, e.g. from https://www.elephantsql.com.  (You'd probably want to test performance due to the higher latency between the Alf.io app and the DB in this approach.)
