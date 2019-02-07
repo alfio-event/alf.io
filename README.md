@@ -7,8 +7,8 @@ alf.io
 
 ## Warning
 
-As the work for Alf.io [v2](https://github.com/alfio-event/alf.io/milestones) has started, this branch may contain **unstable** and **untested** code. 
-If you want to build and deploy alf.io by yourself, we strongly suggest you to use the [1.x-maintenance](https://github.com/alfio-event/alf.io/tree/1.x-maintenance) branch.  
+As the work for Alf.io [v2](https://github.com/alfio-event/alf.io/milestones) has started, this branch may contain **unstable** and **untested** code.
+If you want to build and deploy alf.io by yourself, we strongly suggest you to use the [1.x-maintenance](https://github.com/alfio-event/alf.io/tree/1.x-maintenance) branch.
 
 ## Prerequisites
 
@@ -41,7 +41,7 @@ The local "bootRun" task has the following prerequisites:
 - a _postgres_ user having password: _password_
 - a database named _alfio_
 
-once started, alf.io will create all the required tables on the database.
+once started, alf.io will create all the required tables on the database, and be available at http://localhost:8080/admin. You can login using the default Username _admin_ and the password which was printed on the console.
 
 Note: if you want to test without installing a pgsql instance, we have configured the following tasks:
 
