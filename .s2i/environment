@@ -1,0 +1,23 @@
+# The executable JAR is the Spring *-boot.war, not the *.jar
+ARTIFACT_COPY_ARGS=*-boot.war
+
+# see what we can do about removing the fixed version number here..
+# TODO https://github.com/fabric8io-images/s2i/issues/123 and then:
+# JAVA_APP_JAR=*-boot.war
+JAVA_APP_JAR=alfio-1.17-SNAPSHOT-boot.war
+
+# For all the other options available here, see
+# https://github.com/fabric8io-images/s2i/tree/master/java/images/jboss
+
+# Now the fixed Alf.io options:
+ALFIO_LOG_STDOUT_ONLY=true
+SPRING_PROFILES_ACTIVE=http,jdbc-session
+
+# These options must be passed in environment variables to the container:
+# POSTGRES_PORT_5432_TCP_ADDR=localhost
+# POSTGRES_PORT_5432_TCP_PORT=5432
+# POSTGRES_ENV_POSTGRES_DB=alfio
+# POSTGRES_ENV_POSTGRES_USERNAME=postgres
+# POSTGRES_ENV_POSTGRES_PASSWORD=password
+
+# see README.md for more information about what this is all about
