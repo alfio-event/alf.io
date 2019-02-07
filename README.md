@@ -72,31 +72,11 @@ Importing the Gradle project into Intellij and Eclipse both work.
 
 `./gradlew dependencyUpdates`
 
+## Deployment
 
-## Run on OpenShift
-
-You'll either need to [locally install minishift](https://docs.openshift.org/latest/minishift/index.html)
-(great for testing! perhaps slightly increase resources from the default via `minishift config set memory 4096; minishift config set cpus 4`),
-or need to create at least a FREE TRIAL ;-) account on [openshift.com](https://www.openshift.com).
-Either way you'll use the OC CLI, like this:
-
-    oc login https://... --token=...
-
-    oc new-project alf-io
-
-    oc apply -f openshift.yaml
-
-    oc start-build alfio
-
-    oc logs -f bc/alfio
-
-    oc expose svc/alfio
-
-    oc status
-
-NB: This does NOT use the Docker images (below) from DockerHub, but instead builds a container from source using [OpenShift's S2I Java Builder feature](https://github.com/fabric8io-images/s2i/tree/master/java/examples), thanks to this project's configuration in [.s2i/](.s2i/), and uses [OpenShift's PostgreSQL](https://docs.okd.io/latest/using_images/db_images/postgresql.html) ([from here](https://github.com/sclorg/postgresql-container)).
-
-To use TLS on a Route with a custom Hostname, [use openshift-acme](https://github.com/tnozicka/openshift-acme/tree/master/deploy/letsencrypt-live/single-namespace) which will automagically add a Cert from [Let's Encrypt](https://letsencrypt.org) as soon as you add the `metadata: annotations: kubernetes.io/tls-acme: "true"` to your Route.
+* [OpenShift](docs/deployment/OpenShift.md)
+* [Heroku](https://alf.io/tutorials/heroku/)
+* [SAP Cloud Platform](https://blogs.sap.com/2017/05/20/deploying-alf.io-oss-event-ticketing-app-on-cloud-foundry/)
 
 
 ## Docker images
