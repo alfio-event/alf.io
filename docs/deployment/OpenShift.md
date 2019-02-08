@@ -36,4 +36,4 @@ To use TLS on a Route with a custom Hostname, [use openshift-acme](https://githu
 
 ## Postgres database alternative
 
-Instead of the containerized Postgres which the YAML (above) sets up on your OpenShift, you could also consider using an external managed Postgres as a Service, e.g. from https://www.elephantsql.com.  (You'd probably want to test performance due to the higher latency between the Alf.io app and the DB in this approach.)
+Instead of the containerized Postgres which the YAML (above) sets up on your OpenShift, you could also consider using an external managed Postgres as a Service, e.g. from https://www.elephantsql.com.  (You'll want to deploy your ElephantSQL instance as close as possible to your OpenShift cluster in order to reduce latency.)
