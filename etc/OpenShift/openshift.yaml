@@ -78,6 +78,21 @@ spec:
   lookupPolicy:
     local: false
 ---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: s2i-java
+spec:
+  lookupPolicy:
+    local: false
+  tags:
+    - annotations:
+        openshift.io/imported-from: fabric8/s2i-java
+      from:
+        kind: DockerImage
+        name: fabric8/s2i-java
+      name: latest
+---
 apiVersion: build.openshift.io/v1
 kind: BuildConfig
 metadata:
@@ -90,7 +105,7 @@ spec:
   source:
     git:
       ref: openshift_1.x-maintenance
-      uri: 'https://github.com/vorburger/alf.io'
+      uri: 'https://github.com/alfio-event/alf.io'
     type: Git
   strategy:
     sourceStrategy:
