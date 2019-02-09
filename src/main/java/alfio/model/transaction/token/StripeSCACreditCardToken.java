@@ -18,13 +18,16 @@ package alfio.model.transaction.token;
 
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.PaymentToken;
+import alfio.model.transaction.TransactionInitializationToken;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-public class StripeSCACreditCardToken implements PaymentToken {
+public class StripeSCACreditCardToken implements TransactionInitializationToken {
 
+    @JsonIgnore
     private final String paymentIntentId;
+    @JsonIgnore
     private final String chargeId;
     private final String clientSecret;
 
@@ -37,6 +40,7 @@ public class StripeSCACreditCardToken implements PaymentToken {
         return paymentIntentId;
     }
 
+    @Override
     public String getClientSecret() {
         return clientSecret;
     }

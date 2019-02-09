@@ -22,6 +22,7 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @QueryRepository
@@ -41,8 +42,21 @@ public interface TransactionRepository {
                @Bind("gatewayFee") long gatewayFee,
                @Bind("status") Transaction.Status status);
 
+    @Query("update b_transaction set gtw_tx_id = :gatewayTransactionId, gtw_payment_id = :paymentId, " +
+        "t_timestamp = :timestamp, plat_fee = :platformFee, gtw_fee = :gatewayFee, status = :status where id = :transactionId")
+    int update(@Bind("transactionId") int id,
+               @Bind("gatewayTransactionId") String gatewayTransactionId,
+               @Bind("paymentId") String gatewayPaymentId,
+               @Bind("timestamp") ZonedDateTime timestamp,
+               @Bind("platformFee") long platformFee,
+               @Bind("gatewayFee") long gatewayFee,
+               @Bind("status") Transaction.Status status);
+
     @Query("select * from b_transaction where reservation_id = :reservationId")
     Transaction loadByReservationId(@Bind("reservationId") String reservationId);
+
+    @Query("delete from b_transaction where reservation_id in (:reservationIds)")
+    int deleteForReservations(@Bind("reservationIds") List<String> reservationIds);
 
     @Query("select * from b_transaction where reservation_id = :reservationId")
     Optional<Transaction> loadOptionalByReservationId(@Bind("reservationId") String reservationId);

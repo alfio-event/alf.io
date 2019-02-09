@@ -14,16 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.transaction.capabilities;
-
-import alfio.model.Event;
-import alfio.model.transaction.Capability;
+package alfio.model.transaction;
 
 /**
- * Indicates that the {@link alfio.model.transaction.PaymentProvider} supports Refunds.
+ * Token used for transactions initiated on the backend side and finalized by the frontend side.
+ * A typical example of this is Stripe SCE
  */
-public interface RefundRequest extends Capability {
-
-    boolean refund(alfio.model.transaction.Transaction transaction, Event event, Integer amount);
-
+public interface TransactionInitializationToken extends PaymentToken {
+    String getClientSecret();
 }

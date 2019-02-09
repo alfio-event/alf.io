@@ -145,6 +145,7 @@ public class TicketReservationManagerUnitTest {
         when(event.getVat()).thenReturn(BigDecimal.TEN);
         when(eventRepository.findByReservationId(eq(TICKET_RESERVATION_ID))).thenReturn(event);
         when(ticketReservationRepository.findReservationById(eq(TICKET_RESERVATION_ID))).thenReturn(reservation);
+        when(reservation.getId()).thenReturn(TICKET_RESERVATION_ID);
         when(ticket.getSrcPriceCts()).thenReturn(10);
         when(ticketRepository.findTicketsInReservation(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
         AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
@@ -271,6 +272,7 @@ public class TicketReservationManagerUnitTest {
         when(ticket.getCategoryId()).thenReturn(1);
         when(ticketRepository.findTicketsInReservation(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
         when(ticketCategoryRepository.getByIdAndActive(eq(1), eq(1))).thenReturn(ticketCategory);
+        when(reservation.getId()).thenReturn(TICKET_RESERVATION_ID);
     }
 
     private void initReservationWithAdditionalServices(boolean eventVatIncluded, AdditionalService.VatType additionalServiceVatType, int ticketSrcPrice, int asSrcPrice) {

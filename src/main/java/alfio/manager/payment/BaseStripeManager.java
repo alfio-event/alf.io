@@ -62,6 +62,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 @AllArgsConstructor
 class BaseStripeManager {
 
+    public static final String SUCCEEDED = "succeeded";
     private final ConfigurationManager configurationManager;
     private final ConfigurationRepository configurationRepository;
     private final TicketRepository ticketRepository;
@@ -95,6 +96,10 @@ class BaseStripeManager {
             return configurationManager.getRequiredValue(Configuration.getSystemConfiguration(STRIPE_PUBLIC_KEY));
         }
         return configurationManager.getRequiredValue(context.narrow(STRIPE_PUBLIC_KEY));
+    }
+
+    Map<String, ?> getModelOptions(PaymentContext context) {
+        return Collections.singletonMap("stripe_p_key", getPublicKey(context));
     }
 
     StripeConnectURL getConnectURL(Function<ConfigurationKeys, Configuration.ConfigurationPathKey> keyResolver) {
@@ -274,7 +279,7 @@ class BaseStripeManager {
             if(requestOptionsOptional.isPresent()) {
                 RequestOptions options = requestOptionsOptional.get();
                 Refund r = Refund.create(params, options);
-                if("succeeded".equals(r.getStatus())) {
+                if(SUCCEEDED.equals(r.getStatus())) {
                     log.info("Stripe: refund for payment {} executed with success for amount: {}", chargeId, amountOrFull);
                     return true;
                 } else {

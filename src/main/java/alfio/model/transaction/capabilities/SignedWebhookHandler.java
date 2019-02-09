@@ -17,21 +17,22 @@
 package alfio.model.transaction.capabilities;
 
 import alfio.manager.payment.PaymentSpecification;
-import alfio.manager.support.PaymentResult;
-import alfio.model.transaction.PaymentToken;
+import alfio.manager.support.PaymentWebhookResult;
+import alfio.model.transaction.Capability;
 import alfio.model.transaction.Transaction;
+import alfio.model.transaction.TransactionInitializationToken;
 import alfio.model.transaction.TransactionWebhookPayload;
 
 import java.util.Optional;
 
-public interface SignedWebhookHandler {
+public interface SignedWebhookHandler extends Capability {
 
-    PaymentToken initTransaction(PaymentSpecification paymentSpecification);
+    TransactionInitializationToken initTransaction(PaymentSpecification paymentSpecification);
 
     String getWebhookSignatureKey();
 
     Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature);
 
-    PaymentResult confirm(TransactionWebhookPayload payload, Transaction transaction);
+    PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction);
 
 }

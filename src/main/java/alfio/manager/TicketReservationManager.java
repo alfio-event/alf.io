@@ -19,10 +19,7 @@ package alfio.manager;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.payment.BankTransferManager;
 import alfio.manager.payment.PaymentSpecification;
-import alfio.manager.support.CategoryEvaluator;
-import alfio.manager.support.FeeCalculator;
-import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.manager.support.PaymentResult;
+import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
@@ -384,8 +381,7 @@ public class TicketReservationManager {
             }
 
             if (paymentResult.isSuccessful()) {
-                generateInvoiceNumber(spec, reservationCost);
-                completeReservation(spec, specialPriceSessionId, paymentProxy);
+                transitionToComplete(spec, reservationCost, specialPriceSessionId, paymentProxy);
             } else if(paymentResult.isFailed()) {
                 reTransitionToPending(spec.getReservationId());
             }
@@ -397,6 +393,11 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_STRIPE_unexpected");
         }
 
+    }
+
+    private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
+        generateInvoiceNumber(spec, reservationCost);
+        completeReservation(spec, specialPriceSessionId, paymentProxy);
     }
 
     private void generateInvoiceNumber(PaymentSpecification spec, TotalPrice reservationCost) {
@@ -809,9 +810,13 @@ public class TicketReservationManager {
             auditingRepository.insert(reservationId, null, eventId, Audit.EventType.TERMS_CONDITION_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("termsAndConditionsUrl", spec.getEvent().getTermsAndConditionsUrl())));
         }
 
-        if(StringUtils.isNotBlank(spec.getEvent().getPrivacyPolicyLinkOrNull()) && spec.isPrivacyAccepted()) {
+        if(eventHasPrivacyPolicy(spec.getEvent()) && spec.isPrivacyAccepted()) {
             auditingRepository.insert(reservationId, null, eventId, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getEvent().getPrivacyPolicyUrl())));
         }
+    }
+
+    private boolean eventHasPrivacyPolicy(Event event) {
+        return StringUtils.isNotBlank(event.getPrivacyPolicyLinkOrNull());
     }
 
     private void acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
@@ -887,6 +892,7 @@ public class TicketReservationManager {
             List<String> reservationIds = reservations.stream().map(ReservationIdAndEventId::getId).collect(Collectors.toList());
             extensionManager.handleReservationsExpiredForEvent(event, reservationIds);
             billingDocumentRepository.deleteForReservations(reservationIds, eventId);
+            transactionRepository.deleteForReservations(reservationIds);
         });
         //
         ticketReservationRepository.remove(expiredReservationIds);
@@ -979,14 +985,16 @@ public class TicketReservationManager {
      * @return
      */
     public TotalPrice totalReservationCostWithVAT(String reservationId) {
-        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        
-        Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
-        
-        Event event = eventRepository.findByReservationId(reservationId);
-        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
+        return totalReservationCostWithVAT(ticketReservationRepository.findReservationById(reservationId));
+    }
 
-        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation.getVatStatus(), tickets, collectAdditionalServiceItems(reservationId, event));
+    public TotalPrice totalReservationCostWithVAT(TicketReservation reservation) {
+        Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
+
+        Event event = eventRepository.findByReservationId(reservation.getId());
+        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservation.getId());
+
+        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation.getVatStatus(), tickets, collectAdditionalServiceItems(reservation.getId(), event));
     }
 
     private String formatPromoCode(PromoCodeDiscount promoCodeDiscount, List<Ticket> tickets) {
@@ -1010,24 +1018,28 @@ public class TicketReservationManager {
 
     public OrderSummary orderSummaryForReservationId(String reservationId, Event event, Locale locale) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        TotalPrice reservationCost = totalReservationCostWithVAT(reservationId);
+        return orderSummaryForReservation(reservation, event);
+    }
+
+    public OrderSummary orderSummaryForReservation(TicketReservation reservation, Event event) {
+        TotalPrice reservationCost = totalReservationCostWithVAT(reservation);
         PromoCodeDiscount discount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById).orElse(null);
         //
         boolean free = reservationCost.getPriceWithVAT() == 0;
         String vat = getVAT(event).orElse(null);
         String refundedAmount = null;
 
-        boolean hasRefund = auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.REFUND) > 0;
+        boolean hasRefund = auditingRepository.countAuditsOfTypeForReservation(reservation.getId(), Audit.EventType.REFUND) > 0;
 
         if(hasRefund) {
             refundedAmount = paymentManager.getInfo(reservation, event).getPaymentInformation().getRefundedAmount();
         }
 
         return new OrderSummary(reservationCost,
-                extractSummary(reservationId, reservation.getVatStatus(), event, locale, discount, reservationCost), free,
-                formatCents(reservationCost.getPriceWithVAT()), formatCents(reservationCost.getVAT()),
-                reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
-                reservation.getPaymentMethod() == PaymentProxy.ON_SITE, vat, reservation.getVatStatus(), refundedAmount);
+            extractSummary(reservation.getId(), reservation.getVatStatus(), event, Locale.forLanguageTag(reservation.getUserLanguage()), discount, reservationCost), free,
+            formatCents(reservationCost.getPriceWithVAT()), formatCents(reservationCost.getVAT()),
+            reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
+            reservation.getPaymentMethod() == PaymentProxy.ON_SITE, vat, reservation.getVatStatus(), refundedAmount);
     }
     
     List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
@@ -1645,31 +1657,31 @@ public class TicketReservationManager {
         return StringUtils.isEmpty(reservation.getUserLanguage()) ? Locale.ENGLISH : Locale.forLanguageTag(reservation.getUserLanguage());
     }
 
-    public Optional<Boolean> processTransactionWebhook(String body, String signature, PaymentMethod paymentMethod) {
+    public PaymentWebhookResult processTransactionWebhook(String body, String signature, PaymentMethod paymentMethod) {
         //load the payment provider using system configuration
         var paymentProviderOptional = paymentManager.lookupProviderByMethod(paymentMethod, new PaymentContext())
             .filter(pp -> pp instanceof SignedWebhookHandler);
         if(paymentProviderOptional.isEmpty()) {
-            return Optional.empty();
+            return PaymentWebhookResult.failed("payment provider not found");
         }
 
         var paymentProvider = paymentProviderOptional.get();
         var optionalTransactionWebhookPayload = ((SignedWebhookHandler) paymentProvider).parseTransactionPayload(body, signature);
         if(optionalTransactionWebhookPayload.isEmpty()) {
-            return Optional.empty();
+            return PaymentWebhookResult.failed("payload not recognized");
         }
         var transactionPayload = optionalTransactionWebhookPayload.get();
 
         var optionalReservation = ticketReservationRepository.findOptionalReservationById(transactionPayload.getReservationId());
         if(optionalReservation.isEmpty()) {
-            return Optional.empty();
+            return PaymentWebhookResult.notRelevant("reservation not found");
         }
         var reservation = optionalReservation.get();
         var transaction = transactionRepository.loadByReservationId(reservation.getId());
 
         if(reservation.getStatus() != IN_PAYMENT || transaction.getStatus() != Transaction.Status.PENDING) {
-            log.debug("discarding transaction webhook for reservation id {} ({}). Transaction status is: {}", reservation.getId(), reservation.getStatus(), transaction.getStatus());
-            return Optional.of(false);
+            log.warn("discarding transaction webhook {} for reservation id {} ({}). Transaction status is: {}", transactionPayload.getType(), reservation.getId(), reservation.getStatus(), transaction.getStatus());
+            return PaymentWebhookResult.notRelevant("reservation status is not compatible");
         }
 
 
@@ -1677,12 +1689,44 @@ public class TicketReservationManager {
         return paymentManager.lookupProviderByMethod(paymentMethod, new PaymentContext(eventRepository.findByReservationId(reservation.getId())))
             .filter(pp -> pp instanceof SignedWebhookHandler)
             .map(provider -> {
-                if(transactionPayload.getStatus() == TransactionWebhookPayload.Status.SUCCESS) {
-                    return ((SignedWebhookHandler) provider).confirm(transactionPayload, transaction).isSuccessful();
-                } else {
-                    reTransitionToPending(reservation.getId());
-                    return false;
+                var paymentWebhookResult = ((SignedWebhookHandler) provider).processWebhook(transactionPayload, transaction);
+                switch(paymentWebhookResult.getType()) {
+                    case NOT_RELEVANT:
+                        log.trace("Discarding event {} for reservation {}", transactionPayload.getType(), reservation.getId());
+                        break;
+                    case SUCCESSFUL:
+                        log.trace("Event {} for reservation {} has been successfully processed.", transactionPayload.getType(), reservation.getId());
+                        var event = eventRepository.findByReservationId(reservation.getId());
+                        var totalPrice = totalReservationCostWithVAT(reservation);
+                        var paymentToken = paymentWebhookResult.getPaymentToken();
+                        var paymentSpecification = new PaymentSpecification(reservation, totalPrice, event, paymentToken,
+                            orderSummaryForReservation(reservation, event), true, eventHasPrivacyPolicy(event));
+                        transitionToComplete(paymentSpecification, totalPrice, Optional.empty(), paymentToken.getPaymentProvider());
+                        break;
+                    case FAILED:
+                        log.trace("Event {} for reservation {} has failed with reason: {}", transactionPayload.getType(), reservation.getId(), paymentWebhookResult.getReason());
+                        reTransitionToPending(reservation.getId());
+                        break;
                 }
-            });
+                return paymentWebhookResult;
+            }).orElseGet(() -> PaymentWebhookResult.failed("payment provider not found"));
+    }
+
+    public Optional<TransactionInitializationToken> initTransaction(Event event, String reservationId, PaymentMethod paymentMethod) {
+        var optionalProvider = paymentManager.lookupProviderByMethodAndCapabilities(paymentMethod, new PaymentContext(event), List.of(SignedWebhookHandler.class));
+        if (optionalProvider.isEmpty()) {
+            return Optional.empty();
+        }
+        var provider = (SignedWebhookHandler) optionalProvider.get();
+        ticketReservationRepository.lockReservationForUpdate(reservationId);
+        var reservation = ticketReservationRepository.findReservationById(reservationId);
+        var paymentSpecification = new PaymentSpecification(reservation,
+            totalReservationCostWithVAT(reservation), event, null,
+            orderSummaryForReservation(reservation, event), false, false);
+        var transactionToken = provider.initTransaction(paymentSpecification);
+        if(reservation.getStatus() == PENDING) {
+            ticketReservationRepository.updateReservationStatus(reservation.getId(), IN_PAYMENT.name());
+        }
+        return Optional.of(transactionToken);
     }
 }

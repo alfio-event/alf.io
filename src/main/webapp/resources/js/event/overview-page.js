@@ -5,8 +5,10 @@
 
     window.alfio = {
         registerPaymentHandler: function(handler) {
-            handler.init();
-            paymentHandlers.push(handler);
+            if(handler.active()) {
+                handler.init();
+                paymentHandlers.push(handler);
+            }
         }
     };
 
@@ -163,15 +165,15 @@
             var filteredHandlers = paymentHandlers.filter(function(ph) {return ph.id === selectedPaymentMethod.val() && ph.active(); });
             var paymentHandler = filteredHandlers ? filteredHandlers[0] : null;
             if(paymentHandler) {
-                btn.addClass("hidden");
+                $('#confirm-buttons').addClass('hidden');
+                $('#wait-message').removeClass('hidden');
                 paymentHandler.pay(function(res) {
                     if(res) {
-                        $('#confirm-buttons').addClass('hidden');
-                        $('#wait-message').removeClass('hidden');
                         $form.submit();
                     }
                 }, function() {
-                    btn.removeClass("hidden");
+                    $('#confirm-buttons').removeClass('hidden');
+                    $('#wait-message').addClass('hidden');
                 });
             }
             e.preventDefault();

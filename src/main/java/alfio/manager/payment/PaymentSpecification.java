@@ -16,10 +16,7 @@
  */
 package alfio.manager.payment;
 
-import alfio.model.CustomerName;
-import alfio.model.Event;
-import alfio.model.OrderSummary;
-import alfio.model.PriceContainer;
+import alfio.model.*;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentToken;
 import lombok.Getter;
@@ -82,6 +79,20 @@ public class PaymentSpecification {
         this.privacyAccepted = privacyAccepted;
     }
 
+    public PaymentSpecification(TicketReservation reservation,
+                                            TotalPrice totalPrice,
+                                            Event event,
+                                            PaymentToken gatewayToken,
+                                            OrderSummary orderSummary,
+                                            boolean tcAccepted,
+                                            boolean privacyAccepted) {
+        this(reservation.getId(), gatewayToken, totalPrice.getPriceWithVAT(),
+            event, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event.mustUseFirstAndLastName()),
+            reservation.getBillingAddress(), reservation.getCustomerReference(), Locale.forLanguageTag(reservation.getUserLanguage()), reservation.isInvoiceRequested(),
+            !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
+            reservation.getVatNr(), reservation.getVatStatus(), tcAccepted, privacyAccepted);
+    }
+
     PaymentSpecification( String reservationId, PaymentToken gatewayToken, int priceWithVAT, Event event, String email, CustomerName customerName ) {
         this(reservationId, gatewayToken, priceWithVAT, event, email, customerName, null, null, null, false, false, null, null, null, null, false, false);
     }
@@ -93,4 +104,5 @@ public class PaymentSpecification {
     public PaymentContext getPaymentContext() {
         return new PaymentContext(event);
     }
+
 }

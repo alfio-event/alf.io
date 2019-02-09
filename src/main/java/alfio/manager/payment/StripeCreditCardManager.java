@@ -43,7 +43,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -109,7 +108,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
     @Override
     public Map<String, ?> getModelOptions(PaymentContext context) {
-        return Collections.singletonMap("stripe_p_key", baseStripeManager.getPublicKey(context));
+        return baseStripeManager.getModelOptions(context);
     }
 
     @Override

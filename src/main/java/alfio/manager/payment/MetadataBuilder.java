@@ -25,9 +25,12 @@ import java.util.Map;
 @UtilityClass
 class MetadataBuilder {
 
+
+    static final String RESERVATION_ID = "reservationId";
+
     static Map<String, String> buildMetadata(PaymentSpecification spec) {
         Map<String, String> initialMetadata = new HashMap<>();
-        initialMetadata.put("reservationId", spec.getReservationId());
+        initialMetadata.put(RESERVATION_ID, spec.getReservationId());
         initialMetadata.put("email", spec.getEmail());
         initialMetadata.put("fullName", spec.getEmail());
         if (StringUtils.isNotBlank(spec.getBillingAddress())) {

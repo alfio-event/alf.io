@@ -21,12 +21,13 @@ import alfio.model.Event;
 import alfio.model.OrderSummary;
 import alfio.model.TicketReservation;
 import alfio.model.TotalPrice;
+import alfio.model.transaction.Capability;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public interface ExternalProcessing {
+public interface ExternalProcessing extends Capability {
     /**
      * Builds a {@link PaymentSpecification} from the request params in the given context (Event, TicketReservation).
      * This must be implemented if the payment provider supports external processing

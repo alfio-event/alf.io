@@ -24,39 +24,55 @@
             var stripeHandler;
             var card;
             var stripeEl = doc.getElementById("stripe-key");
+            var eventName = stripeEl.getAttribute("data-stripe-event-name");
+            var reservationId = stripeEl.getAttribute("data-stripe-reservation-id");
 
             w.alfio.registerPaymentHandler({
                 paymentMethod: 'CREDIT_CARD',
                 id: 'STRIPE',
                 pay: function(confirmHandler, cancelHandler) {
-                    var secret = ""; //TODO retrieve secret
-
-                    stripeHandler.handleCardPayment(secret, card, {
-                        source_data: {
-                            owner: {
-                                name: 'Jane Doe',
-                                email: stripeEl.getAttribute('data-stripe-email'),
-                                address: {
-                                    line1: '123 Foo St.',
-                                    postal_code: '94103',
-                                    country: 'US'
+                    retrieveSecretKey(eventName, reservationId, function(secret) {
+                        stripeHandler.handleCardPayment(secret, card, {
+                            source_data: {
+                                owner: {
+                                    name: stripeEl.getAttribute('data-stripe-contact-name'),
+                                    email: stripeEl.getAttribute('data-stripe-email'),
+                                    address: {
+                                         line1: stripeEl.getAttribute('data-stripe-contact-address'),
+                                         postal_code: stripeEl.getAttribute('data-stripe-contact-zip'),
+                                         country: stripeEl.getAttribute('data-stripe-contact-country').toLowerCase()
+                                    }
                                 }
                             }
-                        }
-                    }).then(function(result) {
-                        if(result.error) {
-                            cancelHandler(error);
-                        } else {
-                            //TODO polling on server to verify that the payment has been completed and notified
-
-                            var $form = $('#payment-form');
-                            $form.append($('<input type="hidden" name="gatewayToken" />').val(result.token.id));
-                            confirmHandler(true);
-                        }
-                    });
-
+                        }).then(function(result) {
+                            if(result.error) {
+                                cancelHandler(error);
+                            } else {
+                                var checkIfPaid = function() {
+                                    var url = "/api/events/"+eventName+"/reservation/"+reservationId+"/payment/CREDIT_CARD/status";
+                                    jQuery.ajax({
+                                        url: url,
+                                        type: 'GET',
+                                        success: function(result) {
+                                            if(result.successful) {
+                                                var $form = $('#payment-form');
+                                                $form.append($('<input type="hidden" name="gatewayToken" />').val(result.gatewayIdOrNull));
+                                                clearInterval(handle);
+                                                confirmHandler(true);
+                                            }
+                                        },
+                                        error: function(xhr, textStatus, errorThrown) {
+                                            errorCallback(textStatus);
+                                        }
+                                    });
+                                };
+                                var handle = setInterval(checkIfPaid, 1000);
+                            }
+                        });
+                    }, cancelHandler);
                 },
                 init: function() {
+                    console.log("init...");
                     stripeHandler = Stripe(stripeEl.getAttribute('data-stripe-key'), {
                         betas: ['payment_intent_beta_3']
                     });
@@ -64,10 +80,12 @@
                     card = stripeHandler.elements().create('card', {style: style});
                     card.mount('#card-element');
                     card.addEventListener('change', function(event) {
-                        var displayError = document.getElementById('card-errors');
+                        var displayError = $('#card-errors');
                         if (event.error) {
+                            displayError.removeClass('hide');
                             displayError.textContent = event.error.message;
                         } else {
+                            displayError.addClass('hide');
                             displayError.textContent = '';
                         }
                     });
@@ -75,7 +93,7 @@
                 active: function() {
                     var attr;
                     var stripe = doc.getElementById("stripe-key");
-                    return stripe != null && (attr = stripe.attributes.getNamedItem("data-stripe-mode")) != null && attr.value === 'embedded';
+                    return stripe != null && (attr = stripe.attributes.getNamedItem("data-stripe-embedded")) != null && attr.value === 'true';
                 }
             });
         } else {
@@ -83,7 +101,23 @@
         }
     };
 
-
     setup();
+
+    var retrieveSecretKey = function(eventName, reservationId, successCallback, errorCallback) {
+        var url = "/api/events/"+eventName+"/reservation/"+reservationId+"/payment/CREDIT_CARD/init";
+        jQuery.ajax({
+            url: url,
+            type: 'POST',
+            data: {
+                '_csrf': document.forms[0].elements['_csrf'].value
+            },
+            success: function(result) {
+                successCallback(result.clientSecret);
+            },
+            error: function(xhr, textStatus, errorThrown) {
+                errorCallback(textStatus);
+            }
+        });
+    }
 
 })(window, document);

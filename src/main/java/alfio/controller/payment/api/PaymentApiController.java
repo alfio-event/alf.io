@@ -16,8 +16,74 @@
  */
 package alfio.controller.payment.api;
 
+import alfio.manager.PaymentManager;
+import alfio.manager.TicketReservationManager;
+import alfio.manager.support.PaymentResult;
+import alfio.model.Event;
+import alfio.model.TicketReservation;
+import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.TransactionInitializationToken;
+import alfio.repository.EventRepository;
+import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
+
 @RestController
+@AllArgsConstructor
 public class PaymentApiController {
+
+    private final PaymentManager paymentManager;
+    private final EventRepository eventRepository;
+    private final TicketReservationManager ticketReservationManager;
+
+    @PostMapping("/api/events/{eventName}/reservation/{reservationId}/payment/{method}/init")
+    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("eventName") String eventName,
+                                                                         @PathVariable("reservationId") String reservationId,
+                                                                         @PathVariable("method") String paymentMethodStr) {
+
+        var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
+
+        if(paymentMethod == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = getEventReservationPair(eventName, reservationId)
+            .map(pair -> {
+                var event = pair.getLeft();
+                return ticketReservationManager.initTransaction(event, reservationId, paymentMethod)
+                    .map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
+            });
+
+        return responseEntity.orElseGet(() -> ResponseEntity.badRequest().build());
+    }
+
+    private Optional<Pair<Event, TicketReservation>> getEventReservationPair(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
+            .filter(pair -> pair.getRight().isPresent())
+            .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()));
+    }
+
+    @GetMapping("/api/events/{eventName}/reservation/{reservationId}/payment/{method}/status")
+    public ResponseEntity<PaymentResult> getTransactionStatus(@PathVariable("eventName") String eventName,
+                                                              @PathVariable("reservationId") String reservationId,
+                                                              @PathVariable("method") String paymentMethodStr) {
+        var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
+
+        if(paymentMethod == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return getEventReservationPair(eventName, reservationId)
+            .flatMap(pair -> paymentManager.getTransactionStatus(pair.getRight(), paymentMethod))
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
 }

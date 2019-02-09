@@ -379,7 +379,8 @@ public class ReservationController {
                         .addAttribute("reservationId", reservationId)
                         .addAttribute("reservation", reservation)
                         .addAttribute("pageTitle", "reservation-page.header.title")
-                        .addAttribute("event", event);
+                        .addAttribute("event", event)
+                        .addAttribute("billingDetails", ticketReservationRepository.getBillingDetailsForReservation(reservationId));
                     return "/event/overview";
                 }).orElseGet(() -> redirectReservation(Optional.empty(), eventName, reservationId)))
             .orElse("redirect:/");

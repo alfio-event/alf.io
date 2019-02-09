@@ -14,16 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.transaction.capabilities;
-
-import alfio.model.Event;
-import alfio.model.transaction.Capability;
+package alfio.model.transaction;
 
 /**
- * Indicates that the {@link alfio.model.transaction.PaymentProvider} supports Refunds.
+ * Marker interface for Payment Capabilities
  */
-public interface RefundRequest extends Capability {
-
-    boolean refund(alfio.model.transaction.Transaction transaction, Event event, Integer amount);
-
+public interface Capability {
 }

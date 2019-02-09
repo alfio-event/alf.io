@@ -21,6 +21,7 @@ import alfio.model.transaction.PaymentMethod;
 import alfio.util.RequestUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -35,14 +36,20 @@ public class StripePaymentWebhookController {
 
     private final TicketReservationManager ticketReservationManager;
 
-
     @PostMapping("/api/payment/webhook/stripe/payment")
-    public ResponseEntity<Boolean> receivePaymentConfirmation(@RequestHeader(value = "Stripe-Signature") String stripeSignature,
+    public ResponseEntity<String> receivePaymentConfirmation(@RequestHeader(value = "Stripe-Signature") String stripeSignature,
                                                            HttpServletRequest request) {
         return RequestUtils.readRequest(request)
-            .flatMap(content -> ticketReservationManager.processTransactionWebhook(content, stripeSignature, PaymentMethod.CREDIT_CARD))
-            .map(ResponseEntity::ok)
-            .orElseGet(() -> ResponseEntity.badRequest().build());
+            .map(content -> {
+                var result = ticketReservationManager.processTransactionWebhook(content, stripeSignature, PaymentMethod.CREDIT_CARD);
+                if(result.isSuccessful()) {
+                    return ResponseEntity.ok("OK");
+                } else if(result.isFailed()) {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.getReason());
+                }
+                return ResponseEntity.ok(result.getReason());
+            })
+            .orElseGet(() -> ResponseEntity.badRequest().body("NOK"));
 
     }
 }
