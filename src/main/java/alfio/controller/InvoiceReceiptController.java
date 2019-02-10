@@ -17,6 +17,7 @@
 package alfio.controller;
 
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.ConfigurationManager;
@@ -51,6 +52,7 @@ public class InvoiceReceiptController {
     private final FileUploadManager fileUploadManager;
     private final TemplateManager templateManager;
     private final ConfigurationManager configurationManager;
+    private final ExtensionManager extensionManager;
 
     private ResponseEntity<Void> handleReservationWith(String eventName, String reservationId, Authentication authentication,
                                                        BiFunction<Event, TicketReservation, ResponseEntity<Void>> with) {
@@ -105,7 +107,9 @@ public class InvoiceReceiptController {
 
             try {
                 FileUtil.sendHeaders(response, event.getShortName(), reservation.getId(), forInvoice ? "invoice" : "receipt");
-                TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, billingModel, forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF, response.getOutputStream());
+                TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()),
+                    templateManager, billingModel, forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF,
+                    extensionManager, response.getOutputStream());
                 return ResponseEntity.ok(null);
             } catch (IOException ioe) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

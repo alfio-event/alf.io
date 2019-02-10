@@ -593,7 +593,7 @@ public class AdminReservationManager {
     public Result<Pair<BillingDocument, byte[]>> getSingleBillingDocumentAsPdf(String eventName, String reservationId, long documentId, String username) {
         return loadReservation(eventName, reservationId, username).map(res -> {
             BillingDocument billingDocument = billingDocumentRepository.findById(documentId, reservationId).orElseThrow(IllegalArgumentException::new);
-            Function<Map<String, Object>, Optional<byte[]>> pdfGenerator = model -> TemplateProcessor.buildBillingDocumentPdf(billingDocument.getType(), res.getRight(), fileUploadManager, new Locale(res.getLeft().getUserLanguage()), templateManager, model);
+            Function<Map<String, Object>, Optional<byte[]>> pdfGenerator = model -> TemplateProcessor.buildBillingDocumentPdf(billingDocument.getType(), res.getRight(), fileUploadManager, new Locale(res.getLeft().getUserLanguage()), templateManager, model, extensionManager);
             Map<String, Object> billingModel = billingDocument.getModel();
             return Pair.of(billingDocument, pdfGenerator.apply(billingModel).orElse(null));
         });

@@ -111,6 +111,7 @@ public class EventApiController {
     private final TemplateManager templateManager;
     private final FileUploadManager fileUploadManager;
     private final ConfigurationManager configurationManager;
+    private final ExtensionManager extensionManager;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -631,7 +632,7 @@ public class EventApiController {
                 TicketReservation reservation = pair.getLeft();
                 BillingDocument document = pair.getRight();
                 Map<String, Object> reservationModel = document.getModel();
-                Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, reservationModel);
+                Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, reservationModel, extensionManager);
 
                 if(pdf.isPresent()) {
                     zipOS.putNextEntry(new ZipEntry("invoice-" + eventName + "-id-" + reservation.getId() + "-invoice-nr-" + document.getNumber() + ".pdf"));
