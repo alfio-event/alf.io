@@ -181,7 +181,7 @@ public final class TemplateProcessor {
         extractImageModel(event, fileUploadManager).ifPresent(imageData -> {
             model.put("eventImage", imageData.getEventImage());
             model.put("imageWidth", imageData.getImageWidth());
-            model.put("imageHeight", imageData.getEventImage());
+            model.put("imageHeight", imageData.getImageHeight());
         });
 
         String page = templateManager.renderTemplate(event, templateResource, model, language);
