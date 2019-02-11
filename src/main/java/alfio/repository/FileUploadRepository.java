@@ -29,10 +29,8 @@ import org.springframework.jdbc.core.support.AbstractLobCreatingPreparedStatemen
 import org.springframework.jdbc.support.lob.DefaultLobHandler;
 import org.springframework.jdbc.support.lob.LobCreator;
 import org.springframework.jdbc.support.lob.LobHandler;
-import org.springframework.util.StreamUtils;
 
 import java.io.*;
-import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Date;
@@ -79,7 +77,7 @@ public interface FileUploadRepository {
             SqlParameterSource param = new MapSqlParameterSource("id", id);
             getNamedParameterJdbcTemplate().query("select content from file_blob where id = :id", param, rs -> {
                 try (InputStream is = rs.getBinaryStream("content"); OutputStream os = new FileOutputStream(cachedFile)) {
-                    StreamUtils.copy(is, os);
+                    is.transferTo(os);
                 } catch (IOException e) {
                     throw new IllegalStateException("Error while copying data", e);
                 }

@@ -88,7 +88,7 @@ public interface UploadedResourceRepository {
 
     Function<OutputStream, RowCallbackHandler> OUTPUT_CONTENT = (out) -> rs -> {
             try (InputStream is = rs.getBinaryStream("content")) {
-                StreamUtils.copy(is, out);
+                is.transferTo(out);
             } catch (IOException e) {
                 throw new IllegalStateException("Error while copying data", e);
             }

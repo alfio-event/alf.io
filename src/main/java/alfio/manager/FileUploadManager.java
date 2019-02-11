@@ -29,7 +29,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -61,7 +60,7 @@ public class FileUploadManager {
     public void outputFile(String id, OutputStream out) {
         File file = cache.get(id, identifier -> repository.file(id));
         try (var fis = new FileInputStream(file)){
-            StreamUtils.copy(fis, out);
+            fis.transferTo(out);
         } catch (IOException e) {
             throw new IllegalStateException("Error while copying data", e);
         }
