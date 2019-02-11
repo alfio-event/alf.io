@@ -19,14 +19,13 @@ package alfio.controller.api;
 import alfio.manager.StripeCreditCardManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.pdfbox.io.IOUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 @RestController
@@ -56,7 +55,7 @@ public class WebhookApiController {
 
     private static Optional<String> readRequest(HttpServletRequest request) {
         try (ServletInputStream is = request.getInputStream()){
-            return Optional.ofNullable(IOUtils.toByteArray(is)).map(b -> new String(b, Charset.forName("UTF-8")));
+            return Optional.ofNullable(is.readAllBytes()).map(b -> new String(b, StandardCharsets.UTF_8));
         } catch (Exception e) {
             log.error("exception during request conversion", e);
             return Optional.empty();
