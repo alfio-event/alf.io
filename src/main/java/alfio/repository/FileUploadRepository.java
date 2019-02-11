@@ -31,9 +31,8 @@ import org.springframework.jdbc.support.lob.LobCreator;
 import org.springframework.jdbc.support.lob.LobHandler;
 import org.springframework.util.StreamUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.file.Files;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Date;
@@ -73,17 +72,22 @@ public interface FileUploadRepository {
 
     NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
 
-    default byte[] fileContent(String id) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        SqlParameterSource param = new MapSqlParameterSource("id", id);
-        getNamedParameterJdbcTemplate().query("select content from file_blob where id = :id", param, rs -> {
-            try (InputStream is = rs.getBinaryStream("content")) {
-                StreamUtils.copy(is, baos);
-            } catch (IOException e) {
-                throw new IllegalStateException("Error while copying data", e);
-            }
-        });
-        return baos.toByteArray();
+    default File file(String id) {
+        try {
+            File cachedFile = File.createTempFile("fileupload-cache", ".tmp");
+            cachedFile.deleteOnExit();
+            SqlParameterSource param = new MapSqlParameterSource("id", id);
+            getNamedParameterJdbcTemplate().query("select content from file_blob where id = :id", param, rs -> {
+                try (InputStream is = rs.getBinaryStream("content"); OutputStream os = new FileOutputStream(cachedFile)) {
+                    StreamUtils.copy(is, os);
+                } catch (IOException e) {
+                    throw new IllegalStateException("Error while copying data", e);
+                }
+            });
+            return cachedFile;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
 }
