@@ -208,8 +208,6 @@ public class EventController {
                 .collect(Collectors.toList());
             //
 
-            final int orgId = event.getOrganizationId();
-            final int eventId = event.getId();
             Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = configurationManager.getStringConfigValueFrom(
                 Configuration.from(event, ConfigurationKeys.MAPS_PROVIDER),
                 Configuration.from(event, ConfigurationKeys.MAPS_CLIENT_API_KEY),

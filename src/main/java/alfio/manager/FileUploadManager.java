@@ -21,6 +21,7 @@ import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.FileUploadRepository;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -28,7 +29,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -47,9 +47,14 @@ public class FileUploadManager {
      */
     static final int MAXIMUM_ALLOWED_SIZE = 1024 * 200;
     private final FileUploadRepository repository;
-    private final Cache<String, byte[]> cache = Caffeine.newBuilder()
+    private final Cache<String, File> cache = Caffeine.newBuilder()
         .maximumSize(20)
         .expireAfterWrite(20, TimeUnit.MINUTES)
+        .removalListener((String key, File value, RemovalCause cause) -> {
+            if(value != null) {
+                value.delete();
+            }
+        })
         .build();
 
     public Optional<FileBlobMetadata> findMetadata(String id) {
@@ -57,9 +62,9 @@ public class FileUploadManager {
     }
 
     public void outputFile(String id, OutputStream out) {
-        byte[] res = cache.get(id, identifier -> repository.fileContent(id));
-        try {
-            StreamUtils.copy(res, out);
+        File file = cache.get(id, identifier -> repository.file(id));
+        try (var fis = new FileInputStream(file)){
+            fis.transferTo(out);
         } catch (IOException e) {
             throw new IllegalStateException("Error while copying data", e);
         }

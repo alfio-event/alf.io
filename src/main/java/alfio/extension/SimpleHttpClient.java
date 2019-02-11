@@ -18,7 +18,6 @@ package alfio.extension;
 
 import alfio.util.Json;
 import okhttp3.*;
-import org.springframework.util.StreamUtils;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -156,7 +155,7 @@ public class SimpleHttpClient {
                 //saving the response to a temporary file
                 tempFile = Files.createTempFile("extension-out", ".tmp");
                 try(FileOutputStream out = new FileOutputStream(tempFile.toFile())) {
-                    StreamUtils.copy(body.byteStream(), out);
+                    body.byteStream().transferTo(out);
                 }
             }
             return new SimpleHttpClientCachedResponse(

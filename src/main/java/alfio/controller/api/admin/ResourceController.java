@@ -110,7 +110,7 @@ public class ResourceController {
         response.setContentType("text/plain");
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try (InputStream is = new ClassPathResource(name.classPath()).getInputStream()) {
-            StreamUtils.copy(is, os);
+            is.transferTo(os);
         }
         Locale loc = Locale.forLanguageTag(locale);
         String template = new String(os.toByteArray(), StandardCharsets.UTF_8);
