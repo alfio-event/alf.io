@@ -50,7 +50,11 @@ public class FileUploadManager {
     private final Cache<String, File> cache = Caffeine.newBuilder()
         .maximumSize(20)
         .expireAfterWrite(20, TimeUnit.MINUTES)
-        .removalListener((String key, File value, RemovalCause cause) -> value.delete())
+        .removalListener((String key, File value, RemovalCause cause) -> {
+            if(value != null) {
+                value.delete();
+            }
+        })
         .build();
 
     public Optional<FileBlobMetadata> findMetadata(String id) {
