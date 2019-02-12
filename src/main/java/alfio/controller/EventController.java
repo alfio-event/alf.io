@@ -390,7 +390,7 @@ public class EventController {
     
     @RequestMapping(value = "/event/{eventName}/reserve-tickets", method = { RequestMethod.POST, RequestMethod.GET, RequestMethod.HEAD })
     public String reserveTicket(@PathVariable("eventName") String eventName,
-            @ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model,
+            @ModelAttribute ReservationForm reservation, BindingResult bindingResult,
             ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale) {
 
         return eventRepository.findOptionalByShortName(eventName).map(event -> {

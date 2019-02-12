@@ -84,7 +84,7 @@ public class EventPublicApiController {
     @RequestMapping("/events")
     public ResponseEntity<List<EventListItem>> getEvents(HttpServletRequest request) {
         List<EventListItem> events = eventManager.getPublishedEvents().stream()
-            .map(e -> new EventListItem(e, request.getContextPath(), descriptionsLoader.eventDescriptions()))
+            .map(e -> new EventListItem(e, request.getContextPath(), descriptionsLoader.eventDescriptions().load(e)))
             .collect(Collectors.toList());
         return new ResponseEntity<>(events, getCorsHeaders(), HttpStatus.OK);
     }
@@ -98,7 +98,7 @@ public class EventPublicApiController {
                     .map(c -> buildPublicCategory(c, e))
                     .collect(Collectors.toList());
                 Organization organization = organizationRepository.getById(e.getOrganizationId());
-                return new ResponseEntity<>(new PublicEvent(e, request.getContextPath(), descriptionsLoader.eventDescriptions(), categories, organization), getCorsHeaders(), HttpStatus.OK);
+                return new ResponseEntity<>(new PublicEvent(e, request.getContextPath(), descriptionsLoader.eventDescriptions().load(e), categories, organization), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> new ResponseEntity<>(getCorsHeaders(), HttpStatus.NOT_FOUND));
     }

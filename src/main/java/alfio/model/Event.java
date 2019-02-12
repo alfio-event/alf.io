@@ -67,6 +67,8 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     private final boolean vatIncluded;
     private final BigDecimal vat;
     private final List<PaymentProxy> allowedPaymentProxies;
+
+    @JsonIgnore
     private final String privateKey;
     private final ZoneId timeZone;
     private final int locales;

@@ -29,8 +29,8 @@ public class PublicEvent extends EventListItem {
     private final List<PublicCategory> categories;
     private final Organization organization;
 
-    public PublicEvent(Event event, String requestContextPath, DataLoader<Event, EventDescription> eventDescriptionsLoader, List<PublicCategory> categories, Organization organization) {
-        super(event, requestContextPath, eventDescriptionsLoader);
+    public PublicEvent(Event event, String requestContextPath, List<EventDescription> eventDescriptions, List<PublicCategory> categories, Organization organization) {
+        super(event, requestContextPath, eventDescriptions);
         this.categories = categories;
         this.organization = organization;
     }

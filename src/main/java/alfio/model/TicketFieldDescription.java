@@ -54,7 +54,7 @@ public class TicketFieldDescription {
 
     @JsonIgnore
     public String getPlaceholderDescription() {
-        return description.get("placeholder").toString();
+        return isPlaceholderDescriptionDefined() ? description.get("placeholder").toString() : null;
     }
 
     @JsonIgnore

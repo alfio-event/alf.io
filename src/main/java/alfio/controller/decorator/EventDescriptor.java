@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class EventDescriptor {
 
-    @Delegate
+    @Delegate(excludes = ExcludeDelegate.class)
     private final Event event;
     private final String eventDescription;
 
@@ -48,5 +48,14 @@ public class EventDescriptor {
     @JsonIgnore
     public Event getEvent() {
         return event;
+    }
+
+    @JsonIgnore
+    public String getPrivateKey() {
+        return event.getPrivateKey();
+    }
+
+    public interface ExcludeDelegate {
+        String getPrivateKey();
     }
 }

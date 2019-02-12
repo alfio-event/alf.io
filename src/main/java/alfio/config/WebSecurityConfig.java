@@ -46,6 +46,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -55,6 +56,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.GenericFilterBean;
 
 import javax.servlet.*;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
@@ -311,8 +313,29 @@ public class WebSecurityConfig {
 
 
             //
-
             http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
+
+
+            //FIXME create session and set csrf cookie if we are getting a v2 public api (temporary), will switch to pure cookie based
+            http.addFilterBefore(new Filter() {
+                @Override
+                public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+
+
+                    HttpServletRequest req = (HttpServletRequest) servletRequest;
+                    HttpServletResponse res = (HttpServletResponse) servletResponse;
+                    if (req.getRequestURI().startsWith("/api/v2/public/") && "GET".equalsIgnoreCase(req.getMethod())) {
+                        CsrfToken csrf = csrfTokenRepository.loadToken(req);
+                        if(csrf == null) {
+                            csrf = csrfTokenRepository.generateToken(req);
+                        }
+                        Cookie cookie = new Cookie("XSRF-TOKEN", csrf.getToken());
+                        cookie.setPath("/");
+                        res.addCookie(cookie);
+                    }
+                    filterChain.doFilter(servletRequest, servletResponse);
+                }
+            }, RecaptchaLoginFilter.class);
 
             if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
                 http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, "/authenticate"), RecaptchaLoginFilter.class);

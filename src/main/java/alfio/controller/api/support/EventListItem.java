@@ -30,10 +30,10 @@ public class EventListItem {
     private final String requestContextPath;
     private final List<EventDescription> eventDescriptions;
 
-    public EventListItem(Event event, String requestContextPath, DataLoader<Event, EventDescription> eventDescriptionsLoader) {
+    public EventListItem(Event event, String requestContextPath, List<EventDescription> eventDescriptions) {
         this.event = event;
         this.requestContextPath = requestContextPath;
-        this.eventDescriptions = eventDescriptionsLoader.load(event);
+        this.eventDescriptions = eventDescriptions;
     }
 
     public String getImageUrl() {
