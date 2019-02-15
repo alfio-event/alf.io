@@ -16,6 +16,7 @@
  */
 package alfio.controller.support;
 
+import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
@@ -87,17 +88,22 @@ public final class TemplateProcessor {
                                        FileUploadManager fileUploadManager,
                                        String reservationID,
                                        OutputStream os,
-                                       Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues) throws IOException {
+                                       Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
+                                       ExtensionManager extensionManager) throws IOException {
         Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
         List<TicketFieldConfigurationDescriptionAndValue> fields = retrieveFieldValues.apply(ticket);
         Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID,
             fields.stream().collect(Collectors.toMap(TicketFieldConfigurationDescriptionAndValue::getName, TicketFieldConfigurationDescriptionAndValue::getValueDescription)));
 
         String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
-        renderToPdf(page, os);
+        renderToPdf(page, os, extensionManager, event);
     }
 
-    public static void renderToPdf(String page, OutputStream os) throws IOException {
+    public static void renderToPdf(String page, OutputStream os, ExtensionManager extensionManager, Event event) throws IOException {
+
+        if(extensionManager.handlePdfTransformation(page, event, os)) {
+            return;
+        }
 
         PdfRendererBuilder builder = new PdfRendererBuilder();
         PDDocument doc = new PDDocument(MemoryUsageSetting.setupTempFileOnly());
@@ -177,34 +183,60 @@ public final class TemplateProcessor {
         }
     }
 
-    public static boolean buildReceiptOrInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource, OutputStream os) {
-        extractImageModel(event, fileUploadManager).ifPresent(imageData -> {
-            model.put("eventImage", imageData.getEventImage());
-            model.put("imageWidth", imageData.getImageWidth());
-            model.put("imageHeight", imageData.getImageHeight());
-        });
-
-        String page = templateManager.renderTemplate(event, templateResource, model, language);
+    public static boolean buildReceiptOrInvoicePdf(Event event,
+                                                   FileUploadManager fileUploadManager,
+                                                   Locale language,
+                                                   TemplateManager templateManager,
+                                                   Map<String, Object> model,
+                                                   TemplateResource templateResource,
+                                                   ExtensionManager extensionManager,
+                                                   OutputStream os) {
         try {
-            renderToPdf(page, os);
+            String html = renderReceiptOrInvoicePdfTemplate(event, fileUploadManager, language, templateManager, model, templateResource);
+            renderToPdf(html, os, extensionManager, event);
             return true;
         } catch (IOException ioe) {
             return false;
         }
     }
 
-
-    public static Optional<byte[]> buildReceiptPdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
-        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.RECEIPT_PDF);
+    public static String renderReceiptOrInvoicePdfTemplate(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
+        extractImageModel(event, fileUploadManager).ifPresent(imageData -> {
+            model.put("eventImage", imageData.getEventImage());
+            model.put("imageWidth", imageData.getImageWidth());
+            model.put("imageHeight", imageData.getImageHeight());
+        });
+        return templateManager.renderTemplate(event, templateResource, model, language);
     }
 
-    public static Optional<byte[]> buildInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
-        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.INVOICE_PDF);
+
+    public static Optional<byte[]> buildReceiptPdf(Event event,
+                                                   FileUploadManager fileUploadManager,
+                                                   Locale language,
+                                                   TemplateManager templateManager,
+                                                   Map<String, Object> model,
+                                                   ExtensionManager extensionManager) {
+        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.RECEIPT_PDF, extensionManager);
     }
 
-    private static Optional<byte[]> buildFrom(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
+    public static Optional<byte[]> buildInvoicePdf(Event event,
+                                                   FileUploadManager fileUploadManager,
+                                                   Locale language,
+                                                   TemplateManager templateManager,
+                                                   Map<String, Object> model,
+                                                   ExtensionManager extensionManager) {
+        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.INVOICE_PDF, extensionManager);
+    }
+
+    private static Optional<byte[]> buildFrom(Event event,
+                                              FileUploadManager fileUploadManager,
+                                              Locale language,
+                                              TemplateManager templateManager,
+                                              Map<String, Object> model,
+                                              TemplateResource templateResource,
+                                              ExtensionManager extensionManager) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        boolean res = buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, templateResource, baos);
+        boolean res = buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, templateResource, extensionManager, baos);
         return res ? Optional.of(baos.toByteArray()) : Optional.empty();
     }
 }

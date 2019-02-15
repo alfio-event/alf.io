@@ -193,6 +193,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private ConfigurationManager configurationManager;
+    @Autowired
+    private ExtensionManager extensionManager;
 
     private ReservationApiController reservationApiController;
     private InvoiceReceiptController invoiceReceiptController;
@@ -218,7 +220,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         //
         reservationApiController = new ReservationApiController(eventRepository, ticketHelper, mock(TemplateManager.class), i18nManager, euVatChecker, ticketReservationRepository, ticketReservationManager);
-        invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager, configurationManager);
+        invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager, configurationManager, extensionManager);
 
         //promo code at event level
         eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3);

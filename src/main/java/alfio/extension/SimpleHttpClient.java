@@ -21,8 +21,12 @@ import com.google.gson.JsonSyntaxException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import okhttp3.*;
+import org.springframework.util.StreamUtils;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class SimpleHttpClient {
@@ -37,97 +41,108 @@ public class SimpleHttpClient {
         this.okHttpClient = okHttpClient;
     }
 
-    public HttpClientResponse get(String url) throws IOException {
+    public SimpleHttpClientResponse get(String url) throws IOException {
         return get(url, Collections.emptyMap());
     }
 
-    public HttpClientResponse get(String url, Map<String, String> headers) throws IOException {
+    public SimpleHttpClientResponse get(String url, Map<String, String> headers) throws IOException {
         return doRequest(url, headers, "GET", null);
     }
 
 
-    public HttpClientResponse head(String url) throws IOException {
+    public SimpleHttpClientResponse head(String url) throws IOException {
         return head(url, Collections.emptyMap());
     }
 
-    public HttpClientResponse head(String url, Map<String, String> headers) throws IOException {
+    public SimpleHttpClientResponse head(String url, Map<String, String> headers) throws IOException {
         return doRequest(url, headers, "HEAD", null);
     }
 
-    public HttpClientResponse post(String url) throws IOException {
+    public SimpleHttpClientResponse post(String url) throws IOException {
         return post(url, Collections.emptyMap());
     }
 
-    public HttpClientResponse post(String url, Map<String, String> headers) throws IOException {
+    public SimpleHttpClientResponse post(String url, Map<String, String> headers) throws IOException {
         return post(url, headers, null);
     }
 
-    public HttpClientResponse post(String url, Map<String, String> headers, Object body) throws IOException {
+    public SimpleHttpClientResponse post(String url, Map<String, String> headers, Object body) throws IOException {
         return postJSON(url, headers, body);
     }
 
-    public HttpClientResponse postJSON(String url, Map<String, String> headers, Object body) throws IOException {
+    public SimpleHttpClientResponse postJSON(String url, Map<String, String> headers, Object body) throws IOException {
         return doRequest(url, headers, "POST", body);
     }
 
-    public HttpClientResponse postForm(String url, Map<String, String> headers, Map<String, String> params) throws IOException {
+    public SimpleHttpClientResponse postForm(String url, Map<String, String> headers, Map<String, String> params) throws IOException {
         FormBody.Builder form = new FormBody.Builder();
         params.forEach(form::add);
         return callRemote(buildUrlAndHeader(url, headers).method("POST", form.build()).build());
     }
 
-    public HttpClientResponse delete(String url) throws IOException {
+    public SimpleHttpClientCachedResponse postFileAndSaveResponse(String url, Map<String, String> headers, String file, String filename, String contentType) throws IOException {
+        MultipartBody body = new MultipartBody.Builder().setType(MultipartBody.FORM)
+            .addFormDataPart("file", filename, RequestBody.create(MediaType.parse(contentType), file))
+            .build();
+        return callRemoteAndSaveResponse(buildUrlAndHeader(url, headers).post(body).build());
+    }
+
+    public SimpleHttpClientCachedResponse postBodyAndSaveResponse(String url, Map<String, String> headers, String file, String contentType) throws IOException {
+        return callRemoteAndSaveResponse(buildUrlAndHeader(url, headers).post(RequestBody.create(MediaType.parse(contentType), file)).build());
+    }
+
+    public SimpleHttpClientResponse delete(String url) throws IOException {
         return delete(url, Collections.emptyMap());
     }
 
-    public HttpClientResponse delete(String url, Map<String, String> headers) throws IOException {
+    public SimpleHttpClientResponse delete(String url, Map<String, String> headers) throws IOException {
         return delete(url, headers, null);
     }
 
-    public HttpClientResponse delete(String url, Map<String, String> headers, Object body) throws IOException {
+    public SimpleHttpClientResponse delete(String url, Map<String, String> headers, Object body) throws IOException {
         return doRequest(url, headers, "DELETE", body);
     }
 
 
-    public HttpClientResponse put(String url) throws IOException {
+    public SimpleHttpClientResponse put(String url) throws IOException {
         return put(url, Collections.emptyMap());
     }
 
-    public HttpClientResponse put(String url, Map<String, String> headers) throws IOException {
+    public SimpleHttpClientResponse put(String url, Map<String, String> headers) throws IOException {
         return put(url, headers, null);
     }
 
-    public HttpClientResponse put(String url, Map<String, String> headers, Object body) throws IOException {
+    public SimpleHttpClientResponse put(String url, Map<String, String> headers, Object body) throws IOException {
         return doRequest(url, headers, "PUT", body);
     }
 
 
-    public HttpClientResponse patch(String url) throws IOException {
+    public SimpleHttpClientResponse patch(String url) throws IOException {
         return patch(url, Collections.emptyMap());
     }
 
-    public HttpClientResponse patch(String url, Map<String, String> headers) throws IOException {
+    public SimpleHttpClientResponse patch(String url, Map<String, String> headers) throws IOException {
         return patch(url, headers, null);
     }
 
-    public HttpClientResponse patch(String url, Map<String, String> headers, Object body) throws IOException {
+    public SimpleHttpClientResponse patch(String url, Map<String, String> headers, Object body) throws IOException {
         return doRequest(url, headers, "PATCH", body);
     }
 
-    public HttpClientResponse method(String method, String url, Map<String, String> headers, Object body) throws IOException {
+    public SimpleHttpClientResponse method(String method, String url, Map<String, String> headers, Object body) throws IOException {
         return doRequest(url, headers, method, body);
     }
 
-    private HttpClientResponse doRequest(String url, Map<String, String> headers, String method, Object requestBody) throws IOException {
+    private SimpleHttpClientResponse doRequest(String url, Map<String, String> headers, String method, Object requestBody) throws IOException {
         Request.Builder requestBuilder = buildUrlAndHeader(url, headers);
         Request req = requestBuilder.method(method,  NULL_REQUEST_BODY.contains(method)? null : buildRequestBody(requestBody)).build();
         return callRemote(req);
     }
 
-    private HttpClientResponse callRemote(Request req) throws IOException {
+    private SimpleHttpClientResponse callRemote(Request req) throws IOException {
         try (Response response = okHttpClient.newCall(req).execute()) {
             ResponseBody body = response.body();
-            return new HttpClientResponse(
+            return new SimpleHttpClientResponse(
                 response.isSuccessful(),
                 response.code(),
                 response.message(),
@@ -136,6 +151,25 @@ public class SimpleHttpClient {
         }
     }
 
+    private SimpleHttpClientCachedResponse callRemoteAndSaveResponse(Request req) throws IOException {
+        try (Response response = okHttpClient.newCall(req).execute()) {
+            ResponseBody body = response.body();
+            Path tempFile = null;
+            if(body != null) {
+                //saving the response to a temporary file
+                tempFile = Files.createTempFile("extension-out", ".tmp");
+                try(FileOutputStream out = new FileOutputStream(tempFile.toFile())) {
+                    StreamUtils.copy(body.byteStream(), out);
+                }
+            }
+            return new SimpleHttpClientCachedResponse(
+                response.isSuccessful(),
+                response.code(),
+                response.message(),
+                response.headers().toMultimap(),
+                tempFile != null ? tempFile.toAbsolutePath().toString() : null);
+        }
+    }
 
     public String basicCredentials(String username, String password) {
         return Credentials.basic(username, password);
@@ -151,29 +185,5 @@ public class SimpleHttpClient {
 
     private static RequestBody buildRequestBody(Object body) {
         return body == null ? EMPTY_REQUEST : RequestBody.create(MediaType.parse("application/json"), Json.GSON.toJson(body));
-    }
-
-
-    @Getter
-    @AllArgsConstructor
-    public static class HttpClientResponse {
-        private final boolean successful;
-        private final int code;
-        private final String message;
-        private final Map<String, List<String>> headers;
-        private final String body;
-
-
-        public Object getJsonBody() {
-            return tryParse(body, Object.class);
-        }
-
-        private static Object tryParse(String body, Class<?> clazz) {
-            try {
-                return Json.GSON.fromJson(body, clazz);
-            } catch (JsonSyntaxException jse) {
-                return null;
-            }
-        }
     }
 }

@@ -19,10 +19,7 @@ package alfio.controller;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.support.TemplateProcessor;
 import alfio.controller.support.TicketDecorator;
-import alfio.manager.EventManager;
-import alfio.manager.FileUploadManager;
-import alfio.manager.NotificationManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
@@ -67,7 +64,7 @@ public class TicketController {
     private final ConfigurationManager configurationManager;
     private final FileUploadManager fileUploadManager;
     private final TicketHelper ticketHelper;
-    private final TicketFieldRepository ticketFieldRepository;
+    private final ExtensionManager extensionManager;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/{ticketIdentifier}", method = RequestMethod.GET)
     public String showTicketOLD(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
@@ -185,7 +182,7 @@ public class TicketController {
             TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
                 ticket, ticketCategory, organization,
                 templateManager, fileUploadManager,
-                reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction());
+                reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager);
         }
     }
     

@@ -20,11 +20,16 @@ package alfio.manager;
 import alfio.extension.ExtensionService;
 import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
+import alfio.model.extension.PdfGenerationResult;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 @Component
@@ -51,7 +56,8 @@ public class ExtensionManager {
         EVENT_STATUS_CHANGE,
         WEB_API_HOOK,
         TICKET_CHECKED_IN,
-        TICKET_REVERT_CHECKED_IN
+        TICKET_REVERT_CHECKED_IN,
+        PDF_GENERATION
     }
 
     public void handleEventCreation(Event event) {
@@ -181,6 +187,26 @@ public class ExtensionManager {
         Event event = eventRepository.findById(ticket.getEventId());
         payload.put("ticket", ticket);
         asyncCall(ExtensionEvent.TICKET_REVERT_CHECKED_IN, event, event.getOrganizationId(), payload);
+    }
+
+    public boolean handlePdfTransformation(String html, Event event, OutputStream outputStream) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("html", html);
+        try {
+            PdfGenerationResult response = syncCall(ExtensionEvent.PDF_GENERATION, event, event.getOrganizationId(), payload, PdfGenerationResult.class);
+            if(response == null || response.isEmpty()) {
+                return false;
+            }
+            Path tempFilePath = Paths.get(response.getTempFilePath());
+            if(Files.exists(tempFilePath)) {
+                Files.copy(tempFilePath, outputStream);
+                Files.delete(tempFilePath);
+                return true;
+            }
+            return false;
+        } catch(Exception e) {
+            return false;
+        }
     }
 
 
