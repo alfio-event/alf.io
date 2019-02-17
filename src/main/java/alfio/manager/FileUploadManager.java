@@ -62,7 +62,12 @@ public class FileUploadManager {
     }
 
     public void outputFile(String id, OutputStream out) {
-        File file = cache.get(id, identifier -> repository.file(id));
+        var file = cache.get(id, identifier -> repository.file(id));
+        if(!file.exists()) { //fallback, the file will not be cached though
+            cache.invalidate(id);
+            file = repository.file(id);
+        }
+
         try (var fis = new FileInputStream(file)){
             fis.transferTo(out);
         } catch (IOException e) {
