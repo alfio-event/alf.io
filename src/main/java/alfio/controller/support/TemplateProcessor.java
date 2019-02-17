@@ -24,6 +24,9 @@ import alfio.model.user.Organization;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.openhtmltopdf.DOMBuilder;
 import com.openhtmltopdf.extend.FSStream;
 import com.openhtmltopdf.extend.FSStreamFactory;
@@ -48,6 +51,14 @@ import java.util.stream.Collectors;
 
 @Log4j2
 public final class TemplateProcessor {
+
+    private static final Cache<String, File> FONT_CACHE = Caffeine.newBuilder()
+        .removalListener((String key, File value, RemovalCause cause) -> {
+            if(value != null) {
+                value.delete();
+            }
+        })
+        .build();
 
     private TemplateProcessor() {}
 
@@ -120,15 +131,34 @@ public final class TemplateProcessor {
 
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(parsedDocument), "");
         try (PdfBoxRenderer renderer = builder.buildPdfRenderer()) {
-            try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream()) {
-                renderer.getFontResolver().addFont(() -> is, "DejaVu Sans Mono", null, null, false);
-            } catch (IOException e) {
-                log.warn("error while loading DejaVuSansMono.ttf font", e);
+            File defaultFont = FONT_CACHE.get(DEJA_VU_SANS, LOAD_DEJA_VU_SANS_FONT);
+            if (!defaultFont.exists()) { // fallback, the cached font will not be shared though
+                FONT_CACHE.invalidate(DEJA_VU_SANS);
+                defaultFont = LOAD_DEJA_VU_SANS_FONT.apply(DEJA_VU_SANS);
+            }
+            if (defaultFont != null) {
+                renderer.getFontResolver().addFont(defaultFont, "DejaVu Sans Mono", null, null, false);
             }
             renderer.layout();
             renderer.createPDF();
         }
     }
+
+    private static final String DEJA_VU_SANS = "/alfio/font/DejaVuSansMono.ttf";
+
+    private static final Function<String, File> LOAD_DEJA_VU_SANS_FONT = classPathResource -> {
+        try {
+            File cachedFile = File.createTempFile("font-cache", ".tmp");
+            cachedFile.deleteOnExit();
+            try (InputStream is = new ClassPathResource(DEJA_VU_SANS).getInputStream(); OutputStream tmpOs = new FileOutputStream(cachedFile)) {
+                is.transferTo(tmpOs);
+            }
+            return cachedFile;
+        } catch (IOException e) {
+            log.warn("error while loading DejaVuSansMono.ttf font", e);
+            return null;
+        }
+    };
 
     private static class AlfioInternalFSStreamFactory implements FSStreamFactory {
 
