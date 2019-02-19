@@ -153,13 +153,15 @@ public class SimpleHttpClient {
 
     private SimpleHttpClientCachedResponse callRemoteAndSaveResponse(Request req) throws IOException {
         try (Response response = okHttpClient.newCall(req).execute()) {
-            ResponseBody body = response.body();
             Path tempFile = null;
-            if(body != null) {
-                //saving the response to a temporary file
-                tempFile = Files.createTempFile("extension-out", ".tmp");
-                try(FileOutputStream out = new FileOutputStream(tempFile.toFile())) {
-                    StreamUtils.copy(body.byteStream(), out);
+            if(response.isSuccessful()) {
+                ResponseBody body = response.body();
+                if(body != null) {
+                    //saving the response to a temporary file
+                    tempFile = Files.createTempFile("extension-out", ".tmp");
+                    try(FileOutputStream out = new FileOutputStream(tempFile.toFile())) {
+                        StreamUtils.copy(body.byteStream(), out);
+                    }
                 }
             }
             return new SimpleHttpClientCachedResponse(
