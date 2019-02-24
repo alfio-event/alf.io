@@ -446,7 +446,7 @@ public enum TemplateResource {
         imageData.ifPresent(iData -> {
             model.put("eventImage", iData.getEventImage());
             model.put("imageWidth", iData.getImageWidth());
-            model.put("imageHeight", iData.getEventImage());
+            model.put("imageHeight", iData.getImageHeight());
         });
 
         model.put("deskPaymentRequired", Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired());

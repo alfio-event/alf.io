@@ -111,6 +111,7 @@ public class EventApiController {
     private final TemplateManager templateManager;
     private final FileUploadManager fileUploadManager;
     private final ConfigurationManager configurationManager;
+    private final ExtensionManager extensionManager;
 
 
     @ExceptionHandler(DataAccessException.class)
@@ -405,7 +406,7 @@ public class EventApiController {
 
     @RequestMapping("/events/{eventName}/sponsor-scan/export")
     public void downloadSponsorScanExport(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
-        EventAndOrganizationId event = loadEvent(eventName, principal);
+        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
 
         List<String> header = new ArrayList<>();
@@ -631,7 +632,7 @@ public class EventApiController {
                 TicketReservation reservation = pair.getLeft();
                 BillingDocument document = pair.getRight();
                 Map<String, Object> reservationModel = document.getModel();
-                Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, reservationModel);
+                Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, reservationModel, extensionManager);
 
                 if(pdf.isPresent()) {
                     zipOS.putNextEntry(new ZipEntry("invoice-" + eventName + "-id-" + reservation.getId() + "-invoice-nr-" + document.getNumber() + ".pdf"));
@@ -656,13 +657,13 @@ public class EventApiController {
                                                                           @RequestParam(value = "page", required = false) Integer page,
                                                                           @RequestParam(value = "search", required = false) String search,
                                                                           Principal principal) {
-        Event event = loadEvent(eventName, principal);
+        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         return new PageAndContent<>(eventStatisticsManager.loadModifiedTickets(event.getId(), categoryId, page == null ? 0 : page, search), eventStatisticsManager.countModifiedTicket(event.getId(), categoryId, search));
     }
 
     @RequestMapping(value = "/events/{eventName}/ticket-sold-statistics", method = GET)
     public TicketsStatistics getTicketsStatistics(@PathVariable("eventName") String eventName, @RequestParam(value = "from", required = false) String f, @RequestParam(value = "to", required = false) String t, Principal principal) throws ParseException {
-        EventAndOrganizationId event = loadEvent(eventName, principal);
+        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         //TODO: cleanup
         Date from = DateUtils.truncate(f == null ? new Date(0) : format.parse(f), Calendar.HOUR);

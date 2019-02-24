@@ -14,12 +14,7 @@
     <ul class="list-group" ng-if="!$ctrl.loading && $ctrl.open">
         <li class="list-group-item" data-ng-repeat="event in $ctrl.events">
             <div class="row">
-                <div class="col-md-1 hidden-xs hidden-sm list-group-item-heading">
-                    <h4>
-                        <a ui-sref="events.single.detail({eventName: event.shortName})"><img class="img-responsive" ng-src="/file/{{event.fileBlobId}}"></a>
-                    </h4>
-                </div>
-                <div class="col-md-7 col-xs-12">
+                <div class="col-md-8 col-xs-12">
                     <div class="list-group-item-heading">
                         <h4>
                             <a data-ui-sref="events.single.detail({eventName: event.shortName})">{{event.displayName}}</a>
