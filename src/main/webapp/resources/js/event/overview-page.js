@@ -164,7 +164,7 @@
             }
             var filteredHandlers = paymentHandlers.filter(function(ph) {return ph.id === selectedPaymentMethod.val() && ph.active(); });
             var paymentHandler = filteredHandlers ? filteredHandlers[0] : null;
-            if(paymentHandler) {
+            if(paymentHandler && paymentHandler.valid()) {
                 $('#confirm-buttons').addClass('hidden');
                 $('#wait-message').removeClass('hidden');
                 paymentHandler.pay(function(res) {

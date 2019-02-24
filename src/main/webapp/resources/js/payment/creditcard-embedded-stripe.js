@@ -4,18 +4,18 @@
 
     var style = {
         base: {
-            color: '#32325d',
+            color: '#000000',
             lineHeight: '18px',
             fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
             fontSmoothing: 'antialiased',
-            fontSize: '16px',
+            fontSize: '14px',
             '::placeholder': {
                 color: '#aab7c4'
             }
         },
         invalid: {
-            color: '#fa755a',
-            iconColor: '#fa755a'
+            color: '#a94442',
+            iconColor: '#a94442'
         }
     };
 
@@ -26,6 +26,7 @@
             var stripeEl = doc.getElementById("stripe-key");
             var eventName = stripeEl.getAttribute("data-stripe-event-name");
             var reservationId = stripeEl.getAttribute("data-stripe-reservation-id");
+            var readyToGo = false;
 
             w.alfio.registerPaymentHandler({
                 paymentMethod: 'CREDIT_CARD',
@@ -77,18 +78,28 @@
                         betas: ['payment_intent_beta_3']
                     });
 
-                    card = stripeHandler.elements().create('card', {style: style});
+                    card = stripeHandler.elements({locale: $('html').attr('lang')}).create('card', {style: style});
                     card.mount('#card-element');
                     card.addEventListener('change', function(event) {
+                        readyToGo = false;
                         var displayError = $('#card-errors');
+                        var cardContainer = $('#card-element-container');
                         if (event.error) {
+                            cardContainer.addClass('has-error');
                             displayError.removeClass('hide');
-                            displayError.textContent = event.error.message;
+                            displayError.find('#error-message').text(event.error.message);
                         } else {
+                            cardContainer.removeClass('has-error');
                             displayError.addClass('hide');
-                            displayError.textContent = '';
+                            displayError.find('#error-message').text('');
+                        }
+                        if(event.complete) {
+                            readyToGo = true;
                         }
                     });
+                },
+                valid: function() {
+                    return readyToGo;
                 },
                 active: function() {
                     var attr;

@@ -12,6 +12,9 @@
                 },
                 init: function() {
                 },
+                valid: function() {
+                    return true;
+                },
                 active: function() {
                     return true;
                 }

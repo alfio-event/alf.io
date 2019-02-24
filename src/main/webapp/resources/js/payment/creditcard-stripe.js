@@ -44,6 +44,9 @@
                         }
                     });
                 },
+                valid: function() {
+                    return true;
+                },
                 active: function() {
                     var attr;
                     var stripe = doc.getElementById("stripe-key");
