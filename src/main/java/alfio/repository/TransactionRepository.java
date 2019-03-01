@@ -52,11 +52,17 @@ public interface TransactionRepository {
                @Bind("gatewayFee") long gatewayFee,
                @Bind("status") Transaction.Status status);
 
+    @Query("update b_transaction set status = :status where reservation_id = :reservationId")
+    int updateStatusForReservation(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
+
     @Query("select * from b_transaction where reservation_id = :reservationId")
     Transaction loadByReservationId(@Bind("reservationId") String reservationId);
 
     @Query("delete from b_transaction where reservation_id in (:reservationIds)")
     int deleteForReservations(@Bind("reservationIds") List<String> reservationIds);
+
+    @Query("delete from b_transaction where reservation_id in (:reservationIds) and status = :status")
+    int deleteForReservationsWithStatus(@Bind("reservationIds") List<String> reservationIds, @Bind("status") Transaction.Status status);
 
     @Query("select * from b_transaction where reservation_id = :reservationId")
     Optional<Transaction> loadOptionalByReservationId(@Bind("reservationId") String reservationId);

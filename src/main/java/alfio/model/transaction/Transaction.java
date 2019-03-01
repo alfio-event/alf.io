@@ -25,7 +25,7 @@ import java.time.ZonedDateTime;
 public class Transaction {
 
     public enum Status {
-        PENDING, COMPLETE, CANCELLED
+        PENDING, COMPLETE, FAILED, CANCELLED
     }
 
     private final int id;

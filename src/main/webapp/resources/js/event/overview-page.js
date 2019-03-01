@@ -165,15 +165,21 @@
             var filteredHandlers = paymentHandlers.filter(function(ph) {return ph.id === selectedPaymentMethod.val() && ph.active(); });
             var paymentHandler = filteredHandlers ? filteredHandlers[0] : null;
             if(paymentHandler && paymentHandler.valid()) {
+                var chargeFailedAlert = $('#charge-failed-alert');
                 $('#confirm-buttons').addClass('hidden');
                 $('#wait-message').removeClass('hidden');
+                chargeFailedAlert.addClass('hide');
                 paymentHandler.pay(function(res) {
                     if(res) {
                         $form.submit();
                     }
-                }, function() {
+                }, function(errorMessage) {
                     $('#confirm-buttons').removeClass('hidden');
                     $('#wait-message').addClass('hidden');
+                    if(errorMessage && errorMessage.trim() !== '') {
+                        chargeFailedAlert.removeClass('hide');
+                        chargeFailedAlert.find('#charge-failed-msg').text(errorMessage);
+                    }
                 });
             }
             e.preventDefault();

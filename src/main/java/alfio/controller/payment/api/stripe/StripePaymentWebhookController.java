@@ -44,7 +44,7 @@ public class StripePaymentWebhookController {
                 var result = ticketReservationManager.processTransactionWebhook(content, stripeSignature, PaymentMethod.CREDIT_CARD);
                 if(result.isSuccessful()) {
                     return ResponseEntity.ok("OK");
-                } else if(result.isFailed()) {
+                } else if(result.isError()) {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.getReason());
                 }
                 return ResponseEntity.ok(result.getReason());

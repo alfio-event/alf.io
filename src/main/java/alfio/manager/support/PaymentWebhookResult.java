@@ -28,7 +28,8 @@ public class PaymentWebhookResult {
         NOT_RELEVANT,
         REJECTED,
         SUCCESSFUL,
-        FAILED
+        FAILED,
+        ERROR
     }
 
     private final Type type;
@@ -39,8 +40,8 @@ public class PaymentWebhookResult {
         return type == Type.SUCCESSFUL;
     }
 
-    public boolean isFailed() {
-        return type == Type.FAILED;
+    public boolean isError() {
+        return type == Type.ERROR;
     }
 
     public static PaymentWebhookResult successful(PaymentToken paymentToken) {
@@ -49,6 +50,10 @@ public class PaymentWebhookResult {
 
     public static PaymentWebhookResult failed(String reason) {
         return new PaymentWebhookResult(Type.FAILED, null, reason);
+    }
+
+    public static PaymentWebhookResult error(String reason) {
+        return new PaymentWebhookResult(Type.ERROR, null, reason);
     }
 
     public static PaymentWebhookResult notRelevant(String reason) {

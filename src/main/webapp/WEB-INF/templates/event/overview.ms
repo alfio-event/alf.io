@@ -134,6 +134,10 @@
             </div>
         {{/activePaymentMethods}}
 
+        <div class="alert alert-danger hide" id="charge-failed-alert">
+            <strong id="charge-failed-msg"></strong>
+        </div>
+
     {{/orderSummary.free}}
     {{#orderSummary.free}}
         <input type="hidden" name="paymentMethod" value="NONE">

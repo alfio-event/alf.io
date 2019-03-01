@@ -58,7 +58,8 @@ public class Audit {
         BILLING_DOCUMENT_GENERATED,
         BILLING_DOCUMENT_INVALIDATED,
         BILLING_DOCUMENT_RESTORED,
-        FORCE_VAT_APPLICATION
+        FORCE_VAT_APPLICATION,
+        PAYMENT_FAILED
     }
 
     private final String reservationId;

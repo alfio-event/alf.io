@@ -22,4 +22,8 @@ package alfio.model.transaction;
  */
 public interface TransactionInitializationToken extends PaymentToken {
     String getClientSecret();
+
+    default String getErrorMessage() {
+        return null;
+    }
 }

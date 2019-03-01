@@ -493,8 +493,29 @@ public class ReservationController {
                                         @PathVariable("reservationId") String reservationId,
                                         Model model, Locale locale) {
 
-        //FIXME
-        return "/event/reservation-processing-payment";
+        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
+        if (event.isEmpty()) {
+            return "redirect:/";
+        }
+
+        Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
+        TicketReservationStatus status = reservation.map(TicketReservation::getStatus).orElse(TicketReservationStatus.PENDING);
+        if(reservation.isPresent() && status == TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT) {
+            Event ev = event.get();
+            TicketReservation ticketReservation = reservation.get();
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev, locale);
+
+            model.addAttribute("orderSummary", orderSummary)
+                .addAttribute("reservationId", reservationId)
+                .addAttribute("reservation", ticketReservation)
+                .addAttribute("pageTitle", "reservation-page.header.title")
+                .addAttribute("paymentMethod", paymentManager.getPaymentMethodForReservation(ticketReservation))
+                .addAttribute("event", ev);
+
+            return "/event/reservation-processing-payment";
+        }
+
+        return redirectReservation(reservation, eventName, reservationId);
     }
 
 

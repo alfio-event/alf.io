@@ -26,7 +26,6 @@
                     <strong id="error-message"></strong>
                 </div>
             </div>
-
         </div>
     </div>
 

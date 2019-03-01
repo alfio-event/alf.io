@@ -29,6 +29,8 @@ public interface SignedWebhookHandler extends Capability {
 
     TransactionInitializationToken initTransaction(PaymentSpecification paymentSpecification);
 
+    TransactionInitializationToken errorToken(String errorMessage);
+
     String getWebhookSignatureKey();
 
     Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature);

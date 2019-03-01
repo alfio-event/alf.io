@@ -64,7 +64,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     private final TicketReservationRepository ticketReservationRepository;
     private final EventRepository eventRepository;
     private final AuditingRepository auditingRepository;
-    private final List<String> interestingEventTypes = List.of("payment_intent.succeeded", "payment_intent.failed");
+    private final List<String> interestingEventTypes = List.of("payment_intent.succeeded", "payment_intent.payment_failed");
 
     public StripeWebhookPaymentManager(ConfigurationManager configurationManager,
                                        TicketRepository ticketRepository,
@@ -90,8 +90,40 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             .orElseGet(() -> createNewToken(paymentSpecification));
     }
 
+    @Override
+    public TransactionInitializationToken errorToken(String errorMessage) {
+        return new TransactionInitializationToken() {
+            @Override
+            public String getClientSecret() {
+                return null;
+            }
+
+            @Override
+            public String getToken() {
+                return null;
+            }
+
+            @Override
+            public PaymentMethod getPaymentMethod() {
+                return PaymentMethod.CREDIT_CARD;
+            }
+
+            @Override
+            public PaymentProxy getPaymentProvider() {
+                return PaymentProxy.STRIPE;
+            }
+
+            @Override
+            public String getErrorMessage() {
+                return errorMessage;
+            }
+        };
+    }
+
     private StripeSCACreditCardToken buildTokenFromTransaction(Transaction transaction) {
-        return new StripeSCACreditCardToken(transaction.getPaymentId(), transaction.getTransactionId(), null);
+        String clientSecret = transaction.getStatus() != Transaction.Status.COMPLETE ? transaction.getPaymentId() : null;
+        String chargeId = transaction.getStatus() == Transaction.Status.COMPLETE ? transaction.getTransactionId() : null;
+        return new StripeSCACreditCardToken(transaction.getPaymentId(), chargeId, clientSecret);
     }
 
     private StripeSCACreditCardToken createNewToken(PaymentSpecification paymentSpecification) {
@@ -101,7 +133,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             var intent = PaymentIntent.create(paymentIntentParams, baseStripeManager.options(paymentSpecification.getEvent()).orElseThrow());
             var clientSecret = intent.getClientSecret();
             long platformFee = paymentIntentParams.containsKey("application_fee") ? (long) paymentIntentParams.get("application_fee") : 0L;
-            transactionRepository.insert(intent.getId(), intent.getId(),
+            transactionRepository.insert(intent.getId(), clientSecret,
                 paymentSpecification.getReservationId(), ZonedDateTime.now(paymentSpecification.getEvent().getZoneId()),
                 paymentSpecification.getPriceWithVAT(), paymentSpecification.getEvent().getCurrency(), "Payment Intent",
                 PaymentProxy.STRIPE.name(), platformFee,0L, Transaction.Status.PENDING);
@@ -149,24 +181,36 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             var paymentIntent = (PaymentIntent) payload.getPayload();
             //check if the reservation is still in pending state
             var optionalReservation = ticketReservationRepository.findOptionalReservationById(paymentIntent.getMetadata().get(MetadataBuilder.RESERVATION_ID))
-                .filter(reservation -> reservation.getStatus() == TicketReservation.TicketReservationStatus.IN_PAYMENT);
+                .filter(reservation -> reservation.getStatus() == TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT);
             if(optionalReservation.isEmpty()) {
-                return PaymentWebhookResult.failed("reservation not found");
+                return PaymentWebhookResult.error("reservation not found");
             }
             var reservation = optionalReservation.get();
             var event = eventRepository.findByReservationId(reservation.getId());
-            if(paymentIntent.getStatus().equals(BaseStripeManager.SUCCEEDED)) {
+            var paymentIntentStatus = paymentIntent.getStatus();
+            if(paymentIntentStatus.equals(BaseStripeManager.SUCCEEDED)) {
                 var charge = paymentIntent.getCharges().getData().get(0);
                 var chargeId = charge.getId();
                 long gtwFee = Optional.ofNullable(charge.getBalanceTransactionObject()).map(BalanceTransaction::getFee).orElse(0L);
                 transactionRepository.update(transaction.getId(), chargeId, transaction.getPaymentId(), ZonedDateTime.now(), transaction.getPlatformFee(), gtwFee, Transaction.Status.COMPLETE);
-                auditingRepository.insert(reservation.getId(), null, event.getId(), Audit.EventType.PAYMENT_CONFIRMED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), transaction.getPaymentId());
+                List<Map<String, Object>> modifications = List.of(Map.of("paymentId", chargeId, "paymentMethod", "stripe"));
+                auditingRepository.insert(reservation.getId(), null, event.getId(), Audit.EventType.PAYMENT_CONFIRMED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), modifications);
                 return PaymentWebhookResult.successful(new StripeSCACreditCardToken(transaction.getPaymentId(), chargeId, null));
+            } else if(payload.getType().equals("payment_intent.payment_failed")) {
+                // from docs:
+                //   If payment fails at any stage during the process, the PaymentIntent’s status resets to requires_payment_method.
+                //   When it returns to the initial state, you can prompt the customer to try again–potentially with a different payment method, if desired
+                // so we make sure to set the transaction as failed
+
+                List<Map<String, Object>> modifications = List.of(Map.of("paymentId", transaction.getPaymentId(), "paymentMethod", "stripe"));
+                auditingRepository.insert(reservation.getId(), null, event.getId(), Audit.EventType.PAYMENT_FAILED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), modifications);
+                transactionRepository.updateStatusForReservation(reservation.getId(), Transaction.Status.FAILED);
+                return PaymentWebhookResult.failed("Charge has been reset by Stripe. This is usually caused by a rejection from the customer's bank");
             }
 
         } catch (Exception e) {
             log.error("Error while trying to confirm the reservation", e);
-            return PaymentWebhookResult.failed("unexpected error");
+            return PaymentWebhookResult.error("unexpected error");
         }
         return PaymentWebhookResult.notRelevant("event is not relevant");
     }

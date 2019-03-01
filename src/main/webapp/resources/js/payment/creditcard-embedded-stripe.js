@@ -47,7 +47,7 @@
                             }
                         }).then(function(result) {
                             if(result.error) {
-                                cancelHandler(error);
+                                cancelHandler(result.error.message);
                             } else {
                                 var checkIfPaid = function() {
                                     var url = "/api/events/"+eventName+"/reservation/"+reservationId+"/payment/CREDIT_CARD/status";
@@ -60,6 +60,9 @@
                                                 $form.append($('<input type="hidden" name="gatewayToken" />').val(result.gatewayIdOrNull));
                                                 clearInterval(handle);
                                                 confirmHandler(true);
+                                            }
+                                            if(result.failed) {
+                                                confirmHandler(false);
                                             }
                                         },
                                         error: function(xhr, textStatus, errorThrown) {
@@ -123,7 +126,11 @@
                 '_csrf': document.forms[0].elements['_csrf'].value
             },
             success: function(result) {
-                successCallback(result.clientSecret);
+                if(result.errorMessage) {
+                    errorCallback(result.errorMessage);
+                } else {
+                    successCallback(result.clientSecret);
+                }
             },
             error: function(xhr, textStatus, errorThrown) {
                 errorCallback(textStatus);
