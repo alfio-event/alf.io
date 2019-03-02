@@ -113,7 +113,7 @@ public interface TicketReservationRepository {
     @Query("select id from tickets_reservation where validity < :date and status = 'OFFLINE_PAYMENT' for update skip locked")
     List<String> findExpiredOfflineReservationsForUpdate(@Bind("date") Date date);
 
-    @Query("select id from tickets_reservation where validity < :date and status = 'IN_PAYMENT' for update skip locked")
+    @Query("select id from tickets_reservation where validity < :date and status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT') for update skip locked")
     List<String> findStuckReservationsForUpdate(@Bind("date") Date date);
 
     @Query("delete from tickets_reservation where id in (:ids)")
