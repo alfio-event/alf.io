@@ -131,7 +131,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
                 transactionRepository.insert(charge.getId(), null, spec.getReservationId(),
                     ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
-                    fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE);
+                    fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE, Map.of());
                 return PaymentResult.successful(charge.getId());
             }).orElseGet(() -> PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION"));
         } catch (Exception e) {

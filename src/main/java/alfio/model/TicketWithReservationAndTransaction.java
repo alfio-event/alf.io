@@ -24,6 +24,7 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 
 @Getter
@@ -122,7 +123,7 @@ public class TicketWithReservationAndTransaction {
 
         if(btId != null) {
             this.transaction = Optional.of(new Transaction(btId, transactionId, paymentId, reservationId,
-                timestamp, priceInCents, currency, description, paymentProxy, Optional.ofNullable(platformFee).orElse(0L), Optional.ofNullable(gatewayFee).orElse(0L), transactionStatus));
+                timestamp, priceInCents, currency, description, paymentProxy, Optional.ofNullable(platformFee).orElse(0L), Optional.ofNullable(gatewayFee).orElse(0L), transactionStatus, Map.of()));
         } else {
             this.transaction = Optional.empty();
         }

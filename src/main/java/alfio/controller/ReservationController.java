@@ -500,7 +500,7 @@ public class ReservationController {
 
         Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
         TicketReservationStatus status = reservation.map(TicketReservation::getStatus).orElse(TicketReservationStatus.PENDING);
-        if(reservation.isPresent() && status == TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT) {
+        if(reservation.isPresent() && (status == TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT || status == TicketReservationStatus.WAITING_EXTERNAL_CONFIRMATION)) {
             Event ev = event.get();
             TicketReservation ticketReservation = reservation.get();
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev, locale);
@@ -535,6 +535,7 @@ public class ReservationController {
             case OFFLINE_PAYMENT:
                 return baseUrl + "/waitingPayment";
             case EXTERNAL_PROCESSING_PAYMENT:
+            case WAITING_EXTERNAL_CONFIRMATION:
                 return baseUrl + "/processing-payment";
             case IN_PAYMENT:
             case STUCK:

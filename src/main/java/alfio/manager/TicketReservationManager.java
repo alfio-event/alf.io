@@ -519,7 +519,7 @@ public class TicketReservationManager {
             String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
             transactionRepository.insert(transactionId, null, reservationId, ZonedDateTime.now(event.getZoneId()),
                 priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(),
-                platformFee, 0L, Transaction.Status.COMPLETE);
+                platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
         } else {
             log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", reservationId);
         }
@@ -1174,6 +1174,7 @@ public class TicketReservationManager {
             tickedId -> ticketRepository.releaseExpiredTicket(reservationId, event.getId(), tickedId, UUID.randomUUID().toString())
         ).sum();
         Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
+        transactionRepository.deleteForReservations(List.of(reservationId));
         waitingQueueManager.fireReservationExpired(reservationId);
         groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
@@ -1685,7 +1686,7 @@ public class TicketReservationManager {
         var reservation = optionalReservation.get();
         var transaction = transactionRepository.loadByReservationId(reservation.getId());
 
-        if(reservation.getStatus() != EXTERNAL_PROCESSING_PAYMENT || transaction.getStatus() != Transaction.Status.PENDING) {
+        if(reservationStatusNotCompatible(reservation) || transaction.getStatus() != Transaction.Status.PENDING) {
             log.warn("discarding transaction webhook {} for reservation id {} ({}). Transaction status is: {}", transactionPayload.getType(), reservation.getId(), reservation.getStatus(), transaction.getStatus());
             return PaymentWebhookResult.notRelevant("reservation status is not compatible");
         }
@@ -1700,6 +1701,16 @@ public class TicketReservationManager {
                 switch(paymentWebhookResult.getType()) {
                     case NOT_RELEVANT: {
                         log.trace("Discarding event {} for reservation {}", transactionPayload.getType(), reservation.getId());
+                        break;
+                    }
+                    case TRANSACTION_INITIATED: {
+                        if(reservation.getStatus() == EXTERNAL_PROCESSING_PAYMENT) {
+                            String status = WAITING_EXTERNAL_CONFIRMATION.name();
+                            log.trace("Event {} received. Setting status {} for reservation {}", transactionPayload.getType(), status, reservation.getId());
+                            ticketReservationRepository.updateReservationStatus(reservation.getId(), status);
+                        } else {
+                            log.trace("Ignoring Event {}, as it cannot be applied for reservation {} ({})", transactionPayload.getType(), reservation.getId(), reservation.getStatus());
+                        }
                         break;
                     }
                     case SUCCESSFUL: {
@@ -1742,6 +1753,11 @@ public class TicketReservationManager {
                 }
                 return paymentWebhookResult;
             }).orElseGet(() -> PaymentWebhookResult.error("payment provider not found"));
+    }
+
+    private boolean reservationStatusNotCompatible(TicketReservation reservation) {
+        TicketReservationStatus status = reservation.getStatus();
+        return status != EXTERNAL_PROCESSING_PAYMENT && status != WAITING_EXTERNAL_CONFIRMATION;
     }
 
     private void sendTransactionFailedEmail(Event event, TicketReservation reservation, PaymentMethod paymentMethod, PaymentWebhookResult paymentWebhookResult, boolean cancelReservation) {

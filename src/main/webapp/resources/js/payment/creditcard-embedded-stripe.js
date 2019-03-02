@@ -126,7 +126,7 @@
                 '_csrf': document.forms[0].elements['_csrf'].value
             },
             success: function(result) {
-                if(result.errorMessage) {
+                if(result.errorMessage || !result.clientSecret) {
                     errorCallback(result.errorMessage);
                 } else {
                     successCallback(result.clientSecret);

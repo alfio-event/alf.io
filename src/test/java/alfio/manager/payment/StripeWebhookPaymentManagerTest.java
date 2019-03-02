@@ -87,7 +87,7 @@ class StripeWebhookPaymentManagerTest {
     @Test
     void ignoreNotRelevantTypes() {
         var transactionWebhookPayload = mock(TransactionWebhookPayload.class);
-        when(transactionWebhookPayload.getType()).thenReturn("charge.captured", "charge.expired", "payment_intent.amount_capturable_updated", "payment_intent.created");
+        when(transactionWebhookPayload.getType()).thenReturn("charge.captured", "charge.expired", "payment_intent.amount_capturable_updated");
         for (int i=0; i < 4; i++) {
             assertEquals(PaymentWebhookResult.Type.NOT_RELEVANT, stripeWebhookPaymentManager.processWebhook(transactionWebhookPayload, transaction).getType());
         }
@@ -111,7 +111,7 @@ class StripeWebhookPaymentManagerTest {
 
         var paymentWebhookResult = stripeWebhookPaymentManager.processWebhook(transactionWebhookPayload, transaction);
         assertEquals(PaymentWebhookResult.Type.SUCCESSFUL, paymentWebhookResult.getType());
-        verify(transactionRepository).update(eq(TRANSACTION_ID), eq(CHARGE_ID), eq(PAYMENT_ID), any(), eq(0L), eq(0L), eq(Transaction.Status.COMPLETE));
+        verify(transactionRepository).update(eq(TRANSACTION_ID), eq(CHARGE_ID), eq(PAYMENT_ID), any(), eq(0L), eq(0L), eq(Transaction.Status.COMPLETE), eq(Map.of()));
         Map<String, Object> changes = Map.of("paymentId", CHARGE_ID, "paymentMethod", "stripe");
         verify(auditingRepository).insert(eq(RESERVATION_ID), isNull(), eq(EVENT_ID), eq(Audit.EventType.PAYMENT_CONFIRMED), any(), eq(Audit.EntityType.RESERVATION), eq(RESERVATION_ID), eq(List.of(changes)));
     }

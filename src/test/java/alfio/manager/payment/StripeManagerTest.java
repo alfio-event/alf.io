@@ -115,7 +115,7 @@ public class StripeManagerTest {
         };
         StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(configurationManager, transactionRepository, baseStripeManager);
         when(event.getCurrency()).thenReturn("CHF");
-        when(transactionRepository.insert(anyString(), isNull(), anyString(), any(ZonedDateTime.class), anyInt(), eq("CHF"), anyString(), anyString(), anyLong(), anyLong(), eq(Transaction.Status.COMPLETE)))
+        when(transactionRepository.insert(anyString(), isNull(), anyString(), any(ZonedDateTime.class), anyInt(), eq("CHF"), anyString(), anyString(), anyLong(), anyLong(), eq(Transaction.Status.COMPLETE), eq(Map.of())))
             .thenThrow(new NullPointerException());
 
         PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );

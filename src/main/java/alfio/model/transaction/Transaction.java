@@ -16,10 +16,13 @@
  */
 package alfio.model.transaction;
 
+import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 import java.time.ZonedDateTime;
+import java.util.Map;
+import java.util.Optional;
 
 @Getter
 public class Transaction {
@@ -40,6 +43,7 @@ public class Transaction {
     private final long platformFee;
     private final long gatewayFee;
     private final Status status;
+    private final Map<String, String> metadata;
 
 
     public Transaction(@Column("id") int id,
@@ -53,7 +57,8 @@ public class Transaction {
                        @Column("payment_proxy") String paymentProxy,
                        @Column("plat_fee") long platformFee,
                        @Column("gtw_fee") long gatewayFee,
-                       @Column("status") Status status) {
+                       @Column("status") Status status,
+                       @Column("metadata") @JSONData Map<String, String> metadata) {
         this.id = id;
         this.transactionId = transactionId;
         this.paymentId = paymentId;
@@ -66,5 +71,6 @@ public class Transaction {
         this.platformFee = platformFee;
         this.gatewayFee = gatewayFee;
         this.status = status;
+        this.metadata = Optional.ofNullable(metadata).orElse(Map.of());
     }
 }

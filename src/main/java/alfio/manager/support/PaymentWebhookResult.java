@@ -27,6 +27,7 @@ public class PaymentWebhookResult {
     public enum Type {
         NOT_RELEVANT,
         REJECTED,
+        TRANSACTION_INITIATED,
         SUCCESSFUL,
         FAILED,
         ERROR
@@ -58,5 +59,9 @@ public class PaymentWebhookResult {
 
     public static PaymentWebhookResult notRelevant(String reason) {
         return new PaymentWebhookResult(Type.NOT_RELEVANT, null, reason);
+    }
+
+    public static PaymentWebhookResult processStarted(PaymentToken paymentToken) {
+        return new PaymentWebhookResult(Type.TRANSACTION_INITIATED, paymentToken, null);
     }
 }
