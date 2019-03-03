@@ -22,6 +22,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Audit;
 import alfio.model.Event;
 import alfio.model.PaymentInformation;
+import alfio.model.system.Configuration;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.ClientServerTokenRequest;
 import alfio.model.transaction.capabilities.PaymentInfo;
@@ -43,15 +44,12 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.WAITING_EXTERNAL_CONFIRMATION;
 import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
-import static alfio.model.system.ConfigurationKeys.STRIPE_WEBHOOK_KEY;
+import static alfio.model.system.ConfigurationKeys.STRIPE_WEBHOOK_PAYMENT_KEY;
 
 @Log4j2
 @Component
@@ -133,7 +131,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
 
     private StripeSCACreditCardToken createNewToken(PaymentSpecification paymentSpecification) {
         var paymentIntentParams = baseStripeManager.createParams(paymentSpecification);
-        paymentIntentParams.put("allowed_source_types", List.of("card"));
+        paymentIntentParams.put("payment_method_types", List.of("card"));
         try {
             var intent = PaymentIntent.create(paymentIntentParams, baseStripeManager.options(paymentSpecification.getEvent()).orElseThrow());
             var clientSecret = intent.getClientSecret();
@@ -151,7 +149,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
 
     @Override
     public String getWebhookSignatureKey() {
-        return baseStripeManager.getWebhookSignatureKey();
+        return configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(STRIPE_WEBHOOK_PAYMENT_KEY)).orElseThrow();
     }
 
     @Override
@@ -233,7 +231,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     private boolean isWebhookKeyDefined(PaymentContext context) {
-        return !configurationManager.getStringConfigValue(context.narrow(STRIPE_WEBHOOK_KEY))
+        return !configurationManager.getStringConfigValue(context.narrow(STRIPE_WEBHOOK_PAYMENT_KEY))
             .map(String::strip)
             .orElse("")
             .isEmpty();
@@ -268,6 +266,8 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
 
     @Override
     public Map<String, ?> getModelOptions(PaymentContext context) {
-        return baseStripeManager.getModelOptions(context);
+        var baseOptions = new HashMap<String, Object>(baseStripeManager.getModelOptions(context));
+        baseStripeManager.getConnectedAccount(context.getEvent()).ifPresent(account -> baseOptions.put("stripeConnectedAccount", account));
+        return baseOptions;
     }
 }

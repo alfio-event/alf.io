@@ -45,6 +45,7 @@
             data-stripe-contact-country="{{billingDetails.country}}"
             data-stripe-contact-address="{{billingDetails.addressLine1}}"
             data-stripe-email="{{reservation.email}}"
+            data-stripe-on-behalf-of="{{stripeConnectedAccount}}"
             defer async
     ></script>
 {{/if-config-flag}}
