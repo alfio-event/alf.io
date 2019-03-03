@@ -15,4 +15,5 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table b_transaction add column metadata jsonb;
+alter table b_transaction add column status character(32) not null default 'COMPLETE',
+                          add column metadata jsonb;
