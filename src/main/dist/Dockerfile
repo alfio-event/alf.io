@@ -6,7 +6,7 @@
 FROM azul/zulu-openjdk-alpine:11 as zulu
 
 RUN export ZULU_FOLDER=`ls /usr/lib/jvm/` \
-    && jlink --compress=2 --strip-debug --compress 2 --no-header-files --no-man-pages\
+    && jlink --compress=2 --strip-debug --no-header-files --no-man-pages \
     --module-path /usr/lib/jvm/$ZULU_FOLDER/jmods \
     # see https://github.com/ben-manes/caffeine/issues/273
     # see https://docs.oracle.com/en/java/javase/11/security/oracle-providers.html#GUID-9224B90B-7B2F-41F9-BB96-C0A1B6A0FEAA
