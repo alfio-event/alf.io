@@ -77,9 +77,14 @@
                 },
                 init: function() {
                     console.log("init...");
-                    stripeHandler = Stripe(stripeEl.getAttribute('data-stripe-key'), {
+                    var options = {
                         betas: ['payment_intent_beta_3']
-                    });
+                    };
+                    var connectedAccount = stripeEl.getAttribute('data-stripe-on-behalf-of');
+                    if(connectedAccount && connectedAccount !== '') {
+                        options.stripeAccount = connectedAccount;
+                    }
+                    stripeHandler = Stripe(stripeEl.getAttribute('data-stripe-key'), options);
 
                     card = stripeHandler.elements({locale: $('html').attr('lang')}).create('card', {style: style});
                     card.mount('#card-element');

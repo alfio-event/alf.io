@@ -75,14 +75,6 @@ class BaseStripeManager {
         StripeException.class, this::handleGenericException
     );
 
-    /*
-    handlers.put(CardException.class, this::handleCardException);
-        handlers.put(InvalidRequestException.class, this::handleInvalidRequestException);
-        handlers.put(AuthenticationException.class, this::handleAuthenticationException);
-        handlers.put(ApiConnectionException.class, this::handleApiConnectionException);
-        handlers.put(StripeException.class, this::handleGenericException);
-     */
-
     String getSecretKey(EventAndOrganizationId event) {
         return configurationManager.getRequiredValue(Configuration.from(event, STRIPE_SECRET_KEY));
     }
@@ -184,7 +176,10 @@ class BaseStripeManager {
         int tickets = ticketRepository.countTicketsInReservation(spec.getReservationId());
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", spec.getPriceWithVAT());
-        FeeCalculator.getCalculator(spec.getEvent(), configurationManager).apply(tickets, (long) spec.getPriceWithVAT()).ifPresent(fee -> chargeParams.put("application_fee", fee));
+        FeeCalculator.getCalculator(spec.getEvent(), configurationManager)
+            .apply(tickets, (long) spec.getPriceWithVAT())
+            .filter(l -> l > 0)
+            .ifPresent(fee -> chargeParams.put("application_fee_amount", fee));
         chargeParams.put("currency", spec.getEvent().getCurrency());
 
         chargeParams.put("description", String.format("%d ticket(s) for event %s", tickets, spec.getEvent().getDisplayName()));
@@ -233,6 +228,13 @@ class BaseStripeManager {
                 });
         }
         return Optional.of(builder.setApiKey(getSecretKey(event)).build());
+    }
+
+    Optional<String> getConnectedAccount(Event event) {
+        if(isConnectEnabled(new PaymentContext(event))) {
+            return configurationManager.getStringConfigValue(Configuration.from(event, STRIPE_CONNECTED_ID));
+        }
+        return Optional.empty();
     }
 
     Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
