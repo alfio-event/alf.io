@@ -51,6 +51,10 @@
             ctrl.displayCreationWarning = false;
         };
 
+        ctrl.displayPaymentInfo = function() {
+            return ctrl.reservation != null && ['PENDING', 'OFFLINE_PAYMENT'].indexOf(ctrl.reservation.status) === -1;
+        };
+
         ctrl.$onInit = function() {
             EventService.getAllLanguages().then(function(allLangs) {
                ctrl.allLanguages = allLangs.data;

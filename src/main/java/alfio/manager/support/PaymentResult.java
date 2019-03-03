@@ -16,17 +16,22 @@
  */
 package alfio.manager.support;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.Optional;
 
 @EqualsAndHashCode
+@ToString
 public final class PaymentResult {
 
     public enum Type { SUCCESSFUL, INITIALIZED, PENDING, REDIRECT, FAILED }
 
     private final Type type;
+    @JsonIgnore
     private Optional<String> gatewayId = Optional.empty();
+    @JsonIgnore
     private Optional<String> errorCode = Optional.empty();
     private String redirectUrl;
 
@@ -59,6 +64,10 @@ public final class PaymentResult {
 
     public Optional<String> getGatewayId() {
         return gatewayId;
+    }
+
+    public String getGatewayIdOrNull() {
+        return gatewayId.orElse(null);
     }
 
     private PaymentResult setGatewayId(String gatewayId) {

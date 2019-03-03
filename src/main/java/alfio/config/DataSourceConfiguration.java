@@ -16,6 +16,7 @@
  */
 package alfio.config;
 
+import alfio.config.support.JSONColumnMapper;
 import alfio.config.support.PlatformProvider;
 import alfio.manager.FileDownloadManager;
 import alfio.manager.UploadedResourceManager;
@@ -91,14 +92,15 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
             dataSource.setDriverClassName(platform.getDriverClassName(env));
             dataSource.setMaximumPoolSize(platform.getMaxActive(env));
             dataSource.setMinimumIdle(platform.getMinIdle(env));
+            dataSource.setConnectionTimeout(1000L);
 
             log.debug("Connection pool properties: max active {}, initial size {}", dataSource.getMaximumPoolSize(), dataSource.getMinimumIdle());
 
             // check
-            boolean isSuperAdmin = new NamedParameterJdbcTemplate(dataSource)
+            boolean isSuperAdmin = Boolean.TRUE.equals(new NamedParameterJdbcTemplate(dataSource)
                 .queryForObject("select usesuper from pg_user where usename = CURRENT_USER",
                     new EmptySqlParameterSource(),
-                    Boolean.class);
+                    Boolean.class));
 
             if (isSuperAdmin) {
                 log.warn("You're accessing the database using a superuser. This is highly discouraged since it will disable the row security policy checks.");
@@ -122,10 +124,11 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 
     @Bean
     public QueryFactory queryFactory(Environment env, PlatformProvider platform, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
-        QueryFactory qf = new QueryFactory(platform.getDialect(env), namedParameterJdbcTemplate);
-        qf.addColumnMapperFactory(new ZonedDateTimeMapper.Factory());
-        qf.addParameterConverters(new ZonedDateTimeMapper.Converter());
-        return qf;
+        return new QueryFactory(platform.getDialect(env), namedParameterJdbcTemplate)
+            .addColumnMapperFactory(new ZonedDateTimeMapper.Factory())
+            .addColumnMapperFactory(new JSONColumnMapper.Factory())
+            .addParameterConverters(new ZonedDateTimeMapper.Converter())
+            .addParameterConverters(new JSONColumnMapper.Converter());
     }
 
     @Bean

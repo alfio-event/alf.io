@@ -6,9 +6,49 @@
     {{/demoModeEnabled}}
 </div>
 
-<div class="alert alert-danger payment-errors hide" role="alert">
-</div>
+{{#if-config-flag}}[STRIPE_ENABLE_SCA]
+    <div class="wMarginTop row">
+        <div class="col-xs-12">
+            <div class="form-group">
+                <label for="card-name" class="control-label">{{#i18n}}reservation-page.cardholder.name{{/i18n}}</label>
+                <input type="text" data-stripe="name" required class="form-control" id="card-name" autocomplete="name" value="{{reservation.fullName}}">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="form-group" id="card-element-container">
+                <label for="card-name" class="control-label">{{#i18n}}reservation-page.card.details{{/i18n}}</label>
+                <div>
+                    <div id="card-element"></div>
+                </div>
+                <div class="wMarginTop text-danger payment-errors hide" role="alert" id="card-errors">
+                    <strong id="error-message"></strong>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="{{request.contextPath}}/resources/js/payment/creditcard-embedded-stripe.js"
+            id="stripe-key"
+            data-stripe-key="{{stripe_p_key}}"
+            data-stripe-title="{{event.displayName}}"
+            data-price="{{orderSummary.priceInCents}}"
+            data-currency="{{event.currency}}"
+            data-stripe-description="{{orderSummary.descriptionForPayment}}"
+            data-stripe-embedded="{{#config-flag}}STRIPE_ENABLE_SCA{{/config-flag}}"
+            data-stripe-event-name="{{event.shortName}}"
+            data-stripe-reservation-id="{{reservation.id}}"
+            data-stripe-contact-name="{{reservation.fullName}}"
+            data-stripe-contact-zip="{{billingDetails.zip}}"
+            data-stripe-contact-country="{{billingDetails.country}}"
+            data-stripe-contact-address="{{billingDetails.addressLine1}}"
+            data-stripe-email="{{reservation.email}}"
+            defer async
+    ></script>
+{{/if-config-flag}}
+{{^if-config-flag}}[STRIPE_ENABLE_SCA]
 <script src="https://checkout.stripe.com/checkout.js"></script>
 <script src="{{request.contextPath}}/resources/js/payment/creditcard-stripe.js"
         id="stripe-key"
@@ -28,9 +68,17 @@
         data-stripe-message-abort="{{#i18n}}error.STEP2_STRIPE_abort{{/i18n}}"
         data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
         data-stripe-title="{{event.displayName}}"
-        data-stripe-email="{{reservation.email}}"
         data-price="{{orderSummary.priceInCents}}"
         data-currency="{{event.currency}}"
         data-stripe-description="{{orderSummary.descriptionForPayment}}"
+        data-stripe-embedded="{{#config-flag}}STRIPE_ENABLE_SCA{{/config-flag}}"
+        data-stripe-event-name="{{event.shortName}}"
+        data-stripe-reservation-id="{{reservation.id}}"
+        data-stripe-contact-name="{{reservation.fullName}}"
+        data-stripe-contact-zip="{{billingDetails.zip}}"
+        data-stripe-contact-country="{{billingDetails.country}}"
+        data-stripe-contact-address="{{billingDetails.addressLine1}}"
+        data-stripe-email="{{reservation.email}}"
         defer async
 ></script>
+{{/if-config-flag}}

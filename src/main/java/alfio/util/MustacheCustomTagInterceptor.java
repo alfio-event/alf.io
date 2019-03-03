@@ -17,8 +17,13 @@
 package alfio.util;
 
 import alfio.controller.api.support.TicketHelper;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.EventAndOrganizationId;
+import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import com.samskivert.mustache.Mustache;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.commonmark.node.Node;
@@ -34,6 +39,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,9 +63,12 @@ import static org.apache.commons.lang3.StringUtils.substring;
  * <li>optional: locale:YOUR_LOCALE you can define the locale</li>
  * </ul>
  */
+@AllArgsConstructor
 @Log4j2
 public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
+    private final ConfigurationManager configurationManager;
+    private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*)]");
     private static final String LOCALE_LABEL = "locale:";
 
     static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
@@ -119,6 +128,61 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
         }
     };
 
+    /**
+     * {{#config-flag}}name{{/config-flag}}
+     */
+    static final BiFunction<Object, ConfigurationManager, Mustache.Lambda> CONFIGURATION_FLAG = (obj, configurationManager) -> (frag, out) -> {
+        if( !(obj instanceof EventAndOrganizationId) || configurationManager == null) {
+            log.warn("Event not found or configurationManager is null. Returning false");
+            out.write(Boolean.FALSE.toString());
+            return;
+        }
+        var option = frag.execute().trim();
+        var key = ConfigurationKeys.safeValueOf(option);
+
+        if(key == ConfigurationKeys.NOT_RECOGNIZED) {
+            log.warn("Attempting to lookup a non-existent option: {}", option);
+            out.write(Boolean.FALSE.toString());
+            return;
+        }
+        var flagValue = configurationManager.getBooleanConfigValue(Configuration.from((EventAndOrganizationId) obj, key), false);
+        out.write(String.valueOf(flagValue));
+    };
+
+    /**
+     * {{#if-config-flag}}[name]
+     *      <div>...</div>
+     * {{/if-config-flag}}
+     */
+    private static final BiFunction<Object, ConfigurationManager, Mustache.Lambda> IF_CONFIGURATION_FLAG = (obj, configurationManager) -> (frag, out) -> {
+        if( !(obj instanceof EventAndOrganizationId) || configurationManager == null) {
+            return;
+        }
+        String originalTemplate = frag.decompile();
+        Matcher matcher = ARG_PATTERN.matcher(originalTemplate);
+        String value = null;
+        if(matcher.find()) {
+            value = matcher.group(1);
+        }
+        if(value == null) {
+            log.warn("Missing value");
+            return;
+        }
+        var key = ConfigurationKeys.safeValueOf(value);
+        if(key == ConfigurationKeys.NOT_RECOGNIZED) {
+            log.warn("Attempting to lookup a non-existent option: {}", value);
+            return;
+        }
+        var flagValue = configurationManager.getBooleanConfigValue(Configuration.from((EventAndOrganizationId) obj, key), false);
+        if(flagValue) {
+            String execution = frag.execute().trim();
+            Matcher executionMatcher = ARG_PATTERN.matcher(execution);
+            if(executionMatcher.find()) { //should be always true
+                out.write(execution.substring(executionMatcher.end(1) + 1));
+            }
+        }
+    };
+
     private static Pair<String, Optional<Locale>> parseParams(String r) {
 
         int indexLocale = r.indexOf(LOCALE_LABEL), end = Math.min(r.length(),
@@ -133,10 +197,6 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
         return Pair.of(format, locale);
     }
-
-    private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*)]");
-
-
 
     private static final Function<ModelAndView, Mustache.Lambda> HAS_ERROR = (mv) -> (frag, out) -> {
         Errors err = (Errors) mv.getModelMap().get("error");
@@ -206,7 +266,10 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
             modelAndView.addObject("is-payment-method", IS_PAYMENT_METHOD);
             modelAndView.addObject("commonmark", RENDER_TO_COMMON_MARK);
             modelAndView.addObject("country-name", COUNTRY_NAME);
-            modelAndView.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(modelAndView.getModel().get("additional-fields")));
+            Map<String, Object> model = modelAndView.getModel();
+            modelAndView.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get("additional-fields")));
+            modelAndView.addObject("config-flag", CONFIGURATION_FLAG.apply(model.get("event"), configurationManager));
+            modelAndView.addObject("if-config-flag", IF_CONFIGURATION_FLAG.apply(model.get("event"), configurationManager));
         }
 
         super.postHandle(request, response, handler, modelAndView);

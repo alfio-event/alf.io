@@ -16,19 +16,22 @@
  */
 package alfio.repository;
 
+import alfio.model.support.JSONData;
 import alfio.model.transaction.Transaction;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @QueryRepository
 public interface TransactionRepository {
 
-    @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy, plat_fee, gtw_fee) " +
-            "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy, :platformFee, :gatewayFee)")
+    @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy, plat_fee, gtw_fee, status, metadata) " +
+            "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy, :platformFee, :gatewayFee, :status, to_json(:metadata::json))")
     int insert(@Bind("transactionId") String transactionId,
                @Bind("paymentId") String paymentId,
                @Bind("reservationId") String reservationId,
@@ -38,10 +41,32 @@ public interface TransactionRepository {
                @Bind("description") String description,
                @Bind("paymentProxy") String paymentProxy,
                @Bind("platformFee") long platformFee,
-               @Bind("gatewayFee") long gatewayFee);
+               @Bind("gatewayFee") long gatewayFee,
+               @Bind("status") Transaction.Status status,
+               @Bind("metadata") @JSONData Map<String, String> metadata);
+
+    @Query("update b_transaction set gtw_tx_id = :gatewayTransactionId, gtw_payment_id = :paymentId, " +
+        "t_timestamp = :timestamp, plat_fee = :platformFee, gtw_fee = :gatewayFee, status = :status, metadata = to_json(:metadata::json) where id = :transactionId")
+    int update(@Bind("transactionId") int id,
+               @Bind("gatewayTransactionId") String gatewayTransactionId,
+               @Bind("paymentId") String gatewayPaymentId,
+               @Bind("timestamp") ZonedDateTime timestamp,
+               @Bind("platformFee") long platformFee,
+               @Bind("gatewayFee") long gatewayFee,
+               @Bind("status") Transaction.Status status,
+               @Bind("metadata") @JSONData Map<String, String> metadata);
+
+    @Query("update b_transaction set status = :status where reservation_id = :reservationId")
+    int updateStatusForReservation(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
 
     @Query("select * from b_transaction where reservation_id = :reservationId")
     Transaction loadByReservationId(@Bind("reservationId") String reservationId);
+
+    @Query("delete from b_transaction where reservation_id in (:reservationIds)")
+    int deleteForReservations(@Bind("reservationIds") List<String> reservationIds);
+
+    @Query("delete from b_transaction where reservation_id in (:reservationIds) and status = :status")
+    int deleteForReservationsWithStatus(@Bind("reservationIds") List<String> reservationIds, @Bind("status") Transaction.Status status);
 
     @Query("select * from b_transaction where reservation_id = :reservationId")
     Optional<Transaction> loadOptionalByReservationId(@Bind("reservationId") String reservationId);

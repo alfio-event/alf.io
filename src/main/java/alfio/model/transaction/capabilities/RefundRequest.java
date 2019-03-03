@@ -17,11 +17,12 @@
 package alfio.model.transaction.capabilities;
 
 import alfio.model.Event;
+import alfio.model.transaction.Capability;
 
 /**
  * Indicates that the {@link alfio.model.transaction.PaymentProvider} supports Refunds.
  */
-public interface RefundRequest {
+public interface RefundRequest extends Capability {
 
     boolean refund(alfio.model.transaction.Transaction transaction, Event event, Integer amount);
 

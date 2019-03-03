@@ -17,6 +17,10 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.payment.BankTransferManager;
+import alfio.manager.payment.OnSiteManager;
+import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.TextTemplateGenerator;
@@ -927,6 +931,7 @@ class TicketReservationManagerTest {
         String ticketId = "ticketId";
         when(event.getShortName()).thenReturn(shortName);
         when(ticketReservation.getUserLanguage()).thenReturn("en");
+        when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticketRepository.findByUUID(ticketId)).thenReturn(ticket);
         when(ticket.getUserLanguage()).thenReturn(USER_LANGUAGE);
@@ -934,6 +939,8 @@ class TicketReservationManagerTest {
         assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID));
         //generate the reservationUrl from RESERVATION_ID and event
         assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(RESERVATION_ID, event));
+        //generate the reservationUrl from reservation and event
+        assertEquals(BASE_URL + "event/" + shortName + "/reservation/" + RESERVATION_ID + "?lang=en", trm.reservationUrl(ticketReservation, event));
         //generate the ticket URL
         assertEquals(BASE_URL + "event/" + shortName + "/ticket/ticketId?lang=it", trm.ticketUrl(event, ticketId));
         //generate the ticket update URL

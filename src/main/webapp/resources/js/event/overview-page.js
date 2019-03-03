@@ -5,8 +5,10 @@
 
     window.alfio = {
         registerPaymentHandler: function(handler) {
-            handler.init();
-            paymentHandlers.push(handler);
+            if(handler.active()) {
+                handler.init();
+                paymentHandlers.push(handler);
+            }
         }
     };
 
@@ -162,16 +164,22 @@
             }
             var filteredHandlers = paymentHandlers.filter(function(ph) {return ph.id === selectedPaymentMethod.val() && ph.active(); });
             var paymentHandler = filteredHandlers ? filteredHandlers[0] : null;
-            if(paymentHandler) {
-                btn.addClass("hidden");
+            if(paymentHandler && paymentHandler.valid()) {
+                var chargeFailedAlert = $('#charge-failed-alert');
+                $('#confirm-buttons').addClass('hidden');
+                $('#wait-message').removeClass('hidden');
+                chargeFailedAlert.addClass('hide');
                 paymentHandler.pay(function(res) {
                     if(res) {
-                        $('#confirm-buttons').addClass('hidden');
-                        $('#wait-message').removeClass('hidden');
                         $form.submit();
                     }
-                }, function() {
-                    btn.removeClass("hidden");
+                }, function(errorMessage) {
+                    $('#confirm-buttons').removeClass('hidden');
+                    $('#wait-message').addClass('hidden');
+                    if(errorMessage && errorMessage.trim() !== '') {
+                        chargeFailedAlert.removeClass('hide');
+                        chargeFailedAlert.find('#charge-failed-msg').text(errorMessage);
+                    }
                 });
             }
             e.preventDefault();

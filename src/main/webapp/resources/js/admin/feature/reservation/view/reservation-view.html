@@ -67,7 +67,7 @@
                 </div>
 
                 <div>
-                    <div ng-if="['PENDING', 'OFFLINE_PAYMENT'].indexOf($ctrl.reservation.status) === 0">
+                    <div ng-if="$ctrl.displayPaymentInfo()">
                         <div class="page-header">
                             <h3>Payment info</h3>
                         </div>

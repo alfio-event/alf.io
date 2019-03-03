@@ -1,5 +1,267 @@
 # Change Log
 
+## [2.0-M1](https://github.com/alfio-event/alf.io/tree/2.0-M1) (2019-01-30)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/2.0-M0-EINVOICE-2...2.0-M1)
+
+**Implemented enhancements:**
+
+- enable by default the alf.io PI support [\#591](https://github.com/alfio-event/alf.io/issues/591)
+- Invoice / Receipt pdf output: write it directly to the outputstream instead of keeping it in memory [\#578](https://github.com/alfio-event/alf.io/issues/578)
+- Implement italian e-invoicing support [\#573](https://github.com/alfio-event/alf.io/issues/573)
+- remove unused plugin\_log and plugin\_configuration tables [\#553](https://github.com/alfio-event/alf.io/issues/553)
+- remove unused/useless profiles [\#544](https://github.com/alfio-event/alf.io/issues/544)
+- Reservation detail enhancements [\#541](https://github.com/alfio-event/alf.io/issues/541)
+- Make easier to print again the badge of an attendee who already checked in [\#540](https://github.com/alfio-event/alf.io/issues/540)
+- Integrate the new payment api [\#475](https://github.com/alfio-event/alf.io/issues/475)
+- explore the use of the row security policy of pgsql [\#469](https://github.com/alfio-event/alf.io/issues/469)
+- Explore how to remove quartz scheduler [\#361](https://github.com/alfio-event/alf.io/issues/361)
+- Refactoring of Payment methods [\#323](https://github.com/alfio-event/alf.io/issues/323)
+
+**Fixed bugs:**
+
+- "copy from contact data" does not work for several tickets [\#517](https://github.com/alfio-event/alf.io/issues/517)
+- Additional options are not shown anywere [\#516](https://github.com/alfio-event/alf.io/issues/516)
+
+**Closed issues:**
+
+- in M1/master: we don't send the ticket email automatically [\#585](https://github.com/alfio-event/alf.io/issues/585)
+- instead of creating a new role application\_user -\> use  FORCE ROW LEVEL SECURITY [\#574](https://github.com/alfio-event/alf.io/issues/574)
+- Update source level compatibility to JDK 11 [\#570](https://github.com/alfio-event/alf.io/issues/570)
+- Remove old code that handle multi db [\#546](https://github.com/alfio-event/alf.io/issues/546)
+- Store external systems IDs in Billing Document [\#543](https://github.com/alfio-event/alf.io/issues/543)
+- Romanian translation [\#506](https://github.com/alfio-event/alf.io/issues/506)
+- Import the "billing document" feature [\#476](https://github.com/alfio-event/alf.io/issues/476)
+
+**Merged pull requests:**
+
+- travis: test multiple postgresql versions [\#592](https://github.com/alfio-event/alf.io/pull/592) ([asymmetric](https://github.com/asymmetric))
+- \#585 fix send tickets automatically [\#590](https://github.com/alfio-event/alf.io/pull/590) ([cbellone](https://github.com/cbellone))
+- Docker: remove dependency on links feature [\#589](https://github.com/alfio-event/alf.io/pull/589) ([asymmetric](https://github.com/asymmetric))
+- refactor: move code from manager to repository \(remove template queries\) [\#582](https://github.com/alfio-event/alf.io/pull/582) ([syjer](https://github.com/syjer))
+- implement \#541 add reservation emails log in reservation [\#586](https://github.com/alfio-event/alf.io/pull/586) ([syjer](https://github.com/syjer))
+- \#469 add row security policy [\#567](https://github.com/alfio-event/alf.io/pull/567) ([syjer](https://github.com/syjer))
+- \#553 remove unused table plugin\_log and plugin\_configuration [\#555](https://github.com/alfio-event/alf.io/pull/555) ([syjer](https://github.com/syjer))
+- implement \#361 quartz scheduler removal [\#552](https://github.com/alfio-event/alf.io/pull/552) ([syjer](https://github.com/syjer))
+- implement \#544 refactor profiles [\#548](https://github.com/alfio-event/alf.io/pull/548) ([syjer](https://github.com/syjer))
+- fix \#546 remove unused multi db code [\#547](https://github.com/alfio-event/alf.io/pull/547) ([syjer](https://github.com/syjer))
+- Update spring 5.1 [\#545](https://github.com/alfio-event/alf.io/pull/545) ([syjer](https://github.com/syjer))
+
+## [2.0-M0-EINVOICE-2](https://github.com/alfio-event/alf.io/tree/2.0-M0-EINVOICE-2) (2019-01-17)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.16.3...2.0-M0-EINVOICE-2)
+
+## [1.16.3](https://github.com/alfio-event/alf.io/tree/1.16.3) (2019-01-16)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/2.0-M0-EINVOICE-1...1.16.3)
+
+## [2.0-M0-EINVOICE-1](https://github.com/alfio-event/alf.io/tree/2.0-M0-EINVOICE-1) (2019-01-15)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.16.2...2.0-M0-EINVOICE-1)
+
+## [1.16.2](https://github.com/alfio-event/alf.io/tree/1.16.2) (2019-01-15)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/2.0-M0-EINVOICE...1.16.2)
+
+**Fixed bugs:**
+
+- VAT rounding can be wrong in some cases [\#576](https://github.com/alfio-event/alf.io/issues/576)
+
+**Merged pull requests:**
+
+- partially implement \#579 reduce amount of data loaded [\#580](https://github.com/alfio-event/alf.io/pull/580) ([syjer](https://github.com/syjer))
+- Use nested transaction where possible [\#575](https://github.com/alfio-event/alf.io/pull/575) ([syjer](https://github.com/syjer))
+
+## [2.0-M0-EINVOICE](https://github.com/alfio-event/alf.io/tree/2.0-M0-EINVOICE) (2019-01-04)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/2.0-M0...2.0-M0-EINVOICE)
+
+**Implemented enhancements:**
+
+- Flyway config should take into account if the DB has already some tables [\#558](https://github.com/alfio-event/alf.io/issues/558)
+
+**Fixed bugs:**
+
+- Unused invoice number after failed online payment attempt [\#571](https://github.com/alfio-event/alf.io/issues/571)
+- Mandatory fields do not let you buy a ticket [\#561](https://github.com/alfio-event/alf.io/issues/561)
+- Unexpected change email owner notification on ticket update [\#287](https://github.com/alfio-event/alf.io/issues/287)
+
+**Closed issues:**
+
+- Update Bootstrap version  [\#562](https://github.com/alfio-event/alf.io/issues/562)
+- Embedded Postgresql refuses to start [\#557](https://github.com/alfio-event/alf.io/issues/557)
+- Promo code should have optional "total usage" counter [\#441](https://github.com/alfio-event/alf.io/issues/441)
+- Google API Key should be optional [\#127](https://github.com/alfio-event/alf.io/issues/127)
+
+**Merged pull requests:**
+
+- Migrate source code to JDK11 [\#572](https://github.com/alfio-event/alf.io/pull/572) ([cbellone](https://github.com/cbellone))
+- \#476 import billing document [\#563](https://github.com/alfio-event/alf.io/pull/563) ([cbellone](https://github.com/cbellone))
+- Detect if Flyway should avoid to check if the actual schema is non-empty [\#559](https://github.com/alfio-event/alf.io/pull/559) ([cougil](https://github.com/cougil))
+-  \#540 Add a button to display QR-CODE in checked-in tab [\#550](https://github.com/alfio-event/alf.io/pull/550) ([NassimBounouas](https://github.com/NassimBounouas))
+- Merge payment methods [\#501](https://github.com/alfio-event/alf.io/pull/501) ([cbellone](https://github.com/cbellone))
+
+## [2.0-M0](https://github.com/alfio-event/alf.io/tree/2.0-M0) (2018-11-01)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.16.1...2.0-M0)
+
+**Implemented enhancements:**
+
+- Attendee form: add additional fields before standard fields [\#539](https://github.com/alfio-event/alf.io/issues/539)
+- import new reservation flow [\#464](https://github.com/alfio-event/alf.io/issues/464)
+
+**Closed issues:**
+
+- move all views in afterMigrate\_\_\* scripts [\#479](https://github.com/alfio-event/alf.io/issues/479)
+- Translations for 2.0-M0 [\#477](https://github.com/alfio-event/alf.io/issues/477)
+- Switch vatchecker implementation [\#468](https://github.com/alfio-event/alf.io/issues/468)
+- Update to spring boot 2 and spring 5 [\#467](https://github.com/alfio-event/alf.io/issues/467)
+- Remove hsqldb and mysql support [\#466](https://github.com/alfio-event/alf.io/issues/466)
+
+**Merged pull requests:**
+
+- Switch to spring5 and spring boot2, implement \#467 [\#473](https://github.com/alfio-event/alf.io/pull/473) ([syjer](https://github.com/syjer))
+- Implement \#466 Remove hsql/mysql [\#471](https://github.com/alfio-event/alf.io/pull/471) ([syjer](https://github.com/syjer))
+- implement \#468 switch euvatchecker v2 [\#470](https://github.com/alfio-event/alf.io/pull/470) ([syjer](https://github.com/syjer))
+
+## [1.16.1](https://github.com/alfio-event/alf.io/tree/1.16.1) (2018-11-01)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.16...1.16.1)
+
+**Implemented enhancements:**
+
+- Resize image on upload [\#527](https://github.com/alfio-event/alf.io/issues/527)
+- Display a warning message when alf.io is in production mode and not used over https [\#515](https://github.com/alfio-event/alf.io/issues/515)
+- Add check-in statistics in the mobile app [\#426](https://github.com/alfio-event/alf.io/issues/426)
+
+**Fixed bugs:**
+
+- Cannot update organization on an existing event [\#535](https://github.com/alfio-event/alf.io/issues/535)
+
+**Closed issues:**
+
+- STARTTLS for SMTP [\#536](https://github.com/alfio-event/alf.io/issues/536)
+- Configure first and last name on the label [\#533](https://github.com/alfio-event/alf.io/issues/533)
+- When applying a category specific discount code but \_not\_ selecting the discounted ticket, the discount code with an amount of 0 will appear in the summary [\#532](https://github.com/alfio-event/alf.io/issues/532)
+- Remove "http" \(Spring\) profile, because it does not seems to work \(and is confusing\) [\#514](https://github.com/alfio-event/alf.io/issues/514)
+- How to launch in production/non-dev mode with only 8080 and no HTTPs ? [\#511](https://github.com/alfio-event/alf.io/issues/511)
+- Docker Compose Support [\#363](https://github.com/alfio-event/alf.io/issues/363)
+
+**Merged pull requests:**
+
+- Implement \#527 resize image on upload [\#538](https://github.com/alfio-event/alf.io/pull/538) ([syjer](https://github.com/syjer))
+- Add Docker Compose support [\#534](https://github.com/alfio-event/alf.io/pull/534) ([asymmetric](https://github.com/asymmetric))
+- Fixed French errors [\#526](https://github.com/alfio-event/alf.io/pull/526) ([theute](https://github.com/theute))
+- remove anyway broken "http" \(Spring Boot\) profile \(fixes \#514\) [\#525](https://github.com/alfio-event/alf.io/pull/525) ([vorburger](https://github.com/vorburger))
+- implement \#515, show message if alf.io is used in dev mode or in prod mode not over https, for 1.x [\#519](https://github.com/alfio-event/alf.io/pull/519) ([syjer](https://github.com/syjer))
+- implement \#515, show message if alf.io is used in dev mode or in prod mode not over https [\#518](https://github.com/alfio-event/alf.io/pull/518) ([syjer](https://github.com/syjer))
+
+## [1.16](https://github.com/alfio-event/alf.io/tree/1.16) (2018-09-28)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.16-RC2...1.16)
+
+**Implemented enhancements:**
+
+- Bulk check-in [\#508](https://github.com/alfio-event/alf.io/issues/508)
+- Display additional options at check-in [\#512](https://github.com/alfio-event/alf.io/issues/512)
+- Allow additional rows to be printed in the label [\#498](https://github.com/alfio-event/alf.io/issues/498)
+- Excel \(xslx\) export [\#488](https://github.com/alfio-event/alf.io/issues/488)
+
+**Fixed bugs:**
+
+- Cannot change a user details, without also changing the username. [\#503](https://github.com/alfio-event/alf.io/issues/503)
+
+**Closed issues:**
+
+- Display Transaction details in the attendees export [\#507](https://github.com/alfio-event/alf.io/issues/507)
+- Add template edit at the organization level [\#499](https://github.com/alfio-event/alf.io/issues/499)
+- Attendee Whitelist [\#487](https://github.com/alfio-event/alf.io/issues/487)
+- Api key support [\#486](https://github.com/alfio-event/alf.io/issues/486)
+
+**Merged pull requests:**
+
+- implement \#508 bulk check-in [\#510](https://github.com/alfio-event/alf.io/pull/510) ([syjer](https://github.com/syjer))
+- limit discount code usage: pick + fixes [\#502](https://github.com/alfio-event/alf.io/pull/502) ([syjer](https://github.com/syjer))
+
+## [1.16-RC2](https://github.com/alfio-event/alf.io/tree/1.16-RC2) (2018-09-18)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.16-RC1...1.16-RC2)
+
+**Closed issues:**
+
+- Could not work sending mail via mailgun. [\#504](https://github.com/alfio-event/alf.io/issues/504)
+
+## [1.16-RC1](https://github.com/alfio-event/alf.io/tree/1.16-RC1) (2018-08-30)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.15...1.16-RC1)
+
+**Implemented enhancements:**
+
+- Mark the login qrcode for mobile app [\#382](https://github.com/alfio-event/alf.io/issues/382)
+
+**Closed issues:**
+
+- Docker for me not working [\#460](https://github.com/alfio-event/alf.io/issues/460)
+
+**Merged pull requests:**
+
+- \#499 add organization level template editing [\#500](https://github.com/alfio-event/alf.io/pull/500) ([syjer](https://github.com/syjer))
+- Merge whitelist to master [\#496](https://github.com/alfio-event/alf.io/pull/496) ([cbellone](https://github.com/cbellone))
+- 487 whitelist [\#491](https://github.com/alfio-event/alf.io/pull/491) ([cbellone](https://github.com/cbellone))
+- implement: \#488 add excel support for export [\#490](https://github.com/alfio-event/alf.io/pull/490) ([syjer](https://github.com/syjer))
+- \#486 api key support [\#489](https://github.com/alfio-event/alf.io/pull/489) ([syjer](https://github.com/syjer))
+
+## [1.15](https://github.com/alfio-event/alf.io/tree/1.15) (2018-07-11)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.15-RC3...1.15)
+
+**Implemented enhancements:**
+
+- Improve category stats popover readability [\#485](https://github.com/alfio-event/alf.io/issues/485)
+- Pdf rendering: try to reduce memory consumption: don't load the fonts in memory, use temp files [\#481](https://github.com/alfio-event/alf.io/issues/481)
+
+## [1.15-RC3](https://github.com/alfio-event/alf.io/tree/1.15-RC3) (2018-07-03)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.15-RC2...1.15-RC3)
+
+**Implemented enhancements:**
+
+- Vat checker validation extension [\#483](https://github.com/alfio-event/alf.io/issues/483)
+- Print additional information on ticket [\#482](https://github.com/alfio-event/alf.io/issues/482)
+
+**Merged pull requests:**
+
+- New reservation flow [\#484](https://github.com/alfio-event/alf.io/pull/484) ([syjer](https://github.com/syjer))
+
+## [1.15-RC2](https://github.com/alfio-event/alf.io/tree/1.15-RC2) (2018-06-28)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.15-RC1...1.15-RC2)
+
+## [1.15-RC1](https://github.com/alfio-event/alf.io/tree/1.15-RC1) (2018-06-23)
+[Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14.2...1.15-RC1)
+
+**Implemented enhancements:**
+
+- Include PDF invoice in reservation email [\#459](https://github.com/alfio-event/alf.io/issues/459)
+- Have the possibility to disable the contact details being added automatically to the ticket [\#457](https://github.com/alfio-event/alf.io/issues/457)
+- Invoice enhancements [\#449](https://github.com/alfio-event/alf.io/issues/449)
+- Add a possibility to always generate an invoice instead of the invoice/receipt dichotomy for private customers [\#443](https://github.com/alfio-event/alf.io/issues/443)
+- Add support for Canadian Tax Code \(GST\) [\#431](https://github.com/alfio-event/alf.io/issues/431)
+
+**Fixed bugs:**
+
+- Existing Privacy Policy url is again empty when editing event [\#440](https://github.com/alfio-event/alf.io/issues/440)
+- Follow EU VAT Rules \(for event in Belgium\) [\#432](https://github.com/alfio-event/alf.io/issues/432)
+- Dashboard Gross income is not updating correctly [\#427](https://github.com/alfio-event/alf.io/issues/427)
+
+**Closed issues:**
+
+- email: handle cases where the emails are stuck "IN\_PROCESS" for more than 1h [\#478](https://github.com/alfio-event/alf.io/issues/478)
+- Provide a Purchase Order textfield during registration [\#458](https://github.com/alfio-event/alf.io/issues/458)
+- VAT country is not added to billing address [\#453](https://github.com/alfio-event/alf.io/issues/453)
+- Reservations should not be deleted automatically when expired [\#447](https://github.com/alfio-event/alf.io/issues/447)
+- Missing I18N entry 'reservation-page.expiration-month' for en\_GB  [\#438](https://github.com/alfio-event/alf.io/issues/438)
+- The possibility to turn-off "I don't know yet who will attend" [\#436](https://github.com/alfio-event/alf.io/issues/436)
+- Make it clear which VAT Country code is used [\#433](https://github.com/alfio-event/alf.io/issues/433)
+
+**Merged pull requests:**
+
+- Event API v1 [\#480](https://github.com/alfio-event/alf.io/pull/480) ([minettiandrea](https://github.com/minettiandrea))
+- add additional dejavusans/serif fonts \(for invoice\) [\#474](https://github.com/alfio-event/alf.io/pull/474) ([syjer](https://github.com/syjer))
+- implement \#443 invoice only generation [\#456](https://github.com/alfio-event/alf.io/pull/456) ([syjer](https://github.com/syjer))
+- implement \#436 force ticket owner assignment at registration [\#454](https://github.com/alfio-event/alf.io/pull/454) ([syjer](https://github.com/syjer))
+- implement: \#447, add the possibility to configure the auto-removal of expired offline-payment [\#452](https://github.com/alfio-event/alf.io/pull/452) ([syjer](https://github.com/syjer))
+- \#449 invoice enhancements [\#450](https://github.com/alfio-event/alf.io/pull/450) ([cbellone](https://github.com/cbellone))
+- Add reset billing info [\#448](https://github.com/alfio-event/alf.io/pull/448) ([syjer](https://github.com/syjer))
+- implement \#433  [\#442](https://github.com/alfio-event/alf.io/pull/442) ([syjer](https://github.com/syjer))
+- implement \#431  [\#437](https://github.com/alfio-event/alf.io/pull/437) ([syjer](https://github.com/syjer))
+
 ## [1.14.2](https://github.com/alfio-event/alf.io/tree/1.14.2) (2018-05-14)
 [Full Changelog](https://github.com/alfio-event/alf.io/compare/1.14.1...1.14.2)
 

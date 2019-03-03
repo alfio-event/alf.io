@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.system.Configuration;
@@ -51,9 +52,20 @@ public class PaymentManager {
     private final List<PaymentProvider> paymentProviders; // injected by Spring
 
     public Optional<PaymentProvider> lookupProviderByMethod(PaymentMethod paymentMethod, PaymentContext context) {
+        return compatibleStream(paymentMethod, context).findFirst();
+    }
+
+    Optional<PaymentProvider> lookupProviderByMethodAndCapabilities(PaymentMethod paymentMethod,
+                                                                    PaymentContext context,
+                                                                    List<Class<? extends Capability>> capabilities) {
+        return compatibleStream(paymentMethod, context)
+            .filter(p -> Objects.requireNonNull(capabilities).stream().allMatch(c -> c.isInstance(p)))
+            .findFirst();
+    }
+
+    private Stream<PaymentProvider> compatibleStream(PaymentMethod paymentMethod, PaymentContext context) {
         return paymentProviders.stream()
-                .filter(p -> p.accept(paymentMethod, context))
-                .findFirst();
+            .filter(p -> p.accept(paymentMethod, context));
     }
 
     private List<PaymentMethodDTO> getPaymentMethods(PaymentContext context) {
@@ -153,7 +165,29 @@ public class PaymentManager {
         return lookupProviderByMethod(proxy.getPaymentMethod(), context)
             .filter(ClientServerTokenRequest.class::isInstance)
             .map(ClientServerTokenRequest.class::cast)
-            .map(pp -> pp.buildPaymentToken(gatewayToken))
+            .map(pp -> pp.buildPaymentToken(gatewayToken, context))
+            .orElse(null);
+    }
+
+    public Optional<PaymentResult> getTransactionStatus(TicketReservation reservation, PaymentMethod paymentMethod) {
+        return transactionRepository.loadOptionalByReservationId(reservation.getId())
+            .filter(transaction -> transaction.getPaymentProxy().getPaymentMethod() == paymentMethod)
+            .map(transaction -> {
+                switch(transaction.getStatus()) {
+                    case COMPLETE:
+                        return PaymentResult.successful(transaction.getPaymentId());
+                    case FAILED:
+                        return PaymentResult.failed(null);
+                    default:
+                        return PaymentResult.initialized(transaction.getPaymentId());
+                }
+            });
+    }
+
+    public PaymentMethod getPaymentMethodForReservation(TicketReservation ticketReservation) {
+        return transactionRepository.loadOptionalByReservationId(ticketReservation.getId())
+            .map(Transaction::getPaymentProxy)
+            .map(PaymentProxy::getPaymentMethod)
             .orElse(null);
     }
 

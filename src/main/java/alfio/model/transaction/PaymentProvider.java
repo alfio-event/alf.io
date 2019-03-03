@@ -16,7 +16,7 @@
  */
 package alfio.model.transaction;
 
-import alfio.manager.PaymentSpecification;
+import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.PaymentResult;
 
 import java.util.Collections;

@@ -18,6 +18,7 @@ package alfio.util;
 
 import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
@@ -60,6 +61,18 @@ public enum TemplateResource {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleDataForConfirmationEmail(organization, event);
+        }
+    },
+    CHARGE_ATTEMPT_FAILED_EMAIL("/alfio/templates/charge-failed-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleDataForChargeFailed(organization, event);
+        }
+    },
+    CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER("/alfio/templates/charge-failed-organizer-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return prepareSampleDataForChargeFailed(organization, event);
         }
     },
     CREDIT_NOTE_ISSUED_EMAIL("/alfio/templates/credit-note-issued-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
@@ -245,6 +258,20 @@ public enum TemplateResource {
         String reservationUrl = "http://your-domain.tld/reservation-url/";
         String reservationShortId = "597e7e7b";
         return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId, Optional.of("My Invoice\nAddress"), Optional.empty(), Optional.empty());
+    }
+
+    private static Map<String, Object> prepareSampleDataForChargeFailed(Organization organization, Event event) {
+        TicketReservation reservation = sampleTicketReservation();
+        return Map.of(
+            "reservationId", reservation.getId().substring(0, 8),
+            "reservationCancelled", true,
+            "reservation", reservation,
+            "eventName", event.getDisplayName(),
+            "provider", PaymentMethod.CREDIT_CARD.name(),
+            "reason", "this is the reason from the provider",
+            "reservationUrl", "http://your-domain.tld/reservation-url/",
+            "organization", organization
+        );
     }
 
     //used by multiple enum:

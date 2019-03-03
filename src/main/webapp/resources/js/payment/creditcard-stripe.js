@@ -14,7 +14,7 @@
                 id: 'STRIPE',
                 pay: function(confirmHandler, cancelHandler) {
                     stripeHandler.open({
-                        name: stripeEl.getAttribute('data-stripe-title'),
+                        name: stripeEl.getAttribute('data-stripe-contact-name'),
                         description: stripeEl.getAttribute('data-stripe-description'),
                         zipCode: false,
                         allowRememberMe: false,
@@ -44,8 +44,14 @@
                         }
                     });
                 },
+                valid: function() {
+                    return true;
+                },
                 active: function() {
-                    return doc.getElementById("stripe-key") != null;
+                    var attr;
+                    var stripe = doc.getElementById("stripe-key");
+                    //checkout is the default
+                    return stripe != null && (attr = stripe.attributes.getNamedItem("data-stripe-embedded")) == null || attr.value === 'false';
                 }
             });
         } else {

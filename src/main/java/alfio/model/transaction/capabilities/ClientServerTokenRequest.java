@@ -16,8 +16,10 @@
  */
 package alfio.model.transaction.capabilities;
 
+import alfio.model.transaction.Capability;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentToken;
 
-public interface ClientServerTokenRequest {
-    PaymentToken buildPaymentToken(String clientToken);
+public interface ClientServerTokenRequest extends Capability {
+    PaymentToken buildPaymentToken(String clientToken, PaymentContext paymentContext);
 }

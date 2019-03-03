@@ -24,6 +24,8 @@ import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.*;
 import alfio.manager.EuVatChecker.SameCountryValidator;
+import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -377,7 +379,8 @@ public class ReservationController {
                         .addAttribute("reservationId", reservationId)
                         .addAttribute("reservation", reservation)
                         .addAttribute("pageTitle", "reservation-page.header.title")
-                        .addAttribute("event", event);
+                        .addAttribute("event", event)
+                        .addAttribute("billingDetails", ticketReservationRepository.getBillingDetailsForReservation(reservationId));
                     return "/event/overview";
                 }).orElseGet(() -> redirectReservation(Optional.empty(), eventName, reservationId)))
             .orElse("redirect:/");
@@ -490,8 +493,29 @@ public class ReservationController {
                                         @PathVariable("reservationId") String reservationId,
                                         Model model, Locale locale) {
 
-        //FIXME
-        return "/event/reservation-processing-payment";
+        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
+        if (event.isEmpty()) {
+            return "redirect:/";
+        }
+
+        Optional<TicketReservation> reservation = ticketReservationManager.findById(reservationId);
+        TicketReservationStatus status = reservation.map(TicketReservation::getStatus).orElse(TicketReservationStatus.PENDING);
+        if(reservation.isPresent() && (status == TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT || status == TicketReservationStatus.WAITING_EXTERNAL_CONFIRMATION)) {
+            Event ev = event.get();
+            TicketReservation ticketReservation = reservation.get();
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev, locale);
+
+            model.addAttribute("orderSummary", orderSummary)
+                .addAttribute("reservationId", reservationId)
+                .addAttribute("reservation", ticketReservation)
+                .addAttribute("pageTitle", "reservation-page.header.title")
+                .addAttribute("paymentMethod", paymentManager.getPaymentMethodForReservation(ticketReservation))
+                .addAttribute("event", ev);
+
+            return "/event/reservation-processing-payment";
+        }
+
+        return redirectReservation(reservation, eventName, reservationId);
     }
 
 
@@ -511,6 +535,7 @@ public class ReservationController {
             case OFFLINE_PAYMENT:
                 return baseUrl + "/waitingPayment";
             case EXTERNAL_PROCESSING_PAYMENT:
+            case WAITING_EXTERNAL_CONFIRMATION:
                 return baseUrl + "/processing-payment";
             case IN_PAYMENT:
             case STUCK:
@@ -578,7 +603,7 @@ public class ReservationController {
 
         PaymentToken paymentToken = (PaymentToken) session.getAttribute(PaymentManager.PAYMENT_TOKEN);
         if(paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {
-            paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentMethod(), new PaymentContext(event));
+            paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentMethod(), new PaymentContext(event, reservationId));
         }
         PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
             event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
