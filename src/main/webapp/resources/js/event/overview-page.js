@@ -45,7 +45,7 @@
 
         $("#cancel-reservation").click(function(e) {
             var $form = $('#payment-form');
-            $("input[type=submit], button:not([type=button])", $form ).unbind('click');
+            $("input[type=submit]", $form ).unbind('click');
             $form.unbind('submit');
             $("input", $form).unbind('keypress');
 
@@ -60,8 +60,11 @@
 
         function markFieldAsError(node) {
             $(node).parent().addClass('has-error');
-            if($(node).parent().parent().parent().hasClass('form-group')) {
-                $(node).parent().parent().parent().addClass('has-error');
+            var parent = $(node).parent().parent();
+            if(parent.hasClass('checkbox') || parent.hasClass('radio')) {
+                parent.addClass('has-error');
+            } else if(parent.parent().hasClass('form-group')) {
+                parent.parent().addClass('has-error');
             }
         }
         // based on http://tjvantoll.com/2012/08/05/html5-form-validation-showing-all-error-messages/
@@ -75,6 +78,10 @@
                 var invalidFields = form.find("input,select,textarea").filter(function(i,v) {return !v.validity.valid;}).each( function( index, node ) {
                     markFieldAsError(node);
                 });
+
+                if(invalidFields.length > 0) {
+                    form.get(0).reportValidity();
+                }
             };
 
             // Support Safari
@@ -85,7 +92,7 @@
                 }
             });
 
-            $("input[type=submit], button:not([type=button])", form ).on("click", showAllErrorMessages);
+            $("#continue-button", form).on("click", showAllErrorMessages);
 
             $("input", form).on("keypress", function(event) {
                 var type = $(this).attr("type");
