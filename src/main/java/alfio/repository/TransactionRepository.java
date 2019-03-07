@@ -30,6 +30,8 @@ import java.util.Optional;
 @QueryRepository
 public interface TransactionRepository {
 
+    String SELECT_BY_RESERVATION_ID = "select * from b_transaction where reservation_id = :reservationId and status <> 'INVALID'";
+
     @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy, plat_fee, gtw_fee, status, metadata) " +
             "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy, :platformFee, :gatewayFee, :status, to_json(:metadata::json))")
     int insert(@Bind("transactionId") String transactionId,
@@ -59,16 +61,19 @@ public interface TransactionRepository {
     @Query("update b_transaction set status = :status where reservation_id = :reservationId")
     int updateStatusForReservation(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
 
-    @Query("select * from b_transaction where reservation_id = :reservationId")
+    @Query(SELECT_BY_RESERVATION_ID)
     Transaction loadByReservationId(@Bind("reservationId") String reservationId);
 
     @Query("delete from b_transaction where reservation_id in (:reservationIds)")
     int deleteForReservations(@Bind("reservationIds") List<String> reservationIds);
 
+    @Query("update b_transaction set status = 'INVALID' where reservation_id = :reservationId and status <> 'COMPLETE'")
+    int invalidateForReservation(@Bind("reservationId") String reservationId);
+
     @Query("delete from b_transaction where reservation_id in (:reservationIds) and status = :status")
     int deleteForReservationsWithStatus(@Bind("reservationIds") List<String> reservationIds, @Bind("status") Transaction.Status status);
 
-    @Query("select * from b_transaction where reservation_id = :reservationId")
+    @Query(SELECT_BY_RESERVATION_ID)
     Optional<Transaction> loadOptionalByReservationId(@Bind("reservationId") String reservationId);
 
     @Query("update b_transaction set plat_fee = :platformFee, gtw_fee = :gatewayFee where gtw_tx_id = :transactionId and reservation_id = :reservationId")

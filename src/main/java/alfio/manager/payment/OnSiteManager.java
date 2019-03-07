@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
+import alfio.repository.TransactionRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
@@ -36,6 +37,7 @@ import static alfio.model.system.ConfigurationKeys.ON_SITE_ENABLED;
 public class OnSiteManager implements PaymentProvider {
 
     private final ConfigurationManager configurationManager;
+    private final TransactionRepository transactionRepository;
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
@@ -44,6 +46,7 @@ public class OnSiteManager implements PaymentProvider {
 
     @Override
     public PaymentResult doPayment(PaymentSpecification spec) {
+        PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }
 
