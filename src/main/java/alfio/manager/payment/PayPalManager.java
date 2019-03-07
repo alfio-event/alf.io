@@ -377,7 +377,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
                 Long gatewayFee = Optional.ofNullable(i.getFee()).map(Long::parseLong).orElse(0L);
                 return Pair.of(platformFee, gatewayFee);
             }).orElseGet(() -> Pair.of(0L, 0L));
-            transactionRepository.deleteForReservations(List.of(spec.getReservationId()));
+            transactionRepository.invalidateForReservation(spec.getReservationId());
             transactionRepository.insert(captureId, paymentId, spec.getReservationId(),
                 ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
                 fees.getLeft(), fees.getRight(), alfio.model.transaction.Transaction.Status.COMPLETE, Map.of());

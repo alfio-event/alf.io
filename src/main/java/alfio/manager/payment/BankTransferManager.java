@@ -24,6 +24,7 @@ import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.repository.TicketReservationRepository;
+import alfio.repository.TransactionRepository;
 import alfio.util.WorkingDaysAdjusters;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -47,6 +48,7 @@ public class BankTransferManager implements PaymentProvider {
 
     private final ConfigurationManager configurationManager;
     private final TicketReservationRepository ticketReservationRepository;
+    private final TransactionRepository transactionRepository;
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext paymentContext) {
@@ -58,6 +60,7 @@ public class BankTransferManager implements PaymentProvider {
     @Override
     public PaymentResult doPayment(PaymentSpecification spec) {
         transitionToOfflinePayment(spec);
+        PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }
 
