@@ -32,7 +32,7 @@ class MetadataBuilder {
         Map<String, String> initialMetadata = new HashMap<>();
         initialMetadata.put(RESERVATION_ID, spec.getReservationId());
         initialMetadata.put("email", spec.getEmail());
-        initialMetadata.put("fullName", spec.getEmail());
+        initialMetadata.put("fullName", spec.getCustomerName().getFullName());
         if (StringUtils.isNotBlank(spec.getBillingAddress())) {
             initialMetadata.put("billingAddress", spec.getBillingAddress());
         }
