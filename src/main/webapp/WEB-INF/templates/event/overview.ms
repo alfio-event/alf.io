@@ -50,57 +50,65 @@
     <h2>{{#i18n}}reservation-page.title{{/i18n}}</h2>
 </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>{{#i18n}}reservation-page.category{{/i18n}}</th>
-            <th class="text-center">{{#i18n}}reservation-page.amount{{/i18n}}</th>
-            <th class="text-right">{{#i18n}}reservation-page.price{{/i18n}}</th>
-            <th class="text-right">{{#i18n}}reservation-page.subtotal{{/i18n}}</th>
-        </tr>
-    </thead>
-    <tbody>
-{{#orderSummary.summary}}
-        <tr>
-            <td>{{name}}</td>
-            <td class="text-center">{{amount}}</td>
-            <td class="text-right">{{price}}</td>
-            <td class="text-right">{{subTotal}} {{event.currency}}</td>
-        </tr>
-{{/orderSummary.summary}}
-    </tbody>
-    <tfoot>
-        {{^orderSummary.free}}
-            {{#orderSummary.displayVat}}
-                {{^event.vatIncluded}}
-                    <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}] [{{vatTranslation}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
-                {{/event.vatIncluded}}
-            {{/orderSummary.displayVat}}
-        {{/orderSummary.free}}
-        <tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td class="text-right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
+<div class="row">
+    <div class="col-md-7 col-xs-12">
+        <table class="table">
+            <thead>
+            <tr>
+                <th>{{#i18n}}reservation-page.category{{/i18n}}</th>
+                <th class="text-center">{{#i18n}}reservation-page.amount{{/i18n}}</th>
+                <th class="text-right">{{#i18n}}reservation-page.price{{/i18n}}</th>
+                <th class="text-right">{{#i18n}}reservation-page.subtotal{{/i18n}}</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{#orderSummary.summary}}
+                <tr>
+                    <td>{{name}}</td>
+                    <td class="text-center">{{amount}}</td>
+                    <td class="text-right">{{price}}</td>
+                    <td class="text-right">{{subTotal}} {{event.currency}}</td>
+                </tr>
+            {{/orderSummary.summary}}
+            </tbody>
+            <tfoot>
+            {{^orderSummary.free}}
+                {{#orderSummary.displayVat}}
+                    {{^event.vatIncluded}}
+                        <tr><td colspan="3">{{#i18n}}reservation-page.vat [{{event.vat}}] [{{vatTranslation}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+                    {{/event.vatIncluded}}
+                {{/orderSummary.displayVat}}
+            {{/orderSummary.free}}
+            <tr><th colspan="3">{{#i18n}}reservation-page.total{{/i18n}}</th><td class="text-right"><strong>{{orderSummary.totalPrice}} {{event.currency}}</strong></td></tr>
 
-        {{^orderSummary.free}}
-            {{#orderSummary.displayVat}}
-                {{#event.vatIncluded}}
-                    <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}] [{{vatTranslation}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
-                {{/event.vatIncluded}}
-            {{/orderSummary.displayVat}}
-            {{^orderSummary.displayVat}}
-                <tr><td colspan="4">{{#i18n}}invoice.vat-voided [{{vatTranslation}}]{{/i18n}}</td></tr>
-            {{/orderSummary.displayVat}}
-        {{/orderSummary.free}}
-    </tfoot>
-</table>
-
+            {{^orderSummary.free}}
+                {{#orderSummary.displayVat}}
+                    {{#event.vatIncluded}}
+                        <tr><td colspan="3">{{#i18n}}reservation-page.vat-included [{{event.vat}}] [{{vatTranslation}}]{{/i18n}}</td><td class="text-right">{{orderSummary.totalVAT}} {{event.currency}}</td></tr>
+                    {{/event.vatIncluded}}
+                {{/orderSummary.displayVat}}
+                {{^orderSummary.displayVat}}
+                    <tr><td colspan="4">{{#i18n}}invoice.vat-voided [{{vatTranslation}}]{{/i18n}}</td></tr>
+                {{/orderSummary.displayVat}}
+            {{/orderSummary.free}}
+            </tfoot>
+        </table>
+    </div>
 {{#displayInvoiceData}}
-<div class="page-header">
-    <h2>{{#i18n}}reservation-page.invoice-details{{/i18n}}</h2>
+    <div class="col-xs-12 col-md-5">
+        <div class="border-left">
+            <h5 class="hidden-xs hidden-sm"><strong>{{#i18n}}reservation-page.invoice-details{{/i18n}}</strong></h5>
+            <div class="page-header hidden-md hidden-lg visible-xs">
+                <h2>{{#i18n}}reservation-page.invoice-details{{/i18n}}</h2>
+            </div>
+            <div class="preformatted wMarginBottom">{{reservation.billingAddress}}
+{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}} {{billingDetails.taxId}}</div>
+        </div>
+    </div>
+{{/displayInvoiceData}}
 </div>
 
-<div class="preformatted wMarginBottom">{{reservation.billingAddress}}
-{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}} {{billingDetails.taxId}}
-</div>
-{{/displayInvoiceData}}
+
 
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
 

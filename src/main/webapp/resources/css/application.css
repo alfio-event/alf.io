@@ -151,6 +151,11 @@ a.no-decoration {
         float: none;
         width: 1%;
     }
+    .border-left {
+        margin-left: 15px;
+        padding-left: 40px;
+        border-left: 1px solid #ddd;
+    }
 }
 
 div.preformatted {
