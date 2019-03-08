@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
@@ -89,7 +90,7 @@ public class TicketWithReservationAndTransaction {
                                                @Column("tr_billing_address_line2") String billingAddressLine2,
                                                @Column("tr_billing_address_city") String billingAddressCity,
                                                @Column("tr_billing_address_zip") String billingAddressZip,
-                                               @Column("tr_invoicing_additional_information") String invoicingAdditionalInfo,
+                                               @Column("tr_invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
                                                //
                                                @Column("bt_id") Integer btId,
                                                @Column("bt_gtw_tx_id") String transactionId,
@@ -116,10 +117,9 @@ public class TicketWithReservationAndTransaction {
             reminderSent, promoCodeDiscountId, automatic, trUserLanguage,
             directAssignmentRequested, invoiceNumber, invoiceModel, vatStatus, vatNr, vatCountryCode, invoiceRequested,
             usedVadPercent, vatIncluded, reservationCreationTimestamp, customerReference,
-            reservationRegistrationTimestamp,
-            invoicingAdditionalInfo);
+            reservationRegistrationTimestamp);
 
-        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountryCode, vatNr);
+        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountryCode, vatNr, invoicingAdditionalInfo);
 
         if(btId != null) {
             this.transaction = Optional.of(new Transaction(btId, transactionId, paymentId, reservationId,

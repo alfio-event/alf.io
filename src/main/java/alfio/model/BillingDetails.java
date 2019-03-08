@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -29,6 +30,7 @@ public class BillingDetails {
     private final String city;
     private final String country;
     private final String taxId;
+    private final TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo;
 
     public BillingDetails(@Column("billing_address_company") String companyName,
                           @Column("billing_address_line1") String addressLine1,
@@ -36,7 +38,8 @@ public class BillingDetails {
                           @Column("billing_address_zip") String zip,
                           @Column("billing_address_city") String city,
                           @Column("vat_country") String country,
-                          @Column("vat_nr") String taxId) {
+                          @Column("vat_nr") String taxId,
+                          @Column("invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo) {
 
         this.companyName = companyName;
         this.addressLine1 = addressLine1;
@@ -45,6 +48,7 @@ public class BillingDetails {
         this.city = city;
         this.country = country;
         this.taxId = taxId;
+        this.invoicingAdditionalInfo = invoicingAdditionalInfo;
     }
 
 

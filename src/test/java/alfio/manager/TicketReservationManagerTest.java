@@ -60,6 +60,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.manager.TicketReservationManager.buildCompleteBillingAddress;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.Arrays.asList;
@@ -921,8 +922,7 @@ class TicketReservationManagerTest {
             reservation.getVatIncluded(),
             reservation.getCreationTimestamp(),
             reservation.getCustomerReference(),
-            reservation.getRegistrationTimestamp(),
-            null);
+            reservation.getRegistrationTimestamp());
     }
 
     @Test
@@ -1064,5 +1064,13 @@ class TicketReservationManagerTest {
         form.setFirstName("Test");
         form.setLastName("Test");
         assertFalse(trm.isTicketBeingReassigned(ticket, form, event));
+    }
+
+    @Test
+    void testBuildCompleteBillingAddress() {
+        CustomerName customerName = new CustomerName(null, "First", "Last", true);
+        assertEquals("First Last\nline1\nzip city", buildCompleteBillingAddress(customerName, "   ", "line1", null, "zip", "city"));
+        assertEquals("Company\nFirst Last\nline1\nzip city", buildCompleteBillingAddress(customerName, "Company", "line1", null, "zip", "city"));
+        assertEquals("Company\nFirst Last\nline1\nline2\nzip city", buildCompleteBillingAddress(customerName, "Company", "line1", "line2", "zip", "city"));
     }
 }

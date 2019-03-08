@@ -63,7 +63,7 @@ public class TicketReservation {
     private final ZonedDateTime creationTimestamp;
     private final ZonedDateTime registrationTimestamp;
     private final String customerReference;
-    private final TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo;
+
 
     public TicketReservation(@Column("id") String id,
                              @Column("validity") Date validity,
@@ -91,8 +91,7 @@ public class TicketReservation {
                              @Column("vat_included") Boolean vatIncluded,
                              @Column("creation_ts") ZonedDateTime creationTimestamp,
                              @Column("customer_reference") String customerReference,
-                             @Column("registration_ts") ZonedDateTime registrationTimestamp,
-                             @Column("invoicing_additional_information") String invoicingAdditionalInfo) {
+                             @Column("registration_ts") ZonedDateTime registrationTimestamp) {
         this.id = id;
         this.validity = validity;
         this.status = status;
@@ -120,7 +119,6 @@ public class TicketReservation {
         this.creationTimestamp = creationTimestamp;
         this.registrationTimestamp = registrationTimestamp;
         this.customerReference = customerReference;
-        this.invoicingAdditionalInfo = invoicingAdditionalInfo == null ? null : Json.fromJson(invoicingAdditionalInfo, TicketReservationInvoicingAdditionalInfo.class);
     }
 
     public boolean isStuck() {

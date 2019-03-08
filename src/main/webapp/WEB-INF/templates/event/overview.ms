@@ -92,6 +92,16 @@
     </tfoot>
 </table>
 
+{{#displayInvoiceData}}
+<div class="page-header">
+    <h2>{{#i18n}}reservation-page.invoice-details{{/i18n}}</h2>
+</div>
+
+<div class="preformatted wMarginBottom">{{reservation.billingAddress}}
+{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}} {{billingDetails.taxId}}
+</div>
+{{/displayInvoiceData}}
+
 <form action="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservation.id}}" method="POST" id="payment-form">
 
     {{^orderSummary.free}}

@@ -225,7 +225,7 @@ public interface TicketReservationRepository {
     @Query("select count(b.id) from tickets_reservation a, ticket b where a.id = :reservationId and b.tickets_reservation_id = a.id")
     Integer countTicketsInReservationNoCategories(@Bind("reservationId") String reservationId);
 
-    @Query("select billing_address_company, billing_address_line1, billing_address_line2, billing_address_zip, billing_address_city, vat_nr, vat_country from tickets_reservation where id = :reservationId")
+    @Query("select billing_address_company, billing_address_line1, billing_address_line2, billing_address_zip, billing_address_city, vat_nr, vat_country, invoicing_additional_information from tickets_reservation where id = :reservationId")
     BillingDetails getBillingDetailsForReservation(@Bind("reservationId") String reservationId);
 
     @Query("update tickets_reservation set invoicing_additional_information = :info::json where id = :id")

@@ -1641,12 +1641,8 @@ public class TicketReservationManager {
                                   boolean skipVatNr,
                                   boolean validated) {
 
-        String completeBillingAddress = defaultString(StringUtils.trimToNull(billingAddressCompany), trimToEmpty(customerName.getFullName()))+"\n"+
-            trimToEmpty(billingAddressLine1)+"\n"+
-            trimToEmpty(billingAddressLine2)+"\n"+
-            trimToEmpty(trimToEmpty(billingAddressZip)+" "+ trimToEmpty(billingAddressCity));
 
-        completeBillingAddress = completeBillingAddress.replace("\n\n", "\n");
+        String completeBillingAddress = buildCompleteBillingAddress(customerName, billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity);
 
         ticketReservationRepository.updateTicketReservationWithValidation(reservationId,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(),
@@ -1655,6 +1651,18 @@ public class TicketReservationManager {
             customerReference,
             validated);
     }
+
+    static String buildCompleteBillingAddress(CustomerName customerName, String billingAddressCompany, String billingAddressLine1, String billingAddressLine2, String billingAddressZip, String billingAddressCity) {
+        String companyName = stripToNull(billingAddressCompany);
+        String fullName = stripToEmpty(customerName.getFullName());
+        if(companyName != null && !fullName.isEmpty()) {
+            companyName = companyName + "\n" + fullName;
+        }
+        return Arrays.stream(stripAll(defaultString(companyName, fullName), billingAddressLine1, billingAddressLine2, stripToEmpty(billingAddressZip) + " " + stripToEmpty(billingAddressCity)))
+            .filter(Predicate.not(StringUtils::isEmpty))
+            .collect(joining("\n"));
+    }
+
 
     public void updateReservationInvoicingAdditionalInformation(String reservationId, TicketReservationInvoicingAdditionalInfo ticketReservationInvoicingAdditionalInfo) {
         ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, Json.toJson(ticketReservationInvoicingAdditionalInfo));

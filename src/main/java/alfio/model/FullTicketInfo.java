@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
@@ -90,7 +91,7 @@ public class FullTicketInfo {
                           @Column("tr_billing_address_line2") String billingAddressLine2,
                           @Column("tr_billing_address_city") String billingAddressCity,
                           @Column("tr_billing_address_zip") String billingAddressZip,
-                          @Column("tr_invoicing_additional_information") String invoicingAdditionalInfo,
+                          @Column("tr_invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
                           //
                           @Column("tc_id") int tcId,
                           @Column("tc_inception") ZonedDateTime tcUtcInception,
@@ -114,13 +115,12 @@ public class FullTicketInfo {
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage,
             directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent, vatIncluded, reservationCreationTimestamp, customerReference,
-            reservationRegistrationTimestamp,
-            invoicingAdditionalInfo);
+            reservationRegistrationTimestamp);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
                 tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts, code, validCheckInFrom, validCheckInTo,
                 ticketValidityStart, ticketValidityEnd);
 
-        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountry, vatNr);
+        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountry, vatNr, invoicingAdditionalInfo);
 
     }
 }

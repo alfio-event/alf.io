@@ -215,16 +215,15 @@ public class ContactAndTicketsForm implements Serializable {
         form.setBillingAddressCity(additionalInfo.getBillingAddressCity());
         form.setSkipVatNr(additionalInfo.getSkipVatNr());
 
-        //todo: simplify code, can avoid a level with map
         //https://github.com/alfio-event/alf.io/issues/573
-        Optional.ofNullable(additionalInfo.getInvoicingAdditionalInfo()).ifPresent(i ->
-            Optional.ofNullable(i.getItalianEInvoicing()).ifPresent(iei -> {
+        Optional.ofNullable(additionalInfo.getInvoicingAdditionalInfo())
+            .map(TicketReservationInvoicingAdditionalInfo::getItalianEInvoicing)
+            .ifPresent(iei -> {
                 form.setItalyEInvoicingFiscalCode(iei.getFiscalCode());
                 form.setItalyEInvoicingReferenceType(iei.getReferenceType());
                 form.setItalyEInvoicingReferenceAddresseeCode(iei.getAddresseeCode());
                 form.setItalyEInvoicingReferencePEC(iei.getPec());
-            })
-        );
+            });
 
         return form;
     }
