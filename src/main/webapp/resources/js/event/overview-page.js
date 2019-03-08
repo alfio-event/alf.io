@@ -68,7 +68,7 @@
             }
         }
         // based on http://tjvantoll.com/2012/08/05/html5-form-validation-showing-all-error-messages/
-                // http://stackoverflow.com/questions/13798313/set-custom-html5-required-field-validation-message
+        // http://stackoverflow.com/questions/13798313/set-custom-html5-required-field-validation-message
         var createAllErrors = function() {
             var form = $(this);
 
@@ -160,6 +160,20 @@
         };
 
         var btn = $('#continue-button');
+        var registerUnloadHook = function() {
+            console.log("warn on page reload: on");
+            // source: https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload
+            window.onbeforeunload = function (e) {
+                // Cancel the event
+                e.preventDefault();
+                // Chrome requires returnValue to be set
+                e.returnValue = '';
+            };
+        };
+        var unregisterHook = function() {
+            console.log("warn on page reload: off");
+            window.onbeforeunload = null;
+        };
         btn.on('click', function(e) {
             var $form = $('#payment-form');
             if($form.length === 0 || !$form.get(0).checkValidity()) {
@@ -172,15 +186,18 @@
             var filteredHandlers = paymentHandlers.filter(function(ph) {return ph.id === selectedPaymentMethod.val() && ph.active(); });
             var paymentHandler = filteredHandlers ? filteredHandlers[0] : null;
             if(paymentHandler && paymentHandler.valid()) {
+                registerUnloadHook();
                 var chargeFailedAlert = $('#charge-failed-alert');
                 $('#confirm-buttons').addClass('hidden');
                 $('#wait-message').removeClass('hidden');
                 chargeFailedAlert.addClass('hide');
                 paymentHandler.pay(function(res) {
+                    unregisterHook();
                     if(res) {
                         $form.submit();
                     }
                 }, function(errorMessage) {
+                    unregisterHook();
                     $('#confirm-buttons').removeClass('hidden');
                     $('#wait-message').addClass('hidden');
                     if(errorMessage && errorMessage.trim() !== '') {
