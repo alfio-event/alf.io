@@ -18,6 +18,7 @@ package alfio.controller.form;
 
 import alfio.manager.EuVatChecker;
 import alfio.model.*;
+import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.ErrorsCode;
@@ -69,7 +70,7 @@ public class ContactAndTicketsForm implements Serializable {
 
     // https://github.com/alfio-event/alf.io/issues/573
     private String italyEInvoicingFiscalCode;
-    private BillingDetails.ItalianEInvoicing.ReferenceType italyEInvoicingReferenceType;
+    private ItalianEInvoicing.ReferenceType italyEInvoicingReferenceType;
     private String italyEInvoicingReferenceAddresseeCode;
     private String italyEInvoicingReferencePEC;
     //
@@ -147,7 +148,7 @@ public class ContactAndTicketsForm implements Serializable {
             //
             ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferenceType", "error.italyEInvoicingReferenceTypeSelectValue");
             //
-            if (BillingDetails.ItalianEInvoicing.ReferenceType.ADDRESSEE_CODE == italyEInvoicingReferenceType) {
+            if (ItalianEInvoicing.ReferenceType.ADDRESSEE_CODE == italyEInvoicingReferenceType) {
                 ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferenceAddresseeCode", "error.emptyField");
                 italyEInvoicingReferenceAddresseeCode = StringUtils.trim(italyEInvoicingReferenceAddresseeCode);
                 if (italyEInvoicingReferenceAddresseeCode != null) {
@@ -160,7 +161,7 @@ public class ContactAndTicketsForm implements Serializable {
                     }
                 }
             }
-            if (BillingDetails.ItalianEInvoicing.ReferenceType.PEC == italyEInvoicingReferenceType) {
+            if (ItalianEInvoicing.ReferenceType.PEC == italyEInvoicingReferenceType) {
                 ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferencePEC", "error.emptyField");
             }
 
@@ -246,15 +247,19 @@ public class ContactAndTicketsForm implements Serializable {
 
     // https://github.com/alfio-event/alf.io/issues/573
     public boolean getItalyEInvoicingTypeAddresseeCode() {
-        return italyEInvoicingReferenceType == BillingDetails.ItalianEInvoicing.ReferenceType.ADDRESSEE_CODE;
+        return italyEInvoicingReferenceType == ItalianEInvoicing.ReferenceType.ADDRESSEE_CODE;
     }
 
     public boolean getItalyEInvoicingTypePEC() {
-        return italyEInvoicingReferenceType == BillingDetails.ItalianEInvoicing.ReferenceType.PEC;
+        return italyEInvoicingReferenceType == ItalianEInvoicing.ReferenceType.PEC;
     }
 
     public boolean getItalyEInvoicingTypeNone() {
-        return italyEInvoicingReferenceType == BillingDetails.ItalianEInvoicing.ReferenceType.NONE;
+        return italyEInvoicingReferenceType == ItalianEInvoicing.ReferenceType.NONE;
     }
     //
+
+    public boolean getBusinessCustomer() {
+        return canSkipVatNrCheck() || StringUtils.isNotBlank(billingAddressCompany) || StringUtils.isNotBlank(vatNr);
+    }
 }

@@ -18,7 +18,6 @@ package alfio.model;
 
 import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
@@ -51,27 +50,8 @@ public class BillingDetails {
         this.invoicingAdditionalInfo = invoicingAdditionalInfo;
     }
 
-
-    //
-    // https://github.com/alfio-event/alf.io/issues/573
-    //
-    @Getter
-    @AllArgsConstructor
-    public static class ItalianEInvoicing {
-
-        public enum ReferenceType {
-            ADDRESSEE_CODE, /* Codice destinatario */
-            PEC, /* (pec = email) */
-            NONE
-        }
-
-        private final String fiscalCode;
-        private final ReferenceType referenceType;
-        private final String addresseeCode;
-        private final String pec;
-
-        public String getReferenceTypeAsString() {
-            return referenceType == null ? "" : referenceType.toString();
-        }
+    public boolean getHasTaxId() {
+        return taxId != null && !taxId.isEmpty();
     }
+
 }

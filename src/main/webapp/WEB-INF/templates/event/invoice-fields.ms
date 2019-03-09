@@ -1,3 +1,34 @@
+<div class="page-header">
+    <h2>{{#i18n}}reservation-page.invoice-details{{/i18n}}</h2>
+</div>
+
+<div class="row">
+    <div class="col-xs-12">
+        <div class="form-group">
+            <label for="">
+                {{#i18n}}invoice.type{{/i18n}}
+            </label>
+            <div>
+                <label class="radio-inline">
+                    <input type="radio" name="invoiceType" id="invoiceTypePrivate" value="private" {{^paymentForm.businessCustomer}}checked=""{{/paymentForm.businessCustomer}}> {{#i18n}}invoice.type.private{{/i18n}}
+                </label>
+                <label class="radio-inline">
+                    <input type="radio" name="invoiceType" id="invoiceTypeBusiness" value="business" {{#paymentForm.businessCustomer}}checked=""{{/paymentForm.businessCustomer}}> {{#i18n}}invoice.type.business{{/i18n}}
+                </label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row invoice-business">
+    <div class="col-xs-12">
+        <div class="form-group {{#field-has-error}}[billingAddressCompany] has-error{{/field-has-error}}">
+            <label for="billingAddressCompany" class="control-label">{{#i18n}}reservation-page-complete.company{{/i18n}}</label>
+            <input id="billingAddressCompany" name="billingAddressCompany" class="form-control" type="text" value="{{paymentForm.billingAddressCompany}}" maxlength="255" placeholder="{{#i18n}}reservation-page.if-applicable{{/i18n}}">
+            {{#field-has-error}}[billingAddressCompany]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressCompany{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
+        </div>
+    </div>
+</div>
 <div class="row">
     <div class="col-xs-12">
         <div class="form-group {{#field-has-error}}[billingAddressLine1] has-error{{/field-has-error}}">
@@ -56,7 +87,7 @@
         </div>
     </div>
     {{#customerReferenceEnabled}}
-        <div class="col-xs-12 col-md-6">
+        <div class="col-xs-12 col-md-6 invoice-business">
             <div class="form-group {{#field-has-error}}[customerReference] has-error{{/field-has-error}}">
                 <label for="customerReference" class="control-label">{{#i18n}}common.customer-reference{{/i18n}}</label>
                 <input type="text" name="customerReference" id="customerReference" class="form-control" maxlength="255" value="{{paymentForm.customerReference}}">
@@ -65,7 +96,7 @@
         </div>
     {{/customerReferenceEnabled}}
 </div>
-<div class="row">
+<div class="row invoice-business">
     <div id="vat-number-container">
         <div class="col-md-6">
             <div class="form-group {{#field-has-error}}[vatNr] has-error{{/field-has-error}}">

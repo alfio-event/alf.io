@@ -23,5 +23,45 @@ import lombok.Getter;
 @AllArgsConstructor
 public class TicketReservationInvoicingAdditionalInfo {
 
-    private final BillingDetails.ItalianEInvoicing italianEInvoicing;
+    private final ItalianEInvoicing italianEInvoicing;
+
+    public boolean isEmpty() {
+        return italianEInvoicing == null;
+    }
+
+    public boolean getEmpty() {
+        return isEmpty();
+    }
+
+    //
+    // https://github.com/alfio-event/alf.io/issues/573
+    //
+    @Getter
+    @AllArgsConstructor
+    public static class ItalianEInvoicing {
+
+        public enum ReferenceType {
+            ADDRESSEE_CODE, /* Codice destinatario */
+            PEC, /* (pec = email) */
+            NONE
+        }
+
+        private final String fiscalCode;
+        private final ReferenceType referenceType;
+        private final String addresseeCode;
+        private final String pec;
+
+        public String getReferenceTypeAsString() {
+            return referenceType == null ? "" : referenceType.toString();
+        }
+
+        public String getReference() {
+            if(referenceType == ReferenceType.ADDRESSEE_CODE) {
+                return addresseeCode;
+            } else if(referenceType == ReferenceType.PEC) {
+                return pec;
+            }
+            return null;
+        }
+    }
 }

@@ -30,6 +30,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -151,7 +152,8 @@ public class ReservationController {
                         .addAttribute("attendeeAutocompleteEnabled", ticketsInReservation.size() == 1 && configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ATTENDEE_AUTOCOMPLETE), true))
                         .addAttribute("billingAddressLabel", invoiceAllowed ? "reservation-page.billing-address" : "reservation-page.receipt-address")
                         .addAttribute("customerReferenceEnabled", configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_CUSTOMER_REFERENCE), false))
-                        .addAttribute("enabledItalyEInvoicing", configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ITALY_E_INVOICING), false));
+                        .addAttribute("enabledItalyEInvoicing", configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ITALY_E_INVOICING), false))
+                        .addAttribute("businessSelected", contactAndTicketsForm.getBillingAddressCompany());
 
                     Map<String, Object> modelMap = model.asMap();
                     modelMap.putIfAbsent("paymentForm", contactAndTicketsForm);
@@ -275,12 +277,7 @@ public class ReservationController {
 
                 if(italyEInvoicing) {
                     ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId,
-                        new TicketReservationInvoicingAdditionalInfo(
-                            new BillingDetails.ItalianEInvoicing(contactAndTicketsForm.getItalyEInvoicingFiscalCode(),
-                                contactAndTicketsForm.getItalyEInvoicingReferenceType(),
-                                contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
-                                contactAndTicketsForm.getItalyEInvoicingReferencePEC())
-                        )
+                        new TicketReservationInvoicingAdditionalInfo(getItalianInvoicingInfo(contactAndTicketsForm))
                     );
                 }
 
@@ -305,6 +302,16 @@ public class ReservationController {
                 return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/overview";
             });
 
+    }
+
+    private ItalianEInvoicing getItalianInvoicingInfo(ContactAndTicketsForm contactAndTicketsForm) {
+        if("IT".equalsIgnoreCase(contactAndTicketsForm.getVatCountryCode())) {
+            return new ItalianEInvoicing(contactAndTicketsForm.getItalyEInvoicingFiscalCode(),
+                contactAndTicketsForm.getItalyEInvoicingReferenceType(),
+                contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
+                contactAndTicketsForm.getItalyEInvoicingReferencePEC());
+        }
+        return null;
     }
 
     private void checkAndApplyVATRules(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Event event) {

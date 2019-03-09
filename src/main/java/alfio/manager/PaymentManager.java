@@ -136,7 +136,8 @@ public class PaymentManager {
     }
 
     private TransactionAndPaymentInfo internalGetInfo(TicketReservation reservation, Event event, Transaction transaction) {
-        return lookupProviderByMethod(reservation.getPaymentMethod().getPaymentMethod(), new PaymentContext(event))
+        return Optional.ofNullable(reservation.getPaymentMethod())
+            .flatMap(pm -> lookupProviderByMethod(pm.getPaymentMethod(), new PaymentContext(event)))
             .filter(PaymentInfo.class::isInstance)
             .map(provider -> {
                 Optional<PaymentInformation> info = ((PaymentInfo) provider).getInfo(transaction, event);

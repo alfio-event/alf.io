@@ -51,19 +51,6 @@
         <h2>{{#i18n}}reservation-page.your-details{{/i18n}}</h2>
     </div>
 
-    {{#onlyInvoice}}
-    <div class="row">
-        <div class="col-xs-12">
-            <div class="form-group {{#field-has-error}}[billingAddressCompany] has-error{{/field-has-error}}">
-                <label for="billingAddressCompany" class="control-label">{{#i18n}}reservation-page-complete.company{{/i18n}}</label>
-                <input id="billingAddressCompany" name="billingAddressCompany" class="form-control" type="text" value="{{paymentForm.billingAddressCompany}}" maxlength="255" placeholder="{{#i18n}}reservation-page.if-applicable{{/i18n}}">
-                {{#field-has-error}}[billingAddressCompany]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressCompany{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
-            </div>
-        </div>
-    </div>
-    {{/onlyInvoice}}
-
-
     {{#useFirstAndLastName}}
     <div class="row">
         <div class="col-xs-12 col-sm-6">
@@ -107,30 +94,18 @@
     {{/onlyInvoice}}
     {{^orderSummary.free}}
     {{#invoiceIsAllowed}}
-    {{^onlyInvoice}}
-    <div class="checkbox wMarginTop">
-        <label>
-            <input type="checkbox" name="invoiceRequested" id="invoice-requested" value="true" {{#paymentForm.invoiceRequested}}checked{{/paymentForm.invoiceRequested}}>
-                {{#i18n}}reservation-page.i-need-an-invoice{{/i18n}}
-        </label>
-    </div>
+        {{^onlyInvoice}}
+        <div class="checkbox wMarginTop">
+            <label>
+                <input type="checkbox" name="invoiceRequested" id="invoice-requested" value="true" {{#paymentForm.invoiceRequested}}checked{{/paymentForm.invoiceRequested}}>
+                    {{#i18n}}reservation-page.i-need-an-invoice{{/i18n}}
+            </label>
+        </div>
 
-    <div class="hidden-xs hidden-sm hidden-md hidden-lg invoice-details-section">
-        <div class="page-header">
-            <h2>{{#i18n}}reservation-page.invoice-details{{/i18n}}</h2>
+        <div class="hidden-xs hidden-sm hidden-md hidden-lg invoice-details-section">
+            {{ > /event/invoice-fields }}
         </div>
-        <div class="row">
-            <div class="col-xs-12">
-                <div class="form-group {{#field-has-error}}[billingAddressCompany] has-error{{/field-has-error}}">
-                    <label for="billingAddressCompany" class="control-label">{{#i18n}}reservation-page-complete.company{{/i18n}}</label>
-                    <input id="billingAddressCompany" name="billingAddressCompany" class="form-control" type="text" value="{{paymentForm.billingAddressCompany}}" maxlength="255" placeholder="{{#i18n}}reservation-page.if-applicable{{/i18n}}">
-                    {{#field-has-error}}[billingAddressCompany]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressCompany{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
-                </div>
-            </div>
-        </div>
-        {{ > /event/invoice-fields }}
-    </div>
-    {{/onlyInvoice}}
+        {{/onlyInvoice}}
     {{/invoiceIsAllowed}}
     {{/orderSummary.free}}
 

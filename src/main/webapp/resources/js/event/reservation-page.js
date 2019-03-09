@@ -178,8 +178,23 @@
             }
         }
 
+        function updateInvoiceFields(radio) {
+            if(radio.length > 0) {
+                var elements = $('.invoice-business');
+                if(radio.val() === 'business') {
+                    elements.removeClass('hide');
+                    elements.find('input').val('');
+                } else {
+                    elements.addClass('hide');
+                }
+            }
+        }
 
+        $('input[name=invoiceType]').change(function() {
+            updateInvoiceFields($(this));
+        });
 
+        updateInvoiceFields($('input[name=invoiceType]:checked'));
 
         $("select").map(function() {
             var value = $(this).attr('value');

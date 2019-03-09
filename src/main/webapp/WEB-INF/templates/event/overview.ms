@@ -50,7 +50,7 @@
     <h2>{{#i18n}}reservation-page.title{{/i18n}}</h2>
 </div>
 
-<div class="row">
+<div class="row wMarginBottom">
     <div class="col-md-7 col-xs-12">
         <table class="table">
             <thead>
@@ -101,8 +101,12 @@
             <div class="page-header hidden-md hidden-lg visible-xs">
                 <h2>{{#i18n}}reservation-page.invoice-details{{/i18n}}</h2>
             </div>
-            <div class="preformatted wMarginBottom">{{reservation.billingAddress}}
-{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}} {{billingDetails.taxId}}</div>
+            <div class="preformatted">{{reservation.billingAddress}}{{#billingDetails.hasTaxId}}
+{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}} {{billingDetails.taxId}}{{/billingDetails.hasTaxId}}</div>
+            {{^billingDetails.invoicingAdditionalInfo.empty}}
+            <div>{{billingDetails.invoicingAdditionalInfo.italianEInvoicing.fiscalCode}}</div>
+            <div>{{billingDetails.invoicingAdditionalInfo.italianEInvoicing.reference}}</div>
+            {{/billingDetails.invoicingAdditionalInfo.empty}}
         </div>
     </div>
 {{/displayInvoiceData}}
