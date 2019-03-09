@@ -183,8 +183,9 @@
                 var elements = $('.invoice-business');
                 if(radio.val() === 'business') {
                     elements.removeClass('hide');
-                    elements.find('input').val('');
+                    elements.find('#vatNr').attr('required', true);
                 } else {
+                    elements.find('input').val('').removeAttr('required');
                     elements.addClass('hide');
                 }
             }
@@ -253,20 +254,11 @@
             }
         });
 
-        function canSkipVatNr() {
-            return $("#skip-vat-nr:checked").length === 1;
-        }
-
         $("#skip-vat-nr").change(function() {
-            $("#billingAddressCompany").change();
-        });
-
-        $("#billingAddressCompany").change(function() {
-            var companyName = $(this).val();
-            if(companyName && companyName.trim().length > 0 && !canSkipVatNr()) {
-                $("#vatNr").attr('required', true);
-            } else {
+            if($(this).is(':checked')) {
                 $("#vatNr").removeAttr('required');
+            } else {
+                $("#vatNr").attr('required', true);
             }
         });
 
