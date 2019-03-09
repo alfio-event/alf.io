@@ -65,6 +65,9 @@ public interface EventRepository {
     @Query("select * from event where short_name = :eventName")
     Optional<Event> findOptionalByShortName(@Bind("eventName") String eventName);
 
+    @Query("select private_key from event where id = :eventId")
+    String getPrivateKey(@Bind("eventId") int eventId);
+
     @Query("select id, org_id from event where short_name = :eventName")
     Optional<EventAndOrganizationId> findOptionalEventAndOrganizationIdByShortName(@Bind("eventName") String eventName);
 

@@ -18,14 +18,13 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.EventDescription;
 import alfio.model.Ticket;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
-import alfio.repository.EventDescriptionRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketCategoryRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
@@ -33,39 +32,37 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ryantenney.passkit4j.Pass;
 import com.ryantenney.passkit4j.PassResource;
 import com.ryantenney.passkit4j.PassSerializer;
-import com.ryantenney.passkit4j.model.Color;
-import com.ryantenney.passkit4j.model.TextField;
 import com.ryantenney.passkit4j.model.*;
 import com.ryantenney.passkit4j.sign.PassSigner;
 import com.ryantenney.passkit4j.sign.PassSignerImpl;
 import com.ryantenney.passkit4j.sign.PassSigningException;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.imgscalr.Scalr;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.List;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @AllArgsConstructor
 @Log4j2
-class PassBookManager {
+public class PassKitManager {
 
-    private final Cache<String, Optional<byte[]>> passbookLogoCache = Caffeine.newBuilder()
+    private static final String APPLE_PASS = "ApplePass";
+    private final Cache<String, Optional<byte[]>> passKitLogoCache = Caffeine.newBuilder()
         .maximumSize(20)
         .expireAfterWrite(20, TimeUnit.MINUTES)
         .build();
@@ -75,55 +72,80 @@ class PassBookManager {
     private final FileUploadManager fileUploadManager;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final TicketRepository ticketRepository;
+    private final TicketReservationRepository ticketReservationRepository;
 
 
-    byte[] getPassBook(Map<String, String> model) {
+    public boolean writePass(Ticket ticket, EventAndOrganizationId event, OutputStream out) throws IOException, PassSigningException {
+        Organization organization = organizationRepository.getById(event.getOrganizationId());
+        Map<ConfigurationKeys, String> passConf = getConfigurationKeys(event);
+        if(!passConf.isEmpty()) {
+            buildPass(ticket, eventRepository.findById(event.getId()), organization, passConf, out);
+            return true;
+        } else {
+            log.trace("Cannot generate Pass. Missing configuration keys, check if all 5 are presents");
+            return false;
+        }
+    }
+
+    byte[] getPass(Map<String, String> model) {
         try {
             Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
             int eventId = ticket.getEventId();
             Event event = eventRepository.findById(eventId);
             Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
 
-            Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event);
-            Map<ConfigurationKeys, Optional<String>> pbookConf = configurationManager.getStringConfigValueFrom(
-                partial.apply(PASSBOOK_TYPE_IDENTIFIER),
-                partial.apply(PASSBOOK_KEYSTORE),
-                partial.apply(PASSBOOK_KEYSTORE_PASSWORD),
-                partial.apply(PASSBOOK_TEAM_IDENTIFIER),
-                partial.apply(PASSBOOK_PRIVATE_KEY_ALIAS));
+            Map<ConfigurationKeys, String> passConf = getConfigurationKeys(event);
             //check if all are set
-            if(pbookConf.values().stream().anyMatch(Optional::isEmpty)) {
+            if(passConf.isEmpty()) {
                 log.trace("Cannot generate Passbook. Missing configuration keys, check if all 5 are presents");
                 return null;
             }
 
-            //
-            String teamIdentifier = pbookConf.get(PASSBOOK_TEAM_IDENTIFIER).orElseThrow();
-            String typeIdentifier = pbookConf.get(PASSBOOK_TYPE_IDENTIFIER).orElseThrow();
-            byte[] keystoreRaw = Base64.getDecoder().decode(pbookConf.get(PASSBOOK_KEYSTORE).orElseThrow());
-            String keystorePwd = pbookConf.get(PASSBOOK_KEYSTORE_PASSWORD).orElseThrow();
-            String privateKeyAlias = pbookConf.get(PASSBOOK_PRIVATE_KEY_ALIAS).orElseThrow();
-
-            return buildPass(ticket, event, organization, teamIdentifier, typeIdentifier, keystorePwd, privateKeyAlias, new ByteArrayInputStream(keystoreRaw));
+            try (ByteArrayOutputStream out = new ByteArrayOutputStream()){
+                buildPass(ticket, event, organization, passConf, out);
+                return out.toByteArray();
+            }
         } catch (Exception ex) {
             log.warn("Got Exception while generating Passbook. Please check configuration.", ex);
             return null;
         }
     }
 
-    private byte[] buildPass(Ticket ticket,
-                             Event event,
-                             Organization organization,
-                             String teamIdentifier,
-                             String typeIdentifier,
-                             String keystorePwd,
-                             String privateKeyAlias,
-                             InputStream keyStore) throws IOException, PassSigningException {
+    private Map<ConfigurationKeys, String> getConfigurationKeys(EventAndOrganizationId event) {
+        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event);
+        var configValues = configurationManager.getStringConfigValueFrom(
+                partial.apply(PASSBOOK_TYPE_IDENTIFIER),
+                partial.apply(PASSBOOK_KEYSTORE),
+                partial.apply(PASSBOOK_KEYSTORE_PASSWORD),
+                partial.apply(PASSBOOK_TEAM_IDENTIFIER),
+                partial.apply(PASSBOOK_PRIVATE_KEY_ALIAS)
+            );
+        if(configValues.values().stream().anyMatch(Optional::isEmpty)) {
+            return Map.of();
+        }
+
+        return configValues
+            .entrySet()
+            .stream()
+            .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().orElseThrow()));
+    }
+
+    private void buildPass(Ticket ticket,
+                           Event event,
+                           Organization organization,
+                           Map<ConfigurationKeys, String> config,
+                           OutputStream out) throws IOException, PassSigningException {
 
         // from example: https://github.com/ryantenney/passkit4j/blob/master/src/test/java/com/ryantenney/passkit4j/EventTicketExample.java
         // specification: https://developer.apple.com/library/archive/documentation/UserExperience/Conceptual/PassKit_PG/Creating.html#//apple_ref/doc/uid/TP40012195-CH4-SW6
 
         var ticketLocale = Locale.forLanguageTag(ticket.getUserLanguage());
+        String teamIdentifier = config.get(PASSBOOK_TEAM_IDENTIFIER);
+        String typeIdentifier = config.get(PASSBOOK_TYPE_IDENTIFIER);
+        byte[] keystoreRaw = Base64.getDecoder().decode(config.get(PASSBOOK_KEYSTORE));
+        String keystorePwd = config.get(PASSBOOK_KEYSTORE_PASSWORD);
+        String privateKeyAlias = config.get(PASSBOOK_PRIVATE_KEY_ALIAS);
 
         Location loc = new Location(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude())).altitude(0D);
         String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, ticket.getUserLanguage()).orElse("");
@@ -134,6 +156,8 @@ class PassBookManager {
             .groupingIdentifier(organization.getEmail())
             .description(event.getDisplayName())
             .serialNumber(ticket.getUuid())
+            .authenticationToken(buildAuthenticationToken(ticket, event, event.getPrivateKey()))
+            .webServiceURL(StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(BASE_URL)), "/") + "/api/pass/event/" + event.getShortName() +"/")
             .relevantDate(Date.from(event.getBegin().toInstant()))
             .expirationDate(Date.from(event.getEnd().toInstant()))
             .locations(loc)
@@ -169,7 +193,7 @@ class PassBookManager {
 
         fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(metadata -> {
             if(metadata.getContentType().equals("image/png") || metadata.getContentType().equals("image/jpeg")) {
-                Optional<byte[]> cachedLogo = passbookLogoCache.get(event.getFileBlobId(), (id) -> {
+                Optional<byte[]> cachedLogo = passKitLogoCache.get(event.getFileBlobId(), (id) -> {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     fileUploadManager.outputFile(event.getFileBlobId(), baos);
                     return readAndConvertImage(baos);
@@ -181,17 +205,49 @@ class PassBookManager {
         });
 
         pass.files(passResources.toArray(new PassResource[0]));
-
-        try(ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            InputStream appleCert = new ClassPathResource("/alfio/certificates/AppleWWDRCA.cer").getInputStream()) {
+        try(InputStream appleCert = new ClassPathResource("/alfio/certificates/AppleWWDRCA.cer").getInputStream()) {
             PassSigner signer = PassSignerImpl.builder()
-                .keystore(keyStore, keystorePwd)
+                .keystore(new ByteArrayInputStream(keystoreRaw), keystorePwd)
                 .alias(privateKeyAlias)
                 .intermediateCertificate(appleCert)
                 .build();
-            PassSerializer.writePkPassArchive(pass, signer, baos);
-            return baos.toByteArray();
+            PassSerializer.writePkPassArchive(pass, signer, out);
         }
+    }
+
+    private String buildAuthenticationToken(Ticket ticket, EventAndOrganizationId event, String privateKey) {
+        var code = event.getId() + "/" + ticket.getTicketsReservationId() + "/" + ticket.getUuid();
+        return Ticket.hmacSHA256Base64(privateKey, code);
+    }
+
+    public Optional<Pair<EventAndOrganizationId, Ticket>> validateToken(String eventName, String typeIdentifier, String ticketUuid, String authorizationHeader) {
+        String token;
+        if(authorizationHeader.startsWith(APPLE_PASS)) {
+            // From the specs:
+            // The Authorization header is supplied; its value is the word ApplePass, followed by a space,
+            // followed by the pass’s authorization token as specified in the pass.
+            token = authorizationHeader.substring(APPLE_PASS.length() + 1);
+        } else {
+            log.trace("Authorization Header does not start with ApplePass");
+            return Optional.empty();
+        }
+
+        var eventOptional = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName);
+        if(eventOptional.isEmpty()) {
+            log.trace("event {} not found", eventName);
+            return Optional.empty();
+        }
+
+        var event = eventOptional.get();
+        var typeIdentifierOptional = configurationManager.getStringConfigValue(Configuration.from(event, PASSBOOK_TYPE_IDENTIFIER));
+        if(typeIdentifierOptional.isEmpty() || !typeIdentifierOptional.get().equals(typeIdentifier)) {
+            log.trace("typeIdentifier does not match. Expected {}, got {}", typeIdentifierOptional.orElse("not-found"), typeIdentifier);
+            return Optional.empty();
+        }
+        return ticketRepository.findOptionalByUUID(ticketUuid)
+            .filter(t -> t.getEventId() == event.getId())
+            .filter(t -> buildAuthenticationToken(t, event, eventRepository.getPrivateKey(event.getId())).equals(token))
+            .map(t -> Pair.of(event, t));
     }
 
     private void addLogoResources(byte[] logo, List<PassResource> passResources) {

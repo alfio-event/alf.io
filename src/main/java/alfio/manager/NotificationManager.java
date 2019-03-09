@@ -93,7 +93,7 @@ public class NotificationManager {
                                TemplateManager templateManager,
                                TicketReservationRepository ticketReservationRepository,
                                TicketCategoryRepository ticketCategoryRepository,
-                               PassBookManager passBookManager,
+                               PassKitManager passKitManager,
                                TicketRepository ticketRepository,
                                TicketFieldRepository ticketFieldRepository,
                                AdditionalServiceItemRepository additionalServiceItemRepository,
@@ -117,7 +117,7 @@ public class NotificationManager {
             payload -> TemplateProcessor.buildInvoicePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.CREDIT_NOTE_PDF, receiptOrInvoiceFactory(eventRepository,
             payload -> TemplateProcessor.buildCreditNotePdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passBookManager::getPassBook);
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.PASSBOOK, passKitManager::getPass);
         Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
         attachmentTransformer.put(Mailer.AttachmentIdentifier.TICKET_PDF, generateTicketPDF(eventRepository, organizationRepository, configurationManager, fileUploadManager, templateManager, ticketReservationRepository, retrieveFieldValues, extensionManager));
     }
