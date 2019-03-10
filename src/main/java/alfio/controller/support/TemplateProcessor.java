@@ -121,13 +121,9 @@ public final class TemplateProcessor {
         builder.toStream(os);
         builder.useProtocolsStreamImplementation(new AlfioInternalFSStreamFactory(), "alfio-internal");
         builder.useProtocolsStreamImplementation(new InvalidProtocolFSStreamFactory(), "http", "https", "file", "jar");
-
+        builder.useFastMode();
 
         Document parsedDocument = Jsoup.parse(page);
-        //add <meta name="fast-renderer" content="true"> in the html document to enable  the fast renderer
-        if (!parsedDocument.select("meta[name=fast-renderer][content=true]").isEmpty()) {
-            builder.useFastMode();
-        }
 
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(parsedDocument), "");
         try (PdfBoxRenderer renderer = builder.buildPdfRenderer()) {

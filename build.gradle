@@ -120,9 +120,9 @@ dependencies {
     compile "javax.mail:mail:1.5.0-b01"
     compile 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC17"
-    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC17"
-    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC17"
+    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC18"
+    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC18"
+    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC18"
     /**/
     compile "com.google.zxing:core:3.3.3"
     compile "com.google.zxing:javase:3.3.3"
@@ -192,8 +192,6 @@ dependencies {
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
         exclude module : 'spring-boot-starter-logging'
     }
-
-    runtime "org.glassfish.jaxb:jaxb-runtime:2.4.0-b180830.0438" //temporary for JDK11
 }
 
 // -- license configuration
