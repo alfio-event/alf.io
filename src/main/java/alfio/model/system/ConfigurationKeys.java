@@ -169,6 +169,7 @@ public enum ConfigurationKeys {
     //
 
     //PASSBOOK
+    ENABLE_PASS("Enable Apple(tm) Wallet integration", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     PASSBOOK_TYPE_IDENTIFIER("Passbook type identifier", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     PASSBOOK_TEAM_IDENTIFIER("Passbook team identifier", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     PASSBOOK_KEYSTORE("Passbook keystore(base64 encoded keystore)", false, SettingCategory.GENERAL, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),

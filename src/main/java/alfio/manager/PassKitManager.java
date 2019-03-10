@@ -114,6 +114,9 @@ public class PassKitManager {
 
     private Map<ConfigurationKeys, String> getConfigurationKeys(EventAndOrganizationId event) {
         Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event);
+        if(!configurationManager.getBooleanConfigValue(partial.apply(ENABLE_PASS), false)) {
+            return Map.of();
+        }
         var configValues = configurationManager.getStringConfigValueFrom(
                 partial.apply(PASSBOOK_TYPE_IDENTIFIER),
                 partial.apply(PASSBOOK_KEYSTORE),
