@@ -102,33 +102,40 @@ public class RowLevelSecurity {
                 HttpServletRequest request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
                 DataSource dataSource = Objects.requireNonNull(jdbcTemplate.getJdbcTemplate().getDataSource());
                 Connection connection = DataSourceUtils.getConnection(dataSource);
-                String formattedOrgIds = "";
-                if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
-                    mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
-                    if (mustCheck) {
-                        jdbcTemplate.update("reset alfio.checkRowAccess", new EmptySqlParameterSource());
-                        jdbcTemplate.update("reset alfio.currentUserOrgs", new EmptySqlParameterSource());
-                        //System.err.println(request.getRequestURL()+" - "+joinPoint+" LOCAL VALUES ARE: alfio.checkRowAccess: " + jdbcTemplate.queryForObject("select current_setting('alfio.checkRowAccess', true)", new EmptySqlParameterSource(), String.class));
-                        //System.err.println(request.getRequestURL()+" - "+joinPoint+" LOCAL VALUES ARE: alfio.currentUserOrgs: " + jdbcTemplate.queryForObject("select current_setting('alfio.currentUserOrgs', true)", new EmptySqlParameterSource(), String.class));
-                        //System.err.println(request.getRequestURL()+" - "+joinPoint+" result from function call is:" + jdbcTemplate.queryForObject("select alfio_check_row_access(null)", new EmptySqlParameterSource(), Boolean.class));
-                        Set<Integer> orgIds = new TreeSet<>(organizationRepository.findAllOrganizationIdForUser(SecurityContextHolder.getContext().getAuthentication().getName()));
-                        //System.err.println(joinPoint+" org ids are " + orgIds);
-                        if (orgIds.isEmpty()) {
-                            log.warn("orgIds is empty, was not able to apply currentUserOrgs at join point: {}", joinPoint);
-                        } else {
-                            formattedOrgIds = orgIds.stream().map(s -> Integer.toString(s)).collect(Collectors.joining(","));
-                            jdbcTemplate.update("set local alfio.checkRowAccess = true", new EmptySqlParameterSource());
-                            //cannot use bind variable when calling set local, it's ugly :(
-                            jdbcTemplate.update("set local alfio.currentUserOrgs = '" + formattedOrgIds + "'", new EmptySqlParameterSource());
+
+                try {
+                    String formattedOrgIds = "";
+                    if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
+                        mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
+                        if (mustCheck) {
+                            jdbcTemplate.update("reset alfio.checkRowAccess", new EmptySqlParameterSource());
+                            jdbcTemplate.update("reset alfio.currentUserOrgs", new EmptySqlParameterSource());
+                            //System.err.println(request.getRequestURL()+" - "+joinPoint+" LOCAL VALUES ARE: alfio.checkRowAccess: " + jdbcTemplate.queryForObject("select current_setting('alfio.checkRowAccess', true)", new EmptySqlParameterSource(), String.class));
+                            //System.err.println(request.getRequestURL()+" - "+joinPoint+" LOCAL VALUES ARE: alfio.currentUserOrgs: " + jdbcTemplate.queryForObject("select current_setting('alfio.currentUserOrgs', true)", new EmptySqlParameterSource(), String.class));
+                            //System.err.println(request.getRequestURL()+" - "+joinPoint+" result from function call is:" + jdbcTemplate.queryForObject("select alfio_check_row_access(null)", new EmptySqlParameterSource(), Boolean.class));
+                            Set<Integer> orgIds = new TreeSet<>(organizationRepository.findAllOrganizationIdForUser(SecurityContextHolder.getContext().getAuthentication().getName()));
+                            //System.err.println(joinPoint+" org ids are " + orgIds);
+                            if (orgIds.isEmpty()) {
+                                log.warn("orgIds is empty, was not able to apply currentUserOrgs at join point: {}", joinPoint);
+                            } else {
+                                formattedOrgIds = orgIds.stream().map(s -> Integer.toString(s)).collect(Collectors.joining(","));
+                                jdbcTemplate.update("set local alfio.checkRowAccess = true", new EmptySqlParameterSource());
+                                //cannot use bind variable when calling set local, it's ugly :(
+                                jdbcTemplate.update("set local alfio.currentUserOrgs = '" + formattedOrgIds + "'", new EmptySqlParameterSource());
+                            }
                         }
+                        // note, the policy will check if the variable alfio.checkRowAccess is present before doing anything
+
+                        //
                     }
-                    // note, the policy will check if the variable alfio.checkRowAccess is present before doing anything
 
-                    //
-                }
-
-                if (log.isTraceEnabled()) {
-                    logEntry(connection, dataSource, joinPoint, request, mustCheck, formattedOrgIds);
+                    if (log.isTraceEnabled()) {
+                        logEntry(connection, dataSource, joinPoint, request, mustCheck, formattedOrgIds);
+                    }
+                } finally {
+                    if (connection != null) {
+                        DataSourceUtils.releaseConnection(connection, dataSource);
+                    }
                 }
             }
             return joinPoint.proceed();
