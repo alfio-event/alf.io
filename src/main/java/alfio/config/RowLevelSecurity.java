@@ -96,18 +96,19 @@ public class RowLevelSecurity {
             " @annotation(org.springframework.transaction.annotation.Transactional))")
         public Object setRoleAndVariable(ProceedingJoinPoint joinPoint) throws Throwable {
 
-            boolean mustCheck = false;
+            boolean mustCheck;
 
             if (isInAHttpRequest()) {
                 HttpServletRequest request = Objects.requireNonNull((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
                 DataSource dataSource = Objects.requireNonNull(jdbcTemplate.getJdbcTemplate().getDataSource());
-                Connection connection = DataSourceUtils.getConnection(dataSource);
+                Connection connection = null;
 
                 try {
                     String formattedOrgIds = "";
-                    if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
-                        mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
-                        if (mustCheck) {
+                    mustCheck = !isCurrentlyInAPublicUrlRequest() && isLoggedUser() && !isAdmin();
+                    if (mustCheck) {
+                        connection = DataSourceUtils.getConnection(dataSource);
+                        if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
                             jdbcTemplate.update("reset alfio.checkRowAccess", new EmptySqlParameterSource());
                             jdbcTemplate.update("reset alfio.currentUserOrgs", new EmptySqlParameterSource());
                             //System.err.println(request.getRequestURL()+" - "+joinPoint+" LOCAL VALUES ARE: alfio.checkRowAccess: " + jdbcTemplate.queryForObject("select current_setting('alfio.checkRowAccess', true)", new EmptySqlParameterSource(), String.class));
@@ -125,12 +126,9 @@ public class RowLevelSecurity {
                             }
                         }
                         // note, the policy will check if the variable alfio.checkRowAccess is present before doing anything
-
-                        //
-                    }
-
-                    if (log.isTraceEnabled()) {
-                        logEntry(connection, dataSource, joinPoint, request, mustCheck, formattedOrgIds);
+                        if (log.isTraceEnabled()) {
+                            logEntry(connection, dataSource, joinPoint, request, mustCheck, formattedOrgIds);
+                        }
                     }
                 } finally {
                     if (connection != null) {
@@ -153,7 +151,7 @@ public class RowLevelSecurity {
             StringBuilder sb = new StringBuilder();
 
 
-            if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
+            if (connection != null && DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
                 sb.append("-----------\n");
                 sb.append("connection is transactional\n");
                 sb.append("URL IS ").append(request.getRequestURI()).append("\n");
