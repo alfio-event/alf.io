@@ -50,8 +50,8 @@
     <h2>{{#i18n}}reservation-page.title{{/i18n}}</h2>
 </div>
 
-<div class="row wMarginBottom">
-    <div class="col-md-7 col-xs-12">
+<div class="row wMarginBottom30px">
+    <div class="col-xs-12 {{#displayInvoiceData}}col-md-7{{/displayInvoiceData}}">
         <table class="table">
             <thead>
             <tr>
