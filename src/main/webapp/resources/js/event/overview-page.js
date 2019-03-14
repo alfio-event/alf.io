@@ -1,72 +1,16 @@
 (function() {
 
     'use strict';
+    var paymentHandlers = [];
 
-    function stripeResponseHandler(status, response) {
-        var $form = $('#payment-form');
-
-
-        //https://stripe.com/docs/api#errors codes from stripes
-
-        /*
-         * incorrect_number         The card number is incorrect.
-         * invalid_number           The card number is not a valid credit card number.
-         * invalid_expiry_month     The card's expiration month is invalid.
-         * invalid_expiry_year      The card's expiration year is invalid.
-         * invalid_cvc              The card's security code is invalid.
-         * expired_card             The card has expired.
-         * incorrect_cvc            The card's security code is incorrect.
-         * incorrect_zip            The card's zip code failed validation.
-         * card_declined            The card was declined.
-         * missing                  There is no card on a customer that is being charged.
-         * processing_error         An error occurred while processing the card.
-         * rate_limit               An error occurred due to requests hitting the API too quickly.
-         *
-         */
-
-        var errorCodeToSelectorMap = {
-            incorrect_number : '[data-stripe=number]',
-            invalid_number: '[data-stripe=number]',
-            invalid_expiry_month : '[data-stripe=exp-month]',
-            invalid_expiry_year : '[data-stripe=exp-year]',
-            invalid_cvc : '[data-stripe=cvc]',
-            expired_card : '[data-stripe]',
-            incorrect_cvc : '[data-stripe=cvc]',
-            card_declined : '[data-stripe]',
-            missing : '[data-stripe]',
-            processing_error : '[data-stripe]',
-            rate_limit : '[data-stripe]'
-        };
-
-        if (response.error) {
-            $(".payment-errors").removeClass('hide').empty();
-            $("[data-stripe]").parent().removeClass('has-error');
-
-
-            var attrValue = document.getElementById("stripe-key").getAttribute('data-stripe-message-'+response.error.code);
-
-            $form.find('.payment-errors').append("<p><strong>"+(attrValue || response.error.message)+"</strong></p>");
-            $form.find('button').prop('disabled', false);
-            $form.find(errorCodeToSelectorMap[response.error.code]).parent().addClass('has-error');
-
-        } else {
-            $(".payment-errors").addClass('hide');
-            // token contains id, last4, and card type
-            var token = response.id;
-            // Insert the token into the form so it gets submitted to the server
-            $form.append($('<input type="hidden" name="stripeToken" />').val(token));
-            // and re-submit
-            $form.get(0).submit();
+    window.alfio = {
+        registerPaymentHandler: function(handler) {
+            if(handler.active()) {
+                handler.init();
+                paymentHandlers.push(handler);
+            }
         }
-    }
-
-    var hasStripe = document.getElementById("stripe-key") != null;
-
-    if(hasStripe) {
-        // This identifies your website in the createToken call below
-        Stripe.setPublishableKey(document.getElementById("stripe-key").getAttribute('data-stripe-key'));
-    }
-
+    };
 
     jQuery(function() {
         //validity
@@ -99,49 +43,14 @@
 
         displayMessage();
 
-        function submitForm(e) {
-            var $form = $(this);
-
-            if(!this.checkValidity()) {
-                return false;
-            }
-
-            //var vatCountry = $('#vatCountry');
-            // if(vatCountry.length && vatCountry.val() !== '') {
-            //     var vatNr = $('#vatNr');
-            //     markFieldAsError(vatNr);
-            //     $('#validation-result-container').removeClass(hiddenClasses);
-            //     var validationResult = $('#validation-result');
-            //     validationResult.html(validationResult.attr('data-validation-required-msg'));
-            //     vatNr.focus();
-            //     return false;
-            // }
-
-            // Disable the submit button to prevent repeated clicks
-            $form.find('button').prop('disabled', true);
-
-            var selectedPaymentMethod = $form.find('input[name=paymentMethod]');
-            if(hasStripe && (selectedPaymentMethod.length === 0 ||
-                (selectedPaymentMethod.length === 1 && selectedPaymentMethod.val() === 'STRIPE') ||
-                selectedPaymentMethod.filter(':checked').val() === 'STRIPE')) {
-                Stripe.card.createToken($form, stripeResponseHandler);
-                // Prevent the form from submitting with the default action
-                return false;
-            }
-            return true;
-        }
-        $('#payment-form').submit(submitForm);
-
-
         $("#cancel-reservation").click(function(e) {
             var $form = $('#payment-form');
-            $("input[type=submit], button:not([type=button])", $form ).unbind('click');
+            $("input[type=submit]", $form ).unbind('click');
             $form.unbind('submit');
             $("input", $form).unbind('keypress');
 
             $form
                 .attr('novalidate', 'novalidate')
-                .unbind('submit', submitForm)
                 .find('button').prop('disabled', true);
             $form.trigger("reset");
             $form.append($('<input type="hidden" name="backFromOverview" />').val(true))
@@ -151,12 +60,15 @@
 
         function markFieldAsError(node) {
             $(node).parent().addClass('has-error');
-            if($(node).parent().parent().parent().hasClass('form-group')) {
-                $(node).parent().parent().parent().addClass('has-error');
+            var parent = $(node).parent().parent();
+            if(parent.hasClass('checkbox') || parent.hasClass('radio')) {
+                parent.addClass('has-error');
+            } else if(parent.parent().hasClass('form-group')) {
+                parent.parent().addClass('has-error');
             }
         }
         // based on http://tjvantoll.com/2012/08/05/html5-form-validation-showing-all-error-messages/
-                // http://stackoverflow.com/questions/13798313/set-custom-html5-required-field-validation-message
+        // http://stackoverflow.com/questions/13798313/set-custom-html5-required-field-validation-message
         var createAllErrors = function() {
             var form = $(this);
 
@@ -166,6 +78,10 @@
                 var invalidFields = form.find("input,select,textarea").filter(function(i,v) {return !v.validity.valid;}).each( function( index, node ) {
                     markFieldAsError(node);
                 });
+
+                if(invalidFields.length > 0) {
+                    form.get(0).reportValidity();
+                }
             };
 
             // Support Safari
@@ -176,7 +92,7 @@
                 }
             });
 
-            $("input[type=submit], button:not([type=button])", form ).on("click", showAllErrorMessages);
+            $("#continue-button", form).on("click", showAllErrorMessages);
 
             $("input", form).on("keypress", function(event) {
                 var type = $(this).attr("type");
@@ -228,20 +144,6 @@
                 var method = $(this).attr('data-payment-method');
                 $('.payment-method-detail').hide();
                 $('#payment-method-'+method).show();
-                if(method === 'STRIPE') {
-                    var inputFields = $('#payment-method-STRIPE').find('input');
-                    inputFields.attr('required', true);
-                    var fullName = $.trim($.trim($('#first-name').val()) + ' ' + $.trim($('#last-name').val()));
-                    if(fullName === '') {
-                        fullName = $.trim($('#full-name').val());
-                    }
-                    $('#card-name').val(fullName);
-                    inputFields.first().focus();
-
-                } else {
-                    $('#payment-method-STRIPE').find('input').val('').removeAttr('required');
-                    methodSelected(method);
-                }
             });
         }
 
@@ -257,7 +159,55 @@
             }
         };
 
-
+        var btn = $('#continue-button');
+        var registerUnloadHook = function() {
+            console.log("warn on page reload: on");
+            // source: https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload
+            window.onbeforeunload = function (e) {
+                // Cancel the event
+                e.preventDefault();
+                // Chrome requires returnValue to be set
+                e.returnValue = '';
+            };
+        };
+        var unregisterHook = function() {
+            console.log("warn on page reload: off");
+            window.onbeforeunload = null;
+        };
+        btn.on('click', function(e) {
+            var $form = $('#payment-form');
+            if($form.length === 0 || !$form.get(0).checkValidity()) {
+                return false;
+            }
+            var selectedPaymentMethod = $form.find('input[name=paymentMethod]');
+            if(selectedPaymentMethod.length > 1) {
+                selectedPaymentMethod = selectedPaymentMethod.filter(":checked");
+            }
+            var filteredHandlers = paymentHandlers.filter(function(ph) {return ph.id === selectedPaymentMethod.val() && ph.active(); });
+            var paymentHandler = filteredHandlers ? filteredHandlers[0] : null;
+            if(paymentHandler && paymentHandler.valid()) {
+                registerUnloadHook();
+                var chargeFailedAlert = $('#charge-failed-alert');
+                $('#confirm-buttons').addClass('hidden');
+                $('#wait-message').removeClass('hidden');
+                chargeFailedAlert.addClass('hide');
+                paymentHandler.pay(function(res) {
+                    unregisterHook();
+                    if(res) {
+                        $form.submit();
+                    }
+                }, function(errorMessage) {
+                    unregisterHook();
+                    $('#confirm-buttons').removeClass('hidden');
+                    $('#wait-message').addClass('hidden');
+                    if(errorMessage && errorMessage.trim() !== '') {
+                        chargeFailedAlert.removeClass('hide');
+                        chargeFailedAlert.find('#charge-failed-msg').text(errorMessage);
+                    }
+                });
+            }
+            e.preventDefault();
+        })
 
     });
 

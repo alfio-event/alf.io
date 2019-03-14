@@ -16,170 +16,97 @@
  */
 package alfio.manager;
 
-import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.Transaction;
+import alfio.model.transaction.*;
+import alfio.model.transaction.capabilities.ClientServerTokenRequest;
+import alfio.model.transaction.capabilities.PaymentInfo;
+import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.AuditingRepository;
-import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.user.UserRepository;
-import alfio.util.ErrorsCode;
-import com.paypal.base.rest.PayPalRESTException;
-import com.stripe.exception.StripeException;
-import com.stripe.model.Charge;
-import com.stripe.model.Fee;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
-import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 @Log4j2
 @AllArgsConstructor
 public class PaymentManager {
 
-    private final StripeManager stripeManager;
-    private final PaypalManager paypalManager;
-    private final MollieManager mollieManager;
+    public static final String PAYMENT_TOKEN = "PAYMENT_TOKEN";
+
     private final TransactionRepository transactionRepository;
     private final ConfigurationManager configurationManager;
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
-    private final TicketRepository ticketRepository;
 
-    /**
-     * This method processes the pending payment using the configured payment gateway (at the time of writing, only STRIPE)
-     * and returns a PaymentResult.
-     * In order to preserve the consistency of the payment, when a non-gateway Exception is thrown, it rethrows an IllegalStateException
-     *
-     * @param reservationId
-     * @param gatewayToken
-     * @param price
-     * @param event
-     * @param email
-     * @param customerName
-     * @param billingAddress
-     * @return PaymentResult
-     * @throws java.lang.IllegalStateException if there is an error after charging the credit card
-     */
-    PaymentResult processStripePayment(String reservationId,
-                                       String gatewayToken,
-                                       int price,
-                                       Event event,
-                                       String email,
-                                       CustomerName customerName,
-                                       String billingAddress) {
-        try {
-            final Optional<Charge> optionalCharge = stripeManager.chargeCreditCard(gatewayToken, price,
-                    event, reservationId, email, customerName.getFullName(), billingAddress);
-            return optionalCharge.map(charge -> {
-                log.info("transaction {} paid: {}", reservationId, charge.getPaid());
-                Pair<Long, Long> fees = Optional.ofNullable(charge.getBalanceTransactionObject()).map(bt -> {
-                    List<Fee> feeDetails = bt.getFeeDetails();
-                    return Pair.of(Optional.ofNullable(StripeManager.getFeeAmount(feeDetails, "application_fee")).map(Long::parseLong).orElse(0L),
-                                   Optional.ofNullable(StripeManager.getFeeAmount(feeDetails, "stripe_fee")).map(Long::parseLong).orElse(0L));
-                }).orElse(null);
+    private final List<PaymentProvider> paymentProviders; // injected by Spring
 
-                transactionRepository.insert(charge.getId(), null, reservationId,
-                        ZonedDateTime.now(), price, event.getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
-                        fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L);
-                return PaymentResult.successful(charge.getId());
-            }).orElseGet(() -> PaymentResult.unsuccessful("error.STEP2_UNABLE_TO_TRANSITION"));
-        } catch (Exception e) {
-            if(e instanceof StripeException) {
-                return PaymentResult.unsuccessful(stripeManager.handleException((StripeException)e));
-            }
-            throw new IllegalStateException(e);
-        }
-
+    public Optional<PaymentProvider> lookupProviderByMethod(PaymentMethod paymentMethod, PaymentContext context) {
+        return compatibleStream(paymentMethod, context).findFirst();
     }
 
-    PaymentResult processPayPalPayment(String reservationId,
-                                       String token,
-                                       String payerId,
-                                       int price,
-                                       Event event) {
-        try {
-            Pair<String, String> captureAndPaymentId = paypalManager.commitPayment(reservationId, token, payerId, event);
-            String captureId = captureAndPaymentId.getLeft();
-            String paymentId = captureAndPaymentId.getRight();
-            Supplier<String> feeSupplier = () -> FeeCalculator.getCalculator(event, configurationManager)
-                .apply(ticketRepository.countTicketsInReservation(reservationId), (long) price)
-                .map(String::valueOf)
-                .orElse("0");
-            Pair<Long, Long> fees = paypalManager.getInfo(paymentId, captureId, event, feeSupplier).map(i -> {
-                Long platformFee = Optional.ofNullable(i.getPlatformFee()).map(Long::parseLong).orElse(0L);
-                Long gatewayFee = Optional.ofNullable(i.getFee()).map(Long::parseLong).orElse(0L);
-                return Pair.of(platformFee, gatewayFee);
-            }).orElseGet(() -> Pair.of(0L, 0L));
-            transactionRepository.insert(captureId, paymentId, reservationId,
-                ZonedDateTime.now(), price, event.getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
-                fees.getLeft(), fees.getRight());
-            return PaymentResult.successful(captureId);
-        } catch (Exception e) {
-            log.warn("errow while processing paypal payment: " + e.getMessage(), e);
-            if(e instanceof PayPalRESTException) {
-                return PaymentResult.unsuccessful(ErrorsCode.STEP_2_PAYPAL_UNEXPECTED);
-            } else if(e instanceof PaypalManager.HandledPaypalErrorException) {
-                return PaymentResult.unsuccessful(e.getMessage());
-            }
-            throw new IllegalStateException(e);
-        }
+    Optional<PaymentProvider> lookupProviderByMethodAndCapabilities(PaymentMethod paymentMethod,
+                                                                    PaymentContext context,
+                                                                    List<Class<? extends Capability>> capabilities) {
+        return compatibleStream(paymentMethod, context)
+            .filter(p -> Objects.requireNonNull(capabilities).stream().allMatch(c -> c.isInstance(p)))
+            .findFirst();
     }
 
-    public List<PaymentMethod> getPaymentMethods(int organizationId) {
-        String blacklist = configurationManager.getStringConfigValue(Configuration.from(organizationId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST), "");
+    private Stream<PaymentProvider> compatibleStream(PaymentMethod paymentMethod, PaymentContext context) {
+        return paymentProviders.stream()
+            .filter(p -> p.accept(paymentMethod, context));
+    }
+
+    private List<PaymentMethodDTO> getPaymentMethods(PaymentContext context) {
+        String blacklist = configurationManager.getStringConfigValue(context.narrow(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST), "");
         return PaymentProxy.availableProxies()
             .stream()
             .filter(p -> !blacklist.contains(p.getKey()))
             .map(p -> {
-                PaymentMethod.PaymentMethodStatus status = ConfigurationKeys.byCategory(p.getSettingCategories()).stream()
-                    .allMatch(c -> c.isBackedByDefault() || configurationManager.getStringConfigValue(Configuration.from(organizationId, c)).filter(StringUtils::isNotEmpty).isPresent()) ? PaymentMethod.PaymentMethodStatus.ACTIVE : PaymentMethod.PaymentMethodStatus.ERROR;
-                return new PaymentMethod(p, status);
+                Optional<PaymentProvider> paymentProvider = lookupProviderByMethod(p.getPaymentMethod(), context);
+                PaymentMethodDTO.PaymentMethodStatus status = paymentProvider.isPresent() ? PaymentMethodDTO.PaymentMethodStatus.ACTIVE : PaymentMethodDTO.PaymentMethodStatus.ERROR;
+                return new PaymentMethodDTO(p, status);
             })
             .collect(Collectors.toList());
     }
 
-    public String getStripePublicKey(Event event) {
-        return stripeManager.getPublicKey(event);
+    public List<PaymentMethodDTO> getPaymentMethods(Event event) {
+        return getPaymentMethods(new PaymentContext(event));
     }
 
-    public String createPayPalCheckoutRequest(Event event, String reservationId, OrderSummary orderSummary,
-                                              CustomerName customerName, String email, String billingAddress, String customerReference,
-                                              Locale locale) throws Exception {
-        return paypalManager.createCheckoutRequest(event, reservationId, orderSummary, customerName, email,
-                                                   billingAddress, customerReference, locale);
+    public List<PaymentMethodDTO> getPaymentMethods(int organizationId) {
+        return getPaymentMethods(new PaymentContext(null, Configuration.from(organizationId)));
     }
 
-    public boolean refund(TicketReservation reservation, Event event, Optional<Integer> amount, String username) {
+    public List<PaymentMethodDTO> getActivePaymentMethods(Event event) {
+        return getPaymentMethods(event)
+            .stream()
+            .filter(PaymentMethodDTO::isActive)
+            .collect(Collectors.toList());
+    }
+
+    public boolean refund(TicketReservation reservation, Event event, Integer amount, String username) {
         Transaction transaction = transactionRepository.loadByReservationId(reservation.getId());
-        boolean res;
-        switch(reservation.getPaymentMethod()) {
-            case PAYPAL:
-                res = paypalManager.refund(transaction, event, amount);
-                break;
-            case STRIPE:
-                res = stripeManager.refund(transaction, event, amount);
-                break;
-            default:
-                throw new IllegalStateException("Cannot refund ");
-        }
+
+        boolean res = lookupProviderByMethod(reservation.getPaymentMethod().getPaymentMethod(), new PaymentContext(event))
+            .filter(RefundRequest.class::isInstance)
+            .map(paymentProvider -> ((RefundRequest)paymentProvider).refund(transaction, event, amount))
+            .orElse(false);
 
         if(res) {
             Map<String, Object> changes = new HashMap<>();
-            changes.put("refund", amount.map(Object::toString).orElse("full"));
+            changes.put("refund", amount != null ? amount.toString() : "full");
             changes.put("paymentMethod", reservation.getPaymentMethod().toString());
             auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
                 event.getId(),
@@ -192,16 +119,7 @@ public class PaymentManager {
 
     TransactionAndPaymentInfo getInfo(TicketReservation reservation, Event event) {
         Optional<TransactionAndPaymentInfo> maybeTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId())
-            .map(transaction -> {
-                switch(reservation.getPaymentMethod()) {
-                    case PAYPAL:
-                        return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, paypalManager.getInfo(transaction, event).orElse(null));
-                    case STRIPE:
-                        return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, stripeManager.getInfo(transaction, event).orElse(null));
-                    default:
-                        return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformation(reservation.getPaidAmount(), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));
-                }
-            });
+            .map(transaction -> internalGetInfo(reservation, event, transaction));
         maybeTransaction.ifPresent(info -> {
             try {
                 Transaction transaction = info.getTransaction();
@@ -217,14 +135,66 @@ public class PaymentManager {
         return maybeTransaction.orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformation(reservation.getPaidAmount(), null, null, null)));
     }
 
+    private TransactionAndPaymentInfo internalGetInfo(TicketReservation reservation, Event event, Transaction transaction) {
+        return Optional.ofNullable(reservation.getPaymentMethod())
+            .flatMap(pm -> lookupProviderByMethod(pm.getPaymentMethod(), new PaymentContext(event)))
+            .filter(PaymentInfo.class::isInstance)
+            .map(provider -> {
+                Optional<PaymentInformation> info = ((PaymentInfo) provider).getInfo(transaction, event);
+                return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, info.orElse(null));
+            })
+            .orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, new PaymentInformation(reservation.getPaidAmount(), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee()))));
+    }
+
     private static long safeParseLong(String src) {
         return Optional.ofNullable(src).map(Long::parseLong).orElse(0L);
     }
 
+    public Map<String, ?> loadModelOptionsFor(List<PaymentProxy> activePaymentMethods, Event event) {
+        PaymentContext context = new PaymentContext(event);
+        return activePaymentMethods.stream()
+            .flatMap(pp -> getProviderOptions(context, pp))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    private Stream<? extends Map.Entry<String, ?>> getProviderOptions(PaymentContext context, PaymentProxy pp) {
+        return lookupProviderByMethod(pp.getPaymentMethod(), context).stream()
+            .flatMap(it -> it.getModelOptions(context).entrySet().stream().filter(kv -> kv.getValue() != null));
+    }
+
+    public PaymentToken buildPaymentToken(String gatewayToken, PaymentProxy proxy, PaymentContext context) {
+        return lookupProviderByMethod(proxy.getPaymentMethod(), context)
+            .filter(ClientServerTokenRequest.class::isInstance)
+            .map(ClientServerTokenRequest.class::cast)
+            .map(pp -> pp.buildPaymentToken(gatewayToken, context))
+            .orElse(null);
+    }
+
+    public Optional<PaymentResult> getTransactionStatus(TicketReservation reservation, PaymentMethod paymentMethod) {
+        return transactionRepository.loadOptionalByReservationId(reservation.getId())
+            .filter(transaction -> transaction.getPaymentProxy().getPaymentMethod() == paymentMethod)
+            .map(transaction -> {
+                switch(transaction.getStatus()) {
+                    case COMPLETE:
+                        return PaymentResult.successful(transaction.getPaymentId());
+                    case FAILED:
+                        return PaymentResult.failed(null);
+                    default:
+                        return PaymentResult.initialized(transaction.getPaymentId());
+                }
+            });
+    }
+
+    public PaymentMethod getPaymentMethodForReservation(TicketReservation ticketReservation) {
+        return transactionRepository.loadOptionalByReservationId(ticketReservation.getId())
+            .map(Transaction::getPaymentProxy)
+            .map(PaymentProxy::getPaymentMethod)
+            .orElse(null);
+    }
 
 
     @Data
-    public static final class PaymentMethod {
+    public static final class PaymentMethodDTO {
 
         public enum PaymentMethodStatus {
             ACTIVE, ERROR

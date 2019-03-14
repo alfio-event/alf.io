@@ -19,7 +19,6 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.config.RepositoryConfiguration;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -62,7 +61,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
@@ -113,8 +112,8 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
-        waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event), "peppino@garibaldi.com", null, Locale.ENGLISH);
-        waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event), "bixio@mille.org", null, Locale.ITALIAN);
+        waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event.mustUseFirstAndLastName()), "peppino@garibaldi.com", null, Locale.ENGLISH);
+        waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event.mustUseFirstAndLastName()), "bixio@mille.org", null, Locale.ITALIAN);
         assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
 
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -236,9 +235,9 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());
 
         //sold-out
-        waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event), "peppino@garibaldi.com", null, Locale.ENGLISH);
+        waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event.mustUseFirstAndLastName()), "peppino@garibaldi.com", null, Locale.ENGLISH);
         Thread.sleep(100L);//we are testing ordering, not concurrency...
-        waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event), "bixio@mille.org", null, Locale.ITALIAN);
+        waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event.mustUseFirstAndLastName()), "bixio@mille.org", null, Locale.ITALIAN);
         List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAll(event.getId());
         assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
         assertTrue(subscriptions.stream().allMatch(w -> w.getSubscriptionType().equals(WaitingQueueSubscription.Type.SOLD_OUT)));

@@ -20,10 +20,10 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.config.RepositoryConfiguration;
 import alfio.model.FileBlobMetadata;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.util.BaseIntegrationTest;
+import org.apache.commons.lang3.time.DateUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,11 +35,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Base64;
+import java.util.Date;
 import java.util.Optional;
+
+import static alfio.util.BaseIntegrationTest.ONE_PIXEL_BLACK_GIF;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
@@ -48,8 +51,6 @@ public class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
     FileUploadManager fileUploadManager;
 
     private static final byte[] FILE = {1,2,3,4};
-
-    private static final byte[] ONE_PIXEL_BLACK_GIF = Base64.getDecoder().decode("R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=");
 
     @Test
     public void testInsert() {
@@ -69,6 +70,11 @@ public class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
         Assert.assertTrue(metadata.isPresent());
         Assert.assertEquals("myfile.txt", metadata.get().getName());
         Assert.assertEquals("text/plain", metadata.get().getContentType());
+
+        //
+
+        fileUploadManager.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), 1));
+        Assert.assertFalse(fileUploadManager.findMetadata(id).isPresent());
     }
 
 
@@ -86,6 +92,9 @@ public class FileUploadManagerIntegrationTest extends BaseIntegrationTest {
 
         Assert.assertEquals("1", metadata.get().getAttributes().get("width"));
         Assert.assertEquals("1", metadata.get().getAttributes().get("height"));
+
+        fileUploadManager.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), 1));
+        Assert.assertFalse(fileUploadManager.findMetadata(id).isPresent());
     }
 
     @Test

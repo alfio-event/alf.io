@@ -33,6 +33,7 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.user.UserManager;
@@ -47,8 +48,8 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import com.samskivert.mustache.MustacheException;
+import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
@@ -76,6 +77,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @RestController
 @RequestMapping("/admin/api")
+@AllArgsConstructor
 public class ResourceController {
 
 
@@ -86,30 +88,14 @@ public class ResourceController {
     private final TemplateManager templateManager;
     private final OrganizationRepository organizationRepository;
     private final FileUploadManager fileUploadManager;
+    private final ExtensionManager extensionManager;
 
-
-    @Autowired
-    public ResourceController(UploadedResourceManager uploadedResourceManager,
-                              UserManager userManager,
-                              EventRepository eventRepository,
-                              MessageSource messageSource,
-                              TemplateManager templateManager,
-                              OrganizationRepository organizationRepository,
-                              FileUploadManager fileUploadManager) {
-        this.uploadedResourceManager = uploadedResourceManager;
-        this.userManager = userManager;
-        this.eventRepository = eventRepository;
-        this.messageSource = messageSource;
-        this.templateManager = templateManager;
-        this.organizationRepository = organizationRepository;
-        this.fileUploadManager = fileUploadManager;
-    }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleSyntaxError(Exception ex) {
         Optional<String> cause = Optional.ofNullable(ex.getCause())
-            .filter(e -> MustacheException.class.isInstance(e) || TemplateProcessor.TemplateAccessException.class.isInstance(e))
+            .filter(e -> e instanceof MustacheException || e instanceof TemplateProcessor.TemplateAccessException)
             .map(Throwable::getMessage);
         return cause.orElse("Something went wrong. Please check the syntax and retry");
     }
@@ -124,7 +110,7 @@ public class ResourceController {
         response.setContentType("text/plain");
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try (InputStream is = new ClassPathResource(name.classPath()).getInputStream()) {
-            StreamUtils.copy(is, os);
+            is.transferTo(os);
         }
         Locale loc = Locale.forLanguageTag(locale);
         String template = new String(os.toByteArray(), StandardCharsets.UTF_8);
@@ -169,12 +155,10 @@ public class ResourceController {
                     StreamUtils.copy(renderedTemplate,StandardCharsets.UTF_8, os);
                 }
             } else if ("application/pdf".equals(name.getRenderedContentType())) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                TemplateProcessor.renderToPdf(renderedTemplate, baos);
                 try (OutputStream os = response.getOutputStream()) {
                     response.setContentType("application/pdf");
                     response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".pdf");
-                    os.write(baos.toByteArray());
+                    TemplateProcessor.renderToPdf(renderedTemplate, os, extensionManager, event);
                 }
             } else {
                 throw new IllegalStateException("cannot enter here!");
@@ -241,19 +225,19 @@ public class ResourceController {
     @RequestMapping(value = "/resource/", method = POST)
     public void uploadFile(@RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(principal);
-        uploadedResourceManager.saveResource(upload);
+        uploadedResourceManager.saveResource(upload).orElseThrow(IllegalArgumentException::new);
     }
 
     @RequestMapping(value = "/resource-organization/{organizationId}/", method = POST)
     public void uploadFile(@PathVariable("organizationId") int organizationId, @RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(organizationId, principal);
-        uploadedResourceManager.saveResource(organizationId, upload);
+        uploadedResourceManager.saveResource(organizationId, upload).orElseThrow(IllegalArgumentException::new);
     }
 
     @RequestMapping(value = "/resource-event/{organizationId}/{eventId}/", method = POST)
     public void uploadFile(@PathVariable("organizationId") int organizationId, @PathVariable("eventId") int eventId, @RequestBody UploadBase64FileModification upload, Principal principal) {
         checkAccess(organizationId, eventId, principal);
-        uploadedResourceManager.saveResource(organizationId, eventId, upload);
+        uploadedResourceManager.saveResource(organizationId, eventId, upload).orElseThrow(IllegalArgumentException::new);
     }
 
     //------------------
@@ -333,6 +317,6 @@ public class ResourceController {
     }
 
     private void checkAccess(int organizationId, int eventId, Principal principal) {
-        Validate.isTrue(eventRepository.findById(eventId).getOrganizationId() == organizationId && userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), organizationId));
+        Validate.isTrue(eventRepository.findEventAndOrganizationIdById(eventId).getOrganizationId() == organizationId && userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), organizationId));
     }
 }

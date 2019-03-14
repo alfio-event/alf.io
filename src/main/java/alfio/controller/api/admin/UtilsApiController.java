@@ -27,6 +27,7 @@ import org.apache.commons.text.StringEscapeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -90,7 +91,7 @@ public class UtilsApiController {
         Map<String, Object> applicationInfo = new HashMap<>();
         applicationInfo.put("version", version);
         applicationInfo.put("username", principal.getName());
-        applicationInfo.put("isDemoMode", environment.acceptsProfiles(Initializer.PROFILE_DEMO));
+        applicationInfo.put("isDemoMode", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
         return applicationInfo;
     }
 

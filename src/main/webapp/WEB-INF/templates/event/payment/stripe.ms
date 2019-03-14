@@ -6,35 +6,80 @@
     {{/demoModeEnabled}}
 </div>
 
-<div class="alert alert-danger payment-errors hide" role="alert">
-</div>
+{{#if-config-flag}}[STRIPE_ENABLE_SCA]
+    <div class="wMarginTop row">
+        <div class="col-xs-12">
+            <div class="form-group">
+                <label for="card-name" class="control-label">{{#i18n}}reservation-page.cardholder.name{{/i18n}}</label>
+                <input type="text" data-stripe="name" required class="form-control" id="card-name" autocomplete="name" value="{{reservation.fullName}}">
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="form-group" id="card-element-container">
+                <label for="card-name" class="control-label">{{#i18n}}reservation-page.card.details{{/i18n}}</label>
+                <div>
+                    <div id="card-element"></div>
+                </div>
+                <div class="wMarginTop text-danger payment-errors hide" role="alert" id="card-errors">
+                    <strong id="error-message"></strong>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="form-group">
-    <label for="card-name" class="control-label">{{#i18n}}reservation-page.cardholder.name{{/i18n}}</label>
-    <input type="text" size="20" data-stripe="name" required class="form-control" id="card-name" autocomplete="name">
-</div>
-<div class="form-group">
-    <label for="card-number" class="control-label">{{#i18n}}reservation-page.card-number{{/i18n}}</label>
-    <input type="text" size="20" data-stripe="number" required class="form-control" id="card-number" autocomplete="off">
-</div>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="{{request.contextPath}}/resources/js/payment/creditcard-embedded-stripe.js"
+            id="stripe-key"
+            data-stripe-key="{{stripe_p_key}}"
+            data-stripe-title="{{event.displayName}}"
+            data-price="{{orderSummary.priceInCents}}"
+            data-currency="{{event.currency}}"
+            data-stripe-description="{{orderSummary.descriptionForPayment}}"
+            data-stripe-embedded="{{#config-flag}}STRIPE_ENABLE_SCA{{/config-flag}}"
+            data-stripe-event-name="{{event.shortName}}"
+            data-stripe-reservation-id="{{reservation.id}}"
+            data-stripe-contact-name="{{reservation.fullName}}"
+            data-stripe-contact-zip="{{billingDetails.zip}}"
+            data-stripe-contact-country="{{billingDetails.country}}"
+            data-stripe-contact-address="{{billingDetails.addressLine1}}"
+            data-stripe-email="{{reservation.email}}"
+            {{#platformMode}}data-stripe-on-behalf-of="{{stripeConnectedAccount}}"{{/platformMode}}
+            defer async
+    ></script>
+{{/if-config-flag}}
+{{^if-config-flag}}[STRIPE_ENABLE_SCA]
+<script src="https://checkout.stripe.com/checkout.js"></script>
+<script src="{{request.contextPath}}/resources/js/payment/creditcard-stripe.js"
+        id="stripe-key"
+        data-stripe-key="{{stripe_p_key}}"
 
-<div class="row">
-    <div class="col-md-4">
-        <div class="form-group">
-            <label for="card-mm">{{#i18n}}reservation-page.expiration-month{{/i18n}}</label>
-            <input type="text" class="form-control" size="2" data-stripe="exp-month" required maxlength="2" autocomplete="off" id="card-mm" pattern="\d+">
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="form-group">
-            <label for="card-yyyy">{{#i18n}}reservation-page.expiration-year{{/i18n}}</label>
-            <input type="text" class="form-control" size="4" data-stripe="exp-year" required maxlength="4" autocomplete="off" id="card-yyyy" pattern="\d+">
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="form-group">
-            <label for="card-cvc">{{#i18n}}reservation-page.cvc{{/i18n}}</label>
-            <input type="text" class="form-control" size="4" data-stripe="cvc" required id="card-cvc" autocomplete="off">
-        </div>
-    </div>
-</div>
+        data-stripe-message-incorrect_number="{{#i18n}}error.STEP2_STRIPE_incorrect_number{{/i18n}}"
+        data-stripe-message-invalid_number="{{#i18n}}error.STEP2_STRIPE_invalid_number{{/i18n}}"
+        data-stripe-message-invalid_expiry_month="{{#i18n}}error.STEP2_STRIPE_invalid_expiry_month{{/i18n}}"
+        data-stripe-message-invalid_expiry_year="{{#i18n}}error.STEP2_STRIPE_invalid_expiry_year{{/i18n}}"
+        data-stripe-message-invalid_cvc="{{#i18n}}error.STEP2_STRIPE_invalid_cvc{{/i18n}}"
+        data-stripe-message-expired_card="{{#i18n}}error.STEP2_STRIPE_expired_card{{/i18n}}"
+        data-stripe-message-incorrect_cvc="{{#i18n}}error.STEP2_STRIPE_incorrect_cvc{{/i18n}}"
+        data-stripe-message-incorrect_zip="{{#i18n}}error.STEP2_STRIPE_incorrect_zip{{/i18n}}"
+        data-stripe-message-card_declined="{{#i18n}}error.STEP2_STRIPE_card_declined{{/i18n}}"
+        data-stripe-message-missing="{{#i18n}}error.STEP2_STRIPE_missing{{/i18n}}"
+        data-stripe-message-processing_error="{{#i18n}}error.STEP2_STRIPE_processing_error{{/i18n}}"
+        data-stripe-message-abort="{{#i18n}}error.STEP2_STRIPE_abort{{/i18n}}"
+        data-stripe-message-rate_limit="{{#i18n}}error.STEP2_STRIPE_rate_limit{{/i18n}}"
+        data-stripe-title="{{event.displayName}}"
+        data-price="{{orderSummary.priceInCents}}"
+        data-currency="{{event.currency}}"
+        data-stripe-description="{{orderSummary.descriptionForPayment}}"
+        data-stripe-embedded="{{#config-flag}}STRIPE_ENABLE_SCA{{/config-flag}}"
+        data-stripe-event-name="{{event.shortName}}"
+        data-stripe-reservation-id="{{reservation.id}}"
+        data-stripe-contact-name="{{reservation.fullName}}"
+        data-stripe-contact-zip="{{billingDetails.zip}}"
+        data-stripe-contact-country="{{billingDetails.country}}"
+        data-stripe-contact-address="{{billingDetails.addressLine1}}"
+        data-stripe-email="{{reservation.email}}"
+        defer async
+></script>
+{{/if-config-flag}}

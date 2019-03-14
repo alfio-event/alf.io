@@ -36,8 +36,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static alfio.util.OptionalWrapper.optionally;
-
 @RestController
 @RequestMapping("/admin/api/group")
 @RequiredArgsConstructor
@@ -97,7 +95,7 @@ public class GroupApiController {
     @GetMapping("/for/event/{eventName}/all")
     public ResponseEntity<List<LinkedGroup>> findLinked(@PathVariable("eventName") String eventName,
                                                         Principal principal) {
-        return eventManager.getOptionalByName(eventName, principal.getName())
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> ResponseEntity.ok(groupManager.getLinksForEvent(event.getId())))
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -105,7 +103,7 @@ public class GroupApiController {
     @GetMapping("/for/event/{eventName}")
     public ResponseEntity<LinkedGroup> findActiveGroup(@PathVariable("eventName") String eventName,
                                                        Principal principal) {
-        return eventManager.getOptionalByName(eventName, principal.getName())
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> {
                 Optional<LinkedGroup> configuration = groupManager.getLinksForEvent(event.getId()).stream()
                     .filter(c -> c.getTicketCategoryId() == null)
@@ -119,7 +117,7 @@ public class GroupApiController {
     public ResponseEntity<LinkedGroup> findActiveGroup(@PathVariable("eventName") String eventName,
                                                        @PathVariable("categoryId") int categoryId,
                                                        Principal principal) {
-        return eventManager.getOptionalByName(eventName, principal.getName())
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> {
                 Optional<LinkedGroup> configuration = groupManager.findLinks(event.getId(), categoryId)
                     .stream()
@@ -136,7 +134,7 @@ public class GroupApiController {
             return ResponseEntity.badRequest().build();
         }
 
-        return optionally(() -> eventManager.getSingleEventById(body.getEventId(), principal.getName()))
+        return eventManager.getOptionalEventIdAndOrganizationIdById(body.getEventId(), principal.getName())
             .map(event -> {
                 Optional<LinkedGroup> existing = groupManager.getLinksForEvent(event.getId())
                     .stream()
@@ -155,7 +153,7 @@ public class GroupApiController {
 
     @DeleteMapping("/for/{organizationId}/link/{configurationId}")
     public ResponseEntity<String> unlinkGroup(@PathVariable("organizationId") int organizationId, @PathVariable("configurationId") int configurationId, Principal principal) {
-        if(optionally(() -> userManager.findUserByUsername(principal.getName())).filter(u -> userManager.isOwnerOfOrganization(u, organizationId)).isPresent()) {
+        if(userManager.findOptionalEnabledUserByUsername(principal.getName()).filter(u -> userManager.isOwnerOfOrganization(u, organizationId)).isPresent()) {
             groupManager.disableLink(configurationId);
             return ResponseEntity.ok("OK");
         }
@@ -167,7 +165,7 @@ public class GroupApiController {
                                                     @PathVariable("memberId") int memberId,
                                                     @PathVariable("organizationId") int organizationId,
                                                     Principal principal) {
-        if(notOwner(principal.getName(), organizationId) || !groupManager.findById(groupId, organizationId).isPresent()) {
+        if(notOwner(principal.getName(), organizationId) || groupManager.findById(groupId, organizationId).isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -179,7 +177,7 @@ public class GroupApiController {
     public ResponseEntity<Boolean> deactivateGroup(@PathVariable("groupId") int groupId,
                                                    @PathVariable("organizationId") int organizationId,
                                                    Principal principal) {
-        if(notOwner(principal.getName(), organizationId) || !groupManager.findById(groupId, organizationId).isPresent()) {
+        if(notOwner(principal.getName(), organizationId) || groupManager.findById(groupId, organizationId).isEmpty()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -187,9 +185,9 @@ public class GroupApiController {
     }
 
     private boolean notOwner(String username, int organizationId) {
-        return !optionally(() -> userManager.findUserByUsername(username))
+        return userManager.findOptionalEnabledUserByUsername(username)
             .filter(user -> userManager.isOwnerOfOrganization(user, organizationId))
-            .isPresent();
+            .isEmpty();
     }
 
 }

@@ -41,7 +41,4 @@ public interface UserOrganizationRepository {
     @Query("update j_user_organization set org_id = :organizationId where user_id = :userId")
     int updateUserOrganization(@Bind("userId") int userId, @Bind("organizationId") int organizationId);
 
-    @Query("select * from j_user_organization")
-    List<UserOrganization> findAll();
-
 }

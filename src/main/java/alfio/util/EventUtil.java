@@ -30,7 +30,7 @@ import biweekly.io.text.ICalWriter;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.RegExUtils;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -71,17 +71,17 @@ public class EventUtil {
         .appendLiteral('Z')
         .toFormatter(Locale.ROOT);
 
-    public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<Event> noTicketsAvailable) {
-        return !configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), STOP_WAITING_QUEUE_SUBSCRIPTIONS), false)
+    public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
+        return !configurationManager.getBooleanConfigValue(Configuration.from(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS), false)
             && checkWaitingQueuePreconditions(event, categories, configurationManager, noTicketsAvailable);
     }
 
-    public static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<Event> noTicketsAvailable) {
+    public static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
         return findLastCategory(categories).map(lastCategory -> {
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             if(isPreSales(event, categories)) {
-                return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_PRE_REGISTRATION), false);
-            } else if(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE), false)) {
+                return configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_PRE_REGISTRATION), false);
+            } else if(configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_WAITING_QUEUE), false)) {
                 return now.isBefore(lastCategory.getZonedExpiration()) && noTicketsAvailable.test(event);
             }
             return false;
@@ -108,7 +108,7 @@ public class EventUtil {
         return findFirstCategory(categories).map(c -> now.isBefore(c.getZonedInception())).orElse(false);
     }
 
-    public static Stream<MapSqlParameterSource> generateEmptyTickets(Event event, Date creationDate, int limit, Ticket.TicketStatus ticketStatus) {
+    public static Stream<MapSqlParameterSource> generateEmptyTickets(EventAndOrganizationId event, Date creationDate, int limit, Ticket.TicketStatus ticketStatus) {
         return generateStreamForTicketCreation(limit)
             .map(ps -> buildTicketParams(event.getId(), creationDate, Optional.empty(), 0, ps, ticketStatus));
     }
@@ -153,7 +153,7 @@ public class EventUtil {
         VEvent vEvent = new VEvent();
         vEvent.setSummary(event.getDisplayName());
         vEvent.setDescription(description);
-        vEvent.setLocation(StringUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
+        vEvent.setLocation(RegExUtils.replacePattern(event.getLocation(), "[\n\r\t]+", " "));
         ZonedDateTime begin = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
         ZonedDateTime end = Optional.ofNullable(ticketCategory).map(tc -> tc.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());
         vEvent.setDateStart(Date.from(begin.toInstant()));

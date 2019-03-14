@@ -16,6 +16,8 @@
  */
 package alfio.model.modification;
 
+import alfio.model.BillingDetails;
+import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -32,6 +34,7 @@ import java.util.Optional;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 @Getter
 public class AdminReservationModification implements Serializable {
@@ -41,6 +44,8 @@ public class AdminReservationModification implements Serializable {
     private final List<TicketsInfo> ticketsInfo;
     private final String language;
     private final boolean updateContactData;
+    private final boolean updateAdvancedBillingOptions;
+    private final AdvancedBillingOptions advancedBillingOptions;
     private final Notification notification;
 
     @JsonCreator
@@ -49,12 +54,16 @@ public class AdminReservationModification implements Serializable {
                                         @JsonProperty("ticketsInfo") List<TicketsInfo> ticketsInfo,
                                         @JsonProperty("language") String language,
                                         @JsonProperty("updateContactData") Boolean updateContactData,
+                                        @JsonProperty("updateAdvancedBillingOptions") Boolean updateAdvancedBillingOptions,
+                                        @JsonProperty("advancedBillingOptions") AdvancedBillingOptions advancedBillingOptions,
                                         @JsonProperty("notification") Notification notification) {
         this.expiration = expiration;
         this.customerData = customerData;
         this.ticketsInfo = ticketsInfo;
         this.language = language;
-        this.updateContactData = Optional.ofNullable(updateContactData).orElse(false);
+        this.updateContactData = Boolean.TRUE.equals(updateContactData);
+        this.updateAdvancedBillingOptions = Boolean.TRUE.equals(updateAdvancedBillingOptions);
+        this.advancedBillingOptions = advancedBillingOptions;
         this.notification = notification;
     }
 
@@ -68,6 +77,7 @@ public class AdminReservationModification implements Serializable {
         private final String customerReference;
         private final String vatNr;
         private final String vatCountryCode;
+        private final TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo;
 
         @JsonCreator
         public CustomerData(@JsonProperty("firstName") String firstName,
@@ -77,19 +87,31 @@ public class AdminReservationModification implements Serializable {
                             @JsonProperty("userLanguage") String userLanguage,
                             @JsonProperty("customerReference") String customerReference,
                             @JsonProperty("vatNr") String vatNr,
-                            @JsonProperty("vatCountryCode") String vatCountryCode) {
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.emailAddress = emailAddress;
+                            @JsonProperty("vatCountryCode") String vatCountryCode,
+                            @JsonProperty("invoicingAdditionalInfo") TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo) {
+            this.firstName = trimToEmpty(firstName);
+            this.lastName = trimToEmpty(lastName);
+            this.emailAddress = trimToEmpty(emailAddress);
             this.billingAddress = billingAddress;
             this.userLanguage = userLanguage;
             this.customerReference = customerReference;
             this.vatNr = vatNr;
             this.vatCountryCode = vatCountryCode;
+            this.invoicingAdditionalInfo = invoicingAdditionalInfo;
         }
 
         public String getFullName() {
             return firstName + " " + lastName;
+        }
+    }
+
+    @Getter
+    public static class AdvancedBillingOptions {
+        private final boolean vatApplied;
+
+        @JsonCreator
+        public AdvancedBillingOptions(@JsonProperty("vatApplied") String vatApplied) {
+            this.vatApplied = "Y".equals(vatApplied);
         }
     }
 
@@ -153,9 +175,9 @@ public class AdminReservationModification implements Serializable {
                         @JsonProperty("reference") String reference,
                         @JsonProperty("additionalInfo") Map<String, List<String>> additionalInfo) {
             this.ticketId = ticketId;
-            this.firstName = firstName;
-            this.lastName = lastName;
-            this.emailAddress = emailAddress;
+            this.firstName = trimToEmpty(firstName);
+            this.lastName = trimToEmpty(lastName);
+            this.emailAddress = trimToEmpty(emailAddress);
             this.language = language;
             this.reassignmentForbidden = Optional.ofNullable(reassignmentForbidden).orElse(false);
             this.reference = reference;
@@ -204,7 +226,7 @@ public class AdminReservationModification implements Serializable {
                     .map(a -> new Attendee(a.ticketId, placeholderIfNotEmpty(a.firstName), placeholderIfNotEmpty(a.lastName), placeholderIfNotEmpty(a.emailAddress), a.language, a.reassignmentForbidden, a.reference,singletonMap("hasAdditionalInfo", singletonList(String.valueOf(a.additionalInfo.isEmpty()))))).collect(toList());
                 return new TicketsInfo(ti.getCategory(), attendees, ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees());
             }).collect(toList());
-            return Json.toJson(new AdminReservationModification(src.expiration, summaryForCustomerData(src.customerData), ticketsInfo, src.getLanguage(), src.updateContactData, src.notification));
+            return Json.toJson(new AdminReservationModification(src.expiration, summaryForCustomerData(src.customerData), ticketsInfo, src.getLanguage(), src.updateContactData, src.updateAdvancedBillingOptions, src.advancedBillingOptions, src.notification));
         } catch(Exception e) {
             return e.toString();
         }
@@ -219,7 +241,8 @@ public class AdminReservationModification implements Serializable {
                 placeholderIfNotEmpty(in.userLanguage),
                 placeholderIfNotEmpty(in.customerReference),
                 placeholderIfNotEmpty(in.vatNr),
-                placeholderIfNotEmpty(in.vatCountryCode));
+                placeholderIfNotEmpty(in.vatCountryCode),
+                in.invoicingAdditionalInfo);
         }
         else return null;
     }

@@ -19,31 +19,20 @@ package alfio.manager;
 import alfio.model.FileBlobMetadata;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.FileUploadRepository;
-import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
-import org.springframework.jdbc.core.support.AbstractLobCreatingPreparedStatementCallback;
-import org.springframework.jdbc.support.lob.DefaultLobHandler;
-import org.springframework.jdbc.support.lob.LobCreator;
-import org.springframework.jdbc.support.lob.LobHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -57,11 +46,15 @@ public class FileUploadManager {
      * Maximum allowed file size is 200kb
      */
     static final int MAXIMUM_ALLOWED_SIZE = 1024 * 200;
-    private final NamedParameterJdbcTemplate jdbc;
     private final FileUploadRepository repository;
-    private final Cache<String, byte[]> cache = Caffeine.newBuilder()
+    private final Cache<String, File> cache = Caffeine.newBuilder()
         .maximumSize(20)
         .expireAfterWrite(20, TimeUnit.MINUTES)
+        .removalListener((String key, File value, RemovalCause cause) -> {
+            if(value != null) {
+                value.delete();
+            }
+        })
         .build();
 
     public Optional<FileBlobMetadata> findMetadata(String id) {
@@ -69,20 +62,14 @@ public class FileUploadManager {
     }
 
     public void outputFile(String id, OutputStream out) {
-        byte[] res = cache.get(id, identifier -> {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            SqlParameterSource param = new MapSqlParameterSource("id", id);
-            jdbc.query(repository.fileContent(id), param, rs -> {
-                try (InputStream is = rs.getBinaryStream("content")) {
-                    StreamUtils.copy(is, baos);
-                } catch (IOException e) {
-                    throw new IllegalStateException("Error while copying data", e);
-                }
-            });
-            return baos.toByteArray();
-        });
-        try {
-            StreamUtils.copy(res, out);
+        var file = cache.get(id, identifier -> repository.file(id));
+        if(!file.exists()) { //fallback, the file will not be cached though
+            cache.invalidate(id);
+            file = repository.file(id);
+        }
+
+        try (var fis = new FileInputStream(file)){
+            fis.transferTo(out);
         } catch (IOException e) {
             throw new IllegalStateException("Error while copying data", e);
         }
@@ -90,35 +77,17 @@ public class FileUploadManager {
 
 
     public String insertFile(UploadBase64FileModification file) {
-
         Validate.exclusiveBetween(1, MAXIMUM_ALLOWED_SIZE, file.getFile().length);
-
         String digest = DigestUtils.sha256Hex(file.getFile());
-
-        if(Integer.valueOf(1).equals(repository.isPresent(digest))) {
+        if (Integer.valueOf(1).equals(repository.isPresent(digest))) {
             return digest;
         }
-
-        LobHandler lobHandler = new DefaultLobHandler();
-
-
-        jdbc.getJdbcOperations().execute(repository.uploadTemplate(),
-            new AbstractLobCreatingPreparedStatementCallback(lobHandler) {
-                @Override
-                protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
-                    ps.setString(1, digest);
-                    ps.setString(2, file.getName());
-                    ps.setLong(3, file.getFile().length);
-                    lobCreator.setBlobAsBytes(ps, 4, file.getFile());
-                    ps.setString(5, file.getType());
-                    ps.setString(6, Json.GSON.toJson(getAttributes(file)));
-                }
-            });
+        repository.upload(file, digest, getAttributes(file));
         return digest;
     }
 
-    public void cleanupUnreferencedBlobFiles() {
-        int deleted = repository.cleanupUnreferencedBlobFiles(DateUtils.addDays(new Date(), -1));
+    public void cleanupUnreferencedBlobFiles(Date date) {
+        int deleted = repository.cleanupUnreferencedBlobFiles(date);
         log.debug("removed {} unused file_blob", deleted);
     }
 

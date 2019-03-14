@@ -32,7 +32,7 @@ import java.util.*;
 public class TicketReservation {
 
     public enum TicketReservationStatus {
-        PENDING, IN_PAYMENT, EXTERNAL_PROCESSING_PAYMENT, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED
+        PENDING, IN_PAYMENT, EXTERNAL_PROCESSING_PAYMENT, WAITING_EXTERNAL_CONFIRMATION, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED, CREDIT_NOTE_ISSUED
     }
 
     private final String id;
@@ -61,7 +61,9 @@ public class TicketReservation {
     private final BigDecimal usedVatPercent;
     private final Boolean vatIncluded;
     private final ZonedDateTime creationTimestamp;
+    private final ZonedDateTime registrationTimestamp;
     private final String customerReference;
+
 
     public TicketReservation(@Column("id") String id,
                              @Column("validity") Date validity,
@@ -88,7 +90,8 @@ public class TicketReservation {
                              @Column("used_vat_percent") BigDecimal usedVatPercent,
                              @Column("vat_included") Boolean vatIncluded,
                              @Column("creation_ts") ZonedDateTime creationTimestamp,
-                             @Column("customer_reference") String customerReference) {
+                             @Column("customer_reference") String customerReference,
+                             @Column("registration_ts") ZonedDateTime registrationTimestamp) {
         this.id = id;
         this.validity = validity;
         this.status = status;
@@ -114,6 +117,7 @@ public class TicketReservation {
         this.usedVatPercent = usedVatPercent;
         this.vatIncluded = vatIncluded;
         this.creationTimestamp = creationTimestamp;
+        this.registrationTimestamp = registrationTimestamp;
         this.customerReference = customerReference;
     }
 

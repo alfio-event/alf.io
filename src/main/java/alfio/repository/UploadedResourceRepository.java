@@ -17,9 +17,27 @@
 package alfio.repository;
 
 import alfio.model.UploadedResource;
+import alfio.model.modification.UploadBase64FileModification;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.*;
+import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.core.support.AbstractLobCreatingPreparedStatementCallback;
+import org.springframework.jdbc.support.lob.DefaultLobHandler;
+import org.springframework.jdbc.support.lob.LobCreator;
+import org.springframework.jdbc.support.lob.LobHandler;
+import org.springframework.util.StreamUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 @QueryRepository
 public interface UploadedResourceRepository {
@@ -68,29 +86,60 @@ public interface UploadedResourceRepository {
     int delete(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("name") String name);
 
 
+    Function<OutputStream, RowCallbackHandler> OUTPUT_CONTENT = (out) -> rs -> {
+            try (InputStream is = rs.getBinaryStream("content")) {
+                is.transferTo(out);
+            } catch (IOException e) {
+                throw new IllegalStateException("Error while copying data", e);
+            }
+        };
 
-    @Query(type = QueryType.TEMPLATE, value = "select content from resource_global where name = :name")
-    String fileContentTemplate(String name);
+    default void fileContent(String name, OutputStream out) {
+        SqlParameterSource param = new MapSqlParameterSource("name", name);
+        getNamedParameterJdbcTemplate().query("select content from resource_global where name = :name", param, OUTPUT_CONTENT.apply(out));
+    }
 
-    @Query(type = QueryType.TEMPLATE, value = "select content from resource_organizer where name = :name and organization_id_fk = :organizationId")
-    String fileContentTemplate(int organizationId, String name);
+    default void fileContent(int organizationId, String name, OutputStream out) {
+        SqlParameterSource param = new MapSqlParameterSource("name", name).addValue("organizationId", organizationId);
+        getNamedParameterJdbcTemplate().query("select content from resource_organizer where name = :name and organization_id_fk = :organizationId", param, OUTPUT_CONTENT.apply(out));
+    }
 
-    @Query(type = QueryType.TEMPLATE, value = "select content from resource_event where name = :name and organization_id_fk = :organizationId and event_id_fk = :eventId")
-    String fileContentTemplate(int organizationId, int eventId, String name);
+    default void fileContent(int organizationId, int eventId, String name, OutputStream out) {
+        SqlParameterSource param = new MapSqlParameterSource("name", name).addValue("organizationId", organizationId).addValue("eventId", eventId);
+        getNamedParameterJdbcTemplate().query("select content from resource_event where name = :name and organization_id_fk = :organizationId and event_id_fk = :eventId", param, OUTPUT_CONTENT.apply(out));
+    }
 
+    NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
 
+    default int upload(Integer organizationId, Integer eventId, UploadBase64FileModification file, Map<String, String> attributes) {
 
+        LobHandler lobHandler = new DefaultLobHandler();
 
-    @Query(type = QueryType.TEMPLATE, value = "insert into resource_global (name, content_size, content, content_type, attributes) " +
-        "values(?, ?, ?, ?, ?)")
-    String uploadTemplate(String name);
+        String query = "insert into resource_global (name, content_size, content, content_type, attributes) values(?, ?, ?, ?, ?)";
+        if (organizationId != null && eventId != null) {
+            query = "insert into resource_event (name, content_size, content, content_type, attributes, organization_id_fk, event_id_fk) values(?, ?, ?, ?, ?, ?, ?)";
+        } else if(organizationId != null) {
+            query = "insert into resource_organizer (name, content_size, content, content_type, attributes, organization_id_fk) values(?, ?, ?, ?, ?, ?)";
+        }
 
-    @Query(type = QueryType.TEMPLATE, value = "insert into resource_organizer (name, organization_id_fk, content_size, content, content_type, attributes) " +
-        "values(?, ?, ?, ?, ?, ?)")
-    String uploadTemplate(int organizationId, String name);
-
-    @Query(type = QueryType.TEMPLATE, value = "insert into resource_event (name, organization_id_fk, event_id_fk, content_size, content, content_type, attributes) " +
-        "values(?, ?, ?, ?, ?, ?, ?)")
-    String uploadTemplate(int organizationId, int eventId, String name);
+        return getNamedParameterJdbcTemplate().getJdbcOperations().execute(query,
+            new AbstractLobCreatingPreparedStatementCallback(lobHandler) {
+                @Override
+                protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
+                    ps.setString(1, file.getName());
+                    ps.setLong(2, file.getFile().length);
+                    lobCreator.setBlobAsBytes(ps, 3, file.getFile());
+                    ps.setString(4, file.getType());
+                    ps.setString(5, Json.GSON.toJson(attributes));
+                    if (organizationId != null) {
+                        ps.setInt(6, organizationId);
+                    }
+                    if (eventId != null) {
+                        ps.setInt(7, eventId);
+                    }
+                }
+            }
+        );
+    }
 
 }

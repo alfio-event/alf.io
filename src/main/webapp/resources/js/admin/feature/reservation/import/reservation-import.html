@@ -147,7 +147,7 @@ where:
                 </div>
                 <div class="row">
                     <div class="col-xs-12">
-                        <div class="checkbox">
+                        <div class="checkbox" ng-if="$ctrl.singleReservationsAllowed">
                             <label><input type="checkbox" ng-model="$ctrl.createSingleReservations" id="ticketInfo-{{$index}}-singleReservations" value="true"> Create one reservation per attendee <span ng-if="ticketInfo.attendees.length > 0">(a total of {{ticketInfo.attendees.length}})</span></label>
                         </div>
                     </div>

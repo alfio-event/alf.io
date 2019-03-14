@@ -16,40 +16,91 @@
  */
 package alfio.manager.support;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 import java.util.Optional;
 
 @EqualsAndHashCode
+@ToString
 public final class PaymentResult {
 
-    private final boolean successful;
-    private final Optional<String> gatewayTransactionId;
-    private final Optional<String> errorCode;
+    public enum Type { SUCCESSFUL, INITIALIZED, PENDING, REDIRECT, FAILED }
 
-    private PaymentResult(boolean successful, Optional<String> gatewayTransactionId, Optional<String> errorCode) {
-        this.successful = successful;
-        this.gatewayTransactionId = gatewayTransactionId;
-        this.errorCode = errorCode;
+    private final Type type;
+    @JsonIgnore
+    private Optional<String> gatewayId = Optional.empty();
+    @JsonIgnore
+    private Optional<String> errorCode = Optional.empty();
+    private String redirectUrl;
+
+    private PaymentResult(Type type) {
+        this.type = type;
     }
 
     public boolean isSuccessful() {
-        return successful;
+        return type == Type.SUCCESSFUL;
+    }
+
+    public boolean isFailed() { return type == Type.FAILED; }
+
+    public boolean isRedirect() {
+        return type == Type.REDIRECT;
+    }
+
+    public boolean isInitialized() {
+        return type == Type.INITIALIZED;
     }
 
     public Optional<String> getErrorCode() {
         return errorCode;
     }
 
-    public Optional<String> getGatewayTransactionId() {
-        return gatewayTransactionId;
+    private PaymentResult setErrorCode( String errorCode ) {
+        this.errorCode = Optional.of(errorCode);
+        return this;
     }
 
-    public static PaymentResult successful(String gatewayTransactionId) {
-        return new PaymentResult(true, Optional.of(gatewayTransactionId), Optional.empty());
+    public Optional<String> getGatewayId() {
+        return gatewayId;
     }
 
-    public static PaymentResult unsuccessful(String errorCode) {
-        return new PaymentResult(false, Optional.empty(), Optional.of(errorCode));
+    public String getGatewayIdOrNull() {
+        return gatewayId.orElse(null);
+    }
+
+    private PaymentResult setGatewayId(String gatewayId) {
+        this.gatewayId = Optional.of(gatewayId);
+        return this;
+    }
+
+    public String getRedirectUrl() {
+        return redirectUrl;
+    }
+
+    private PaymentResult setRedirectUrl( String redirectUrl ) {
+        this.redirectUrl = redirectUrl;
+        return this;
+    }
+
+    public static PaymentResult successful( String gatewayId) {
+        return new PaymentResult(Type.SUCCESSFUL).setGatewayId( gatewayId );
+    }
+
+    public static PaymentResult redirect(String redirectUrl) {
+        return new PaymentResult(Type.REDIRECT).setRedirectUrl( redirectUrl );
+    }
+
+    public static PaymentResult pending(String gatewayId) {
+        return new PaymentResult(Type.PENDING).setGatewayId( gatewayId );
+    }
+
+    public static PaymentResult initialized(String gatewayId) {
+        return new PaymentResult(Type.INITIALIZED).setGatewayId( gatewayId );
+    }
+
+    public static PaymentResult failed( String errorCode) {
+        return new PaymentResult(Type.FAILED).setErrorCode( errorCode );
     }
 }

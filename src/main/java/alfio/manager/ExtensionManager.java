@@ -18,13 +18,19 @@
 package alfio.manager;
 
 import alfio.extension.ExtensionService;
+import alfio.manager.payment.PaymentSpecification;
 import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
+import alfio.model.extension.PdfGenerationResult;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 @Component
@@ -38,6 +44,7 @@ public class ExtensionManager {
     public enum ExtensionEvent {
         RESERVATION_CONFIRMED,
         RESERVATION_CANCELLED,
+        RESERVATION_CREDIT_NOTE_ISSUED,
         TICKET_CANCELLED,
         RESERVATION_EXPIRED,
         TICKET_ASSIGNED,
@@ -51,7 +58,8 @@ public class ExtensionManager {
         EVENT_STATUS_CHANGE,
         WEB_API_HOOK,
         TICKET_CHECKED_IN,
-        TICKET_REVERT_CHECKED_IN
+        TICKET_REVERT_CHECKED_IN,
+        PDF_GENERATION
     }
 
     public void handleEventCreation(Event event) {
@@ -67,13 +75,17 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.EVENT_STATUS_CHANGE, event, event.getOrganizationId(), payload);
     }
 
-    public void handleReservationConfirmation(TicketReservation reservation, int eventId) {
+    public void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, int eventId) {
         int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
         Event event = eventRepository.findById(eventId);
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("reservation", reservation);
+        payload.put("billingDetails", billingDetails);
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
             event,
             organizationId,
-            Collections.singletonMap("reservation", reservation));
+            payload);
     }
 
     public void handleTicketAssignment(Ticket ticket) {
@@ -137,23 +149,22 @@ public class ExtensionManager {
         syncCall(extensionEvent, event, organizationId, payload, Boolean.class);
     }
 
-    public Optional<InvoiceGeneration> handleInvoiceGeneration(Event event, String reservationId, String email, CustomerName customerName, Locale userLanguage,
-                                                     String billingAddress, String customerReference, TotalPrice reservationCost, boolean invoiceRequested,
-                                                     String vatCountryCode, String vatNr, PriceContainer.VatStatus vatStatus) {
+    public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost, BillingDetails billingDetails) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("reservationId", reservationId);
-        payload.put("email", email);
-        payload.put("customerName", customerName);
-        payload.put("userLanguage", userLanguage);
-        payload.put("billingAddress", billingAddress);
-        payload.put("customerReference", customerReference);
+        payload.put("reservationId", spec.getReservationId());
+        payload.put("email", spec.getEmail());
+        payload.put("customerName", spec.getCustomerName());
+        payload.put("userLanguage", spec.getLocale().getLanguage());
+        payload.put("billingAddress", spec.getBillingAddress());
+        payload.put("billingDetails", billingDetails);
+        payload.put("customerReference", spec.getCustomerReference());
         payload.put("reservationCost", reservationCost);
-        payload.put("invoiceRequested", invoiceRequested);
-        payload.put("vatCountryCode", vatCountryCode);
-        payload.put("vatNr", vatNr);
-        payload.put("vatStatus", vatStatus);
+        payload.put("invoiceRequested", spec.isInvoiceRequested());
+        payload.put("vatCountryCode", billingDetails.getCountry());
+        payload.put("vatNr", billingDetails.getTaxId());
+        payload.put("vatStatus", spec.getVatStatus());
 
-        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, event, event.getOrganizationId(), payload, InvoiceGeneration.class));
+        return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getEvent(), spec.getEvent().getOrganizationId(), payload, InvoiceGeneration.class));
     }
 
     public boolean handleTaxIdValidation(int eventId, String taxIdNumber, String countryCode) {
@@ -178,23 +189,54 @@ public class ExtensionManager {
         asyncCall(ExtensionEvent.TICKET_REVERT_CHECKED_IN, event, event.getOrganizationId(), payload);
     }
 
+    void handleReservationsCreditNoteIssuedForEvent(Event event, List<String> reservationIds) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("reservationIds", reservationIds);
+        payload.put("reservations", ticketReservationRepository.findByIds(reservationIds));
+
+        syncCall(ExtensionEvent.RESERVATION_CREDIT_NOTE_ISSUED, event, event.getOrganizationId(), payload, Boolean.class);
+    }
+
+    public boolean handlePdfTransformation(String html, Event event, OutputStream outputStream) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("html", html);
+        try {
+            PdfGenerationResult response = syncCall(ExtensionEvent.PDF_GENERATION, event, event.getOrganizationId(), payload, PdfGenerationResult.class);
+            if(response == null || response.isEmpty()) {
+                return false;
+            }
+            Path tempFilePath = Paths.get(response.getTempFilePath());
+            if(Files.exists(tempFilePath)) {
+                Files.copy(tempFilePath, outputStream);
+                Files.delete(tempFilePath);
+                return true;
+            }
+            return false;
+        } catch(Exception e) {
+            return false;
+        }
+    }
+
 
     private void asyncCall(ExtensionEvent extensionEvent, Event event, int organizationId, Map<String, Object> payload) {
-        Map<String, Object> payloadCopy = new HashMap<>(payload);
-        payloadCopy.put("event", event);
-        payloadCopy.put("eventId", event.getId());
-        payloadCopy.put("organizationId", organizationId);
-
         extensionService.executeScriptAsync(extensionEvent.name(),
-            toPath(organizationId, event.getId()), payloadCopy);
+            toPath(organizationId, event.getId()),
+            fillWithBasicInfo(payload, event, organizationId));
     }
 
     private <T> T syncCall(ExtensionEvent extensionEvent, Event event, int organizationId, Map<String, Object> payload, Class<T> clazz) {
+        return extensionService.executeScriptsForEvent(extensionEvent.name(),
+            toPath(event.getId(), organizationId),
+            fillWithBasicInfo(payload, event, organizationId),
+            clazz);
+    }
+
+    private Map<String, Object> fillWithBasicInfo(Map<String, Object> payload, Event event, int organizationId) {
         Map<String, Object> payloadCopy = new HashMap<>(payload);
         payloadCopy.put("event", event);
         payloadCopy.put("eventId", event.getId());
         payloadCopy.put("organizationId", organizationId);
-        return extensionService.executeScriptsForEvent(extensionEvent.name(), toPath(event.getId(), organizationId), payloadCopy, clazz);
+        return payloadCopy;
     }
 
 

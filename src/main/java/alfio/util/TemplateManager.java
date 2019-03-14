@@ -19,7 +19,7 @@ package alfio.util;
 import alfio.config.WebSecurityConfig;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import com.samskivert.mustache.Mustache;
@@ -98,43 +98,41 @@ public class TemplateManager {
             .withLoader(templateLoader));
     }
 
-    public String renderTemplate(Optional<Event> event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+    public String renderTemplate(Optional<? extends EventAndOrganizationId> event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
         return render(new ClassPathResource(templateResource.classPath()), modelEnricher(model, event, locale), locale, templateResource.getTemplateOutput());
     }
 
-    public String renderTemplate(Event event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
-        Map<String, Object> updatedModel = modelEnricher(model, Optional.ofNullable(event), locale);
+    public String renderTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+        Map<String, Object> updatedModel = modelEnricher(model, Optional.of(event), locale);
         return uploadedResourceManager.findCascading(event.getOrganizationId(), event.getId(), templateResource.getSavedName(locale))
             .map(resource -> render(new ByteArrayResource(resource), updatedModel, locale, templateResource.getTemplateOutput()))
-            .orElseGet(() -> renderTemplate(Optional.ofNullable(event), templateResource, updatedModel, locale));
+            .orElseGet(() -> renderTemplate(Optional.of(event), templateResource, updatedModel, locale));
     }
 
-    public String renderString(Event event, String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+    public String renderString(EventAndOrganizationId event, String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
         return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), modelEnricher(model, Optional.ofNullable(event), locale), locale, templateOutput);
     }
 
     //TODO: to be removed when only the rest api will be exposed
-    public String renderServletContextResource(String servletContextResource, Event event, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
+    public String renderServletContextResource(String servletContextResource, EventAndOrganizationId event, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
         model.put("request", request);
         model.put(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
         Locale locale = RequestContextUtils.getLocale(request);
         return render(new ServletContextResource(request.getServletContext(), servletContextResource), modelEnricher(model, Optional.ofNullable(event), locale), locale, templateOutput);
     }
 
-    private Map<String, Object> modelEnricher(Map<String, Object> model, Optional<Event> event, Locale locale) {
+    private Map<String, Object> modelEnricher(Map<String, Object> model, Optional<? extends EventAndOrganizationId> event, Locale locale) {
         Map<String, Object> toEnrich = new HashMap<>(model);
-        event.ifPresent(ev -> {
-            toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, getVATString(ev, messageSource, locale, configurationManager));
-        });
+        event.ifPresent(ev -> toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, getVATString(ev, messageSource, locale, configurationManager)));
         return toEnrich;
     }
 
 
-    public static String getVATString(Event event, MessageSource messageSource, Locale loc, ConfigurationManager configurationManager) {
+    public static String getVATString(EventAndOrganizationId event, MessageSource messageSource, Locale loc, ConfigurationManager configurationManager) {
         String locale = messageSource.getMessage("locale", null, loc);
         String translatedVat = messageSource.getMessage("common.vat", null, loc);
         ConfigurationKeys vatKey = ConfigurationKeys.valueOf("TRANSLATION_OVERRIDE_VAT_"+locale.toUpperCase(Locale.ENGLISH));
-        Configuration.ConfigurationPathKey vatPathKey = Optional.ofNullable(event).map(e -> alfio.model.system.Configuration.from(e.getOrganizationId(), e.getId(), vatKey))
+        Configuration.ConfigurationPathKey vatPathKey = Optional.ofNullable(event).map(e -> alfio.model.system.Configuration.from(e, vatKey))
             .orElseGet(() -> alfio.model.system.Configuration.getSystemConfiguration(vatKey));
         return configurationManager.getStringConfigValue(vatPathKey, translatedVat);
     }
@@ -160,7 +158,7 @@ public class TemplateManager {
     }
 
     private static final Pattern KEY_PATTERN = Pattern.compile("(.*?)[\\s\\[]");
-    private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)\\]");
+    private static final Pattern ARGS_PATTERN = Pattern.compile("\\[(.*?)]");
 
     /**
      * Split key from (optional) arguments.

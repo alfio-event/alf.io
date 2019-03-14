@@ -58,12 +58,9 @@ public class IntegrationTestUtil {
 
     public static Map<String, String> generateDBConfig(String url, String username, String password) {
         Map<String, String> c = new HashMap<>();
-        c.put("datasource.dialect", "PGSQL");
-        c.put("datasource.driver", "org.postgresql.Driver");
         c.put("datasource.url", url);
         c.put("datasource.username", username);
         c.put("datasource.password", password);
-        c.put("datasource.validationQuery", "SELECT 1");
         return c;
     }
 
@@ -127,5 +124,10 @@ public class IntegrationTestUtil {
     public static void initAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {
         userRepository.create(UserManager.ADMIN_USERNAME, "", "The", "Administrator", "admin@localhost", true, User.Type.INTERNAL, null, null);
         authorityRepository.create(UserManager.ADMIN_USERNAME, Role.ADMIN.getRoleName());
+    }
+
+    public static void removeAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {
+        authorityRepository.revokeAll(UserManager.ADMIN_USERNAME);
+        userRepository.deleteUser(userRepository.findIdByUserName(UserManager.ADMIN_USERNAME).get());
     }
 }

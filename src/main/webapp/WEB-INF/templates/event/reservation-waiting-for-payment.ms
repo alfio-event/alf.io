@@ -31,11 +31,18 @@
 <div class="wMarginBottom">&nbsp;</div>
 <div class="container-fluid" id="back-to-event-site">
     <div class="pull-left"><a href="{{event.websiteUrl}}" class="btn btn-default">{{#i18n}}to-event-site{{/i18n}}</a></div>
+    {{#userCanDownloadReceiptOrInvoice}}
     {{#reservation.hasInvoiceNumber}}
         <div class="pull-right">
             <a href="{{request.contextPath}}/event/{{event.shortName}}/reservation/{{reservationId}}/invoice" class="btn btn-success" target="_blank">{{#i18n}}reservation-page-complete.download-your-invoice{{/i18n}}</a>
         </div>
     {{/reservation.hasInvoiceNumber}}
+    {{/userCanDownloadReceiptOrInvoice}}
+    {{^userCanDownloadReceiptOrInvoice}}
+        <div class="pull-right">
+            {{#i18n}}reservation-page-waiting.invoice-will-be-sent{{/i18n}}
+        </div>
+    {{/userCanDownloadReceiptOrInvoice}}
 </div>
 <div class="clearfix wMarginBottom"></div>
 <div class="text-center">

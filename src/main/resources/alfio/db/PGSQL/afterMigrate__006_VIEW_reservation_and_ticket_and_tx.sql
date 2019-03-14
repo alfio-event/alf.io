@@ -44,6 +44,13 @@ create view reservation_and_ticket_and_tx as (select
     tickets_reservation.event_id_fk tr_event_id,
     tickets_reservation.creation_ts tr_creation_ts,
     tickets_reservation.customer_reference tr_customer_reference,
+    tickets_reservation.billing_address_company tr_billing_address_company,
+    tickets_reservation.billing_address_line1 tr_billing_address_line1,
+    tickets_reservation.billing_address_line2 tr_billing_address_line2,
+    tickets_reservation.billing_address_city tr_billing_address_city,
+    tickets_reservation.billing_address_zip tr_billing_address_zip,
+    tickets_reservation.registration_ts tr_registration_ts,
+    tickets_reservation.invoicing_additional_information tr_invoicing_additional_information,
 
     ticket.id t_id,
     ticket.uuid t_uuid,
@@ -74,7 +81,8 @@ create view reservation_and_ticket_and_tx as (select
     b_transaction.description bt_description,
     b_transaction.payment_proxy bt_payment_proxy,
     b_transaction.gtw_fee bt_gtw_fee,
-    b_transaction.plat_fee bt_plat_fee
+    b_transaction.plat_fee bt_plat_fee,
+    b_transaction.status bt_status
 
 from tickets_reservation
 left outer join ticket on tickets_reservation.id = ticket.tickets_reservation_id

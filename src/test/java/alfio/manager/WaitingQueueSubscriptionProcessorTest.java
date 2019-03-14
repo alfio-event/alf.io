@@ -94,14 +94,14 @@ public class WaitingQueueSubscriptionProcessorTest {
 
     @Test
     void filterWaitingQueueFlagIsNotActive() {
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(false);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(false);
         processor.handleWaitingTickets();
         verify(waitingQueueManager, never()).distributeSeats(eq(event));
     }
 
     @Test
     void processPendingTickets() {
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false))).thenReturn(true);
         when(messageSource.getMessage(anyString(), any(), eq(Locale.ENGLISH))).thenReturn("subject");
         when(subscription.getLocale()).thenReturn(Locale.ENGLISH);
         when(subscription.getEmailAddress()).thenReturn("me");
@@ -110,8 +110,8 @@ public class WaitingQueueSubscriptionProcessorTest {
         String reservationId = "reservation-id";
         when(ticketReservationManager.createTicketReservation(eq(event), anyList(), anyList(), any(Date.class), eq(Optional.empty()), eq(Optional.empty()), any(Locale.class), eq(true))).thenReturn(reservationId);
         processor.handleWaitingTickets();
-        verify(configurationManager).getBooleanConfigValue(eq(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE)), eq(false));
+        verify(configurationManager).getBooleanConfigValue(eq(Configuration.from(event, ENABLE_WAITING_QUEUE)), eq(false));
         verify(ticketReservationManager).createTicketReservation(eq(event), eq(Collections.singletonList(reservation)), anyList(), eq(Date.from(expiration.toInstant())), eq(Optional.empty()), eq(Optional.empty()), eq(Locale.ENGLISH), eq(true));
-        verify(notificationManager).sendSimpleEmail(eq(event), eq("me"), eq("subject"), any(TextTemplateGenerator.class));
+        verify(notificationManager).sendSimpleEmail(eq(event), eq(reservationId), eq("me"), eq("subject"), any(TextTemplateGenerator.class));
     }
 }

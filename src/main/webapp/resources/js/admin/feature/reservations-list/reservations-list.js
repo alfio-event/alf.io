@@ -35,7 +35,7 @@
 
         function loadData(loadPartially) {
 
-            loadPartially = loadPartially || {pending: true, completed: true, paymentPending: true, cancelled: true, stuck: true};
+            loadPartially = loadPartially || {pending: true, completed: true, paymentPending: true, cancelled: true, stuck: true, credited: true};
 
             $location.search({
                 pendingPage: ctrl.currentPagePending,
@@ -54,7 +54,7 @@
             }
 
             if(loadPartially.paymentPending) {
-                EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPagePendingPayment - 1, ctrl.toSearch, ['IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT']).then(function (res) {
+                EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPagePendingPayment - 1, ctrl.toSearch, ['IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'WAITING_EXTERNAL_CONFIRMATION', 'OFFLINE_PAYMENT']).then(function (res) {
                     ctrl.paymentPendingReservations = res.data.left;
                     ctrl.paymentPendingFoundReservations = res.data.right;
                 });
@@ -78,6 +78,13 @@
                 EventService.findAllReservations(ctrl.event.shortName, 0, ctrl.toSearch, ['STUCK']).then(function(res) {
                     ctrl.stuckReservations = res.data.left;
                     ctrl.foundStuckReservations = res.data.right;
+                });
+            }
+
+            if(loadPartially.credited) {
+                EventService.findAllReservations(ctrl.event.shortName, 0, ctrl.toSearch, ['CREDIT_NOTE_ISSUED']).then(function(res) {
+                    ctrl.creditedReservations = res.data.left;
+                    ctrl.foundCreditedReservations = res.data.right;
                 });
             }
         }

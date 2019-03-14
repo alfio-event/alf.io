@@ -19,19 +19,21 @@ package alfio.controller.api.admin;
 import alfio.controller.api.support.PageAndContent;
 import alfio.manager.AdminReservationManager;
 import alfio.manager.EventManager;
+import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.model.*;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
-import alfio.repository.EventRepository;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Collections;
@@ -40,6 +42,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static alfio.util.FileUtil.sendPdf;
+
 @RequestMapping("/admin/api/reservation")
 @RestController
 @AllArgsConstructor
@@ -47,8 +51,8 @@ public class AdminReservationApiController {
 
     private final AdminReservationManager adminReservationManager;
     private final EventManager eventManager;
-    private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
+    private final FileUploadManager fileUploadManager;
 
     @RequestMapping(value = "/event/{eventName}/new", method = RequestMethod.POST)
     public Result<String> createNew(@PathVariable("eventName") String eventName, @RequestBody AdminReservationModification reservation, Principal principal) {
@@ -67,7 +71,7 @@ public class AdminReservationApiController {
                                                           @RequestParam(value = "search", required = false) String search,
                                                           @RequestParam(value = "status", required = false) List<TicketReservation.TicketReservationStatus> status,
                                                           Principal principal) {
-        return eventManager.getOptionalByName(eventName, principal.getName())
+        return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(event -> {
                 Pair<List<TicketReservation>, Integer> res = ticketReservationManager.findAllReservationsInEvent(event.getId(), page, search, status);
                 return new PageAndContent<>(res.getLeft(), res.getRight());
@@ -92,9 +96,63 @@ public class AdminReservationApiController {
         return adminReservationManager.notify(eventName, reservationId, arm, principal.getName());
     }
 
+    @PutMapping("/event/{eventName}/{reservationId}/notify-attendees")
+    public Result<Boolean> notifyAttendees(@PathVariable("eventName") String eventName,
+                                           @PathVariable("reservationId") String reservationId,
+                                           @RequestBody List<Integer> ids,
+                                           Principal principal) {
+        return adminReservationManager.notifyAttendees(eventName, reservationId, ids, principal.getName());
+    }
+
     @RequestMapping(value = "/event/{eventName}/{reservationId}/audit", method = RequestMethod.GET)
     public Result<List<Audit>> getAudit(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.getAudit(eventName, reservationId, principal.getName());
+    }
+
+    @GetMapping("/event/{eventName}/{reservationId}/billing-documents")
+    public Result<List<BillingDocument>> getBillingDocuments(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+        return adminReservationManager.getBillingDocuments(eventName, reservationId, principal.getName());
+    }
+
+    @DeleteMapping("/event/{eventName}/{reservationId}/billing-document/{documentId}")
+    public ResponseEntity<Boolean> invalidateBillingDocument(@PathVariable("eventName") String eventName,
+                                                             @PathVariable("reservationId") String reservationId,
+                                                             @PathVariable("documentId") long documentId,
+                                                             Principal principal) {
+        Result<Boolean> invalidateResult = adminReservationManager.invalidateBillingDocument(eventName, reservationId, documentId, principal.getName());
+        if(invalidateResult.isSuccess()) {
+            return ResponseEntity.ok(invalidateResult.getData());
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PutMapping("/event/{eventName}/{reservationId}/billing-document/{documentId}/restore")
+    public ResponseEntity<Boolean> restoreBillingDocument(@PathVariable("eventName") String eventName,
+                                                             @PathVariable("reservationId") String reservationId,
+                                                             @PathVariable("documentId") long documentId,
+                                                             Principal principal) {
+        Result<Boolean> restoreResult = adminReservationManager.restoreBillingDocument(eventName, reservationId, documentId, principal.getName());
+        if(restoreResult.isSuccess()) {
+            return ResponseEntity.ok(restoreResult.getData());
+        } else {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/event/{eventName}/{reservationId}/billing-document/{documentId}")
+    public ResponseEntity<Void> getBillingDocument(@PathVariable("eventName") String eventName,
+                                                   @PathVariable("reservationId") String reservationId,
+                                                   @PathVariable("documentId") long documentId,
+                                                   Principal principal,
+                                                   HttpServletResponse response) {
+        Result<Boolean> result = adminReservationManager.getSingleBillingDocumentAsPdf(eventName, reservationId, documentId, principal.getName())
+            .map(res -> sendPdf(res.getRight(), response, eventName, reservationId, res.getLeft().getType().toString().toLowerCase()));
+        if(result.isSuccess()) {
+            return ResponseEntity.ok(null);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @RequestMapping(value = "/event/{eventName}/{reservationId}", method = RequestMethod.GET)
@@ -138,9 +196,27 @@ public class AdminReservationApiController {
         return Result.success(true);
     }
 
+    @RequestMapping(value = "/event/{eventName}/{reservationId}/credit", method = RequestMethod.POST)
+    public Result<Boolean> creditReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @RequestParam("refund") boolean refund,
+                                             @RequestParam(value = "notify", defaultValue = "false") boolean notify,
+                                             Principal principal) {
+        adminReservationManager.creditReservation(eventName, reservationId, refund, notify, principal.getName());
+        return Result.success(true);
+    }
+
+    @PutMapping("/event/{eventName}/{reservationId}/regenerate-billing-document")
+    public Result<Boolean> regenerateBillingDocument(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+        return adminReservationManager.regenerateBillingDocument(eventName, reservationId, principal.getName());
+    }
+
     @RequestMapping(value = "/event/{eventName}/{reservationId}/refund", method = RequestMethod.POST)
     public Result<Boolean> refund(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @RequestBody RefundAmount amount, Principal principal) {
         return adminReservationManager.refund(eventName, reservationId, new BigDecimal(amount.amount), principal.getName());
+    }
+
+    @GetMapping("/event/{eventName}/{reservationId}/email-list")
+    public Result<List<LightweightMailMessage>> getEmailList(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+        return adminReservationManager.getEmailsForReservation(eventName, reservationId, principal.getName());
     }
 
     private TicketReservationDescriptor toReservationDescriptor(String reservationId, Triple<TicketReservation, List<Ticket>, Event> triple) {

@@ -22,6 +22,7 @@ import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.Ticket;
 import alfio.model.TicketWithCategory;
 import alfio.model.result.ErrorCode;
@@ -34,6 +35,7 @@ import alfio.util.EventUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -51,13 +53,13 @@ public class AttendeeManager {
 
     public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String username) {
         int userId = userRepository.getByUsername(username).getId();
-        Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventShortName);
-        if(!maybeEvent.isPresent()) {
+        Optional<EventAndOrganizationId> maybeEvent = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName);
+        if(maybeEvent.isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.EVENT_NOT_FOUND, "event not found"));
         }
-        Event event = maybeEvent.get();
+        EventAndOrganizationId event = maybeEvent.get();
         Optional<Ticket> maybeTicket = ticketRepository.findOptionalByUUID(ticketUid);
-        if(!maybeTicket.isPresent()) {
+        if(maybeTicket.isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(CheckInStatus.TICKET_NOT_FOUND, "ticket not found"));
         }
         Ticket ticket = maybeTicket.get();
@@ -65,8 +67,9 @@ public class AttendeeManager {
             return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(CheckInStatus.INVALID_TICKET_STATE, "not checked-in"));
         }
         Optional<ZonedDateTime> existingRegistration = sponsorScanRepository.getRegistrationTimestamp(userId, event.getId(), ticket.getId());
-        if(!existingRegistration.isPresent()) {
-            sponsorScanRepository.insert(userId, ZonedDateTime.now(event.getZoneId()), event.getId(), ticket.getId());
+        if(existingRegistration.isEmpty()) {
+            ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
+            sponsorScanRepository.insert(userId, ZonedDateTime.now(eventZoneId), event.getId(), ticket.getId());
         }
         return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
     }
@@ -75,7 +78,7 @@ public class AttendeeManager {
         Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventShortName)
             .filter(e -> userManager.findUserOrganizations(username).stream().anyMatch(o -> o.getId() == e.getOrganizationId()));
 
-        if(!maybeEvent.isPresent()) {
+        if(maybeEvent.isEmpty()) {
             return Result.error(ErrorCode.EventError.NOT_FOUND);
         }
 
@@ -93,7 +96,7 @@ public class AttendeeManager {
         return maybeEvent.map(event -> loadAttendeesData(event, userId, start));
     }
 
-    private List<SponsorAttendeeData> loadAttendeesData(Event event, int userId, ZonedDateTime start) {
+    private List<SponsorAttendeeData> loadAttendeesData(EventAndOrganizationId event, int userId, ZonedDateTime start) {
         return sponsorScanRepository.loadSponsorData(event.getId(), userId, start).stream()
             .map(scan -> {
                 Ticket ticket = scan.getTicket();

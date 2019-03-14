@@ -29,7 +29,6 @@ import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.repository.AdditionalServiceRepository;
 import alfio.util.ErrorsCode;
-import alfio.util.OptionalWrapper;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -110,7 +109,7 @@ public class ReservationForm implements Serializable {
 
         final boolean validCategorySelection = categories.stream().allMatch(c -> {
             TicketCategory tc = eventManager.getTicketCategoryById(c.getTicketCategoryId(), event.getId());
-            return OptionalWrapper.optionally(() -> eventManager.findEventByTicketCategory(tc)).isPresent();
+            return eventManager.eventExistsById(tc.getEventId());
         });
 
 
@@ -121,7 +120,7 @@ public class ReservationForm implements Serializable {
                 as.getExpiration(event.getZoneId()).isAfter(now) &&
                 asm.getQuantity() >= 0 &&
                 ((as.isFixPrice() && asm.isQuantityValid(as, selectionCount)) || (!as.isFixPrice() && asm.getAmount() != null && asm.getAmount().compareTo(BigDecimal.ZERO) >= 0)) &&
-                OptionalWrapper.optionally(() -> eventManager.findEventByAdditionalService(as)).isPresent();
+                eventManager.eventExistsById(as.getEventId());
         });
 
         if(!validCategorySelection || !validAdditionalServiceSelected) {
@@ -131,8 +130,8 @@ public class ReservationForm implements Serializable {
 
         List<TicketReservationWithOptionalCodeModification> res = new ArrayList<>();
         //
-        Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode)).flatMap(
-                (trimmedCode) -> tickReservationManager.getSpecialPriceByCode(trimmedCode));
+        Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode))
+            .flatMap(tickReservationManager::getSpecialPriceByCode);
         //
         final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         maxTicketsByTicketReservation.forEach((pair) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));

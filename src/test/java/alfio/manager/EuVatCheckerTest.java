@@ -28,10 +28,6 @@ import org.junit.Test;
 import java.util.Optional;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.*;
 
 public class EuVatCheckerTest {

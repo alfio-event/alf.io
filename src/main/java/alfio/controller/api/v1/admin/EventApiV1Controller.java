@@ -133,7 +133,7 @@ public class EventApiV1Controller {
     public ResponseEntity<String> delete(@PathVariable("slug") String slug, Principal user) {
         Result<String> result =  new Result.Builder<String>()
             .build(() -> {
-                eventManager.getOptionalByName(slug,user.getName()).ifPresent( e -> eventManager.deleteEvent(e.getId(),user.getName()));
+                eventManager.getOptionalEventAndOrganizationIdByName(slug,user.getName()).ifPresent( e -> eventManager.deleteEvent(e.getId(),user.getName()));
                 return "Ok";
             });
         if(result.isSuccess()) {
@@ -245,7 +245,7 @@ public class EventApiV1Controller {
                         List<ExtensionMetadataValue> values = settings.stream()
                             .map(es -> Pair.of(es, metadata.stream().filter(mm -> mm.getName().equals(es.getKey())).findFirst()))
                             .filter(pair -> {
-                                if (!pair.getRight().isPresent()) {
+                                if (pair.getRight().isEmpty()) {
                                     log.warn("ignoring non-existent extension setting key {}", pair.getLeft().getKey());
                                 }
                                 return pair.getRight().isPresent();

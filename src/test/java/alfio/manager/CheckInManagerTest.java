@@ -26,9 +26,6 @@ import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Date;
 import java.util.Optional;
@@ -37,29 +34,26 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
 public class CheckInManagerTest {
 
-    @Mock
     private EventRepository eventRepository;
-    @Mock
     private ConfigurationManager configurationManager;
-    @Mock
-    private OrganizationRepository organizationRepository;
-    @Mock
-    private Event event;
-    @Mock
-    private Organization organization;
     private CheckInManager checkInManager;
 
     private static final String EVENT_NAME = "eventName";
     private static final String USERNAME = "username";
     private static final int EVENT_ID = 0;
     private static final int ORG_ID = 1;
+    private Event event;
 
 
     @Before
     public void setUp() {
+        eventRepository = mock(EventRepository.class);
+        configurationManager = mock(ConfigurationManager.class);
+        OrganizationRepository organizationRepository = mock(OrganizationRepository.class);
+        event = mock(Event.class);
+        Organization organization = mock(Organization.class);
         when(eventRepository.findOptionalByShortName(EVENT_NAME)).thenReturn(Optional.of(event));
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORG_ID);
@@ -72,7 +66,7 @@ public class CheckInManagerTest {
 
     @Test
     public void getStatistics() {
-        when(configurationManager.getBooleanConfigValue(Configuration.from(ORG_ID, EVENT_ID, ConfigurationKeys.CHECK_IN_STATS), true)).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.CHECK_IN_STATS), true)).thenReturn(true);
         CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
         assertNotNull(statistics);
         verify(eventRepository).retrieveCheckInStatisticsForEvent(EVENT_ID);
@@ -80,7 +74,7 @@ public class CheckInManagerTest {
 
     @Test
     public void getStatisticsDisabled() {
-        when(configurationManager.getBooleanConfigValue(Configuration.from(ORG_ID, EVENT_ID, ConfigurationKeys.CHECK_IN_STATS), true)).thenReturn(false);
+        when(configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.CHECK_IN_STATS), true)).thenReturn(false);
         CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
         assertNull(statistics);
         verify(eventRepository, never()).retrieveCheckInStatisticsForEvent(EVENT_ID);

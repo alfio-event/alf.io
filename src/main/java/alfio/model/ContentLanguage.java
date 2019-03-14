@@ -28,14 +28,16 @@ import java.util.stream.Collectors;
 public class ContentLanguage {
 
     public static final int ENGLISH_IDENTIFIER = 0b00010;
-    public static final int ALL_LANGUAGES_IDENTIFIER = 0b00001 | ENGLISH_IDENTIFIER | 0b00100 | 0b01000 | 0b10000;
     public static final ContentLanguage ITALIAN = new ContentLanguage(Locale.ITALIAN, 0b00001, Locale.ITALIAN, "it");
     public static final ContentLanguage ENGLISH = new ContentLanguage(Locale.ENGLISH, ENGLISH_IDENTIFIER, Locale.ENGLISH, "gb");
     private static final ContentLanguage GERMAN = new ContentLanguage(Locale.GERMAN,   0b00100, Locale.GERMAN, "de");
     private static final ContentLanguage DUTCH = new ContentLanguage(new Locale("nl"), 0b01000, new Locale("nl"), "nl");
     private static final ContentLanguage FRENCH = new ContentLanguage(Locale.FRENCH,0b10000, Locale.FRENCH, "fr");
+    private static final ContentLanguage ROMANIAN = new ContentLanguage(new Locale("ro"),0b100000, new Locale("ro"), "ro");
+    private static final ContentLanguage PORTUGUESE = new ContentLanguage(new Locale("pt"),0b1000000, new Locale("pt"), "pt");
 
-    public static final List<ContentLanguage> ALL_LANGUAGES = Arrays.asList(ITALIAN, ENGLISH, GERMAN, DUTCH,FRENCH);
+    public static final List<ContentLanguage> ALL_LANGUAGES = Arrays.asList(ITALIAN, ENGLISH, GERMAN, DUTCH, FRENCH, ROMANIAN, PORTUGUESE);
+    public static final int ALL_LANGUAGES_IDENTIFIER = ALL_LANGUAGES.stream().mapToInt(ContentLanguage::getValue).reduce(0, (a,b) -> a|b);
 
     public static List<ContentLanguage> findAllFor(int bitMask) {
         return ALL_LANGUAGES.stream()

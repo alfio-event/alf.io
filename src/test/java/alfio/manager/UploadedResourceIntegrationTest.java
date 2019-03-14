@@ -19,7 +19,6 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.config.RepositoryConfiguration;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.modification.DateTimeModification;
@@ -45,16 +44,13 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class UploadedResourceIntegrationTest extends BaseIntegrationTest {
@@ -109,7 +105,9 @@ public class UploadedResourceIntegrationTest extends BaseIntegrationTest {
         toSave.setFile(FILE);
         toSave.setName("file_name.txt");
         toSave.setType("text/plain");
-        Assert.assertEquals(1, uploadedResourceManager.saveResource(toSave));
+        Optional<Integer> savedResource = uploadedResourceManager.saveResource(toSave);
+        Assert.assertTrue(savedResource.isPresent());
+        Assert.assertEquals(1, savedResource.get().intValue());
 
         Assert.assertTrue(uploadedResourceManager.hasResource("file_name.txt"));
         Assert.assertEquals(1, uploadedResourceManager.findAll().size());
@@ -120,7 +118,9 @@ public class UploadedResourceIntegrationTest extends BaseIntegrationTest {
         Assert.assertArrayEquals(FILE, baos.toByteArray());
 
         toSave.setFile(ONE_PIXEL_BLACK_GIF);
-        Assert.assertEquals(1, uploadedResourceManager.saveResource(toSave));
+        savedResource = uploadedResourceManager.saveResource(toSave);
+        Assert.assertTrue(savedResource.isPresent());
+        Assert.assertEquals(1, savedResource.get().intValue());
 
         ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource("file_name.txt", baos1);
@@ -137,7 +137,9 @@ public class UploadedResourceIntegrationTest extends BaseIntegrationTest {
         toSave.setFile(FILE);
         toSave.setName("file_name.txt");
         toSave.setType("text/plain");
-        Assert.assertEquals(1, uploadedResourceManager.saveResource(orgId, toSave));
+        var savedResource = uploadedResourceManager.saveResource(orgId, toSave);
+        Assert.assertTrue(savedResource.isPresent());
+        Assert.assertEquals(1, savedResource.get().intValue());
 
         Assert.assertTrue(uploadedResourceManager.hasResource(orgId, "file_name.txt"));
         Assert.assertEquals(1, uploadedResourceManager.findAll(orgId).size());
@@ -148,7 +150,9 @@ public class UploadedResourceIntegrationTest extends BaseIntegrationTest {
         Assert.assertArrayEquals(FILE, baos.toByteArray());
 
         toSave.setFile(ONE_PIXEL_BLACK_GIF);
-        Assert.assertEquals(1, uploadedResourceManager.saveResource(orgId, toSave));
+        savedResource = uploadedResourceManager.saveResource(orgId, toSave);
+        Assert.assertTrue(savedResource.isPresent());
+        Assert.assertEquals(1, savedResource.get().intValue());
 
         ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource(orgId, "file_name.txt", baos1);
@@ -166,7 +170,9 @@ public class UploadedResourceIntegrationTest extends BaseIntegrationTest {
         toSave.setFile(FILE);
         toSave.setName("file_name.txt");
         toSave.setType("text/plain");
-        Assert.assertEquals(1, uploadedResourceManager.saveResource(orgId, eventId, toSave));
+        var savedResource = uploadedResourceManager.saveResource(orgId, eventId, toSave);
+        Assert.assertTrue(savedResource.isPresent());
+        Assert.assertEquals(1, savedResource.get().intValue());
 
         Assert.assertTrue(uploadedResourceManager.hasResource(orgId, eventId, "file_name.txt"));
         Assert.assertEquals(1, uploadedResourceManager.findAll(orgId, eventId).size());
@@ -177,7 +183,9 @@ public class UploadedResourceIntegrationTest extends BaseIntegrationTest {
         Assert.assertArrayEquals(FILE, baos.toByteArray());
 
         toSave.setFile(ONE_PIXEL_BLACK_GIF);
-        Assert.assertEquals(1, uploadedResourceManager.saveResource(orgId, eventId, toSave));
+        savedResource = uploadedResourceManager.saveResource(orgId, eventId, toSave);
+        Assert.assertTrue(savedResource.isPresent());
+        Assert.assertEquals(1, savedResource.get().intValue());
 
         ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
         uploadedResourceManager.outputResource(orgId, eventId, "file_name.txt", baos1);

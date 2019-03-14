@@ -53,7 +53,7 @@ public class SpecialPriceApiController {
     @ResponseBody
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String handleExceptions(Exception e) {
-        if(!IllegalArgumentException.class.isInstance(e)) {
+        if(!(e instanceof IllegalArgumentException)) {
             log.error("Unexpected exception in SpecialPriceApiController", e);
             return e.toString();
         }
@@ -82,7 +82,7 @@ public class SpecialPriceApiController {
     public boolean sendCodes(@PathVariable("eventName") String eventName,
                              @PathVariable("categoryId") int categoryId,
                              @RequestBody List<SendCodeModification> codes,
-                             Principal principal) throws IOException {
+                             Principal principal) {
 
         Validate.isTrue(StringUtils.isNotEmpty(eventName));
         Objects.requireNonNull(codes);

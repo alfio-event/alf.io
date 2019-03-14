@@ -132,10 +132,11 @@
                 $(this).removeClass('untouched');
             });
 
-        $('#copy-from-contact-data').click(function() {
+        $('.copy-from-contact-data').click(function() {
             var firstOrFullName = $('#first-name').val() || $('#full-name').val();
-            fillAttendeeData(firstOrFullName, $('#last-name').val());
-            $('#attendeesData').find('.attendee-email').first().val($('#email').val());
+            var ticket = $(this).attr('data-ticket');
+            fillAttendeeData(firstOrFullName, $('#last-name').val(), ticket);
+            getTargetTicketData(ticket).find('.attendee-email').first().val($('#email').val());
         });
 
         var postponeAssignment = $('#postpone-assignment');
@@ -155,9 +156,9 @@
             $('#attendeesData').find('.field-required').attr('required', false);
         }
 
-        function fillAttendeeData(firstOrFullName, lastName) {
+        function fillAttendeeData(firstOrFullName, lastName, ticketUUID) {
             var useFullName = (typeof lastName === "undefined");
-            var element = $('#attendeesData');
+            var element = getTargetTicketData(ticketUUID);
             if(useFullName) {
                 updateIfNotTouched(element.find('.attendee-full-name').first(), firstOrFullName);
             } else {
@@ -166,14 +167,35 @@
             }
         }
 
+        function getTargetTicketData(ticketUUID) {
+            var id = ticketUUID ? '#attendee-data-'+ticketUUID : '#attendeesData';
+            return $(id);
+        }
+
         function updateIfNotTouched(element, newValue) {
             if(element.hasClass('untouched')) {
                 element.val(newValue);
             }
         }
 
+        function updateInvoiceFields(radio) {
+            if(radio.length > 0) {
+                var elements = $('.invoice-business');
+                if(radio.val() === 'business') {
+                    elements.removeClass('hide');
+                    elements.find('#vatNr').attr('required', true);
+                } else {
+                    elements.find('input').val('').removeAttr('required');
+                    elements.addClass('hide');
+                }
+            }
+        }
 
+        $('input[name=invoiceType]').change(function() {
+            updateInvoiceFields($(this));
+        });
 
+        updateInvoiceFields($('input[name=invoiceType]:checked'));
 
         $("select").map(function() {
             var value = $(this).attr('value');
@@ -190,34 +212,60 @@
 
             } else {
                 $(".invoice-details-section").addClass(hiddenClasses);
-                $(".invoice-details-section input").removeAttr('required');
+                $("#billingAddressLine1, #billingAddressZip, #billingAddressCity, #vatCountry").removeAttr('required');
             }
         });
 
+
+        var enabledItalyEInvoicing = $("#italyEInvoicing").length === 1;
+
+        $("#italyEInvoicing").hide();
+
         $("#vatCountry").change(function() {
-            $("#selected-country-code").text($("#vatCountry").val());
+            var vatCountryValue = $("#vatCountry").val();
+            $("#selected-country-code").text(vatCountryValue);
+
+            if(enabledItalyEInvoicing && vatCountryValue === 'IT') {
+                $("#italyEInvoicing").show();
+                $("#italyEInvoicingFiscalCode").attr('required', true);
+            } else {
+                $("#italyEInvoicing").hide();
+                $("#italyEInvoicingFiscalCode").removeAttr('required');
+            }
         });
 
-        function canSkipVatNr() {
-            return $("#skip-vat-nr:checked").length === 1;
-        }
+        $("input[name=italyEInvoicingReferenceType]").change(function() {
+            var referenceType = $("input[name=italyEInvoicingReferenceType]:checked").val();
+
+            $("input[name=italyEInvoicingReferenceAddresseeCode]").attr('disabled', true);
+            $("input[name=italyEInvoicingReferencePEC]").attr('disabled', true);
+
+            if(referenceType === 'ADDRESSEE_CODE') {
+                $("input[name=italyEInvoicingReferencePEC]").val('')
+                $("input[name=italyEInvoicingReferenceAddresseeCode]").removeAttr('disabled');
+            }
+            else if(referenceType === 'PEC') {
+                $("input[name=italyEInvoicingReferenceAddresseeCode]").val('')
+                $("input[name=italyEInvoicingReferencePEC]").removeAttr('disabled');
+            }
+            else if(referenceType === 'NONE') {
+                $("input[name=italyEInvoicingReferenceAddresseeCode]").val('')
+                $("input[name=italyEInvoicingReferencePEC]").val('')
+            }
+        });
 
         $("#skip-vat-nr").change(function() {
-            $("#billingAddressCompany").change();
-        });
-
-        $("#billingAddressCompany").change(function() {
-            var companyName = $(this).val();
-            if(companyName && companyName.trim().length > 0 && !canSkipVatNr()) {
-                $("#vatNr").attr('required', true);
-            } else {
+            if($(this).is(':checked')) {
                 $("#vatNr").removeAttr('required');
+            } else {
+                $("#vatNr").attr('required', true);
             }
         });
 
         //
         $("#vatCountry").change();
         $("#invoice-requested").change();
+        $("input[name=italyEInvoicingReferenceType]").change();
 
 
         $("form").each(createAllErrors);

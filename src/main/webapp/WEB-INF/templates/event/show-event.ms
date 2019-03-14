@@ -19,24 +19,6 @@
     </div>
 </div>
 
-<div class="wizard2 center text-muted">
-    <div class="wizard2-current">
-        <div><span class="badge">1</span><span>{{#i18n}}breadcrumb.step1{{/i18n}}</span></div>
-        <div class="wizard2-line"></div>
-    </div>
-    <div>
-        <div><span class="badge">2</span><span>{{#i18n}}breadcrumb.step2{{/i18n}}</span></div>
-        <div class="wizard2-line"></div>
-    </div>
-    <div>
-        <div><span class="badge">3</span><span>{{#i18n}}breadcrumb.step3{{#event.free}}.free{{/event.free}}{{/i18n}}</span></div>
-        <div class="wizard2-line"></div>
-    </div>
-    <div>
-        <div><span class="badge">4</span><span>{{#i18n}}breadcrumb.step4{{/i18n}}</span></div>
-    </div>
-</div>
-
 <h2>{{#i18n}}show-event.tickets{{/i18n}}</h2>
 
 {{#hasErrors}}
@@ -115,12 +97,6 @@
 {{/displayWaitingQueueForm}}
 
 <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reserve-tickets" class="form-horizontal">
-{{^validPaymentMethodAvailable}}
-    <div class="alert alert-warning">
-        <h3>{{#i18n}}show-event.offline-payment-not-available{{/i18n}}</h3>
-    </div>
-{{/validPaymentMethodAvailable}}
-{{#validPaymentMethodAvailable}}
     <ul class="list-group">
     {{#ticketCategories}}
         {{> /event/ticket-category.ms }}
@@ -217,7 +193,6 @@
 {{#captchaForTicketSelectionEnabled}}
     <div class="show-event g-recaptcha" data-sitekey="{{recaptchaApiKey}}"></div>
 {{/captchaForTicketSelectionEnabled}}
-{{/validPaymentMethodAvailable}}
     <hr/>
 
     <input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}">

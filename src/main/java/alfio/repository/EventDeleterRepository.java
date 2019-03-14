@@ -26,12 +26,6 @@ public interface EventDeleterRepository {
 	@Query("delete from waiting_queue where event_id = :eventId")
 	int deleteWaitingQueue(@Bind("eventId") int eventId);
 	
-	@Query("delete from plugin_log where event_id = :eventId")
-	int deletePluginLog(@Bind("eventId") int eventId);
-	
-	@Query("delete from plugin_configuration where event_id = :eventId")
-	int deletePluginConfiguration(@Bind("eventId") int eventId);
-	
 	@Query("delete from configuration_event where event_id_fk = :eventId")
 	int deleteConfigurationEvent(@Bind("eventId") int eventId);
 
@@ -103,5 +97,8 @@ public interface EventDeleterRepository {
 
     @Query("delete from whitelisted_ticket where group_link_id_fk in(select id from group_link where event_id_fk = :eventId)")
     int deleteWhitelistedTickets(@Bind("eventId") int eventId);
+
+    @Query("delete from billing_document where event_id_fk = :eventId")
+    int deleteBillingDocuments(@Bind("eventId") int eventId);
 
 }

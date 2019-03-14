@@ -16,13 +16,20 @@
  */
 package alfio.model.transaction;
 
+import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
 import java.time.ZonedDateTime;
+import java.util.Map;
+import java.util.Optional;
 
 @Getter
 public class Transaction {
+
+    public enum Status {
+        PENDING, COMPLETE, FAILED, CANCELLED, INVALID
+    }
 
     private final int id;
     private final String transactionId;
@@ -35,6 +42,8 @@ public class Transaction {
     private final PaymentProxy paymentProxy;
     private final long platformFee;
     private final long gatewayFee;
+    private final Status status;
+    private final Map<String, String> metadata;
 
 
     public Transaction(@Column("id") int id,
@@ -47,7 +56,9 @@ public class Transaction {
                        @Column("description") String description,
                        @Column("payment_proxy") String paymentProxy,
                        @Column("plat_fee") long platformFee,
-                       @Column("gtw_fee") long gatewayFee) {
+                       @Column("gtw_fee") long gatewayFee,
+                       @Column("status") Status status,
+                       @Column("metadata") @JSONData Map<String, String> metadata) {
         this.id = id;
         this.transactionId = transactionId;
         this.paymentId = paymentId;
@@ -59,5 +70,7 @@ public class Transaction {
         this.paymentProxy = PaymentProxy.valueOf(paymentProxy);
         this.platformFee = platformFee;
         this.gatewayFee = gatewayFee;
+        this.status = status;
+        this.metadata = Optional.ofNullable(metadata).orElse(Map.of());
     }
 }

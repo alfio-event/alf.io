@@ -78,15 +78,14 @@ public class EventManagerUnbindTicketsTest {
         when(event.getId()).thenReturn(eventId);
         when(event.getOrganizationId()).thenReturn(organizationId);
         when(organization.getId()).thenReturn(organizationId);
-        when(eventRepository.findByShortName(eq(eventName))).thenReturn(event);
-        when(eventRepository.findOptionalByShortName(eq(eventName))).thenReturn(Optional.of(event));
+        when(eventRepository.findOptionalEventAndOrganizationIdByShortName(eq(eventName))).thenReturn(Optional.of(event));
         when(ticketCategory.getId()).thenReturn(categoryId);
         when(organizationRepository.findOrganizationForUser(anyString(), anyInt())).thenReturn(Optional.of(organization));
         eventManager = new EventManager(userManager, eventRepository,
             eventDescriptionRepository, ticketCategoryRepository, ticketCategoryDescriptionRepository,
             ticketRepository, specialPriceRepository, null, null, null,
             null, null, null,
-            null, null, null, organizationRepository,
+            null, null, organizationRepository,
             null, null, null);
     }
 
@@ -98,7 +97,7 @@ public class EventManagerUnbindTicketsTest {
         assertThrows(IllegalArgumentException.class, () -> eventManager.unbindTickets(eventName, categoryId, username));
         verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
         verify(organizationRepository).findOrganizationForUser(eq(username), eq(organizationId));
-        verify(eventRepository).findOptionalByShortName(eq(eventName));
+        verify(eventRepository).findOptionalEventAndOrganizationIdByShortName(eq(eventName));
         verifyNoMoreInteractions(ticketCategoryRepository, userManager, eventRepository, ticketRepository);
     }
 
@@ -115,7 +114,7 @@ public class EventManagerUnbindTicketsTest {
         assertThrows(IllegalArgumentException.class, () -> eventManager.unbindTickets(eventName, categoryId, username));
         verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
         verify(organizationRepository).findOrganizationForUser(eq(username), eq(organizationId));
-        verify(eventRepository).findOptionalByShortName(eq(eventName));
+        verify(eventRepository).findOptionalEventAndOrganizationIdByShortName(eq(eventName));
     }
 
     @Test
@@ -140,7 +139,7 @@ public class EventManagerUnbindTicketsTest {
 
         verify(ticketCategoryRepository).countUnboundedCategoriesByEventId(eq(eventId));
         verify(organizationRepository).findOrganizationForUser(eq(username), eq(organizationId));
-        verify(eventRepository).findOptionalByShortName(eq(eventName));
+        verify(eventRepository).findOptionalEventAndOrganizationIdByShortName(eq(eventName));
         verify(ticketRepository).selectTicketInCategoryForUpdate(eq(eventId), eq(categoryId), eq(notSold), eq(singletonList(Ticket.TicketStatus.FREE.name())));
         verify(ticketRepository).unbindTicketsFromCategory(eq(eventId), eq(categoryId), eq(lockedTickets));
         verify(ticketCategoryRepository).updateSeatsAvailability(eq(categoryId), eq(0));

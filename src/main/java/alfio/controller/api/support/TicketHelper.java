@@ -20,7 +20,6 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EuVatChecker;
 import alfio.manager.EuVatChecker.SameCountryValidator;
-import alfio.manager.FileUploadManager;
 import alfio.manager.GroupManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PartialTicketTextGenerator;
@@ -65,7 +64,6 @@ public class TicketHelper {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
-    private final FileUploadManager fileUploadManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final EuVatChecker vatChecker;

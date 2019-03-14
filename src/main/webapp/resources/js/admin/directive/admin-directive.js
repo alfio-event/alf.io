@@ -436,9 +436,7 @@
 
                 $scope.$watch('droppedFile', function (droppedFile) {
                     if(angular.isDefined(droppedFile)) {
-                        if(droppedFile === null) {
-                            alert('File drag&drop is not working, please click on the element and select the file.')
-                        } else {
+                        if(droppedFile !== null) {
                             $scope.imageDropped([droppedFile]);
                         }
                     }
@@ -450,7 +448,7 @@
                         $scope.$applyAsync(function() {
                             var imageBase64 = e.target.result;
                             $scope.imageBase64 = imageBase64;
-                            FileUploadService.upload({file : imageBase64.substring(imageBase64.indexOf('base64,') + 7), type : files[0].type, name : files[0].name}).success(function(imageId) {
+                            FileUploadService.uploadImageWithResize({file : imageBase64.substring(imageBase64.indexOf('base64,') + 7), type : files[0].type, name : files[0].name}).success(function(imageId) {
                                 $scope.obj.fileBlobId = imageId;
                             })
                         })

@@ -1,4 +1,5 @@
 import org.apache.tools.ant.filters.ReplaceTokens
+import org.springframework.jdbc.core.JdbcTemplate
 
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -6,12 +7,13 @@ import java.time.Year
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.util.regex.Pattern
 
 buildscript {
 
     dependencies {
-        classpath 'ru.yandex.qatools.embed:postgresql-embedded:+'
+        classpath 'ru.yandex.qatools.embed:postgresql-embedded:2.9'
+        classpath 'org.postgresql:postgresql:42.2.5'
+        classpath "org.springframework:spring-jdbc:$springVersion"
     }
 
     repositories {
@@ -28,10 +30,10 @@ plugins {
     id 'idea'
     id 'jacoco'
     id 'com.github.kt3k.coveralls' version '2.8.2'
-    id 'com.github.ben-manes.versions' version '0.20.0'
-    id 'com.github.hierynomus.license' version '0.14.0'
+    id 'com.github.ben-manes.versions' version '0.21.0'
+    id 'com.github.hierynomus.license' version '0.15.0'
     id 'net.researchgate.release' version '2.7.0'
-    id 'org.springframework.boot' version '2.0.6.RELEASE'
+    id 'org.springframework.boot' version '2.1.3.RELEASE'
 }
 
 apply plugin: 'java'
@@ -40,24 +42,12 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 
-//as pointed out by @facundofarias, we should check minimum javac version in order to avoid problems with type inference mechanism during compilation
+//as pointed out by @facundofarias, we should validate minimum javac version
 task validate {
     //check JDK version
-    def javaVersion = JavaVersion.current();
-    if (!javaVersion.isJava8Compatible()) {
-        throw new GradleException("A Java JDK 8+ is required to build the project.")
-    }
-    //check build number, but only if current java version is 8
-    if (javaVersion == JavaVersion.VERSION_1_8) {
-        def currentVersion = System.getProperty("java.version")
-        def matcher = Pattern.compile("1(\\.\\d+){2}_(\\d+)").matcher(currentVersion)
-        if (!matcher.find()) {
-            throw new GradleException(currentVersion + " is not a recognized java version. Please report this issue.")
-        }
-        def buildNumber = Integer.parseInt(matcher.group(2))
-        if(buildNumber < 25) {
-            throw new GradleException(currentVersion + " is not a supported JDK version. Minimum version is 1.8.0b25. Please update your local JDK.")
-        }
+    def javaVersion = JavaVersion.current()
+    if (!javaVersion.isJava11Compatible()) {
+        throw new GradleException("A Java JDK 11+ is required to build the project.")
     }
 }
 
@@ -74,23 +64,18 @@ ext {
     // default settings
     jettyPort = 8080
     jettyHost = '0.0.0.0'
-    datasourceDialect = 'PGSQL'
-    datasourceDriver = 'org.postgresql.Driver'
     datasourceUrl = 'jdbc:postgresql://localhost:5432/alfio'
     datasourceUsername = 'postgres'
     datasourcePassword = 'password'
     datasourceValidationQuery = 'SELECT 1'
-    //springProfilesActive = 'dev,debug-csp' //enable csp report. FIXME For some reasons it doesn't work on Chrome
+    //springProfilesActive = 'dev
     //springProfilesActive = 'dev,demo'
-    //springProfilesActive = 'dev,demo,jdbc-session'
     springProfilesActive = 'dev'
     port = "8080"
 
 
     switch (profile) {
         case 'docker-test':
-            datasourceDialect = 'PGSQL'
-            datasourceDriver = 'org.postgresql.Driver'
             datasourceUrl = 'jdbc:postgresql://0.0.0.0:5432/postgres'
             datasourceUsername = 'postgres'
             datasourcePassword = 'postgres'
@@ -110,6 +95,7 @@ configurations {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     jcenter()
 }
@@ -127,57 +113,54 @@ dependencies {
     }
     compile "org.springframework.security:spring-security-web:$springSecurityConfigVersion"
     compile "org.springframework.security:spring-security-config:$springSecurityConfigVersion"
-    compile 'org.springframework.session:spring-session:1.3.3.RELEASE'
-    compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.4"
+    compile 'org.springframework.session:spring-session:1.3.5.RELEASE'
+    compile "ch.digitalfondue.npjt-extra:npjt-extra:1.1.5"
     compile "com.samskivert:jmustache:1.14"
     compile "com.github.sps.mustache:mustache-spring-view:1.4"
     compile "javax.mail:mail:1.5.0-b01"
-    compile "org.quartz-scheduler:quartz:2.3.0", {
-        exclude group: "com.zaxxer", module: "HikariCP-java6"
-        exclude group: "com.mchange", module: "c3p0"
-    }
     compile 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC16"
-    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC16"
-    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC16"
+    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC18"
+    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC18"
+    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC18"
     /**/
     compile "com.google.zxing:core:3.3.3"
     compile "com.google.zxing:javase:3.3.3"
     compile "org.flywaydb:flyway-core:5.1.3"
-    compile "org.postgresql:postgresql:42.2.2"
-    compile "com.zaxxer:HikariCP:2.7.7"
+    compile "org.postgresql:postgresql:42.2.5"
+    compile "com.zaxxer:HikariCP:3.3.1"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
-    compile "com.stripe:stripe-java:5.42.0"
+    compile "com.stripe:stripe-java:7.26.0"
     compile 'com.paypal.sdk:rest-api-sdk:1.14.0'
-    compile 'com.squareup.okhttp3:okhttp:3.10.0'
-    compile "org.apache.commons:commons-lang3:3.7"
-    compile "org.apache.commons:commons-text:1.2"
-    compile "com.opencsv:opencsv:4.2"
-    compile 'commons-codec:commons-codec:1.11'
-    compile 'net.sf.biweekly:biweekly:0.6.1'
-    compile 'com.atlassian.commonmark:commonmark:0.11.0'
+    compile 'com.squareup.okhttp3:okhttp:3.13.1'
+    compile "org.apache.commons:commons-lang3:3.8.1"
+    compile "org.apache.commons:commons-text:1.6"
+    compile "com.opencsv:opencsv:4.4"
+    compile 'commons-codec:commons-codec:1.12'
+    compile 'net.sf.biweekly:biweekly:0.6.3'
+    compile 'com.atlassian.commonmark:commonmark:0.12.1'
     compile 'com.ryantenney.passkit4j:passkit4j:2.0.1'
-    compile 'com.github.ben-manes.caffeine:caffeine:2.6.2'
+    compile 'com.github.ben-manes.caffeine:caffeine:2.7.0'
     compile 'de.danielbechler:java-object-diff:0.95'
     compile 'com.github.scribejava:scribejava-core:5.0.0'
     compile 'ch.digitalfondue.vatchecker:vatchecker:1.1'
-    compile 'org.apache.poi:poi-ooxml:3.17'
+    compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.0'
+    compile 'org.imgscalr:imgscalr-lib:4.2'
+    compile 'org.aspectj:aspectjweaver:1.9.2'
 
-    annotationProcessor "org.projectlombok:lombok:1.18.2"
+    testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.9" //we leave it to the v2.9 for now, since some user had issues on Windows
 
-    testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.8"
-
-    compileOnly "javax.servlet:javax.servlet-api:3.1.0"
-    testCompile "javax.servlet:javax.servlet-api:3.1.0"
+    compileOnly "javax.servlet:javax.servlet-api:4.0.1"
+    testCompile "javax.servlet:javax.servlet-api:4.0.1"
     testCompile "org.springframework.boot:spring-boot-starter-test", {
         exclude module : 'spring-boot-starter-logging'
     }
-    testCompile "net.sourceforge.htmlunit:htmlunit:2.29"
-    runtime "commons-fileupload:commons-fileupload:1.3.3"
+    testCompile "net.sourceforge.htmlunit:htmlunit:2.33"
+    runtime "commons-fileupload:commons-fileupload:1.4"
     providedCompile "org.springframework.boot:spring-boot-starter-web", {
         exclude module : 'spring-boot-starter-logging'
         exclude group: "org.springframework.boot", module: 'spring-boot-starter-tomcat'
+        exclude group: "org.hibernate.validator"
     }
     providedCompile "org.springframework.boot:spring-boot-starter", {
         exclude module : 'spring-boot-starter-logging'
@@ -209,8 +192,6 @@ dependencies {
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
         exclude module : 'spring-boot-starter-logging'
     }
-
-    runtime "org.glassfish.jaxb:jaxb-runtime:2.4.0-b180830.0438" //temporary for JDK11
 }
 
 // -- license configuration
@@ -253,6 +234,7 @@ compileJava {
 test {
     useJUnitPlatform()
     systemProperties = System.properties
+    jvmArgs("--illegal-access=warn")
     testLogging {
         events "failed"
         exceptionFormat "full"
@@ -265,13 +247,10 @@ bootRun {
     def externalConfig = new File("./custom.jvmargs")
     def opts = []
     opts += [
-        "-Dspring.profiles.active=${project.springProfilesActive},jdbc-session",
-        "-Ddatasource.dialect=${project.datasourceDialect}",
-        "-Ddatasource.driver=${project.datasourceDriver}",
+        "-Dspring.profiles.active=${project.springProfilesActive}",
         "-Ddatasource.url=${project.datasourceUrl}",
         "-Ddatasource.username=${project.datasourceUsername}",
         "-Ddatasource.password=${project.datasourcePassword}",
-        "-Ddatasource.validationQuery=${project.datasourceValidationQuery}",
         "-Dalfio.version=${project.version}",
         "-Dalfio.build-ts=${ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)}"
     ]
@@ -295,15 +274,15 @@ bootWar {
 // -- code-coverage
 
 jacoco {
-    toolVersion = '0.8.0'
+    toolVersion = '0.8.2'
 }
 
 jacocoTestReport {
     group = 'Reporting'
     description = 'Generate Jacoco coverage reports after running tests.'
-    additionalSourceDirs = project.files(sourceSets.main.allSource.srcDirs)
-    sourceDirectories = project.files(sourceSets.main.allSource.srcDirs)
-    classDirectories =  project.files(sourceSets.main.output)
+    additionalSourceDirs.from(project.files(sourceSets.main.allSource.srcDirs))
+    sourceDirectories.from(project.files(sourceSets.main.allSource.srcDirs))
+    classDirectories.from(project.files(sourceSets.main.output))
     reports {
         xml.enabled = true
         csv.enabled = false
@@ -318,9 +297,8 @@ task dockerize(type: Copy) {
 }
 
 task distribution(type: Copy) {
-    from new File(project.buildDir, "libs/alfio-${project.version}-boot.war")
+    from zipTree("${project.buildDir}/libs/alfio-${project.version}-boot.war")
     into "${buildDir}/dockerize"
-
     dependsOn build, dockerize
 }
 
@@ -338,6 +316,7 @@ task clever(type: Copy) {
 
 import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres
 import ru.yandex.qatools.embed.postgresql.distribution.Version.Main
+import org.postgresql.ds.PGSimpleDataSource
 
 task startEmbeddedPgSQL {
     doLast {
@@ -346,12 +325,25 @@ task startEmbeddedPgSQL {
         final tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data")
         final postgres = new EmbeddedPostgres(Main.PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString())
         postgres.start(EmbeddedPostgres.cachedRuntimeConfig(Paths.get(System.getProperty("java.io.tmpdir"), "pgembed")),
-            "localhost", 5432, "alfio", "postgres", "password", Arrays.asList("-E", "SQL_ASCII", "--locale=C", "--lc-collate=C", "--lc-ctype=C"))
+            "localhost", 5432, "alfio", "admin", "password", Arrays.asList("-E", "SQL_ASCII", "--locale=C", "--lc-collate=C", "--lc-ctype=C"))
 
         postgres.getProcess().ifPresent({
             final pid = it.getProcessId()
             Files.write(Paths.get(".", "alfio-itest", "pgsql-pid"), Arrays.asList(Long.toString(pid)))
             System.out.println("Launched pgsql with pid " + pid)
+
+            final dataSource = new PGSimpleDataSource()
+            dataSource.setUrl("jdbc:postgresql://localhost:5432/postgres");
+            dataSource.setUser("admin")
+            dataSource.setPassword("password")
+            final jdbc = new JdbcTemplate(dataSource);
+            jdbc.execute("CREATE ROLE postgres LOGIN PASSWORD 'password' NOSUPERUSER INHERIT CREATEDB CREATEROLE REPLICATION")
+            //todo: check if the following grants are necessary
+            jdbc.execute("GRANT pg_monitor TO postgres")
+            jdbc.execute("GRANT pg_read_all_settings TO postgres")
+            jdbc.execute("GRANT pg_read_all_stats TO postgres")
+            jdbc.execute("GRANT pg_signal_backend TO postgres")
+            jdbc.execute("GRANT pg_stat_scan_tables TO postgres")
         })
     }
 }
@@ -376,4 +368,6 @@ release {
 }
 
 lombok {
+    version = '1.18.4'
+    sha256 = ""
 }

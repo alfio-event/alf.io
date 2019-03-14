@@ -130,7 +130,7 @@ public class Ticket {
         return status == TicketStatus.CHECKED_IN;
     }
 
-    private static String hmacSHA256Base64(String key, String code) {
+    public static String hmacSHA256Base64(String key, String code) {
         return Base64.getEncoder().encodeToString(new HmacUtils(HmacAlgorithms.HMAC_SHA_256, key).hmac(code));
     }
 

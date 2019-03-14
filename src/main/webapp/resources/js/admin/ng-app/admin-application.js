@@ -1087,8 +1087,8 @@
             });
         };
 
-        var getPendingPayments = function() {
-            EventService.getPendingPayments($stateParams.eventName).success(function(data) {
+        var getPendingPayments = function(force) {
+            EventService.getPendingPayments($stateParams.eventName, force).success(function(data) {
                 $scope.pendingReservations = data;
             });
         };
@@ -1105,19 +1105,6 @@
                 $scope.loading = false;
             });
         };
-        $scope.deletePayment = function(eventName, id) {
-            $scope.loading = true;
-            EventService.cancelPayment(eventName, id).success(function() {
-                loadData().then(function(res) {
-                    if(res.data.event.visibleForCurrentUser) {
-                        getPendingPayments();
-                    }
-                });
-            }).error(function() {
-                $scope.loading = false;
-            });
-        };
-        
         //
 
         $scope.countActive = function(categories) {
@@ -1705,7 +1692,7 @@
         });
     });
 
-    admin.controller('PendingPaymentsController', function($scope, EventService, $stateParams, $log, $window) {
+    admin.controller('PendingPaymentsController', function($scope, EventService, $stateParams, $log, $window, $uibModal) {
 
         EventService.getEvent($stateParams.eventName).then(function(result) {
             $scope.event = result.data.event;
@@ -1735,14 +1722,32 @@
                 $scope.loading = false;
             });
         };
-        $scope.deletePayment = function(eventName, id) {
-            if(!$window.confirm('Do you really want to delete this reservation?')) {
-                return;
-            }
-            $scope.loading = true;
-            EventService.cancelPayment(eventName, id).success(function() {
+
+        $scope.deletePayment = function(eventName, id, credit) {
+            var action = credit ? "credit" : "cancel";
+            var confirmPromise = $uibModal.open({
+                size:'md',
+                templateUrl:BASE_STATIC_URL + '/pending-payments/delete-or-credit-modal.html',
+                backdrop: 'static',
+                controller: function($scope) {
+                    var ctrl = this;
+                    ctrl.credit = credit;
+                    ctrl.reservationId = id;
+                    ctrl.cancel = function() {
+                        $scope.$dismiss('canceled');
+                    };
+                    ctrl.confirm = function() {
+                        $scope.$close(true);
+                    };
+                },
+                controllerAs: '$ctrl'
+            }).result;
+
+            confirmPromise.then(function() {
+                return EventService.cancelPayment(eventName, id, credit);
+            }).then(function() {
                 getPendingPayments(true);
-            }).error(function() {
+            }, function() {
                 $scope.loading = false;
             });
         };

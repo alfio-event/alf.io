@@ -16,6 +16,7 @@
  */
 package alfio.controller.support;
 
+import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
@@ -23,6 +24,9 @@ import alfio.model.user.Organization;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import com.openhtmltopdf.DOMBuilder;
 import com.openhtmltopdf.extend.FSStream;
 import com.openhtmltopdf.extend.FSStreamFactory;
@@ -47,6 +51,14 @@ import java.util.stream.Collectors;
 
 @Log4j2
 public final class TemplateProcessor {
+
+    private static final Cache<String, File> FONT_CACHE = Caffeine.newBuilder()
+        .removalListener((String key, File value, RemovalCause cause) -> {
+            if(value != null) {
+                value.delete();
+            }
+        })
+        .build();
 
     private TemplateProcessor() {}
 
@@ -87,46 +99,62 @@ public final class TemplateProcessor {
                                        FileUploadManager fileUploadManager,
                                        String reservationID,
                                        OutputStream os,
-                                       Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues) throws IOException {
+                                       Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
+                                       ExtensionManager extensionManager) throws IOException {
         Optional<TemplateResource.ImageData> imageData = extractImageModel(event, fileUploadManager);
         List<TicketFieldConfigurationDescriptionAndValue> fields = retrieveFieldValues.apply(ticket);
         Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID,
             fields.stream().collect(Collectors.toMap(TicketFieldConfigurationDescriptionAndValue::getName, TicketFieldConfigurationDescriptionAndValue::getValueDescription)));
 
         String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
-        renderToPdf(page, os);
+        renderToPdf(page, os, extensionManager, event);
     }
 
-    public static void renderToPdf(String page, OutputStream os) throws IOException {
+    public static void renderToPdf(String page, OutputStream os, ExtensionManager extensionManager, Event event) throws IOException {
 
+        if(extensionManager.handlePdfTransformation(page, event, os)) {
+            return;
+        }
         PdfRendererBuilder builder = new PdfRendererBuilder();
         PDDocument doc = new PDDocument(MemoryUsageSetting.setupTempFileOnly());
         builder.usePDDocument(doc);
         builder.toStream(os);
         builder.useProtocolsStreamImplementation(new AlfioInternalFSStreamFactory(), "alfio-internal");
         builder.useProtocolsStreamImplementation(new InvalidProtocolFSStreamFactory(), "http", "https", "file", "jar");
-
+        builder.useFastMode();
 
         Document parsedDocument = Jsoup.parse(page);
-        //add <meta name="fast-renderer" content="true"> in the html document to enable  the fast renderer
-        if (!parsedDocument.select("meta[name=fast-renderer][content=true]").isEmpty()) {
-            builder.useFastMode();
-        }
 
         builder.withW3cDocument(DOMBuilder.jsoup2DOM(parsedDocument), "");
-        PdfBoxRenderer renderer = builder.buildPdfRenderer();
-        try (InputStream is = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream()) {
-            renderer.getFontResolver().addFont(() -> is, "DejaVu Sans Mono", null, null, false);
-        } catch(IOException e) {
-            log.warn("error while loading DejaVuSansMono.ttf font", e);
-        }
-        try {
+        try (PdfBoxRenderer renderer = builder.buildPdfRenderer()) {
+            File defaultFont = FONT_CACHE.get(DEJA_VU_SANS, LOAD_DEJA_VU_SANS_FONT);
+            if (!defaultFont.exists()) { // fallback, the cached font will not be shared though
+                FONT_CACHE.invalidate(DEJA_VU_SANS);
+                defaultFont = LOAD_DEJA_VU_SANS_FONT.apply(DEJA_VU_SANS);
+            }
+            if (defaultFont != null) {
+                renderer.getFontResolver().addFont(defaultFont, "DejaVu Sans Mono", null, null, false);
+            }
             renderer.layout();
             renderer.createPDF();
-        } finally {
-            renderer.close();
         }
     }
+
+    private static final String DEJA_VU_SANS = "/alfio/font/DejaVuSansMono.ttf";
+
+    private static final Function<String, File> LOAD_DEJA_VU_SANS_FONT = classPathResource -> {
+        try {
+            File cachedFile = File.createTempFile("font-cache", ".tmp");
+            cachedFile.deleteOnExit();
+            try (InputStream is = new ClassPathResource(DEJA_VU_SANS).getInputStream(); OutputStream tmpOs = new FileOutputStream(cachedFile)) {
+                is.transferTo(tmpOs);
+            }
+            return cachedFile;
+        } catch (IOException e) {
+            log.warn("error while loading DejaVuSansMono.ttf font", e);
+            return null;
+        }
+    };
 
     private static class AlfioInternalFSStreamFactory implements FSStreamFactory {
 
@@ -177,29 +205,81 @@ public final class TemplateProcessor {
         }
     }
 
-    private static Optional<byte[]> buildReceiptOrInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
-        extractImageModel(event, fileUploadManager).ifPresent(imageData -> {
-            model.put("eventImage", imageData.getEventImage());
-            model.put("imageWidth", imageData.getImageWidth());
-            model.put("imageHeight", imageData.getEventImage());
-        });
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        String page = templateManager.renderTemplate(event, templateResource, model, language);
+    public static boolean buildReceiptOrInvoicePdf(Event event,
+                                                   FileUploadManager fileUploadManager,
+                                                   Locale language,
+                                                   TemplateManager templateManager,
+                                                   Map<String, Object> model,
+                                                   TemplateResource templateResource,
+                                                   ExtensionManager extensionManager,
+                                                   OutputStream os) {
         try {
-            renderToPdf(page, baos);
-            return Optional.of(baos.toByteArray());
+            String html = renderReceiptOrInvoicePdfTemplate(event, fileUploadManager, language, templateManager, model, templateResource);
+            renderToPdf(html, os, extensionManager, event);
+            return true;
         } catch (IOException ioe) {
-            return Optional.empty();
+            return false;
         }
     }
 
-
-    public static Optional<byte[]> buildReceiptPdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
-        return buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, TemplateResource.RECEIPT_PDF);
+    public static String renderReceiptOrInvoicePdfTemplate(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, TemplateResource templateResource) {
+        extractImageModel(event, fileUploadManager).ifPresent(imageData -> {
+            model.put("eventImage", imageData.getEventImage());
+            model.put("imageWidth", imageData.getImageWidth());
+            model.put("imageHeight", imageData.getImageHeight());
+        });
+        return templateManager.renderTemplate(event, templateResource, model, language);
     }
 
-    public static Optional<byte[]> buildInvoicePdf(Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model) {
-        return buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, TemplateResource.INVOICE_PDF);
+    public static Optional<byte[]> buildBillingDocumentPdf(BillingDocument.Type documentType, Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, ExtensionManager extensionManager) {
+        switch (documentType) {
+            case INVOICE:
+                return buildInvoicePdf(event, fileUploadManager, language, templateManager, model, extensionManager);
+            case RECEIPT:
+                return buildReceiptPdf(event, fileUploadManager, language, templateManager, model, extensionManager);
+            case CREDIT_NOTE:
+                return buildCreditNotePdf(event, fileUploadManager, language, templateManager, model, extensionManager);
+            default:
+                throw new IllegalStateException(documentType + " not supported");
+        }
+    }
+
+    private static Optional<byte[]> buildFrom(Event event,
+                                              FileUploadManager fileUploadManager,
+                                              Locale language,
+                                              TemplateManager templateManager,
+                                              Map<String, Object> model,
+                                              TemplateResource templateResource,
+                                              ExtensionManager extensionManager) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        boolean res = buildReceiptOrInvoicePdf(event, fileUploadManager, language, templateManager, model, templateResource, extensionManager, baos);
+        return res ? Optional.of(baos.toByteArray()) : Optional.empty();
+    }
+
+    public static Optional<byte[]> buildReceiptPdf(Event event,
+                                                   FileUploadManager fileUploadManager,
+                                                   Locale language,
+                                                   TemplateManager templateManager,
+                                                   Map<String, Object> model,
+                                                   ExtensionManager extensionManager) {
+        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.RECEIPT_PDF, extensionManager);
+    }
+
+    public static Optional<byte[]> buildInvoicePdf(Event event,
+                                                   FileUploadManager fileUploadManager,
+                                                   Locale language,
+                                                   TemplateManager templateManager,
+                                                   Map<String, Object> model,
+                                                   ExtensionManager extensionManager) {
+        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.INVOICE_PDF, extensionManager);
+    }
+
+    public static Optional<byte[]> buildCreditNotePdf(Event event,
+                                                      FileUploadManager fileUploadManager,
+                                                      Locale language,
+                                                      TemplateManager templateManager,
+                                                      Map<String, Object> model,
+                                                      ExtensionManager extensionManager) {
+        return buildFrom(event, fileUploadManager, language, templateManager, model, TemplateResource.CREDIT_NOTE_PDF, extensionManager);
     }
 }

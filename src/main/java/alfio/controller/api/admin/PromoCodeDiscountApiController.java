@@ -17,7 +17,6 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.EventManager;
-import alfio.model.Event;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.modification.PromoCodeDiscountModification;
@@ -25,7 +24,6 @@ import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,10 +34,8 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.TimeZone;
 
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
-import static alfio.util.OptionalWrapper.optionally;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
@@ -72,8 +68,7 @@ public class PromoCodeDiscountApiController {
 
     private ZoneId zoneIdFromEventId(Integer eventId, Integer utcOffset) {
         if(eventId != null) {
-            Event event = eventRepository.findById(eventId);
-            return TimeZone.getTimeZone(event.getTimeZone()).toZoneId();
+            return eventRepository.getZoneIdByEventId(eventId);
         } else {
             return ZoneId.ofOffset("UTC", ZoneOffset.ofTotalSeconds(utcOffset != null ? utcOffset : 0));
         }
@@ -101,8 +96,8 @@ public class PromoCodeDiscountApiController {
     
     @RequestMapping(value = "/promo-code/{promoCodeId}/count-use", method = GET)
     public int countPromoCodeUse(@PathVariable("promoCodeId") int promoCodeId) {
-        Optional<PromoCodeDiscount> code = optionally(() -> promoCodeRepository.findById(promoCodeId));
-        if(!code.isPresent()) {
+        Optional<PromoCodeDiscount> code = promoCodeRepository.findOptionalById(promoCodeId);
+        if(code.isEmpty()) {
             return 0;
         }
         return promoCodeRepository.countConfirmedPromoCode(promoCodeId, categoriesOrNull(code.get()), null, categoriesOrNull(code.get()) != null ? "X" : null);

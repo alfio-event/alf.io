@@ -22,7 +22,6 @@ import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @QueryRepository

@@ -8,3 +8,5 @@
     </div>
 {{/captchaRequestedForOffline}}
 </div>
+
+<script src="{{request.contextPath}}/resources/js/payment/offline.js" defer async></script>

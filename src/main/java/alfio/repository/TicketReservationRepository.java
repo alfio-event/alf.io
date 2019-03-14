@@ -17,7 +17,9 @@
 package alfio.repository;
 
 import alfio.model.*;
-import ch.digitalfondue.npjt.*;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
+import ch.digitalfondue.npjt.QueryRepository;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -72,11 +74,11 @@ public interface TicketReservationRepository {
     @Query("select count(id) from tickets_reservation where status = 'OFFLINE_PAYMENT' and event_id_fk = :eventId")
     Integer findAllReservationsWaitingForPaymentCountInEventId(@Bind("eventId") int eventId);
 
-    @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false")
-    List<TicketReservation> findAllOfflinePaymentReservationForNotification(@Bind("expiration") Date expiration);
+    @Query("select * from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and offline_payment_reminder_sent = false for update skip locked")
+    List<TicketReservation> findAllOfflinePaymentReservationForNotificationForUpdate(@Bind("expiration") Date expiration);
 
-    @Query("select id, full_name, first_name, last_name, email_address, event_id_fk, validity from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and event_id_fk = :eventId")
-    List<TicketReservationInfo> findAllOfflinePaymentReservationWithExpirationBefore(@Bind("expiration") ZonedDateTime expiration, @Bind("eventId") int eventId);
+    @Query("select id, full_name, first_name, last_name, email_address, event_id_fk, validity from tickets_reservation where status = 'OFFLINE_PAYMENT' and date_trunc('day', validity) <= :expiration and event_id_fk = :eventId for update skip locked")
+    List<TicketReservationInfo> findAllOfflinePaymentReservationWithExpirationBeforeForUpdate(@Bind("expiration") ZonedDateTime expiration, @Bind("eventId") int eventId);
 
     @Query("update tickets_reservation set offline_payment_reminder_sent = true where id = :reservationId")
     int flagAsOfflinePaymentReminderSent(@Bind("reservationId") String reservationId);
@@ -96,20 +98,23 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set status = :status where id in (:reservationIds)")
     int updateReservationsStatus(@Bind("reservationIds") Collection<String> ids, @Bind("status") String status);
 
+    @Query("update tickets_reservation set registration_ts = :registrationTimestamp where id = :reservationId")
+    int updateRegistrationTimestamp(@Bind("reservationId") String id, @Bind("registrationTimestamp") ZonedDateTime registrationTimestamp);
+
     @Query("select * from tickets_reservation where id = :id")
     TicketReservation findReservationById(@Bind("id") String id);
 
     @Query("select * from tickets_reservation where id = :id")
     Optional<TicketReservation> findOptionalReservationById(@Bind("id") String id);
 
-    @Query("select id from tickets_reservation where validity < :date and status = 'PENDING'")
-    List<String> findExpiredReservation(@Bind("date") Date date);
+    @Query("select id from tickets_reservation where validity < :date and status = 'PENDING' for update skip locked")
+    List<String> findExpiredReservationForUpdate(@Bind("date") Date date);
 
-    @Query("select id from tickets_reservation where validity < :date and status = 'OFFLINE_PAYMENT'")
-    List<String> findExpiredOfflineReservations(@Bind("date") Date date);
+    @Query("select id from tickets_reservation where validity < :date and status = 'OFFLINE_PAYMENT' for update skip locked")
+    List<String> findExpiredOfflineReservationsForUpdate(@Bind("date") Date date);
 
-    @Query("select id from tickets_reservation where validity < :date and status = 'IN_PAYMENT'")
-    List<String> findStuckReservations(@Bind("date") Date date);
+    @Query("select id from tickets_reservation where validity < :date and status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT') for update skip locked")
+    List<String> findStuckReservationsForUpdate(@Bind("date") Date date);
 
     @Query("delete from tickets_reservation where id in (:ids)")
     int remove(@Bind("ids") List<String> ids);
@@ -136,10 +141,7 @@ public interface TicketReservationRepository {
                           @Bind("vatCountry") String country,
                           @Bind("invoiceRequested") boolean invoiceRequested,
                           @Bind("reservationId") String reservationId);
-
-    @Query("update tickets_reservation set  invoice_requested = false, vat_status = null, vat_nr = null, vat_country = null, billing_address = null where id = :reservationId")
-    int resetBillingData(@Bind("reservationId") String reservationId);
-
+    
 
     @Query("select count(ticket.id) ticket_count, to_char(date_trunc('day', confirmation_ts), 'YYYY-MM-DD') as day from ticket " +
         "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
@@ -198,14 +200,14 @@ public interface TicketReservationRepository {
 
 
     @Query("select billing_address_company, billing_address_line1, billing_address_line2, " +
-        " billing_address_zip, billing_address_city, validated_for_overview, skip_vat_nr from tickets_reservation where id = :id")
+        " billing_address_zip, billing_address_city, validated_for_overview, skip_vat_nr, invoicing_additional_information from tickets_reservation where id = :id")
     TicketReservationAdditionalInfo getAdditionalInfo(@Bind("id") String reservationId);
 
     @Query("update tickets_reservation set validated_for_overview = :validated where id = :reservationId")
     int updateValidationStatus(@Bind("reservationId") String reservationId, @Bind("validated") boolean validated);
 
-    @Query("update tickets_reservation set  invoice_requested = false, vat_status = null where id = :reservationId")
-    int resetVat(@Bind("reservationId") String reservationId);
+    @Query("update tickets_reservation set  invoice_requested = false, vat_status = :vatStatus where id = :reservationId")
+    int resetVat(@Bind("reservationId") String reservationId, @Bind("vatStatus") PriceContainer.VatStatus vatStatus);
 
 
     default Integer countTicketsInReservationForCategories(String reservationId, Collection<Integer> categories) {
@@ -222,4 +224,10 @@ public interface TicketReservationRepository {
 
     @Query("select count(b.id) from tickets_reservation a, ticket b where a.id = :reservationId and b.tickets_reservation_id = a.id")
     Integer countTicketsInReservationNoCategories(@Bind("reservationId") String reservationId);
+
+    @Query("select billing_address_company, billing_address_line1, billing_address_line2, billing_address_zip, billing_address_city, vat_nr, vat_country, invoicing_additional_information from tickets_reservation where id = :reservationId")
+    BillingDetails getBillingDetailsForReservation(@Bind("reservationId") String reservationId);
+
+    @Query("update tickets_reservation set invoicing_additional_information = :info::json where id = :id")
+    int updateInvoicingAdditionalInformation(@Bind("id") String reservationId, @Bind("info") String info);
 }

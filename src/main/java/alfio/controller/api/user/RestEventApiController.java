@@ -31,7 +31,10 @@ import alfio.model.result.Result;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
-import alfio.repository.*;
+import alfio.repository.AdditionalServiceRepository;
+import alfio.repository.EventRepository;
+import alfio.repository.SpecialPriceRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
 import org.apache.commons.lang3.StringUtils;
@@ -96,7 +99,7 @@ public class RestEventApiController {
     @RequestMapping("events/{shortName}")
     public ResponseEntity<PublicEvent> showEvent(@PathVariable("shortName") String shortName, @RequestParam(value="specialCode", required = false) String specialCodeParam, HttpServletRequest request) {
 
-        Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(specialCodeParam)).flatMap((trimmedCode) -> specialPriceRepository.getByCode(trimmedCode));
+        Optional<SpecialPrice> specialCode = Optional.ofNullable(StringUtils.trimToNull(specialCodeParam)).flatMap(specialPriceRepository::getByCode);
 
         return eventRepository.findOptionalByShortName(shortName).map((e) -> {
             List<PublicCategory> categories = ticketCategoryRepository.findAllTicketCategories(e.getId()).stream()
@@ -139,7 +142,7 @@ public class RestEventApiController {
                 return Optional.empty();
             });
 
-            Result<String> result = reservationUrl.map(url -> Result.success(url)).orElseGet(() -> Result.validationError(bindingResult.getAllErrors()));
+            Result<String> result = reservationUrl.map(Result::success).orElseGet(() -> Result.validationError(bindingResult.getAllErrors()));
             return new ResponseEntity<>(result, HttpStatus.OK);
         }).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }

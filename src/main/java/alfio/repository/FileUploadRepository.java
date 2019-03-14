@@ -17,12 +17,24 @@
 package alfio.repository;
 
 import alfio.model.FileBlobMetadata;
+import alfio.model.modification.UploadBase64FileModification;
+import alfio.util.Json;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
-import ch.digitalfondue.npjt.QueryType;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
+import org.springframework.jdbc.core.support.AbstractLobCreatingPreparedStatementCallback;
+import org.springframework.jdbc.support.lob.DefaultLobHandler;
+import org.springframework.jdbc.support.lob.LobCreator;
+import org.springframework.jdbc.support.lob.LobHandler;
 
+import java.io.*;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 
 @QueryRepository
@@ -37,11 +49,43 @@ public interface FileUploadRepository {
     @Query("delete from file_blob where creation_time <= :date and id not in (select file_blob_id from event where file_blob_id is not null)")
     int cleanupUnreferencedBlobFiles(@Bind("date") Date date);
 
-    @Query(type = QueryType.TEMPLATE, value = "insert into file_blob (id, name, content_size, content, content_type, attributes) " +
-            "values(?, ?, ?, ?, ?, ?)")
-    String uploadTemplate();
+    default void upload(UploadBase64FileModification file, String digest, Map<String, String> attributes) {
+        LobHandler lobHandler = new DefaultLobHandler();
 
-    @Query(type = QueryType.TEMPLATE, value = "select content from file_blob where id = :id")
-    String fileContent(@Bind("id") String id);
+        NamedParameterJdbcTemplate jdbc = getNamedParameterJdbcTemplate();
+
+        jdbc.getJdbcOperations().execute("insert into file_blob (id, name, content_size, content, content_type, attributes) values(?, ?, ?, ?, ?, ?)",
+            new AbstractLobCreatingPreparedStatementCallback(lobHandler) {
+                @Override
+                protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
+                    ps.setString(1, digest);
+                    ps.setString(2, file.getName());
+                    ps.setLong(3, file.getFile().length);
+                    lobCreator.setBlobAsBytes(ps, 4, file.getFile());
+                    ps.setString(5, file.getType());
+                    ps.setString(6, Json.GSON.toJson(attributes));
+                }
+            });
+    }
+
+    NamedParameterJdbcTemplate getNamedParameterJdbcTemplate();
+
+    default File file(String id) {
+        try {
+            File cachedFile = File.createTempFile("fileupload-cache", ".tmp");
+            cachedFile.deleteOnExit();
+            SqlParameterSource param = new MapSqlParameterSource("id", id);
+            getNamedParameterJdbcTemplate().query("select content from file_blob where id = :id", param, rs -> {
+                try (InputStream is = rs.getBinaryStream("content"); OutputStream os = new FileOutputStream(cachedFile)) {
+                    is.transferTo(os);
+                } catch (IOException e) {
+                    throw new IllegalStateException("Error while copying data", e);
+                }
+            });
+            return cachedFile;
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
 }

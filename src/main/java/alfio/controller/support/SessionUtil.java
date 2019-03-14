@@ -16,11 +16,13 @@
  */
 package alfio.controller.support;
 
+import alfio.manager.PaymentManager;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -56,10 +58,16 @@ public final class SessionUtil {
         return Optional.ofNullable((String)request.getSession().getAttribute(SPECIAL_PRICE_CODE_SESSION_ID));
     }
 
-    public static void removeSpecialPriceData(HttpServletRequest request) {
-        request.getSession().removeAttribute(SPECIAL_PRICE_CODE_SESSION_ID);
-        request.getSession().removeAttribute(SPECIAL_PRICE_CODE);
-        request.getSession().removeAttribute(PROMOTIONAL_CODE_DISCOUNT);
+    public static void cleanupSession(HttpServletRequest request) {
+        HttpSession session = request.getSession();
+        session.removeAttribute(SPECIAL_PRICE_CODE_SESSION_ID);
+        session.removeAttribute(SPECIAL_PRICE_CODE);
+        session.removeAttribute(PROMOTIONAL_CODE_DISCOUNT);
+        removePaymentToken(request);
+    }
+
+    public static void removePaymentToken(HttpServletRequest request) {
+        request.getSession().removeAttribute(PaymentManager.PAYMENT_TOKEN);
     }
 
     public static void addToFlash(BindingResult bindingResult, RedirectAttributes redirectAttributes) {

@@ -17,15 +17,16 @@
 package alfio.manager.system;
 
 import alfio.config.Initializer;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import lombok.Data;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 
 import java.util.*;
 
 public interface Mailer {
 
-    void send(Event event, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment);
+    void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment);
 
     @Data
     class Attachment {
@@ -40,7 +41,7 @@ public interface Mailer {
     }
 
     default String decorateSubjectIfDemo(String subject, Environment environment) {
-        if(environment.acceptsProfiles(Initializer.PROFILE_DEMO)) {
+        if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             return "THIS IS A TEST: " + subject;
         } else {
             return subject;
@@ -64,7 +65,7 @@ public interface Mailer {
             public String contentType(String contentType) {
                 return "text/calendar";
             }
-        }, INVOICE_PDF, RECEIPT_PDF, PASSBOOK {
+        }, INVOICE_PDF, RECEIPT_PDF, CREDIT_NOTE_PDF, PASSBOOK {
             @Override
             public String fileName(String fileName) {
                 return "Passbook.pkpass";

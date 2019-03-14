@@ -32,9 +32,7 @@ import java.util.Optional;
 @Data
 public class PaymentForm implements Serializable {
 
-    private String stripeToken;
-    private String paypalPaymentId;
-    private String paypalPayerID;
+    private String gatewayToken;
     private PaymentProxy paymentMethod;
     private Boolean termAndConditionsAccepted;
     private Boolean privacyPolicyAccepted;
@@ -43,40 +41,19 @@ public class PaymentForm implements Serializable {
     private Boolean cancelReservation;
 
 
-    public String getToken() {
-        if (paymentMethod == PaymentProxy.STRIPE) {
-            return stripeToken;
-        } else if (paymentMethod == PaymentProxy.PAYPAL) {
-            return paypalPaymentId;
-        } else {
-            return null;
-        }
-    }
-
-    public boolean hasPaypalTokens() {
-        return StringUtils.isNotBlank(paypalPayerID) && StringUtils.isNotBlank(paypalPaymentId);
-    }
-
     public void validate(BindingResult bindingResult, Event event, TotalPrice reservationCost) {
         List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
 
         Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
-        PaymentProxy paymentProxy = paymentProxyOptional.filter(allowedPaymentMethods::contains).orElse(PaymentProxy.STRIPE);
         boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
         boolean multiplePaymentMethods = allowedPaymentMethods.size() > 1;
-        if (multiplePaymentMethods && priceGreaterThanZero && !paymentProxyOptional.isPresent()) {
+        if (multiplePaymentMethods && priceGreaterThanZero && paymentProxyOptional.isEmpty()) {
             bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
-        } else if (priceGreaterThanZero && (paymentProxy == PaymentProxy.STRIPE && StringUtils.isBlank(stripeToken))) {
-            bindingResult.reject(ErrorsCode.STEP_2_MISSING_STRIPE_TOKEN);
         }
 
         if (Objects.isNull(termAndConditionsAccepted) || !termAndConditionsAccepted
             || (StringUtils.isNotEmpty(event.getPrivacyPolicyUrl()) && (Objects.isNull(privacyPolicyAccepted) || !privacyPolicyAccepted))) {
             bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
-        }
-
-        if (hasPaypalTokens() /*&& !PaypalManager.isValidHMAC(new CustomerName(fullName, firstName, lastName, event), email, billingAddress, hmac, event)*/) {
-            bindingResult.reject(ErrorsCode.STEP_2_INVALID_HMAC);
         }
     }
 

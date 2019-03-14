@@ -56,11 +56,11 @@ public class DynamicResourcesController {
     @RequestMapping("/resources/js/google-analytics")
     public void getGoogleAnalyticsScript(HttpSession session, HttpServletResponse response, @RequestParam("e") Integer eventId) throws IOException {
         response.setContentType("application/javascript");
-        Optional<Event> ev = Optional.ofNullable(eventId).flatMap(id -> Optional.ofNullable(eventRepository.findById(id)));
-        ConfigurationPathKey pathKey = ev.map(e -> Configuration.from(e.getOrganizationId(), e.getId(), GOOGLE_ANALYTICS_KEY)).orElseGet(() -> Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_KEY));
+        Optional<Event> ev = Optional.ofNullable(eventId).flatMap(id -> eventRepository.findOptionalById(id));
+        ConfigurationPathKey pathKey = ev.map(e -> Configuration.from(e, GOOGLE_ANALYTICS_KEY)).orElseGet(() -> Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_KEY));
         final Optional<String> id = configurationManager.getStringConfigValue(pathKey);
         final String script;
-        ConfigurationPathKey anonymousPathKey = ev.map(e -> Configuration.from(e.getOrganizationId(), e.getId(), GOOGLE_ANALYTICS_ANONYMOUS_MODE)).orElseGet(() -> Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_ANONYMOUS_MODE));
+        ConfigurationPathKey anonymousPathKey = ev.map(e -> Configuration.from(e, GOOGLE_ANALYTICS_ANONYMOUS_MODE)).orElseGet(() -> Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_ANONYMOUS_MODE));
         if(id.isPresent() && configurationManager.getBooleanConfigValue(anonymousPathKey, true)) {
             String trackingId = Optional.ofNullable(StringUtils.trimToNull((String)session.getAttribute("GA_TRACKING_ID"))).orElseGet(() -> UUID.randomUUID().toString());
             Map<String, Object> model = new HashMap<>();

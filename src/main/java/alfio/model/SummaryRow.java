@@ -32,4 +32,8 @@ public class SummaryRow {
     public enum SummaryType {
         TICKET, PROMOTION_CODE, ADDITIONAL_SERVICE
     }
+
+    public String getDescriptionForPayment() {
+        return amount + " x " + name;
+    }
 }

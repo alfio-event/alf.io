@@ -19,16 +19,15 @@
 
 
         <uib-tabset active="active">
-            <uib-tab index="0">
+            <uib-tab>
                 <uib-tab-heading>
                     Info
                 </uib-tab-heading>
 
-
-
                 <div class="page-header">
                     <h3>Reservation details
-                        <button type="button" ng-click="$ctrl.cancelReservationModal()" ng-if="$ctrl.reservation.status !== 'CANCELLED'" class="btn btn-danger pull-right"><i class="fa fa-trash"></i> <span class="hidden-sm hidden-xs">Cancel reservation</span></button>
+                        <button type="button" ng-click="$ctrl.cancelReservationModal(false)" ng-if="$ctrl.reservation.showCreditCancel" class="btn btn-danger pull-right"><i class="fa fa-trash"></i> <span class="hidden-sm hidden-xs">Cancel reservation</span></button>
+                        <button type="button" ng-click="$ctrl.cancelReservationModal(true)" ng-if="$ctrl.reservation.showCreditCancel && $ctrl.reservation.status === 'OFFLINE_PAYMENT'" class="btn btn-warning pull-right" style="margin-right:10px;"><i class="fa fa-undo"></i> <span class="hidden-sm hidden-xs">Credit reservation</span></button>
                     </h3>
                 </div>
 
@@ -68,7 +67,7 @@
                 </div>
 
                 <div>
-                    <div ng-if="$ctrl.reservation.status !== 'PENDING'">
+                    <div ng-if="$ctrl.displayPaymentInfo()">
                         <div class="page-header">
                             <h3>Payment info</h3>
                         </div>
@@ -185,6 +184,46 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row" ng-if="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType">
+                        <div class="col-xs-12 col-sm-12">
+                            <div class="form-group">
+                                <label>Italian E-Invoicing</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6">
+                            <div class="form-group">
+                                <div class="form-group">
+                                    <label>Codice Fiscale</label>
+                                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData" ng-bind="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.fiscalCode"></div>
+                                    <input class="form-control" ng-if="$ctrl.reservation.updateContactData" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.fiscalCode">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xs-12" ng-if="$ctrl.reservation.updateContactData">
+                            <div class="form-group">
+                                <label><input type="radio" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType" value="ADDRESSEE_CODE"> Codice destinatario</label>
+                                <label><input type="radio" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType" value="PEC"> PEC</label>
+                                <label><input type="radio" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType" value="NONE"> Nessun codice destinatario o PEC</label>
+                            </div>
+                        </div>
+                        <div class="col-xs-12 col-sm-6">
+                            <div class="form-group">
+                                <div class="form-group" data-ng-if="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType === 'ADDRESSEE_CODE'">
+                                    <label>Codice destinatario</label>
+                                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData" ng-bind="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.addresseeCode"></div>
+                                    <input class="form-control" ng-if="$ctrl.reservation.updateContactData" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.addresseeCode">
+                                </div>
+                                <div class="form-group" data-ng-if="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType === 'PEC'">
+                                    <label>PEC</label>
+                                    <div class="form-control-static" ng-if="!$ctrl.reservation.updateContactData" ng-bind="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.pec"></div>
+                                    <input class="form-control" ng-if="$ctrl.reservation.updateContactData" ng-model="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.pec">
+                                </div>
+                                <div class="form-group" data-ng-if="$ctrl.reservation.customerData.invoicingAdditionalInfo.italianEInvoicing.referenceType === 'NONE'">
+                                    <label>Nessun codice destinatario o PEC</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="row" ng-if="$ctrl.reservation.updateContactData || $ctrl.reservation.customerData.billingAddress">
                         <div class="col-xs-12">
                             <div class="form-group">
@@ -198,6 +237,66 @@
                             </div>
                         </div>
                     </div>
+                    <div ng-if="['PENDING', 'OFFLINE_PAYMENT'].indexOf($ctrl.reservation.status) > -1">
+
+                        <div class="form-group">
+                            <div class="checkbox">
+                                <label><input type="checkbox" ng-model="$ctrl.reservation.updateAdvancedBillingOptions"> Edit advanced invoice data</label>
+                            </div>
+                        </div>
+                        <div class="panel panel-danger" uib-collapse="!$ctrl.reservation.updateAdvancedBillingOptions">
+                            <div class="panel-heading">
+                                <div class="panel-title">Danger zone!</div>
+                            </div>
+                            <div class="panel-body">
+                                <p class="text-danger">Please modify the following option with care, as they might affect the reservation total price and/or lead to inconsistencies.</p>
+                                <div class="row">
+                                    <div class="col-xs-12 col-sm-6">
+                                        <div class="form-group">
+                                            <label ng-if="$ctrl.reservation.advancedBillingOptions.vatApplied"><input type="checkbox" ng-model="$ctrl.reservation.advancedBillingOptions.vatApplied" ng-true-value="'Y'" ng-false-value="'N'"> Apply VAT/GST</label>
+                                            <label ng-if="!$ctrl.reservation.advancedBillingOptions.vatApplied">VAT/GST Application</label>
+                                            <div class="form-control-static" ng-if="!$ctrl.reservation.advancedBillingOptions.vatApplied">VAT/GST not applicable</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="page-header">
+                            <h3>Order summary</h3>
+                        </div>
+                        <div class="panel-body">
+                            <p>
+                                Payment method: {{$ctrl.reservationDescriptor.reservation.paymentMethod}}
+                            </p>
+                            <table class="table table-striped">
+                                <thead>
+                                    <th>Category</th>
+                                    <th>Type</th>
+                                    <th class="text-center">Qty</th>
+                                    <th class="text-right">Price</th>
+                                    <th class="text-right">Subtotal</th>
+                                </thead>
+                                <tbody>
+                                    <tr data-ng-repeat="summaryRow in $ctrl.reservationDescriptor.orderSummary.summary">
+                                        <td>{{summaryRow.name}}</td>
+                                        <td>{{summaryRow.type}}</td>
+                                        <td class="text-center">{{summaryRow.amount}}</td>
+                                        <td class="text-right">{{summaryRow.price}}</td>
+                                        <td class="text-right">{{summaryRow.subTotal}}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Total</th>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                        <th class="text-right">{{$ctrl.reservationDescriptor.orderSummary.totalPrice}}</th>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                     <hr>
                     <div class="panel panel-default" ng-repeat="ticketInfo in $ctrl.reservation.ticketsInfo">
                         <div class="panel-heading">
@@ -209,7 +308,6 @@
                             </div>
                         </div>
                         <div class="table-responsive wMarginTop10px">
-
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
@@ -217,6 +315,7 @@
                                         <th>First name</th>
                                         <th>Last name</th>
                                         <th>E-Mail</th>
+                                        <th>Check-in</th>
                                         <th><span class="hidden-xs hidden-sm">Actions</span></th>
                                     </tr>
                                 </thead>
@@ -236,6 +335,14 @@
                                             <div ng-show="!ticketInfo.updateAttendees" class="form-control-static">{{attendee.emailAddress}}</div>
                                         </td>
                                         <td>
+                                            <button type="button" class="btn"
+                                                    ng-class="{'btn-success': attendee.status === 'CHECKED_IN', 'btn-default': attendee.status !== 'CHECKED_IN'}"
+                                                    ng-if="!ticketInfo.updateAttendees && $ctrl.checkInLog[attendee.ticketId]"
+                                                    ng-click="$ctrl.openCheckInLog(attendee)">
+                                                <i class="fa" ng-class="{'fa-check': attendee.status === 'CHECKED_IN', 'fa-question-circle-o': attendee.status !== 'CHECKED_IN'}"></i>
+                                            </button>
+                                        </td>
+                                        <td>
                                             <button type="button" class="btn btn-sm btn-danger" ng-click="$ctrl.removeTicket(attendee)"><i class="fa fa-trash"></i> <span class="hidden-xs hidden-sm">Remove</span></button>
                                         </td>
                                     </tr>
@@ -247,8 +354,6 @@
                         <div class="col-xs-12">
                             <button class="btn btn-sm btn-default btn-block-xs" ng-if="$ctrl.reservation.status === 'COMPLETE'" type="button" ng-click="$ctrl.notifyCustomer()"><i class="fa fa-envelope-o"></i> Send reservation via email</button>
                             <button class="btn btn-sm btn-default btn-block-xs" ng-if="$ctrl.reservation.status === 'COMPLETE'" type="button" ng-click="$ctrl.notifyAttendees()"><i class="fa fa-envelope-o"></i> Send tickets via email</button>
-                            <a class="btn btn-sm btn-default btn-block-xs pull-right-md" ng-if="$ctrl.reservationDescriptor.reservation.hasInvoiceNumber" href="../event/{{$ctrl.event.shortName}}/reservation/{{$ctrl.reservation.id}}/invoice" target="_blank"><i class="fa fa-download"></i> Download invoice</a>
-                            <a class="btn btn-sm btn-default btn-block-xs pull-right-md" ng-if="!$ctrl.reservationDescriptor.reservation.hasInvoiceNumber" href="../event/{{$ctrl.event.shortName}}/reservation/{{$ctrl.reservation.id}}/receipt" target="_blank"><i class="fa fa-download"></i> Download receipt</a>
                         </div>
                     </div>
                     <div class="clearfix wMarginBottom"></div>
@@ -266,8 +371,103 @@
                 </div>
             </uib-tab>
 
-            <uib-tab index="1">
-                <uib-tab-heading>Audit log</uib-tab-heading>
+            <uib-tab>
+                <uib-tab-heading>Billing Documents <span class="badge" ng-bind="$ctrl.billingDocuments.count"></span></uib-tab-heading>
+                <button type="button" class="btn btn-warning btn-block-xs pull-right-md" ng-if="$ctrl.reservationDescriptor.reservation.status !== 'CANCELLED'" ng-click="$ctrl.regenerateBillingDocument()"><i class="fa fa-refresh"></i> Regenerate</button>
+                <div class="page-header">
+                    <h3>Active</h3>
+                </div>
+                <div class="table-responsive wMarginTop10px">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Number</th>
+                            <th>Date</th>
+                            <th>&nbsp;</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-if="valid.length == 0">
+                            <td colspan="5" class="text-center">No documents found</td>
+                        </tr>
+
+                        <tr ng-repeat="doc in $ctrl.billingDocuments.valid">
+                            <td><i class="fa" uib-tooltip="{{doc.type}}" ng-class="{'fa-sticky-note-o': doc.type === 'RECEIPT', 'fa-file-text-o': doc.type === 'INVOICE', 'fa-undo': doc.type === 'CREDIT_NOTE'}"></i></td>
+                            <td ng-bind="doc.number"></td>
+                            <td ng-bind="doc.generationTimestamp | formatDate"></td>
+                            <td class="text-right">
+                              <a class="btn btn-sm btn-default" ng-href="/admin/api/reservation/event/{{$ctrl.event.shortName}}/{{$ctrl.reservation.id}}/billing-document/{{doc.id}}" target="_blank"><i class="fa fa-download"></i> Download</a>
+                              <button type="button" class="btn btn-sm btn-danger" ng-click="$ctrl.invalidateDocument(doc.id)"><i class="fa fa-ban"></i> Invalidate</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="page-header">
+                    <h3>Not Active</h3>
+                </div>
+
+                <div class="table-responsive wMarginTop10px">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Number</th>
+                            <th>Date</th>
+                            <th>&nbsp;</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-if="$ctrl.billingDocuments.notValid.length == 0">
+                            <td colspan="5" class="text-center">No documents found</td>
+                        </tr>
+
+                        <tr ng-repeat="doc in $ctrl.billingDocuments.notValid">
+                            <td><i class="fa" uib-tooltip="{{doc.type}}" ng-class="{'fa-sticky-note-o': doc.type === 'RECEIPT', 'fa-file-text-o': doc.type === 'INVOICE', 'fa-undo': doc.type === 'CREDIT_NOTE'}"></i></td>
+                            <td ng-bind="doc.number"></td>
+                            <td ng-bind="doc.generationTimestamp | formatDate"></td>
+                            <td class="text-right">
+                                <a class="btn btn-sm btn-default" ng-href="/admin/api/reservation/event/{{$ctrl.event.shortName}}/{{$ctrl.reservation.id}}/billing-document/{{doc.id}}" target="_blank"><i class="fa fa-download"></i> Download</a>
+                                <button type="button" class="btn btn-sm btn-warning" ng-click="$ctrl.restoreDocument(doc.id)"><i class="fa fa-redo"></i> Restore</button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </uib-tab>
+
+            <uib-tab>
+                <uib-tab-heading>Emails sent <span class="badge" ng-bind="$ctrl.emails.length"></span></uib-tab-heading>
+                <div class="table-responsive wMarginTop10px" data-ng-if="$ctrl.emails.length > 0">
+                    <table class="table">
+                        <thead>
+                        <th>Recipient</th>
+                        <th>Subject</th>
+                        <th>Message</th>
+                        <th>Status</th>
+                        <th>Checksum</th>
+                        <th>Requested</th>
+                        <th>Sent</th>
+                        </thead>
+                        <tbody>
+                        <tr data-ng-repeat="email in $ctrl.emails" data-ng-class="{'text-success': email.status === 'SENT', 'text-danger': email.status === 'ERROR', 'text-warning': email.status === 'RETRY'}">
+                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.recipient}}</td>
+                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.subject | truncateString}}</td>
+                            <td data-ng-class-even="'active'" class="cell-wrap"><a href="#" target="_blank" data-ui-sref="events.single.email-log-detail({eventName: $ctrl.event.shortName, messageId: email.id})">{{::email.message | truncateString:100}}</a></td>
+                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.status}}</td>
+                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.checksum | truncateString:10}}</td>
+                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.requestTimestamp | formatDate}}</td>
+                            <td data-ng-class-even="'active'" class="cell-wrap">{{::email.sentTimestamp | formatDate}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </uib-tab>
+
+            <uib-tab>
+                <uib-tab-heading>Audit log <span class="badge" ng-bind="$ctrl.audit.length"></span></uib-tab-heading>
                 <div class="table-responsive wMarginTop10px">
                     <table class="table table-striped">
                         <thead>

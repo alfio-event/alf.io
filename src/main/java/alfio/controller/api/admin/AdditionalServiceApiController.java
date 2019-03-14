@@ -148,7 +148,7 @@ public class AdditionalServiceApiController {
     @Transactional
     public ResponseEntity<String> remove(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, Principal principal) {
         return eventRepository.findOptionalById(eventId)
-            .map(event -> optionally(() -> additionalServiceRepository.getById(additionalServiceId, eventId))
+            .map(event -> additionalServiceRepository.getOptionalById(additionalServiceId, eventId)
                 .map(as -> {
                     log.debug("{} is deleting additional service #{}", principal.getName(), additionalServiceId);
                     int deletedTexts = additionalServiceTextRepository.deleteAdditionalServiceTexts(additionalServiceId);

@@ -35,6 +35,6 @@ public class WaitingQueueSubscriptionForm implements Serializable {
     private Integer selectedCategory;
 
     public CustomerName toCustomerName(Event event) {
-        return new CustomerName(fullName, firstName, lastName, event);
+        return new CustomerName(fullName, firstName, lastName, event.mustUseFirstAndLastName());
     }
 }

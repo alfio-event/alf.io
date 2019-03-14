@@ -130,6 +130,7 @@
                         <td data-ng-class-even="'active'" data-label="Payment Type">{{::ticket.ticketReservation.paymentMethod}}</td>
                         <td data-ng-class-even="'active'" data-label="Transaction id"><span data-ng-if="ticket.paid">{{::ticket.transaction.id}}</span></td>
                         <td data-ng-class-even="'active'" data-label="Transaction timestamp"><span data-ng-if="ticket.paid">{{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</span></td>
+                        <td data-ng-class-even="'active'" data-label="Display QR-Code"><button type="button" class="btn btn-primary btn-xs" data-ng-click="showQrCode(ticket, event)"><i class="fa fa-qrcode"></i> QR-Code</button></td>
                         <td><button type="button" class="btn btn-primary btn-xs" data-ng-click="revertCheckIn(ticket)">Revert check-in</button></td>
                     </tr>
                     </tbody>

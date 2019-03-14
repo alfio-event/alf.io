@@ -7,12 +7,16 @@ alf.io
 
 ## Warning
 
-As the work for Alf.io [v2](https://github.com/alfio-event/alf.io/milestones) has started, this branch may contain **unstable** and **untested** code. 
-If you want to build and deploy alf.io by yourself, we strongly suggest you to use the [1.x-maintenance](https://github.com/alfio-event/alf.io/tree/1.x-maintenance) branch.  
+As the work for Alf.io [v2](https://github.com/alfio-event/alf.io/milestones) has started, this branch may contain **unstable** and **untested** code.
+If you want to build and deploy alf.io by yourself, we strongly suggest you to use the [1.x-maintenance](https://github.com/alfio-event/alf.io/tree/1.x-maintenance) branch.
 
 ## Prerequisites
 
-You should have installed Java version 8 (either [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html) or [OpenJDK](http://openjdk.java.net/install/)) in order to build and run alf.io. Please note that for the build process the JDK is required.
+You should have installed Java version **11** (e.g. [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html), [OpenJDK](http://openjdk.java.net/install/), or any other distribution) in order to build and run alf.io. Please note that for the build process the JDK is required.
+
+Postgresql version 9.6 or later.
+
+Additionally, the database user that create and use the tables should not be a "SUPERUSER", or else the row security policy checks will not be applied.
 
 ## Run on your machine
 
@@ -33,11 +37,11 @@ You must specify a project property at the command line, such as
 ```
 The local "bootRun" task has the following prerequisites:
 
-- a PostgreSQL instance up and runnning on localhost:5432
+- a PostgreSQL (version 9.6 or later) instance up and runnning on localhost:5432
 - a _postgres_ user having password: _password_
 - a database named _alfio_
 
-once started, alf.io will create all the required tables on the database.
+once started, alf.io will create all the required tables on the database, and be available at http://localhost:8080/admin. You can login using the default Username _admin_ and the password which was printed on the console.
 
 Note: if you want to test without installing a pgsql instance, we have configured the following tasks:
 
@@ -141,8 +145,6 @@ It will expire the 02/07/23 (as https://www.apple.com/certificateauthority/).
 ## Available spring profiles:
 
  - dev: enable dev mode
- - debug-csp: add report-uri and log csp violations
  - spring-boot: added when launched by spring-boot
  - demo: enable demo mode, the accounts for the admin will be created on the fly
  - disable-jobs: disable jobs
- - jdbc-session: enable saving the http session in the database

@@ -20,7 +20,7 @@ package alfio.extension;
 import alfio.util.Json;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.RemovalListener;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.OkHttpClient;
 import org.springframework.stereotype.Service;
@@ -55,7 +55,7 @@ public class ScriptingExecutionService {
         .build();
     private final Cache<String, ExecutorService> asyncExecutors = Caffeine.newBuilder()
         .expireAfterAccess(12, TimeUnit.HOURS)
-        .removalListener((RemovalListener<String, ExecutorService>) (key, value, cause) -> {
+        .removalListener((String key, ExecutorService value, RemovalCause cause) -> {
             if (value != null) {
                 value.shutdown();
             }

@@ -19,7 +19,6 @@ package alfio.controller;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.config.RepositoryConfiguration;
 import alfio.controller.api.AttendeeApiController;
 import alfio.controller.api.ReservationApiController;
 import alfio.controller.api.admin.CheckInApiController;
@@ -36,6 +35,7 @@ import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.audit.ScanAudit;
@@ -73,7 +73,11 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -105,7 +109,7 @@ import static org.mockito.Mockito.mock;
  *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = {RepositoryConfiguration.class, DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
+@ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, ReservationFlowIntegrationTest.ControllerConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
 public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
@@ -135,9 +139,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     private EventRepository eventRepository;
 
     @Autowired
-    private EuVatChecker euVatChecker;
-
-    @Autowired
     private EventController eventController;
 
     @Autowired
@@ -165,6 +166,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     private ScanAuditRepository scanAuditRepository;
     @Autowired
     private TicketReservationManager ticketReservationManager;
+    @Autowired
+    private ExtensionManager extensionManager;
 
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
@@ -186,6 +189,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private TemplateManager templateManager;
+
+    @Autowired
+    private ConfigurationManager configurationManager;
 
     private ReservationApiController reservationApiController;
     private InvoiceReceiptController invoiceReceiptController;
@@ -210,8 +216,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         user = eventAndUser.getValue() + "_owner";
 
         //
-        reservationApiController = new ReservationApiController(eventRepository, ticketHelper, mock(TemplateManager.class), i18nManager, euVatChecker, ticketReservationRepository, ticketReservationManager);
-        invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager);
+
+        reservationApiController = new ReservationApiController(eventRepository, ticketHelper, mock(TemplateManager.class), i18nManager, ticketReservationRepository, ticketReservationManager);
+        invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager, configurationManager, extensionManager);
 
         //promo code at event level
         eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3);
@@ -296,9 +303,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         //check receipt/invoice
         MockHttpServletResponse responseForReceipt = new MockHttpServletResponse();
         // no invoice
-        Assert.assertEquals(404, invoiceReceiptController.getInvoice(eventName, reservationIdentifier, new MockHttpServletResponse()).getStatusCodeValue());
+
+        Authentication anon = new AnonymousAuthenticationToken("key", "anonymous",
+            AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"));
+
+        Assert.assertEquals(404, invoiceReceiptController.getInvoice(eventName, reservationIdentifier, new MockHttpServletResponse(), anon).getStatusCodeValue());
         // we got a receipt
-        Assert.assertEquals(200, invoiceReceiptController.getReceipt(eventName, reservationIdentifier, responseForReceipt).getStatusCodeValue());
+        Assert.assertEquals(200, invoiceReceiptController.getReceipt(eventName, reservationIdentifier, responseForReceipt, anon).getStatusCodeValue());
         Assert.assertEquals("attachment; filename=\"receipt-" + eventName + "-" + reservationIdentifier + ".pdf\"", responseForReceipt.getHeader("Content-Disposition"));
         //
 
@@ -446,10 +457,17 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
         //
-        List<Integer> offlineIdentifiers = checkInApiController.getOfflineIdentifiers(event.getShortName(), 0L, new MockHttpServletResponse(), principal);
+        var offlineIdentifiers = checkInApiController.getOfflineIdentifiers(event.getShortName(), 0L, new MockHttpServletResponse(), principal);
+        assertFalse("Alf.io-PI integration must be enabled by default", offlineIdentifiers.isEmpty());
+
+        //disable Alf.io-PI
+        configurationRepository.insert(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED.name(), "false", null);
+        offlineIdentifiers = checkInApiController.getOfflineIdentifiers(event.getShortName(), 0L, new MockHttpServletResponse(), principal);
         assertTrue(offlineIdentifiers.isEmpty());
+
+        //re-enable Alf.io-PI
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ConfigurationKeys.OFFLINE_CHECKIN_ENABLED.name(), "true", null);
-        configurationRepository.insert(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED.name(), "true", null);
+        configurationRepository.update(ConfigurationKeys.ALFIO_PI_INTEGRATION_ENABLED.name(), "true");
         offlineIdentifiers = checkInApiController.getOfflineIdentifiers(event.getShortName(), 0L, new MockHttpServletResponse(), principal);
         assertFalse(offlineIdentifiers.isEmpty());
         Map<String, String> payload = checkInApiController.getOfflineEncryptedInfo(event.getShortName(), Collections.emptyList(), offlineIdentifiers, principal);
@@ -530,7 +548,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         Principal principal = mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(user);
         MockHttpServletResponse response = new MockHttpServletResponse();
-        List<SerializablePair<String, String>> fields = eventApiController.getAllFields(eventName);
+        List<SerializablePair<String, String>> fields = eventApiController.getAllFields(eventName, principal);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setParameter("fields", fields.stream().map(SerializablePair::getKey).toArray(String[]::new));
         eventApiController.downloadAllTicketsCSV(eventName, "csv", request, response, principal);
@@ -566,13 +584,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         reservationController.validateToOverview(eventName, reservationIdentifier, contactAndTicketsForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
 
-        Assert.assertEquals("/event/overview", reservationController.showOverview(eventName, reservationIdentifier, null, null, null, null, Locale.ENGLISH, model));
+        Assert.assertEquals("/event/overview", reservationController.showOverview(eventName, reservationIdentifier, Locale.ENGLISH, model, new MockHttpSession()));
 
         PaymentForm paymentForm = new PaymentForm();
         paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
         paymentForm.setTermAndConditionsAccepted(true);
         paymentForm.setPrivacyPolicyAccepted(true);
-        return reservationController.handleReservation(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
+        return reservationController.handleReservation(eventName, reservationIdentifier, paymentForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes, new MockHttpSession());
     }
 
     private String reserveTicket(String eventName) {

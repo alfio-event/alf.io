@@ -2,91 +2,96 @@
     <h3><i class="fa fa-info-circle"></i> Attendees' data to collect</h3>
     <h5 class="text-muted">The following data will be collected (full name, e-mail and language are collected by default)</h5>
 </div>
-<div class="panel panel-default" data-ng-repeat="field in $ctrl.additionalFields | orderBy: 'order' ">
-    <div class="panel-heading">
-        <div class="panel-title">
+<standard-fields ng-if="$ctrl.additionalFields.length === 0"></standard-fields>
+<div data-ng-repeat="field in $ctrl.additionalFields | orderBy: 'order' ">
+    <standard-fields ng-if="$index == $ctrl.standardFieldsIndex"></standard-fields>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <div class="panel-title">
+                <div class="row">
+                    <div class="col-xs-5 col-md-3">
+                        {{field.name}}
+                    </div>
+                    <div class="col-xs-7 col-md-9">
+                        <div class="pull-right">
+                            <button class="btn btn-sm btn-default" type="button" data-ng-click="$ctrl.editField($ctrl.event, false, field)"><i class="fa fa-edit"></i> edit</button>
+                            <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.fieldUp($index)" ng-hide="edit || ($first && field.order < 0)"><i class="fa fa-arrow-up"></i> move up</button>
+                            <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.fieldDown($index)" ng-hide="edit || $last"><i class="fa fa-arrow-down"></i> move down</button>
+                            <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.deleteFieldModal(field)"><i class="fa fa-trash"></i> delete</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-body">
             <div class="row">
-                <div class="col-xs-5 col-md-3">
-                    [{{$index+1}}] {{field.name}}
+                <div class="col-xs-12 col-md-5">
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Field name</strong></div>
+                        <div class="col-sm-8" >{{field.name}}</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Type</strong></div>
+                        <div class="col-sm-8">{{field | fieldType}} </div>
+                    </div>
+                    <div class="row" data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
+                        <div class="col-sm-4"><strong>Min length</strong></div>
+                        <div class="col-sm-8">{{field.minLength}}</div>
+                    </div>
+                    <div class="row" data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
+                        <div class="col-sm-4"><strong>Max Length</strong></div>
+                        <div class="col-sm-8">{{field.maxLength}}</div>
+                    </div>
                 </div>
-                <div class="col-xs-7 col-md-9">
-                    <div class="pull-right">
-                        <button class="btn btn-sm btn-default" type="button" data-ng-click="$ctrl.editField($ctrl.event, false, field)"><i class="fa fa-edit"></i> edit</button>
-                        <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.fieldUp($index)" ng-hide="edit || $first"><i class="fa fa-arrow-up"></i> move up</button>
-                        <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.fieldDown($index)" ng-hide="edit || $last"><i class="fa fa-arrow-down"></i> move down</button>
-                        <button class="btn btn-sm btn-default" type="button" ng-click="$ctrl.deleteFieldModal(field)"><i class="fa fa-trash"></i> delete</button>
+                <div class="col-xs-12 col-md-5">
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Label</strong></div>
+                        <div class="col-sm-8">
+                            <span data-ng-repeat="lang in $ctrl.allLanguages | selectedLanguages:$ctrl.event.locales"><span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.label}}</span><span data-ng-if="!$last"> / </span></span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Placeholder</strong></div>
+                        <div class="col-sm-8">
+                                            <span data-ng-repeat="lang in $ctrl.allLanguages | selectedLanguages:$ctrl.event.locales">
+                                                <span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.placeholder}}</span><span data-ng-if="!$last"> / </span>
+                                            </span>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Required</strong></div>
+                        <div class="col-sm-8">{{field.required}}</div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-    <div class="panel-body">
-        <div class="row">
-            <div class="col-xs-12 col-md-5">
-                <div class="row">
-                    <div class="col-sm-4"><strong>Field name</strong></div>
-                    <div class="col-sm-8" >{{field.name}}</div>
-                </div>
-                <div class="row">
-                    <div class="col-sm-4"><strong>Type</strong></div>
-                    <div class="col-sm-8">{{field | fieldType}} </div>
-                </div>
-                <div class="row" data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
-                    <div class="col-sm-4"><strong>Min length</strong></div>
-                    <div class="col-sm-8">{{field.minLength}}</div>
-                </div>
-                <div class="row" data-ng-if="field.type == 'input:text' || field.type == 'input:tel' || field.type == 'textarea'">
-                    <div class="col-sm-4"><strong>Max Length</strong></div>
-                    <div class="col-sm-8">{{field.maxLength}}</div>
-                </div>
-            </div>
-            <div class="col-xs-12 col-md-5">
-                <div class="row">
-                    <div class="col-sm-4"><strong>Label</strong></div>
-                    <div class="col-sm-8">
-                        <span data-ng-repeat="lang in $ctrl.allLanguages | selectedLanguages:$ctrl.event.locales"><span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.label}}</span><span data-ng-if="!$last"> / </span></span>
+            <hr data-ng-if="field.type == 'select'" />
+            <div class="row" data-ng-if="field.type == 'select'">
+                <div class="col-xs-1"><strong>Values</strong></div>
+                <div class="col-xs-10">
+                    <div data-ng-repeat="restrictedValue in field.restrictedValues" ng-class="{'text-muted': field.disabledValues && field.disabledValues.indexOf(restrictedValue) > -1 }">
+                        <span><strong>{{restrictedValue}}</strong>: </span>
+                        <span data-ng-repeat="lang in $ctrl.allLanguages | selectedLanguages:$ctrl.event.locales">
+                            <span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.restrictedValues[restrictedValue]}}</span><span data-ng-if="!$last"> / </span>
+                        </span>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-sm-4"><strong>Placeholder</strong></div>
-                    <div class="col-sm-8">
-                                        <span data-ng-repeat="lang in $ctrl.allLanguages | selectedLanguages:$ctrl.event.locales">
-                                            <span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.placeholder}}</span><span data-ng-if="!$last"> / </span>
-                                        </span>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-sm-4"><strong>Required</strong></div>
-                    <div class="col-sm-8">{{field.required}}</div>
-                </div>
+                <div class="col-xs-1"><button class="btn btn-default btn-xs" type="button" ng-click="$ctrl.openStats(field)"><i class="fa fa-bar-chart-o"></i> Statistics</button></div>
             </div>
-        </div>
-        <hr data-ng-if="field.type == 'select'" />
-        <div class="row" data-ng-if="field.type == 'select'">
-            <div class="col-xs-1"><strong>Values</strong></div>
-            <div class="col-xs-10">
-                <div data-ng-repeat="restrictedValue in field.restrictedValues" ng-class="{'text-muted': field.disabledValues && field.disabledValues.indexOf(restrictedValue) > -1 }">
-                    <span><strong>{{restrictedValue}}</strong>: </span>
-                    <span data-ng-repeat="lang in $ctrl.allLanguages | selectedLanguages:$ctrl.event.locales">
-                        <span title="{{lang.displayLanguage}}">{{field.description[lang.locale].description.restrictedValues[restrictedValue]}}</span><span data-ng-if="!$last"> / </span>
-                    </span>
-                </div>
+            <hr data-ng-if="field.context === 'ADDITIONAL_SERVICE'" />
+            <div data-ng-if="field.context === 'ADDITIONAL_SERVICE'">
+                <i class="fa fa-info-circle"></i> collected only if <i><a ui-sref="events.single.donations({eventName: $ctrl.event.shortName})">{{$ctrl.additionalServiceDescription($ctrl.event, field.additionalServiceId)}}</a></i> has been selected.
             </div>
-            <div class="col-xs-1"><button class="btn btn-default btn-xs" type="button" ng-click="$ctrl.openStats(field)"><i class="fa fa-bar-chart-o"></i> Statistics</button></div>
-        </div>
-        <hr data-ng-if="field.context === 'ADDITIONAL_SERVICE'" />
-        <div data-ng-if="field.context === 'ADDITIONAL_SERVICE'">
-            <i class="fa fa-info-circle"></i> collected only if <i><a ui-sref="events.single.donations({eventName: $ctrl.event.shortName})">{{$ctrl.additionalServiceDescription($ctrl.event, field.additionalServiceId)}}</a></i> has been selected.
-        </div>
-        <hr data-ng-if="field.categoryIds && field.categoryIds.length > 0" />
-        <div class="row" data-ng-if="field.categoryIds && field.categoryIds.length > 0">
-            <div class="col-sm-1"><strong>Categories</strong></div>
-            <div class="col-sm-11">
-                <span ng-repeat="cId in field.categoryIds">{{ $ctrl.getCategoryDescription(cId) }}<span ng-if="!$last" class="ml-1 mr-10 ">-</span></span>
+            <hr data-ng-if="field.categoryIds && field.categoryIds.length > 0" />
+            <div class="row" data-ng-if="field.categoryIds && field.categoryIds.length > 0">
+                <div class="col-sm-1"><strong>Categories</strong></div>
+                <div class="col-sm-11">
+                    <span ng-repeat="cId in field.categoryIds">{{ $ctrl.getCategoryDescription(cId) }}<span ng-if="!$last" class="ml-1 mr-10 ">-</span></span>
+                </div>
             </div>
         </div>
     </div>
 </div>
+<standard-fields ng-if="$ctrl.additionalFields.length > 0 && $ctrl.standardFieldsIndex === -1"></standard-fields>
 <div class="clearfix"></div>
 <div class="wMarginBottom">
     <button type="button" class="btn btn-success" data-ng-click="$ctrl.editField($ctrl.event, true)"><i class="fa fa-plus"></i> add new</button>

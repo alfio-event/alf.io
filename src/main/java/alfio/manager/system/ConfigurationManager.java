@@ -17,7 +17,7 @@
 package alfio.manager.system;
 
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
@@ -45,7 +45,6 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.model.system.ConfigurationPathLevel.*;
-import static alfio.util.OptionalWrapper.optionally;
 
 @Component
 @Transactional
@@ -65,9 +64,9 @@ public class ConfigurationManager {
     private final EventRepository eventRepository;
 
     //TODO: refactor, not the most beautiful code, find a better solution...
-    private Configuration findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
+    private Optional<Configuration> findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
         switch (path.pathLevel()) {
-            case SYSTEM: return configurationRepository.findByKey(key.getValue());
+            case SYSTEM: return configurationRepository.findOptionalByKey(key.getValue());
             case ORGANIZATION: {
                 OrganizationConfigurationPath o = from(path);
                 return selectPath(configurationRepository.findByOrganizationAndKey(o.getId(), key.getValue()));
@@ -92,8 +91,8 @@ public class ConfigurationManager {
      * @param conf
      * @return
      */
-    private Configuration selectPath(List<Configuration> conf) {
-        return conf.size() == 1 ? conf.get(0) : conf.stream().max(Comparator.comparing(Configuration::getConfigurationPathLevel)).orElse(null);
+    private Optional<Configuration> selectPath(List<Configuration> conf) {
+        return conf.size() == 1 ? Optional.of(conf.get(0)) : conf.stream().max(Comparator.comparing(Configuration::getConfigurationPathLevel));
     }
 
     //meh
@@ -104,7 +103,7 @@ public class ConfigurationManager {
 
     public int getIntConfigValue(ConfigurationPathKey pathKey, int defaultValue) {
         try {
-            return Optional.ofNullable(findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()))
+            return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())
                 .map(Configuration::getValue)
                 .map(Integer::parseInt).orElse(defaultValue);
         } catch (NumberFormatException | EmptyResultDataAccessException e) {
@@ -124,7 +123,7 @@ public class ConfigurationManager {
     }
 
     public Optional<String> getStringConfigValue(ConfigurationPathKey pathKey) {
-        return optionally(() -> findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())).map(Configuration::getValue);
+        return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()).map(Configuration::getValue);
     }
 
     public Map<ConfigurationKeys, Optional<String>> getStringConfigValueFrom(ConfigurationPathKey... keys) {
@@ -166,7 +165,7 @@ public class ConfigurationManager {
     private void saveOrganizationConfiguration(int organizationId, String key, String optionValue) {
         Optional<String> value = evaluateValue(key, optionValue);
         Optional<Configuration> existing = configurationRepository.findByKeyAtOrganizationLevel(organizationId, key);
-        if (!value.isPresent()) {
+        if (value.isEmpty()) {
             configurationRepository.deleteOrganizationLevelByKey(key, organizationId);
         } else if (existing.isPresent()) {
             configurationRepository.updateOrganizationLevel(organizationId, key, value.get());
@@ -185,7 +184,7 @@ public class ConfigurationManager {
     private void saveEventConfiguration(int eventId, int organizationId, String key, String optionValue) {
         Optional<Configuration> existing = configurationRepository.findByKeyAtEventLevel(eventId, organizationId, key);
         Optional<String> value = evaluateValue(key, optionValue);
-        if(!value.isPresent()) {
+        if(value.isEmpty()) {
             configurationRepository.deleteEventLevelByKey(key, eventId);
         } else if (existing.isPresent()) {
             configurationRepository.updateEventLevel(eventId, organizationId, key, value.get());
@@ -197,7 +196,7 @@ public class ConfigurationManager {
     public void saveAllEventConfiguration(int eventId, int organizationId, List<ConfigurationModification> list, String username) {
         User user = userManager.findUserByUsername(username);
         Validate.isTrue(userManager.isOwnerOfOrganization(user, organizationId), "Cannot update settings, user is not owner");
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "event does not exist");
         if(organizationId != event.getOrganizationId()) {
             Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
@@ -209,7 +208,7 @@ public class ConfigurationManager {
 
     public void saveCategoryConfiguration(int categoryId, int eventId, List<ConfigurationModification> list, String username) {
         User user = userManager.findUserByUsername(username);
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "event does not exist");
         Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
         list.stream()
@@ -217,7 +216,7 @@ public class ConfigurationManager {
             .forEach(c -> {
                 Optional<Configuration> existing = configurationRepository.findByKeyAtCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey());
                 Optional<String> value = evaluateValue(c.getKey(), c.getValue());
-                if(!value.isPresent()) {
+                if(value.isEmpty()) {
                     configurationRepository.deleteCategoryLevelByKey(c.getKey(), eventId, categoryId);
                 } else if (existing.isPresent()) {
                     configurationRepository.updateCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey(), value.get());
@@ -239,7 +238,7 @@ public class ConfigurationManager {
     }
 
     public void saveSystemConfiguration(ConfigurationKeys key, String value) {
-        Optional<Configuration> conf = optionally(() -> findByConfigurationPathAndKey(Configuration.system(), key));
+        Optional<Configuration> conf = findByConfigurationPathAndKey(Configuration.system(), key);
         if(key.isBooleanComponentType()) {
             Optional<Boolean> state = getThreeStateValue(value);
             if(conf.isPresent()) {
@@ -253,7 +252,7 @@ public class ConfigurationManager {
             }
         } else {
             Optional<String> valueOpt = Optional.ofNullable(value);
-            if(!conf.isPresent()) {
+            if(conf.isEmpty()) {
                 valueOpt.ifPresent(v -> configurationRepository.insert(key.getValue(), v, key.getDescription()));
             } else {
                 configurationRepository.update(key.getValue(), value);
@@ -273,7 +272,7 @@ public class ConfigurationManager {
     public boolean isBasicConfigurationNeeded() {
         return ConfigurationKeys.basic().stream()
             .anyMatch(key -> {
-                boolean absent = !configurationRepository.findOptionalByKey(key.getValue()).isPresent();
+                boolean absent = configurationRepository.findOptionalByKey(key.getValue()).isEmpty();
                 if (absent) {
                     log.warn("cannot find a value for " + key.getValue());
                 }
@@ -311,20 +310,20 @@ public class ConfigurationManager {
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfig(int eventId, String username) {
         User user = userManager.findUserByUsername(username);
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         int organizationId = event.getOrganizationId();
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
         }
         boolean isAdmin = userManager.isAdmin(user);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findEventConfiguration(organizationId, eventId).stream().filter(checkActualConfigurationLevel(isAdmin, EVENT)).sorted().collect(groupByCategory());
-        boolean offlineCheckInEnabled = areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED).test(event);
+        boolean offlineCheckInEnabled = areBooleanSettingsEnabledForEvent(true, ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED).test(event);
         return removeAlfioPISettingsIfNeeded(offlineCheckInEnabled, groupByCategory(isAdmin ? union(SYSTEM, EVENT) : EVENT_CONFIGURATION, existing));
     }
 
-    public Predicate<Event> areBooleanSettingsEnabledForEvent(ConfigurationKeys... keys) {
+    public Predicate<EventAndOrganizationId> areBooleanSettingsEnabledForEvent(boolean defaultValue, ConfigurationKeys... keys) {
         return event -> Arrays.stream(keys)
-            .allMatch(k -> getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId()).apply(k), false));
+            .allMatch(k -> getBooleanConfigValue(Configuration.from(event).apply(k), defaultValue));
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
@@ -353,7 +352,7 @@ public class ConfigurationManager {
 
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadCategoryConfig(int eventId, int categoryId, String username) {
         User user = userManager.findUserByUsername(username);
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         int organizationId = event.getOrganizationId();
         if(!userManager.isOwnerOfOrganization(user, organizationId)) {
             return Collections.emptyMap();
@@ -365,9 +364,8 @@ public class ConfigurationManager {
     private Map<ConfigurationKeys.SettingCategory, List<Configuration>> groupByCategory(Map<ConfigurationKeys.SettingCategory, List<Configuration>> all, Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing) {
         return all.entrySet().stream()
             .map(e -> {
-                Set<Configuration> entries = new TreeSet<>();
                 ConfigurationKeys.SettingCategory key = e.getKey();
-                entries.addAll(e.getValue());
+                Set<Configuration> entries = new TreeSet<>(e.getValue());
                 if(existing.containsKey(key)) {
                     List<Configuration> configurations = existing.get(key);
                     entries.removeAll(configurations);
@@ -413,14 +411,14 @@ public class ConfigurationManager {
     }
 
     public void deleteEventLevelByKey(String key, int eventId, String username) {
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "Wrong event id");
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
         configurationRepository.deleteEventLevelByKey(key, eventId);
     }
 
     public void deleteCategoryLevelByKey(String key, int eventId, int categoryId, String username) {
-        Event event = eventRepository.findById(eventId);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
         Validate.notNull(event, "Wrong event id");
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), event.getOrganizationId()), "User is not owner of the organization. Therefore, delete is not allowed.");
         configurationRepository.deleteCategoryLevelByKey(key, eventId, categoryId);
@@ -434,22 +432,36 @@ public class ConfigurationManager {
             .collect(groupByCategory());
     }
 
-    public String getShortReservationID(Event event, String reservationId) {
-        return StringUtils.substring(reservationId, 0, getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
+    public String getShortReservationID(EventAndOrganizationId event, String reservationId) {
+        return StringUtils.substring(reservationId, 0, getIntConfigValue(Configuration.from(event, PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
     }
 
-    public boolean hasAllConfigurationsForInvoice(Event event) {
-        return getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.INVOICE_ADDRESS)).isPresent() &&
-            getStringConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ConfigurationKeys.VAT_NR)).isPresent();
+    public boolean hasAllConfigurationsForInvoice(EventAndOrganizationId event) {
+        return getStringConfigValue(Configuration.from(event, ConfigurationKeys.INVOICE_ADDRESS)).isPresent() &&
+            getStringConfigValue(Configuration.from(event, ConfigurationKeys.VAT_NR)).isPresent();
     }
 
-    public boolean isRecaptchaForOfflinePaymentEnabled(Event event) {
-        return getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), false)
+    public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
+        return getBooleanConfigValue(Configuration.from(event, ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), false)
             && getStringConfigValue(Configuration.getSystemConfiguration(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), null) != null;
     }
 
-    public boolean isRecaptchaForTicketSelectionEnabled(Event event) {
-        return getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ENABLE_CAPTCHA_FOR_TICKET_SELECTION), false)
+    public boolean isRecaptchaForTicketSelectionEnabled(EventAndOrganizationId event) {
+        return getBooleanConfigValue(Configuration.from(event, ENABLE_CAPTCHA_FOR_TICKET_SELECTION), false)
             && getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null) != null;
+    }
+
+    // https://github.com/alfio-event/alf.io/issues/573
+    public boolean canGenerateReceiptOrInvoiceToCustomer(EventAndOrganizationId event) {
+        return !isItalianEInvoicingEnabled(event);
+    }
+
+    public boolean isInvoiceOnly(EventAndOrganizationId event) {
+        return getBooleanConfigValue(Configuration.from(event, GENERATE_ONLY_INVOICE), false) ||
+            getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+    }
+
+    public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
+        return getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
     }
 }

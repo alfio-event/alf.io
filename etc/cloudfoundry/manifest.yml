@@ -1,0 +1,9 @@
+---
+applications:
+    - name: alfio
+      path: alf.io-boot.war
+      instances: 1
+      buildpack: https://github.com/cloudfoundry/java-buildpack.git
+      memory: 256m
+      env:
+          JBP_CONFIG_OPEN_JDK_JRE: '{ jre: { version: 11.+ } }'

@@ -17,7 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.SpecialPrice;
 import alfio.model.TicketCategory;
 import alfio.model.system.Configuration;
@@ -31,6 +31,7 @@ import org.apache.commons.lang3.time.StopWatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Class SpecialPriceTokenGenerator.
@@ -39,7 +40,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Log4j2
-public class SpecialPriceTokenGenerator {
+@Transactional
+    public class SpecialPriceTokenGenerator {
 
     private static final char[] ADMITTED_CHARACTERS = new char[]{
             'A', 'B', 'C', 'D', 'E', 'F',
@@ -65,7 +67,7 @@ public class SpecialPriceTokenGenerator {
         this.eventRepository = eventRepository;
     }
 
-    void generatePendingCodes() {
+    public void generatePendingCodes() {
         StopWatch stopWatch = new StopWatch();
         log.trace("start pending codes generation");
         stopWatch.start();
@@ -74,14 +76,14 @@ public class SpecialPriceTokenGenerator {
         log.trace("end. Took {} ms", stopWatch.getTime());
     }
 
-    void generatePendingCodesForCategory(int categoryId) {
+    public void generatePendingCodesForCategory(int categoryId) {
         specialPriceRepository.findWaitingElementsForCategory(categoryId).forEach(this::generateCode);
     }
 
-    private void generateCode(SpecialPrice specialPrice) {
+    private void generateCode(SpecialPrice.SpecialPriceTicketCategoryId specialPrice) {
 
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(specialPrice.getTicketCategoryId()).orElseThrow(IllegalStateException::new);
-        Event event = eventRepository.findById(ticketCategory.getEventId());
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(ticketCategory.getEventId());
         int maxLength = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ConfigurationKeys.SPECIAL_PRICE_CODE_LENGTH), 6);
 
         while (true) {

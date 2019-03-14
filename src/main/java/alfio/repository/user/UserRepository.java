@@ -18,6 +18,7 @@ package alfio.repository.user;
 
 import alfio.model.user.User;
 import ch.digitalfondue.npjt.*;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.ZonedDateTime;
 import java.util.Collection;
@@ -30,6 +31,9 @@ public interface UserRepository {
 
     @Query("SELECT * FROM ba_user WHERE id = :userId")
     User findById(@Bind("userId") int userId);
+
+    @Query("SELECT * FROM ba_user WHERE id = :userId")
+    Optional<User> findOptionalById(@Bind("userId") int userId);
 
     @Query("select * from ba_user where id in (:userIds)")
     List<User> findByIds(@Bind("userIds") Collection<Integer> ids);
@@ -45,6 +49,13 @@ public interface UserRepository {
 
     @Query("select id from ba_user where username = :username")
     Optional<Integer> findIdByUserName(@Bind("username") String username);
+
+    default Optional<Integer> nullSafeFindIdByUserName(String username) {
+        if(StringUtils.isNotBlank(username)) {
+            return findIdByUserName(username);
+        }
+        return Optional.empty();
+    }
 
     @Query("select * from ba_user where username = :username and enabled = true")
     Optional<User> findEnabledByUsername(@Bind("username") String username);

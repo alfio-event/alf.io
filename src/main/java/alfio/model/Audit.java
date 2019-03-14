@@ -40,6 +40,7 @@ public class Audit {
         CANCEL_RESERVATION,
         UPDATE_EVENT,
         CANCEL_TICKET,
+        PAYMENT_CONFIRMED,
         REFUND,
         CHECK_IN,
         MANUAL_CHECK_IN,
@@ -52,7 +53,13 @@ public class Audit {
         PRIVACY_POLICY_ACCEPTED,
         VAT_VALIDATION_SUCCESSFUL,
         VAT_FORMAL_VALIDATION_SUCCESSFUL,
-        GROUP_MEMBER_ACQUIRED
+        GROUP_MEMBER_ACQUIRED,
+        CREDIT_NOTE_ISSUED,
+        BILLING_DOCUMENT_GENERATED,
+        BILLING_DOCUMENT_INVALIDATED,
+        BILLING_DOCUMENT_RESTORED,
+        FORCE_VAT_APPLICATION,
+        PAYMENT_FAILED
     }
 
     private final String reservationId;

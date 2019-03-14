@@ -82,6 +82,14 @@ public class TicketDecorator {
         return ticketFieldConfiguration;
     }
 
+    public List<TicketFieldConfigurationDescriptionAndValue> getTicketFieldConfigurationBeforeStandard() {
+        return ticketFieldConfiguration.stream().filter(TicketFieldConfigurationDescriptionAndValue::isBeforeStandardFields).collect(Collectors.toList());
+    }
+
+    public List<TicketFieldConfigurationDescriptionAndValue> getTicketFieldConfigurationAfterStandard() {
+        return ticketFieldConfiguration.stream().filter(tv -> !tv.isBeforeStandardFields()).collect(Collectors.toList());
+    }
+
     public String getElementNamePrefix() {
         return elementNamePrefix;
     }

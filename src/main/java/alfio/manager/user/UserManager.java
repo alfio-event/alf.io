@@ -24,7 +24,6 @@ import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
-import alfio.util.OptionalWrapper;
 import alfio.util.PasswordGenerator;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +44,7 @@ import java.util.stream.Stream;
 import static java.util.stream.Collectors.toList;
 
 @Component
+@Transactional
 @RequiredArgsConstructor
 public class UserManager {
 
@@ -97,6 +97,10 @@ public class UserManager {
 
     public User findUserByUsername(String username) {
         return userRepository.findEnabledByUsername(username).orElseThrow(IllegalArgumentException::new);
+    }
+
+    public Optional<User> findOptionalEnabledUserByUsername(String username) {
+        return userRepository.findEnabledByUsername(username);
     }
 
     public boolean usernameExists(String username) {
@@ -156,7 +160,6 @@ public class UserManager {
         return authorityRepository.checkRole(user.getUsername(), roleNames);
     }
 
-    @Transactional
     public int createOrganization(String name, String description, String email) {
         organizationRepository.create(name, description, email);
         int orgId = organizationRepository.getIdByName(name);
@@ -164,7 +167,6 @@ public class UserManager {
         return orgId;
     }
 
-    @Transactional
     public void updateOrganization(Integer id, String name, String email, String description) {
         organizationRepository.update(id, name, description, email);
     }
@@ -179,7 +181,6 @@ public class UserManager {
         return ValidationResult.success();
     }
 
-    @Transactional
     public void editUser(int id, int organizationId, String username, String firstName, String lastName, String emailAddress, String description, Role role, String currentUsername) {
         boolean admin = ADMIN_USERNAME.equals(username) && Role.ADMIN == role;
         if(!admin) {
@@ -195,12 +196,12 @@ public class UserManager {
         }
     }
 
-    @Transactional
+
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType) {
         return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, null, null);
     }
 
-    @Transactional
+
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, ZonedDateTime validTo, String description) {
         if (userType == User.Type.API_KEY) {
             username = UUID.randomUUID().toString();
@@ -213,14 +214,13 @@ public class UserManager {
         return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, userPassword, validTo, description);
     }
 
-    @Transactional
     public void bulkInsertApiKeys(int organizationId, Role role, List<String> descriptions) {
         for (String description : descriptions) {
             insertUser(organizationId, null, null, null, null, role, User.Type.API_KEY, null, description);
         }
     }
 
-    @Transactional
+
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType, String userPassword, ZonedDateTime validTo, String description) {
         Organization organization = organizationRepository.getById(organizationId);
         AffectedRowCountAndKey<Integer> result = userRepository.create(username, passwordEncoder.encode(userPassword), firstName, lastName, emailAddress, true, userType, validTo, description);
@@ -229,7 +229,7 @@ public class UserManager {
         return new UserWithPassword(userRepository.findById(result.getKey()), userType != User.Type.API_KEY ? userPassword : "", UUID.randomUUID().toString());
     }
 
-    @Transactional
+
     public UserWithPassword resetPassword(int userId) {
         User user = findUser(userId);
         String password = PasswordGenerator.generateRandomPassword();
@@ -237,7 +237,7 @@ public class UserManager {
         return new UserWithPassword(user, password, UUID.randomUUID().toString());
     }
 
-    @Transactional
+
     public boolean updatePassword(String username, String newPassword) {
         User user = userRepository.findByUsername(username).orElseThrow(IllegalStateException::new);
         Validate.isTrue(PasswordGenerator.isValid(newPassword), "invalid password");
@@ -245,7 +245,7 @@ public class UserManager {
         return true;
     }
 
-    @Transactional
+
     public void deleteUser(int userId, String currentUsername) {
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
@@ -255,7 +255,7 @@ public class UserManager {
         userRepository.deleteUser(userId);
     }
 
-    @Transactional
+
     public void enable(int userId, String currentUsername, boolean status) {
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
         Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
@@ -265,10 +265,9 @@ public class UserManager {
 
     public ValidationResult validateUser(Integer id, String username, int organizationId, String role, String firstName, String lastName, String emailAddress) {
 
-        Optional<User> existing = Optional.ofNullable(id)
-            .flatMap(uid -> OptionalWrapper.optionally(() -> userRepository.findById(uid)));
+        Optional<User> existing = Optional.ofNullable(id).flatMap(uid -> userRepository.findOptionalById(uid));
 
-        if(!existing.filter(e -> e.getUsername().equals(username)).isPresent() && usernameExists(username)) {
+        if(existing.filter(e -> e.getUsername().equals(username)).isEmpty() && usernameExists(username)) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("username", "There is already another user with the same username."));
         }
         return ValidationResult.of(Stream.of(Pair.of(firstName, "firstName"), Pair.of(lastName, "lastName"), Pair.of(emailAddress, "emailAddress"))
@@ -282,7 +281,7 @@ public class UserManager {
             .map(u -> {
                 List<ValidationResult.ErrorDescriptor> errors = new ArrayList<>();
                 Optional<String> password = userRepository.findPasswordByUsername(username);
-                if(!password.filter(p -> passwordEncoder.matches(oldPassword, p)).isPresent()) {
+                if(password.filter(p -> passwordEncoder.matches(oldPassword, p)).isEmpty()) {
                     errors.add(new ValidationResult.ErrorDescriptor("alfio.old-password-invalid", "wrong password"));
                 }
                 if(!PasswordGenerator.isValid(newPassword)) {

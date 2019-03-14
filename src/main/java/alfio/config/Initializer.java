@@ -18,10 +18,9 @@ package alfio.config;
 
 import alfio.util.DefaultExceptionHandler;
 import com.openhtmltopdf.util.XRLog;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
-import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
@@ -34,18 +33,14 @@ import javax.servlet.SessionCookieConfig;
 import java.util.Objects;
 import java.util.logging.Level;
 
-@Log4j2
 public class Initializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
     public static final String PROFILE_DEV = "dev";
     public static final String PROFILE_INTEGRATION_TEST = "integration-test";
-    public static final String PROFILE_DEBUG_CSP = "debug-csp";
     public static final String PROFILE_LIVE = "!dev";
     static final String PROFILE_SPRING_BOOT = "spring-boot";
     public static final String PROFILE_DEMO = "demo";
     public static final String PROFILE_DISABLE_JOBS = "disable-jobs";
-    public static final String PROFILE_JDBC_SESSION = "jdbc-session";
-    public static final String PROFILE_USE_WORKER_NAME = "use-worker-name";
     private Environment environment;
 
     @Override
@@ -74,8 +69,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
     protected WebApplicationContext createRootApplicationContext() {
         ConfigurableWebApplicationContext ctx = ((ConfigurableWebApplicationContext) super.createRootApplicationContext());
         Objects.requireNonNull(ctx, "Something really bad is happening...");
-        ConfigurableEnvironment environment = ctx.getEnvironment();
-        this.environment = environment;
+        this.environment = ctx.getEnvironment();
         return ctx;
     }
 
@@ -86,7 +80,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
         
         Validate.notNull(environment, "environment cannot be null!");
         // set secure cookie only if current environment doesn't strictly need HTTP
-        config.setSecure(environment.acceptsProfiles(Initializer.PROFILE_LIVE));
+        config.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
 
         // FIXME and CHECKME what a mess, ouch: https://issues.jboss.org/browse/WFLY-3448 ?
         config.setPath(servletContext.getContextPath() + "/");
@@ -94,7 +88,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        return new Class<?>[] { ApplicationPropertiesConfiguration.class, RepositoryConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class };
+        return new Class<?>[] { ApplicationPropertiesConfiguration.class, DataSourceConfiguration.class, WebSecurityConfig.class };
     }
 
     @Override

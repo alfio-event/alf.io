@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
@@ -24,6 +25,7 @@ import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.Map;
 import java.util.Optional;
 
 @Getter
@@ -32,6 +34,7 @@ public class TicketWithReservationAndTransaction {
 
     private final Ticket ticket;
     private final TicketReservation ticketReservation;
+    private final BillingDetails billingDetails;
     private final Optional<Transaction> transaction;
 
 
@@ -79,7 +82,15 @@ public class TicketWithReservationAndTransaction {
                                                @Column("tr_used_vat_percent") BigDecimal usedVadPercent,
                                                @Column("tr_vat_included") Boolean vatIncluded,
                                                @Column("tr_creation_ts") ZonedDateTime reservationCreationTimestamp,
+                                               @Column("tr_registration_ts") ZonedDateTime reservationRegistrationTimestamp,
                                                @Column("tr_customer_reference") String customerReference,
+
+                                               @Column("tr_billing_address_company") String billingAddressCompany,
+                                               @Column("tr_billing_address_line1") String billingAddressLine1,
+                                               @Column("tr_billing_address_line2") String billingAddressLine2,
+                                               @Column("tr_billing_address_city") String billingAddressCity,
+                                               @Column("tr_billing_address_zip") String billingAddressZip,
+                                               @Column("tr_invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
                                                //
                                                @Column("bt_id") Integer btId,
                                                @Column("bt_gtw_tx_id") String transactionId,
@@ -91,7 +102,8 @@ public class TicketWithReservationAndTransaction {
                                                @Column("bt_description") String description,
                                                @Column("bt_payment_proxy") String paymentProxy,
                                                @Column("bt_plat_fee") Long platformFee,
-                                               @Column("bt_gtw_fee") Long gatewayFee
+                                               @Column("bt_gtw_fee") Long gatewayFee,
+                                               @Column("bt_status") Transaction.Status transactionStatus
                                                ) {
 
         this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
@@ -104,11 +116,14 @@ public class TicketWithReservationAndTransaction {
             billingAddress, confirmationTimestamp, latestReminder, paymentMethod,
             reminderSent, promoCodeDiscountId, automatic, trUserLanguage,
             directAssignmentRequested, invoiceNumber, invoiceModel, vatStatus, vatNr, vatCountryCode, invoiceRequested,
-            usedVadPercent, vatIncluded, reservationCreationTimestamp, customerReference);
+            usedVadPercent, vatIncluded, reservationCreationTimestamp, customerReference,
+            reservationRegistrationTimestamp);
+
+        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountryCode, vatNr, invoicingAdditionalInfo);
 
         if(btId != null) {
             this.transaction = Optional.of(new Transaction(btId, transactionId, paymentId, reservationId,
-                timestamp, priceInCents, currency, description, paymentProxy, Optional.ofNullable(platformFee).orElse(0L), Optional.ofNullable(gatewayFee).orElse(0L)));
+                timestamp, priceInCents, currency, description, paymentProxy, Optional.ofNullable(platformFee).orElse(0L), Optional.ofNullable(gatewayFee).orElse(0L), transactionStatus, Map.of()));
         } else {
             this.transaction = Optional.empty();
         }

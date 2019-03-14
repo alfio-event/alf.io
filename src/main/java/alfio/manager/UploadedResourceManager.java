@@ -19,26 +19,15 @@ package alfio.manager;
 import alfio.model.UploadedResource;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.repository.UploadedResourceRepository;
-import alfio.util.Json;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
-import org.springframework.jdbc.core.support.AbstractLobCreatingPreparedStatementCallback;
-import org.springframework.jdbc.support.lob.DefaultLobHandler;
-import org.springframework.jdbc.support.lob.LobCreator;
-import org.springframework.jdbc.support.lob.LobHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StreamUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,12 +41,10 @@ public class UploadedResourceManager {
     public static final String ATTR_IMG_WIDTH = "width";
     public static final String ATTR_IMG_HEIGHT = "height";
 
-    private final NamedParameterJdbcTemplate jdbc;
     private final UploadedResourceRepository uploadedResourceRepository;
 
     @Autowired
-    public UploadedResourceManager(NamedParameterJdbcTemplate jdbc, UploadedResourceRepository uploadedResourceRepository) {
-        this.jdbc = jdbc;
+    public UploadedResourceManager(UploadedResourceRepository uploadedResourceRepository) {
         this.uploadedResourceRepository = uploadedResourceRepository;
     }
 
@@ -87,92 +74,39 @@ public class UploadedResourceManager {
 
 
     public void outputResource(String name, OutputStream out) {
-        SqlParameterSource param = new MapSqlParameterSource("name", name);
-        jdbc.query(uploadedResourceRepository.fileContentTemplate(name), param, rs -> {
-            try (InputStream is = rs.getBinaryStream("content")) {
-                StreamUtils.copy(is, out);
-            } catch (IOException e) {
-                throw new IllegalStateException("Error while copying data", e);
-            }
-        });
+        uploadedResourceRepository.fileContent(name, out);
     }
 
     public void outputResource(int organizationId, String name, OutputStream out) {
-        SqlParameterSource param = new MapSqlParameterSource("name", name).addValue("organizationId", organizationId);
-        jdbc.query(uploadedResourceRepository.fileContentTemplate(organizationId, name), param, rs -> {
-            try (InputStream is = rs.getBinaryStream("content")) {
-                StreamUtils.copy(is, out);
-            } catch (IOException e) {
-                throw new IllegalStateException("Error while copying data", e);
-            }
-        });
+        uploadedResourceRepository.fileContent(organizationId, name, out);
     }
 
     public void outputResource(int organizationId, int eventId, String name, OutputStream out) {
-        SqlParameterSource param = new MapSqlParameterSource("name", name).addValue("organizationId", organizationId).addValue("eventId", eventId);
-        jdbc.query(uploadedResourceRepository.fileContentTemplate(organizationId, eventId, name), param, rs -> {
-            try (InputStream is = rs.getBinaryStream("content")) {
-                StreamUtils.copy(is, out);
-            } catch (IOException e) {
-                throw new IllegalStateException("Error while copying data", e);
-            }
-        });
+        uploadedResourceRepository.fileContent(organizationId, eventId, name, out);
     }
 
-    public int saveResource(UploadBase64FileModification file) {
+    public Optional<Integer> saveResource(UploadBase64FileModification file) {
         if (hasResource(file.getName())) {
             uploadedResourceRepository.delete(file.getName());
         }
-        LobHandler lobHandler = new DefaultLobHandler();
-        return jdbc.getJdbcOperations().execute(uploadedResourceRepository.uploadTemplate(file.getName()),
-            new AbstractLobCreatingPreparedStatementCallback(lobHandler) {
-                @Override
-                protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
-                    setFileValues(ps, lobCreator, file, 1);
-                }
-            });
 
+        return Optional.ofNullable(uploadedResourceRepository.upload(null, null, file, getAttributes(file)));
     }
 
-    public int saveResource(int organizationId, UploadBase64FileModification file) {
+    public Optional<Integer> saveResource(int organizationId, UploadBase64FileModification file) {
         if (hasResource(organizationId, file.getName())) {
             uploadedResourceRepository.delete(organizationId, file.getName());
         }
-        LobHandler lobHandler = new DefaultLobHandler();
-        return jdbc.getJdbcOperations().execute(uploadedResourceRepository.uploadTemplate(organizationId, file.getName()),
-            new AbstractLobCreatingPreparedStatementCallback(lobHandler) {
-                @Override
-                protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
-                    ps.setInt(2, organizationId);
-                    setFileValues(ps, lobCreator, file, 2);
-                }
-            });
+
+        return Optional.ofNullable(uploadedResourceRepository.upload(organizationId, null, file, getAttributes(file)));
     }
 
-    public int saveResource(int organizationId, int eventId, UploadBase64FileModification file) {
+    public Optional<Integer> saveResource(int organizationId, int eventId, UploadBase64FileModification file) {
         if (hasResource(organizationId, eventId, file.getName())) {
             uploadedResourceRepository.delete(organizationId, eventId, file.getName());
         }
-        LobHandler lobHandler = new DefaultLobHandler();
-        return jdbc.getJdbcOperations().execute(uploadedResourceRepository.uploadTemplate(organizationId, eventId, file.getName()),
-            new AbstractLobCreatingPreparedStatementCallback(lobHandler) {
-                @Override
-                protected void setValues(PreparedStatement ps, LobCreator lobCreator) throws SQLException {
-                    ps.setInt(2, organizationId);
-                    ps.setInt(3, eventId);
-                    setFileValues(ps, lobCreator, file, 3);
-                }
-            });
 
-    }
-
-    private static void setFileValues(PreparedStatement ps, LobCreator lobCreator, UploadBase64FileModification file, int baseIndex) throws SQLException {
-        ps.setString(1, file.getName());
-
-        ps.setLong(baseIndex + 1, file.getFile().length);
-        lobCreator.setBlobAsBytes(ps, baseIndex + 2, file.getFile());
-        ps.setString(baseIndex + 3, file.getType());
-        ps.setString(baseIndex + 4, Json.GSON.toJson(getAttributes(file)));
+        return Optional.ofNullable(uploadedResourceRepository.upload(organizationId, eventId, file, getAttributes(file)));
     }
 
     public void deleteResource(String name) {

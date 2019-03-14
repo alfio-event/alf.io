@@ -23,14 +23,12 @@ import lombok.extern.log4j.Log4j2;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.Objects;
 
 
 @Log4j2
-@Component
 public class FileDownloadManager {
 
     private final OkHttpClient client = new OkHttpClient();
@@ -58,7 +56,7 @@ public class FileDownloadManager {
                 return null;
             }
         } catch(IOException e) {
-            log.warn("error while downloading file");
+            log.warn("error while downloading file", e);
             return null;
         }
     }

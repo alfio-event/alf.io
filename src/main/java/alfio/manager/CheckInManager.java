@@ -61,6 +61,7 @@ import java.util.stream.Collectors;
 import static alfio.manager.support.CheckInStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
 @Component
 @Transactional
@@ -196,15 +197,15 @@ public class CheckInManager {
 
     private TicketAndCheckInResult extractStatus(Optional<Event> maybeEvent, Optional<Ticket> maybeTicket, String ticketIdentifier, Optional<String> ticketCode) {
 
-        if (!maybeEvent.isPresent()) {
+        if (maybeEvent.isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(EVENT_NOT_FOUND, "Event not found"));
         }
 
-        if (!maybeTicket.isPresent()) {
+        if (maybeTicket.isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(TICKET_NOT_FOUND, "Ticket with uuid " + ticketIdentifier + " not found"));
         }
 
-        if(!ticketCode.filter(StringUtils::isNotEmpty).isPresent()) {
+        if(ticketCode.filter(StringUtils::isNotEmpty).isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(EMPTY_TICKET_CODE, "Missing ticket code"));
         }
 
@@ -293,7 +294,7 @@ public class CheckInManager {
         }
     }
 
-    public List<Integer> getAttendeesIdentifiers(Event ev, Date changedSince, String username) {
+    public List<Integer> getAttendeesIdentifiers(EventAndOrganizationId ev, Date changedSince, String username) {
         return Optional.ofNullable(ev)
             .filter(EventManager.checkOwnership(username, organizationRepository))
             .filter(isOfflineCheckInEnabled())
@@ -315,12 +316,12 @@ public class CheckInManager {
             .orElse(Collections.emptyList());
     }
 
-    public Predicate<Event> isOfflineCheckInEnabled() {
-        return configurationManager.areBooleanSettingsEnabledForEvent(ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED);
+    public Predicate<EventAndOrganizationId> isOfflineCheckInEnabled() {
+        return configurationManager.areBooleanSettingsEnabledForEvent(true, ALFIO_PI_INTEGRATION_ENABLED, OFFLINE_CHECKIN_ENABLED);
     }
 
-    public Predicate<Event> isOfflineCheckInAndLabelPrintingEnabled() {
-        return isOfflineCheckInEnabled().and(configurationManager.areBooleanSettingsEnabledForEvent(LABEL_PRINTING_ENABLED));
+    public Predicate<EventAndOrganizationId> isOfflineCheckInAndLabelPrintingEnabled() {
+        return isOfflineCheckInEnabled().and(configurationManager.areBooleanSettingsEnabledForEvent(true, LABEL_PRINTING_ENABLED));
     }
 
     public Map<String,String> getEncryptedAttendeesInformation(Event ev, Set<String> additionalFields, List<Integer> ids) {
@@ -342,7 +343,9 @@ public class CheckInManager {
                 info.put("uuid", ticket.getUuid());
                 info.put("category", ticket.getTicketCategory().getName());
                 if (!additionalFields.isEmpty()) {
-                    Map<String, String> map = ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream()
+                    Map<String, String> fields = new HashMap<>();
+                    fields.put("company", trimToEmpty(ticket.getBillingDetails().getCompanyName()));
+                    fields.putAll(ticketFieldRepository.findValueForTicketId(ticket.getId(), additionalFields).stream()
                         .map(vd -> {
                             try {
                                 if(StringUtils.isNotBlank(vd.getDescription())) {
@@ -359,8 +362,8 @@ public class CheckInManager {
                             }
                             return Pair.of(vd.getName(), vd.getValue());
                         })
-                        .collect(toMap(Pair::getLeft, Pair::getRight));
-                    info.put("additionalInfoJson", Json.toJson(map));
+                        .collect(toMap(Pair::getLeft, Pair::getRight)));
+                    info.put("additionalInfoJson", Json.toJson(fields));
                 }
 
                 //
@@ -403,8 +406,8 @@ public class CheckInManager {
             .orElse(null);
     }
 
-    private boolean areStatsEnabled(Event event) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), CHECK_IN_STATS), true);
+    private boolean areStatsEnabled(EventAndOrganizationId event) {
+        return configurationManager.getBooleanConfigValue(Configuration.from(event, CHECK_IN_STATS), true);
     }
 
     @Getter

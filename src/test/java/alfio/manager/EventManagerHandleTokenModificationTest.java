@@ -24,7 +24,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 import java.time.ZoneId;
@@ -32,7 +31,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Collections.singletonList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -41,7 +39,6 @@ class EventManagerHandleTokenModificationTest {
 
     private TicketCategory original;
     private TicketCategory updated;
-    private NamedParameterJdbcTemplate jdbc;
     private SpecialPriceRepository specialPriceRepository;
     private EventManager eventManager;
     private final int eventId = 10;
@@ -51,13 +48,12 @@ class EventManagerHandleTokenModificationTest {
     void init() {
         original = mock(TicketCategory.class);
         updated = mock(TicketCategory.class);
-        jdbc = mock(NamedParameterJdbcTemplate.class);
         specialPriceRepository = mock(SpecialPriceRepository.class);
         Event event = mock(Event.class);
         TicketRepository ticketRepository = mock(TicketRepository.class);
         when(event.getId()).thenReturn(eventId);
         eventManager = new EventManager(null, null, null, null,
-            null, ticketRepository, specialPriceRepository, null, jdbc, null, null, null, null, null, null, null, null, null, null, null);
+            null, ticketRepository, specialPriceRepository, null, null, null, null, null, null, null, null, null, null, null, null);
         when(original.getId()).thenReturn(20);
         when(updated.getId()).thenReturn(30);
         when(original.getSrcPriceCts()).thenReturn(1000);
@@ -65,7 +61,6 @@ class EventManagerHandleTokenModificationTest {
         when(original.getMaxTickets()).thenReturn(10);
         when(updated.getMaxTickets()).thenReturn(11);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
-        when(specialPriceRepository.bulkInsert()).thenReturn("aaaa");
     }
 
 
@@ -75,19 +70,17 @@ class EventManagerHandleTokenModificationTest {
         when(original.isAccessRestricted()).thenReturn(false);
         when(updated.isAccessRestricted()).thenReturn(false);
         eventManager.handleTokenModification(original, updated, 50);
-        verify(jdbc, never()).batchUpdate(anyString(), any(SqlParameterSource[].class));
+        verify(specialPriceRepository, never()).bulkInsert(any(TicketCategory.class), anyInt());
     }
 
     @Test
     @DisplayName("handle the activation of access restriction")
     void handleRestrictionActivation() {
-        ArgumentCaptor<SqlParameterSource[]> captor = ArgumentCaptor.forClass(SqlParameterSource[].class);
         when(original.isAccessRestricted()).thenReturn(false);
         when(updated.isAccessRestricted()).thenReturn(true);
         when(updated.getMaxTickets()).thenReturn(50);
         eventManager.handleTokenModification(original, updated, 50);
-        verify(jdbc, times(1)).batchUpdate(anyString(), captor.capture());
-        assertEquals(50, captor.getValue().length);
+        verify(specialPriceRepository, times(1)).bulkInsert(updated, updated.getMaxTickets());
     }
 
     @Test
@@ -107,8 +100,7 @@ class EventManagerHandleTokenModificationTest {
         when(original.isAccessRestricted()).thenReturn(true);
         when(updated.isAccessRestricted()).thenReturn(true);
         eventManager.handleTokenModification(original, updated, 50);
-        verify(jdbc, times(1)).batchUpdate(anyString(), captor.capture());
-        assertEquals(50, captor.getValue().length);
+        verify(specialPriceRepository, times(1)).bulkInsert(updated, 50);
     }
 
     @Test

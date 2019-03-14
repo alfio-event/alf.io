@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.support.JSONData;
 import alfio.model.transaction.PaymentProxy;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
@@ -32,6 +33,8 @@ public class FullTicketInfo {
     private final Ticket ticket;
 
     private final TicketReservation ticketReservation;
+
+    private final BillingDetails billingDetails;
 
     private final TicketCategory ticketCategory;
 
@@ -81,7 +84,14 @@ public class FullTicketInfo {
                           @Column("tr_vat_included") Boolean vatIncluded,
                           @Column("tr_creation_ts") ZonedDateTime reservationCreationTimestamp,
                           @Column("tr_customer_reference") String customerReference,
+                          @Column("tr_registration_ts") ZonedDateTime reservationRegistrationTimestamp,
                           //
+                          @Column("tr_billing_address_company") String billingAddressCompany,
+                          @Column("tr_billing_address_line1") String billingAddressLine1,
+                          @Column("tr_billing_address_line2") String billingAddressLine2,
+                          @Column("tr_billing_address_city") String billingAddressCity,
+                          @Column("tr_billing_address_zip") String billingAddressZip,
+                          @Column("tr_invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
                           //
                           @Column("tc_id") int tcId,
                           @Column("tc_inception") ZonedDateTime tcUtcInception,
@@ -104,10 +114,13 @@ public class FullTicketInfo {
             lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage,
-            directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent, vatIncluded, reservationCreationTimestamp, customerReference);
+            directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent, vatIncluded, reservationCreationTimestamp, customerReference,
+            reservationRegistrationTimestamp);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
                 tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts, code, validCheckInFrom, validCheckInTo,
                 ticketValidityStart, ticketValidityEnd);
+
+        this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountry, vatNr, invoicingAdditionalInfo);
 
     }
 }

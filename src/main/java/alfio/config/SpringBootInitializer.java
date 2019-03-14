@@ -17,26 +17,21 @@
 package alfio.config;
 
 import com.openhtmltopdf.util.XRLog;
-import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.server.session.DefaultSessionIdManager;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.web.embedded.jetty.JettyServletWebServerFactory;
 import org.springframework.boot.web.server.ErrorPage;
 import org.springframework.boot.web.server.ErrorPageRegistrar;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
-import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
 import javax.servlet.Filter;
 import javax.servlet.SessionCookieConfig;
-import java.util.Objects;
 import java.util.logging.Level;
 
 import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
@@ -45,11 +40,11 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
         org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
         org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration.class,
+        org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration.class,
         org.springframework.boot.autoconfigure.session.SessionAutoConfiguration.class,
         org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration.class})
 @Configuration
 @Profile(Initializer.PROFILE_SPRING_BOOT)
-@Log4j2
 public class SpringBootInitializer {
 
 
@@ -60,7 +55,7 @@ public class SpringBootInitializer {
             ConfigurableEnvironment environment = ctx.getBean(ConfigurableEnvironment.class);
             SessionCookieConfig config = servletContext.getSessionCookieConfig();
             config.setHttpOnly(true);
-            config.setSecure(environment.acceptsProfiles(Initializer.PROFILE_LIVE));
+            config.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
             // force log initialization, then disable it
             XRLog.setLevel(XRLog.EXCEPTION, Level.WARNING);
             XRLog.setLoggingEnabled(false);
@@ -73,20 +68,6 @@ public class SpringBootInitializer {
         cef.setEncoding("UTF-8");
         cef.setForceEncoding(true);
         return cef;
-    }
-
-    @Bean
-    @Profile(Initializer.PROFILE_USE_WORKER_NAME)
-    public ConfigurableServletWebServerFactory jettyCustomizer() {
-        JettyServletWebServerFactory factory = new JettyServletWebServerFactory();
-        factory.addServerCustomizers(server -> {
-            String workerName = Objects.requireNonNull(StringUtils.trimToNull(System.getProperty("alfio.worker.name")), "Invalid value for 'alfio.worker.name'.");
-            log.info("Configuring session manager using worker name {}", workerName);
-            DefaultSessionIdManager sessionIdManager = new DefaultSessionIdManager(server);
-            sessionIdManager.setWorkerName(workerName);
-            server.setSessionIdManager(sessionIdManager);
-        });
-        return factory;
     }
 
     @Bean
