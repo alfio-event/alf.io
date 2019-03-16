@@ -38,7 +38,6 @@ import com.ryantenney.passkit4j.sign.PassSignerImpl;
 import com.ryantenney.passkit4j.sign.PassSigningException;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.imgscalr.Scalr;
 import org.springframework.core.io.ClassPathResource;
@@ -159,8 +158,8 @@ public class PassKitManager {
             .groupingIdentifier(organization.getEmail())
             .description(event.getDisplayName())
             .serialNumber(ticket.getUuid())
-            .authenticationToken(buildAuthenticationToken(ticket, event, event.getPrivateKey()))
-            .webServiceURL(StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(BASE_URL)), "/") + "/api/pass/event/" + event.getShortName() +"/")
+            //.authenticationToken(buildAuthenticationToken(ticket, event, event.getPrivateKey()))
+            //.webServiceURL(StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(BASE_URL)), "/") + "/api/pass/event/" + event.getShortName() +"/")
             .relevantDate(Date.from(event.getBegin().toInstant()))
             .expirationDate(Date.from(event.getEnd().toInstant()))
             .locations(loc)
