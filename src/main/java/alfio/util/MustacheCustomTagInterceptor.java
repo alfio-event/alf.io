@@ -23,6 +23,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import com.samskivert.mustache.Mustache;
+import com.samskivert.mustache.Template;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
@@ -36,6 +37,8 @@ import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.Writer;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -153,8 +156,25 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
      * {{#if-config-flag}}[name]
      *      <div>...</div>
      * {{/if-config-flag}}
+     * or
+     * {{^if-config-flag}}[name]
+     *      <div>...</div>
+     * {{/if-config-flag}}
      */
-    private static final BiFunction<Object, ConfigurationManager, Mustache.Lambda> IF_CONFIGURATION_FLAG = (obj, configurationManager) -> (frag, out) -> {
+    private static final BiFunction<Object, ConfigurationManager, Mustache.InvertibleLambda> IF_CONFIGURATION_FLAG = (obj, configurationManager) -> new Mustache.InvertibleLambda() {
+
+        @Override
+        public void execute(Template.Fragment frag, Writer out) throws IOException {
+            internalIfConfigurationFlag(obj, configurationManager, frag, out, true);
+        }
+
+        @Override
+        public void executeInverse(Template.Fragment frag, Writer out) throws IOException {
+            internalIfConfigurationFlag(obj, configurationManager, frag, out, false);
+        }
+    };
+
+    private static void internalIfConfigurationFlag(Object obj, ConfigurationManager configurationManager, Template.Fragment frag, Writer out, boolean executeIf) throws IOException {
         if( !(obj instanceof EventAndOrganizationId) || configurationManager == null) {
             return;
         }
@@ -169,19 +189,21 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
             return;
         }
         var key = ConfigurationKeys.safeValueOf(value);
+        boolean flagValue;
         if(key == ConfigurationKeys.NOT_RECOGNIZED) {
             log.warn("Attempting to lookup a non-existent option: {}", value);
-            return;
+            flagValue = false;
+        } else {
+            flagValue = configurationManager.getBooleanConfigValue(Configuration.from((EventAndOrganizationId) obj, key), false);
         }
-        var flagValue = configurationManager.getBooleanConfigValue(Configuration.from((EventAndOrganizationId) obj, key), false);
-        if(flagValue) {
+        if(flagValue == executeIf) {
             String execution = frag.execute().trim();
             Matcher executionMatcher = ARG_PATTERN.matcher(execution);
             if(executionMatcher.find()) { //should be always true
                 out.write(execution.substring(executionMatcher.end(1) + 1));
             }
         }
-    };
+    }
 
     private static Pair<String, Optional<Locale>> parseParams(String r) {
 
