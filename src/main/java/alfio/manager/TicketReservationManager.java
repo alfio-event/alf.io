@@ -38,6 +38,7 @@ import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
+import alfio.model.transaction.capabilities.ServerInitiatedTransaction;
 import alfio.model.transaction.capabilities.SignedWebhookHandler;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -1795,12 +1796,12 @@ public class TicketReservationManager {
 
     }
 
-    public Optional<TransactionInitializationToken> initTransaction(Event event, String reservationId, PaymentMethod paymentMethod) {
-        var optionalProvider = paymentManager.lookupProviderByMethodAndCapabilities(paymentMethod, new PaymentContext(event), List.of(SignedWebhookHandler.class));
+    public Optional<TransactionInitializationToken> initTransaction(Event event, String reservationId, PaymentMethod paymentMethod, Map<String, List<String>> params) {
+        var optionalProvider = paymentManager.lookupProviderByMethodAndCapabilities(paymentMethod, new PaymentContext(event), List.of(SignedWebhookHandler.class, ServerInitiatedTransaction.class));
         if (optionalProvider.isEmpty()) {
             return Optional.empty();
         }
-        var provider = (SignedWebhookHandler) optionalProvider.get();
+        var provider = (ServerInitiatedTransaction) optionalProvider.get();
         ticketReservationRepository.lockReservationForUpdate(reservationId);
         var reservation = ticketReservationRepository.findReservationById(reservationId);
         var paymentSpecification = new PaymentSpecification(reservation,
@@ -1811,7 +1812,7 @@ public class TicketReservationManager {
             var errorMessage = messageSource.getMessage("error.STEP2_WHITELIST", null, Locale.forLanguageTag(reservation.getUserLanguage()));
             return Optional.of(provider.errorToken(errorMessage));
         }
-        var transactionToken = provider.initTransaction(paymentSpecification);
+        var transactionToken = provider.initTransaction(paymentSpecification, params);
         if(reservation.getStatus() == PENDING) {
             ticketReservationRepository.updateReservationStatus(reservation.getId(), EXTERNAL_PROCESSING_PAYMENT.name());
         }
