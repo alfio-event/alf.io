@@ -41,6 +41,7 @@ import com.github.scribejava.core.builder.ServiceBuilder;
 import com.github.scribejava.core.builder.api.DefaultApi20;
 import com.github.scribejava.core.model.OAuthConfig;
 import com.github.scribejava.core.oauth.OAuth20Service;
+import com.stripe.Stripe;
 import com.stripe.exception.*;
 import com.stripe.model.BalanceTransaction;
 import com.stripe.model.Charge;
@@ -62,7 +63,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 @AllArgsConstructor
 class BaseStripeManager {
 
-    public static final String SUCCEEDED = "succeeded";
+    static final String SUCCEEDED = "succeeded";
     private final ConfigurationManager configurationManager;
     private final ConfigurationRepository configurationRepository;
     private final TicketRepository ticketRepository;
@@ -74,6 +75,10 @@ class BaseStripeManager {
         ApiConnectionException.class, this::handleApiConnectionException,
         StripeException.class, this::handleGenericException
     );
+
+    static {
+        Stripe.setAppInfo("Alf.io", "2.x", "https://alf.io");
+    }
 
     String getSecretKey(EventAndOrganizationId event) {
         return configurationManager.getRequiredValue(Configuration.from(event, STRIPE_SECRET_KEY));
