@@ -248,7 +248,8 @@
             templateUrl: '/resources/angular-templates/admin/partials/form/control-buttons.html',
             scope: {
                 formObj: '=',
-                cancelHandler: '='
+                cancelHandler: '=',
+                disableSubmit:'<'
             },
             link: function(scope, element, attrs) {
                 scope.successText = angular.isDefined(attrs.successText) ? attrs.successText : "Save";

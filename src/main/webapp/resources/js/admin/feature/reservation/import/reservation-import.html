@@ -182,6 +182,6 @@ where:
 
         <hr>
 
-        <control-buttons data-form-obj="newReservation" cancel-handler="$ctrl.reinit" success-text="Upload" ng-if="!$ctrl.loading"></control-buttons>
+        <control-buttons data-form-obj="newReservation" cancel-handler="$ctrl.reinit" disable-submit="$ctrl.countParsedAttendees($ctrl.reservation.ticketsInfo) === 0" success-text="Upload" ng-if="!$ctrl.loading"></control-buttons>
     </form>
 </div>

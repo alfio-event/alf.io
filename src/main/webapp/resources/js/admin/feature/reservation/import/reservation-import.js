@@ -197,6 +197,18 @@
             delete ctrl.errorMessage;
         };
 
+        ctrl.countParsedAttendees = function(ticketsInfo) {
+            var count = 0;
+            if(ticketsInfo) {
+                for(var i = 0; i < ticketsInfo.length; i++) {
+                    if(ticketsInfo[i] && ticketsInfo[i].attendees) {
+                        count += ticketsInfo[i].attendees.length;
+                    }
+                }
+            }
+            return count;
+        }
+
         var internalParseFileContent = function(content) {
             var self = this;
             self.attendees = [];
