@@ -58,9 +58,20 @@ public class PaymentManager {
     Optional<PaymentProvider> lookupProviderByMethodAndCapabilities(PaymentMethod paymentMethod,
                                                                     PaymentContext context,
                                                                     List<Class<? extends Capability>> capabilities) {
+        return doLookupProvidersByMethodAndCapabilities(paymentMethod, context, capabilities).findFirst();
+    }
+
+    List<PaymentProvider> lookupProvidersByMethodAndCapabilities(PaymentMethod paymentMethod,
+                                                                 PaymentContext context,
+                                                                 List<Class<? extends Capability>> capabilities) {
+        return doLookupProvidersByMethodAndCapabilities(paymentMethod, context, capabilities).collect(Collectors.toList());
+    }
+
+    private Stream<PaymentProvider> doLookupProvidersByMethodAndCapabilities(PaymentMethod paymentMethod,
+                                                                             PaymentContext context,
+                                                                             List<Class<? extends Capability>> capabilities) {
         return compatibleStream(paymentMethod, context)
-            .filter(p -> Objects.requireNonNull(capabilities).stream().allMatch(c -> c.isInstance(p)))
-            .findFirst();
+            .filter(p -> Objects.requireNonNull(capabilities).stream().allMatch(c -> c.isInstance(p)));
     }
 
     private Stream<PaymentProvider> compatibleStream(PaymentMethod paymentMethod, PaymentContext context) {

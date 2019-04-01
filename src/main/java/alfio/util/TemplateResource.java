@@ -87,6 +87,21 @@ public enum TemplateResource {
             return prepareSampleModelForOfflineReservationExpiringEmailForOrganizer(event);
         }
     },
+    OFFLINE_PAYMENT_MATCHES_FOUND("/alfio/templates/offline-payment-matches-found-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return Map.of(
+                "matchingCount", 3,
+                "eventName", event.getDisplayName(),
+                "pendingReviewMatches", true,
+                "pendingReview", List.of(UUID.randomUUID().toString()),
+                "automaticApprovedMatches", true,
+                "automaticApproved", List.of(UUID.randomUUID().toString()),
+                "automaticApprovalErrors", true,
+                "approvalErrors", List.of(UUID.randomUUID().toString())
+            );
+        }
+    },
     REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
@@ -306,7 +321,7 @@ public enum TemplateResource {
 
         model.put("hasRefund", StringUtils.isNotEmpty(orderSummary.getRefundedAmount()));
 
-        ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getRegistrationTimestamp(), reservation.getCreationTimestamp(), reservation.getConfirmationTimestamp(), ZonedDateTime.now());
+        ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getRegistrationTimestamp(), reservation.getConfirmationTimestamp(), reservation.getCreationTimestamp(), ZonedDateTime.now());
         model.put("confirmationDate", creationTimestamp.withZoneSameInstant(event.getZoneId()));
         model.put("now", ZonedDateTime.now(event.getZoneId()));
 

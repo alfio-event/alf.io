@@ -264,7 +264,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     @Override
     public Map<String, ?> getModelOptions(PaymentContext context) {
         var baseOptions = new HashMap<String, Object>(baseStripeManager.getModelOptions(context));
-        var connectedAccountOptional = baseStripeManager.getConnectedAccount(context.getEvent());
+        var connectedAccountOptional = baseStripeManager.getConnectedAccount(context);
         baseOptions.put("platformMode", connectedAccountOptional.isPresent());
         connectedAccountOptional.ifPresent(account -> baseOptions.put("stripeConnectedAccount", account));
         return baseOptions;

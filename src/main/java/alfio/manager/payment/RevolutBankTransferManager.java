@@ -1,0 +1,209 @@
+/**
+ * This file is part of alf.io.
+ *
+ * alf.io is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * alf.io is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
+ */
+package alfio.manager.payment;
+
+import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.TicketReservationWithTransaction;
+import alfio.model.result.ErrorCode;
+import alfio.model.result.Result;
+import alfio.model.transaction.PaymentContext;
+import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.PaymentProvider;
+import alfio.model.transaction.Transaction;
+import alfio.model.transaction.capabilities.OfflineProcessor;
+import alfio.model.transaction.provider.RevolutTransactionDescriptor;
+import alfio.repository.TransactionRepository;
+import alfio.util.Json;
+import alfio.util.MonetaryUtil;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+
+import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.EventUtil.JSON_DATETIME_FORMATTER;
+
+@Component
+@Transactional
+@Log4j2
+@AllArgsConstructor
+public class RevolutBankTransferManager implements PaymentProvider, OfflineProcessor {
+
+    private static final ZoneId UTC = ZoneId.of("UTC");
+    private final BankTransferManager bankTransferManager;
+    private final ConfigurationManager configurationManager;
+    private final TransactionRepository transactionRepository;
+    private final HttpClient client = HttpClient.newBuilder().build();
+    private static final Cache<String, List<String>> accountsCache = Caffeine.newBuilder()
+        .expireAfterWrite(1, TimeUnit.HOURS)
+        .build();
+
+    @Override
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
+        return bankTransferManager.bankTransferEnabled(paymentMethod, context)
+            && configurationManager.getBooleanConfigValue(context.narrow(REVOLUT_ENABLED), false)
+            && configurationManager.getStringConfigValue(context.narrow(REVOLUT_API_KEY)).isPresent();
+    }
+
+    @Override
+    public PaymentResult doPayment(PaymentSpecification spec) {
+        PaymentResult paymentResult = bankTransferManager.doPayment(spec);
+        return paymentResult;
+    }
+
+    @Override
+    public Map<String, ?> getModelOptions(PaymentContext context) {
+        return bankTransferManager.getModelOptions(context);
+    }
+
+
+    @Override
+    public Result<List<TicketReservationWithTransaction>> checkPendingReservations(Collection<TicketReservationWithTransaction> reservations,
+                                                                                   PaymentContext context,
+                                                                                   ZonedDateTime lastCheck) {
+        if(reservations.isEmpty()) {
+            return Result.success(List.of());
+        }
+        var host = configurationManager.getBooleanConfigValue(context.narrow(REVOLUT_LIVE_MODE), false) ? "https://b2b.revolut.com" : "https://sandbox-b2b.revolut.com";
+        var revolutKeyOptional = configurationManager.getStringConfigValue(context.narrow(REVOLUT_API_KEY));
+        if(revolutKeyOptional.isEmpty()) {
+            return Result.error(ErrorCode.custom("unavailable", "cannot retrieve Revolut API KEY. Please fix configuration"));
+        }
+        var revolutKey = revolutKeyOptional.get();
+
+        return loadAccounts(revolutKey, host)
+            .flatMap(accounts -> loadTransactions(lastCheck, revolutKey, host, accounts))
+            .flatMap(revolutTransactions -> matchTransactions(reservations, revolutTransactions, context));
+    }
+
+    private Result<List<TicketReservationWithTransaction>> matchTransactions(Collection<TicketReservationWithTransaction> pendingReservations,
+                                                              List<RevolutTransactionDescriptor> transactions,
+                                                              PaymentContext context) {
+        List<Pair<TicketReservationWithTransaction, RevolutTransactionDescriptor>> matched = pendingReservations.stream()
+            .map(reservation -> Pair.of(reservation, transactions.stream().filter(transactionMatches(reservation, context)).findFirst()))
+            .filter(pair -> pair.getRight().isPresent())
+            .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()))
+            .collect(Collectors.toList());
+
+        boolean manualReviewRequired = configurationManager.getBooleanConfigValue(context.narrow(REVOLUT_MANUAL_REVIEW), true);
+
+        return Result.success(matched.stream().peek(pair -> {
+            var transaction = pair.getLeft().getTransaction();
+            var revolutTransaction = pair.getRight();
+
+            transactionRepository.update(transaction.getId(),
+                revolutTransaction.getId(),
+                revolutTransaction.getRequestId(),
+                revolutTransaction.getCompletedAt(),
+                0L,
+                0L,
+                manualReviewRequired ? Transaction.Status.OFFLINE_PENDING_REVIEW : Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND,
+                revolutTransaction.getMetadata());
+        }).map(Pair::getLeft).collect(Collectors.toList()));
+    }
+
+    private Predicate<RevolutTransactionDescriptor> transactionMatches(TicketReservationWithTransaction reservationWithTransaction, PaymentContext context) {
+        var reservation = reservationWithTransaction.getTicketReservation();
+        var transaction = reservationWithTransaction.getTransaction();
+        var shortReservationId = configurationManager.getShortReservationID(context.getEvent(), reservation.getId());
+        String[] terms;
+        if(reservation.getHasInvoiceNumber()) {
+            terms = new String[] {reservation.getInvoiceNumber(), shortReservationId, reservation.getId()};
+        } else {
+            terms = new String[] {shortReservationId, reservation.getId()};
+        }
+
+        return revolutTransaction -> revolutTransaction.getTransactionBalance().compareTo(BigDecimal.ZERO) > 0
+            && Arrays.stream(terms).anyMatch(s -> revolutTransaction.getReference().contains(s))
+            && transaction.getPriceInCents() == MonetaryUtil.unitToCents(revolutTransaction.getTransactionBalance());
+    }
+
+    private Result<List<RevolutTransactionDescriptor>> loadTransactions(ZonedDateTime lastCheck, String revolutKey, String revolutUrl, List<String> accounts) {
+        if(accounts.isEmpty()) {
+            return Result.error(ErrorCode.custom("no-account", "No active accounts found."));
+        }
+        try {
+            var from = lastCheck != null ? lastCheck.withZoneSameInstant(UTC) : ZonedDateTime.now(UTC);
+            var request = HttpRequest.newBuilder(URI.create(revolutUrl + "/api/1.0/transactions?from=" + from.format(JSON_DATETIME_FORMATTER)))
+                .GET()
+                .header("Authorization", "Bearer "+revolutKey)
+                .build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if(response.statusCode() == HttpStatus.OK.value()) {
+                List<RevolutTransactionDescriptor> result = Json.fromJson(response.body(), new TypeReference<>() {});
+                return Result.success(
+                    result.stream()
+                        .filter(t -> "completed".equals(t.getState()) && t.getLegs().size() == 1 && accounts.contains(t.getLegs().get(0).getAccountId()))
+                        .collect(Collectors.toList()));
+            }
+            return Result.error(ErrorCode.custom("no data received", "No data received from Revolut. Status code is "+response.statusCode()));
+        } catch (Exception e) {
+            log.warn("cannot call Revolut APIs", e);
+            return Result.error(ErrorCode.custom("error", "Cannot call Revolut API"));
+        }
+    }
+
+    private Result<List<String>> loadAccounts(String revolutKey, String baseUrl) {
+        var key = revolutKey + "@" + baseUrl;
+        try {
+            return Result.success(accountsCache.get(key, k -> loadAccountsFromAPI(revolutKey, baseUrl)));
+        } catch (Exception e) {
+            return Result.error(ErrorCode.custom("error", e.getMessage()));
+        }
+    }
+
+    private List<String> loadAccountsFromAPI(String revolutKey, String baseUrl) {
+        var request = HttpRequest.newBuilder(URI.create(baseUrl + "/api/1.0/accounts"))
+            .GET()
+            .header("Authorization", "Bearer "+revolutKey)
+            .build();
+        try {
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if(response.statusCode() == HttpStatus.OK.value()) {
+                List<Map<String, ?>> result = Json.fromJson(response.body(), new TypeReference<>() {});
+                return result.stream().filter(m -> "active".equals(m.get("state"))).map(m -> (String) m.get("id")).collect(Collectors.toList());
+            }
+            throw new IllegalStateException("cannot retrieve accounts");
+        } catch (Exception e) {
+            log.warn("got error while retrieving accounts", e);
+            throw new IllegalStateException(e);
+        }
+    }
+
+
+}

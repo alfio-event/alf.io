@@ -28,7 +28,14 @@ import java.util.Optional;
 public class Transaction {
 
     public enum Status {
-        PENDING, COMPLETE, FAILED, CANCELLED, INVALID
+        PENDING,
+        OFFLINE_MATCHING_PAYMENT_FOUND,
+        OFFLINE_PENDING_REVIEW,
+        OFFLINE_DISABLE_MATCH,
+        COMPLETE,
+        FAILED,
+        CANCELLED,
+        INVALID
     }
 
     private final int id;

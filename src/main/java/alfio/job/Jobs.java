@@ -192,4 +192,14 @@ public class Jobs {
             log.trace("end job processReleasedTickets");
         }
     }
+
+    @Scheduled(fixedRate = ONE_MINUTE)
+    public void checkOfflinePaymentsStatus() {
+        log.trace("running job checkOfflinePaymentsStatus");
+        try {
+            ticketReservationManager.checkOfflinePaymentsStatus();
+        } finally {
+            log.trace("end job checkOfflinePaymentsStatus");
+        }
+    }
 }

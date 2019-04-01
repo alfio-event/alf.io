@@ -35,9 +35,11 @@ import alfio.model.group.LinkedGroup;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.result.Result;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
+import alfio.model.transaction.capabilities.OfflineProcessor;
 import alfio.model.transaction.capabilities.ServerInitiatedTransaction;
 import alfio.model.transaction.capabilities.SignedWebhookHandler;
 import alfio.model.user.Organization;
@@ -516,10 +518,15 @@ public class TicketReservationManager {
 
         //FIXME we must support multiple transactions for a reservation, otherwise we can't handle properly the case of ON_SITE payments
 
-        if(paymentProxy != PaymentProxy.ON_SITE || transactionRepository.loadOptionalByReservationId(reservationId).isEmpty()) {
-            String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
+        var transactionOptional = transactionRepository.loadOptionalByReservationId(reservationId);
+        String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
+        if(transactionOptional.isEmpty()) {
             transactionRepository.insert(transactionId, null, reservationId, ZonedDateTime.now(event.getZoneId()),
                 priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(),
+                platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
+        } else if(paymentProxy == PaymentProxy.OFFLINE) {
+            var transaction = transactionOptional.get();
+            transactionRepository.update(transaction.getId(), transactionId, null, ZonedDateTime.now(event.getZoneId()),
                 platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
         } else {
             log.warn("ON-Site check-in: ignoring transaction registration for reservationId {}", reservationId);
@@ -724,7 +731,7 @@ public class TicketReservationManager {
             ticketsWithCategory = ticketCategoryRepository.findByIds(ticketsByCategory.keySet())
                 .stream()
                 .flatMap(tc -> ticketsByCategory.get(tc.getId()).stream().map(t -> new TicketWithCategory(t, tc)))
-                .collect(Collectors.toList());
+                .collect(toList());
         } else {
             ticketsWithCategory = Collections.emptyList();
         }
@@ -893,7 +900,7 @@ public class TicketReservationManager {
             .collect(Collectors.groupingBy(ReservationIdAndEventId::getEventId));
         reservationIdsByEvent.forEach((eventId, reservations) -> {
             Event event = eventRepository.findById(eventId);
-            List<String> reservationIds = reservations.stream().map(ReservationIdAndEventId::getId).collect(Collectors.toList());
+            List<String> reservationIds = reservations.stream().map(ReservationIdAndEventId::getId).collect(toList());
             extensionManager.handleReservationsExpiredForEvent(event, reservationIds);
             billingDocumentRepository.deleteForReservations(reservationIds, eventId);
             transactionRepository.deleteForReservations(reservationIds);
@@ -1075,7 +1082,7 @@ public class TicketReservationManager {
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
                 final int subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(prices);
                 return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts()), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first))), prices.size(), formatCents(subtotal), formatCents(subtotalBeforeVat), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE);
-            }).collect(Collectors.toList()));
+            }).collect(toList()));
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
             String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
@@ -1241,7 +1248,7 @@ public class TicketReservationManager {
     public List<Triple<AdditionalService, List<AdditionalServiceText>, AdditionalServiceItem>> findAdditionalServicesInReservation(String reservationId) {
         return additionalServiceItemRepository.findByReservationUuid(reservationId).stream()
             .map(asi -> Triple.of(additionalServiceRepository.getById(asi.getAdditionalServiceId(), asi.getEventId()), additionalServiceTextRepository.findAllByAdditionalServiceId(asi.getAdditionalServiceId()), asi))
-            .collect(Collectors.toList());
+            .collect(toList());
     }
 
     public Optional<String> getVAT(EventAndOrganizationId event) {
@@ -1592,7 +1599,7 @@ public class TicketReservationManager {
     private List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(int eventId, Event event, Locale locale) {
         return ticketReservationRepository.findAllReservationsWaitingForPaymentInEventId(eventId).stream()
             .map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event, locale)))
-            .collect(Collectors.toList());
+            .collect(toList());
     }
 
     public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(Event event) {
@@ -1818,5 +1825,85 @@ public class TicketReservationManager {
         }
         transactionRepository.updateStatusForReservation(reservationId, Transaction.Status.PENDING);
         return Optional.of(transactionToken);
+    }
+
+    public void checkOfflinePaymentsStatus() {
+        eventRepository.findAllActives(ZonedDateTime.now(Clock.systemUTC()))
+            .forEach(this::checkOfflinePaymentsForEvent);
+    }
+
+    private void checkOfflinePaymentsForEvent(Event event) {
+        log.trace("check offline payments for event {}", event.getShortName());
+        var paymentContext = new PaymentContext(event);
+        var providers = paymentManager.lookupProvidersByMethodAndCapabilities(PaymentMethod.BANK_TRANSFER, paymentContext, List.of(OfflineProcessor.class));
+        if(providers.isEmpty()) {
+            log.trace("No active offline provider has been found. Exiting...");
+            return;
+        }
+        var pendingReservationsMap = ticketSearchRepository.findOfflineReservationsWithPendingTransaction(event.getId()).stream()
+            .collect(toMap(tr -> tr.getTicketReservation().getId(), Function.identity()));
+
+        if(pendingReservationsMap.isEmpty()) {
+            log.trace("no pending reservations found. Exiting...");
+            return;
+        }
+
+        var errors = new ArrayList<String>();
+        var confirmed = new ArrayList<String>();
+        var pendingReview = new ArrayList<String>();
+        int matchingCount = 0;
+        for (int i = 0; !pendingReservationsMap.isEmpty() && i < providers.size(); i++) {
+            OfflineProcessor offlineProcessor = (OfflineProcessor) providers.get(i);
+            Result<List<TicketReservationWithTransaction>> matching = offlineProcessor.checkPendingReservations(pendingReservationsMap.values(), paymentContext, null);
+            if(matching.isSuccess()) {
+                matchingCount += matching.getData().size();
+                log.trace("found {} matches for provider {}", matchingCount, offlineProcessor.getClass().getName());
+                var byStatus = matching.getData().stream()
+                    .peek(tr -> pendingReservationsMap.remove(tr.getTicketReservation().getId()))
+                    .collect(groupingBy(tr -> tr.getTransaction().getStatus()));
+
+                byStatus.get(Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND).forEach(tr -> {
+                    if(automaticConfirmOfflinePayment(event, tr.getTicketReservation().getId())) {
+                        log.trace("reservation {} confirmed automatically", tr.getTicketReservation().getId());
+                        confirmed.add(tr.getTicketReservation().getId());
+                    } else {
+                        log.trace("got error while confirming reservation {}", tr.getTicketReservation().getId());
+                        errors.add(tr.getTicketReservation().getId());
+                    }
+                });
+
+                pendingReview.addAll(byStatus.get(Transaction.Status.OFFLINE_PENDING_REVIEW).stream().map(tr -> tr.getTicketReservation().getId()).collect(toList()));
+            }
+        }
+        if(matchingCount > 0) {
+            var organization = organizationRepository.getById(event.getOrganizationId());
+            var cc = notificationManager.getCCForEventOrganizer(event);
+            var subject = String.format("%d matching payments found for: %s", matchingCount, event.getDisplayName());
+
+            Map<String, Object> model = Map.of(
+                "matchingCount", matchingCount,
+                "eventName", event.getDisplayName(),
+                "pendingReviewMatches", !pendingReview.isEmpty(),
+                "pendingReview", pendingReview,
+                "automaticApprovedMatches", !confirmed.isEmpty(),
+                "automaticApproved", confirmed,
+                "automaticApprovalErrors", !errors.isEmpty(),
+                "approvalErrors", errors
+            );
+            notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, subject,
+                () -> templateManager.renderTemplate(event, TemplateResource.OFFLINE_PAYMENT_MATCHES_FOUND, model, Locale.ENGLISH));
+        }
+
+
+    }
+
+    private boolean automaticConfirmOfflinePayment(Event event, String reservationId) {
+        try {
+            confirmOfflinePayment(event, reservationId, null);
+            return true;
+        } catch(Exception ex) {
+            log.warn("Unable to confirm reservation "+reservationId, ex);
+            return false;
+        }
     }
 }

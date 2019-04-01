@@ -20,9 +20,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
-import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProvider;
+import alfio.model.transaction.*;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.util.WorkingDaysAdjusters;
@@ -33,13 +31,11 @@ import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.OptionalInt;
+import java.util.*;
 
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
 import static alfio.model.system.ConfigurationKeys.*;
+import static java.time.ZoneOffset.UTC;
 
 @Component
 @Log4j2
@@ -52,8 +48,13 @@ public class BankTransferManager implements PaymentProvider {
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext paymentContext) {
+        return bankTransferEnabled(paymentMethod, paymentContext)
+            && !configurationManager.getBooleanConfigValue(paymentContext.narrow(REVOLUT_ENABLED), false);
+    }
+
+    boolean bankTransferEnabled(PaymentMethod paymentMethod, PaymentContext paymentContext) {
         return paymentMethod == PaymentMethod.BANK_TRANSFER &&
-            configurationManager.getBooleanConfigValue( paymentContext.narrow(BANK_TRANSFER_ENABLED), false )
+            configurationManager.getBooleanConfigValue(paymentContext.narrow(BANK_TRANSFER_ENABLED), false)
             && (paymentContext.getEvent() == null || getOfflinePaymentWaitingPeriod(paymentContext, configurationManager).orElse(0) > 0);
     }
 
@@ -61,6 +62,9 @@ public class BankTransferManager implements PaymentProvider {
     public PaymentResult doPayment(PaymentSpecification spec) {
         transitionToOfflinePayment(spec);
         PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
+        transactionRepository.insert(UUID.randomUUID().toString(), null,
+            spec.getReservationId(), ZonedDateTime.now(UTC), spec.getPriceWithVAT(), spec.getCurrencyCode(),
+            "", PaymentProxy.OFFLINE.name(), 0L, 0L, Transaction.Status.PENDING, Map.of());
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }
 

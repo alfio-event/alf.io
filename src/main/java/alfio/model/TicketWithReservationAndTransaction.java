@@ -103,7 +103,8 @@ public class TicketWithReservationAndTransaction {
                                                @Column("bt_payment_proxy") String paymentProxy,
                                                @Column("bt_plat_fee") Long platformFee,
                                                @Column("bt_gtw_fee") Long gatewayFee,
-                                               @Column("bt_status") Transaction.Status transactionStatus
+                                               @Column("bt_status") Transaction.Status transactionStatus,
+                                               @Column("bt_metadata") @JSONData Map<String, String> metadata
                                                ) {
 
         this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
@@ -123,7 +124,7 @@ public class TicketWithReservationAndTransaction {
 
         if(btId != null) {
             this.transaction = Optional.of(new Transaction(btId, transactionId, paymentId, reservationId,
-                timestamp, priceInCents, currency, description, paymentProxy, Optional.ofNullable(platformFee).orElse(0L), Optional.ofNullable(gatewayFee).orElse(0L), transactionStatus, Map.of()));
+                timestamp, priceInCents, currency, description, paymentProxy, Optional.ofNullable(platformFee).orElse(0L), Optional.ofNullable(gatewayFee).orElse(0L), transactionStatus, metadata));
         } else {
             this.transaction = Optional.empty();
         }
