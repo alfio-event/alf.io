@@ -36,6 +36,7 @@ import alfio.model.group.LinkedGroup;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -81,6 +82,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
+import static alfio.model.Audit.EventType.MATCHING_PAYMENT_FOUND;
 import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
@@ -1857,6 +1859,20 @@ public class TicketReservationManager {
             .forEach(this::checkOfflinePaymentsForEvent);
     }
 
+    public Result<Boolean> discardMatchingPayment(String eventName,
+                                                  String reservationId,
+                                                  int transactionId) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .flatMap(e -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r)))
+            .flatMap(pair -> transactionRepository.loadOptionalByIdAndStatus(transactionId, Transaction.Status.OFFLINE_PENDING_REVIEW)
+                .map(transaction -> {
+                    auditingRepository.insert(reservationId, null, pair.getLeft().getId(), Audit.EventType.MATCHING_PAYMENT_DISCARDED, new Date(), RESERVATION, reservationId);
+                    Validate.isTrue(transactionRepository.discardMatchingPayment(transactionId) == 1, "Transaction is in an incompatible state.");
+                    return Result.success(true);
+                })
+            ).orElse(Result.error(ErrorCode.EventError.NOT_FOUND));
+    }
+
     private void checkOfflinePaymentsForEvent(Event event) {
         log.trace("check offline payments for event {}", event.getShortName());
         var paymentContext = new PaymentContext(event);
@@ -1884,16 +1900,24 @@ public class TicketReservationManager {
                 matchingCount += matching.getData().size();
                 log.trace("found {} matches for provider {}", matchingCount, offlineProcessor.getClass().getName());
                 var byStatus = matching.getData().stream()
-                    .peek(tr -> pendingReservationsMap.remove(tr.getTicketReservation().getId()))
+                    .peek(tr -> {
+                        var reservationId = tr.getTicketReservation().getId();
+                        auditingRepository.insert(reservationId, null, event.getId(),
+                            MATCHING_PAYMENT_FOUND, new Date(), RESERVATION, reservationId, Json.toJson(List.of(tr.getTransaction().getMetadata())));
+                        pendingReservationsMap.remove(reservationId);
+                    })
                     .collect(groupingBy(tr -> tr.getTransaction().getStatus()));
 
                 byStatus.get(Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND).forEach(tr -> {
-                    if(automaticConfirmOfflinePayment(event, tr.getTicketReservation().getId())) {
-                        log.trace("reservation {} confirmed automatically", tr.getTicketReservation().getId());
-                        confirmed.add(tr.getTicketReservation().getId());
+                    var reservationId = tr.getTicketReservation().getId();
+                    if(automaticConfirmOfflinePayment(event, reservationId)) {
+                        log.trace("reservation {} confirmed automatically", reservationId);
+                        auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.AUTOMATIC_PAYMENT_CONFIRMATION, new Date(), RESERVATION, reservationId);
+                        confirmed.add(reservationId);
                     } else {
-                        log.trace("got error while confirming reservation {}", tr.getTicketReservation().getId());
-                        errors.add(tr.getTicketReservation().getId());
+                        log.trace("got error while confirming reservation {}", reservationId);
+                        auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.AUTOMATIC_PAYMENT_CONFIRMATION_FAILED, new Date(), RESERVATION, reservationId);
+                        errors.add(reservationId);
                     }
                 });
 

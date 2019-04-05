@@ -66,6 +66,26 @@
                     This reservation is in an unknown state. This could happen when we have troubles after receiving a response from the Payment Gateway. Please check the payment status on the Payment Gateway's dashboard and confirm or cancel this reservation.
                 </div>
 
+                <div class="panel panel-info" ng-if="$ctrl.displayPotentialMatch">
+                    <div class="panel-heading">
+                        <h4 class="panel-title"><i class="fa fa-info-circle"></i> Matching Transaction found</h4>
+                    </div>
+                    <div class="panel-body">
+                        <dl class="dl-horizontal">
+                            <dt>Payment id</dt>
+                            <dd ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
+                            <dt>Transaction timestamp</dt>
+                            <dd ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
+                            <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
+                            <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
+                        </dl>
+                    </div>
+                    <div class="panel-footer">
+                        <button type="button" class="btn btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()"><i class="fa fa-check"></i> Confirm</button>
+                        <button type="button" class="btn btn-danger pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.deleteTransaction()"><i class="fa fa-ban"></i> Flag as not valid</button>
+                    </div>
+                </div>
+
                 <div>
                     <div ng-if="$ctrl.displayPaymentInfo()">
                         <div class="page-header">
@@ -76,8 +96,7 @@
                         <div ng-if="!$ctrl.loadingPaymentInfo && !$ctrl.paymentInfo">No payments have been found.</div>
                         <div class="row" ng-if="$ctrl.paymentInfo">
                             <div class="col-xs-12 col-sm-6">
-
-                                <dl class="dl-horizontal">
+                                <dl class="dl-horizontal" ng-if="$ctrl.paymentInfo.transaction && $ctrl.paymentInfo.transaction.complete">
                                     <dt>Payment method</dt>
                                     <dd><span ng-bind="$ctrl.paymentInfo.paymentMethod">-</span></dd>
 
@@ -87,13 +106,12 @@
                                     <dt ng-if="$ctrl.paymentInfo.transaction">Transaction timestamp</dt>
                                     <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
 
-                                    <dt ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.paymentInformation">Paid amount</dt>
-                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
+                                    <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
+                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
 
                                     <dt ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">Refunded amount</dt>
                                     <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">{{$ctrl.paymentInfo.paymentInformation.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}</dd>
                                 </dl>
-
                             </div>
                             <div class="col-xs-12 col-sm-6" ng-if="$ctrl.reservation.status !== 'STUCK' && $ctrl.paymentInfo.supportRefund">
                                 <div class="panel panel-default">

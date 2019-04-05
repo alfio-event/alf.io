@@ -136,7 +136,7 @@ public class PaymentManager {
                 Transaction transaction = info.getTransaction();
                 String transactionId = transaction.getTransactionId();
                 PaymentInformation paymentInformation = info.getPaymentInformation();
-                if(paymentInformation != null) {
+                if(paymentInformation != null && feesUpdated(transaction, paymentInformation)) {
                     transactionRepository.updateFees(transactionId, reservation.getId(), safeParseLong(paymentInformation.getPlatformFee()), safeParseLong(paymentInformation.getFee()));
                 }
             } catch (Exception e) {
@@ -144,6 +144,11 @@ public class PaymentManager {
             }
         });
         return maybeTransaction.orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformation(reservation.getPaidAmount(), null, null, null)));
+    }
+
+    private boolean feesUpdated(Transaction transaction, PaymentInformation paymentInformation) {
+        return transaction.getPlatformFee() != safeParseLong(paymentInformation.getPlatformFee())
+            || transaction.getGatewayFee()  != safeParseLong(paymentInformation.getFee());
     }
 
     private TransactionAndPaymentInfo internalGetInfo(TicketReservation reservation, Event event, Transaction transaction) {

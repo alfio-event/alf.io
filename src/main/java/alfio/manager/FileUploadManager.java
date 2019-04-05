@@ -63,7 +63,7 @@ public class FileUploadManager {
 
     public void outputFile(String id, OutputStream out) {
         var file = cache.get(id, identifier -> repository.file(id));
-        if(!file.exists()) { //fallback, the file will not be cached though
+        if(file == null || !file.exists()) { //fallback, the file will not be cached though
             cache.invalidate(id);
             file = repository.file(id);
         }

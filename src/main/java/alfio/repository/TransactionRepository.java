@@ -30,7 +30,8 @@ import java.util.Optional;
 @QueryRepository
 public interface TransactionRepository {
 
-    String SELECT_BY_RESERVATION_ID = "select * from b_transaction where reservation_id = :reservationId and status <> 'INVALID'";
+    String SELECT_BY_RESERVATION_ID = "select * from b_transaction where reservation_id = :reservationId";
+    String SELECT_VALID_BY_RESERVATION_ID = SELECT_BY_RESERVATION_ID + " and status not in ('INVALID', 'OFFLINE_DISABLE_MATCH')";
 
     @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy, plat_fee, gtw_fee, status, metadata) " +
             "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy, :platformFee, :gatewayFee, :status, to_json(:metadata::json))")
@@ -61,7 +62,10 @@ public interface TransactionRepository {
     @Query("update b_transaction set status = :status where reservation_id = :reservationId")
     int updateStatusForReservation(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
 
-    @Query(SELECT_BY_RESERVATION_ID)
+    @Query("update b_transaction set status = 'OFFLINE_DISABLE_MATCH' where id = :id and status = 'OFFLINE_PENDING_REVIEW'")
+    int discardMatchingPayment(@Bind("id") int transactionId);
+
+    @Query(SELECT_VALID_BY_RESERVATION_ID)
     Transaction loadByReservationId(@Bind("reservationId") String reservationId);
 
     @Query("delete from b_transaction where reservation_id in (:reservationIds)")
@@ -73,8 +77,14 @@ public interface TransactionRepository {
     @Query("delete from b_transaction where reservation_id in (:reservationIds) and status = :status")
     int deleteForReservationsWithStatus(@Bind("reservationIds") List<String> reservationIds, @Bind("status") Transaction.Status status);
 
-    @Query(SELECT_BY_RESERVATION_ID)
+    @Query(SELECT_VALID_BY_RESERVATION_ID)
     Optional<Transaction> loadOptionalByReservationId(@Bind("reservationId") String reservationId);
+
+    @Query(SELECT_BY_RESERVATION_ID + " and status = :status")
+    Optional<Transaction> loadOptionalByReservationIdAndStatus(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
+
+    @Query("select * from b_transaction where id = :id and status = :status")
+    Optional<Transaction> loadOptionalByIdAndStatus(@Bind("id") int id, @Bind("status") Transaction.Status status);
 
     @Query("update b_transaction set plat_fee = :platformFee, gtw_fee = :gatewayFee where gtw_tx_id = :transactionId and reservation_id = :reservationId")
     int updateFees(@Bind("transactionId") String transactionId,

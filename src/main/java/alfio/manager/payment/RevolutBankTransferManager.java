@@ -18,6 +18,8 @@ package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.Event;
+import alfio.model.PaymentInformation;
 import alfio.model.TicketReservationWithTransaction;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
@@ -26,6 +28,7 @@ import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProvider;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.capabilities.OfflineProcessor;
+import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.provider.RevolutTransactionDescriptor;
 import alfio.repository.TransactionRepository;
 import alfio.util.Json;
@@ -47,10 +50,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -62,7 +62,7 @@ import static alfio.util.EventUtil.JSON_DATETIME_FORMATTER;
 @Transactional
 @Log4j2
 @AllArgsConstructor
-public class RevolutBankTransferManager implements PaymentProvider, OfflineProcessor {
+public class RevolutBankTransferManager implements PaymentProvider, OfflineProcessor, PaymentInfo {
 
     private static final ZoneId UTC = ZoneId.of("UTC");
     private final BankTransferManager bankTransferManager;
@@ -82,8 +82,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
 
     @Override
     public PaymentResult doPayment(PaymentSpecification spec) {
-        PaymentResult paymentResult = bankTransferManager.doPayment(spec);
-        return paymentResult;
+        return bankTransferManager.doPayment(spec);
     }
 
     @Override
@@ -111,7 +110,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
             .flatMap(revolutTransactions -> matchTransactions(reservations, revolutTransactions, context));
     }
 
-    private Result<List<TicketReservationWithTransaction>> matchTransactions(Collection<TicketReservationWithTransaction> pendingReservations,
+    Result<List<TicketReservationWithTransaction>> matchTransactions(Collection<TicketReservationWithTransaction> pendingReservations,
                                                               List<RevolutTransactionDescriptor> transactions,
                                                               PaymentContext context) {
         List<Pair<TicketReservationWithTransaction, RevolutTransactionDescriptor>> matched = pendingReservations.stream()
@@ -140,16 +139,17 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     private Predicate<RevolutTransactionDescriptor> transactionMatches(TicketReservationWithTransaction reservationWithTransaction, PaymentContext context) {
         var reservation = reservationWithTransaction.getTicketReservation();
         var transaction = reservationWithTransaction.getTransaction();
-        var shortReservationId = configurationManager.getShortReservationID(context.getEvent(), reservation.getId());
+        String reservationId = reservation.getId().toLowerCase();
+        var shortReservationId = configurationManager.getShortReservationID(context.getEvent(), reservationId);
         String[] terms;
         if(reservation.getHasInvoiceNumber()) {
-            terms = new String[] {reservation.getInvoiceNumber(), shortReservationId, reservation.getId()};
+            terms = new String[] {reservation.getInvoiceNumber().toLowerCase(), shortReservationId, reservationId};
         } else {
-            terms = new String[] {shortReservationId, reservation.getId()};
+            terms = new String[] {shortReservationId, reservationId};
         }
 
         return revolutTransaction -> revolutTransaction.getTransactionBalance().compareTo(BigDecimal.ZERO) > 0
-            && Arrays.stream(terms).anyMatch(s -> revolutTransaction.getReference().contains(s))
+            && Arrays.stream(terms).anyMatch(s -> revolutTransaction.getReference().toLowerCase().contains(s))
             && transaction.getPriceInCents() == MonetaryUtil.unitToCents(revolutTransaction.getTransactionBalance());
     }
 
@@ -206,4 +206,12 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     }
 
 
+    @Override
+    public Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
+        var metadata = transaction.getMetadata();
+        if(metadata != null && metadata.containsKey("counterpartyAccountId")) {
+            return Optional.of(new PaymentInformation(MonetaryUtil.formatCents(transaction.getPriceInCents()), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));
+        }
+        return Optional.empty();
+    }
 }

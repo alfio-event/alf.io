@@ -80,4 +80,13 @@ public class Transaction {
         this.status = status;
         this.metadata = Optional.ofNullable(metadata).orElse(Map.of());
     }
+
+    public boolean isComplete() {
+        return status == Status.COMPLETE;
+    }
+
+    public boolean isPotentialMatch() {
+        return status == Status.OFFLINE_MATCHING_PAYMENT_FOUND
+            || status == Status.OFFLINE_PENDING_REVIEW;
+    }
 }

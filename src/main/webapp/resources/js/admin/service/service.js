@@ -139,6 +139,9 @@
                     }
                 }).error(HttpErrorHandler.handle);
             },
+            cancelMatchingPayment: function(eventName, reservationId, transactionId) {
+                return $http['delete']('/admin/api/events/'+eventName+'/reservation/'+reservationId+'/transaction/'+transactionId+'/discard').error(HttpErrorHandler.handle);
+            },
             sendCodesByEmail: function(eventName, categoryId, pairs) {
                 return $http['post']('/admin/api/events/'+eventName+'/categories/'+categoryId+'/send-codes', pairs).error(HttpErrorHandler.handle);
             },

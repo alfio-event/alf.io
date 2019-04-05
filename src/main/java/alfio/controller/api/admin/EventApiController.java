@@ -675,6 +675,18 @@ public class EventApiController {
         return new TicketsStatistics(eventStatisticsManager.getTicketSoldStatistics(eventId, from, to), eventStatisticsManager.getTicketReservedStatistics(eventId, from, to));
     }
 
+    @DeleteMapping("/events/{eventName}/reservation/{reservationId}/transaction/{transactionId}/discard")
+    public ResponseEntity<Void> discardMatchingPayment(@PathVariable("eventName") String eventName,
+                                                       @RequestParam("reservationId") String reservationId,
+                                                       @RequestParam("transactionId") int transactionId) {
+        var result = ticketReservationManager.discardMatchingPayment(eventName, reservationId, transactionId);
+        if(result.isSuccess()) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     private Event loadEvent(String eventName, Principal principal) {
         Optional<Event> singleEvent = eventManager.getOptionalByName(eventName, principal.getName());
         Validate.isTrue(singleEvent.isPresent(), "event not found");
