@@ -234,6 +234,7 @@ compileJava {
 test {
     useJUnitPlatform()
     systemProperties = System.properties
+    systemProperties.remove("java.endorsed.dirs")
     jvmArgs("--illegal-access=warn")
     testLogging {
         events "failed"
