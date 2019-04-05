@@ -1069,8 +1069,8 @@ class TicketReservationManagerTest {
     @Test
     void testBuildCompleteBillingAddress() {
         CustomerName customerName = new CustomerName(null, "First", "Last", true);
-        assertEquals("First Last\nline1\nzip city", buildCompleteBillingAddress(customerName, "   ", "line1", null, "zip", "city"));
-        assertEquals("Company\nFirst Last\nline1\nzip city", buildCompleteBillingAddress(customerName, "Company", "line1", null, "zip", "city"));
-        assertEquals("Company\nFirst Last\nline1\nline2\nzip city", buildCompleteBillingAddress(customerName, "Company", "line1", "line2", "zip", "city"));
+        assertEquals("First Last\nline1\nzip city\nSwitzerland", buildCompleteBillingAddress(customerName, "   ", "line1", null, "zip", "city", "CH", Locale.ENGLISH));
+        assertEquals("Company\nFirst Last\nline1\nzip city\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", null, "zip", "city", "CH", Locale.ENGLISH));
+        assertEquals("Company\nFirst Last\nline1\nline2\nzip city\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", "line2", "zip", "city", "CH", Locale.ENGLISH));
     }
 }

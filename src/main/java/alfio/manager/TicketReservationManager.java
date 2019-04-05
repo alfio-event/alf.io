@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.payment.BankTransferManager;
 import alfio.manager.payment.PaymentSpecification;
@@ -1647,10 +1648,18 @@ public class TicketReservationManager {
                                   String vatNr,
                                   boolean isInvoiceRequested,
                                   boolean skipVatNr,
-                                  boolean validated) {
+                                  boolean validated,
+                                  Locale locale) {
 
 
-        String completeBillingAddress = buildCompleteBillingAddress(customerName, billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity);
+        String completeBillingAddress = buildCompleteBillingAddress(customerName,
+            billingAddressCompany,
+            billingAddressLine1,
+            billingAddressLine2,
+            billingAddressZip,
+            billingAddressCity,
+            vatCountryCode,
+            locale);
 
         ticketReservationRepository.updateTicketReservationWithValidation(reservationId,
             customerName.getFullName(), customerName.getFirstName(), customerName.getLastName(),
@@ -1660,13 +1669,29 @@ public class TicketReservationManager {
             validated);
     }
 
-    static String buildCompleteBillingAddress(CustomerName customerName, String billingAddressCompany, String billingAddressLine1, String billingAddressLine2, String billingAddressZip, String billingAddressCity) {
+    static String buildCompleteBillingAddress(CustomerName customerName,
+                                              String billingAddressCompany,
+                                              String billingAddressLine1,
+                                              String billingAddressLine2,
+                                              String billingAddressZip,
+                                              String billingAddressCity,
+                                              String countryCode,
+                                              Locale locale) {
         String companyName = stripToNull(billingAddressCompany);
         String fullName = stripToEmpty(customerName.getFullName());
         if(companyName != null && !fullName.isEmpty()) {
             companyName = companyName + "\n" + fullName;
         }
-        return Arrays.stream(stripAll(defaultString(companyName, fullName), billingAddressLine1, billingAddressLine2, stripToEmpty(billingAddressZip) + " " + stripToEmpty(billingAddressCity)))
+        String country = null;
+        if(countryCode != null) {
+            country = TicketHelper.getLocalizedCountriesForVat(locale).stream()
+                .filter(c -> c.getKey().equals(countryCode))
+                .map(Pair::getValue)
+                .findFirst()
+                .orElse(null);
+        }
+
+        return Arrays.stream(stripAll(defaultString(companyName, fullName), billingAddressLine1, billingAddressLine2, stripToEmpty(billingAddressZip) + " " + stripToEmpty(billingAddressCity), stripToNull(country)))
             .filter(Predicate.not(StringUtils::isEmpty))
             .collect(joining("\n"));
     }
