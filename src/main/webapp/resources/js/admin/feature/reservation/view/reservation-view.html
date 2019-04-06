@@ -43,8 +43,8 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-xs-3">
-                        <div class="form-group">
+                    <div class="col-xs-6">
+                        <div class="form-group" ng-if="!$ctrl.displayPotentialMatch">
                             <label>Status</label>
                             <div class="input-group">
                                 <div class="form-control-static" ng-class="{'text-danger': $ctrl.reservation.status === 'STUCK'}">{{$ctrl.reservation.status}}</div>
@@ -53,8 +53,23 @@
                                 </div>
                             </div>
                         </div>
+                        <div ng-if="$ctrl.displayPotentialMatch">
+                            <h4 class="text-success"><i class="fa fa-info-circle"></i> Matching Transaction found</h4>
+                            <dl class="dl">
+                                <dt>Payment id</dt>
+                                <dd ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
+                                <dt>Transaction timestamp</dt>
+                                <dd ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
+                                <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
+                                <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
+                            </dl>
+                            <div class="text-left">
+                                <button type="button" class="btn btn-sm btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()"><i class="fa fa-check"></i> Confirm</button>
+                                <button type="button" class="btn btn-sm btn-danger" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.deleteTransaction()"><i class="fa fa-ban"></i> Flag as not valid</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-xs-3 col-xs-push-3" ng-if="$ctrl.reservation.status !== 'COMPLETE' && $ctrl.reservation.status !== 'CANCELLED'">
+                    <div class="col-xs-3" ng-if="$ctrl.reservation.status !== 'COMPLETE' && $ctrl.reservation.status !== 'CANCELLED'">
                         <div class="form-group">
                             <label for="expiration">Expiration</label>
                             <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration" required>
@@ -64,26 +79,6 @@
 
                 <div class="alert alert-danger" ng-if="$ctrl.reservation.status === 'STUCK'">
                     This reservation is in an unknown state. This could happen when we have troubles after receiving a response from the Payment Gateway. Please check the payment status on the Payment Gateway's dashboard and confirm or cancel this reservation.
-                </div>
-
-                <div class="panel panel-info" ng-if="$ctrl.displayPotentialMatch">
-                    <div class="panel-heading">
-                        <h4 class="panel-title"><i class="fa fa-info-circle"></i> Matching Transaction found</h4>
-                    </div>
-                    <div class="panel-body">
-                        <dl class="dl-horizontal">
-                            <dt>Payment id</dt>
-                            <dd ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
-                            <dt>Transaction timestamp</dt>
-                            <dd ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
-                            <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
-                            <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
-                        </dl>
-                    </div>
-                    <div class="panel-footer">
-                        <button type="button" class="btn btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()"><i class="fa fa-check"></i> Confirm</button>
-                        <button type="button" class="btn btn-danger pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.deleteTransaction()"><i class="fa fa-ban"></i> Flag as not valid</button>
-                    </div>
                 </div>
 
                 <div>

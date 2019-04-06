@@ -150,6 +150,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
 
         return revolutTransaction -> revolutTransaction.getTransactionBalance().compareTo(BigDecimal.ZERO) > 0
             && Arrays.stream(terms).anyMatch(s -> revolutTransaction.getReference().toLowerCase().contains(s))
+            && transaction.getCurrency().equals(revolutTransaction.getLegs().get(0).getCurrency())
             && transaction.getPriceInCents() == MonetaryUtil.unitToCents(revolutTransaction.getTransactionBalance());
     }
 
@@ -158,7 +159,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
             return Result.error(ErrorCode.custom("no-account", "No active accounts found."));
         }
         try {
-            var from = lastCheck != null ? lastCheck.withZoneSameInstant(UTC) : ZonedDateTime.now(UTC);
+            var from = lastCheck != null ? lastCheck.withZoneSameInstant(UTC) : ZonedDateTime.now(UTC).minusDays(1);//defaults to now - 24h
             var request = HttpRequest.newBuilder(URI.create(revolutUrl + "/api/1.0/transactions?from=" + from.format(JSON_DATETIME_FORMATTER)))
                 .GET()
                 .header("Authorization", "Bearer "+revolutKey)

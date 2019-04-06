@@ -60,6 +60,7 @@ class RevolutBankTransferManagerTest {
         var transaction = mock(Transaction.class);
         when(transaction.getPriceInCents()).thenReturn(100);
         when(transaction.getId()).thenReturn(TRANSACTION_ID);
+        when(transaction.getCurrency()).thenReturn("CHF");
         when(first.getTransaction()).thenReturn(transaction);
 
         second = mock(TicketReservationWithTransaction.class);
@@ -104,6 +105,7 @@ class RevolutBankTransferManagerTest {
         when(single.getId()).thenReturn(paymentId);
         var leg = mock(RevolutTransactionDescriptor.TransactionLeg.class);
         when(leg.getAmount()).thenReturn(BigDecimal.ONE);
+        when(leg.getCurrency()).thenReturn("CHF");
         when(single.getLegs()).thenReturn(List.of(leg));
         var result = revolutBankTransferManager.matchTransactions(pendingReservations, List.of(single), paymentContext);
         assertTrue(result.isSuccess());

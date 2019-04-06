@@ -1908,7 +1908,7 @@ public class TicketReservationManager {
                     })
                     .collect(groupingBy(tr -> tr.getTransaction().getStatus()));
 
-                byStatus.get(Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND).forEach(tr -> {
+                byStatus.getOrDefault(Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND, List.of()).forEach(tr -> {
                     var reservationId = tr.getTicketReservation().getId();
                     if(automaticConfirmOfflinePayment(event, reservationId)) {
                         log.trace("reservation {} confirmed automatically", reservationId);
@@ -1921,7 +1921,7 @@ public class TicketReservationManager {
                     }
                 });
 
-                pendingReview.addAll(byStatus.get(Transaction.Status.OFFLINE_PENDING_REVIEW).stream().map(tr -> tr.getTicketReservation().getId()).collect(toList()));
+                pendingReview.addAll(byStatus.getOrDefault(Transaction.Status.OFFLINE_PENDING_REVIEW, List.of()).stream().map(tr -> tr.getTicketReservation().getId()).collect(toList()));
             }
         }
         if(matchingCount > 0) {

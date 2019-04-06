@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Getter
 public class RevolutTransactionDescriptor {
@@ -92,8 +93,8 @@ public class RevolutTransactionDescriptor {
 
     public Map<String, String> getMetadata() {
         return Map.of(
-            "counterpartyAccountId", legs.get(0).counterpartyAccountId,
-            "counterpartyType", legs.get(0).counterpartyType
+            "counterpartyAccountId", Optional.ofNullable(legs.get(0).counterpartyAccountId).orElse("N/A"),
+            "counterpartyType", Optional.ofNullable(legs.get(0).counterpartyType).orElse("N/A")
         );
     }
 
@@ -102,7 +103,7 @@ public class RevolutTransactionDescriptor {
         private final String id;
 
         @JsonCreator
-        public Counterparty(@JsonProperty("type") String type,
+        public Counterparty(@JsonProperty("account_type") String type,
                             @JsonProperty("account_id") String id) {
             this.type = type;
             this.id = id;
