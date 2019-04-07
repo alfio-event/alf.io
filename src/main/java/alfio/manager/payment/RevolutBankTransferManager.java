@@ -92,7 +92,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
 
 
     @Override
-    public Result<List<TicketReservationWithTransaction>> checkPendingReservations(Collection<TicketReservationWithTransaction> reservations,
+    public Result<List<String>> checkPendingReservations(Collection<TicketReservationWithTransaction> reservations,
                                                                                    PaymentContext context,
                                                                                    ZonedDateTime lastCheck) {
         if(reservations.isEmpty()) {
@@ -110,7 +110,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
             .flatMap(revolutTransactions -> matchTransactions(reservations, revolutTransactions, context));
     }
 
-    Result<List<TicketReservationWithTransaction>> matchTransactions(Collection<TicketReservationWithTransaction> pendingReservations,
+    Result<List<String>> matchTransactions(Collection<TicketReservationWithTransaction> pendingReservations,
                                                               List<RevolutTransactionDescriptor> transactions,
                                                               PaymentContext context) {
         List<Pair<TicketReservationWithTransaction, RevolutTransactionDescriptor>> matched = pendingReservations.stream()
@@ -133,7 +133,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
                 0L,
                 manualReviewRequired ? Transaction.Status.OFFLINE_PENDING_REVIEW : Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND,
                 revolutTransaction.getMetadata());
-        }).map(Pair::getLeft).collect(Collectors.toList()));
+        }).map(p -> p.getLeft().getTicketReservation().getId()).collect(Collectors.toList()));
     }
 
     private Predicate<RevolutTransactionDescriptor> transactionMatches(TicketReservationWithTransaction reservationWithTransaction, PaymentContext context) {

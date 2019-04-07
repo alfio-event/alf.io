@@ -110,7 +110,7 @@ class RevolutBankTransferManagerTest {
         var result = revolutBankTransferManager.matchTransactions(pendingReservations, List.of(single), paymentContext);
         assertTrue(result.isSuccess());
         assertEquals(1, result.getData().size());
-        assertEquals(FIRST_UUID, result.getData().get(0).getTicketReservation().getId());
+        assertEquals(FIRST_UUID, result.getData().get(0));
         verify(transactionRepository).update(
             eq(TRANSACTION_ID),
             eq(paymentId),

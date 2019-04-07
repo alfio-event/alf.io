@@ -1901,33 +1901,14 @@ public class TicketReservationManager {
         int matchingCount = 0;
         for (int i = 0; !pendingReservationsMap.isEmpty() && i < providers.size(); i++) {
             OfflineProcessor offlineProcessor = (OfflineProcessor) providers.get(i);
-            Result<List<TicketReservationWithTransaction>> matching = offlineProcessor.checkPendingReservations(pendingReservationsMap.values(), paymentContext, null);
+            Result<List<String>> matching = offlineProcessor.checkPendingReservations(pendingReservationsMap.values(), paymentContext, null);
             if(matching.isSuccess()) {
-                matchingCount += matching.getData().size();
+                int resultSize = matching.getData().size();
+                matchingCount += resultSize;
                 log.trace("found {} matches for provider {}", matchingCount, offlineProcessor.getClass().getName());
-                var byStatus = matching.getData().stream()
-                    .peek(tr -> {
-                        var reservationId = tr.getTicketReservation().getId();
-                        auditingRepository.insert(reservationId, null, event.getId(),
-                            MATCHING_PAYMENT_FOUND, new Date(), RESERVATION, reservationId, Json.toJson(List.of(tr.getTransaction().getMetadata())));
-                        pendingReservationsMap.remove(reservationId);
-                    })
-                    .collect(groupingBy(tr -> tr.getTransaction().getStatus()));
-
-                byStatus.getOrDefault(Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND, List.of()).forEach(tr -> {
-                    var reservationId = tr.getTicketReservation().getId();
-                    if(automaticConfirmOfflinePayment(event, reservationId)) {
-                        log.trace("reservation {} confirmed automatically", reservationId);
-                        auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.AUTOMATIC_PAYMENT_CONFIRMATION, new Date(), RESERVATION, reservationId);
-                        confirmed.add(reservationId);
-                    } else {
-                        log.trace("got error while confirming reservation {}", reservationId);
-                        auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.AUTOMATIC_PAYMENT_CONFIRMATION_FAILED, new Date(), RESERVATION, reservationId);
-                        errors.add(reservationId);
-                    }
-                });
-
-                pendingReview.addAll(byStatus.getOrDefault(Transaction.Status.OFFLINE_PENDING_REVIEW, List.of()).stream().map(tr -> tr.getTicketReservation().getId()).collect(toList()));
+                if(resultSize > 0) {
+                    processResults(event, pendingReservationsMap, errors, confirmed, pendingReview, matching);
+                }
             }
         }
         if(matchingCount > 0) {
@@ -1950,6 +1931,33 @@ public class TicketReservationManager {
         }
 
 
+    }
+
+    private void processResults(Event event, Map<String, TicketReservationWithTransaction> pendingReservationsMap, ArrayList<String> errors, ArrayList<String> confirmed, ArrayList<String> pendingReview, Result<List<String>> matching) {
+        var reservations = ticketSearchRepository.findOfflineReservationsWithTransaction(matching.getData());
+        var byStatus = reservations.stream()
+            .peek(tr -> {
+                var reservationId = tr.getTicketReservation().getId();
+                auditingRepository.insert(reservationId, null, event.getId(),
+                    MATCHING_PAYMENT_FOUND, new Date(), RESERVATION, reservationId, Json.toJson(List.of(tr.getTransaction().getMetadata())));
+                pendingReservationsMap.remove(reservationId);
+            })
+            .collect(groupingBy(tr -> tr.getTransaction().getStatus()));
+
+        byStatus.getOrDefault(Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND, List.of()).forEach(tr -> {
+            var reservationId = tr.getTicketReservation().getId();
+            if(automaticConfirmOfflinePayment(event, reservationId)) {
+                log.trace("reservation {} confirmed automatically", reservationId);
+                auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.AUTOMATIC_PAYMENT_CONFIRMATION, new Date(), RESERVATION, reservationId);
+                confirmed.add(reservationId);
+            } else {
+                log.trace("got error while confirming reservation {}", reservationId);
+                auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.AUTOMATIC_PAYMENT_CONFIRMATION_FAILED, new Date(), RESERVATION, reservationId);
+                errors.add(reservationId);
+            }
+        });
+
+        pendingReview.addAll(byStatus.getOrDefault(Transaction.Status.OFFLINE_PENDING_REVIEW, List.of()).stream().map(tr -> tr.getTicketReservation().getId()).collect(toList()));
     }
 
     private boolean automaticConfirmOfflinePayment(Event event, String reservationId) {

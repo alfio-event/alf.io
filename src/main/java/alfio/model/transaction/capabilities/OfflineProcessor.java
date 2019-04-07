@@ -32,9 +32,9 @@ public interface OfflineProcessor extends Capability {
      * @param reservations the reservations to check
      * @param paymentContext
      * @param lastCheck last check timestamp, can be null. Defaults to <code>now - 24h</code>
-     * @return a list of {@link TicketReservationWithTransaction}s.
+     * @return a list of {@link alfio.model.TicketReservation} ids.
      */
-    Result<List<TicketReservationWithTransaction>> checkPendingReservations(Collection<TicketReservationWithTransaction> reservations,
+    Result<List<String>> checkPendingReservations(Collection<TicketReservationWithTransaction> reservations,
                                                                             PaymentContext paymentContext,
                                                                             ZonedDateTime lastCheck);
 
