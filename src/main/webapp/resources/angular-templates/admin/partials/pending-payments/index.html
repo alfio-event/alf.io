@@ -15,7 +15,7 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table">
+                <table class="table table-striped">
                     <thead>
                         <th>ID</th>
                         <th>Expiration Date</th>
@@ -23,18 +23,24 @@
                         <th>Customer's name</th>
                         <th>Customer's email</th>
                         <th></th>
+                        <th></th>
                     </thead>
                     <tbody>
-                        <tr data-ng-repeat="reservation in pendingReservations">
-                            <td data-ng-class-even="'active'"><a data-ui-sref="events.single.view-reservation({eventName:eventName, reservationId: reservation.left.id})" target="_blank">{{reservation.left.id}}</a></td>
-                            <td data-ng-class-even="'active'">{{reservation.left.validity | formatDate}}</td>
-                            <td data-ng-class-even="'active'">{{reservation.right.totalPrice}}</td>
-                            <td data-ng-class-even="'active'">{{reservation.left.fullName}}</td>
-                            <td data-ng-class-even="'active'">{{reservation.left.email}}</td>
-                            <td data-ng-class-even="'active'">
-                                <button class="btn btn-success btn-xs" data-ng-disabled="loading" data-ng-click="registerPayment(eventName, reservation.left.id)"><i class="fa fa-check"></i> confirm</button>
-                                <button data-ng-disabled="loading" ng-if="reservation.left.invoiceNumber" data-ng-click="deletePayment(eventName, reservation.left.id, true)" class="btn btn-warning btn-xs" uib-tooltip="Issue a Credit Note for this Reservation"><i class="fa fa-undo"></i> credit</button>
-                                <button data-ng-disabled="loading" data-ng-click="deletePayment(eventName, reservation.left.id, false)" class="btn btn-danger btn-xs" uib-tooltip="Cancel the payment and delete the Reservation"><i class="fa fa-trash-o"></i> delete</button>
+                        <tr data-ng-repeat="pending in pendingReservations">
+                            <td>
+                                <a data-ui-sref="events.single.view-reservation({eventName:eventName, reservationId: pending.ticketReservation.id})" target="_blank">{{pending.ticketReservation.id | limitTo:8:0 | uppercase}}</a>
+                            </td>
+                            <td>{{pending.ticketReservation.validity | formatDate}}</td>
+                            <td><span ng-if="pending.transaction">{{pending.transaction.priceInCents / 100 | currency:pending.transaction.currency}}</span></td>
+                            <td>{{pending.ticketReservation.fullName}}</td>
+                            <td>{{pending.ticketReservation.email}}</td>
+                            <td>
+                                <button type="button" ng-if="pending.transaction && pending.transaction.status == 'OFFLINE_PENDING_REVIEW'" class="btn btn-xs btn-success" ng-click="showTransactionDialog(pending)"><i class="fa fa-check"></i> Matching payment</button>
+                            </td>
+                            <td>
+                                <button class="btn btn-success btn-xs" data-ng-disabled="loading" data-ng-click="registerPayment(eventName, pending.ticketReservation.id)"><i class="fa fa-check"></i> confirm</button>
+                                <button data-ng-disabled="loading" ng-if="pending.ticketReservation.invoiceNumber" data-ng-click="deletePayment(eventName, pending.ticketReservation.id, true)" class="btn btn-warning btn-xs" uib-tooltip="Issue a Credit Note for this Reservation"><i class="fa fa-undo"></i> credit</button>
+                                <button data-ng-disabled="loading" data-ng-click="deletePayment(eventName, pending.ticketReservation.id, false)" class="btn btn-danger btn-xs" uib-tooltip="Cancel the payment and delete the Reservation"><i class="fa fa-trash-o"></i> delete</button>
                             </td>
                         </tr>
                     </tbody>

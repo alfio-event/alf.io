@@ -564,9 +564,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     private void validatePayment(String eventName, String reservationIdentifier) {
         Principal principal = mock(Principal.class);
         Mockito.when(principal.getName()).thenReturn(user);
-        assertEquals(1, eventApiController.getPendingPayments(eventName, principal).size());
+        assertEquals(1, eventApiController.getPendingPayments(eventName).size());
         assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal, new BindingAwareModelMap(), new MockHttpServletRequest()));
-        assertEquals(0, eventApiController.getPendingPayments(eventName, principal).size());
+        assertEquals(0, eventApiController.getPendingPayments(eventName).size());
     }
 
     private String payOffline(String eventName, String reservationIdentifier) {

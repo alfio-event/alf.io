@@ -70,6 +70,9 @@ public interface TicketSearchRepository {
     @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status = 'OFFLINE_PAYMENT' and bt_reservation_id is not null and bt_status = 'PENDING'")
     List<TicketReservationWithTransaction> findOfflineReservationsWithPendingTransaction(@Bind("eventId") int eventId);
 
+    @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status = 'OFFLINE_PAYMENT'")
+    List<TicketReservationWithTransaction> findOfflineReservationsWithOptionalTransaction(@Bind("eventId") int eventId);
+
     @Query("select count(distinct tr_id) from (" + FIND_ALL_TICKETS_INCLUDING_NEW +" ) as d_tbl")
     Integer countReservationsForEvent(@Bind("eventId") int eventId,
                                       @Bind("search") String search,

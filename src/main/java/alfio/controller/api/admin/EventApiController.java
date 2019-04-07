@@ -545,11 +545,11 @@ public class EventApiController {
         eventManager.updateAdditionalField(id, field);
     }
 
+
+
     @RequestMapping(value = "/events/{eventName}/pending-payments")
-    public List<SerializablePair<TicketReservation, OrderSummary>> getPendingPayments(@PathVariable("eventName") String eventName, Principal principal) {
-        Event event = eventManager.getSingleEvent(eventName, principal.getName());
-        return ticketReservationManager.getPendingPayments(event).stream()
-                .map(SerializablePair::fromPair).collect(toList());
+    public List<TicketReservationWithTransaction> getPendingPayments(@PathVariable("eventName") String eventName) {
+        return ticketReservationManager.getPendingPayments(eventName);
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments-count")
@@ -676,12 +676,12 @@ public class EventApiController {
     }
 
     @DeleteMapping("/events/{eventName}/reservation/{reservationId}/transaction/{transactionId}/discard")
-    public ResponseEntity<Void> discardMatchingPayment(@PathVariable("eventName") String eventName,
+    public ResponseEntity<String> discardMatchingPayment(@PathVariable("eventName") String eventName,
                                                        @PathVariable("reservationId") String reservationId,
                                                        @PathVariable("transactionId") int transactionId) {
         var result = ticketReservationManager.discardMatchingPayment(eventName, reservationId, transactionId);
         if(result.isSuccess()) {
-            return ResponseEntity.ok().build();
+            return ResponseEntity.ok("OK");
         } else {
             return ResponseEntity.notFound().build();
         }

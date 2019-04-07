@@ -1040,7 +1040,6 @@ public class TicketReservationManager {
         PromoCodeDiscount discount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById).orElse(null);
         //
         boolean free = reservationCost.getPriceWithVAT() == 0;
-        String vat = getVAT(event).orElse(null);
         String refundedAmount = null;
 
         boolean hasRefund = auditingRepository.countAuditsOfTypeForReservation(reservation.getId(), Audit.EventType.REFUND) > 0;
@@ -1050,10 +1049,15 @@ public class TicketReservationManager {
         }
 
         return new OrderSummary(reservationCost,
-            extractSummary(reservation.getId(), reservation.getVatStatus(), event, Locale.forLanguageTag(reservation.getUserLanguage()), discount, reservationCost), free,
-            formatCents(reservationCost.getPriceWithVAT()), formatCents(reservationCost.getVAT()),
+            extractSummary(reservation.getId(), reservation.getVatStatus(), event, Locale.forLanguageTag(reservation.getUserLanguage()), discount, reservationCost),
+            free,
+            formatCents(reservationCost.getPriceWithVAT()),
+            formatCents(reservationCost.getVAT()),
             reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
-            reservation.getPaymentMethod() == PaymentProxy.ON_SITE, vat, reservation.getVatStatus(), refundedAmount);
+            reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
+            Optional.ofNullable(event.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p))).orElse(null),
+            reservation.getVatStatus(),
+            refundedAmount);
     }
     
     List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
@@ -1605,8 +1609,10 @@ public class TicketReservationManager {
             .collect(toList());
     }
 
-    public List<Pair<TicketReservation, OrderSummary>> getPendingPayments(Event event) {
-        return fetchWaitingForPayment(event.getId(), event, Locale.ENGLISH);
+    public List<TicketReservationWithTransaction> getPendingPayments(String eventName) {
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .map(event -> ticketSearchRepository.findOfflineReservationsWithOptionalTransaction(event.getId()))
+            .orElse(List.of());
     }
 
     public Integer getPendingPaymentsCount(int eventId) {

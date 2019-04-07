@@ -94,8 +94,12 @@ public class TicketReservationWithTransaction {
 
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountryCode, vatNr, invoicingAdditionalInfo);
 
-        this.transaction = new Transaction(btId, transactionId, paymentId, reservationId,
-                timestamp, priceInCents, currency, description, paymentProxy, Optional.ofNullable(platformFee).orElse(0L), Optional.ofNullable(gatewayFee).orElse(0L), transactionStatus, transactionMetadata);
+        if(btId != null) {
+            this.transaction = new Transaction(btId, transactionId, paymentId, reservationId,
+                    timestamp, priceInCents, currency, description, paymentProxy, Optional.ofNullable(platformFee).orElse(0L), Optional.ofNullable(gatewayFee).orElse(0L), transactionStatus, transactionMetadata);
+        } else {
+            this.transaction = null;
+        }
 
     }
 

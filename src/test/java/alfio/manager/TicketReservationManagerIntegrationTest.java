@@ -170,7 +170,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
 
 
-        assertEquals(0, ticketReservationManager.getPendingPayments(event).size());
+        assertEquals(0, ticketReservationManager.getPendingPayments(event.getShortName()).size());
 
         PaymentSpecification specification = new PaymentSpecification(reservationId, null, totalPrice.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
@@ -181,7 +181,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         assertEquals(TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT, ticketReservationManager.findById(reservationId).get().getStatus());
 
-        assertEquals(1, ticketReservationManager.getPendingPayments(event).size());
+        assertEquals(1, ticketReservationManager.getPendingPayments(event.getShortName()).size());
 
         Date now = new Date();
         Date from = DateUtils.addDays(now, -1);
