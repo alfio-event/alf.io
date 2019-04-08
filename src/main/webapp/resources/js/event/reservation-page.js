@@ -181,7 +181,7 @@
         function updateInvoiceFields(radio) {
             if(radio.length > 0) {
                 var elements = $('.invoice-business');
-                if(radio.val() === 'business') {
+                if(radio.val() === 'true') {
                     elements.removeClass('hide');
                     elements.find('#vatNr').attr('required', true);
                 } else {
@@ -191,11 +191,11 @@
             }
         }
 
-        $('input[name=invoiceType]').change(function() {
+        $('input[name=addCompanyBillingDetails]').change(function() {
             updateInvoiceFields($(this));
         });
 
-        updateInvoiceFields($('input[name=invoiceType]:checked'));
+        updateInvoiceFields($('input[name=addCompanyBillingDetails]:checked'));
 
         $("select").map(function() {
             var value = $(this).attr('value');

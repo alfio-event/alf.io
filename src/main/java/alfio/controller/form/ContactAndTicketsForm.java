@@ -64,6 +64,7 @@ public class ContactAndTicketsForm implements Serializable {
     private String billingAddressZip;
     private String billingAddressCity;
 
+    private Boolean addCompanyBillingDetails;
     private Boolean skipVatNr;
     private Boolean backFromOverview;
     //
@@ -259,7 +260,7 @@ public class ContactAndTicketsForm implements Serializable {
     }
     //
 
-    public boolean getBusinessCustomer() {
-        return canSkipVatNrCheck() || StringUtils.isNotBlank(billingAddressCompany) || StringUtils.isNotBlank(vatNr);
+    public boolean getAddCompanyBillingDetails() {
+        return Boolean.TRUE.equals(addCompanyBillingDetails);
     }
 }
