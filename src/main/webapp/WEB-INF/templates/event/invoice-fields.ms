@@ -10,10 +10,10 @@
             </label>
             <div>
                 <label class="radio-inline">
-                    <input type="radio" name="invoiceType" id="invoiceTypePrivate" value="private" {{^paymentForm.businessCustomer}}checked=""{{/paymentForm.businessCustomer}}> {{#i18n}}invoice.type.private{{/i18n}}
+                    <input type="radio" name="addCompanyBillingDetails" id="invoiceTypePrivate" value="false" {{^paymentForm.addCompanyBillingDetails}}checked=""{{/paymentForm.addCompanyBillingDetails}}> {{#i18n}}invoice.type.private{{/i18n}}
                 </label>
                 <label class="radio-inline">
-                    <input type="radio" name="invoiceType" id="invoiceTypeBusiness" value="business" {{#paymentForm.businessCustomer}}checked=""{{/paymentForm.businessCustomer}}> {{#i18n}}invoice.type.business{{/i18n}}
+                    <input type="radio" name="addCompanyBillingDetails" id="invoiceTypeBusiness" value="true" {{#paymentForm.addCompanyBillingDetails}}checked=""{{/paymentForm.addCompanyBillingDetails}}> {{#i18n}}invoice.type.business{{/i18n}}
                 </label>
             </div>
         </div>
