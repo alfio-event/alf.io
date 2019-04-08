@@ -28,7 +28,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static alfio.model.system.ConfigurationKeys.REVOLUT_MANUAL_REVIEW;
@@ -50,6 +52,7 @@ class RevolutBankTransferManagerTest {
     private TransactionRepository transactionRepository;
     private RevolutBankTransferManager revolutBankTransferManager;
     private Event event;
+    private Transaction transaction;
 
     @BeforeEach
     void setUp() {
@@ -57,10 +60,12 @@ class RevolutBankTransferManagerTest {
         var firstReservation = mock(TicketReservation.class);
         when(firstReservation.getId()).thenReturn(FIRST_UUID);
         when(first.getTicketReservation()).thenReturn(firstReservation);
-        var transaction = mock(Transaction.class);
+        transaction = mock(Transaction.class);
         when(transaction.getPriceInCents()).thenReturn(100);
         when(transaction.getId()).thenReturn(TRANSACTION_ID);
         when(transaction.getCurrency()).thenReturn("CHF");
+        when(transaction.getStatus()).thenReturn(Transaction.Status.PENDING);
+        when(transaction.getTimestamp()).thenReturn(ZonedDateTime.now());
         when(first.getTransaction()).thenReturn(transaction);
 
         second = mock(TicketReservationWithTransaction.class);
@@ -97,6 +102,7 @@ class RevolutBankTransferManagerTest {
     private void internalMatchSingleTransaction(boolean automaticConfirmation) {
         var paymentContext = new PaymentContext(event);
         when(configurationManager.getBooleanConfigValue(eq(paymentContext.narrow(REVOLUT_MANUAL_REVIEW)), eq(true))).thenReturn(!automaticConfirmation);
+        when(transactionRepository.lockLatestForUpdate(eq(FIRST_UUID))).thenReturn(Optional.of(transaction));
         var pendingReservations = List.of(first, second, third);
         var single = mock(RevolutTransactionDescriptor.class);
         when(single.getReference()).thenReturn("Very long description "+FIRST_UUID.substring(0,8)+ "... to be continued...");
