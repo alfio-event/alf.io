@@ -24,10 +24,7 @@ import alfio.model.Event;
 import alfio.model.PaymentInformation;
 import alfio.model.system.Configuration;
 import alfio.model.transaction.*;
-import alfio.model.transaction.capabilities.ClientServerTokenRequest;
-import alfio.model.transaction.capabilities.PaymentInfo;
-import alfio.model.transaction.capabilities.RefundRequest;
-import alfio.model.transaction.capabilities.SignedWebhookHandler;
+import alfio.model.transaction.capabilities.*;
 import alfio.model.transaction.token.StripeSCACreditCardToken;
 import alfio.model.transaction.webhook.StripeChargeTransactionWebhookPayload;
 import alfio.model.transaction.webhook.StripePaymentIntentWebhookPayload;
@@ -54,7 +51,7 @@ import static alfio.model.system.ConfigurationKeys.STRIPE_WEBHOOK_PAYMENT_KEY;
 @Log4j2
 @Component
 @Transactional
-public class StripeWebhookPaymentManager implements PaymentProvider, RefundRequest, PaymentInfo, SignedWebhookHandler, ClientServerTokenRequest {
+public class StripeWebhookPaymentManager implements PaymentProvider, RefundRequest, PaymentInfo, SignedWebhookHandler, ClientServerTokenRequest, ServerInitiatedTransaction {
 
 
     private static final String CLIENT_SECRET_METADATA = "clientSecret";
@@ -86,7 +83,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     @Override
-    public TransactionInitializationToken initTransaction(PaymentSpecification paymentSpecification) {
+    public TransactionInitializationToken initTransaction(PaymentSpecification paymentSpecification, Map<String, List<String>> params) {
         var reservationId = paymentSpecification.getReservationId();
         return transactionRepository.loadOptionalByReservationId(reservationId)
             .map(this::buildTokenFromTransaction)
@@ -267,7 +264,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     @Override
     public Map<String, ?> getModelOptions(PaymentContext context) {
         var baseOptions = new HashMap<String, Object>(baseStripeManager.getModelOptions(context));
-        var connectedAccountOptional = baseStripeManager.getConnectedAccount(context.getEvent());
+        var connectedAccountOptional = baseStripeManager.getConnectedAccount(context);
         baseOptions.put("platformMode", connectedAccountOptional.isPresent());
         connectedAccountOptional.ifPresent(account -> baseOptions.put("stripeConnectedAccount", account));
         return baseOptions;

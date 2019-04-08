@@ -21,6 +21,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.function.IntConsumer;
 import java.util.regex.Pattern;
@@ -28,6 +29,7 @@ import java.util.stream.IntStream;
 
 public final class PasswordGenerator {
 
+    private static final SecureRandom RANDOM = new SecureRandom();
     private static final char[] PASSWORD_CHARACTERS;
     private static final boolean DEV_MODE;
     private static final int MAX_LENGTH = 14;
@@ -70,7 +72,7 @@ public final class PasswordGenerator {
         }
         Random r = new Random();
         int length = MIN_LENGTH + r.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
-        return RandomStringUtils.random(length, PASSWORD_CHARACTERS);
+        return RandomStringUtils.random(length, 0, PASSWORD_CHARACTERS.length, false, false, PASSWORD_CHARACTERS, RANDOM);
     }
 
     public static boolean isValid(String password) {

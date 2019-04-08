@@ -82,7 +82,8 @@ create view reservation_and_ticket_and_tx as (select
     b_transaction.payment_proxy bt_payment_proxy,
     b_transaction.gtw_fee bt_gtw_fee,
     b_transaction.plat_fee bt_plat_fee,
-    b_transaction.status bt_status
+    b_transaction.status bt_status,
+    b_transaction.metadata bt_metadata
 
 from tickets_reservation
 left outer join ticket on tickets_reservation.id = ticket.tickets_reservation_id

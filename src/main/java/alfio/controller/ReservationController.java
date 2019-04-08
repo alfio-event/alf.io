@@ -271,7 +271,7 @@ public class ReservationController {
                     contactAndTicketsForm.getBillingAddressCompany(), contactAndTicketsForm.getBillingAddressLine1(), contactAndTicketsForm.getBillingAddressLine2(),
                     contactAndTicketsForm.getBillingAddressZip(), contactAndTicketsForm.getBillingAddressCity(), contactAndTicketsForm.getVatCountryCode(),
                     contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
-                    contactAndTicketsForm.canSkipVatNrCheck(), false);
+                    contactAndTicketsForm.canSkipVatNrCheck(), false, locale);
 
                 boolean italyEInvoicing = configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_ITALY_E_INVOICING), false);
 
@@ -555,12 +555,12 @@ public class ReservationController {
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
     public String handleReservation(@PathVariable("eventName") String eventName,
-                                    @PathVariable("reservationId") String reservationId, 
-                                    PaymentForm paymentForm, 
+                                    @PathVariable("reservationId") String reservationId,
+                                    PaymentForm paymentForm,
                                     BindingResult bindingResult,
-                                    Model model, 
-                                    HttpServletRequest request, 
-                                    Locale locale, 
+                                    Model model,
+                                    HttpServletRequest request,
+                                    Locale locale,
                                     RedirectAttributes redirectAttributes,
                                     HttpSession session) {
 

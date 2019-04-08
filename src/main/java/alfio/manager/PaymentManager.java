@@ -58,9 +58,20 @@ public class PaymentManager {
     Optional<PaymentProvider> lookupProviderByMethodAndCapabilities(PaymentMethod paymentMethod,
                                                                     PaymentContext context,
                                                                     List<Class<? extends Capability>> capabilities) {
+        return doLookupProvidersByMethodAndCapabilities(paymentMethod, context, capabilities).findFirst();
+    }
+
+    List<PaymentProvider> lookupProvidersByMethodAndCapabilities(PaymentMethod paymentMethod,
+                                                                 PaymentContext context,
+                                                                 List<Class<? extends Capability>> capabilities) {
+        return doLookupProvidersByMethodAndCapabilities(paymentMethod, context, capabilities).collect(Collectors.toList());
+    }
+
+    private Stream<PaymentProvider> doLookupProvidersByMethodAndCapabilities(PaymentMethod paymentMethod,
+                                                                             PaymentContext context,
+                                                                             List<Class<? extends Capability>> capabilities) {
         return compatibleStream(paymentMethod, context)
-            .filter(p -> Objects.requireNonNull(capabilities).stream().allMatch(c -> c.isInstance(p)))
-            .findFirst();
+            .filter(p -> Objects.requireNonNull(capabilities).stream().allMatch(c -> c.isInstance(p)));
     }
 
     private Stream<PaymentProvider> compatibleStream(PaymentMethod paymentMethod, PaymentContext context) {
@@ -125,7 +136,7 @@ public class PaymentManager {
                 Transaction transaction = info.getTransaction();
                 String transactionId = transaction.getTransactionId();
                 PaymentInformation paymentInformation = info.getPaymentInformation();
-                if(paymentInformation != null) {
+                if(paymentInformation != null && feesUpdated(transaction, paymentInformation)) {
                     transactionRepository.updateFees(transactionId, reservation.getId(), safeParseLong(paymentInformation.getPlatformFee()), safeParseLong(paymentInformation.getFee()));
                 }
             } catch (Exception e) {
@@ -133,6 +144,11 @@ public class PaymentManager {
             }
         });
         return maybeTransaction.orElseGet(() -> new TransactionAndPaymentInfo(reservation.getPaymentMethod(),null, new PaymentInformation(reservation.getPaidAmount(), null, null, null)));
+    }
+
+    private boolean feesUpdated(Transaction transaction, PaymentInformation paymentInformation) {
+        return transaction.getPlatformFee() != safeParseLong(paymentInformation.getPlatformFee())
+            || transaction.getGatewayFee()  != safeParseLong(paymentInformation.getFee());
     }
 
     private TransactionAndPaymentInfo internalGetInfo(TicketReservation reservation, Event event, Transaction transaction) {

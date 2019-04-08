@@ -28,7 +28,14 @@ import java.util.Optional;
 public class Transaction {
 
     public enum Status {
-        PENDING, COMPLETE, FAILED, CANCELLED, INVALID
+        PENDING,
+        OFFLINE_MATCHING_PAYMENT_FOUND,
+        OFFLINE_PENDING_REVIEW,
+        OFFLINE_DISABLE_MATCH,
+        COMPLETE,
+        FAILED,
+        CANCELLED,
+        INVALID
     }
 
     private final int id;
@@ -72,5 +79,14 @@ public class Transaction {
         this.gatewayFee = gatewayFee;
         this.status = status;
         this.metadata = Optional.ofNullable(metadata).orElse(Map.of());
+    }
+
+    public boolean isComplete() {
+        return status == Status.COMPLETE;
+    }
+
+    public boolean isPotentialMatch() {
+        return status == Status.OFFLINE_MATCHING_PAYMENT_FOUND
+            || status == Status.OFFLINE_PENDING_REVIEW;
     }
 }

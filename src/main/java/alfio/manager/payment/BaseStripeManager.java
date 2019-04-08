@@ -230,9 +230,9 @@ class BaseStripeManager {
         return Optional.of(builder.setApiKey(getSecretKey(event)).build());
     }
 
-    Optional<String> getConnectedAccount(Event event) {
-        if(isConnectEnabled(new PaymentContext(event))) {
-            return configurationManager.getStringConfigValue(Configuration.from(event, STRIPE_CONNECTED_ID));
+    Optional<String> getConnectedAccount(PaymentContext paymentContext) {
+        if(isConnectEnabled(paymentContext)) {
+            return configurationManager.getStringConfigValue(paymentContext.narrow(STRIPE_CONNECTED_ID));
         }
         return Optional.empty();
     }

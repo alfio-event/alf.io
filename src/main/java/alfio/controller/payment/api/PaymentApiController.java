@@ -27,10 +27,8 @@ import alfio.repository.EventRepository;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
@@ -44,8 +42,9 @@ public class PaymentApiController {
 
     @PostMapping("/api/events/{eventName}/reservation/{reservationId}/payment/{method}/init")
     public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("eventName") String eventName,
-                                                                         @PathVariable("reservationId") String reservationId,
-                                                                         @PathVariable("method") String paymentMethodStr) {
+                                                                          @PathVariable("reservationId") String reservationId,
+                                                                          @PathVariable("method") String paymentMethodStr,
+                                                                          @RequestParam MultiValueMap<String, String> allParams) {
 
         var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
 
@@ -56,7 +55,7 @@ public class PaymentApiController {
         Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = getEventReservationPair(eventName, reservationId)
             .map(pair -> {
                 var event = pair.getLeft();
-                return ticketReservationManager.initTransaction(event, reservationId, paymentMethod)
+                return ticketReservationManager.initTransaction(event, reservationId, paymentMethod, allParams)
                     .map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.notFound().build());
             });

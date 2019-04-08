@@ -135,7 +135,6 @@
                     {{/ticketReservation.hasBillingAddress}}
                     {{#ticketReservation.hasVatNumber}}
                         <p>{{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}} {{ticketReservation.vatNr}}</p>
-                        <p>{{#country-name}}{{ticketReservation.vatCountryCode}} locale:{{#i18n}}locale{{/i18n}}{{/country-name}}</p>
                     {{/ticketReservation.hasVatNumber}}
                 </td>
             </tr>

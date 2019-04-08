@@ -16,6 +16,7 @@
 
     function ReservationViewCtrl(AdminReservationService, EventService, $window, $stateParams, NotificationHandler, CountriesService, $uibModal) {
         var ctrl = this;
+        ctrl.displayPotentialMatch = false;
 
         ctrl.notification = {
             customer: {
@@ -33,13 +34,11 @@
         ctrl.amountToRefund = null;
         ctrl.refundInProgress = false;
         ctrl.vatStatusDescriptions = {
-           /*
            'NONE': 'VAT/GST not supported',
            'INCLUDED': 'Included in the sale price',
            'NOT_INCLUDED': 'Not included in the sale price',
            'INCLUDED_EXEMPT': 'VAT/GST voided',
-           'NOT_INCLUDED_EXEMPT': '
-            */
+           'NOT_INCLUDED_EXEMPT': 'VAT/GST voided'
         };
 
         ctrl.displayCreationWarning = angular.isDefined($stateParams.fromCreation) && $stateParams.fromCreation;
@@ -52,7 +51,9 @@
         };
 
         ctrl.displayPaymentInfo = function() {
-            return ctrl.reservation != null && ['PENDING', 'OFFLINE_PAYMENT'].indexOf(ctrl.reservation.status) === -1;
+            return ctrl.reservation != null
+                && !$ctrl.displayPotentialMatch
+                && ['PENDING', 'OFFLINE_PAYMENT'].indexOf(ctrl.reservation.status) === -1;
         };
 
         ctrl.$onInit = function() {
@@ -118,9 +119,9 @@
                 ctrl.countries = countries;
             });
 
-            loadEmails();
 
             if(ctrl.event.visibleForCurrentUser) {
+                loadEmails();
                 loadPaymentInfo();
                 loadAudit();
                 loadBillingDocuments();
@@ -133,7 +134,16 @@
                     AdminReservationService.restoreDocument(ctrl.event.shortName, ctrl.reservation.id, id).then(function() {
                         loadBillingDocuments();
                     });
-                }
+                };
+                ctrl.deleteTransaction = function() {
+                    if($window.confirm('About to flag a potential match as not valid. Are you sure?')) {
+                        EventService.cancelMatchingPayment(ctrl.event.shortName, ctrl.reservation.id, ctrl.paymentInfo.transaction.id).then(function() {
+                            NotificationHandler.showSuccess("Payment discarded");
+                            loadPaymentInfo();
+                            loadAudit();
+                        });
+                    }
+                };
             }
 
         };
@@ -172,6 +182,7 @@
             ctrl.loadingPaymentInfo = true;
             AdminReservationService.paymentInfo(ctrl.event.shortName, ctrl.reservationDescriptor.reservation.id).then(function(res) {
                 ctrl.paymentInfo = res.data.data;
+                ctrl.displayPotentialMatch = ctrl.paymentInfo.transaction && ctrl.paymentInfo.transaction.potentialMatch;
                 ctrl.loadingPaymentInfo = false;
             }, function() {
                 ctrl.loadingPaymentInfo = false;

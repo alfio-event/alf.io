@@ -43,8 +43,8 @@
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-xs-3">
-                        <div class="form-group">
+                    <div class="col-xs-6">
+                        <div class="form-group" ng-if="!$ctrl.displayPotentialMatch">
                             <label>Status</label>
                             <div class="input-group">
                                 <div class="form-control-static" ng-class="{'text-danger': $ctrl.reservation.status === 'STUCK'}">{{$ctrl.reservation.status}}</div>
@@ -53,8 +53,23 @@
                                 </div>
                             </div>
                         </div>
+                        <div ng-if="$ctrl.displayPotentialMatch">
+                            <h4 class="text-success"><i class="fa fa-info-circle"></i> Matching Transaction found</h4>
+                            <dl class="dl">
+                                <dt>Payment id</dt>
+                                <dd ng-bind="$ctrl.paymentInfo.transaction.transactionId"></dd>
+                                <dt>Transaction timestamp</dt>
+                                <dd ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
+                                <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
+                                <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
+                            </dl>
+                            <div class="text-left">
+                                <button type="button" class="btn btn-sm btn-success" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()"><i class="fa fa-check"></i> Confirm</button>
+                                <button type="button" class="btn btn-sm btn-danger" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.deleteTransaction()"><i class="fa fa-ban"></i> Flag as not valid</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-xs-3 col-xs-push-3" ng-if="$ctrl.reservation.status !== 'COMPLETE' && $ctrl.reservation.status !== 'CANCELLED'">
+                    <div class="col-xs-3" ng-if="$ctrl.reservation.status !== 'COMPLETE' && $ctrl.reservation.status !== 'CANCELLED'">
                         <div class="form-group">
                             <label for="expiration">Expiration</label>
                             <input class="form-control" id="expiration" name="expiration" ng-model="$ctrl.reservation.expirationStr" single-date start-model="$ctrl.reservation.expiration" required>
@@ -76,8 +91,7 @@
                         <div ng-if="!$ctrl.loadingPaymentInfo && !$ctrl.paymentInfo">No payments have been found.</div>
                         <div class="row" ng-if="$ctrl.paymentInfo">
                             <div class="col-xs-12 col-sm-6">
-
-                                <dl class="dl-horizontal">
+                                <dl class="dl-horizontal" ng-if="$ctrl.paymentInfo.transaction && $ctrl.paymentInfo.transaction.complete">
                                     <dt>Payment method</dt>
                                     <dd><span ng-bind="$ctrl.paymentInfo.paymentMethod">-</span></dd>
 
@@ -87,13 +101,12 @@
                                     <dt ng-if="$ctrl.paymentInfo.transaction">Transaction timestamp</dt>
                                     <dd ng-if="$ctrl.paymentInfo.transaction" ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
 
-                                    <dt ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.paymentInformation">Paid amount</dt>
-                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
+                                    <dt ng-if="$ctrl.paymentInfo.paymentInformation">Paid amount</dt>
+                                    <dd ng-if="$ctrl.paymentInfo.paymentInformation">{{$ctrl.paymentInfo.paymentInformation.paidAmount}} {{$ctrl.paymentInfo.transaction.currency || $ctrl.event.currencyCode}}</dd>
 
                                     <dt ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">Refunded amount</dt>
                                     <dd ng-if="$ctrl.paymentInfo.paymentInformation && $ctrl.paymentInfo.supportRefund">{{$ctrl.paymentInfo.paymentInformation.refundedAmount}} {{$ctrl.paymentInfo.transaction.currency}}</dd>
                                 </dl>
-
                             </div>
                             <div class="col-xs-12 col-sm-6" ng-if="$ctrl.reservation.status !== 'STUCK' && $ctrl.paymentInfo.supportRefund">
                                 <div class="panel panel-default">
