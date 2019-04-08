@@ -16,19 +16,18 @@
  */
 package alfio.model.modification;
 
+import alfio.model.PromoCodeDiscount.DiscountType;
+import alfio.util.MonetaryUtil;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
+
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import lombok.Getter;
-import alfio.model.PromoCodeDiscount.DiscountType;
-import alfio.util.MonetaryUtil;
-
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Getter
 public class PromoCodeDiscountModification {
@@ -43,6 +42,8 @@ public class PromoCodeDiscountModification {
     private final List<Integer> categories;
     private final Integer utcOffset;
     private final Integer maxUsage;
+    private final String description;
+    private final String emailReference;
 
     @JsonCreator
     public PromoCodeDiscountModification(
@@ -55,7 +56,10 @@ public class PromoCodeDiscountModification {
             @JsonProperty("discountType") DiscountType discountType,
             @JsonProperty("categories") List<Integer> categories,
             @JsonProperty("utcOffset") Integer utcOffset,
-            @JsonProperty("maxUsage") Integer maxUsage) {
+            @JsonProperty("maxUsage") Integer maxUsage,
+            @JsonProperty("description") String description,
+            @JsonProperty("emailReference") String emailReference) {
+
         this.organizationId = organizationId;
         this.eventId = eventId;
         this.promoCode = promoCode;
@@ -66,6 +70,8 @@ public class PromoCodeDiscountModification {
         this.categories = Optional.ofNullable(categories).map(l -> l.stream().filter(Objects::nonNull).collect(Collectors.toList())).orElse(Collections.emptyList());
         this.utcOffset = utcOffset;
         this.maxUsage = maxUsage;
+        this.description = description;
+        this.emailReference = emailReference;
     }
     
     public int getDiscountAsPercent() {

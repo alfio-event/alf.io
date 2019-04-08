@@ -756,9 +756,23 @@ public class EventManager {
         return true;
     }
 
-    public void addPromoCode(String promoCode, Integer eventId, Integer organizationId, ZonedDateTime start, ZonedDateTime end, int discountAmount, DiscountType discountType, List<Integer> categoriesId, Integer maxUsage) {
+    public void addPromoCode(String promoCode,
+                             Integer eventId,
+                             Integer organizationId,
+                             ZonedDateTime start,
+                             ZonedDateTime end,
+                             int discountAmount,
+                             DiscountType discountType,
+                             List<Integer> categoriesId,
+                             Integer maxUsage,
+                             String description,
+                             String emailReference) {
+
         Validate.isTrue(promoCode.length() >= 7, "min length is 7 chars");
         Validate.isTrue((eventId != null && organizationId == null) || (eventId == null && organizationId != null), "eventId or organizationId must be not null");
+        Validate.isTrue(StringUtils.length(description) < 1025, "Description can be maximum 1024 chars");
+        Validate.isTrue(StringUtils.length(emailReference) < 257, "Description can be maximum 256 chars");
+
         if(maxUsage != null) {
             Validate.isTrue(maxUsage > 0, "Invalid max usage");
         }
@@ -777,16 +791,18 @@ public class EventManager {
             organizationId = eventRepository.findOrganizationIdByEventId(eventId);
         }
 
-        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId), maxUsage);
+        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId), maxUsage, description, emailReference);
     }
     
     public void deletePromoCode(int promoCodeId) {
         promoCodeRepository.deletePromoCode(promoCodeId);
     }
 
-    public void updatePromoCode(int promoCodeId, ZonedDateTime start, ZonedDateTime end, Integer maxUsage, List<Integer> categories) {
+    public void updatePromoCode(int promoCodeId, ZonedDateTime start, ZonedDateTime end, Integer maxUsage, List<Integer> categories, String description, String emailReference) {
+        Validate.isTrue(StringUtils.length(description) < 1025, "Description can be maximum 1024 chars");
+        Validate.isTrue(StringUtils.length(emailReference) < 257, "Description can be maximum 256 chars");
         String categoriesJson = CollectionUtils.isEmpty(categories) ? null : Json.toJson(categories);
-        promoCodeRepository.updateEventPromoCode(promoCodeId, start, end, maxUsage, categoriesJson);
+        promoCodeRepository.updateEventPromoCode(promoCodeId, start, end, maxUsage, categoriesJson, description, emailReference);
     }
     
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {

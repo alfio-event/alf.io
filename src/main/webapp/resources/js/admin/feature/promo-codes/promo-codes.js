@@ -82,7 +82,9 @@
                     $scope.promocode = {
                         start: {date: start.format('YYYY-MM-DD'), time: start.format('HH:mm')},
                         end: {date: end.format('YYYY-MM-DD'), time: end.format('HH:mm')},
-                        maxUsage: promocode.maxUsage
+                        maxUsage: promocode.maxUsage,
+                        description: promocode.description,
+                        emailReference: promocode.emailReference
                     };
                     $scope.validCategories = _.map(ctrl.event.ticketCategories, function(c) {
                         var c1 = angular.copy(c, {});

@@ -11,29 +11,31 @@
             <thead>
             <tr>
                 <th>Code</th>
-                <th><abbr title="Usage count">count</abbr></th>
-                <th>Limit</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Type</th>
-                <th>Amount</th>
-                <th ng-if="$ctrl.forEvent">Categories</th>
+                <th width="2%">#</th>
+                <th width="2%">Max</th>
+                <th width="10%">Start</th>
+                <th width="10%">End</th>
+                <th width="6%">Amount</th>
+                <th width="10%" ng-if="$ctrl.forEvent">Categories</th>
+                <th width="15%">Description</th>
+                <th width="10%">Contact</th>
                 <th>Actions</th>
             </tr>
             </thead>
             <tbody>
             <tr data-ng-repeat="promocode in $ctrl.promocodes" data-ng-class="{'text-muted': promocode.expired}">
                 <td>{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span></td>
-                <td>{{promocode.useCount}}</td>
-                <td>{{promocode.maxUsage}}</td>
+                <td class="text-right">{{promocode.useCount}}</td>
+                <td class="text-right">{{promocode.maxUsage}}</td>
                 <td>{{::promocode.formattedStart | formatDate}}</td>
                 <td>{{::promocode.formattedEnd | formatDate}}</td>
-                <td>{{::promocode.discountType}}</td>
                 <td>
-                    <span data-ng-if="promocode.discountType === 'PERCENTAGE'">{{::promocode.discountAmount}}%</span>
-                    <span data-ng-if="promocode.discountType === 'FIXED_AMOUNT'">{{::promocode.formattedDiscountAmount | currency : ($ctrl.event.currency || "")}}</span>
+                    <span data-ng-if="promocode.discountType === 'PERCENTAGE'">-{{::promocode.discountAmount}}%</span>
+                    <span data-ng-if="promocode.discountType === 'FIXED_AMOUNT'">-{{::promocode.formattedDiscountAmount | currency : ($ctrl.event.currency || "")}}</span>
                 </td>
                 <td ng-if="$ctrl.forEvent"><div ng-if="promocode.categories.length > 0"><p ng-repeat="categoryId in promocode.categories">{{::$ctrl.ticketCategoriesById[categoryId].name}}</p></div><div class="text-muted" ng-if="promocode.categories.length == 0 || promocode.categories == null">Apply to all</div></td>
+                <td ng-bind="promocode.description"></td>
+                <td ng-bind="promocode.emailReference"></td>
                 <td>
                     <button class="btn btn-sm btn-default" ng-click="$ctrl.changeDate(promocode)"><i class="fa fa-edit"></i> Edit Settings</button>
                     <button data-ng-hide="promocode.expired" class="btn btn-sm btn-default" data-ng-click="$ctrl.disablePromocode(promocode)"><i class="fa fa-remove"></i> Disable</button>

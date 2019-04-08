@@ -44,15 +44,19 @@ public interface PromoCodeDiscountRepository {
     @Query("select * from promo_code where id = :id")
     Optional<PromoCodeDiscount> findOptionalById(@Bind("id") int id);
 
-    @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage) "
-            + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage)")
+    @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage, description, email_reference) "
+        + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage, :description, :emailReference)")
     int addPromoCode(@Bind("promoCode") String promoCode,
-            @Bind("eventId") Integer eventId, @Bind("organizationId") int organizationId, @Bind("start") ZonedDateTime start,
-            @Bind("end") ZonedDateTime end,
-            @Bind("discountAmount") int discountAmount,
-            @Bind("discountType") String discountType,
-            @Bind("categories") String categories,
-            @Bind("maxUsage") Integer maxUsage);
+                     @Bind("eventId") Integer eventId,
+                     @Bind("organizationId") int organizationId,
+                     @Bind("start") ZonedDateTime start,
+                     @Bind("end") ZonedDateTime end,
+                     @Bind("discountAmount") int discountAmount,
+                     @Bind("discountType") String discountType,
+                     @Bind("categories") String categories,
+                     @Bind("maxUsage") Integer maxUsage,
+                     @Bind("description") String description,
+                     @Bind("emailReference") String emailReference);
 
     @Query("select * from promo_code where promo_code = :promoCode and ("
         +" event_id_fk = :eventId or "
@@ -71,6 +75,12 @@ public interface PromoCodeDiscountRepository {
     @Query("update promo_code set valid_to = :end where id = :id")
     int updateEventPromoCodeEnd(@Bind("id") int id, @Bind("end") ZonedDateTime end);
 
-    @Query("update promo_code set valid_from = :start, valid_to = :end, max_usage = :maxUsage, categories = :categories where id = :id")
-    int updateEventPromoCode(@Bind("id") int id, @Bind("start") ZonedDateTime start, @Bind("end") ZonedDateTime end, @Bind("maxUsage") Integer maxUsage, @Bind("categories") String categories);
+    @Query("update promo_code set valid_from = :start, valid_to = :end, max_usage = :maxUsage, categories = :categories, description = :description, email_reference = :emailReference where id = :id")
+    int updateEventPromoCode(@Bind("id") int id,
+                             @Bind("start") ZonedDateTime start,
+                             @Bind("end") ZonedDateTime end,
+                             @Bind("maxUsage") Integer maxUsage,
+                             @Bind("categories") String categories,
+                             @Bind("description") String description,
+                             @Bind("emailReference") String emailReference);
 }

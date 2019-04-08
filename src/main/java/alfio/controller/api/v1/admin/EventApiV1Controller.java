@@ -209,6 +209,8 @@ public class EventApiV1Controller {
                         pc.getDiscount(),
                         pc.getDiscountType(),
                         Collections.emptyList(),
+                        null,
+                        null,
                         null
                     )
                 )
