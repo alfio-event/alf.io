@@ -120,20 +120,28 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
             .collect(Collectors.toList());
 
         boolean manualReviewRequired = configurationManager.getBooleanConfigValue(context.narrow(REVOLUT_MANUAL_REVIEW), true);
+        return Result.success(matched.stream().map(pair -> {
+                var reservationId = pair.getLeft().getTicketReservation().getId();
+                var transaction = pair.getLeft().getTransaction();
+                Optional<Transaction> latestTransaction = transactionRepository.lockLatestForUpdate(reservationId);
+                if(latestTransaction.isEmpty() || latestTransaction.get().getId() != transaction.getId() || latestTransaction.get().getStatus() != transaction.getStatus()) {
+                    log.trace("transaction {} has been modified while processing. Current status is: {}", transaction.getId(), latestTransaction.map(t -> t.getStatus().name()).orElse("N/A"));
+                    return null;
+                }
+                var revolutTransaction = pair.getRight();
 
-        return Result.success(matched.stream().peek(pair -> {
-            var transaction = pair.getLeft().getTransaction();
-            var revolutTransaction = pair.getRight();
-
-            transactionRepository.update(transaction.getId(),
-                revolutTransaction.getId(),
-                revolutTransaction.getRequestId(),
-                revolutTransaction.getCompletedAt(),
-                0L,
-                0L,
-                manualReviewRequired ? Transaction.Status.OFFLINE_PENDING_REVIEW : Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND,
-                revolutTransaction.getMetadata());
-        }).map(p -> p.getLeft().getTicketReservation().getId()).collect(Collectors.toList()));
+                transactionRepository.update(transaction.getId(),
+                    revolutTransaction.getId(),
+                    revolutTransaction.getRequestId(),
+                    revolutTransaction.getCompletedAt(),
+                    0L,
+                    0L,
+                    manualReviewRequired ? Transaction.Status.OFFLINE_PENDING_REVIEW : Transaction.Status.OFFLINE_MATCHING_PAYMENT_FOUND,
+                    revolutTransaction.getMetadata());
+                return reservationId;
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList()));
     }
 
     private Predicate<RevolutTransactionDescriptor> transactionMatches(TicketReservationWithTransaction reservationWithTransaction, PaymentContext context) {

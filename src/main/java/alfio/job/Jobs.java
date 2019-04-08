@@ -193,7 +193,7 @@ public class Jobs {
         }
     }
 
-    @Scheduled(fixedRate = ONE_MINUTE)
+    @Scheduled(fixedRateString = "#{environment.acceptsProfiles('dev') ? (1000 * 60) : (30 * 60 * 1000)}")
     public void checkOfflinePaymentsStatus() {
         log.trace("running job checkOfflinePaymentsStatus");
         try {

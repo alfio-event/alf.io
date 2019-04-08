@@ -59,6 +59,9 @@ public interface TransactionRepository {
                @Bind("status") Transaction.Status status,
                @Bind("metadata") @JSONData Map<String, String> metadata);
 
+    @Query("select * from b_transaction where reservation_id = :reservationId order by t_timestamp desc limit 1 for update")
+    Optional<Transaction> lockLatestForUpdate(@Bind("reservationId") String reservationId);
+
     @Query("update b_transaction set status = :status where reservation_id = :reservationId")
     int updateStatusForReservation(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
 
