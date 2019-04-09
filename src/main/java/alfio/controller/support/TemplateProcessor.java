@@ -24,10 +24,11 @@ import alfio.model.user.Organization;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import ch.digitalfondue.jfiveparse.Parser;
+import ch.digitalfondue.jfiveparse.W3CDom;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
-import com.openhtmltopdf.DOMBuilder;
 import com.openhtmltopdf.extend.FSStream;
 import com.openhtmltopdf.extend.FSStreamFactory;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
@@ -35,8 +36,6 @@ import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.extern.log4j.Log4j2;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.servlet.http.HttpServletRequest;
@@ -123,9 +122,9 @@ public final class TemplateProcessor {
         builder.useProtocolsStreamImplementation(new InvalidProtocolFSStreamFactory(), "http", "https", "file", "jar");
         builder.useFastMode();
 
-        Document parsedDocument = Jsoup.parse(page);
+        var parser = new Parser();
 
-        builder.withW3cDocument(DOMBuilder.jsoup2DOM(parsedDocument), "");
+        builder.withW3cDocument(W3CDom.toW3CDocument(parser.parse(page)), "");
         try (PdfBoxRenderer renderer = builder.buildPdfRenderer()) {
             File defaultFont = FONT_CACHE.get(DEJA_VU_SANS, LOAD_DEJA_VU_SANS_FONT);
             if (!defaultFont.exists()) { // fallback, the cached font will not be shared though

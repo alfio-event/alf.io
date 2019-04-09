@@ -120,9 +120,9 @@ dependencies {
     compile "javax.mail:mail:1.5.0-b01"
     compile 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC18"
-    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC18"
-    compile "com.openhtmltopdf:openhtmltopdf-jsoup-dom-converter:0.0.1-RC18"
+    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC19"
+    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC19"
+    compile "ch.digitalfondue.jfiveparse:jfiveparse:0.5.3"
     /**/
     compile "com.google.zxing:core:3.3.3"
     compile "com.google.zxing:javase:3.3.3"
