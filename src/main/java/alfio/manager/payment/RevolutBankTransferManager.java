@@ -148,7 +148,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         var reservation = reservationWithTransaction.getTicketReservation();
         var transaction = reservationWithTransaction.getTransaction();
         String reservationId = reservation.getId().toLowerCase();
-        var shortReservationId = configurationManager.getShortReservationID(context.getEvent(), reservationId).toLowerCase();
+        var shortReservationId = configurationManager.getShortReservationID(context.getEvent(), reservation).toLowerCase();
         String[] terms;
         if(reservation.getHasInvoiceNumber()) {
             terms = new String[] {reservation.getInvoiceNumber().toLowerCase(), shortReservationId, reservationId};

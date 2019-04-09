@@ -52,7 +52,7 @@
 
         ctrl.displayPaymentInfo = function() {
             return ctrl.reservation != null
-                && !$ctrl.displayPotentialMatch
+                && !ctrl.displayPotentialMatch
                 && ['PENDING', 'OFFLINE_PAYMENT'].indexOf(ctrl.reservation.status) === -1;
         };
 

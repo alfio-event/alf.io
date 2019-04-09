@@ -26,7 +26,6 @@
         ctrl.itemsPerPage = 50;
         ctrl.formatFullName = formatFullName;
         ctrl.updateFilteredData = loadData;
-        ctrl.truncateReservationId = truncateReservationId;
         ctrl.onTabSelected = onTabSelected;
 
         this.$onInit = function() {
@@ -95,10 +94,6 @@
             } else {
                 return r.fullName;
             }
-        }
-
-        function truncateReservationId(id) {
-            return id.substring(0,8).toUpperCase();
         }
 
         function onTabSelected(n) {

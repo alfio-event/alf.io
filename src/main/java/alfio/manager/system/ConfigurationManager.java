@@ -18,6 +18,7 @@ package alfio.manager.system;
 
 import alfio.manager.user.UserManager;
 import alfio.model.EventAndOrganizationId;
+import alfio.model.TicketReservation;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
@@ -432,8 +433,11 @@ public class ConfigurationManager {
             .collect(groupByCategory());
     }
 
-    public String getShortReservationID(EventAndOrganizationId event, String reservationId) {
-        return StringUtils.substring(reservationId, 0, getIntConfigValue(Configuration.from(event, PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
+    public String getShortReservationID(EventAndOrganizationId event, TicketReservation reservation) {
+        if(getBooleanConfigValue(Configuration.from(event, USE_INVOICE_NUMBER_AS_ID), false) && reservation.getHasInvoiceNumber()) {
+            return reservation.getInvoiceNumber();
+        }
+        return StringUtils.substring(reservation.getId(), 0, getIntConfigValue(Configuration.from(event, PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
     }
 
     public boolean hasAllConfigurationsForInvoice(EventAndOrganizationId event) {

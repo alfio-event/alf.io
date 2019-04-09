@@ -83,9 +83,9 @@ class RevolutBankTransferManagerTest {
         revolutBankTransferManager = new RevolutBankTransferManager(bankTransferManager, configurationManager, transactionRepository);
         event = mock(Event.class);
 
-        when(configurationManager.getShortReservationID(eq(event), eq(FIRST_UUID))).thenReturn(FIRST_UUID.substring(0,8));
-        when(configurationManager.getShortReservationID(eq(event), eq(SECOND_UUID))).thenReturn(SECOND_UUID.substring(0,8));
-        when(configurationManager.getShortReservationID(eq(event), eq(THIRD_UUID))).thenReturn(THIRD_UUID.substring(0,8));
+        when(configurationManager.getShortReservationID(eq(event), eq(firstReservation))).thenReturn(FIRST_UUID.substring(0,8));
+        when(configurationManager.getShortReservationID(eq(event), eq(secondReservation))).thenReturn(SECOND_UUID.substring(0,8));
+        when(configurationManager.getShortReservationID(eq(event), eq(thirdReservation))).thenReturn(THIRD_UUID.substring(0,8));
         when(configurationManager.getIntConfigValue(any(), eq(8))).thenReturn(8);
     }
 

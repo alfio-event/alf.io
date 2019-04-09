@@ -859,7 +859,7 @@ class TicketReservationManagerTest {
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(configurationManager, atLeastOnce()).getStringConfigValue(any());
         verify(configurationManager, atLeastOnce()).getRequiredValue(any());
-        verify(configurationManager, atLeastOnce()).getShortReservationID(eq(event), eq(RESERVATION_ID));
+        verify(configurationManager, atLeastOnce()).getShortReservationID(eq(event), any(TicketReservation.class));
         verify(ticketRepository).countTicketsInReservation(eq(RESERVATION_ID));
         verify(configurationManager).getBooleanConfigValue(any(), eq(false));
     }

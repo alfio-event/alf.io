@@ -116,7 +116,7 @@ public class TicketController {
         Ticket ticket = data.getRight();
         model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view", ticketHelper.findTicketFieldConfigurationAndValue(ticket), true, "")))//
                 .addAttribute("reservation", data.getMiddle())//
-                .addAttribute("reservationId", ticketReservationManager.getShortReservationID(event, data.getMiddle().getId()))
+                .addAttribute("reservationId", ticketReservationManager.getShortReservationID(event, data.getMiddle()))
                 .addAttribute("event", event)//
                 .addAttribute("ticketCategory", ticketCategory)//
                 .addAttribute("countries", TicketHelper.getLocalizedCountries(locale))
@@ -176,7 +176,7 @@ public class TicketController {
         try (OutputStream os = response.getOutputStream()) {
             TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
             Organization organization = organizationRepository.getById(event.getOrganizationId());
-            String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation.getId());
+            String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation);
             TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
                 ticket, ticketCategory, organization,
                 templateManager, fileUploadManager,
@@ -233,7 +233,7 @@ public class TicketController {
             .addAttribute("ticketCategory", ticketCategory)//
             .addAttribute("organization", organization)//
             .addAttribute("ticketEmailSent", ticketEmailSent)
-            .addAttribute("reservationId", ticketReservationManager.getShortReservationID(event, reservation.getId()))
+            .addAttribute("reservationId", ticketReservationManager.getShortReservationID(event, reservation))
             .addAttribute("deskPaymentRequired", Optional.ofNullable(reservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired())
             .addAttribute("backSuffix", backSuffix)
             .addAttribute("userLanguage", locale.getLanguage())

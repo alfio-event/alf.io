@@ -115,14 +115,14 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         return Optional.ofNullable(id);
     }
 
-    private List<Transaction> buildPaymentDetails(Event event, OrderSummary orderSummary, String reservationId, Locale locale) {
+    private List<Transaction> buildPaymentDetails(Event event, OrderSummary orderSummary, TicketReservation reservation, Locale locale) {
         Amount amount = new Amount()
             .setCurrency(event.getCurrency())
             .setTotal(orderSummary.getTotalPrice());
 
 
         Transaction transaction = new Transaction();
-        String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, reservationId), event.getDisplayName()}, locale);
+        String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, reservation), event.getDisplayName()}, locale);
         transaction.setDescription(description).setAmount(amount);
 
 
@@ -140,7 +140,8 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
 
         Optional<String> experienceProfileId = getOrCreateWebProfile(spec.getEvent(), spec.getLocale(), apiContext);
 
-        List<Transaction> transactions = buildPaymentDetails(spec.getEvent(), spec.getOrderSummary(), spec.getReservationId(), spec.getLocale());
+        TicketReservation reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
+        List<Transaction> transactions = buildPaymentDetails(spec.getEvent(), spec.getOrderSummary(), reservation, spec.getLocale());
         String eventName = spec.getEvent().getShortName();
 
         Payer payer = new Payer();
@@ -168,7 +169,6 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         Payment createdPayment = payment.create(apiContext);
 
 
-        TicketReservation reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
         //add 15 minutes of validity in case the paypal flow is slow
         ticketReservationRepository.updateValidity(spec.getReservationId(), DateUtils.addMinutes(reservation.getValidity(), 15));
 

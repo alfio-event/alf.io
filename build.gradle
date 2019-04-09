@@ -51,13 +51,6 @@ task validate {
     }
 }
 
-idea {
-    project {
-        jdkName sourceCompatibility.toString()
-        languageLevel sourceCompatibility
-    }
-}
-
 def profile = project.hasProperty('profile') ? project.profile : 'dev'
 
 ext {

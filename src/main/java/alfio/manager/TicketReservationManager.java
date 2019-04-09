@@ -551,7 +551,7 @@ public class TicketReservationManager {
         }
 
         notificationManager.sendSimpleEmail(event, ticketReservation.getId(), ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
-                new Object[]{getShortReservationID(event, reservationId), event.getDisplayName()}, language),
+                new Object[]{getShortReservationID(event, ticketReservation), event.getDisplayName()}, language),
             () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language),
             attachments);
     }
@@ -722,7 +722,7 @@ public class TicketReservationManager {
     public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation, Optional<String> vat, OrderSummary summary) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String reservationUrl = reservationUrl(reservation.getId());
-        String reservationShortID = getShortReservationID(event, reservation.getId());
+        String reservationShortID = getShortReservationID(event, reservation);
         Optional<String> invoiceAddress = configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.INVOICE_ADDRESS));
         Optional<String> bankAccountNr = configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.BANK_ACCOUNT_NR));
         Optional<String> bankAccountOwner = configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.BANK_ACCOUNT_OWNER));
@@ -1436,7 +1436,7 @@ public class TicketReservationManager {
                     Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
                     Locale locale = p.getRight();
                     ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
-                    notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(event, reservation.getId())}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
+                    notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(event, reservation)}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
                 });
     }
 
@@ -1540,7 +1540,11 @@ public class TicketReservationManager {
     }
 
     public String getShortReservationID(EventAndOrganizationId event, String reservationId) {
-        return configurationManager.getShortReservationID(event, reservationId);
+        return configurationManager.getShortReservationID(event, findById(reservationId).orElseThrow());
+    }
+
+    public String getShortReservationID(EventAndOrganizationId event, TicketReservation reservation) {
+        return configurationManager.getShortReservationID(event, reservation);
     }
 
     public int countAvailableTickets(EventAndOrganizationId event, TicketCategory category) {
@@ -1811,7 +1815,7 @@ public class TicketReservationManager {
     }
 
     private void sendTransactionFailedEmail(Event event, TicketReservation reservation, PaymentMethod paymentMethod, PaymentWebhookResult paymentWebhookResult, boolean cancelReservation) {
-        var shortReservationID = getShortReservationID(event, reservation.getId());
+        var shortReservationID = getShortReservationID(event, reservation);
         Map<String, Object> model = Map.of(
         "organization", organizationRepository.getById(event.getOrganizationId()),
         "reservationCancelled", cancelReservation,

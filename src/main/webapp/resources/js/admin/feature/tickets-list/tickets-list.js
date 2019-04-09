@@ -25,7 +25,6 @@
         ctrl.formatFullName = formatFullName;
         ctrl.updateFilteredData = updateFilteredData;
         ctrl.evaluateTicketStatus = evaluateTicketStatus;
-        ctrl.truncateReservationId = truncateReservationId;
         ctrl.removeTicket = removeTicket;
         ctrl.toggleLocking = toggleLocking;
 
@@ -47,10 +46,6 @@
             } else {
                 return r.fullName;
             }
-        }
-
-        function truncateReservationId(id) {
-            return id.substring(0,8).toUpperCase();
         }
 
         function updateFilteredData() {

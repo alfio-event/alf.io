@@ -112,7 +112,7 @@ public class MollieCreditCardManager implements PaymentProvider {
             payload.put("amount", spec.getOrderSummary().getTotalPrice()); // quite ugly, but the mollie api require json floating point...
 
             //
-            String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(spec.getEvent(), spec.getReservationId()), spec.getEvent().getDisplayName()}, spec.getLocale());
+            String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(spec.getEvent(), ticketReservationRepository.findReservationById(spec.getReservationId())), spec.getEvent().getDisplayName()}, spec.getLocale());
             payload.put("description", description);
             payload.put("redirectUrl", bookUrl);
             payload.put("webhookUrl", baseUrl + "/webhook/mollie/api/event/" + eventName + "/reservation/" + spec.getReservationId());

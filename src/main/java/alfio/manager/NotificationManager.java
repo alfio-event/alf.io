@@ -140,7 +140,7 @@ public class NotificationManager {
                 Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
                 TemplateProcessor.renderPDFTicket(Locale.forLanguageTag(ticket.getUserLanguage()), event, reservation,
                     ticket, ticketCategory, organization, templateManager, fileUploadManager,
-                    configurationManager.getShortReservationID(event, ticket.getTicketsReservationId()), baos, retrieveFieldValues, extensionManager);
+                    configurationManager.getShortReservationID(event, reservation), baos, retrieveFieldValues, extensionManager);
             } catch (IOException e) {
                 log.warn("was not able to generate ticket pdf for ticket with id" + ticket.getId(), e);
             }

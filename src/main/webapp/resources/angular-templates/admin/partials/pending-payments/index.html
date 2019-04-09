@@ -28,7 +28,7 @@
                     <tbody>
                         <tr data-ng-repeat="pending in pendingReservations">
                             <td>
-                                <a data-ui-sref="events.single.view-reservation({eventName:eventName, reservationId: pending.ticketReservation.id})" target="_blank">{{pending.ticketReservation.id | limitTo:8:0 | uppercase}}</a>
+                                <a ng-if="event" data-ui-sref="events.single.view-reservation({eventName:eventName, reservationId: pending.ticketReservation.id})" target="_blank"><reservation-identifier event-id="event.id" reservation="pending.ticketReservation"></reservation-identifier></a>
                             </td>
                             <td>{{pending.ticketReservation.validity | formatDate}}</td>
                             <td><span ng-if="pending.transaction">{{pending.transaction.priceInCents / 100 | currency:pending.transaction.currency}}</span></td>
