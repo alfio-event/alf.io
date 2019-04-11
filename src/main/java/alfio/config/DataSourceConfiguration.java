@@ -18,9 +18,13 @@ package alfio.config;
 
 import alfio.config.support.JSONColumnMapper;
 import alfio.config.support.PlatformProvider;
-import alfio.manager.FileDownloadManager;
-import alfio.manager.UploadedResourceManager;
+import alfio.job.Jobs;
+import alfio.job.executor.ReservationJobExecutor;
+import alfio.manager.*;
+import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.user.UserManager;
+import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.QueryFactory;
@@ -33,10 +37,7 @@ import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.ResourceLoaderAware;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.*;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
@@ -56,13 +57,14 @@ import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 @Configuration
 @EnableTransactionManagement
 @EnableScheduling
 @EnableAsync
-@ComponentScan(basePackages = {"alfio.manager", "alfio.job", "alfio.extension"})
+@ComponentScan(basePackages = {"alfio.manager", "alfio.extension"})
 @Log4j2
 public class DataSourceConfiguration implements ResourceLoaderAware {
 
@@ -193,6 +195,40 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     public RowLevelSecurity.RoleAndOrganizationsAspect getRoleAndOrganizationsAspect(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
                                                                                      OrganizationRepository organizationRepository) {
         return new RowLevelSecurity.RoleAndOrganizationsAspect(namedParameterJdbcTemplate, organizationRepository);
+    }
+
+    @Bean
+    @DependsOn("migrator")
+    @Profile("!" + Initializer.PROFILE_DISABLE_JOBS)
+    public Jobs jobs(AdminReservationRequestManager adminReservationRequestManager,
+                     ConfigurationManager configurationManager,
+                     Environment environment,
+                     EventManager eventManager,
+                     FileUploadManager fileUploadManager,
+                     NotificationManager notificationManager,
+                     SpecialPriceTokenGenerator specialPriceTokenGenerator,
+                     UserManager userManager,
+                     WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor,
+                     TicketReservationManager ticketReservationManager,
+                     AdminJobQueueRepository adminJobQueueRepository,
+                     PlatformTransactionManager platformTransactionManager
+                     ) {
+        return new Jobs(adminReservationRequestManager, configurationManager, environment, eventManager, fileUploadManager,
+            notificationManager, specialPriceTokenGenerator, ticketReservationManager, userManager,
+            waitingQueueSubscriptionProcessor, adminJobManager(adminJobQueueRepository, platformTransactionManager, ticketReservationManager));
+
+    }
+
+    @Bean
+    AdminJobManager adminJobManager(AdminJobQueueRepository adminJobQueueRepository,
+                                    PlatformTransactionManager transactionManager,
+                                    TicketReservationManager ticketReservationManager) {
+        return new AdminJobManager(List.of(reservationJobExecutor(ticketReservationManager)), adminJobQueueRepository, transactionManager);
+    }
+
+    @Bean
+    ReservationJobExecutor reservationJobExecutor(TicketReservationManager ticketReservationManager) {
+        return new ReservationJobExecutor(ticketReservationManager);
     }
 
     @Override
