@@ -18,6 +18,8 @@ package alfio.job;
 
 import alfio.config.Initializer;
 import alfio.manager.*;
+import alfio.manager.system.AdminJobExecutor;
+import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.system.Configuration;
@@ -36,6 +38,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <p>Scheduled jobs. Important: all the jobs must be able to run on multiple instance at the same time.</p>
@@ -66,6 +69,7 @@ public class Jobs {
     private final TicketReservationManager ticketReservationManager;
     private final UserManager userManager;
     private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
+    private final AdminJobManager adminJobManager;
 
 
     //cron each minute: "0 0/1 * * * ?"
@@ -114,7 +118,7 @@ public class Jobs {
     public void sendOfflinePaymentReminderToEventOrganizers() {
         log.trace("running job sendOfflinePaymentReminderToEventOrganizers");
         try {
-            ticketReservationManager.sendReminderForOfflinePaymentsToEventManagers();
+            adminJobManager.scheduleExecution(AdminJobExecutor.JobName.SEND_OFFLINE_PAYMENT_TO_ORGANIZER, Map.of());
         } finally {
             log.trace("end job sendOfflinePaymentReminderToEventOrganizers");
         }
@@ -150,18 +154,17 @@ public class Jobs {
     public void sendOfflinePaymentReminder() {
         log.trace("running job sendOfflinePaymentReminder");
         try {
-            ticketReservationManager.sendReminderForOfflinePayments();
+            adminJobManager.scheduleExecution(AdminJobExecutor.JobName.SEND_OFFLINE_PAYMENT_REMINDER, Map.of());
         } finally {
             log.trace("end job sendOfflinePaymentReminder");
         }
     }
 
-    @Scheduled(fixedRate = THIRTY_SECONDS)
+    @Scheduled(fixedRate = THIRTY_MINUTES)
     public void sendTicketAssignmentReminder() {
         log.trace("running job sendTicketAssignmentReminder");
         try {
-            ticketReservationManager.sendReminderForTicketAssignment();
-            ticketReservationManager.sendReminderForOptionalData();
+            adminJobManager.scheduleExecution(AdminJobExecutor.JobName.SEND_TICKET_ASSIGNMENT_REMINDER, Map.of());
         } finally {
             log.trace("end job sendTicketAssignmentReminder");
         }
@@ -197,7 +200,7 @@ public class Jobs {
     public void checkOfflinePaymentsStatus() {
         log.trace("running job checkOfflinePaymentsStatus");
         try {
-            ticketReservationManager.checkOfflinePaymentsStatus();
+            adminJobManager.scheduleExecution(AdminJobExecutor.JobName.CHECK_OFFLINE_PAYMENTS, Map.of());
         } finally {
             log.trace("end job checkOfflinePaymentsStatus");
         }
