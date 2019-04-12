@@ -35,7 +35,12 @@ public class ReservationJobExecutor implements AdminJobExecutor {
 
     @Override
     public Set<JobName> getJobNames() {
-        return EnumSet.of(CHECK_OFFLINE_PAYMENTS, SEND_TICKET_ASSIGNMENT_REMINDER, SEND_OFFLINE_PAYMENT_REMINDER, SEND_OFFLINE_PAYMENT_TO_ORGANIZER);
+        return EnumSet.of(
+            CHECK_OFFLINE_PAYMENTS,
+            SEND_TICKET_ASSIGNMENT_REMINDER,
+            SEND_OFFLINE_PAYMENT_REMINDER,
+            SEND_OFFLINE_PAYMENT_TO_ORGANIZER
+        );
     }
 
     @Override

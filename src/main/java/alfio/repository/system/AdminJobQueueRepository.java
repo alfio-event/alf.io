@@ -26,6 +26,7 @@ import ch.digitalfondue.npjt.QueryRepository;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @QueryRepository
 public interface AdminJobQueueRepository {
@@ -43,4 +44,7 @@ public interface AdminJobQueueRepository {
     int schedule(@Bind("jobName") JobName jobName,
                  @Bind("requestTs") ZonedDateTime requestTimestamp,
                  @Bind("metadata") @JSONData Map<String, Object> metadata);
+
+    @Query("delete from admin_job_queue where status in (:status) and request_ts <= :requestTs")
+    int removePastSchedules(@Bind("requestTs") ZonedDateTime requestTs, @Bind("status") Set<String> statuses);
 }

@@ -25,7 +25,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,14 +33,12 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.AdminJobSchedule.Status.EXECUTED;
 import static java.util.stream.Collectors.*;
 
-@Component
 @Transactional
 @Log4j2
 public class AdminJobManager {
@@ -49,6 +46,8 @@ public class AdminJobManager {
     private final Map<JobName, List<AdminJobExecutor>> executorsByJobId;
     private final AdminJobQueueRepository adminJobQueueRepository;
     private final TransactionTemplate nestedTransactionTemplate;
+    private final Set<String> executedStatuses;
+    private final Set<String> notExecutedStatuses;
 
     public AdminJobManager(List<AdminJobExecutor> jobExecutors,
                            AdminJobQueueRepository adminJobQueueRepository,
@@ -59,10 +58,14 @@ public class AdminJobManager {
             .collect(groupingBy(Pair::getLeft, () -> new EnumMap<>(JobName.class), mapping(Pair::getValue, toList())));
         this.adminJobQueueRepository = adminJobQueueRepository;
         this.nestedTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition((TransactionDefinition.PROPAGATION_NESTED)));
+        var executed = EnumSet.of(EXECUTED);
+        this.executedStatuses = executed.stream().map(Enum::name).collect(toSet());
+        this.notExecutedStatuses = EnumSet.complementOf(executed).stream().map(Enum::name).collect(toSet());
     }
 
     @Scheduled(fixedDelay = 60 * 1000)
     void processPendingRequests() {
+        log.trace("Processing pending requests");
         adminJobQueueRepository.loadPendingSchedules()
             .stream()
             .map(this::processPendingRequest)
@@ -79,9 +82,23 @@ public class AdminJobManager {
                             log.debug("Message from {}: {}", schedule.getJobName(), result.getData());
                         }
                     });
-                    adminJobQueueRepository.updateSchedule(schedule.getId(), AdminJobSchedule.Status.EXECUTED, ZonedDateTime.now(), Map.of());
+                    adminJobQueueRepository.updateSchedule(schedule.getId(), EXECUTED, ZonedDateTime.now(), Map.of());
                 }
             });
+        log.trace("done processing pending requests");
+    }
+
+    @Scheduled(cron = "#{environment.acceptsProfiles('dev') ? '0 * * * * *' : '0 0 0 * * *'}")
+    void cleanupExpiredRequests() {
+        log.trace("Cleanup expired requests");
+        int deleted = adminJobQueueRepository.removePastSchedules(ZonedDateTime.now().minusDays(1), executedStatuses);
+        if(deleted > 0) {
+            log.trace("Deleted {} executed jobs", deleted);
+        }
+        deleted = adminJobQueueRepository.removePastSchedules(ZonedDateTime.now().minusWeeks(1), notExecutedStatuses);
+        if(deleted > 0) {
+            log.warn("Deleted {} NOT executed jobs", deleted);
+        }
     }
 
     public boolean scheduleExecution(JobName jobName, Map<String, Object> metadata) {
