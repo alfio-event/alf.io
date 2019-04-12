@@ -237,7 +237,7 @@ public class EventController {
                 .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
                 .addAttribute("ticketCategories", validCategories)//
                 .addAttribute("expiredCategories", expiredCategories)//
-                .addAttribute("containsExpiredCategories", !expiredCategories.isEmpty())//
+                .addAttribute("containsExpiredCategories", configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.DISPLAY_EXPIRED_CATEGORIES), true) && !expiredCategories.isEmpty())//
                 .addAttribute("showNoCategoriesWarning", validCategories.isEmpty())
                 .addAttribute("hasAccessPromotions", hasAccessPromotions)
                 .addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
