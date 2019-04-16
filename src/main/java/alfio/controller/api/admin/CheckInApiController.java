@@ -109,6 +109,7 @@ public class CheckInApiController {
         String username = principal.getName();
         String auditUser = StringUtils.defaultIfBlank(offlineUser, username);
         return ticketIdentifierCodes.stream()
+            .distinct()
             .map(t -> {
                 TicketAndCheckInResult res = checkInManager.checkIn(eventName, t.getIdentifier(),
                     Optional.ofNullable(t.getCode()),
@@ -308,4 +309,5 @@ public class CheckInApiController {
             }
         }
     }
+
 }
