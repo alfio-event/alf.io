@@ -12,7 +12,7 @@ RUN export ZULU_FOLDER=`ls /usr/lib/jvm/` \
     --module-path /usr/lib/jvm/$ZULU_FOLDER/jmods \
     # see https://github.com/ben-manes/caffeine/issues/273
     # see https://docs.oracle.com/en/java/javase/11/security/oracle-providers.html#GUID-9224B90B-7B2F-41F9-BB96-C0A1B6A0FEAA
-    --add-modules jdk.scripting.nashorn,java.desktop,java.logging,java.sql,java.management,java.naming,jdk.unsupported,jdk.crypto.ec \
+    --add-modules jdk.scripting.nashorn,java.desktop,java.logging,java.sql,java.management,java.naming,jdk.unsupported,jdk.crypto.ec,java.net.http \
     --output /jlinked
 
 FROM alpine:latest
