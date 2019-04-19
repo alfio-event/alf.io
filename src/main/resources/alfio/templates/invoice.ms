@@ -203,7 +203,9 @@ PEC: {{pec}}{{/italianEInvoicing}}
                 <p>{{#i18n}}invoice.payment-instruction-no-later-than [{{#format-date}}{{expirationDate}} {{#i18n}}datetime.pattern{{/i18n}} locale:{{#i18n}}locale{{/i18n}}{{/format-date}}]{{/i18n}}</p>
                 <br/>
                 <p class="strong">{{#i18n}}invoice.payment-instruction{{/i18n}}</p>
+                {{#hasBankAccountNr}}
                 <p>{{#i18n}}invoice.account-number [{{bankAccountNr}}]{{/i18n}}</p>
+                {{/hasBankAccountNr}}
                 {{#hasBankAccountOnwer}}
                     <p style="margin-bottom:0.5em">{{#i18n}}invoice.payment-to{{/i18n}}</p>
                     {{#bankAccountOnwerAsList}}
