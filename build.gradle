@@ -33,7 +33,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.21.0'
     id 'com.github.hierynomus.license' version '0.15.0'
     id 'net.researchgate.release' version '2.7.0'
-    id 'org.springframework.boot' version '2.1.3.RELEASE'
+    id 'org.springframework.boot' version '2.1.4.RELEASE'
 }
 
 apply plugin: 'java'
@@ -113,8 +113,8 @@ dependencies {
     compile "javax.mail:mail:1.5.0-b01"
     compile 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC19"
-    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC19"
+    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC20"
+    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC20"
     compile "ch.digitalfondue.jfiveparse:jfiveparse:0.5.3"
     /**/
     compile "com.google.zxing:core:3.3.3"
@@ -136,7 +136,7 @@ dependencies {
     compile 'com.github.ben-manes.caffeine:caffeine:2.7.0'
     compile 'de.danielbechler:java-object-diff:0.95'
     compile 'com.github.scribejava:scribejava-core:5.0.0'
-    compile 'ch.digitalfondue.vatchecker:vatchecker:1.1'
+    compile 'ch.digitalfondue.vatchecker:vatchecker:1.2'
     compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.0'
     compile 'org.imgscalr:imgscalr-lib:4.2'
     compile 'org.aspectj:aspectjweaver:1.9.2'
