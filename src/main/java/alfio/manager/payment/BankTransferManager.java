@@ -76,7 +76,7 @@ public class BankTransferManager implements PaymentProvider {
             log.error("Already started event {} has been found with OFFLINE payment enabled" , event.getDisplayName());
         }
         Map<String, Object> model = new HashMap<>();
-        model.put("delayForOfflinePayment", Math.min(1, delay.orElse( 0 )));
+        model.put("delayForOfflinePayment", Math.max(1, delay.orElse( 0 )));
         boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
         model.put("captchaRequestedForOffline", recaptchaEnabled);
         if(recaptchaEnabled) {
