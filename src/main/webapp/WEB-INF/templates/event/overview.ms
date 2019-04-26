@@ -128,8 +128,8 @@
                     {{#is-payment-method}}[STRIPE]<i class="fa fa-cc-stripe"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
                     {{#is-payment-method}}[PAYPAL]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
                     {{#is-payment-method}}[MOLLIE] {{#i18n}}reservation-page.mollie{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[ON_SITE]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
-                    {{#is-payment-method}}[OFFLINE]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
+                    {{#is-payment-method}}[ON_SITE]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}<span class="hidden custom-button-text" data-button-text="{{#i18n}}reservation-page.confirm [{{orderSummary.totalPrice}}][{{event.currency}}]{{/i18n}}"></span>{{/is-payment-method}}
+                    {{#is-payment-method}}[OFFLINE]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}<span class="hidden custom-button-text" data-button-text="{{#i18n}}reservation-page.confirm [{{orderSummary.totalPrice}}][{{event.currency}}]{{/i18n}}"></span>{{/is-payment-method}}
                 </label>
                 {{/activePaymentMethods}}
             </div>
@@ -140,8 +140,8 @@
                 {{#is-payment-method}}[STRIPE]<i class="fa fa-credit-card"></i> {{#i18n}}reservation-page.credit-card{{/i18n}}{{/is-payment-method}}
                 {{#is-payment-method}}[PAYPAL]<i class="fa fa-paypal"></i> {{#i18n}}reservation-page.paypal{{/i18n}}{{/is-payment-method}}
                 {{#is-payment-method}}[MOLLIE] {{#i18n}}reservation-page.mollie{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[ON_SITE]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}{{/is-payment-method}}
-                {{#is-payment-method}}[OFFLINE]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}{{/is-payment-method}}
+                {{#is-payment-method}}[ON_SITE]<i class="fa fa-money"></i> {{#i18n}}reservation-page.on-site{{/i18n}}<span class="hidden custom-button-text" data-button-text="{{#i18n}}reservation-page.confirm [{{orderSummary.totalPrice}}][{{event.currency}}]{{/i18n}}"></span>{{/is-payment-method}}
+                {{#is-payment-method}}[OFFLINE]<i class="fa fa-exchange"></i> {{#i18n}}reservation-page.offline{{/i18n}}<span class="hidden custom-button-text" data-button-text="{{#i18n}}reservation-page.confirm [{{orderSummary.totalPrice}}][{{event.currency}}]{{/i18n}}"></span>{{/is-payment-method}}
                 </h4>
                 <input type="hidden" name="paymentMethod" value="{{.}}">
             {{/activePaymentMethods}}
@@ -202,7 +202,7 @@
     {{^orderSummary.free}}
         <div class="row" id="confirm-buttons">
             <div class="col-md-4 col-md-push-8 col-xs-12 wMarginBottom">
-                <button type="button" class="btn btn-success btn-block" id="continue-button">
+                <button type="button" class="btn btn-success btn-block" id="continue-button" data-default-text="{{#i18n}}reservation-page.pay{{/i18n}} {{orderSummary.totalPrice}} {{event.currency}}">
                 {{#tokenAcquired}}
                     {{#i18n}}reservation-page.confirm-button{{/i18n}}
                 {{/tokenAcquired}}

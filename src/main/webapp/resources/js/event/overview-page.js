@@ -134,6 +134,16 @@
             }
         };
 
+        var setConfirmButtonText = function(method) {
+            var customTextContainer = method.find('.custom-button-text');
+            var button = $('#continue-button');
+            var defaultText = button.attr('data-default-text');
+            if(customTextContainer.length === 1) {
+                button.text(customTextContainer.attr('data-button-text'));
+            } else if(defaultText) {
+                button.text(defaultText);
+            }
+        };
 
         var paymentMethod = $('input[name=paymentMethod]');
         if(paymentMethod.length > 1) {
@@ -144,7 +154,10 @@
                 var method = $(this).attr('data-payment-method');
                 $('.payment-method-detail').hide();
                 $('#payment-method-'+method).show();
+                setConfirmButtonText($(this).parent());
             });
+        } else if(paymentMethod.length === 1) {
+            setConfirmButtonText($(paymentMethod[0]).parent());
         }
 
         window.recaptchaLoadCallback = function() {

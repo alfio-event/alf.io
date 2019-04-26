@@ -71,7 +71,7 @@ import static org.apache.commons.lang3.StringUtils.substring;
 public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
     private final ConfigurationManager configurationManager;
-    private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*)]");
+    private static final Pattern ARG_PATTERN = Pattern.compile("\\[(.*?)]");
     private static final String LOCALE_LABEL = "locale:";
 
     static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
@@ -101,8 +101,6 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
             .orElse(code);
     }
 
-    private static final Pattern ADDITIONAL_FIELD_PARAM_ARG_PATTERN = Pattern.compile("\\[(.*?)]");
-
     /**
      * {{#additional-field-value}}[Prefix][name][suffix]{{/additional-field-value}}
      * prefix is optional, unless a suffix is needed.
@@ -114,7 +112,7 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
         }
         Map<?, ?> fieldNamesAndValues = (Map<?, ?>) obj;
         String execution = frag.execute().trim();
-        Matcher matcher = ADDITIONAL_FIELD_PARAM_ARG_PATTERN.matcher(execution);
+        Matcher matcher = ARG_PATTERN.matcher(execution);
         List<String> args = new ArrayList<>();
         while(matcher.find()) {
             args.add(matcher.group(1));
