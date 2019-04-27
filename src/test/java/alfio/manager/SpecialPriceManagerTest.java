@@ -18,11 +18,13 @@ package alfio.manager;
 
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.SpecialPrice;
 import alfio.model.TicketCategory;
 import alfio.model.modification.SendCodeModification;
+import alfio.model.system.Configuration;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
 import alfio.util.TemplateManager;
@@ -36,6 +38,7 @@ import org.springframework.context.MessageSource;
 import java.time.ZoneId;
 import java.util.*;
 
+import static alfio.model.system.ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.*;
@@ -54,6 +57,7 @@ public class SpecialPriceManagerTest {
     private MessageSource messageSource;
     private I18nManager i18nManager;
     private SpecialPriceManager specialPriceManager;
+    private ConfigurationManager configurationManager;
 
     @BeforeEach
     public void init() {
@@ -66,6 +70,7 @@ public class SpecialPriceManagerTest {
         templateManager = mock(TemplateManager.class);
         messageSource = mock(MessageSource.class);
         i18nManager = mock(I18nManager.class);
+        configurationManager = mock(ConfigurationManager.class);
 
         List<SpecialPrice> specialPrices = asList(new SpecialPrice(0, "123", 0, 0, "FREE", null, null, null, null), new SpecialPrice(0, "456", 0, 0, "FREE", null, null, null, null));
         when(i18nManager.getEventLanguages(anyInt())).thenReturn(Collections.singletonList(ContentLanguage.ITALIAN));
@@ -83,7 +88,7 @@ public class SpecialPriceManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(specialPriceRepository.markAsSent(any(), anyString(), anyString(), anyString())).thenReturn(1);
         setRestricted(ticketCategory, true);
-        specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSource, i18nManager);
+        specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSource, i18nManager, configurationManager);
     }
 
     @Test
@@ -126,19 +131,7 @@ public class SpecialPriceManagerTest {
 
     @Test
     public void sendSuccessfulComplete() throws Exception {
-        assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", "it")), "", 0, ""));
-        ArgumentCaptor<TextTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TextTemplateGenerator.class);
-        verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq("me@domain.com"), anyString(), templateCaptor.capture());
-        templateCaptor.getValue().generate();
-        ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
-        verify(templateManager).renderTemplate(any(Event.class), eq(TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
-        Map<String, Object> model = captor.getValue();
-        assertEquals("123", model.get("code"));
-        assertEquals(event, model.get("event"));
-        assertEquals(organization, model.get("organization"));
-        assertEquals("http://my-event", model.get("eventPage"));
-        assertEquals("me", model.get("assignee"));
-        verify(messageSource).getMessage(eq("email-code.subject"), eq(new Object[]{"Event Name"}), eq(Locale.ITALIAN));
+        sendMessage(null);
     }
 
     @Test
@@ -155,7 +148,30 @@ public class SpecialPriceManagerTest {
         assertEquals(organization, model.get("organization"));
         assertEquals("http://my-event", model.get("eventPage"));
         assertEquals("me", model.get("assignee"));
-        verify(messageSource).getMessage(eq("email-code.subject"), eq(new Object[]{"Event Name"}), eq(Locale.ITALIAN));
+        verify(messageSource).getMessage(eq("email-code.subject"), eq(new Object[]{"Event Name", null}), eq(Locale.ITALIAN));
+    }
+
+    @Test
+    void usePartnerCode() {
+        when(messageSource.getMessage(eq("show-event.promo-code-type.partner"), isNull(), isNull(), any())).thenReturn("Partner");
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL)), eq(false))).thenReturn(true);
+        sendMessage("Partner");
+    }
+
+    private void sendMessage(String promoCodeDescription) {
+        assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", "it")), "", 0, ""));
+        ArgumentCaptor<TextTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TextTemplateGenerator.class);
+        verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq("me@domain.com"), anyString(), templateCaptor.capture());
+        templateCaptor.getValue().generate();
+        ArgumentCaptor<Map> captor = ArgumentCaptor.forClass(Map.class);
+        verify(templateManager).renderTemplate(any(Event.class), eq(TemplateResource.SEND_RESERVED_CODE), captor.capture(), eq(Locale.ITALIAN));
+        Map<String, Object> model = captor.getValue();
+        assertEquals("123", model.get("code"));
+        assertEquals(event, model.get("event"));
+        assertEquals(organization, model.get("organization"));
+        assertEquals("http://my-event", model.get("eventPage"));
+        assertEquals("me", model.get("assignee"));
+        verify(messageSource).getMessage(eq("email-code.subject"), eq(new Object[]{"Event Name", promoCodeDescription}), eq(Locale.ITALIAN));
     }
 
     private static void setRestricted(TicketCategory ticketCategory, boolean restricted) {
