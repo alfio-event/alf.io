@@ -15,6 +15,11 @@ matrix:
       env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql10"
       addons:
         postgresql: "10"
+    - name: postgresql 11
+      jdk: oraclejdk11
+      env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql10"
+      addons:
+        postgresql: "11"
 
 before_script:
   - psql -c 'create database alfio;' -U postgres
