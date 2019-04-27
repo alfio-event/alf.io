@@ -34,7 +34,7 @@ The following profiles are supported
  * `dev-mysql`
  * `docker-test`
 
-You can get a list of all supported Gradle tasks by running
+You can get a list of all supported Gradle tasks by running:
 ```
 ./gradlew tasks --all
 ```
@@ -103,13 +103,17 @@ Here's an example of deployment as a 3 tier application using the following imag
  ```
  docker run --name alfio-db -e POSTGRES_DB=postgres -e POSTGRES_USERNAME=postgres -e POSTGRES_PASSWORD=alfiopassword --restart=always -d -v /path/to/local/data:/var/lib/postgresql/data postgres
  ```
-    * Note: on Mac volumes don't work (see https://jhipster.github.io/installation.html for a possible workaround), launch the above command without the `-v` parameter (data are lost at every restart)
+    
+Note: On Mac, volumes don't work (see https://jhipster.github.io/installation.html for a possible workaround), launch the above command without the `-v` parameter (data are lost at every restart).
 
  * Launch the alf.io server
  ```
- docker run --name alfio --link alfio-db:postgres -d alfio/alf.io
+ docker run --name alfio --link alfio-db:postgres -p 8080:8080 -p 8443:8443 -e "POSTGRES_ENV_USE_SSL=disable" -d alfio/alf.io
  ```
-    Please note that at the moment, the only alias supported for the DB link is *postgres*
+ 
+Please note that at the moment, the only alias supported for the DB link is *postgres*.
+
+The `POSTGRES_ENV_USE_SSL=disable` is due to https://github.com/alfio-event/alf.io/issues/587.
 
  * Launch the proxy
  ```
