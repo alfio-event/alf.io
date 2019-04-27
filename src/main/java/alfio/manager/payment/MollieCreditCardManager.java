@@ -118,7 +118,7 @@ public class MollieCreditCardManager implements PaymentProvider {
             payload.put("webhookUrl", baseUrl + "/webhook/mollie/api/event/" + eventName + "/reservation/" + spec.getReservationId());
 
 
-            payload.put("metadata", MetadataBuilder.buildMetadata(spec));
+            payload.put("metadata", MetadataBuilder.buildMetadata(spec, Map.of()));
 
             RequestBody body = RequestBody.create(MediaType.parse("application/json"), Json.GSON.toJson(payload));
             Request request = requestFor("https://api.mollie.nl/v1/payments", spec.getEvent())

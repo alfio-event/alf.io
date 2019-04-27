@@ -45,8 +45,7 @@ import java.util.*;
 
 import static alfio.model.TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.WAITING_EXTERNAL_CONFIRMATION;
-import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
-import static alfio.model.system.ConfigurationKeys.STRIPE_WEBHOOK_PAYMENT_KEY;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Log4j2
 @Component
@@ -127,7 +126,10 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     private StripeSCACreditCardToken createNewToken(PaymentSpecification paymentSpecification) {
-        var paymentIntentParams = baseStripeManager.createParams(paymentSpecification);
+        Map<String, String> baseMetadata = configurationManager.getStringConfigValue(Configuration.from(paymentSpecification.getEvent(), BASE_URL))
+            .map(baseUrl -> Map.of("alfioBaseUrl", baseUrl))
+            .orElse(Map.of());
+        var paymentIntentParams = baseStripeManager.createParams(paymentSpecification, baseMetadata);
         paymentIntentParams.put("payment_method_types", List.of("card"));
         try {
             var intent = PaymentIntent.create(paymentIntentParams, baseStripeManager.options(paymentSpecification.getEvent()).orElseThrow());
@@ -224,6 +226,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
         return baseStripeManager.accept(paymentMethod, context)
             && configurationManager.getBooleanConfigValue(context.narrow(STRIPE_ENABLE_SCA), false)
+            && configurationManager.getStringConfigValue(context.narrow(BASE_URL)).isPresent()
             && isWebhookKeyDefined(context);
     }
 

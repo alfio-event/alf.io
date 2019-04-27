@@ -172,12 +172,12 @@ class BaseStripeManager {
      * @throws StripeException
      */
     Optional<Charge> chargeCreditCard(PaymentSpecification spec) throws StripeException {
-        var chargeParams = createParams(spec);
+        var chargeParams = createParams(spec, Map.of());
         chargeParams.put("card", spec.getGatewayToken().getToken());
         return charge( spec.getEvent(), chargeParams );
     }
 
-    protected Map<String, Object> createParams(PaymentSpecification spec) {
+    protected Map<String, Object> createParams(PaymentSpecification spec, Map<String, String> baseMetadata) {
         int tickets = ticketRepository.countTicketsInReservation(spec.getReservationId());
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", spec.getPriceWithVAT());
@@ -189,7 +189,7 @@ class BaseStripeManager {
 
         chargeParams.put("description", String.format("%d ticket(s) for event %s", tickets, spec.getEvent().getDisplayName()));
 
-        chargeParams.put("metadata", MetadataBuilder.buildMetadata(spec));
+        chargeParams.put("metadata", MetadataBuilder.buildMetadata(spec, baseMetadata));
         return chargeParams;
     }
 

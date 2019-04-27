@@ -28,8 +28,8 @@ class MetadataBuilder {
 
     static final String RESERVATION_ID = "reservationId";
 
-    static Map<String, String> buildMetadata(PaymentSpecification spec) {
-        Map<String, String> initialMetadata = new HashMap<>();
+    static Map<String, String> buildMetadata(PaymentSpecification spec, Map<String, String> base) {
+        Map<String, String> initialMetadata = new HashMap<>(base);
         initialMetadata.put(RESERVATION_ID, spec.getReservationId());
         initialMetadata.put("email", spec.getEmail());
         initialMetadata.put("fullName", spec.getCustomerName().getFullName());
