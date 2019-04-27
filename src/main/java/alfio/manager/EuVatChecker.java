@@ -33,7 +33,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -46,7 +46,6 @@ import static alfio.model.Audit.EventType.VAT_FORMAL_VALIDATION_SUCCESSFUL;
 import static alfio.model.Audit.EventType.VAT_VALIDATION_SUCCESSFUL;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS;
-import static java.util.Collections.singletonList;
 
 @Component
 @Log4j2
@@ -105,6 +104,16 @@ public class EuVatChecker {
         };
     }
 
+    public void logSuccessfulValidation(VatDetail detail, String reservationId, int eventId) {
+        logSuccessfulValidation(detail.getVatNr(), detail.getCountry(), reservationId, eventId, true);
+    }
+
+
+    private void logSuccessfulValidation(String vatNr, String country, String ticketReservationId, int eventId, boolean strict) {
+        List<Map<String, Object>> modifications = List.of(Map.of("vatNumber", vatNr, "country", country));
+        auditingRepository.insert(ticketReservationId, null, eventId, strict ? VAT_VALIDATION_SUCCESSFUL : VAT_FORMAL_VALIDATION_SUCCESSFUL, new Date(), RESERVATION, ticketReservationId, modifications);
+    }
+
     private static EUVatCheckResponse validateEUVat(String vat, String countryCode, EUVatChecker client) {
 
         if(StringUtils.isEmpty(vat) || StringUtils.length(countryCode) != 2) {
@@ -161,10 +170,7 @@ public class EuVatChecker {
                 valid = checker.extensionManager.handleTaxIdValidation(eventId, vatNr, organizerCountry);
             }
             if(valid && StringUtils.isNotEmpty(ticketReservationId)) {
-                Map<String, Object> data = new HashMap<>();
-                data.put("vatNumber", vatNr);
-                data.put("country", organizerCountry);
-                checker.auditingRepository.insert(ticketReservationId, null, eventId, validStrict ? VAT_VALIDATION_SUCCESSFUL : VAT_FORMAL_VALIDATION_SUCCESSFUL, new Date(), RESERVATION, ticketReservationId, singletonList(data));
+                checker.logSuccessfulValidation(vatNr, organizerCountry, ticketReservationId, eventId, validStrict);
             }
             return valid;
         }

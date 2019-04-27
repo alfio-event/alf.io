@@ -82,6 +82,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
+import static alfio.model.Audit.EventType.EXTERNAL_INVOICE_NUMBER;
 import static alfio.model.Audit.EventType.MATCHING_PAYMENT_FOUND;
 import static alfio.model.BillingDocument.Type.*;
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
@@ -413,16 +414,23 @@ public class TicketReservationManager {
             return;
         }
 
-        String invoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, ticketReservationRepository.getBillingDetailsForReservation(spec.getReservationId()))
-            .flatMap(invoiceGeneration -> Optional.ofNullable(StringUtils.trimToNull(invoiceGeneration.getInvoiceNumber())))
-            .orElseGet(() -> {
+        String reservationId = spec.getReservationId();
+        var optionalInvoiceNumber = extensionManager.handleInvoiceGeneration(spec, reservationCost, ticketReservationRepository.getBillingDetailsForReservation(reservationId))
+            .flatMap(invoiceGeneration -> Optional.ofNullable(trimToNull(invoiceGeneration.getInvoiceNumber())));
+
+        optionalInvoiceNumber.ifPresent(invoiceNumber -> {
+            List<Map<String, Object>> modifications = List.of(Map.of("invoiceNumber", invoiceNumber));
+            auditingRepository.insert(reservationId, null, spec.getEvent().getId(), EXTERNAL_INVOICE_NUMBER, new Date(), RESERVATION, reservationId, modifications);
+        });
+
+        String invoiceNumber = optionalInvoiceNumber.orElseGet(() -> {
                 int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getEvent().getOrganizationId());
                 invoiceSequencesRepository.incrementSequenceFor(spec.getEvent().getOrganizationId());
                 String pattern = configurationManager.getStringConfigValue(Configuration.from(spec.getEvent(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
                 return String.format(pattern, invoiceSequence);
-            });
+        });
 
-        ticketReservationRepository.setInvoiceNumber(spec.getReservationId(), invoiceNumber);
+        ticketReservationRepository.setInvoiceNumber(reservationId, invoiceNumber);
     }
 
     private boolean isDiscountCodeUsageExceeded(String reservationId) {

@@ -337,6 +337,7 @@ public class ReservationController {
                 } else {
                     PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
                     ticketReservationRepository.updateBillingData(vatStatus, StringUtils.trimToNull(vatValidation.getVatNr()), country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
+                    vatChecker.logSuccessfulValidation(vatValidation, reservationId, event.getId());
                 }
             });
         } catch (IllegalStateException ise) {//vat checker failure

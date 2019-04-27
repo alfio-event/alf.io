@@ -236,15 +236,15 @@ public class ContactAndTicketsForm implements Serializable {
     }
 
     public boolean isBackFromOverview() {
-        return Optional.ofNullable(backFromOverview).orElse(false);
+        return Boolean.TRUE.equals(backFromOverview);
     }
 
     public boolean canSkipVatNrCheck() {
-        return Optional.ofNullable(skipVatNr).orElse(false);
+        return Boolean.TRUE.equals(skipVatNr);
     }
 
     public boolean isBusiness() {
-        return StringUtils.isNotBlank(billingAddressCompany) && !canSkipVatNrCheck() && invoiceRequested;
+        return getAddCompanyBillingDetails() && !canSkipVatNrCheck() && invoiceRequested;
     }
 
     // https://github.com/alfio-event/alf.io/issues/573

@@ -79,7 +79,7 @@ public class AdminJobManager {
                 } else {
                     partitionedResults.get(true).forEach(result -> {
                         if(result.getData() != null) {
-                            log.debug("Message from {}: {}", schedule.getJobName(), result.getData());
+                            log.trace("Message from {}: {}", schedule.getJobName(), result.getData());
                         }
                     });
                     adminJobQueueRepository.updateSchedule(schedule.getId(), EXECUTED, ZonedDateTime.now(), Map.of());
