@@ -17,15 +17,16 @@
 package alfio.manager;
 
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
+import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
@@ -34,9 +35,12 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import static alfio.model.system.Configuration.from;
+import static alfio.model.system.ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL;
 import static java.util.stream.Collectors.toList;
 
 @Component
+@AllArgsConstructor
 public class SpecialPriceManager {
 
     private static final Predicate<SendCodeModification> IS_CODE_PRESENT = v -> Optional.ofNullable(v.getCode()).isPresent();
@@ -46,21 +50,7 @@ public class SpecialPriceManager {
     private final TemplateManager templateManager;
     private final MessageSource messageSource;
     private final I18nManager i18nManager;
-
-    @Autowired
-    public SpecialPriceManager(EventManager eventManager,
-                               NotificationManager notificationManager,
-                               SpecialPriceRepository specialPriceRepository,
-                               TemplateManager templateManager,
-                               MessageSource messageSource,
-                               I18nManager i18nManager) {
-        this.eventManager = eventManager;
-        this.notificationManager = notificationManager;
-        this.specialPriceRepository = specialPriceRepository;
-        this.templateManager = templateManager;
-        this.messageSource = messageSource;
-        this.i18nManager = i18nManager;
-    }
+    private final ConfigurationManager configurationManager;
 
     private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, EventAndOrganizationId event, String username) {
         final TicketCategory category = checkOwnership(categoryId, event, username);
@@ -119,8 +109,14 @@ public class SpecialPriceManager {
         ContentLanguage defaultLocale = eventLanguages.contains(ContentLanguage.ENGLISH) ? ContentLanguage.ENGLISH : eventLanguages.get(0);
         set.forEach(m -> {
             Locale locale = Locale.forLanguageTag(StringUtils.defaultString(StringUtils.trimToNull(m.getLanguage()), defaultLocale.getLanguage()));
-            Map<String, Object> model = TemplateResource.prepareModelForSendReservedCode(organization, event, m, eventManager.getEventUrl(event));
-            notificationManager.sendSimpleEmail(event, null, m.getEmail(), messageSource.getMessage("email-code.subject", new Object[] {event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.SEND_RESERVED_CODE, model, locale));
+            var usePartnerCode = configurationManager.getBooleanConfigValue(from(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), false);
+            var promoCodeDescription = messageSource.getMessage("show-event.promo-code-type."+(usePartnerCode ? "partner" : "promotional"), null, null, locale);
+            Map<String, Object> model = TemplateResource.prepareModelForSendReservedCode(organization, event, m, eventManager.getEventUrl(event), promoCodeDescription);
+            notificationManager.sendSimpleEmail(event,
+                null,
+                m.getEmail(),
+                messageSource.getMessage("email-code.subject", new Object[] {event.getDisplayName(), promoCodeDescription}, locale),
+                () -> templateManager.renderTemplate(event, TemplateResource.SEND_RESERVED_CODE, model, locale));
             int marked = specialPriceRepository.markAsSent(ZonedDateTime.now(event.getZoneId()), m.getAssignee().trim(), m.getEmail().trim(), m.getCode().trim());
             Validate.isTrue(marked == 1, "Expected exactly one row updated, got "+marked);
         });

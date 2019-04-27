@@ -870,7 +870,7 @@
         }
     }]);
 
-    directives.directive('alfioSidebar', ['EventService', 'UtilsService', '$state', '$window', '$rootScope', function(EventService, UtilsService, $state, $window, $rootScope) {
+    directives.directive('alfioSidebar', ['EventService', 'UtilsService', 'ConfigurationService', '$state', '$window', '$rootScope', function(EventService, UtilsService, ConfigurationService, $state, $window, $rootScope) {
         return {
             restrict: 'E',
             bindToController: true,
@@ -889,6 +889,10 @@
                 var loadEventData = function() {
                     if(ctrl.displayEventData && $state.params.eventName) {
                         EventService.getEvent($state.params.eventName).success(function(event) {
+                            ConfigurationService.loadSingleConfigForEvent(event.event.id, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL')
+                                .then(function(result) {
+                                    ctrl.promoCodeDescription = (result.data === 'true') ? 'Partner' : 'Promo';
+                                });
                             ctrl.event = event.event;
                             ctrl.internal = (ctrl.event.type === 'INTERNAL');
                             ctrl.owner = ctrl.event.visibleForCurrentUser;

@@ -41,6 +41,7 @@ import alfio.util.EventUtil;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -86,6 +87,7 @@ public class EventController {
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final TicketRepository ticketRepository;
     private final RecaptchaService recaptchaService;
+    private final MessageSource messageSource;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -233,6 +235,7 @@ public class EventController {
             List<SaleableAdditionalService> supplements = adjustIndex(0, notExpiredServices.stream().filter(a -> a.getType() == AdditionalService.AdditionalServiceType.SUPPLEMENT).collect(Collectors.toList()));
             List<SaleableAdditionalService> donations = adjustIndex(supplements.size(), notExpiredServices.stream().filter(a -> a.getType() == AdditionalService.AdditionalServiceType.DONATION).collect(Collectors.toList()));
 
+            boolean usePartnerCode = configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), false);
             model.addAttribute("event", eventDescriptor)//
                 .addAttribute("organization", organizationRepository.getById(event.getOrganizationId()))
                 .addAttribute("ticketCategories", validCategories)//
@@ -258,7 +261,9 @@ public class EventController {
                 .addAttribute("forwardButtonDisabled", saleableTicketCategories.stream().noneMatch(SaleableTicketCategory::getSaleable))
                 .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
                 .addAttribute("validityStart", event.getBegin())
-                .addAttribute("validityEnd", event.getEnd());
+                .addAttribute("validityEnd", event.getEnd())
+                .addAttribute("usePartnerCode", usePartnerCode)
+                .addAttribute("promoCodeDescription", messageSource.getMessage("show-event.promo-code-type."+(usePartnerCode ? "partner" : "promotional"), null, null, locale));
 
             if(configurationManager.isRecaptchaForTicketSelectionEnabled(event)) {
                 model.addAttribute("captchaForTicketSelectionEnabled", true)

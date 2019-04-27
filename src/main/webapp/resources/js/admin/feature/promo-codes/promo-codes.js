@@ -2,7 +2,7 @@
     'use strict';
 
     angular.module('adminApplication').component('promoCodes', {
-        controller: ['$window', '$uibModal', '$q', 'PromoCodeService', PromoCodeCtrl],
+        controller: ['$window', '$uibModal', '$q', 'PromoCodeService', 'ConfigurationService', PromoCodeCtrl],
         templateUrl: '../resources/js/admin/feature/promo-codes/promo-codes.html',
         bindings: {
             forEvent: '<',
@@ -13,7 +13,7 @@
     });
 
 
-    function PromoCodeCtrl($window, $uibModal, $q, PromoCodeService) {
+    function PromoCodeCtrl($window, $uibModal, $q, PromoCodeService, ConfigurationService) {
         var ctrl = this;
 
         ctrl.isInternal = isInternal;
@@ -29,6 +29,15 @@
         function loadData() {
             var loader = ctrl.forEvent ? function () {return PromoCodeService.list(ctrl.event.id)} : function() {return PromoCodeService.listOrganization(ctrl.organizationId)};
 
+            if(ctrl.forEvent) {
+                ConfigurationService.loadSingleConfigForEvent(ctrl.event.id, 'USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL')
+                    .then(function(result) {
+                        ctrl.promoCodeDescription = (result.data === 'true') ? 'Partner' : 'Promo';
+                    });
+            } else {
+                ctrl.promoCodeDescription = 'Promo';
+            }
+
             loader().then(function(res) {
                 ctrl.promocodes = res.data;
                 angular.forEach(ctrl.promocodes, function(v) {
@@ -40,9 +49,11 @@
                 });
 
                 ctrl.ticketCategoriesById = {};
-                angular.forEach(ctrl.event.ticketCategories, function(v) {
-                    ctrl.ticketCategoriesById[v.id] = v;
-                });
+                if(ctrl.forEvent) {
+                    angular.forEach(ctrl.event.ticketCategories, function(v) {
+                        ctrl.ticketCategoriesById[v.id] = v;
+                    });
+                }
             });
         }
 
@@ -56,13 +67,13 @@
         }
 
         function deletePromocode(promocode) {
-            if($window.confirm('Delete promo code ' + promocode.promoCode + '?')) {
+            if($window.confirm('Delete ' +ctrl.promoCodeDescription+ ' code ' + promocode.promoCode + '?')) {
                 PromoCodeService.remove(promocode.id).then(loadData, errorHandler);
             }
         }
 
         function disablePromocode(promocode) {
-            if($window.confirm('Disable promo code ' + promocode.promoCode + '?')) {
+            if($window.confirm('Disable ' +ctrl.promoCodeDescription+ ' code ' + promocode.promoCode + '?')) {
                 PromoCodeService.disable(promocode.id).then(loadData, errorHandler);
             }
         }
@@ -79,6 +90,7 @@
                     $scope.forEvent = ctrl.forEvent;
                     var start = moment(promocode.formattedStart);
                     var end = moment(promocode.formattedEnd);
+                    $scope.promoCodeDescription = ctrl.promoCodeDescription;
                     $scope.promocode = {
                         start: {date: start.format('YYYY-MM-DD'), time: start.format('HH:mm')},
                         end: {date: end.format('YYYY-MM-DD'), time: end.format('HH:mm')},
@@ -88,7 +100,7 @@
                     };
                     $scope.validCategories = _.map(ctrl.event.ticketCategories, function(c) {
                         var c1 = angular.copy(c, {});
-                        let promoCodeIdx = _.indexOf(promocode.categories, c.id);
+                        var promoCodeIdx = _.indexOf(promocode.categories, c.id);
                         c1.selected = promoCodeIdx > -1;
                         return c1;
                     });
@@ -146,6 +158,7 @@
 
                     $scope.event = event;
                     $scope.forEvent = forEvent;
+                    $scope.promoCodeDescription = ctrl.promoCodeDescription;
 
                     var now = moment();
                     var eventBegin = forEvent ? moment(event.formattedBegin) : moment().add(1,'d').endOf('d');

@@ -1,6 +1,6 @@
 {{#i18n}}email.hello [{{assignee}}]{{/i18n}}
 
-{{#i18n}}email-code.intro [{{code}}] [{{eventPage}}]{{/i18n}}
+{{#i18n}}email-code.intro [{{code}}] [{{eventPage}}] [{{promoCodeDescription}}]{{/i18n}}
 
 #### {{#i18n}}email.event-info{{/i18n}} ####
 

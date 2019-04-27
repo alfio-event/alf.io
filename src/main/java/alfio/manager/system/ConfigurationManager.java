@@ -309,6 +309,19 @@ public class ConfigurationManager {
         }
     }
 
+    public String getSingleConfigForEvent(int eventId, String keyAsString, String username) {
+        User user = userManager.findUserByUsername(username);
+        EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);
+        int organizationId = event.getOrganizationId();
+        if(!userManager.isOwnerOfOrganization(user, organizationId)) {
+            return null;
+        }
+        var key = safeValueOf(keyAsString);
+        return configurationRepository.findByKeyAtEventLevel(eventId, organizationId, key.name())
+            .map(Configuration::getValue)
+            .orElse(null);
+    }
+
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfig(int eventId, String username) {
         User user = userManager.findUserByUsername(username);
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(eventId);

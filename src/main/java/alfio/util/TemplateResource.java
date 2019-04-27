@@ -48,7 +48,7 @@ public enum TemplateResource {
     SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            return prepareModelForSendReservedCode(organization, event, new SendCodeModification("CODE", "Firstname Lastname", "email@email.tld", "en"), "http://your-domain.tld/event-page");
+            return prepareModelForSendReservedCode(organization, event, new SendCodeModification("CODE", "Firstname Lastname", "email@email.tld", "en"), "http://your-domain.tld/event-page", "Promotional");
         }
     },
     CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
@@ -375,13 +375,15 @@ public enum TemplateResource {
     public static Map<String, Object> prepareModelForSendReservedCode(Organization organization,
                                                                       Event event,
                                                                       SendCodeModification m,
-                                                                      String eventPageUrl) {
+                                                                      String eventPageUrl,
+                                                                      String promoCodeLabel) {
         Map<String, Object> model = new HashMap<>();
         model.put("code", m.getCode());
         model.put("event", event);
         model.put("organization", organization);
         model.put("eventPage", eventPageUrl);
         model.put("assignee", m.getAssignee());
+        model.put("promoCodeDescription", promoCodeLabel);
         return model;
     }
 

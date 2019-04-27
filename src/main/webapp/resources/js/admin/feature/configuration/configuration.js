@@ -57,6 +57,9 @@
             loadEventConfig: function(eventId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/load').error(HttpErrorHandler.handle)
             },
+            loadSingleConfigForEvent: function(eventId, key) {
+                return $http.get('/admin/api/configuration/events/'+eventId+'/single/'+key).error(HttpErrorHandler.handle)
+            },
             loadCategory: function(eventId, categoryId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/categories/'+categoryId+'/load').error(HttpErrorHandler.handle);
             },

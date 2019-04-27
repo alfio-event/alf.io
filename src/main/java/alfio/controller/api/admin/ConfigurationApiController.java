@@ -26,10 +26,7 @@ import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.*;
@@ -83,8 +80,16 @@ public class ConfigurationApiController {
     }
 
     @RequestMapping(value = "/configuration/events/{eventId}/load", method = GET)
-    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfiguration(@PathVariable("eventId") int eventId, Principal principal) {
+    public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadEventConfiguration(@PathVariable("eventId") int eventId,
+                                                                                              Principal principal) {
         return configurationManager.loadEventConfig(eventId, principal.getName());
+    }
+
+    @GetMapping("/configuration/events/{eventId}/single/{key}")
+    public String getSingleConfigForEvent(@PathVariable("eventId") int eventId,
+                                   @PathVariable("key") String key,
+                                   Principal principal) {
+        return configurationManager.getSingleConfigForEvent(eventId, key, principal.getName());
     }
 
     @RequestMapping(value = "/configuration/organizations/{organizationId}/events/{eventId}/update", method = POST)

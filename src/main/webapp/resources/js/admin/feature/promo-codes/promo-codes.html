@@ -3,8 +3,8 @@
 </div>
 <div ng-if="$ctrl.forOrganization || ($ctrl.isInternal($ctrl.event) && !$ctrl.event.freeOfCharge)">
     <div class="page-header">
-        <h3><i class="fa fa-percent"></i> Promo codes</h3>
-        <h5 class="text-muted">Manage/Handle the promo codes.</h5>
+        <h3><i class="fa fa-percent"></i> {{$ctrl.promoCodeDescription}} codes</h3>
+        <h5 class="text-muted">Manage/Handle the {{$ctrl.promoCodeDescription}} codes.</h5>
     </div>
     <div class="table-responsive">
         <table class="table" data-ng-if="$ctrl.promocodes.length > 0">
@@ -45,7 +45,7 @@
             </tbody>
         </table>
         <div>
-            <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode()"><i class="fa fa-plus"></i> add promo code</button>
+            <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode()"><i class="fa fa-plus"></i> add {{$ctrl.promoCodeDescription}} code</button>
         </div>
     </div>
 </div>

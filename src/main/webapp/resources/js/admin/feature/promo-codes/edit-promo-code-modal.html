@@ -1,11 +1,11 @@
 <div class="modal-header">
-    <h3>Insert new promo code</h3>
+    <h3>Insert new {{promoCodeDescription}} code</h3>
 </div>
 <form name="promoCodeForm" data-ng-submit="update(promoCodeForm, promocode)" novalidate data-error-sensitive>
     <div class="modal-body">
         <div class="col-sm-12 col-md-8 col-md-offset-2">
             <div class="form-group" bs-form-error="promocode.promoCode">
-                <label for="promoCode">Promo code name (min length is 7 characters)</label>
+                <label for="promoCode">{{promoCodeDescription}} code name (min length is 7 characters)</label>
                 <input type="text" id="promoCode" data-ng-model="promocode.promoCode" class="form-control to-uppercase" required minlength="7"/>
                 <field-error data-form-obj="promocode" data-field-obj="promocode.promoCode" data-show-existing-errors="showExistingErrors"></field-error>
             </div>

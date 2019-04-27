@@ -29,22 +29,15 @@
         return {
             getReservationIdentifier: function(eventId, reservation, displayFullId) {
                 if(config[eventId] == null) {
-                    config[eventId] = ConfigurationService.loadEventConfig(eventId).then(function(result) {
-                        var invoiceSettings = {};
-                        _.forEach(result.data['INVOICE'], function(v) {
-                            invoiceSettings[v.key] = v.value;
-                        });
-                        return {
-                            data: invoiceSettings
-                        };
+                    config[eventId] = ConfigurationService.loadSingleConfigForEvent(eventId, 'USE_INVOICE_NUMBER_AS_ID').then(function(result) {
+                        return result.data;
                     });
                     $window.setTimeout(function() {
                         config[eventId] = null;
                     }, 30000);
                 }
                 return config[eventId].then(function(result) {
-                    config = result.data;
-                    var useInvoiceNumber = config['USE_INVOICE_NUMBER_AS_ID'] === 'true'; // default is false
+                    var useInvoiceNumber = result.data === 'true'; // default is false
                     if(useInvoiceNumber) {
                         return reservation.invoiceNumber || 'N/A';
                     }
