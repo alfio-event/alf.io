@@ -153,7 +153,7 @@ public class ReservationController {
                         .addAttribute("billingAddressLabel", invoiceAllowed ? "reservation-page.billing-address" : "reservation-page.receipt-address")
                         .addAttribute("customerReferenceEnabled", configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_CUSTOMER_REFERENCE), false))
                         .addAttribute("enabledItalyEInvoicing", configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ITALY_E_INVOICING), false))
-                        .addAttribute("businessSelected", contactAndTicketsForm.getBillingAddressCompany());
+                        .addAttribute("vatNumberStrictlyRequired", configurationManager.getBooleanConfigValue(partialConfig.apply(VAT_NUMBER_IS_REQUIRED), false));
 
                     Map<String, Object> modelMap = model.asMap();
                     modelMap.putIfAbsent("paymentForm", contactAndTicketsForm);

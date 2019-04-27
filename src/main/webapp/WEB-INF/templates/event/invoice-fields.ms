@@ -108,6 +108,7 @@
                 {{#field-has-error}}[vatNr]<span class="help-block text-danger">{{#i18n}}{{#field-error}}vatNr{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
             </div>
         </div>
+        {{^vatNumberStrictlyRequired}}
         <div class="col-md-6">
             <div class="form-group">
                 <div class="form-check checkbox checkbox-in-form-group">
@@ -118,6 +119,7 @@
                 </div>
             </div>
         </div>
+        {{/vatNumberStrictlyRequired}}
     </div>
 </div>
 {{#enabledItalyEInvoicing}}
