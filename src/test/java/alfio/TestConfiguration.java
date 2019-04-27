@@ -20,14 +20,14 @@ import alfio.config.support.PlatformProvider;
 import alfio.manager.FileDownloadManager;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
+import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 import com.zaxxer.hikari.HikariDataSource;
-import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.ByteArrayResource;
-import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres;
+
 
 import javax.annotation.PreDestroy;
 import javax.sql.DataSource;
@@ -41,17 +41,21 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Properties;
 
-import static ru.yandex.qatools.embed.postgresql.distribution.Version.Main.PRODUCTION;
+
 
 @Configuration
 public class TestConfiguration {
 
     private EmbeddedPostgres postgres;
 
+    private final String POSTGRES_USERNAME = "postgres";
+    private final String POSTGRES_PASSWORD = "postgres";
+    private final String POSTGRES_DB = "postgres";
+
     @Bean
     @Profile("!travis")
     public PlatformProvider getCloudProvider(EmbeddedPostgres postgres) {
-        IntegrationTestUtil.generateDBConfig(postgres.getConnectionUrl().orElseThrow(IllegalArgumentException::new), EmbeddedPostgres.DEFAULT_USER, EmbeddedPostgres.DEFAULT_PASSWORD)
+        IntegrationTestUtil.generateDBConfig(postgres.getJdbcUrl(POSTGRES_USERNAME, POSTGRES_DB), POSTGRES_USERNAME, POSTGRES_PASSWORD)
             .forEach(System::setProperty);
         return PlatformProvider.DEFAULT;
     }
@@ -60,9 +64,9 @@ public class TestConfiguration {
     @Profile("!travis")
     public DataSource getDataSource(EmbeddedPostgres postgres) {
         HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl(postgres.getConnectionUrl().orElseThrow(IllegalArgumentException::new));
-        dataSource.setUsername(EmbeddedPostgres.DEFAULT_USER);
-        dataSource.setPassword(EmbeddedPostgres.DEFAULT_PASSWORD);
+        dataSource.setJdbcUrl(postgres.getJdbcUrl(POSTGRES_USERNAME, POSTGRES_DB));
+        dataSource.setUsername(POSTGRES_USERNAME);
+        dataSource.setPassword(POSTGRES_PASSWORD);
         dataSource.setDriverClassName("org.postgresql.Driver");
         dataSource.setMaximumPoolSize(5);
         return dataSource;
@@ -74,21 +78,14 @@ public class TestConfiguration {
         Path pgsqlPath = Paths.get(".", "alfio-itest");
         Files.createDirectories(pgsqlPath);
         Path tmpDataDir = Files.createTempDirectory(pgsqlPath, "alfio-data");
-        postgres = new EmbeddedPostgres(PRODUCTION, tmpDataDir.normalize().toAbsolutePath().toString());
-        postgres.start(EmbeddedPostgres.cachedRuntimeConfig(Paths.get(System.getProperty("java.io.tmpdir"), "pgembed")));
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                FileUtils.deleteDirectory(tmpDataDir.normalize().toAbsolutePath().toFile());
-            } catch (IOException e) {
-            }
-        }));
+        postgres = EmbeddedPostgres.builder().setDataDirectory(tmpDataDir).start();
         return postgres;
     }
 
     @PreDestroy
-    public void shutdown() {
+    public void shutdown() throws IOException {
         if (postgres != null) {
-            postgres.stop();
+            postgres.close();
         }
     }
 

@@ -11,7 +11,8 @@ import java.time.format.DateTimeFormatter
 buildscript {
 
     dependencies {
-        classpath 'ru.yandex.qatools.embed:postgresql-embedded:2.9'
+        //classpath 'ru.yandex.qatools.embed:postgresql-embedded:2.9'
+        classpath 'com.opentable.components:otj-pg-embedded:0.13.1'
         classpath 'org.postgresql:postgresql:42.2.5'
         classpath "org.springframework:spring-jdbc:$springVersion"
     }
@@ -141,7 +142,8 @@ dependencies {
     compile 'org.imgscalr:imgscalr-lib:4.2'
     compile 'org.aspectj:aspectjweaver:1.9.2'
 
-    testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.9" //we leave it to the v2.9 for now, since some user had issues on Windows
+    //testCompile "ru.yandex.qatools.embed:postgresql-embedded:2.9" //we leave it to the v2.9 for now, since some user had issues on Windows
+    testCompile 'com.opentable.components:otj-pg-embedded:0.13.1'
 
     compileOnly "javax.servlet:javax.servlet-api:4.0.1"
     testCompile "javax.servlet:javax.servlet-api:4.0.1"
@@ -308,11 +310,11 @@ task clever(type: Copy) {
     dependsOn build
 }
 
-import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres
-import ru.yandex.qatools.embed.postgresql.distribution.Version.Main
+/*import ru.yandex.qatools.embed.postgresql.EmbeddedPostgres
+import ru.yandex.qatools.embed.postgresql.distribution.Version.Main*/
 import org.postgresql.ds.PGSimpleDataSource
 
-task startEmbeddedPgSQL {
+/*task startEmbeddedPgSQL {
     doLast {
         final pgsqlPath = Paths.get(".", "alfio-itest")
         Files.createDirectories(pgsqlPath)
@@ -350,7 +352,7 @@ task stopEmbeddedPgSQL {
         Runtime.runtime.exec("kill -9 " + pid)
         System.out.println("Killed pgsql with pid " + pid)
     }
-}
+}*/
 
 release {
     buildTasks = ['distribution']
