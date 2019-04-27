@@ -4,6 +4,7 @@ alf.io
 alf.io
 
 [![Build Status](http://img.shields.io/travis/alfio-event/alf.io/master.svg)](https://travis-ci.org/alfio-event/alf.io) [![Coverage Status](https://img.shields.io/coveralls/alfio-event/alf.io.svg)](https://coveralls.io/r/alfio-event/alf.io)
+[![Docker Hub Pulls](https://img.shields.io/docker/pulls/alfio/alf.io.svg)](https://hub.docker.com/r/alfio/alf.io/tags)
 
 ## Warning
 
@@ -101,7 +102,9 @@ Importing the Gradle project into Intellij and Eclipse both work.
 
 ## Docker
 
-alf.io can be run for development with Docker Compose:
+Container images are available on https://hub.docker.com/r/alfio/alf.io/tags.
+
+alf.io can also be run locally for development with Docker Compose:
 
     docker-compose up
 
