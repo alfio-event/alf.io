@@ -440,6 +440,13 @@ public class ConfigurationManager {
         return StringUtils.substring(reservation.getId(), 0, getIntConfigValue(Configuration.from(event, PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
     }
 
+    public String getPublicReservationID(EventAndOrganizationId event, TicketReservation reservation) {
+        if(getBooleanConfigValue(Configuration.from(event, USE_INVOICE_NUMBER_AS_ID), false) && reservation.getHasInvoiceNumber()) {
+            return reservation.getInvoiceNumber();
+        }
+        return reservation.getId();
+    }
+
     public boolean hasAllConfigurationsForInvoice(EventAndOrganizationId event) {
         return getStringConfigValue(Configuration.from(event, ConfigurationKeys.INVOICE_ADDRESS)).isPresent() &&
             getStringConfigValue(Configuration.from(event, ConfigurationKeys.VAT_NR)).isPresent();
