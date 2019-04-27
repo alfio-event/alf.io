@@ -215,6 +215,7 @@ public class ContactAndTicketsForm implements Serializable {
         form.setBillingAddressLine2(additionalInfo.getBillingAddressLine2());
         form.setBillingAddressZip(additionalInfo.getBillingAddressZip());
         form.setBillingAddressCity(additionalInfo.getBillingAddressCity());
+        form.setAddCompanyBillingDetails(additionalInfo.getAddCompanyBillingDetails());
         form.setSkipVatNr(additionalInfo.getSkipVatNr());
 
         //https://github.com/alfio-event/alf.io/issues/573
