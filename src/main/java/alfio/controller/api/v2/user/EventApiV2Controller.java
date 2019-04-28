@@ -109,14 +109,13 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/ticket-categories")
-    public ResponseEntity<TicketCategories> getTicketCategories(@PathVariable("eventName") String eventName, Model model, HttpServletRequest request) {
+    public ResponseEntity<List<TicketCategory>> getTicketCategories(@PathVariable("eventName") String eventName, Model model, HttpServletRequest request) {
         if ("/event/show-event".equals(eventController.showEvent(eventName, model, request, Locale.ENGLISH))) {
             var valid = (List<SaleableTicketCategory>) model.asMap().get("ticketCategories");
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
-
             var converted = valid.stream().map(stc -> new TicketCategory(stc, applyCommonMark(ticketCategoryDescriptions.get(stc.getId())))).collect(Collectors.toList());
-            return new ResponseEntity<>(new TicketCategories(converted), getCorsHeaders(), HttpStatus.OK);
+            return new ResponseEntity<>(converted, getCorsHeaders(), HttpStatus.OK);
         } else {
             return ResponseEntity.notFound().headers(getCorsHeaders()).build();
         }

@@ -24,13 +24,14 @@ import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
+import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
-import alfio.model.Event;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.model.*;
 import alfio.repository.EventRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
@@ -41,6 +42,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RestController
@@ -48,10 +50,12 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/v2/public/")
 public class ReservationApiV2Controller {
 
+    private final EventManager eventManager;
     private final EventRepository eventRepository;
     private final ReservationController reservationController;
     private final TicketReservationManager ticketReservationManager;
     private final TicketReservationRepository ticketReservationRepository;
+    private final TicketFieldRepository ticketFieldRepository;
 
 
     @GetMapping("/tmp/event/{eventName}/reservation/{reservationId}/status")
@@ -65,22 +69,63 @@ public class ReservationApiV2Controller {
     }
 
 
-
+    /**
+     * See {@link ReservationController#showBookingPage(String, String, Model, Locale)}
+     *
+     * @param eventName
+     * @param reservationId
+     * @return
+     */
     @GetMapping("/event/{eventName}/reservation/{reservationId}/booking-info")
     public ResponseEntity<BookingInfo> getBookingInfo(@PathVariable("eventName") String eventName,
-                                                      @PathVariable("reservationId") String reservationId,
-                                                      Model model,
-                                                      Locale locale) {
-        reservationController.showBookingPage(eventName, reservationId, model, locale);
+                                                      @PathVariable("reservationId") String reservationId) {
+
+        Optional<BookingInfo> res = eventRepository.findOptionalByShortName(eventName).flatMap(event -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
+
+            if (reservation.getStatus() != TicketReservation.TicketReservationStatus.PENDING) {
+                return Optional.empty();
+            }
+
+            TicketReservationAdditionalInfo additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
+            if (additionalInfo.hasBeenValidated()) {
+                return Optional.empty(); //-> client should redirect to overview
+            }
+
+
+            var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
+
+            Set<Integer> ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toSet());
+
+            var ticketFields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+
+            var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
+                .stream()
+                .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+
+            var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
+                .stream()
+                .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
+
+            //TODO: cleanup this transformation, we most likely don't need to fully load the ticket category
+            var ticketsInReservation = tickets.stream()
+                .collect(Collectors.groupingBy(Ticket::getCategoryId))
+                .entrySet()
+                .stream()
+                .map((e) -> {
+                    var tc = eventManager.getTicketCategoryById(e.getKey(), event.getId());
+                    var ts = e.getValue().stream().map(t -> {//
+                        return toBookingInfoTicket(t, ticketFields, descriptionsByTicketFieldId, valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()));
+                    }).collect(Collectors.toList());
+                    return new TicketsByTicketCategory(tc.getName(), ts);
+                })
+                .collect(Collectors.toList());
+
+
+            return Optional.of(new BookingInfo(reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), ticketsInReservation));
+        }));
+
         //
-        var ticketsByCategory = ((List<Pair<TicketCategory, List<TicketDecorator>>>) model.asMap().get("ticketsByCategory"))
-            .stream()
-            .map(a -> new TicketsByTicketCategory(a.getKey().getName(), toBookingInfoTicket(a.getValue())))
-            .collect(Collectors.toList());
-
-        var reservation = (TicketReservation) model.asMap().get("reservation");
-
-        return ResponseEntity.ok(new BookingInfo(reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), ticketsByCategory));
+        return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
     @DeleteMapping("/event/{eventName}/reservation/{reservationId}")
@@ -179,6 +224,8 @@ public class ReservationApiV2Controller {
         }
     }
 
+    //will be removed!
+    @Deprecated
     private static List<BookingInfo.BookingInfoTicket> toBookingInfoTicket(List<TicketDecorator> ticketDecorators) {
         return ticketDecorators.stream()
             .map(td -> new BookingInfo.BookingInfoTicket(td.getUuid(),
@@ -186,8 +233,49 @@ public class ReservationApiV2Controller {
                 td.getEmail(),
                 td.getFullName(),
                 td.getAssigned(),
-                td.getTicketFieldConfiguration()))
+                td.getTicketFieldConfiguration().stream().map(t -> toAdditionalField(t, Collections.emptyMap())).collect(Collectors.toList())))
             .collect(Collectors.toList());
+    }
+
+    private static BookingInfo.AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, BookingInfo.Description> description) {
+        var fields = t.getFields().stream().map(f -> new BookingInfo.Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
+        return new BookingInfo.AdditionalField(t.getName(), t.getValue(), t.getType(), t.isRequired(),
+            t.getMinLength(), t.getMaxLength(), t.getRestrictedValues(),
+            fields, t.isBeforeStandardFields(), t.isInputField(),
+            t.isEuVat(), t.isTextareaField(),
+            t.isCountryField(),
+            t.isSelectField(),
+            description,
+            t.getLabelDescription());
+    }
+
+    private static Map<String, BookingInfo.Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {
+        return descs.stream().collect(Collectors.toMap(TicketFieldDescription::getLocale,
+            d -> new BookingInfo.Description(d.getLabelDescription(), d.getPlaceholderDescription(), d.getRestrictedValuesDescription())));
+    }
+
+    private static BookingInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket,
+                                                                     List<TicketFieldConfiguration> ticketFields,
+                                                                     Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
+                                                                     List<TicketFieldValue> ticketFieldValues) {
+
+
+        var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::getTicketFieldConfigurationId, Function.identity()));
+
+        var tfcdav = ticketFields.stream() //TODO: check
+            // .filter(f -> f.getContext() == ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
+            .filter(tfc -> CollectionUtils.isEmpty(tfc.getCategoryIds()) || tfc.getCategoryIds().contains(ticket.getCategoryId()))
+            .sorted(Comparator.comparing(TicketFieldConfiguration::getOrder))
+            .map(tfc -> {
+                var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!
+                var fieldValue = valueById.get(tfc.getId());
+                return new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, 1, fieldValue == null ? null : fieldValue.getValue());
+            }).map(t -> toAdditionalField(t, fromFieldDescriptions(descriptionsByTicketFieldId.get(t.getTicketFieldConfigurationId())))).collect(Collectors.toList());
+
+        return new BookingInfo.BookingInfoTicket(ticket.getUuid(),
+            ticket.getFirstName(), ticket.getLastName(),
+            ticket.getEmail(), ticket.getFullName(),
+            ticket.getAssigned(), tfcdav);
     }
 
 }

@@ -16,12 +16,12 @@
  */
 package alfio.controller.api.v2.user.model;
 
-import alfio.controller.support.TicketDecorator;
 import alfio.model.TicketFieldConfigurationDescriptionAndValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -49,7 +49,7 @@ public class BookingInfo {
         private final String email;
         private final String fullName;
         private final boolean assigned;
-        private final List<TicketFieldConfigurationDescriptionAndValue> ticketFieldConfiguration;
+        private final List<AdditionalField> ticketFieldConfiguration;
 
         public String getEmail() {
             return email;
@@ -75,12 +75,54 @@ public class BookingInfo {
             return assigned;
         }
 
-        public List<TicketFieldConfigurationDescriptionAndValue> getTicketFieldConfigurationBeforeStandard() {
-            return ticketFieldConfiguration.stream().filter(TicketFieldConfigurationDescriptionAndValue::isBeforeStandardFields).collect(Collectors.toList());
+        public List<AdditionalField> getTicketFieldConfigurationBeforeStandard() {
+            return ticketFieldConfiguration.stream().filter(AdditionalField::isBeforeStandardFields).collect(Collectors.toList());
         }
 
-        public List<TicketFieldConfigurationDescriptionAndValue> getTicketFieldConfigurationAfterStandard() {
+        public List<AdditionalField> getTicketFieldConfigurationAfterStandard() {
             return ticketFieldConfiguration.stream().filter(tv -> !tv.isBeforeStandardFields()).collect(Collectors.toList());
         }
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class AdditionalField {
+        private final String name;
+        private final String value;
+        private final String type;
+        private final boolean required;
+        private final int minLength;
+        private final int maxLength;
+        private final List<String> restrictedValues;
+        private final List<Field> fields;
+
+        private final boolean beforeStandardFields;
+
+        private final boolean inputField;
+        private final boolean euVat;
+        private final boolean textareaField;
+        private final boolean countryField;
+        private final boolean selectField;
+
+        private final Map<String, Description> description;
+
+        //tmp
+        private final String labelDescription;
+
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class Description {
+        private final String label;
+        private final String placeholder;
+        private final Map<String, String> restrictedValuesDescription;
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class Field {
+        private final int fieldIndex;
+        private final String fieldValue;
     }
 }
