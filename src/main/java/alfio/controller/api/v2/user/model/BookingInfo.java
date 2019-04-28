@@ -16,7 +16,6 @@
  */
 package alfio.controller.api.v2.user.model;
 
-import alfio.model.TicketFieldConfigurationDescriptionAndValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

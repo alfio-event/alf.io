@@ -23,7 +23,6 @@ import alfio.controller.api.v2.user.model.ValidatedResponse;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.support.SessionUtil;
-import alfio.controller.support.TicketDecorator;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
 import alfio.model.*;
@@ -32,7 +31,6 @@ import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -72,6 +70,8 @@ public class ReservationApiV2Controller {
     /**
      * See {@link ReservationController#showBookingPage(String, String, Model, Locale)}
      *
+     * Note: now it will return for any states of the reservation.
+     *
      * @param eventName
      * @param reservationId
      * @return
@@ -81,16 +81,6 @@ public class ReservationApiV2Controller {
                                                       @PathVariable("reservationId") String reservationId) {
 
         Optional<BookingInfo> res = eventRepository.findOptionalByShortName(eventName).flatMap(event -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
-
-            if (reservation.getStatus() != TicketReservation.TicketReservationStatus.PENDING) {
-                return Optional.empty();
-            }
-
-            TicketReservationAdditionalInfo additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
-            if (additionalInfo.hasBeenValidated()) {
-                return Optional.empty(); //-> client should redirect to overview
-            }
-
 
             var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
@@ -192,26 +182,6 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(model.asMap());
     }
 
-    @GetMapping("/tmp/event/{eventName}/reservation/{reservationId}/success")
-    public ResponseEntity<Map<String, ?>> showConfirmationPage(@PathVariable("eventName") String eventName,
-                                                      @PathVariable("reservationId") String reservationId,
-                                                      Locale locale,
-                                                      Model model,
-                                                      HttpServletRequest request) {
-
-        var res = reservationController.showConfirmationPage(eventName, reservationId, false, false,
-            model, locale, request);
-        model.addAttribute("viewState", res);
-        var ticketsByCategory = (List<Pair<TicketCategory, List<TicketDecorator>>>) model.asMap().get("ticketsByCategory");
-        if (ticketsByCategory != null) {
-            model.addAttribute("ticketsByCategory", ticketsByCategory.stream()
-                .map(a -> new TicketsByTicketCategory(a.getKey().getName(), toBookingInfoTicket(a.getValue())))
-                .collect(Collectors.toList()));
-        }
-
-        return ResponseEntity.ok(model.asMap());
-    }
-
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/re-send-email")
     public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName,
@@ -222,19 +192,6 @@ public class ReservationApiV2Controller {
         } else {
             return ResponseEntity.ok(false);
         }
-    }
-
-    //will be removed!
-    @Deprecated
-    private static List<BookingInfo.BookingInfoTicket> toBookingInfoTicket(List<TicketDecorator> ticketDecorators) {
-        return ticketDecorators.stream()
-            .map(td -> new BookingInfo.BookingInfoTicket(td.getUuid(),
-                td.getFirstName(), td.getLastName(),
-                td.getEmail(),
-                td.getFullName(),
-                td.getAssigned(),
-                td.getTicketFieldConfiguration().stream().map(t -> toAdditionalField(t, Collections.emptyMap())).collect(Collectors.toList())))
-            .collect(Collectors.toList());
     }
 
     private static BookingInfo.AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, BookingInfo.Description> description) {
@@ -269,8 +226,10 @@ public class ReservationApiV2Controller {
             .map(tfc -> {
                 var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!
                 var fieldValue = valueById.get(tfc.getId());
-                return new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, 1, fieldValue == null ? null : fieldValue.getValue());
-            }).map(t -> toAdditionalField(t, fromFieldDescriptions(descriptionsByTicketFieldId.get(t.getTicketFieldConfigurationId())))).collect(Collectors.toList());
+                var t = new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, 1, fieldValue == null ? null : fieldValue.getValue());
+                var descs = fromFieldDescriptions(descriptionsByTicketFieldId.get(t.getTicketFieldConfigurationId()));
+                return toAdditionalField(t, descs);
+            }).collect(Collectors.toList());
 
         return new BookingInfo.BookingInfoTicket(ticket.getUuid(),
             ticket.getFirstName(), ticket.getLastName(),
