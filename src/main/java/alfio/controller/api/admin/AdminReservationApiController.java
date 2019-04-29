@@ -224,7 +224,7 @@ public class AdminReservationApiController {
             .map(entry -> SerializablePair.of(eventManager.getTicketCategoryById(entry.getKey(), triple.getRight().getId()), entry.getValue()))
             .collect(Collectors.toList());
         TicketReservation reservation = triple.getLeft();
-        return new TicketReservationDescriptor(reservation, ticketReservationManager.orderSummaryForReservationId(reservationId, triple.getRight(), Locale.forLanguageTag(reservation.getUserLanguage())), tickets);
+        return new TicketReservationDescriptor(reservation, ticketReservationManager.orderSummaryForReservationId(reservationId, triple.getRight()), tickets);
     }
 
     @RequiredArgsConstructor

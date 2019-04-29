@@ -252,7 +252,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         Assert.assertEquals(-300, totalPrice.getDiscount());
         Assert.assertEquals(1, totalPrice.getDiscountAppliedCount());
 
-        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, Locale.ENGLISH);
+        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
         Assert.assertEquals("27.00", orderSummary.getTotalPrice());
         Assert.assertEquals("0.27", orderSummary.getTotalVAT());
         Assert.assertEquals(3, orderSummary.getTicketAmount());
@@ -273,7 +273,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         Assert.assertEquals(-15, totalPriceFixed.getDiscount());
         Assert.assertEquals(3, totalPriceFixed.getDiscountAppliedCount());
 
-        OrderSummary orderSummaryFixed = ticketReservationManager.orderSummaryForReservationId(reservationIdFixed, event, Locale.ENGLISH);
+        OrderSummary orderSummaryFixed = ticketReservationManager.orderSummaryForReservationId(reservationIdFixed, event);
         Assert.assertEquals("29.85", orderSummaryFixed.getTotalPrice());
         Assert.assertEquals("0.30", orderSummaryFixed.getTotalVAT());
         Assert.assertEquals(3, orderSummaryFixed.getTicketAmount());
@@ -328,7 +328,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         Assert.assertEquals(0, totalPrice.getDiscount());
         Assert.assertEquals(0, totalPrice.getDiscountAppliedCount());
 
-        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, Locale.ENGLISH);
+        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
         Assert.assertEquals("40.00", orderSummary.getTotalPrice());
         Assert.assertEquals("0.40", orderSummary.getTotalVAT());
         Assert.assertEquals(3, orderSummary.getTicketAmount());

@@ -126,7 +126,7 @@ public class ReservationController {
                          .addAttribute("showPostpone", !forceAssignment && ticketsInReservation.size() > 1 && !ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId()));
 
 
-                    OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
+                    OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
                     //FIXME recaptcha for free orders
 
@@ -363,7 +363,7 @@ public class ReservationController {
                         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/book";
                     }
 
-                    OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
+                    OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
                     List<PaymentProxy> activePaymentMethods;
                     if(session.getAttribute(PaymentManager.PAYMENT_TOKEN) != null) {
@@ -474,7 +474,7 @@ public class ReservationController {
         if(reservation.isPresent() && status == TicketReservationStatus.OFFLINE_PAYMENT) {
             Event ev = event.get();
             TicketReservation ticketReservation = reservation.get();
-            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev, locale);
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev);
             model.addAttribute("totalPrice", orderSummary.getTotalPrice());
             model.addAttribute("emailAddress", organizationRepository.getById(ev.getOrganizationId()).getEmail());
             model.addAttribute("reservation", ticketReservation);
@@ -511,7 +511,7 @@ public class ReservationController {
         if(reservation.isPresent() && (status == TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT || status == TicketReservationStatus.WAITING_EXTERNAL_CONFIRMATION)) {
             Event ev = event.get();
             TicketReservation ticketReservation = reservation.get();
-            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev, locale);
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, ev);
 
             model.addAttribute("orderSummary", orderSummary)
                 .addAttribute("reservationId", reservationId)
@@ -605,7 +605,7 @@ public class ReservationController {
 
                 CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
 
-                OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event, locale);
+                OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
                 PaymentToken paymentToken = (PaymentToken) session.getAttribute(PaymentManager.PAYMENT_TOKEN);
                 if(paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {

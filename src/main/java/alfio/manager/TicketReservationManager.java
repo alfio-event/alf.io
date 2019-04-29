@@ -550,7 +550,7 @@ public class TicketReservationManager {
     public void sendConfirmationEmail(Event event, TicketReservation ticketReservation, Locale language) {
         String reservationId = ticketReservation.getId();
 
-        OrderSummary summary = orderSummaryForReservationId(reservationId, event, language);
+        OrderSummary summary = orderSummaryForReservationId(reservationId, event);
 
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
         List<Mailer.Attachment> attachments = Collections.emptyList();
@@ -583,7 +583,7 @@ public class TicketReservationManager {
         Map<String, Object> reservationEmailModel = prepareModelForReservationEmail(event, ticketReservation);
 
         String reservationId = ticketReservation.getId();
-        OrderSummary summary = orderSummaryForReservationId(reservationId, event, language);
+        OrderSummary summary = orderSummaryForReservationId(reservationId, event);
 
         List<Mailer.Attachment> attachments = Collections.emptyList();
 
@@ -676,7 +676,7 @@ public class TicketReservationManager {
         if(reservation.getStatus() == PENDING || reservation.getStatus() == CANCELLED) {
             return;
         }
-        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event, getReservationLocale(reservation));
+        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event);
         if(TicketReservationManager.mustGenerateBillingDocument(summary, reservation)) {
             getOrCreateBillingDocumentModel(event, reservation, username);
         }
@@ -691,7 +691,7 @@ public class TicketReservationManager {
         Optional<String> vat = getVAT(event);
         String existingModel = reservation.getInvoiceModel();
         boolean existingModelPresent = StringUtils.isNotBlank(existingModel);
-        OrderSummary summary = existingModelPresent ? Json.fromJson(existingModel, OrderSummary.class) : orderSummaryForReservationId(reservation.getId(), event, getReservationLocale(reservation));
+        OrderSummary summary = existingModelPresent ? Json.fromJson(existingModel, OrderSummary.class) : orderSummaryForReservationId(reservation.getId(), event);
         Map<String, Object> model = prepareModelForReservationEmail(event, reservation, vat, summary);
         String number = reservation.getHasInvoiceNumber() ? reservation.getInvoiceNumber() : UUID.randomUUID().toString();
         if(!existingModelPresent) {
@@ -744,7 +744,7 @@ public class TicketReservationManager {
     @Transactional(readOnly = true)
     public Map<String, Object> prepareModelForReservationEmail(Event event, TicketReservation reservation) {
         Optional<String> vat = getVAT(event);
-        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event, getReservationLocale(reservation));
+        OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event);
         return prepareModelForReservationEmail(event, reservation, vat, summary);
     }
 
@@ -1026,7 +1026,7 @@ public class TicketReservationManager {
         return promoCodeDiscount.getPromoCode() + " " + formattedDiscountedCategories;
     }
 
-    public OrderSummary orderSummaryForReservationId(String reservationId, Event event, Locale locale) {
+    public OrderSummary orderSummaryForReservationId(String reservationId, Event event) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         return orderSummaryForReservation(reservation, event);
     }
@@ -1596,7 +1596,7 @@ public class TicketReservationManager {
 
     public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigDecimal paidAmount, String username) {
         TicketReservation reservation = findByPartialID(reservationId);
-        Optional<OrderSummary> optionalOrderSummary = optionally(() -> orderSummaryForReservationId(reservation.getId(), event, Locale.forLanguageTag(reservation.getUserLanguage())));
+        Optional<OrderSummary> optionalOrderSummary = optionally(() -> orderSummaryForReservationId(reservation.getId(), event));
         Validate.isTrue(optionalOrderSummary.isPresent(), "Reservation not found");
         OrderSummary orderSummary = optionalOrderSummary.get();
         Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().getPriceWithVAT()).compareTo(paidAmount) == 0, "paid price differs from due price");
@@ -1605,7 +1605,7 @@ public class TicketReservationManager {
 
     private List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(int eventId, Event event, Locale locale) {
         return ticketReservationRepository.findAllReservationsWaitingForPaymentInEventId(eventId).stream()
-            .map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event, locale)))
+            .map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event)))
             .collect(toList());
     }
 
