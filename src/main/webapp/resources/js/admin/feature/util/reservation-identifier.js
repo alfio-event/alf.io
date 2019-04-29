@@ -37,7 +37,7 @@
                     }, 30000);
                 }
                 return config[eventId].then(function(result) {
-                    var useInvoiceNumber = result.data === 'true'; // default is false
+                    var useInvoiceNumber = result === 'true'; // default is false
                     if(useInvoiceNumber) {
                         return reservation.invoiceNumber || 'N/A';
                     }

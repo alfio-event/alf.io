@@ -317,7 +317,9 @@ public class ConfigurationManager {
             return null;
         }
         var key = safeValueOf(keyAsString);
-        return configurationRepository.findByKeyAtEventLevel(eventId, organizationId, key.name())
+        return configurationRepository.findByEventAndKey(eventId, organizationId, key.name())
+            .stream()
+            .findFirst()
             .map(Configuration::getValue)
             .orElse(null);
     }
