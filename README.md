@@ -104,7 +104,7 @@ Importing the Gradle project into Intellij and Eclipse both work.
 
 Container images are available on https://hub.docker.com/r/alfio/alf.io/tags.
 
-alf.io can also be run locally for development with Docker Compose:
+alf.io can also be run with Docker Compose:
 
     docker-compose up
 
