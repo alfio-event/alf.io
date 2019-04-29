@@ -205,8 +205,7 @@ public class ReservationApiV2Controller {
             t.isEuVat(), t.isTextareaField(),
             t.isCountryField(),
             t.isSelectField(),
-            description,
-            t.getLabelDescription());
+            description);
     }
 
     private static Map<String, ReservationInfo.Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {

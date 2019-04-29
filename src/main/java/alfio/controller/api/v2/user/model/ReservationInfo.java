@@ -29,7 +29,7 @@ public class ReservationInfo {
     private final String firstName;
     private final String lastName;
     private final String email;
-    List<TicketsByTicketCategory> ticketsByCategory;
+    private final List<TicketsByTicketCategory> ticketsByCategory;
 
 
     @AllArgsConstructor
@@ -104,10 +104,6 @@ public class ReservationInfo {
         private final boolean selectField;
 
         private final Map<String, Description> description;
-
-        //tmp
-        private final String labelDescription;
-
     }
 
     @AllArgsConstructor
