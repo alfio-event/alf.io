@@ -16,25 +16,12 @@
  */
 package alfio.controller.api.v2.user.model;
 
-import alfio.controller.decorator.SaleableTicketCategory;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.Map;
-
+@AllArgsConstructor
 @Getter
-public class TicketCategory {
-
-    private final Map<String, String> description;
-    private final int id;
+public class LocalizedCountry {
+    private final String isoCode;
     private final String name;
-    private final int[] amountOfTickets;
-    private final boolean free;
-
-    public TicketCategory(SaleableTicketCategory saleableTicketCategory, Map<String, String> description) {
-        this.description = description;
-        this.id = saleableTicketCategory.getId();
-        this.name = saleableTicketCategory.getName();
-        this.amountOfTickets = saleableTicketCategory.getAmountOfTickets();
-        this.free = saleableTicketCategory.getFree();
-    }
 }

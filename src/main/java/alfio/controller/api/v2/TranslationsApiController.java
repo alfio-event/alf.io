@@ -16,13 +16,19 @@
  */
 package alfio.controller.api.v2;
 
+import alfio.controller.api.support.TicketHelper;
+import alfio.controller.api.v2.user.model.LocalizedCountry;
 import alfio.util.CustomResourceBundleMessageSource;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.text.Collator;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
@@ -36,12 +42,12 @@ public class TranslationsApiController {
     private final CustomResourceBundleMessageSource messageSource;
     private static String[] EMPTY_ARRAY = new String[]{};
 
-    @GetMapping("/public/i18n/{lang}")
+    @GetMapping("/public/i18n/bundle/{lang}")
     public Map<String, String> getPublicTranslations(@PathVariable("lang") String lang) {
         return getBundleAsMap("alfio.i18n.public", lang);
     }
 
-    @GetMapping("/admin/i18n/{lang}")
+    @GetMapping("/admin/i18n/bundle/{lang}")
     public Map<String, String> getAdminTranslations(@PathVariable("lang") String lang) {
         return getBundleAsMap("alfio.i18n.admin", lang);
     }
@@ -53,5 +59,15 @@ public class TranslationsApiController {
             .collect(Collectors.toMap(Function.identity(), k -> messageSource.getMessage(k, EMPTY_ARRAY, locale)
                 //replace all placeholder {0} -> {{0}} so it can be consumed by ngx-translate
                 .replaceAll("\\{(\\d+)\\}", "{{$1}}")));
+    }
+
+    @GetMapping("/public/i18n/countries/{lang}")
+    public List<LocalizedCountry> getCountries(@PathVariable("lang") String lang) {
+        var collator = Collator.getInstance(Locale.FRENCH); //<- gives the better sorting experience...
+        return TicketHelper.getLocalizedCountries(Locale.forLanguageTag(lang))
+            .stream()
+            .map(p-> new LocalizedCountry(p.getKey(), p.getValue()))
+            .sorted((lc1, lc2) -> collator.compare(lc1.getName(), lc2.getName()))
+            .collect(Collectors.toList());
     }
 }
