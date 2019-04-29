@@ -49,6 +49,7 @@ public class ReservationInfo {
         private final String lastName;
         private final String email;
         private final String fullName;
+        private final String userLanguage;
         private final boolean assigned;
         private final List<AdditionalField> ticketFieldConfiguration;
 
@@ -74,6 +75,10 @@ public class ReservationInfo {
 
         public boolean isAssigned() {
             return assigned;
+        }
+
+        public String getUserLanguage() {
+            return userLanguage;
         }
 
         public List<AdditionalField> getTicketFieldConfigurationBeforeStandard() {

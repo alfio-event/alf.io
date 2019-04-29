@@ -148,12 +148,11 @@ public class ReservationApiV2Controller {
                                                                BindingResult bindingResult,
                                                                Model model,
                                                                HttpServletRequest request,
-                                                               Locale locale,
                                                                RedirectAttributes redirectAttributes,
                                                                HttpSession session) {
         //FIXME check precondition (see ReservationController.redirectIfNotValid)
         reservationController.handleReservation(eventName, reservationId, paymentForm,
-            bindingResult, model, request, locale, redirectAttributes,
+            bindingResult, model, request, Locale.ENGLISH, redirectAttributes,
             session);
         return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors()));
     }
@@ -164,11 +163,10 @@ public class ReservationApiV2Controller {
                                                              @RequestBody ContactAndTicketsForm contactAndTicketsForm,
                                                              BindingResult bindingResult,
                                                              HttpServletRequest request,
-                                                             RedirectAttributes redirectAttributes,
-                                                             Locale locale) {
+                                                             RedirectAttributes redirectAttributes) {
 
         //FIXME check precondition (see ReservationController.redirectIfNotValid)
-        reservationController.validateToOverview(eventName, reservationId, contactAndTicketsForm, bindingResult, request, redirectAttributes, locale);
+        reservationController.validateToOverview(eventName, reservationId, contactAndTicketsForm, bindingResult, request, redirectAttributes, Locale.ENGLISH);
 
         return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors()));
     }
@@ -223,6 +221,7 @@ public class ReservationApiV2Controller {
         return new ReservationInfo.BookingInfoTicket(ticket.getUuid(),
             ticket.getFirstName(), ticket.getLastName(),
             ticket.getEmail(), ticket.getFullName(),
+            ticket.getUserLanguage(),
             ticket.getAssigned(), tfcdav);
     }
 
