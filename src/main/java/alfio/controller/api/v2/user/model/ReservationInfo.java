@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.user.model;
 
+import alfio.model.OrderSummary;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -30,6 +31,7 @@ public class ReservationInfo {
     private final String lastName;
     private final String email;
     private final List<TicketsByTicketCategory> ticketsByCategory;
+    private final OrderSummary orderSummary; //<- TODO: rewrap it so the model is kept inside v2.user.model
 
 
     @AllArgsConstructor

@@ -82,12 +82,11 @@ public class ReservationApiV2Controller {
 
         Optional<ReservationInfo> res = eventRepository.findOptionalByShortName(eventName).flatMap(event -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
 
-
             var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
             var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
-            Set<Integer> ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toSet());
+            var ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toSet());
 
             var ticketFields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
 
@@ -114,7 +113,7 @@ public class ReservationApiV2Controller {
                 .collect(Collectors.toList());
 
 
-            return Optional.of(new ReservationInfo(reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), ticketsInReservation));
+            return Optional.of(new ReservationInfo(reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), ticketsInReservation, orderSummary));
         }));
 
         //
@@ -173,18 +172,6 @@ public class ReservationApiV2Controller {
 
         return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors()));
     }
-
-    @GetMapping("/tmp/event/{eventName}/reservation/{reservationId}/overview")
-    public ResponseEntity<Map<String, ?>> showOverview(@PathVariable("eventName") String eventName,
-                               @PathVariable("reservationId") String reservationId,
-                               Locale locale,
-                               Model model,
-                               HttpSession session) {
-        var res = reservationController.showOverview(eventName, reservationId, locale, model, session);
-        model.addAttribute("viewState", res);
-        return ResponseEntity.ok(model.asMap());
-    }
-
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/re-send-email")
     public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName,
