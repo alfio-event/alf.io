@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @Getter
-public class BookingInfo {
+public class ReservationInfo {
     private final String firstName;
     private final String lastName;
     private final String email;

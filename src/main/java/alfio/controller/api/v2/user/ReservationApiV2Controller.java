@@ -17,8 +17,8 @@
 package alfio.controller.api.v2.user;
 
 import alfio.controller.ReservationController;
-import alfio.controller.api.v2.user.model.BookingInfo;
-import alfio.controller.api.v2.user.model.BookingInfo.TicketsByTicketCategory;
+import alfio.controller.api.v2.user.model.ReservationInfo;
+import alfio.controller.api.v2.user.model.ReservationInfo.TicketsByTicketCategory;
 import alfio.controller.api.v2.user.model.ValidatedResponse;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
@@ -76,11 +76,14 @@ public class ReservationApiV2Controller {
      * @param reservationId
      * @return
      */
-    @GetMapping("/event/{eventName}/reservation/{reservationId}/booking-info")
-    public ResponseEntity<BookingInfo> getBookingInfo(@PathVariable("eventName") String eventName,
-                                                      @PathVariable("reservationId") String reservationId) {
+    @GetMapping("/event/{eventName}/reservation/{reservationId}")
+    public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("eventName") String eventName,
+                                                              @PathVariable("reservationId") String reservationId) {
 
-        Optional<BookingInfo> res = eventRepository.findOptionalByShortName(eventName).flatMap(event -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
+        Optional<ReservationInfo> res = eventRepository.findOptionalByShortName(eventName).flatMap(event -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
+
+
+            var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
             var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
 
@@ -111,7 +114,7 @@ public class ReservationApiV2Controller {
                 .collect(Collectors.toList());
 
 
-            return Optional.of(new BookingInfo(reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), ticketsInReservation));
+            return Optional.of(new ReservationInfo(reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), ticketsInReservation));
         }));
 
         //
@@ -194,9 +197,9 @@ public class ReservationApiV2Controller {
         }
     }
 
-    private static BookingInfo.AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, BookingInfo.Description> description) {
-        var fields = t.getFields().stream().map(f -> new BookingInfo.Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
-        return new BookingInfo.AdditionalField(t.getName(), t.getValue(), t.getType(), t.isRequired(),
+    private static ReservationInfo.AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, ReservationInfo.Description> description) {
+        var fields = t.getFields().stream().map(f -> new ReservationInfo.Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
+        return new ReservationInfo.AdditionalField(t.getName(), t.getValue(), t.getType(), t.isRequired(),
             t.getMinLength(), t.getMaxLength(), t.getRestrictedValues(),
             fields, t.isBeforeStandardFields(), t.isInputField(),
             t.isEuVat(), t.isTextareaField(),
@@ -206,15 +209,15 @@ public class ReservationApiV2Controller {
             t.getLabelDescription());
     }
 
-    private static Map<String, BookingInfo.Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {
+    private static Map<String, ReservationInfo.Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {
         return descs.stream().collect(Collectors.toMap(TicketFieldDescription::getLocale,
-            d -> new BookingInfo.Description(d.getLabelDescription(), d.getPlaceholderDescription(), d.getRestrictedValuesDescription())));
+            d -> new ReservationInfo.Description(d.getLabelDescription(), d.getPlaceholderDescription(), d.getRestrictedValuesDescription())));
     }
 
-    private static BookingInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket,
-                                                                     List<TicketFieldConfiguration> ticketFields,
-                                                                     Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
-                                                                     List<TicketFieldValue> ticketFieldValues) {
+    private static ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket,
+                                                                         List<TicketFieldConfiguration> ticketFields,
+                                                                         Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
+                                                                         List<TicketFieldValue> ticketFieldValues) {
 
 
         var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::getTicketFieldConfigurationId, Function.identity()));
@@ -231,7 +234,7 @@ public class ReservationApiV2Controller {
                 return toAdditionalField(t, descs);
             }).collect(Collectors.toList());
 
-        return new BookingInfo.BookingInfoTicket(ticket.getUuid(),
+        return new ReservationInfo.BookingInfoTicket(ticket.getUuid(),
             ticket.getFirstName(), ticket.getLastName(),
             ticket.getEmail(), ticket.getFullName(),
             ticket.getAssigned(), tfcdav);
