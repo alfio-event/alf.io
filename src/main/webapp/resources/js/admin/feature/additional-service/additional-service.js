@@ -64,7 +64,7 @@
 
         self.propagateChanges = angular.isDefined(self.eventId);
 
-        $q.all([EventService.getSupportedLanguages(), AdditionalServiceManager.loadAll(self.eventId)]).then(function(results) {
+        $q.all([EventService.getSupportedLanguages(), AdditionalServiceManager.loadAll(self.eventId), AdditionalServiceManager.getUseCount(self.eventId)]).then(function(results) {
             var languages = _.filter(results[0].data, function(l) {return (l.value & self.selectedLanguages) === l.value});
             var titles = _.map(languages, function(l) {
                 return {
@@ -94,6 +94,7 @@
                 return item;
             });
             self.displayList = buildDisplayList(self.list);
+            self.additionalServiceUseCount = results[2].data;
 
         });
 
@@ -291,6 +292,9 @@
                 var deferred = $q.defer();
                 deferred.resolve({data:[]});
                 return deferred.promise;
+            },
+            getUseCount: function(eventId) {
+                return $http.get('/admin/api/event/'+eventId+'/additional-services/count').error(HttpErrorHandler.handle);
             },
             save: function(eventId, additionalService) {
                 return (angular.isDefined(additionalService.id)) ? this.update(eventId, additionalService) : this.create(eventId, additionalService);

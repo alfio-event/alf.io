@@ -40,6 +40,7 @@ import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -87,6 +88,11 @@ public class AdditionalServiceApiController {
                                             .withPriceContainer(buildPriceContainer(event, as)).build())
                             .collect(Collectors.toList()))
             .orElse(Collections.emptyList());
+    }
+
+    @GetMapping("/event/{eventId}/additional-services/count")
+    public Map<Integer, Integer> countUse(@PathVariable("eventId") int eventId) {
+        return additionalServiceRepository.getCount(eventId);
     }
 
     @RequestMapping(value = "/event/{eventId}/additional-services/{additionalServiceId}", method = RequestMethod.PUT)
