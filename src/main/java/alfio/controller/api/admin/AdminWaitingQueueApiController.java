@@ -28,6 +28,7 @@ import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.EventUtil;
+import alfio.util.ExportUtils;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
@@ -36,10 +37,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.STOP_WAITING_QUEUE_SUBSCRIPTIONS;
 import static java.util.Collections.singletonList;
@@ -108,6 +111,29 @@ public class AdminWaitingQueueApiController {
         }
         response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         return Collections.emptyList();
+    }
+
+    @GetMapping("/download")
+    public void downloadAllSubscriptions(@PathVariable("eventName") String eventName,
+                                         @RequestParam(name = "format", defaultValue = "excel") String format,
+                                         Principal principal, HttpServletResponse response) throws IOException {
+        var event = eventManager.getSingleEvent(eventName, principal.getName());
+        var found = waitingQueueManager.loadAllSubscriptionsForEvent(event.getId());
+
+        var header = new String[] {"Firstname", "Lastname", "Email", "Subscription type", "Date"};
+        var lines = convertSubscriptions(found, event);
+        if ("excel".equals(format)) {
+            ExportUtils.exportExcel(eventName + "-waiting-queue.xlsx", "waiting-queue",
+                header,
+                lines, response);
+        } else {
+            ExportUtils.exportCsv(eventName + "-waiting-queue.csv", header, lines, response);
+        }
+    }
+
+    private static Stream<String[]> convertSubscriptions(List<WaitingQueueSubscription> l, Event event) {
+        return l.stream().map(s -> new String[] {s.getFirstName(), s.getLastName(), s.getEmailAddress(),
+            s.getSubscriptionType().toString(), s.getCreation().withZoneSameInstant(event.getZoneId()).toString()});
     }
 
     @RequestMapping(value = "/subscriber/{subscriberId}", method = RequestMethod.DELETE)
