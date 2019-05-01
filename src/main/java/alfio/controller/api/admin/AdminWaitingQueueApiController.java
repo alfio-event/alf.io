@@ -120,7 +120,7 @@ public class AdminWaitingQueueApiController {
         var event = eventManager.getSingleEvent(eventName, principal.getName());
         var found = waitingQueueManager.loadAllSubscriptionsForEvent(event.getId());
 
-        var header = new String[] {"Firstname", "Lastname", "Email", "Subscription type", "Date"};
+        var header = new String[] {"Type", "Firstname", "Lastname", "Email", "Language", "Status", "Date"};
         var lines = convertSubscriptions(found, event);
         if ("excel".equals(format)) {
             ExportUtils.exportExcel(eventName + "-waiting-queue.xlsx", "waiting-queue",
@@ -132,8 +132,10 @@ public class AdminWaitingQueueApiController {
     }
 
     private static Stream<String[]> convertSubscriptions(List<WaitingQueueSubscription> l, Event event) {
-        return l.stream().map(s -> new String[] {s.getFirstName(), s.getLastName(), s.getEmailAddress(),
-            s.getSubscriptionType().toString(), s.getCreation().withZoneSameInstant(event.getZoneId()).toString()});
+        return l.stream().map(s -> new String[] {s.getSubscriptionType().toString(),
+            s.getFirstName(), s.getLastName(), s.getEmailAddress(),
+            s.getLocale().toLanguageTag(), s.getStatus().name(),
+            s.getCreation().withZoneSameInstant(event.getZoneId()).toString()});
     }
 
     @RequestMapping(value = "/subscriber/{subscriberId}", method = RequestMethod.DELETE)
