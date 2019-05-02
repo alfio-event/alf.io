@@ -18,6 +18,8 @@ package alfio.controller.api.v2;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.user.model.LocalizedCountry;
+import alfio.manager.i18n.I18nManager;
+import alfio.model.ContentLanguage;
 import alfio.util.CustomResourceBundleMessageSource;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
@@ -41,6 +43,7 @@ public class TranslationsApiController {
 
     private final CustomResourceBundleMessageSource messageSource;
     private static String[] EMPTY_ARRAY = new String[]{};
+    private final I18nManager i18nManager;
 
     @GetMapping("/public/i18n/bundle/{lang}")
     public Map<String, String> getPublicTranslations(@PathVariable("lang") String lang) {
@@ -69,5 +72,10 @@ public class TranslationsApiController {
             .map(p-> new LocalizedCountry(p.getKey(), p.getValue()))
             .sorted((lc1, lc2) -> collator.compare(lc1.getName(), lc2.getName()))
             .collect(Collectors.toList());
+    }
+
+    @GetMapping("/public/i18n/languages")
+    public List<ContentLanguage> getAvailableLanguages() {
+        return i18nManager.getSupportedLanguages();
     }
 }
