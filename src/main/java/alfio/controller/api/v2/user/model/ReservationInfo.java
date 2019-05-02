@@ -105,11 +105,13 @@ public class ReservationInfo {
 
         private final boolean beforeStandardFields;
 
+        // TODO: can be removed, the "type" field is enough
         private final boolean inputField;
         private final boolean euVat;
         private final boolean textareaField;
         private final boolean countryField;
         private final boolean selectField;
+        //
 
         private final Map<String, Description> description;
     }

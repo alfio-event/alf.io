@@ -91,7 +91,7 @@ public class EventApiV2Controller {
                     Configuration.from(event, ConfigurationKeys.MAPS_HERE_APP_ID),
                     Configuration.from(event, ConfigurationKeys.MAPS_HERE_APP_CODE));
                 LocationDescriptor ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
-                return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld, organization, descriptions), getCorsHeaders(), HttpStatus.OK);
+                return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }

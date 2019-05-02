@@ -18,7 +18,6 @@ package alfio.controller.api.v2.user.model;
 
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
-import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 
@@ -28,7 +27,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class EventWithAdditionalInfo {
     private final Event event;
-    private final LocationDescriptor locationDescriptor;
+    private final String mapUrl;
     private final Organization organization;
     private final Map<String, String> description;
 
@@ -57,12 +56,13 @@ public class EventWithAdditionalInfo {
         return event.getWebsiteUrl();
     }
 
+    //TODO: don't expose content language -> can be more restricted
     public List<ContentLanguage> getContentLanguages() {
         return event.getContentLanguages();
     }
 
-    public LocationDescriptor getLocationDescriptor() {
-        return locationDescriptor;
+    public String getMapUrl() {
+        return mapUrl;
     }
 
     public String getOrganizationName() {
