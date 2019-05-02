@@ -30,6 +30,7 @@ public class ReservationInfo {
     private final String firstName;
     private final String lastName;
     private final String email;
+    private final long validity;
     private final List<TicketsByTicketCategory> ticketsByCategory;
     private final OrderSummary orderSummary; //<- TODO: rewrap it so the model is kept inside v2.user.model
 

@@ -113,7 +113,9 @@ public class ReservationApiV2Controller {
                 .collect(Collectors.toList());
 
 
-            return Optional.of(new ReservationInfo(reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(), ticketsInReservation, orderSummary));
+            return Optional.of(new ReservationInfo(reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(),
+                reservation.getValidity().getTime(),
+                ticketsInReservation, orderSummary));
         }));
 
         //
