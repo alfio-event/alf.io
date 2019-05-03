@@ -188,11 +188,7 @@ public class ReservationApiV2Controller {
         var fields = t.getFields().stream().map(f -> new ReservationInfo.Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
         return new ReservationInfo.AdditionalField(t.getName(), t.getValue(), t.getType(), t.isRequired(),
             t.getMinLength(), t.getMaxLength(), t.getRestrictedValues(),
-            fields, t.isBeforeStandardFields(), t.isInputField(),
-            t.isEuVat(), t.isTextareaField(),
-            t.isCountryField(),
-            t.isSelectField(),
-            description);
+            fields, t.isBeforeStandardFields(), description);
     }
 
     private static Map<String, ReservationInfo.Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {

@@ -22,14 +22,12 @@ import alfio.manager.i18n.I18nManager;
 import alfio.model.ContentLanguage;
 import alfio.util.CustomResourceBundleMessageSource;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.text.Collator;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;

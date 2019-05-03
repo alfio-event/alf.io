@@ -98,21 +98,11 @@ public class ReservationInfo {
         private final String value;
         private final String type;
         private final boolean required;
-        private final int minLength;
-        private final int maxLength;
+        private final Integer minLength;
+        private final Integer maxLength;
         private final List<String> restrictedValues;
         private final List<Field> fields;
-
         private final boolean beforeStandardFields;
-
-        // TODO: can be removed, the "type" field is enough
-        private final boolean inputField;
-        private final boolean euVat;
-        private final boolean textareaField;
-        private final boolean countryField;
-        private final boolean selectField;
-        //
-
         private final Map<String, Description> description;
     }
 
