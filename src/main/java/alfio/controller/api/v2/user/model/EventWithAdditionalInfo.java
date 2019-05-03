@@ -40,18 +40,8 @@ public class EventWithAdditionalInfo {
         return event.getDisplayName();
     }
 
-    //TODO remove -> only file blob id is present
-    public boolean getFileBlobIdIsPresent() {
-        return event.getFileBlobIdIsPresent();
-    }
-
     public String getFileBlobId() {
         return event.getFileBlobId();
-    }
-
-    //TODO remove -> will only use file blob id
-    public String getImageUrl() {
-        return event.getImageUrl();
     }
 
     public String getWebsiteUrl() {
