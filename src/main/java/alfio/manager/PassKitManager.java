@@ -149,7 +149,7 @@ public class PassKitManager {
         String keystorePwd = config.get(PASSBOOK_KEYSTORE_PASSWORD);
         String privateKeyAlias = config.get(PASSBOOK_PRIVATE_KEY_ALIAS);
 
-        Location loc = new Location(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude())).altitude(0D);
+
         String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, ticket.getUserLanguage()).orElse("");
         Pass pass = new Pass()
             .teamIdentifier(teamIdentifier)
@@ -162,7 +162,7 @@ public class PassKitManager {
             //.webServiceURL(StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(BASE_URL)), "/") + "/api/pass/event/" + event.getShortName() +"/")
             .relevantDate(Date.from(event.getBegin().toInstant()))
             .expirationDate(Date.from(event.getEnd().toInstant()))
-            .locations(loc)
+
             .barcode(new Barcode(BarcodeFormat.QR, ticket.ticketCode(event.getPrivateKey())))
             .labelColor(Color.BLACK)
             .foregroundColor(Color.BLACK)
@@ -186,6 +186,10 @@ public class PassKitManager {
                         new TextField("credits", "Powered by", "Alf.io, the Open Source ticket reservation System.")
                     )
             );
+
+        if (event.getLatitude() != null && event.getLongitude() != null) {
+            pass.locations(new Location(Double.parseDouble(event.getLatitude()), Double.parseDouble(event.getLongitude())).altitude(0D));
+        }
 
         List<PassResource> passResources = new ArrayList<>(6);
 
