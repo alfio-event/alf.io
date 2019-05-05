@@ -466,7 +466,7 @@
                         } else if (apiKeyAndProvider.provider === 'HERE') {
                             handleHEREGeolocate(location, locService, apiKeyAndProvider, resolve, reject);
                         } else {
-                            alert('Must provide an API key (google or HERE maps)')
+                            resolve({latitude: null, longitude: null});
                         }
                     })
 

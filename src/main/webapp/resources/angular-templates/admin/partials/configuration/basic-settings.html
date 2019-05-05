@@ -68,6 +68,12 @@
         <div>
             <p class="radio-inline">
                 <label>
+                    <input type="radio" name="map.mapsProvider" data-ng-model="ctrl.map['MAPS_PROVIDER'].value" data-ng-value="'NONE'">
+                    None
+                </label>
+            </p>
+            <p class="radio-inline">
+                <label>
                     <input type="radio" name="map.mapsProvider" data-ng-model="ctrl.map['MAPS_PROVIDER'].value" data-ng-value="'GOOGLE'">
                     Google maps
                 </label>
@@ -78,14 +84,16 @@
                     Here maps
                 </label>
             </p>
-            <div>
+            <div ng-if="ctrl.map['MAPS_PROVIDER'].value === 'GOOGLE'">
                 <setting data-obj="ctrl.map['MAPS_CLIENT_API_KEY']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
             </div>
-            <div>
-                <setting data-obj="ctrl.map['MAPS_HERE_APP_ID']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
-            </div>
-            <div>
-                <setting data-obj="ctrl.map['MAPS_HERE_APP_CODE']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+            <div ng-if="ctrl.map['MAPS_PROVIDER'].value === 'HERE'">
+                <div>
+                    <setting data-obj="ctrl.map['MAPS_HERE_APP_ID']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+                </div>
+                <div>
+                    <setting data-obj="ctrl.map['MAPS_HERE_APP_CODE']" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+                </div>
             </div>
         </div>
 

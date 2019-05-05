@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
 
@@ -48,6 +49,10 @@ public class LocationDescriptor {
         this.latitude = latitude;
         this.longitude = longitude;
         this.mapUrl = mapUrl;
+    }
+
+    public boolean getHasMapUrl() {
+        return StringUtils.isNotBlank(mapUrl);
     }
 
     public static LocationDescriptor fromGeoData(Pair<String, String> coordinates, TimeZone timeZone, Map<ConfigurationKeys, Optional<String>> geoConf) {
@@ -85,7 +90,7 @@ public class LocationDescriptor {
         switch (provider) {
             case GOOGLE: return "https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&key=${key}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
             case HERE: return "https://image.maps.api.here.com/mia/1.6/mapview?c=${latitude},${longitude}&z=16&w=400&h=400&poi=${latitude},${longitude}&app_id=${appId}&app_code=${appCode}";
-            default: return "https://tyler-demo.herokuapp.com/?center=${latitude},${longitude}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
+            default: return "";
         }
     }
 

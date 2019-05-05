@@ -42,7 +42,7 @@ public class LocationDescriptorTest {
     @Test
     public void testLocationDescriptorNone() {
         Map<ConfigurationKeys, Optional<String>> geoInfo = Collections.emptyMap();
-        final LocationDescriptor expected = locationDescriptorBuilder.apply("https://tyler-demo.herokuapp.com/?center=latitude,longitude&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7Clatitude,longitude");
+        final LocationDescriptor expected = locationDescriptorBuilder.apply("");
         assertEquals(expected, LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), timeZone, geoInfo));
     }
 
@@ -72,7 +72,7 @@ public class LocationDescriptorTest {
     public void testLocationDescriptorNONEWithTypeSet() {
         Map<ConfigurationKeys, Optional<String>> geoInfo = new HashMap<>();
         geoInfo.put(ConfigurationKeys.MAPS_PROVIDER, Optional.of(ConfigurationKeys.GeoInfoProvider.NONE.name()));
-        final LocationDescriptor expected = locationDescriptorBuilder.apply("https://tyler-demo.herokuapp.com/?center=latitude,longitude&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7Clatitude,longitude");
+        final LocationDescriptor expected = locationDescriptorBuilder.apply("");
         assertEquals(expected, LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), timeZone, geoInfo));
     }
 

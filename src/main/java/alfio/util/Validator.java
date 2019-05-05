@@ -85,7 +85,7 @@ public final class Validator {
     private static boolean isLocationMissing(EventModification em) {
         LocationDescriptor descriptor = em.getLocationDescriptor();
         return descriptor == null
-            || isAnyBlank(descriptor.getLatitude(), descriptor.getLongitude(), descriptor.getTimeZone());
+            || isAnyBlank(descriptor.getTimeZone());
     }
 
     public static ValidationResult validateTicketCategories(EventModification ev, Errors errors) {
