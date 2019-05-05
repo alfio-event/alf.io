@@ -3,12 +3,14 @@
 {{>/event/header}}
 
 <div class="row">
-    <div class="col-md-7">
+    <div class="{{#locationDescriptor.hasMapUrl}}col-md-7{{/locationDescriptor.hasMapUrl}}{{^locationDescriptor.hasMapUrl}}col-md-12{{/locationDescriptor.hasMapUrl}}">
         {{>/event/event-details}}
     </div>
+    {{#locationDescriptor.hasMapUrl}}
     <div class="col-md-5">
         <img src="{{locationDescriptor.mapUrl}}" class="img-responsive img-center">
     </div>
+    {{/locationDescriptor.hasMapUrl}}
 </div>
 
 <hr/>

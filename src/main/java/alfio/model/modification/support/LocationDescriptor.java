@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringSubstitutor;
 
@@ -48,6 +49,10 @@ public class LocationDescriptor {
         this.latitude = latitude;
         this.longitude = longitude;
         this.mapUrl = mapUrl;
+    }
+
+    public boolean getHasMapUrl() {
+        return StringUtils.isNotBlank(mapUrl);
     }
 
     public static LocationDescriptor fromGeoData(Pair<String, String> coordinates, TimeZone timeZone, Map<ConfigurationKeys, Optional<String>> geoConf) {
