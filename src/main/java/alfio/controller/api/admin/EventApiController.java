@@ -36,14 +36,11 @@ import alfio.model.user.User;
 import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketFieldRepository;
+import alfio.util.ExportUtils;
 import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.Validator;
-import ch.digitalfondue.basicxlsx.Cell;
-import ch.digitalfondue.basicxlsx.StreamingWorkbook;
-import ch.digitalfondue.basicxlsx.Style;
 import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -61,13 +58,11 @@ import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.text.DateFormat;
@@ -279,7 +274,6 @@ public class EventApiController {
     private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Payment ID", "Payment Method");
     private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
     private static final List<String> ITALIAN_E_INVOICING_FIELDS = List.of("Fiscal Code", "Reference Type", "Addressee Code", "PEC");
-    private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
     @RequestMapping("/events/{eventName}/export")
     public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
@@ -296,47 +290,18 @@ public class EventApiController {
     }
 
     private void exportTicketExcel(String eventName, HttpServletResponse response, Principal principal, List<String> fields, Map<Integer,TicketCategory> categoriesMap, ZoneId eventZoneId) throws IOException {
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-export.xlsx");
+        ExportUtils.exportExcel(eventName + "-export.xlsx",
+            eventName + " export",
+            exportHeader(fields),
+            exportLines(eventName, principal, fields, categoriesMap, eventZoneId), response);
 
-        try (ServletOutputStream out = response.getOutputStream()) {
-            exportExcel(eventName + " export", exportHeader(fields), exportLines(eventName, principal, fields, categoriesMap, eventZoneId).collect(Collectors.toList()), out);
-        }
-    }
-
-    private void exportExcel(String sheetName, String[] header, List<String[]> data, OutputStream out) throws IOException {
-        try (StreamingWorkbook workbook = new StreamingWorkbook(out)) {
-            Style boldFont = workbook.defineStyle().font().bold(true).build();
-
-            StreamingWorkbook.Row headerRow = StreamingWorkbook.row(Arrays.stream(header)
-                .map(v -> Cell.cell(v).withStyle(boldFont))
-                .collect(Collectors.toList()));
-
-            Stream<StreamingWorkbook.Row> dataStream = data.stream()
-                .map(rowData -> Arrays.stream(rowData).map(Cell::cell).collect(Collectors.toList()))
-                .map(StreamingWorkbook::row);
-
-            workbook.withSheet(sheetName, Stream.concat(Stream.of(headerRow), dataStream));
-        }
     }
 
     private void exportTicketCSV(String eventName, HttpServletResponse response,
                            Principal principal, List<String> fields,
                            Map<Integer, TicketCategory> categoriesMap,
                            ZoneId eventZoneId) throws IOException {
-
-        response.setContentType("text/csv;charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-export.csv");
-
-        try(ServletOutputStream out = response.getOutputStream(); CSVWriter writer = new CSVWriter(new OutputStreamWriter(out))) {
-            for (int marker : BOM_MARKERS) {//UGLY-MODE_ON: specify that the file is written in UTF-8 with BOM, thanks to alexr http://stackoverflow.com/a/4192897
-                out.write(marker);
-            }
-            writer.writeNext(exportHeader(fields));
-            exportLines(eventName, principal, fields, categoriesMap, eventZoneId).forEachOrdered(writer::writeNext);
-            writer.flush();
-            out.flush();
-        }
+        ExportUtils.exportCsv(eventName + "-export.csv", exportHeader(fields), exportLines(eventName, principal, fields, categoriesMap, eventZoneId), response);
     }
 
     private String[] exportHeader(List<String> fields) {
@@ -451,27 +416,15 @@ public class EventApiController {
 
     private void exportSponsorScanExcel(String eventName, List<String> header, Stream<String[]> sponsorScans,
                                         HttpServletResponse response) throws IOException {
-
-        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-sponsor-scan.xlsx");
-        try (OutputStream os = response.getOutputStream()) {
-            exportExcel(eventName + " sponsor scan", header.toArray(new String[0]), sponsorScans.collect(toList()), os);
-        }
+        ExportUtils.exportExcel(eventName + "-sponsor-scan.xlsx",
+            eventName + " sponsor scan",
+            header.toArray(new String[0]),
+            sponsorScans, response);
     }
 
     private void exportSponsorScanCSV(String eventName, List<String> header, Stream<String[]> sponsorScans,
                                       HttpServletResponse response) throws IOException {
-        response.setContentType("text/csv;charset=UTF-8");
-        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-sponsor-scan.csv");
-        try (ServletOutputStream out = response.getOutputStream(); CSVWriter writer = new CSVWriter(new OutputStreamWriter(out))) {
-            for (int marker : BOM_MARKERS) {
-                out.write(marker);
-            }
-            writer.writeNext(header.toArray(new String[0]));
-            sponsorScans.forEachOrdered(writer::writeNext);
-            writer.flush();
-            out.flush();
-        }
+        ExportUtils.exportCsv(eventName + "-sponsor-scan.csv", header.toArray(new String[0]), sponsorScans, response);
     }
 
     @RequestMapping("/events/{eventName}/fields")
