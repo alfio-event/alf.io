@@ -17,7 +17,7 @@
 package alfio.controller.api.v2;
 
 import alfio.controller.api.support.TicketHelper;
-import alfio.controller.api.v2.user.model.LocalizedCountry;
+import alfio.controller.api.v2.model.LocalizedCountry;
 import alfio.manager.i18n.I18nManager;
 import alfio.model.ContentLanguage;
 import alfio.util.CustomResourceBundleMessageSource;

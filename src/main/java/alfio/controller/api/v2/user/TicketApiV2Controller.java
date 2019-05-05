@@ -18,8 +18,8 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.TicketController;
 import alfio.controller.api.support.TicketHelper;
-import alfio.controller.api.v2.user.model.TicketInfo;
-import alfio.controller.api.v2.user.model.ValidatedResponse;
+import alfio.controller.api.v2.model.TicketInfo;
+import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.TicketReservationManager;
 import alfio.repository.TicketCategoryRepository;

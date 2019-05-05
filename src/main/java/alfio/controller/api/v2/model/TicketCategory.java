@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.v2.user.model;
+package alfio.controller.api.v2.model;
 
 import alfio.controller.decorator.SaleableTicketCategory;
 import lombok.Getter;

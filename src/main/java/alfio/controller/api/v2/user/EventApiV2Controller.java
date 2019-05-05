@@ -17,7 +17,7 @@
 package alfio.controller.api.v2.user;
 
 import alfio.controller.EventController;
-import alfio.controller.api.v2.user.model.*;
+import alfio.controller.api.v2.model.*;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.manager.EventManager;

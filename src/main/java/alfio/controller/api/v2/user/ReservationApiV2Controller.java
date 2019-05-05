@@ -17,9 +17,9 @@
 package alfio.controller.api.v2.user;
 
 import alfio.controller.ReservationController;
-import alfio.controller.api.v2.user.model.ReservationInfo;
-import alfio.controller.api.v2.user.model.ReservationInfo.TicketsByTicketCategory;
-import alfio.controller.api.v2.user.model.ValidatedResponse;
+import alfio.controller.api.v2.model.ReservationInfo;
+import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
+import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.support.SessionUtil;

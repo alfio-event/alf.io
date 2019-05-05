@@ -14,20 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.v2.user.model;
+package alfio.controller.api.v2.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@Getter
 @AllArgsConstructor
-public class TicketInfo {
-
-    private final String fullName;
-    private final String email;
-    private final String uuid;
-
-    private final String ticketCategoryName;
-    private final String reservationFullName;
-    private final String reservationId;
+@Getter
+public class LocalizedCountry {
+    private final String isoCode;
+    private final String name;
 }
