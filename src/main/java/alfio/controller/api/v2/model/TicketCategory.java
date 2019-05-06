@@ -29,6 +29,7 @@ public class TicketCategory {
     private final String name;
     private final int[] amountOfTickets;
     private final boolean free;
+    private final String formattedFinalPrice;
 
     public TicketCategory(SaleableTicketCategory saleableTicketCategory, Map<String, String> description) {
         this.description = description;
@@ -36,5 +37,6 @@ public class TicketCategory {
         this.name = saleableTicketCategory.getName();
         this.amountOfTickets = saleableTicketCategory.getAmountOfTickets();
         this.free = saleableTicketCategory.getFree();
+        this.formattedFinalPrice = saleableTicketCategory.getFormattedFinalPrice();
     }
 }
