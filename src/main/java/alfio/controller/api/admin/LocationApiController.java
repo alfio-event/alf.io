@@ -65,8 +65,8 @@ public class LocationApiController {
 
     @RequestMapping("/location/static-map-image")
     public String getMapImage(
-        @RequestParam("lat") String lat,
-        @RequestParam("lng") String lng) {
+        @RequestParam(name = "lat", required = false) String lat,
+        @RequestParam(name = "lng", required = false) String lng) {
         Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf();
         return LocationDescriptor.getMapUrl(lat, lng, geoInfoConfiguration);
     }

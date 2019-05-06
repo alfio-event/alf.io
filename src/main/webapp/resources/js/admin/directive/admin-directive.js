@@ -334,6 +334,10 @@
                         date: endDateTime.format('YYYY-MM-DD'),
                         time: endDateTime.format('HH:mm')
                     };
+
+                    if(!$scope.obj.geolocation) {
+                        $scope.obj.geolocation = {timeZone: $scope.eventObj.timeZone, latitude: $scope.eventObj.latitude, longitude: $scope.eventObj.longitude};
+                    }
                 }
 
                 LocationService.getTimezones().then(function(res) {
@@ -393,7 +397,10 @@
                     $scope.loadingMap = true;
                     LocationService.clientGeolocate(location).then(function(result) {
                         delete $scope['mapError'];
-                        $scope.obj['geolocation'] = result;
+
+                        if(result.latitude !== null && result.longitude !== null) {
+                            $scope.obj['geolocation'] = result;
+                        }
                         $scope.loadingMap = false;
                     }, function(e) {
                         $scope.mapError = e;
