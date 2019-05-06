@@ -92,4 +92,8 @@ public class EventWithAdditionalInfo {
     public String getVat() {
         return event.getVat().toString();
     }
+
+    public boolean isFree() {
+        return event.getFree();
+    }
 }
