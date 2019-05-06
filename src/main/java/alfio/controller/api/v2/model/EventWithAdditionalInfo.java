@@ -84,4 +84,8 @@ public class EventWithAdditionalInfo {
     public String getCurrency() {
         return event.getCurrency();
     }
+
+    public boolean isVatIncluded() {
+        return event.isVatIncluded();
+    }
 }
