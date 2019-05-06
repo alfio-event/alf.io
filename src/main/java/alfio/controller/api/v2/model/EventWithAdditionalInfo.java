@@ -88,4 +88,8 @@ public class EventWithAdditionalInfo {
     public boolean isVatIncluded() {
         return event.isVatIncluded();
     }
+
+    public String getVat() {
+        return event.getVat().toString();
+    }
 }
