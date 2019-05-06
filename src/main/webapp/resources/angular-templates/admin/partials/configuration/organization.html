@@ -140,7 +140,7 @@
                     <div class="panel-body" ng-if="organizationConf.platformModeEnabled">
                         <div class="row">
                             <div class="col-xs-4 col-md-3">
-                                <a class="stripe-connect" ng-href="configuration/payment/stripe/connect/{{organizationConf.organizationId}}"><span>Connect with Stripe</span></a>
+                                <a class="stripe-connect" ng-href="/admin/configuration/payment/stripe/connect/{{organizationConf.organizationId}}"><span>Connect with Stripe</span></a>
                             </div>
                             <div class="col-xs-8 col-md-9" ng-class="{'text-success': organizationConf.stripeConnected}">
                                 <i class="fa" ng-class="{'fa-check': organizationConf.stripeConnected, 'fa-question': !organizationConf.stripeConnected}"></i> <span ng-if="organizationConf.stripeConnected">Connected</span> <span ng-if="!organizationConf.stripeConnected">NOT Connected</span>
