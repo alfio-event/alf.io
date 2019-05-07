@@ -112,10 +112,12 @@ public class ReservationApiV2Controller {
                 })
                 .collect(Collectors.toList());
 
+            //TODO: will most likely need to expose more of the additional info
+            var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
 
             return Optional.of(new ReservationInfo(reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(),
                 reservation.getValidity().getTime(),
-                ticketsInReservation, orderSummary));
+                ticketsInReservation, orderSummary, reservation.getStatus(), additionalInfo.hasBeenValidated()));
         }));
 
         //

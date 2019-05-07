@@ -17,6 +17,7 @@
 package alfio.controller.api.v2.model;
 
 import alfio.model.OrderSummary;
+import alfio.model.TicketReservation;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -33,6 +34,10 @@ public class ReservationInfo {
     private final long validity;
     private final List<TicketsByTicketCategory> ticketsByCategory;
     private final OrderSummary orderSummary; //<- TODO: rewrap it so the model is kept inside v2.user.model
+
+
+    private final TicketReservation.TicketReservationStatus status;
+    private final boolean validatedBookingInformations;
 
 
     @AllArgsConstructor
