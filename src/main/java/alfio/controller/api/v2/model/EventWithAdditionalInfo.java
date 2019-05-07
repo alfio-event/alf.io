@@ -18,6 +18,7 @@ package alfio.controller.api.v2.model;
 
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
+import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 
@@ -30,6 +31,7 @@ public class EventWithAdditionalInfo {
     private final String mapUrl;
     private final Organization organization;
     private final Map<String, String> description;
+    private List<PaymentProxy> activePaymentMethods;
 
 
     public String getShortName() {
@@ -95,5 +97,9 @@ public class EventWithAdditionalInfo {
 
     public boolean isFree() {
         return event.getFree();
+    }
+
+    public List<PaymentProxy> getActivePaymentMethods() {
+        return activePaymentMethods;
     }
 }

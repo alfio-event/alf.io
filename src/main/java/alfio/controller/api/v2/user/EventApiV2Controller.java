@@ -21,6 +21,8 @@ import alfio.controller.api.v2.model.*;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.manager.EventManager;
+import alfio.manager.PaymentManager;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.EventDescription;
@@ -28,7 +30,7 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.user.Organization;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
@@ -50,6 +52,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
+
 
 @RestController
 @RequestMapping("/api/v2/public/")
@@ -63,6 +67,7 @@ public class EventApiV2Controller {
     private final OrganizationRepository organizationRepository;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
+    private final PaymentManager paymentManager;
 
 
     @GetMapping("events")
@@ -83,17 +88,34 @@ public class EventApiV2Controller {
                     .stream()
                     .collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription)));
 
-                Organization organization = organizationRepository.getById(event.getOrganizationId());
+                var organization = organizationRepository.getById(event.getOrganizationId());
 
                 Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = configurationManager.getStringConfigValueFrom(
                     Configuration.from(event, ConfigurationKeys.MAPS_PROVIDER),
                     Configuration.from(event, ConfigurationKeys.MAPS_CLIENT_API_KEY),
                     Configuration.from(event, ConfigurationKeys.MAPS_HERE_APP_ID),
                     Configuration.from(event, ConfigurationKeys.MAPS_HERE_APP_CODE));
-                LocationDescriptor ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
-                return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions), getCorsHeaders(), HttpStatus.OK);
+
+                var ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
+
+                var activePaymentMethods = getActivePaymentMethods(event);
+
+
+                return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, activePaymentMethods), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
+    }
+
+    private List<PaymentProxy> getActivePaymentMethods(Event event) {
+        if(!event.isFreeOfCharge()) {
+            return paymentManager.getPaymentMethods(event)
+                .stream()
+                .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
+                .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)
+                .collect(toList());
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     private static Map<String, String> applyCommonMark(Map<String, String> in) {
