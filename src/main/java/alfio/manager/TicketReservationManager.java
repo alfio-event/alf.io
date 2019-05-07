@@ -587,7 +587,7 @@ public class TicketReservationManager {
 
         List<Mailer.Attachment> attachments = Collections.emptyList();
 
-        if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event)) { // https://github.com/alfio-event/alf.io/issues/573
+        if (!configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) || configurationManager.isInvoiceOnly(event)) { // https://github.com/alfio-event/alf.io/issues/573
             attachments = generateAttachmentForConfirmationEmail(event, ticketReservation, language, summary);
         }
 
