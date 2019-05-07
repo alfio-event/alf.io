@@ -42,6 +42,26 @@
         </div>
 
         <div class="page-header">
+            <h2>Pass Integration</h2>
+            <span>Integration with Apple (tm) Pass</span>
+        </div>
+        <div>
+            <div data-ng-repeat="setting in systemConf.passIntegration.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+            </div>
+        </div>
+
+        <div class="page-header">
+            <h2>Waiting List</h2>
+            <span>Waiting List configuration</span>
+        </div>
+        <div>
+            <div data-ng-repeat="setting in systemConf.passIntegration.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+            </div>
+        </div>
+
+        <div class="page-header">
             <h2>E-Mail</h2>
             <span>E-Mail settings</span>
         </div>
@@ -131,7 +151,7 @@
 
 
         <div class="page-header">
-            <h2>Invoice settings</h2>
+            <h2>Invoices</h2>
         </div>
         <div>
             <div data-ng-repeat="setting in systemConf.settings.INVOICE">

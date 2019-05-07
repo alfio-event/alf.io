@@ -123,7 +123,7 @@
                     }
                 }
 
-                _.forEach(['PAYMENT', 'PAYMENT_STRIPE', 'PAYMENT_PAYPAL', /*'PAYMENT_MOLLIE',*/ 'PAYMENT_OFFLINE', 'INVOICE_EU', 'TRANSLATIONS', 'RESERVATION_UI', 'ALFIO_PI'], function(group) {
+                _.forEach(['PAYMENT', 'PAYMENT_STRIPE', 'PAYMENT_PAYPAL', /*'PAYMENT_MOLLIE',*/ 'PAYMENT_OFFLINE', 'INVOICE_EU', 'TRANSLATIONS', 'RESERVATION_UI', 'PASS_INTEGRATION', 'WAITING_LIST', 'ALFIO_PI'], function(group) {
                     if(angular.isDefined(original[group]) && original[group].length > 0) {
                         transformed[_.camelCase(group)] = {
                             settings: original[group]
@@ -434,12 +434,12 @@
 
     function loadSettings(container, settings, ConfigurationService) {
         var general = settings['GENERAL'] || [];
-        container.hasResults = general.length > 0;
-        container.noResults = general.length === 0;
-        if(container.hasResults) {
+        if(general.length > 0) {
             container.settings = settings;
             angular.extend(container, ConfigurationService.transformConfigurationObject(settings));
         }
+        container.hasResults = general.length > 0;
+        container.noResults = general.length === 0;
         container.loading = false;
     }
 

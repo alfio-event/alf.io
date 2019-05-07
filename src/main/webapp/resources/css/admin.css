@@ -713,3 +713,15 @@ span.path {
 .disabled-value {
     opacity: .5;
 }
+
+.nz-toggle-wrap {
+    vertical-align: bottom;
+}
+
+.boolean-option {
+    margin: 10px 0;
+}
+
+.boolean-option > label {
+    margin-left: 10px;
+}
