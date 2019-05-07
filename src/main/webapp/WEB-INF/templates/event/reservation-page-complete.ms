@@ -73,9 +73,9 @@
 </div>
 
 {{^additionalServicesOnly}}
-    {{#ticketsAreAllAssigned}}
+    {{#displayTransferInfo}}
     <p class="bg-info ticket-info">{{#i18n}}reservation-page-complete.info-update{{/i18n}}</p>
-    {{/ticketsAreAllAssigned}}
+    {{/displayTransferInfo}}
 {{/additionalServicesOnly}}
 
 <ul class="list-group">

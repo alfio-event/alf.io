@@ -48,6 +48,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
+import static alfio.model.system.ConfigurationKeys.ENABLE_TICKET_TRANSFER;
 
 @Controller
 @RequiredArgsConstructor
@@ -111,7 +112,6 @@ public class TicketController {
         Event event = data.getLeft();
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(data.getRight().getCategoryId(), event.getId());
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-
         boolean enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false);
         Ticket ticket = data.getRight();
         model.addAttribute("ticketAndCategory", Pair.of(eventManager.getTicketCategoryById(ticket.getCategoryId(), event.getId()), new TicketDecorator(ticket, enableFreeCancellation, eventManager.checkTicketCancellationPrerequisites().apply(ticket), "ticket/"+ticket.getUuid()+"/view", ticketHelper.findTicketFieldConfigurationAndValue(ticket), true, "")))//
@@ -122,7 +122,8 @@ public class TicketController {
                 .addAttribute("countries", TicketHelper.getLocalizedCountries(locale))
                 .addAttribute("organization", organization)//
                 .addAttribute("pageTitle", "show-ticket.header.title")
-                .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName());
+                .addAttribute("useFirstAndLastName", event.mustUseFirstAndLastName())
+                .addAttribute("transferEnabled", configurationManager.getBooleanConfigValue(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER), true) && !ticket.getLockedAssignment());
 
         return "/event/update-ticket";
     }

@@ -709,6 +709,7 @@ class TicketReservationManagerTest {
     @Test
     void confirmPaidReservation() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
         testPaidReservation();
         verify(notificationManager).sendTicketByEmail(any(), any(), any(), any(), any(), any());
     }
@@ -716,8 +717,28 @@ class TicketReservationManagerTest {
     @Test
     void confirmPaidReservationButDoNotSendEmail() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(false);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
         testPaidReservation();
         verify(notificationManager, never()).sendTicketByEmail(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void confirmAndLockTickets() {
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(false);
+        when(ticketRepository.forbidReassignment(any())).thenReturn(1);
+        testPaidReservation();
+    }
+
+    @Test
+    void lockFailed() {
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(false);
+        when(ticketRepository.forbidReassignment(any())).thenReturn(0);
+        try {
+            testPaidReservation();
+            fail();
+        } catch (AssertionError e) {
+            e.printStackTrace();
+        }
     }
 
     private void testPaidReservation() {
@@ -778,6 +799,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()), isNull())).thenReturn(1);
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
         OnSiteManager onSiteManager = mock(OnSiteManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.ON_SITE), any())).thenReturn(Optional.of(onSiteManager));
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
@@ -846,6 +868,7 @@ class TicketReservationManagerTest {
         when(reservation.getUserLanguage()).thenReturn("en");
         when(reservation.getPromoCodeDiscountId()).thenReturn(null);
         when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(new Organization(1, "", "", ""));
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
 
         trm.confirmOfflinePayment(event, RESERVATION_ID, "username");
         verify(ticketReservationRepository, atLeastOnce()).findOptionalReservationById(RESERVATION_ID);

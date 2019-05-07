@@ -14,8 +14,9 @@
         <strong>{{#i18n}}email.ticket-email-sent{{/i18n}}</strong>
     </div>
 {{/ticketEmailSent}}
-
+{{#transferEnabled}}
 <p class="bg-info ticket-info">{{#i18n}}reservation-page-complete.info-update{{/i18n}}</p>
+{{/transferEnabled}}
 
 <ul class="list-group">
     {{#ticketAndCategory}}

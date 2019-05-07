@@ -218,16 +218,19 @@ public class ReservationController {
                             })
                             .collect(toList()));
                     boolean ticketsAllAssigned = tickets.stream().allMatch(Ticket::getAssigned);
-                    model.addAttribute("ticketsAreAllAssigned", ticketsAllAssigned);
-                    model.addAttribute("collapseEnabled", tickets.size() > 1 && !ticketsAllAssigned);
-                    model.addAttribute("additionalServicesOnly", tickets.isEmpty() && !additionalServices.isEmpty());
-                    model.addAttribute("additionalServices", additionalServices);
-                    model.addAttribute("countries", TicketHelper.getLocalizedCountries(locale));
-                    model.addAttribute("pageTitle", "reservation-page-complete.header.title");
-                    model.addAttribute("event", ev);
-                    model.addAttribute("useFirstAndLastName", ev.mustUseFirstAndLastName());
-                    model.addAttribute("userCanDownloadReceiptOrInvoice", configurationManager.canGenerateReceiptOrInvoiceToCustomer(ev));
+                    model.addAttribute("ticketsAreAllAssigned", ticketsAllAssigned)
+                        .addAttribute("displayTransferInfo", ticketsAllAssigned && configurationManager.getBooleanConfigValue(Configuration.from(ev).apply(ENABLE_TICKET_TRANSFER), true))
+                        .addAttribute("collapseEnabled", tickets.size() > 1 && !ticketsAllAssigned)
+                        .addAttribute("additionalServicesOnly", tickets.isEmpty() && !additionalServices.isEmpty())
+                        .addAttribute("additionalServices", additionalServices)
+                        .addAttribute("countries", TicketHelper.getLocalizedCountries(locale))
+                        .addAttribute("pageTitle", "reservation-page-complete.header.title")
+                        .addAttribute("event", ev)
+                        .addAttribute("useFirstAndLastName", ev.mustUseFirstAndLastName())
+                        .addAttribute("userCanDownloadReceiptOrInvoice", configurationManager.canGenerateReceiptOrInvoiceToCustomer(ev));
+
                     model.asMap().putIfAbsent("validationResult", ValidationResult.success());
+
                     return "/event/reservation-page-complete";
                 }).orElseGet(() -> redirectReservation(tr, eventName, reservationId));
         }).orElse("redirect:/");
