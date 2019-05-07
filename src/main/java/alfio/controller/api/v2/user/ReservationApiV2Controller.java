@@ -19,6 +19,7 @@ package alfio.controller.api.v2.user;
 import alfio.controller.ReservationController;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
+import alfio.controller.api.v2.model.ReservationStatusInfo;
 import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
@@ -123,6 +124,20 @@ public class ReservationApiV2Controller {
         //
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
     }
+
+    @GetMapping("/event/{eventName}/reservation/{reservationId}/status")
+    public ResponseEntity<ReservationStatusInfo> getReservationStatus(@PathVariable("eventName") String eventName,
+                                                                      @PathVariable("reservationId") String reservationId) {
+
+        Optional<ReservationStatusInfo> res = Optional.empty();
+        if (eventRepository.existsByShortName(eventName)) {
+            res = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
+                .map(status -> new ReservationStatusInfo(status.getStatus(), Boolean.TRUE.equals(status.getValidated())));
+        }
+
+        return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
+    }
+
 
     @DeleteMapping("/event/{eventName}/reservation/{reservationId}")
     public ResponseEntity<Boolean> cancelPendingReservation(@PathVariable("eventName") String eventName,

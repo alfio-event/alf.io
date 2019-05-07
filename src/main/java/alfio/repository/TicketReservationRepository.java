@@ -107,6 +107,9 @@ public interface TicketReservationRepository {
     @Query("select * from tickets_reservation where id = :id")
     Optional<TicketReservation> findOptionalReservationById(@Bind("id") String id);
 
+    @Query("select status, validated_for_overview from tickets_reservation where id = :id")
+    Optional<TicketReservationStatusAndValidation> findOptionalStatusAndValidationById(@Bind("id") String id);
+
     @Query("select id from tickets_reservation where validity < :date and status = 'PENDING' for update skip locked")
     List<String> findExpiredReservationForUpdate(@Bind("date") Date date);
 
