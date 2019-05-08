@@ -20,7 +20,6 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.model.LocalizedCountry;
 import alfio.manager.i18n.I18nManager;
-import alfio.model.ContentLanguage;
 import alfio.util.CustomResourceBundleMessageSource;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +40,7 @@ import java.util.stream.Collectors;
 public class TranslationsApiController {
 
     private final CustomResourceBundleMessageSource messageSource;
-    private static String[] EMPTY_ARRAY = new String[]{};
+    private static final String[] EMPTY_ARRAY = new String[]{};
     private final I18nManager i18nManager;
 
     @GetMapping("/public/i18n/bundle/{lang}")
