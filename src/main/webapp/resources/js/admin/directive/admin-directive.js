@@ -1005,6 +1005,48 @@
                     return ctrl.currentView === 'CONFIGURATION';
                 };
 
+                /*
+                GENERAL:'General',
+                            RESERVATION_UI:'Reservation UI',
+                            WAITING_LIST:'Waiting List',
+                            MAIL:'E-Mail',
+                            MAP:'Map',
+                            INVOICE:'Invoice',
+                            PAYMENT:'Payment'
+                 */
+                if(ctrl.isConfiguration()) {
+                    ctrl.settingCategories = [
+                        {
+                            id: 'GENERAL',
+                            name: 'General'
+                        },
+                        {
+                            id: 'RESERVATION_UI',
+                            name: 'Reservation UI'
+                        },
+                        {
+                            id: 'WAITING_LIST',
+                            name: 'Waiting List'
+                        },
+                        {
+                            id: 'MAIL',
+                            name: 'E-Mail'
+                        },
+                        {
+                            id: 'MAP',
+                            name: 'Map'
+                        },
+                        {
+                            id: 'INVOICE',
+                            name: 'Invoice'
+                        },
+                        {
+                            id: 'PAYMENT',
+                            name: 'Payment'
+                        }
+                    ];
+                }
+
                 toUnbind.push($rootScope.$on('ConfigurationMenuLoaded', function(e, organizations) {
                     ctrl.organizations = organizations;
                 }));

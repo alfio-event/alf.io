@@ -123,6 +123,19 @@
                 </ul>
             </li>
         </ul>
+        <hr/>
+        <ul class="list-unstyled">
+            <li>
+                <h4 class="text-muted">Go to</h4>
+            </li>
+            <li>
+                <ul class="nav nav-pills nav-stacked">
+                    <li data-ng-repeat="s in ctrl.settingCategories">
+                        <a ng-click="ctrl.navigateTo(s.id)">{{s.name}} <i class="fa fa-chevron-right pull-right"></i> </a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
     </section>
     <footer data-ng-if="ctrl.currentView !== 'UNKNOWN'">
         <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{ctrl.applicationInfo.version}}</h5>

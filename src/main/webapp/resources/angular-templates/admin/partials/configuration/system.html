@@ -11,7 +11,7 @@
         <h1>System configuration</h1>
     </div>
 
-    <div class="page-header">
+    <div class="page-header" id="GENERAL">
         <h2>General</h2>
         <span>General settings</span>
     </div>
@@ -31,7 +31,7 @@
             </div>
         </div>
 
-        <div class="page-header">
+        <div class="page-header" id="RESERVATION_UI">
             <h2>Reservation Process</h2>
             <span>Customizations for the public-facing reservation process</span>
         </div>
@@ -41,7 +41,7 @@
             </div>
         </div>
 
-        <div class="page-header">
+        <div class="page-header" id="PASS_INTEGRATION">
             <h2>Pass Integration</h2>
             <span>Integration with Apple (tm) Pass</span>
         </div>
@@ -51,17 +51,17 @@
             </div>
         </div>
 
-        <div class="page-header">
+        <div class="page-header" id="WAITING_LIST">
             <h2>Waiting List</h2>
             <span>Waiting List configuration</span>
         </div>
         <div>
-            <div data-ng-repeat="setting in systemConf.passIntegration.settings">
+            <div data-ng-repeat="setting in systemConf.waitingList.settings">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
             </div>
         </div>
 
-        <div class="page-header">
+        <div class="page-header" id="MAIL">
             <h2>E-Mail</h2>
             <span>E-Mail settings</span>
         </div>
@@ -113,7 +113,7 @@
             </div>
         </div>
 
-        <div class="page-header">
+        <div class="page-header" id="MAP">
             <h2>Map</h2>
             <span>Map settings</span>
         </div>
@@ -150,7 +150,7 @@
         </div>
 
 
-        <div class="page-header">
+        <div class="page-header" id="INVOICE">
             <h2>Invoices</h2>
         </div>
         <div>
@@ -170,7 +170,7 @@
         </div>
 
 
-        <div class="page-header" data-ng-if="systemConf.payment || systemConf.paymentPaypal || systemConf.paymentStripe || systemConf.paymentMollie || systemConf.paymentOffline">
+        <div class="page-header" id="PAYMENT" data-ng-if="systemConf.payment || systemConf.paymentPaypal || systemConf.paymentStripe || systemConf.paymentMollie || systemConf.paymentOffline">
             <h2>Payment</h2>
             <span>Payment provider settings</span>
         </div>
