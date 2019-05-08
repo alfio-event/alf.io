@@ -56,18 +56,6 @@ public class ReservationApiV2Controller {
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketFieldRepository ticketFieldRepository;
 
-
-    @GetMapping("/tmp/event/{eventName}/reservation/{reservationId}/status")
-    public ResponseEntity<String> getStatus(@PathVariable("eventName") String eventName,
-                                            @PathVariable("reservationId") String reservationId) {
-        Optional<Event> event = eventRepository.findOptionalByShortName(eventName);
-        if (event.isEmpty()) {
-            return ResponseEntity.ok("redirect:/");
-        }
-        return ResponseEntity.ok(reservationController.redirectReservation(ticketReservationManager.findById(reservationId), eventName, reservationId));
-    }
-
-
     /**
      * See {@link ReservationController#showBookingPage(String, String, Model, Locale)}
      *
