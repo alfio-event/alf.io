@@ -16,7 +16,6 @@
  */
 package alfio.controller.api.v2.model;
 
-import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
@@ -24,6 +23,7 @@ import lombok.AllArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @AllArgsConstructor
 public class EventWithAdditionalInfo {
@@ -50,9 +50,11 @@ public class EventWithAdditionalInfo {
         return event.getWebsiteUrl();
     }
 
-    //TODO: don't expose content language -> can be more restricted
-    public List<ContentLanguage> getContentLanguages() {
-        return event.getContentLanguages();
+    public List<Language> getContentLanguages() {
+        return event.getContentLanguages()
+            .stream()
+            .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))
+            .collect(Collectors.toList());
     }
 
     public String getMapUrl() {

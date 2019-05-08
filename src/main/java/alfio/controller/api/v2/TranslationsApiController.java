@@ -17,6 +17,7 @@
 package alfio.controller.api.v2;
 
 import alfio.controller.api.support.TicketHelper;
+import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.model.LocalizedCountry;
 import alfio.manager.i18n.I18nManager;
 import alfio.model.ContentLanguage;
@@ -73,7 +74,10 @@ public class TranslationsApiController {
     }
 
     @GetMapping("/public/i18n/languages")
-    public List<ContentLanguage> getAvailableLanguages() {
-        return i18nManager.getSupportedLanguages();
+    public List<Language> getAvailableLanguages() {
+        return i18nManager.getSupportedLanguages()
+            .stream()
+            .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))
+            .collect(Collectors.toList());
     }
 }
