@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @Getter
 public class ReservationInfo {
+    private final String id;
+    private final String shortId;
     private final String firstName;
     private final String lastName;
     private final String email;
