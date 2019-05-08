@@ -117,7 +117,8 @@ public class ReservationApiV2Controller {
                 reservation.getValidity().getTime(),
                 ticketsInReservation, orderSummary, reservation.getStatus(),
                 additionalInfo.hasBeenValidated(),
-                formattedExpirationDate
+                formattedExpirationDate,
+                reservation.getInvoiceNumber()
                 ));
         }));
 
