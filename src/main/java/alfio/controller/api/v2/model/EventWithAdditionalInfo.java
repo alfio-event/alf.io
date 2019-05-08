@@ -31,7 +31,13 @@ public class EventWithAdditionalInfo {
     private final String mapUrl;
     private final Organization organization;
     private final Map<String, String> description;
-    private List<PaymentProxy> activePaymentMethods;
+    private final List<PaymentProxy> activePaymentMethods;
+
+    //payment related informations
+    private final boolean userCanDownloadReceiptOrInvoice;
+    private final String bankAccount;
+    private final List<String> bankAccountOwner;
+    //
 
 
     public String getShortName() {
@@ -103,5 +109,17 @@ public class EventWithAdditionalInfo {
 
     public List<PaymentProxy> getActivePaymentMethods() {
         return activePaymentMethods;
+    }
+
+    public boolean isUserCanDownloadReceiptOrInvoice() {
+        return userCanDownloadReceiptOrInvoice;
+    }
+
+    public String getBankAccount() {
+        return bankAccount;
+    }
+
+    public List<String> getBankAccountOwner() {
+        return bankAccountOwner;
     }
 }

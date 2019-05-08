@@ -52,6 +52,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
 import static java.util.stream.Collectors.toList;
 
 
@@ -101,7 +103,15 @@ public class EventApiV2Controller {
                 var activePaymentMethods = getActivePaymentMethods(event);
 
 
-                return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, activePaymentMethods), getCorsHeaders(), HttpStatus.OK);
+                //
+                String bankAccount = configurationManager.getStringConfigValue(Configuration.from(event, BANK_ACCOUNT_NR)).orElse("");
+                List<String> bankAccountOwner = Arrays.asList(configurationManager.getStringConfigValue(Configuration.from(event, BANK_ACCOUNT_OWNER)).orElse("").split("\n"));
+                boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
+                //
+
+
+                return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, activePaymentMethods,
+                    canGenerateReceiptOrInvoiceToCustomer, bankAccount, bankAccountOwner), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
