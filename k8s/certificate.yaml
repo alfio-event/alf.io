@@ -1,0 +1,19 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: new-reg-devoxx-be-tls
+  namespace: default
+spec:
+  secretName: new-reg-devoxx-be-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: reg.devoxx.be
+  dnsNames:
+  - reg.devoxx.be
+  acme:
+    config:
+    - http01:
+        ingress: alfio19
+      domains:
+      - reg.devoxx.be

@@ -1,0 +1,85 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: alfio19
+  name: alfio19
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: alfio19
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: alfio19
+    spec:
+      containers:
+      - env:
+        - name: SPRING_PROFILES_ACTIVE
+          value: jdbc-session
+        - name: POSTGRES_PORT_5432_TCP_PORT
+          value: "5432"
+        - name: POSTGRES_ENV_POSTGRES_DB
+          value: alfio19
+        - name: POSTGRES_PORT_5432_TCP_ADDR
+          value: 127.0.0.1
+        - name: POSTGRES_ENV_POSTGRES_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: alfio-postgresql-credentials
+        - name: POSTGRES_ENV_POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: alfio-postgresql-credentials
+        image: eu.gcr.io/devoxx-registration/alfiov2:m2.1
+        imagePullPolicy: IfNotPresent
+        name: alfio-app
+        ports:
+        - containerPort: 8080
+          name: web
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "1"
+            memory: 512Mi
+          requests:
+            cpu: 200m
+            memory: 512Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      - command:
+        - /cloud_sql_proxy
+        - -instances=devoxx-registration:europe-west1:alfio-postgres=tcp:5432
+        - -credential_file=/secrets/cloudsql/alfio-service-account.json
+        image: gcr.io/cloudsql-docker/gce-proxy:1.11
+        imagePullPolicy: IfNotPresent
+        name: cloudsql-proxy
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /secrets/cloudsql
+          name: alfio-sa
+          readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: alfio-sa
+        secret:
+          defaultMode: 420
+          secretName: alfio-sa

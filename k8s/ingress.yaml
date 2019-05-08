@@ -1,0 +1,24 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: alfio19
+  namespace: default
+  annotations:
+      kubernetes.io/ingress.class: "nginx"
+      nginx.ingress.kubernetes.io/affinity: "cookie"
+      nginx.ingress.kubernetes.io/session-cookie-name: "route"
+      nginx.ingress.kubernetes.io/session-cookie-hash: "sha1"
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - reg.devoxx.be
+    secretName: new-reg-devoxx-be-tls
+  rules:
+  - host: reg.devoxx.be
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: alfio19
+          servicePort: 8080
