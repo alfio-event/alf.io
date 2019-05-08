@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.user;
 
+import alfio.controller.InvoiceReceiptController;
 import alfio.controller.ReservationController;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
@@ -34,12 +35,14 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -59,6 +62,7 @@ public class ReservationApiV2Controller {
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketFieldRepository ticketFieldRepository;
     private final MessageSource messageSource;
+    private final InvoiceReceiptController invoiceReceiptController;
 
     /**
      * See {@link ReservationController#showBookingPage(String, String, Model, Locale)}
@@ -200,6 +204,22 @@ public class ReservationApiV2Controller {
         } else {
             return ResponseEntity.ok(false);
         }
+    }
+
+    @GetMapping("/event/{eventName}/reservation/{reservationId}/receipt")
+    public ResponseEntity<Void> getReceipt(@PathVariable("eventName") String eventName,
+                                           @PathVariable("reservationId") String reservationId,
+                                           HttpServletResponse response,
+                                           Authentication authentication) {
+        return invoiceReceiptController.getReceipt(eventName, reservationId, response, authentication);
+    }
+
+    @GetMapping("/event/{eventName}/reservation/{reservationId}/invoice")
+    public ResponseEntity<Void> getInvoice(@PathVariable("eventName") String eventName,
+                                           @PathVariable("reservationId") String reservationId,
+                                           HttpServletResponse response,
+                                           Authentication authentication) {
+        return invoiceReceiptController.getInvoice(eventName, reservationId, response, authentication);
     }
 
     private static ReservationInfo.AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, ReservationInfo.Description> description) {
