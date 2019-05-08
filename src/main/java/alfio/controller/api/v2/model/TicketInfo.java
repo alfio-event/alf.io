@@ -30,4 +30,6 @@ public class TicketInfo {
     private final String ticketCategoryName;
     private final String reservationFullName;
     private final String reservationId;
+
+    private final boolean deskPaymentRequired;
 }

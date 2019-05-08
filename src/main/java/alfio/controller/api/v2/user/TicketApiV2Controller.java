@@ -22,6 +22,11 @@ import alfio.controller.api.v2.model.TicketInfo;
 import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.TicketReservationManager;
+import alfio.model.Event;
+import alfio.model.Ticket;
+import alfio.model.TicketCategory;
+import alfio.model.TicketReservation;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketCategoryRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -82,16 +87,23 @@ public class TicketApiV2Controller {
         var data = oData.get();
 
 
-        var ticketCategory = ticketCategoryRepository.getByIdAndActive(data.getRight().getCategoryId(), data.getLeft().getId());
+        TicketReservation ticketReservation = data.getMiddle();
+        Ticket ticket = data.getRight();
+        Event event = data.getLeft();
 
-        var ticket = data.getRight();
+        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
 
-        var ticketInfo = new TicketInfo(ticket.getFullName(), ticket.getEmail(), ticket.getUuid(),
+        boolean deskPaymentRequired = Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired();
+
+        return ResponseEntity.ok(new TicketInfo(
+            ticket.getFullName(),
+            ticket.getEmail(),
+            ticket.getUuid(),
             ticketCategory.getName(),
-            data.getMiddle().getFullName(),
-            ticketReservationManager.getShortReservationID(data.getLeft(), data.getMiddle()));
-
-        return ResponseEntity.ok(ticketInfo);
+            ticketReservation.getFullName(),
+            ticketReservationManager.getShortReservationID(event, ticketReservation),
+            deskPaymentRequired)
+        );
     }
 
     @PutMapping("/event/{eventName}/ticket/{ticketIdentifier}")
