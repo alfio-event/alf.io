@@ -122,7 +122,9 @@ public class ReservationApiV2Controller {
                 ticketsInReservation, orderSummary, reservation.getStatus(),
                 additionalInfo.hasBeenValidated(),
                 formattedExpirationDate,
-                reservation.getInvoiceNumber()
+                reservation.getInvoiceNumber(),
+                reservation.getHasInvoiceOrReceiptDocument(),
+                reservation.getHasBeenPaid()
                 ));
         }));
 

@@ -44,6 +44,9 @@ public class ReservationInfo {
 
     private final String invoiceNumber;
 
+    private final boolean invoiceOrReceiptDocumentPresent;
+    private final boolean paid;
+
 
     @AllArgsConstructor
     @Getter
