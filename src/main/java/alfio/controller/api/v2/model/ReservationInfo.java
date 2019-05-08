@@ -40,6 +40,7 @@ public class ReservationInfo {
 
     private final TicketReservation.TicketReservationStatus status;
     private final boolean validatedBookingInformations;
+    private final Map<String, String> formattedExpirationDate; // map of language -> formatted date
 
 
     @AllArgsConstructor

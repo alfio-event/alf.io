@@ -32,6 +32,7 @@ import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -40,6 +41,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -55,6 +58,7 @@ public class ReservationApiV2Controller {
     private final TicketReservationManager ticketReservationManager;
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketFieldRepository ticketFieldRepository;
+    private final MessageSource messageSource;
 
     /**
      * See {@link ReservationController#showBookingPage(String, String, Model, Locale)}
@@ -106,10 +110,15 @@ public class ReservationApiV2Controller {
 
             var shortReservationId =  ticketReservationManager.getShortReservationID(event, reservation);
 
+            var formattedExpirationDate = reservation.getValidity() != null ? formatDateForLocales(event, ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()), "datetime.pattern") : null;
+
             return Optional.of(new ReservationInfo(reservation.getId(), shortReservationId,
                 reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(),
                 reservation.getValidity().getTime(),
-                ticketsInReservation, orderSummary, reservation.getStatus(), additionalInfo.hasBeenValidated()));
+                ticketsInReservation, orderSummary, reservation.getStatus(),
+                additionalInfo.hasBeenValidated(),
+                formattedExpirationDate
+                ));
         }));
 
         //
@@ -229,6 +238,16 @@ public class ReservationApiV2Controller {
             ticket.getEmail(), ticket.getFullName(),
             ticket.getUserLanguage(),
             ticket.getAssigned(), tfcdav);
+    }
+
+    private Map<String, String> formatDateForLocales(Event event, ZonedDateTime date, String formattingCode) {
+
+        Map<String, String> res = new HashMap<>();
+        for (ContentLanguage cl : event.getContentLanguages()) {
+            var formatter = messageSource.getMessage(formattingCode, null, cl.getLocale());
+            res.put(cl.getLocale().getLanguage(), DateTimeFormatter.ofPattern(formatter, cl.getLocale()).format(date));
+        }
+        return res;
     }
 
 }
