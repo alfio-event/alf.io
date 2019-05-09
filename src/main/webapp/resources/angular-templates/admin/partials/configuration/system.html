@@ -11,12 +11,12 @@
         <h1>System configuration</h1>
     </div>
 
-    <div class="page-header" id="GENERAL">
-        <h2>General</h2>
-        <span>General settings</span>
-    </div>
 
     <form name="settingsForm" novalidate data-ng-submit="systemConf.saveSettings(settingsForm)">
+        <div class="page-header" id="GENERAL">
+            <h2>General</h2>
+            <span>General settings</span>
+        </div>
         <div data-ng-if="systemConf.general">
             <div class="form-group">
                 <label>Supported translations</label>
@@ -151,7 +151,7 @@
 
 
         <div class="page-header" id="INVOICE">
-            <h2>Invoices</h2>
+            <h2>Invoice</h2>
         </div>
         <div>
             <div data-ng-repeat="setting in systemConf.settings.INVOICE">
@@ -298,6 +298,6 @@
             </div>
         </div>
 
-        <control-buttons data-form-obj="systemConf" data-success-text="Save" data-cancel-handler="Cancel"></control-buttons>
+        <control-buttons data-form-obj="systemConf" data-success-text="Save" data-cancel-handler="systemConf.cancel"></control-buttons>
     </form>
 </div>

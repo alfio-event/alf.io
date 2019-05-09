@@ -11,19 +11,18 @@
             <h1>Configuration for {{eventConf.event.displayName}}</h1>
         </div>
 
-        <div class="page-header">
-            <h2>General</h2>
-            <span>General settings</span>
-        </div>
-
-        <form name="settingsForm" novalidate data-ng-submit="eventConf.saveSettings(settingsForm)">
+        <form name="settingsForm" novalidate data-ng-submit="eventConf.saveSettings(settingsForm)" class="wMarginTop30px">
+            <div class="page-header" id="GENERAL">
+                <h2>General</h2>
+                <span>General settings</span>
+            </div>
             <div data-ng-if="eventConf.general">
                 <div data-ng-repeat="setting in eventConf.general.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="eventConf.globalSettings" data-delete-handler="eventConf.delete(config)" ></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="eventConf.globalSettings" data-delete-handler="eventConf.delete(config)"></setting>
                 </div>
             </div>
 
-            <div class="page-header">
+            <div class="page-header" id="RESERVATION_UI">
                 <h2>Reservation Process</h2>
                 <span>Customizations for the public-facing reservation process</span>
             </div>
@@ -33,9 +32,29 @@
                 </div>
             </div>
 
-            <div class="page-header" data-ng-if="eventConf.mail">
+            <div class="page-header" id="PASS_INTEGRATION">
+                <h2>Pass Integration</h2>
+                <span>Integration with Apple (tm) Pass</span>
+            </div>
+            <div>
+                <div data-ng-repeat="setting in eventConf.passIntegration.settings">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                </div>
+            </div>
+
+            <div class="page-header" id="WAITING_LIST">
+                <h2>Waiting List</h2>
+                <span>Waiting List configuration</span>
+            </div>
+            <div>
+                <div data-ng-repeat="setting in eventConf.waitingList.settings">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                </div>
+            </div>
+
+            <div class="page-header" id="MAIL">
                 <h2>E-Mail</h2>
-                <span>E-Mail settings <span class="label label-info">system</span></span>
+                <span>E-Mail settings</span>
             </div>
 
             <div data-ng-if="eventConf.mail">
@@ -64,50 +83,105 @@
                             Disable
                         </label>
                     </div>
-                    <div data-ng-repeat="setting in eventConf.mail.settings | mailSettingsFilter:eventConf.mail.type.value" >
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
+                    <div data-ng-repeat="setting in eventConf.mail.settings | mailSettingsFilter:eventConf.mail.type.value">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                     </div>
                     <div>
-                        <setting obj="eventConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
+                        <setting obj="eventConf.mail.maxEmailPerCycle" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                     </div>
                     <div>
-                        <setting obj="eventConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
+                        <setting obj="eventConf.mail.mailReplyTo" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                     </div>
                     <div>
-                        <setting obj="eventConf.mail.mailAttemptsCount" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
+                        <setting obj="eventConf.mail.mailAttemptsCount" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                     </div>
                     <div>
-                        <setting obj="eventConf.mail.cc" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
+                        <setting obj="eventConf.mail.cc" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                     </div>
                 </div>
-                <div data-ng-repeat="setting in eventConf.mail.settings" data-ng-if="!eventConf.mail.type" >
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
+                <div data-ng-repeat="setting in eventConf.mail.settings" data-ng-if="!eventConf.mail.type">
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                 </div>
             </div>
 
-
-            <div class="page-header">
-                <h2>Invoice settings</h2>
-            </div>
-            <div class="alert alert-info"><i class="fa fa-info-circle"></i> You must fill all the fields below (<i>VAT number, Invoice number pattern, Invoice address</i>), otherwise invoices won't be generated.
-                <p>Invoice number pattern follows the <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html#syntax" target="_blank">Java (tm) string formatting syntax</a></p>
+            <div class="page-header" id="INVOICE">
+                <h2>Invoice</h2>
             </div>
             <div>
                 <div data-ng-repeat="setting in eventConf.settings.INVOICE">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)" display-system-badge="true"></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  ></setting>
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title"><i class="fa fa-eur"></i> EU-Specific invoice settings</div>
+                </div>
+                <div class="panel-body">
+                    <div data-ng-repeat="setting in eventConf.invoiceEu.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(setting)" list-values="setting.listValues"></setting>
+                    </div>
                 </div>
             </div>
 
-            <div class="page-header" data-ng-if="eventConf.payment">
+
+            <div class="page-header" id="PAYMENT" data-ng-if="eventConf.payment || eventConf.paymentPaypal || eventConf.paymentStripe || eventConf.paymentMollie || eventConf.paymentOffline">
                 <h2>Payment</h2>
                 <span>Payment provider settings</span>
             </div>
 
-            <div data-ng-if="eventConf.payment">
-                <div data-ng-repeat="setting in eventConf.payment.settings" >
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  display-system-badge="true"></setting>
+            <div data-ng-if="eventConf.payment" class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title"><i class="fa fa-dollar"></i> General</div>
+                </div>
+                <div class="panel-body">
+                    <div data-ng-repeat="setting in eventConf.payment.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  ></setting>
+                    </div>
                 </div>
             </div>
+
+            <div data-ng-if="eventConf.paymentStripe" class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title"><i class="fa fa-cc-stripe"></i> Stripe configuration</div>
+                </div>
+                <div class="panel-body">
+                    <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
+                    <div data-ng-repeat="setting in eventConf.paymentStripe.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  ></setting>
+                    </div>
+                </div>
+            </div>
+
+            <div data-ng-if="eventConf.paymentPaypal" class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title"><i class="fa fa-paypal"></i> PayPal configuration</div>
+                </div>
+                <div class="panel-body">
+                    <div class="alert alert-info">
+                        <p><i class="fa fa-info-circle"></i> in order to accept payments through PayPal, you must create and enable a new <strong>REST API app</strong>, as explained <a href="https://developer.paypal.com/docs/integration/admin/manage-apps/" target="_blank">here</a></p>
+                        <p>Once you have created your app and tested the integration, you can enable live payments by inserting the <strong>Live</strong> Client ID and Secret, and enabling the "live mode" below.</p>
+                        <p><strong>IMPORTANT:</strong> if you are going to accept payments in a currency you don't hold, please make sure to enable automatic currency conversion. </p>
+                        <p>To do that, go to <a href="https://www.paypal.com/cgi-bin/customerprofileweb?cmd=_profile-pref">PayPal dashboard</a> and select <code>Profile</code> -> <code>Profile and Settings</code> -> <code>My Selling Tools</code> -> <code>Block Payments</code></p>
+                    </div>
+                    <div data-ng-repeat="setting in eventConf.paymentPaypal.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  ></setting>
+                    </div>
+                </div>
+            </div>
+
+            <!--<div data-ng-if="eventConf.paymentMollie" class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title"> Mollie configuration</div>
+                </div>
+                <div class="panel-body">
+                    <div class="alert alert-info">
+                        <p><i class="fa fa-info-circle"></i> in order to accept payments through Mollie, you must have Live API key.</p>
+                    </div>
+                    <div data-ng-repeat="setting in eventConf.paymentMollie.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  ></setting>
+                    </div>
+                </div>
+            </div>-->
 
             <div data-ng-if="eventConf.paymentOffline" class="panel panel-default">
                 <div class="panel-heading">
@@ -117,57 +191,17 @@
                     <div class="alert alert-info">
                         <p><i class="fa fa-info-circle"></i> In order to be able to accept offline payments, you must fill your <strong>Bank Account</strong> data.</p>
                     </div>
-                    <div data-ng-repeat="setting in eventConf.paymentOffline.settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  ></setting>
+                    <div data-ng-repeat="setting in eventConf.paymentOffline.settings | filter: '!REVOLUT'">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    </div>
+                    <div class="page-header">
+                        <h3>Revolut integration</h3>
+                    </div>
+                    <p>If the IBAN above is actually a Revolut Bank Account, you can enable the integration in order to check incoming payments automatically and flag the reservations as complete once the due amount has been received.</p>
+                    <div data-ng-repeat="setting in eventConf.paymentOffline.settings | filter: 'REVOLUT'">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                     </div>
                 </div>
-            </div>
-
-            <div ng-if="eventConf.groups.length > 0">
-                <div class="page-header" data-ng-if="eventConf.groups.length > 0">
-                    <h2>Link to Group</h2>
-                    <span>Allow only selected people to assign/buy a ticket for this event</span>
-                </div>
-                <div class="row">
-                    <div class="col-xs-12 col-md-6">
-                        <div class="row">
-                            <div class="col-xs-12">
-                                <div class="list-group">
-                                    <a class="list-group-item" ng-repeat="group in eventConf.groups" ng-class="{'active': eventConf.group.groupId == group.id}" ng-click="eventConf.selectGroup(group)">
-                                        <h4 class="list-group-item-heading"><i class="fa fa-check" ng-if="eventConf.group.groupId == group.id"></i> {{group.name}}</h4>
-                                        <p class="list-group-item-text" ng-bind="group.description"></p>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="col-xs-12" ng-if="eventConf.group">
-                                <button type="button" class="btn btn-danger" ng-click="eventConf.removeGroupLink(eventConf.organizationId, eventConf.group)"><i class="fa fa-trash"></i> Deactivate</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-xs-12 col-md-6">
-                        <div class="row" ng-if="eventConf.group">
-                            <div class="col-xs-12">
-                                <div class="form-group">
-                                    <label for="matchType">Match Type</label>
-                                    <select class="form-control" id="matchType" ng-options="key as value for (key , value) in eventConf.groupMatchTypes" ng-model="eventConf.group.matchType"></select>
-                                </div>
-                            </div>
-                            <div class="col-xs-12">
-                                <div class="form-group">
-                                    <label for="selectStrategy">Ticket Allocation Strategy</label>
-                                    <select class="form-control" id="selectStrategy" ng-options="key as value for (key , value) in eventConf.groupTypes" ng-model="eventConf.group.type"></select>
-                                </div>
-                            </div>
-                            <div class="col-xs-12" ng-if="eventConf.group.type == 'LIMITED_QUANTITY'">
-                                <div class="form-group">
-                                    <label for="maxAllocation">Max tickets</label>
-                                    <input type="number" pattern="\d+" required class="form-control" id="maxAllocation" ng-model="eventConf.group.maxAllocation"/>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
 
@@ -185,34 +219,19 @@
                 </div>
             </div>
 
-            <div class="page-header" data-ng-if="eventConf.alfioPi">
-                <h2>Integrations</h2>
+            <div class="page-header" data-ng-if="eventConf.payment || eventConf.paymentPaypal || eventConf.paymentStripe || eventConf.paymentMollie || eventConf.paymentOffline">
+                <h2>Alf.io PI settings</h2>
             </div>
-
             <div data-ng-if="eventConf.alfioPi" class="panel panel-default">
                 <div class="panel-heading">
-                    <div class="panel-title"><i class="fa fa-check"></i> Offline scan and label printing with Alf.io-PI</div>
+                    <div class="panel-title"><i class="fa fa-check"></i> Alf.io-PI integration for offline check-in and label printing</div>
                 </div>
                 <div class="panel-body">
+                    <div class="alert alert-info">
+                        <p><i class="fa fa-info-circle"></i> See <a href="https://github.com/exteso/alf.io-PI">Alf.io-PI repository</a> for more information.</p>
+                    </div>
                     <div data-ng-repeat="setting in eventConf.alfioPiOptions">
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
-                    </div>
-                    <div ng-if="eventConf.isLabelPrintingEnabled()" class="hidden-xs hidden-sm">
-                        <label-template config="eventConf.labelLayout" data-delete-handler="eventConf.delete(config)"></label-template>
-                    </div>
-                </div>
-            </div>
-
-            <div data-ng-if="eventConf.pluginSettingsByPluginId">
-                <div class="page-header">
-                    <h2>Plugins</h2>
-                    <span>Plugins settings</span>
-                </div>
-
-                <div data-ng-repeat="(key, settings) in eventConf.pluginSettingsByPluginId">
-                    <div class="page-header"><h3 data-ng-bind="key"></h3></div>
-                    <div data-ng-repeat="setting in settings">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-organization="eventConf.organization" display-system-badge="true"></setting>
                     </div>
                 </div>
             </div>
@@ -233,15 +252,7 @@
                 </div>
             </div>
 
-
-            <div class="pull-left wMarginBottom wMarginTop" data-ng-if="eventConf.eventName">
-                <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.single.detail({eventName: eventConf.eventName})">back to event</a>
-            </div>
-            <div class="pull-right wMarginBottom wMarginTop">
-                <button type="submit" class="btn btn-success" data-ng-disabled="eventConf.loading">save</button>
-                <a class="btn btn-default" data-ng-if="!eventConf.eventName" data-ui-sref="index">cancel</a>
-                <a class="btn btn-default" data-ng-if="eventConf.eventName" data-ui-sref="events.single.detail({eventName: eventConf.eventName})">cancel</a>
-            </div>
+            <control-buttons data-form-obj="eventConf" data-success-text="Save" data-cancel-handler="eventConf.cancel"></control-buttons>
         </form>
     </div>
 </div>

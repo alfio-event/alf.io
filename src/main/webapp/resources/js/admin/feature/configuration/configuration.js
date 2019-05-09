@@ -214,6 +214,9 @@
                 }
 
                 systemConf.extensionSettings = results[3].data;
+                systemConf.cancel = function() {
+                    loadAll();
+                };
 
             }, function() {
                 systemConf.loading = false;
@@ -274,6 +277,9 @@
                     organizationConf.platformModeEnabled = platformModeStatus.enabled;
                     organizationConf.stripeConnected = platformModeStatus.stripeConnected;
                     organizationConf.extensionSettings = result[4].data;
+                    organizationConf.cancel = function() {
+                        load();
+                    };
                 }, function() {
                     organizationConf.loading = false;
                 });
@@ -333,7 +339,15 @@
         }
     }
 
-    function EventConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $q, $rootScope, $stateParams, GroupService) {
+    function EventConfigurationController(ConfigurationService,
+                                          EventService,
+                                          ExtensionService,
+                                          NotificationHandler,
+                                          $q,
+                                          $rootScope,
+                                          $stateParams,
+                                          GroupService,
+                                          $state) {
         var eventConf = this;
         var getData = function() {
             if(angular.isDefined($stateParams.eventName)) {
@@ -345,7 +359,8 @@
                     eventConf.eventId = event.id;
                     $q.all([
                         ConfigurationService.loadEventConfig(eventConf.eventId),
-                        ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId)
+                        ExtensionService.loadEventConfigWithOrgIdAndEventId(eventConf.organizationId, eventConf.eventId),
+                        ConfigurationService.loadSettingCategories()
                     ]).then(function(result) {
                         deferred.resolve([{data:event}].concat(result));
                     }, function(e) {
@@ -380,6 +395,13 @@
                         eventConf.labelLayout = _.find(eventConf.alfioPi.settings, function(pi) { return pi.key === 'LABEL_LAYOUT'});
                     }
                     eventConf.extensionSettings = result[2].data;
+                    eventConf.cancel = function() {
+                        if(eventConf.eventName) {
+                            $state.go('events.single.detail', {eventName: eventConf.eventName});
+                        } else {
+                            load();
+                        }
+                    };
                     eventConf.loading = false;
                 }, function() {
                     eventConf.loading = false;
@@ -437,7 +459,7 @@
         }
     }
 
-    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams', 'GroupService'];
+    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams', 'GroupService', '$state'];
 
     function unlinkGroup(conf, GroupService, loadFn) {
         return function(organizationId, groupLink) {
