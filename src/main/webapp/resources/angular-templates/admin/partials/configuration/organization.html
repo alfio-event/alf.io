@@ -14,19 +14,17 @@
     <uib-tabset>
         <uib-tab index="0" heading="Settings">
             <form name="settingsForm" novalidate data-ng-submit="organizationConf.saveSettings(settingsForm)" class="wMarginTop30px">
-
-                <div class="page-header">
+                <div class="page-header" id="GENERAL">
                     <h2>General</h2>
                     <span>General settings</span>
                 </div>
-
                 <div data-ng-if="organizationConf.general">
-                    <div data-ng-repeat="setting in organizationConf.general.settings | orderBy:'configurationPathLevel'" >
+                    <div data-ng-repeat="setting in organizationConf.general.settings">
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="organizationConf.globalSettings" data-delete-handler="organizationConf.delete(config)"></setting>
                     </div>
                 </div>
 
-                <div class="page-header">
+                <div class="page-header" id="RESERVATION_UI">
                     <h2>Reservation Process</h2>
                     <span>Customizations for the public-facing reservation process</span>
                 </div>
@@ -36,7 +34,27 @@
                     </div>
                 </div>
 
-                <div class="page-header">
+                <div class="page-header" id="PASS_INTEGRATION">
+                    <h2>Pass Integration</h2>
+                    <span>Integration with Apple (tm) Pass</span>
+                </div>
+                <div>
+                    <div data-ng-repeat="setting in organizationConf.passIntegration.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                    </div>
+                </div>
+
+                <div class="page-header" id="WAITING_LIST">
+                    <h2>Waiting List</h2>
+                    <span>Waiting List configuration</span>
+                </div>
+                <div>
+                    <div data-ng-repeat="setting in organizationConf.waitingList.settings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                    </div>
+                </div>
+
+                <div class="page-header" id="MAIL">
                     <h2>E-Mail</h2>
                     <span>E-Mail settings</span>
                 </div>
@@ -67,7 +85,7 @@
                                 Disable
                             </label>
                         </div>
-                        <div data-ng-repeat="setting in organizationConf.mail.settings | mailSettingsFilter:organizationConf.mail.type.value"  >
+                        <div data-ng-repeat="setting in organizationConf.mail.settings | mailSettingsFilter:organizationConf.mail.type.value">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                         <div>
@@ -83,35 +101,32 @@
                             <setting obj="organizationConf.mail.cc" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                     </div>
-                    <div data-ng-repeat="setting in organizationConf.mail.settings" data-ng-if="!organizationConf.mail.type"  >
+                    <div data-ng-repeat="setting in organizationConf.mail.settings" data-ng-if="!organizationConf.mail.type">
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                     </div>
                 </div>
 
-                <div class="page-header">
-                    <h2>Invoice settings</h2>
-                </div>
-                <div class="alert alert-info"><i class="fa fa-info-circle"></i> You must fill all the fields below (<i>VAT number, Invoice number pattern, Invoice address</i>), otherwise invoices won't be generated.
-                    <p>Invoice number pattern follows the <a href="http://docs.oracle.com/javase/8/docs/api/java/util/Formatter.html#syntax" target="_blank">Java (tm) string formatting syntax</a></p>
+                <div class="page-header" id="INVOICE">
+                    <h2>Invoice</h2>
                 </div>
                 <div>
                     <div data-ng-repeat="setting in organizationConf.settings.INVOICE">
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                     </div>
                 </div>
-
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <div class="panel-title"><i class="fa fa-eur"></i> EU-Specific invoice settings</div>
                     </div>
                     <div class="panel-body">
                         <div data-ng-repeat="setting in organizationConf.invoiceEu.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(setting)"  list-values="setting.listValues"></setting>
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(setting)" list-values="setting.listValues"></setting>
                         </div>
                     </div>
                 </div>
 
-                <div class="page-header" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
+
+                <div class="page-header" id="PAYMENT" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
                     <h2>Payment</h2>
                     <span>Payment provider settings</span>
                 </div>
@@ -131,22 +146,11 @@
                     <div class="panel-heading">
                         <div class="panel-title"><i class="fa fa-cc-stripe"></i> Stripe configuration</div>
                     </div>
-                    <div class="panel-body" ng-if="!organizationConf.platformModeEnabled">
+                    <div class="panel-body">
                         <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
                         <div data-ng-repeat="setting in organizationConf.paymentStripe.settings">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
-                    </div>
-                    <div class="panel-body" ng-if="organizationConf.platformModeEnabled">
-                        <div class="row">
-                            <div class="col-xs-4 col-md-3">
-                                <a class="stripe-connect" ng-href="/admin/configuration/payment/stripe/connect/{{organizationConf.organizationId}}"><span>Connect with Stripe</span></a>
-                            </div>
-                            <div class="col-xs-8 col-md-9" ng-class="{'text-success': organizationConf.stripeConnected}">
-                                <i class="fa" ng-class="{'fa-check': organizationConf.stripeConnected, 'fa-question': !organizationConf.stripeConnected}"></i> <span ng-if="organizationConf.stripeConnected">Connected</span> <span ng-if="!organizationConf.stripeConnected">NOT Connected</span>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
 
@@ -169,7 +173,7 @@
 
                 <!--<div data-ng-if="organizationConf.paymentMollie" class="panel panel-default">
                     <div class="panel-heading">
-                        <div class="panel-title"></i> Mollie configuration</div>
+                        <div class="panel-title"> Mollie configuration</div>
                     </div>
                     <div class="panel-body">
                         <div class="alert alert-info">
@@ -189,11 +193,19 @@
                         <div class="alert alert-info">
                             <p><i class="fa fa-info-circle"></i> In order to be able to accept offline payments, you must fill your <strong>Bank Account</strong> data.</p>
                         </div>
-                        <div data-ng-repeat="setting in organizationConf.paymentOffline.settings">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
+                        <div data-ng-repeat="setting in organizationConf.paymentOffline.settings | filter: '!REVOLUT'">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        </div>
+                        <div class="page-header">
+                            <h3>Revolut integration</h3>
+                        </div>
+                        <p>If the IBAN above is actually a Revolut Bank Account, you can enable the integration in order to check incoming payments automatically and flag the reservations as complete once the due amount has been received.</p>
+                        <div data-ng-repeat="setting in organizationConf.paymentOffline.settings | filter: 'REVOLUT'">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                     </div>
                 </div>
+
 
                 <div class="page-header">
                     <h2>Internationalization</h2>
@@ -204,6 +216,23 @@
                     </div>
                     <div class="panel-body">
                         <div data-ng-repeat="setting in organizationConf.translations.settings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page-header" data-ng-if="organizationConf.payment || organizationConf.paymentPaypal || organizationConf.paymentStripe || organizationConf.paymentMollie || organizationConf.paymentOffline">
+                    <h2>Alf.io PI settings</h2>
+                </div>
+                <div data-ng-if="organizationConf.alfioPi" class="panel panel-default">
+                    <div class="panel-heading">
+                        <div class="panel-title"><i class="fa fa-check"></i> Alf.io-PI integration for offline check-in and label printing</div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="alert alert-info">
+                            <p><i class="fa fa-info-circle"></i> See <a href="https://github.com/exteso/alf.io-PI">Alf.io-PI repository</a> for more information.</p>
+                        </div>
+                        <div data-ng-repeat="setting in organizationConf.alfioPiOptions">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
                     </div>
@@ -225,10 +254,7 @@
                     </div>
                 </div>
 
-                <div class="pull-right wMarginBottom wMarginTop">
-                    <button type="submit" class="btn btn-success" data-ng-disabled="organizationConf.loading">save</button>
-                    <a class="btn btn-default" data-ui-sref="index">cancel</a>
-                </div>
+                <control-buttons data-form-obj="organizationConf" data-success-text="Save" data-cancel-handler="organizationConf.cancel"></control-buttons>
             </form>
         </uib-tab>
         <uib-tab index="1" heading="Promo codes">

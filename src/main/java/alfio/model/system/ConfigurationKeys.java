@@ -46,8 +46,6 @@ public enum ConfigurationKeys {
 
     RECAPTCHA_API_KEY("Recaptcha api key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     RECAPTCHA_SECRET("Recaptcha secret", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS("Enable captcha for offline payments / free of charge tickets (default false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
-    ENABLE_CAPTCHA_FOR_TICKET_SELECTION("Enable captcha for ticket selection (default false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
     ENABLE_CAPTCHA_FOR_LOGIN("Enable captcha for login (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
 
     DISPLAY_STATS_IN_EVENT_DETAIL("Display stats (sold tickets, gross income, pending reservations) in event detail (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
@@ -76,15 +74,17 @@ public enum ConfigurationKeys {
     RESERVATION_TIMEOUT("The amount of time, in MINUTES, that the user have to complete the reservation process (default: 25)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT("The minimum amount of time, in MINUTES, that we grant to the user after a failed payment attempt (default: 10)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS("Receive a mail for all failed payment attempts (provider dependant, default: false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    SEND_TICKETS_AUTOMATICALLY("Send tickets to attendees automatically (default: true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, EVENT)),
 
-    FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION("Force ticket owner assignment at reservation time", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    ENABLE_TICKET_TRANSFER("Enable ticket transfer after confirmation (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    ENABLE_CUSTOMER_REFERENCE("Enable Customer Reference (Purchase Order) field in contact detail (default: false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    ENABLE_ATTENDEE_AUTOCOMPLETE("Enable attendee autocomplete for 1-ticket reservations (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    ENABLE_CAPTCHA_FOR_TICKET_SELECTION("Enable captcha for ticket selection (default false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
+    DISPLAY_EXPIRED_CATEGORIES("Display expired categories in the Event page (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     DISPLAY_DISCOUNT_CODE_BOX("Display discount code box in the Event page (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL("Wording: Use 'Partner Code' instead of 'Promotional Code' (default: false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    DISPLAY_EXPIRED_CATEGORIES("Display expired categories in the Event page (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    ENABLE_CUSTOMER_REFERENCE("Enable Customer Reference (Purchase Order) field in contact detail (default: false)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    ENABLE_ATTENDEE_AUTOCOMPLETE("Enable attendee autocomplete for 1-ticket reservations (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION("Force ticket owner assignment at reservation time", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    SEND_TICKETS_AUTOMATICALLY("Send tickets to attendees automatically (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, EVENT)),
+    ENABLE_TICKET_TRANSFER("Enable ticket transfer after confirmation (default: true)", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    ALLOW_FREE_TICKETS_CANCELLATION("Allow cancellation for free tickets", false, SettingCategory.RESERVATION_UI, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT, TICKET_CATEGORY)),
 
     //
     MAILER_TYPE("Mailer type (if not set, default will be disabled)", false, SettingCategory.MAIL, ComponentType.TEXT, true, EnumSet.of(SYSTEM)),//valid values: smtp | mailgun
@@ -105,9 +105,10 @@ public enum ConfigurationKeys {
     SMTP_FROM_EMAIL("E-Mail sender", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     SMTP_PROPERTIES("SMTP Properties", false, SettingCategory.MAIL, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM)),
 
+    BANK_TRANSFER_ENABLED("Bank transfer enabled", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     OFFLINE_PAYMENT_DAYS("Maximum number of days allowed to pay an offline ticket", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     OFFLINE_REMINDER_HOURS("How many hours before expiration should be sent a reminder e-mail for offline payments?", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    BANK_TRANSFER_ENABLED("Bank transfer enabled", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION)),
+    ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS("Enable captcha for offline payments / free of charge tickets (default false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
     BANK_ACCOUNT_NR("Bank Account number", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     BANK_ACCOUNT_OWNER("Bank Account owner", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT("Cancel Reservation automatically when payment is overdue", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
@@ -133,13 +134,11 @@ public enum ConfigurationKeys {
     GOOGLE_ANALYTICS_KEY("Google Analytics tracking ID", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     GOOGLE_ANALYTICS_ANONYMOUS_MODE("Run Google Analytics without cookies and scrambling the client IP address (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
 
-    ALLOW_FREE_TICKETS_CANCELLATION("Allow cancellation for free tickets", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT, TICKET_CATEGORY)),
-
-    ENABLE_WAITING_QUEUE("Enable waiting queue in case of sold-out (default: false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    ENABLE_PRE_REGISTRATION("Enable pre-registration (default false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    ENABLE_WAITING_QUEUE_NOTIFICATION("Do you want to receive an e-mail when someone subscribes to the waiting queue? (default: false)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    WAITING_QUEUE_RESERVATION_TIMEOUT("The maximum time, in hours, before the \"waiting queue\" reservation would expire (default: 4)", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    STOP_WAITING_QUEUE_SUBSCRIPTIONS("Stop subscriptions", true, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.noneOf(ConfigurationPathLevel.class)),
+    ENABLE_WAITING_QUEUE("Enable waiting list in case of sold-out (default: false)", false, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    ENABLE_PRE_REGISTRATION("Enable pre-registration (default false)", false, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    ENABLE_WAITING_QUEUE_NOTIFICATION("Do you want to receive an e-mail when someone subscribes to the waiting list? (default: false)", false, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    WAITING_QUEUE_RESERVATION_TIMEOUT("The maximum time, in hours, before the \"waiting list\" reservation would expire (default: 4)", false, SettingCategory.WAITING_LIST, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    STOP_WAITING_QUEUE_SUBSCRIPTIONS("Stop subscriptions", true, SettingCategory.WAITING_LIST, ComponentType.BOOLEAN, false, EnumSet.noneOf(ConfigurationPathLevel.class)),
 
     //
     MAIL_ATTEMPTS_COUNT("The number of attempts when trying to sending an email (default: 10)", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
@@ -178,12 +177,12 @@ public enum ConfigurationKeys {
     //
 
     //PASSBOOK
-    ENABLE_PASS("Enable Apple(tm) Wallet integration", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    PASSBOOK_TYPE_IDENTIFIER("Passbook type identifier", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    PASSBOOK_TEAM_IDENTIFIER("Passbook team identifier", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    PASSBOOK_KEYSTORE("Passbook keystore(base64 encoded keystore)", false, SettingCategory.GENERAL, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    PASSBOOK_KEYSTORE_PASSWORD("Passbook keystore password", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    PASSBOOK_PRIVATE_KEY_ALIAS("Passbook Private Key alias", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    ENABLE_PASS("Enable Apple(tm) Wallet integration", false, SettingCategory.PASS_INTEGRATION, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
+    PASSBOOK_TYPE_IDENTIFIER("Passbook type identifier", false, SettingCategory.PASS_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    PASSBOOK_TEAM_IDENTIFIER("Passbook team identifier", false, SettingCategory.PASS_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    PASSBOOK_KEYSTORE("Passbook keystore(base64 encoded keystore)", false, SettingCategory.PASS_INTEGRATION, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM)),
+    PASSBOOK_KEYSTORE_PASSWORD("Passbook keystore password", false, SettingCategory.PASS_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    PASSBOOK_PRIVATE_KEY_ALIAS("Passbook Private Key alias", false, SettingCategory.PASS_INTEGRATION, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
     //CHECK-IN
     CHECK_IN_STATS("Display check-in statistics in mobile apps", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
@@ -224,7 +223,9 @@ public enum ConfigurationKeys {
         MAIL("E-Mail settings"),
         ALFIO_PI("Offline check-in and badge printing"),
         MAP("Maps settings"),
-        TRANSLATIONS("Translations");
+        TRANSLATIONS("Translations"),
+        PASS_INTEGRATION("Pass Integration"),
+        WAITING_LIST("Waiting List");
 
         private final String description;
         SettingCategory(String description) {
