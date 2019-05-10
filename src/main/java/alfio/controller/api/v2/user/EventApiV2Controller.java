@@ -18,6 +18,7 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.EventController;
 import alfio.controller.api.v2.model.*;
+import alfio.controller.api.v2.model.EventWithAdditionalInfo.PaymentProxyWithParameters;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.manager.EventManager;
@@ -101,10 +102,12 @@ public class EventApiV2Controller {
 
                 var ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
 
-                Map<PaymentMethod, PaymentProxy> availablePaymentMethods = new EnumMap<>(PaymentMethod.class);
+                Map<PaymentMethod, PaymentProxyWithParameters> availablePaymentMethods = new EnumMap<>(PaymentMethod.class);
 
-                getActivePaymentMethods(event).forEach(apm -> {
-                    availablePaymentMethods.put(apm.getPaymentMethod(), apm);
+                var activePaymentMethods = getActivePaymentMethods(event);
+
+                activePaymentMethods.forEach(apm -> {
+                    availablePaymentMethods.put(apm.getPaymentMethod(), new PaymentProxyWithParameters(apm, paymentManager.loadModelOptionsFor(Collections.singletonList(apm), event)));
                 });
 
 

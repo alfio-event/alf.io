@@ -21,6 +21,7 @@ import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,7 @@ public class EventWithAdditionalInfo {
     private final String mapUrl;
     private final Organization organization;
     private final Map<String, String> description;
-    private final Map<PaymentMethod, PaymentProxy> activePaymentMethods;
+    private final Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods;
 
     //payment related informations
     private final boolean userCanDownloadReceiptOrInvoice;
@@ -108,7 +109,7 @@ public class EventWithAdditionalInfo {
         return event.getFree();
     }
 
-    public Map<PaymentMethod, PaymentProxy> getActivePaymentMethods() {
+    public Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods() {
         return activePaymentMethods;
     }
 
@@ -122,5 +123,12 @@ public class EventWithAdditionalInfo {
 
     public List<String> getBankAccountOwner() {
         return bankAccountOwner;
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class PaymentProxyWithParameters {
+        private final PaymentProxy paymentProxy;
+        private final Map<String, ?> parameters;
     }
 }
