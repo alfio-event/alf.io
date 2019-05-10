@@ -127,7 +127,7 @@ public class PriceContainerTest {
         List<BigDecimal> vatPercentages = IntStream.range(100, 3000)
             .mapToObj(vatCts -> new BigDecimal(vatCts).divide(new BigDecimal("100.00"), 2, RoundingMode.UNNECESSARY))
             .collect(Collectors.toList());
-        return IntStream.range(1, 50_000).
+        return IntStream.range(1, 5_000).
             parallel()
             .boxed()
             .flatMap(i -> vatPercentages.stream().map(vat -> Pair.of(i, new PriceContainerImpl(i, "CHF", vat, vatStatus))));
