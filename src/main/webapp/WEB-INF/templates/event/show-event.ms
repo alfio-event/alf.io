@@ -99,6 +99,30 @@
 {{/displayWaitingQueueForm}}
 
 <form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/reserve-tickets" class="form-horizontal">
+    {{#hasAccessPromotions}}
+    <div id="accessRestrictedTokens" class="wMarginBottom">
+        <div class="panel panel-default">
+            <div class="panel-heading" role="tab" id="headingOne">
+                <h4 class="panel-title">
+                    <i class="fa {{^usePartnerCode}}fa-gift{{/usePartnerCode}}{{#usePartnerCode}}fa-handshake-o{{/usePartnerCode}}"></i>
+                    <a data-toggle="collapse" href="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                        {{#i18n}}show-event.promo-code [{{promoCodeDescription}}]{{/i18n}}
+                    </a>
+                </h4>
+            </div>
+            <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
+                <div class="panel-body">
+                    <div class="hidden text-danger text-center wMarginBottom" id="error-code-not-found">{{#i18n}}error.STEP_1_CODE_NOT_FOUND{{/i18n}}</div>
+                    <div class="form-inline text-center">
+                        <label>{{#i18n}}show-event.promo-code-insert [{{promoCodeDescription}}]{{/i18n}} <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label>
+                        <button class="btn btn-success" type="button" id="apply-promo-codes">{{#i18n}}show-event.promo-code.apply{{/i18n}}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {{/hasAccessPromotions}}
+
     <ul class="list-group">
     {{#ticketCategories}}
         {{> /event/ticket-category.ms }}
@@ -169,29 +193,6 @@
 {{/hasPromoCodeDiscount}}
 
 <div class="wMarginBottom"></div>
-{{#hasAccessPromotions}}
-<div id="accessRestrictedTokens" class="wMarginBottom">
-    <div class="panel panel-default">
-        <div class="panel-heading" role="tab" id="headingOne">
-            <h4 class="panel-title">
-                <i class="fa {{^usePartnerCode}}fa-gift{{/usePartnerCode}}{{#usePartnerCode}}fa-handshake-o{{/usePartnerCode}}"></i>
-                <a data-toggle="collapse" href="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-                    {{#i18n}}show-event.promo-code [{{promoCodeDescription}}]{{/i18n}}
-                </a>
-            </h4>
-        </div>
-        <div id="collapseOne" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingOne">
-            <div class="panel-body">
-                <div class="hidden text-danger text-center wMarginBottom" id="error-code-not-found">{{#i18n}}error.STEP_1_CODE_NOT_FOUND{{/i18n}}</div>
-                <div class="form-inline text-center">
-                    <label>{{#i18n}}show-event.promo-code-insert [{{promoCodeDescription}}]{{/i18n}} <input name="promoCodes" autocomplete="off" class="form-control" id="promo-code"></label>
-                    <button class="btn btn-success" type="button" id="apply-promo-codes">{{#i18n}}show-event.promo-code.apply{{/i18n}}</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{{/hasAccessPromotions}}
 {{#captchaForTicketSelectionEnabled}}
     <div class="show-event g-recaptcha" data-sitekey="{{recaptchaApiKey}}"></div>
 {{/captchaForTicketSelectionEnabled}}
