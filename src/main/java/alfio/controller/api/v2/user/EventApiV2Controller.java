@@ -30,6 +30,7 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
@@ -100,7 +101,11 @@ public class EventApiV2Controller {
 
                 var ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
 
-                var activePaymentMethods = getActivePaymentMethods(event);
+                Map<PaymentMethod, PaymentProxy> availablePaymentMethods = new EnumMap<>(PaymentMethod.class);
+
+                getActivePaymentMethods(event).forEach(apm -> {
+                    availablePaymentMethods.put(apm.getPaymentMethod(), apm);
+                });
 
 
                 //
@@ -110,7 +115,7 @@ public class EventApiV2Controller {
                 //
 
 
-                return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, activePaymentMethods,
+                return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     canGenerateReceiptOrInvoiceToCustomer, bankAccount, bankAccountOwner), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
