@@ -20,14 +20,19 @@ import alfio.controller.InvoiceReceiptController;
 import alfio.controller.ReservationController;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
+import alfio.controller.api.v2.model.ReservationPaymentResult;
 import alfio.controller.api.v2.model.ReservationStatusInfo;
 import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.support.SessionUtil;
 import alfio.manager.EventManager;
+import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.support.PaymentResult;
 import alfio.model.*;
+import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.PaymentToken;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
@@ -75,7 +80,8 @@ public class ReservationApiV2Controller {
      */
     @GetMapping("/event/{eventName}/reservation/{reservationId}")
     public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("eventName") String eventName,
-                                                              @PathVariable("reservationId") String reservationId) {
+                                                              @PathVariable("reservationId") String reservationId,
+                                                              HttpSession session) {
 
         Optional<ReservationInfo> res = eventRepository.findOptionalByShortName(eventName).flatMap(event -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
 
@@ -116,6 +122,12 @@ public class ReservationApiV2Controller {
 
             var formattedExpirationDate = reservation.getValidity() != null ? formatDateForLocales(event, ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()), "datetime.pattern") : null;
 
+            boolean tokenAcquired = session.getAttribute(PaymentManager.PAYMENT_TOKEN) != null;
+            PaymentProxy selectedPaymentProxy = null;
+            if (tokenAcquired) {
+                selectedPaymentProxy = ((PaymentToken)session.getAttribute(PaymentManager.PAYMENT_TOKEN)).getPaymentProvider();
+            }
+
             return Optional.of(new ReservationInfo(reservation.getId(), shortReservationId,
                 reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(),
                 reservation.getValidity().getTime(),
@@ -124,7 +136,9 @@ public class ReservationApiV2Controller {
                 formattedExpirationDate,
                 reservation.getInvoiceNumber(),
                 reservation.getHasInvoiceOrReceiptDocument(),
-                reservation.getHasBeenPaid()
+                reservation.getHasBeenPaid(),
+                tokenAcquired,
+                selectedPaymentProxy != null ? selectedPaymentProxy : reservation.getPaymentMethod()
                 ));
         }));
 
@@ -168,19 +182,28 @@ public class ReservationApiV2Controller {
     }
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}")
-    public ResponseEntity<ValidatedResponse<Boolean>> handleReservation(@PathVariable("eventName") String eventName,
-                                                               @PathVariable("reservationId") String reservationId,
-                                                               @RequestBody  PaymentForm paymentForm,
-                                                               BindingResult bindingResult,
-                                                               Model model,
-                                                               HttpServletRequest request,
-                                                               RedirectAttributes redirectAttributes,
-                                                               HttpSession session) {
+    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> handleReservation(@PathVariable("eventName") String eventName,
+                                                                                         @PathVariable("reservationId") String reservationId,
+                                                                                         @RequestBody  PaymentForm paymentForm,
+                                                                                         BindingResult bindingResult,
+                                                                                         Model model,
+                                                                                         HttpServletRequest request,
+                                                                                         RedirectAttributes redirectAttributes,
+                                                                                         HttpSession session) {
         //FIXME check precondition (see ReservationController.redirectIfNotValid)
         reservationController.handleReservation(eventName, reservationId, paymentForm,
             bindingResult, model, request, Locale.ENGLISH, redirectAttributes,
             session);
-        return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors()));
+
+        var modelMap = model.asMap();
+        if (modelMap.containsKey("paymentResultStatus")) {
+            PaymentResult paymentResult = (PaymentResult) modelMap.get("paymentResultStatus");
+            if (paymentResult.isRedirect() && !bindingResult.hasErrors()) {
+                return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, new ReservationPaymentResult(!bindingResult.hasErrors(), true, paymentResult.getRedirectUrl())));
+            }
+        }
+
+        return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, new ReservationPaymentResult(!bindingResult.hasErrors(), false, null)));
     }
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/validate-to-overview")

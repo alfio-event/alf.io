@@ -639,6 +639,10 @@ public class ReservationController {
                 final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                         Optional.ofNullable(paymentForm.getPaymentMethod()));
 
+                //
+                model.addAttribute("paymentResultStatus", status);
+                //
+
                 if (status.isRedirect()) {
                     return "redirect:" + status.getRedirectUrl();
                 }

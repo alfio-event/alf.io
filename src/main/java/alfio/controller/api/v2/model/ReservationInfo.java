@@ -18,6 +18,8 @@ package alfio.controller.api.v2.model;
 
 import alfio.model.OrderSummary;
 import alfio.model.TicketReservation;
+import alfio.model.transaction.PaymentProxy;
+import com.paypal.api.payments.Payment;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -46,6 +48,8 @@ public class ReservationInfo {
 
     private final boolean invoiceOrReceiptDocumentPresent;
     private final boolean paid;
+    private final boolean tokenAcquired;
+    private final PaymentProxy paymentProxy;
 
 
     @AllArgsConstructor
