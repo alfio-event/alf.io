@@ -135,6 +135,8 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         return transactions;
     }
 
+    private static final String URL_PLACEHOLDER = "--operation--";
+
     private String createCheckoutRequest(PaymentSpecification spec) throws Exception {
         APIContext apiContext = getApiContext(spec.getEvent());
 
@@ -154,14 +156,14 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         RedirectUrls redirectUrls = new RedirectUrls();
 
         String baseUrl = StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(spec.getEvent(), ConfigurationKeys.BASE_URL)), "/");
-        String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/payment/paypal/{operation}";
+        String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/payment/paypal/" + URL_PLACEHOLDER;
 
         UriComponentsBuilder bookUrlBuilder = UriComponentsBuilder.fromUriString(bookUrl)
             .queryParam("hmac", computeHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getEvent()));
         String finalUrl = bookUrlBuilder.toUriString();
 
-        redirectUrls.setCancelUrl(finalUrl.replace("{operation}", "cancel"));
-        redirectUrls.setReturnUrl(finalUrl.replace("{operation}", "confirm"));
+        redirectUrls.setCancelUrl(finalUrl.replace(URL_PLACEHOLDER, "cancel"));
+        redirectUrls.setReturnUrl(finalUrl.replace(URL_PLACEHOLDER, "confirm"));
         payment.setRedirectUrls(redirectUrls);
 
         experienceProfileId.ifPresent(payment::setExperienceProfileId);
