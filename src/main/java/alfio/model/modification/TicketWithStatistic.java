@@ -26,6 +26,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.joda.money.BigMoney;
+import org.joda.money.Money;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -102,18 +104,18 @@ public class TicketWithStatistic implements Comparable<TicketWithStatistic>, Pri
     }
 
     @Override
-    public BigDecimal getAppliedDiscount() {
-        return MonetaryUtil.centsToUnit(ticket.getDiscountCts());
+    public BigMoney getAppliedDiscount() {
+        return MonetaryUtil.centsToUnit(event.getCurrency(), ticket.getDiscountCts());
     }
 
     @Override
-    public BigDecimal getFinalPrice() {
-        return MonetaryUtil.centsToUnit(ticket.getFinalPriceCts());
+    public BigMoney getFinalPrice() {
+        return MonetaryUtil.centsToUnit(event.getCurrency(), ticket.getFinalPriceCts());
     }
 
     @Override
-    public BigDecimal getVAT() {
-        return MonetaryUtil.centsToUnit(ticket.getVatCts());
+    public Money getVAT() {
+        return MonetaryUtil.centsToUnit(event.getCurrency(), ticket.getVatCts()).toMoney();
     }
 
     @Override

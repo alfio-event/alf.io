@@ -38,6 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
+import static java.util.Optional.ofNullable;
 import static org.apache.commons.collections.CollectionUtils.isEmpty;
 
 @Getter
@@ -95,7 +96,7 @@ public class EventCreationRequest{
             tickets.taxPercentage,
             tickets.taxIncludedInPrice,
             tickets.paymentMethods,
-            tickets.categories.stream().map(CategoryRequest::toTicketCategoryModification).collect(Collectors.toList()),
+            tickets.categories.stream().map(tc -> tc.toTicketCategoryModification(tickets.currency)).collect(Collectors.toList()),
             tickets.freeOfCharge,
             new LocationDescriptor(timezone, location.getCoordinate().getLatitude(), location.getCoordinate().getLongitude(), null),
             locales,
@@ -105,7 +106,7 @@ public class EventCreationRequest{
     }
 
     private static <T> T first(T value,T other) {
-        return Optional.ofNullable(value).orElse(other);
+        return ofNullable(value).orElse(other);
     }
 
 
@@ -120,6 +121,7 @@ public class EventCreationRequest{
                 .mapToInt(ContentLanguage::getValue).reduce(0, (x, y) -> x | y);
         }
 
+        String currency = tickets != null ? first(tickets.currency, original.getCurrency()) : original.getCurrency();
 
         return new EventModification(
             original.getId(),
@@ -131,7 +133,7 @@ public class EventCreationRequest{
             null,
             first(imageRef,original.getFileBlobId()),
             original.getShortName(),
-            first(title,original.getDisplayName()),
+            first(title, original.getDisplayName()),
             organization.getId(),
             location != null ? first(location.getFullAddress(),original.getLocation()) : original.getLocation(),
             location != null && location.getCoordinate() != null ? location.getCoordinate().getLatitude() : original.getLatitude(),
@@ -140,19 +142,27 @@ public class EventCreationRequest{
             description != null ? description.stream().collect(Collectors.toMap(DescriptionRequest::getLang,DescriptionRequest::getBody)) : null,
             startDate != null ? new DateTimeModification(startDate.toLocalDate(),startDate.toLocalTime()) : new DateTimeModification(original.getBegin().toLocalDate(),original.getEnd().toLocalTime()),
             endDate != null ? new DateTimeModification(endDate.toLocalDate(),endDate.toLocalTime()) : new DateTimeModification(original.getEnd().toLocalDate(),original.getEnd().toLocalTime()),
-            tickets != null && tickets.categories != null ? tickets.categories.stream().map((x) -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ZERO).max(original.getRegularPrice()) : original.getRegularPrice(),
-            tickets != null ? first(tickets.currency,original.getCurrency()) : original.getCurrency(),
+            getRegularPrice(original),
+            currency,
             tickets != null ? tickets.max : original.getAvailableSeats(),
             tickets != null ? first(tickets.taxPercentage,original.getVat()) : original.getVat(),
             tickets != null ? first(tickets.taxIncludedInPrice,original.isVatIncluded()) : original.isVatIncluded(),
             tickets != null ? first(tickets.paymentMethods,original.getAllowedPaymentProxies()) : original.getAllowedPaymentProxies(),
-            tickets != null && tickets.categories != null ? tickets.categories.stream().map(tc -> tc.toTicketCategoryModification(findCategoryId(original, tc))).collect(Collectors.toList()) : null,
+            tickets != null && tickets.categories != null ? tickets.categories.stream().map(tc -> tc.toTicketCategoryModification(findCategoryId(original, tc), currency)).collect(Collectors.toList()) : null,
             tickets != null ? first(tickets.freeOfCharge,original.isFreeOfCharge()) : original.isFreeOfCharge(),
             null,
             locales,
             toAdditionalFields(orEmpty(additionalInfo)),
             emptyList()  // TODO improve API
         );
+    }
+
+    private BigDecimal getRegularPrice(EventWithAdditionalInfo original) {
+        BigDecimal originalPrice = original.getRegularPrice().getAmount();
+        if(tickets != null && tickets.categories != null) {
+            return tickets.categories.stream().map((x) -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ZERO).max(originalPrice);
+        }
+        return originalPrice;
     }
 
     private static Integer findCategoryId(EventWithAdditionalInfo event, CategoryRequest categoryRequest) {
@@ -212,14 +222,14 @@ public class EventCreationRequest{
         private CustomTicketValidityRequest customValidity;
         private GroupLinkRequest groupLink;
 
-        TicketCategoryModification toTicketCategoryModification() {
-            return toTicketCategoryModification(null);
+        TicketCategoryModification toTicketCategoryModification(String currencyCode) {
+            return toTicketCategoryModification(null, currencyCode);
         }
 
-        TicketCategoryModification toTicketCategoryModification(Integer categoryId) {
-            int capacity = Optional.ofNullable(maxTickets).orElse(0);
+        TicketCategoryModification toTicketCategoryModification(Integer categoryId, String currencyCode) {
+            int capacity = ofNullable(maxTickets).orElse(0);
 
-            Optional<CustomTicketValidityRequest> customValidityOpt = Optional.ofNullable(customValidity);
+            Optional<CustomTicketValidityRequest> customValidityOpt = ofNullable(customValidity);
 
             return new TicketCategoryModification(
                 categoryId,
@@ -229,14 +239,15 @@ public class EventCreationRequest{
                 new DateTimeModification(endSellingDate.toLocalDate(),endSellingDate.toLocalTime()),
                 description.stream().collect(Collectors.toMap(DescriptionRequest::getLang,DescriptionRequest::getBody)),
                 price,
+                currencyCode,
                 accessRestricted,
                 null,
                 capacity > 0,
                 accessCode,
-                customValidityOpt.flatMap((x) -> Optional.ofNullable(x.checkInFrom)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
-                customValidityOpt.flatMap((x) -> Optional.ofNullable(x.checkInTo)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
-                customValidityOpt.flatMap((x) -> Optional.ofNullable(x.validityStart)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
-                customValidityOpt.flatMap((x) -> Optional.ofNullable(x.validityEnd)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null)
+                customValidityOpt.flatMap((x) -> ofNullable(x.checkInFrom)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
+                customValidityOpt.flatMap((x) -> ofNullable(x.checkInTo)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
+                customValidityOpt.flatMap((x) -> ofNullable(x.validityStart)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
+                customValidityOpt.flatMap((x) -> ofNullable(x.validityEnd)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null)
             );
         }
     }

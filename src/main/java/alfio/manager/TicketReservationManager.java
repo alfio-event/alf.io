@@ -60,6 +60,9 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.joda.money.BigMoney;
+import org.joda.money.BigMoneyProvider;
+import org.joda.money.CurrencyUnit;
 import org.springframework.context.MessageSource;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -89,8 +92,7 @@ import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.TicketReservation.TicketReservationStatus.*;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.util.MonetaryUtil.formatCents;
-import static alfio.util.MonetaryUtil.unitToCents;
+import static alfio.util.MonetaryUtil.*;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
@@ -359,7 +361,7 @@ public class TicketReservationManager {
     }
 
     public PaymentResult performPayment(PaymentSpecification spec,
-                                        TotalPrice reservationCost,
+                                        PriceDescriptor reservationCost,
                                         Optional<String> specialPriceSessionId,
                                         Optional<PaymentProxy> method) {
         PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
@@ -404,12 +406,12 @@ public class TicketReservationManager {
 
     }
 
-    private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
+    private void transitionToComplete(PaymentSpecification spec, PriceDescriptor reservationCost, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
         generateInvoiceNumber(spec, reservationCost);
         completeReservation(spec, specialPriceSessionId, paymentProxy);
     }
 
-    private void generateInvoiceNumber(PaymentSpecification spec, TotalPrice reservationCost) {
+    private void generateInvoiceNumber(PaymentSpecification spec, PriceDescriptor reservationCost) {
         if(!reservationCost.requiresPayment() || !spec.isInvoiceRequested() || !configurationManager.hasAllConfigurationsForInvoice(spec.getEvent())) {
             return;
         }
@@ -458,18 +460,18 @@ public class TicketReservationManager {
             .anyMatch(t -> allLinks.stream().anyMatch(lg -> lg.getTicketCategoryId() == null || lg.getTicketCategoryId().equals(t.getCategoryId())));
     }
 
-    private PaymentProxy evaluatePaymentProxy(Optional<PaymentProxy> method, TotalPrice reservationCost) {
+    private PaymentProxy evaluatePaymentProxy(Optional<PaymentProxy> method, PriceDescriptor reservationCost) {
         if(method.isPresent()) {
             return method.get();
         }
-        if(reservationCost.getPriceWithVAT() == 0) {
+        if(reservationCost.getPriceAfterTax().isZero()) {
             return PaymentProxy.NONE;
         }
         return PaymentProxy.STRIPE;
     }
 
-    private boolean initPaymentProcess(TotalPrice reservationCost, PaymentProxy paymentProxy, PaymentSpecification spec) {
-        if(reservationCost.getPriceWithVAT() > 0 && paymentProxy == PaymentProxy.STRIPE) {
+    private boolean initPaymentProcess(PriceDescriptor reservationCost, PaymentProxy paymentProxy, PaymentSpecification spec) {
+        if(reservationCost.requiresPayment() && paymentProxy == PaymentProxy.STRIPE) {
             try {
                 transitionToInPayment(spec);
             } catch (Exception e) {
@@ -523,9 +525,9 @@ public class TicketReservationManager {
     }
 
     void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
-        int priceWithVAT = totalReservationCostWithVAT(reservationId).getPriceWithVAT();
+        var priceWithVAT = totalReservationCostWithVAT(reservationId).getPriceAfterTax();
         Long platformFee = FeeCalculator.getCalculator(event, configurationManager)
-            .apply(ticketRepository.countTicketsInReservation(reservationId), (long) priceWithVAT)
+            .apply(ticketRepository.countTicketsInReservation(reservationId), priceWithVAT)
             .orElse(0L);
 
         //FIXME we must support multiple transactions for a reservation, otherwise we can't handle properly the case of ON_SITE payments
@@ -534,7 +536,7 @@ public class TicketReservationManager {
         String transactionId = paymentProxy.getKey() + "-" + System.currentTimeMillis();
         if(transactionOptional.isEmpty()) {
             transactionRepository.insert(transactionId, null, reservationId, ZonedDateTime.now(event.getZoneId()),
-                priceWithVAT, event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(),
+                unitToCents(priceWithVAT), event.getCurrency(), "Offline payment confirmed for "+reservationId, paymentProxy.getKey(),
                 platformFee, 0L, Transaction.Status.COMPLETE, Map.of());
         } else if(paymentProxy == PaymentProxy.OFFLINE) {
             var transaction = transactionOptional.get();
@@ -970,31 +972,32 @@ public class TicketReservationManager {
         }
     }
 
-    private static TotalPrice totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount,
+    private static PriceDescriptor totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount,
                                                           Event event,
                                                           PriceContainer.VatStatus reservationVatStatus,
                                                           List<Ticket> tickets,
                                                           Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
 
+        var currencyUnit = CurrencyUnit.of(event.getCurrency());
         List<TicketPriceContainer> ticketPrices = tickets.stream().map(t -> TicketPriceContainer.from(t, reservationVatStatus, event.getCurrency(), event.getVat(), event.getVatStatus(), promoCodeDiscount)).collect(toList());
-        BigDecimal totalVAT = calcTotal(ticketPrices, PriceContainer::getRawVAT);
-        BigDecimal totalDiscount = calcTotal(ticketPrices, PriceContainer::getAppliedDiscount);
-        BigDecimal totalNET = calcTotal(ticketPrices, PriceContainer::getFinalPrice);
-        int discountedTickets = (int) ticketPrices.stream().filter(t -> t.getAppliedDiscount().compareTo(BigDecimal.ZERO) > 0).count();
+        BigMoney totalVAT = calcTotal(currencyUnit, ticketPrices, PriceContainer::getRawVAT);
+        BigMoney totalDiscount = calcTotal(currencyUnit, ticketPrices, PriceContainer::getAppliedDiscount);
+        BigMoney totalNET = calcTotal(currencyUnit, ticketPrices, PriceContainer::getFinalPrice);
+        int discountedTickets = (int) ticketPrices.stream().filter(t -> t.getAppliedDiscount().isPositive()).count();
         int discountAppliedCount = discountedTickets <= 1 || promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT ? discountedTickets : 1;
 
         List<AdditionalServiceItemPriceContainer> asPrices = additionalServiceItems
             .flatMap(generateASIPriceContainers(event, null))
             .collect(toList());
 
-        BigDecimal asTotalVAT = calcTotal(asPrices, PriceContainer::getRawVAT);
+        BigMoney asTotalVAT = calcTotal(currencyUnit, asPrices, PriceContainer::getRawVAT);
         //FIXME discount is not applied to donations, as it wouldn't make sense. Must be implemented for #111
-        BigDecimal asTotalNET = calcTotal(asPrices, PriceContainer::getFinalPrice);
-        return new TotalPrice(unitToCents(totalNET.add(asTotalNET)), unitToCents(totalVAT.add(asTotalVAT)), -(MonetaryUtil.unitToCents(totalDiscount)), discountAppliedCount);
+        BigMoney asTotalNET = calcTotal(currencyUnit, asPrices, PriceContainer::getFinalPrice);
+        return new PriceDescriptor(totalNET.plus(asTotalNET), totalVAT.plus(asTotalVAT), totalDiscount.negated(), discountAppliedCount);
     }
 
-    private static BigDecimal calcTotal(List<? extends PriceContainer> elements, Function<? super PriceContainer, BigDecimal> operator) {
-        return elements.stream().map(operator).reduce(BigDecimal.ZERO, BigDecimal::add);
+    private static BigMoney calcTotal(CurrencyUnit currencyUnit, List<? extends PriceContainer> elements, Function<? super PriceContainer, BigMoney> operator) {
+        return elements.stream().map(operator).reduce(BigMoney.zero(currencyUnit), BigMoney::plus);
     }
 
     private static Function<Pair<AdditionalService, List<AdditionalServiceItem>>, Stream<? extends AdditionalServiceItemPriceContainer>> generateASIPriceContainers(Event event, PromoCodeDiscount discount) {
@@ -1007,11 +1010,11 @@ public class TicketReservationManager {
      * @param reservationId
      * @return
      */
-    public TotalPrice totalReservationCostWithVAT(String reservationId) {
+    public PriceDescriptor totalReservationCostWithVAT(String reservationId) {
         return totalReservationCostWithVAT(ticketReservationRepository.findReservationById(reservationId));
     }
 
-    public TotalPrice totalReservationCostWithVAT(TicketReservation reservation) {
+    public PriceDescriptor totalReservationCostWithVAT(TicketReservation reservation) {
         Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
 
         Event event = eventRepository.findByReservationId(reservation.getId());
@@ -1045,10 +1048,10 @@ public class TicketReservationManager {
     }
 
     public OrderSummary orderSummaryForReservation(TicketReservation reservation, Event event) {
-        TotalPrice reservationCost = totalReservationCostWithVAT(reservation);
+        PriceDescriptor reservationCost = totalReservationCostWithVAT(reservation);
         PromoCodeDiscount discount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById).orElse(null);
         //
-        boolean free = reservationCost.getPriceWithVAT() == 0;
+        boolean free = !reservationCost.requiresPayment();
         String refundedAmount = null;
 
         boolean hasRefund = auditingRepository.countAuditsOfTypeForReservation(reservation.getId(), Audit.EventType.REFUND) > 0;
@@ -1057,33 +1060,41 @@ public class TicketReservationManager {
             refundedAmount = paymentManager.getInfo(reservation, event).getPaymentInformation().getRefundedAmount();
         }
 
-        return new OrderSummary(reservationCost,
+        return new OrderSummary(reservationCost, null,
             extractSummary(reservation.getId(), reservation.getVatStatus(), event, Locale.forLanguageTag(reservation.getUserLanguage()), discount, reservationCost),
             free,
-            formatCents(reservationCost.getPriceWithVAT()),
-            formatCents(reservationCost.getVAT()),
+            formatAmount(reservationCost.getPriceAfterTax(), false),
+            formatAmount(reservationCost.getTax(), false),
             reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
             reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
-            Optional.ofNullable(event.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p))).orElse(null),
+            Optional.ofNullable(event.getVat()).map(BigDecimal::toPlainString).orElse(null),
             reservation.getVatStatus(),
             refundedAmount);
     }
     
     List<SummaryRow> extractSummary(String reservationId, PriceContainer.VatStatus reservationVatStatus,
-                                    Event event, Locale locale, PromoCodeDiscount promoCodeDiscount, TotalPrice reservationCost) {
+                                    Event event, Locale locale, PromoCodeDiscount promoCodeDiscount, PriceDescriptor reservationCost) {
         List<SummaryRow> summary = new ArrayList<>();
+        String currencyCode = event.getCurrency();
         List<TicketPriceContainer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream()
-            .map(t -> TicketPriceContainer.from(t, reservationVatStatus, event.getCurrency(), event.getVat(), event.getVatStatus(), promoCodeDiscount)).collect(toList());
+            .map(t -> TicketPriceContainer.from(t, reservationVatStatus, currencyCode, event.getVat(), event.getVatStatus(), promoCodeDiscount)).collect(toList());
         tickets.stream()
             .collect(Collectors.groupingBy(TicketPriceContainer::getCategoryId))
             .forEach((categoryId, ticketsByCategory) -> {
                 final int subTotal = ticketsByCategory.stream().mapToInt(TicketPriceContainer::getSummarySrcPriceCts).sum();
-                final int subTotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(ticketsByCategory);
+                var subTotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVat(currencyCode, ticketsByCategory);
                 TicketPriceContainer firstTicket = ticketsByCategory.get(0);
                 final int ticketPriceCts = firstTicket.getSummarySrcPriceCts();
-                final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(firstTicket));
+                var priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVat(currencyCode, List.of(firstTicket));
                 String categoryName = ticketCategoryRepository.getByIdAndActive(categoryId, event.getId()).getName();
-                summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts), formatCents(priceBeforeVat), ticketsByCategory.size(), formatCents(subTotal), formatCents(subTotalBeforeVat), subTotal, SummaryRow.SummaryType.TICKET));
+                summary.add(new SummaryRow(
+                    categoryName,
+                    formatCents(currencyCode, ticketPriceCts),
+                    formatAmount(priceBeforeVat, false),
+                    ticketsByCategory.size(),
+                    formatCents(currencyCode, subTotal),
+                    formatAmount(subTotalBeforeVat, false),
+                    SummaryRow.SummaryType.TICKET));
             });
 
         summary.addAll(collectAdditionalServiceItems(reservationId, event)
@@ -1096,17 +1107,23 @@ public class TicketReservationManager {
                 List<AdditionalServiceItemPriceContainer> prices = generateASIPriceContainers(event, null).apply(entry).collect(toList());
                 AdditionalServiceItemPriceContainer first = prices.get(0);
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
-                final int subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(prices);
-                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts()), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first))), prices.size(), formatCents(subtotal), formatCents(subtotalBeforeVat), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE);
+                var subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVat(currencyCode, prices);
+                return new SummaryRow(title.getValue(),
+                    formatCents(currencyCode, first.getSrcPriceCts()),
+                    formatAmount(SummaryPriceContainer.getSummaryPriceBeforeVat(currencyCode, singletonList(first)), false),
+                    prices.size(),
+                    formatCents(currencyCode, subtotal),
+                    formatAmount(subtotalBeforeVat, false),
+                    SummaryRow.SummaryType.ADDITIONAL_SERVICE);
             }).collect(toList()));
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
-            String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
+            String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(currencyCode, promo.getDiscountAmount()) : (promo.getDiscountAmount()+"%"));
             summary.add(new SummaryRow(formatPromoCode(promo, ticketRepository.findTicketsInReservation(reservationId)),
                 formattedSingleAmount,
                 formattedSingleAmount,
                 reservationCost.getDiscountAppliedCount(),
-                formatCents(reservationCost.getDiscount()), formatCents(reservationCost.getDiscount()), reservationCost.getDiscount(), SummaryRow.SummaryType.PROMOTION_CODE));
+                formatAmount(reservationCost.getDiscount(), false), formatAmount(reservationCost.getDiscount(), false), SummaryRow.SummaryType.PROMOTION_CODE));
         });
         return summary;
     }
@@ -1607,12 +1624,12 @@ public class TicketReservationManager {
         return configurationManager.getIntConfigValue(Configuration.from(event, RESERVATION_TIMEOUT), 25);
     }
 
-    public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigDecimal paidAmount, String username) {
+    public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigMoneyProvider paidAmount, String username) {
         TicketReservation reservation = findByPartialID(reservationId);
         Optional<OrderSummary> optionalOrderSummary = optionally(() -> orderSummaryForReservationId(reservation.getId(), event));
         Validate.isTrue(optionalOrderSummary.isPresent(), "Reservation not found");
         OrderSummary orderSummary = optionalOrderSummary.get();
-        Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().getPriceWithVAT()).compareTo(paidAmount) == 0, "paid price differs from due price");
+        Validate.isTrue(orderSummary.safeGetPriceDescriptor(event.getCurrency()).getPriceAfterTax().isEqual(paidAmount), "paid price differs from due price");
         confirmOfflinePayment(event, reservation.getId(), username);
     }
 

@@ -109,12 +109,12 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                         new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event.mustUseFirstAndLastName()), "peppino@garibaldi.com", null, Locale.ENGLISH);
         waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event.mustUseFirstAndLastName()), "bixio@mille.org", null, Locale.ITALIAN);
-        assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
+        assertEquals(2, (int) waitingQueueRepository.countWaitingPeople(event.getId()));
 
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
         assertEquals(18, ticketRepository.findFreeByEventId(event.getId()).size());
@@ -122,7 +122,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null);
+                DESCRIPTION, BigDecimal.TEN, "CHF",false, "", true, null, null, null, null, null);
         eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -156,7 +156,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
             event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
-            event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
+            event.getRegularPrice().getAmount(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
             Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
         eventManager.updateEventPrices(event, eventModification, "admin");
         //that should create an additional "RELEASED" ticket
@@ -175,7 +175,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
             event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
-            event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
+            event.getRegularPrice().getAmount(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
             Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
         eventManager.updateEventPrices(event, eventModification, "admin");
         //that should create an additional "RELEASED" ticket, but it won't be linked to any category, so the following call won't have any effect
@@ -186,7 +186,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         //explicitly expand the category
         TicketCategory category = eventManager.loadTicketCategories(event).get(0);
         eventManager.updateCategory(category.getId(), event.getId(), new TicketCategoryModification(category.getId(), category.getName(), category.getMaxTickets() + 1,
-            fromZonedDateTime(category.getInception(event.getZoneId())), fromZonedDateTime(category.getExpiration(event.getZoneId())), emptyMap(), category.getPrice(),
+            fromZonedDateTime(category.getInception(event.getZoneId())), fromZonedDateTime(category.getExpiration(event.getZoneId())), emptyMap(), category.getPrice(event.getCurrency()).getAmount(), event.getCurrency(),
             category.isAccessRestricted(), "", category.isBounded(), null, null, null, null, null), "admin");
 
         //now the waiting queue processor should create the reservation for the first in line
@@ -205,13 +205,13 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", boundedCategorySize,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ZERO, false, "", true, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.ZERO, "CHF", false, "", true, null, null, null, null, null));
 
         if(withUnboundedCategory) {
              categories.add(new TicketCategoryModification(null, "unbounded", 0,
                  new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                  new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                 DESCRIPTION, BigDecimal.ZERO, false, "", false, null, null, null, null, null));
+                 DESCRIPTION, BigDecimal.ZERO, "CHF", false, "", false, null, null, null, null, null));
         }
 
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
@@ -239,12 +239,12 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         Thread.sleep(100L);//we are testing ordering, not concurrency...
         waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event.mustUseFirstAndLastName()), "bixio@mille.org", null, Locale.ITALIAN);
         List<WaitingQueueSubscription> subscriptions = waitingQueueRepository.loadAll(event.getId());
-        assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
+        assertEquals(2, (int) waitingQueueRepository.countWaitingPeople(event.getId()));
         assertTrue(subscriptions.stream().allMatch(w -> w.getSubscriptionType().equals(WaitingQueueSubscription.Type.SOLD_OUT)));
 
         //the following call shouldn't have any effect
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
-        assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
+        assertEquals(2, (int) waitingQueueRepository.countWaitingPeople(event.getId()));
         return Pair.of(reservationId, event);
     }
 }

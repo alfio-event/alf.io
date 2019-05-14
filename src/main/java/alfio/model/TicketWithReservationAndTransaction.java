@@ -21,6 +21,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.Transaction;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
+import org.joda.money.CurrencyUnit;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -32,6 +33,7 @@ import java.util.Optional;
 public class TicketWithReservationAndTransaction {
 
 
+    private final CurrencyUnit eventCurrencyUnit;
     private final Ticket ticket;
     private final TicketReservation ticketReservation;
     private final BillingDetails billingDetails;
@@ -104,7 +106,8 @@ public class TicketWithReservationAndTransaction {
                                                @Column("bt_plat_fee") Long platformFee,
                                                @Column("bt_gtw_fee") Long gatewayFee,
                                                @Column("bt_status") Transaction.Status transactionStatus,
-                                               @Column("bt_metadata") @JSONData Map<String, String> metadata
+                                               @Column("bt_metadata") @JSONData Map<String, String> metadata,
+                                               @Column("event_currency_code") String eventCurrencyCode
                                                ) {
 
         this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
@@ -128,6 +131,8 @@ public class TicketWithReservationAndTransaction {
         } else {
             this.transaction = Optional.empty();
         }
+
+        this.eventCurrencyUnit = eventCurrencyCode != null ? CurrencyUnit.of(eventCurrencyCode) : null;
 
     }
 }

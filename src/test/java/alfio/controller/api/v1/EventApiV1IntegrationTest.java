@@ -46,9 +46,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.net.URISyntaxException;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -185,12 +183,11 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
                 assertEquals(1,requestCategories.size());
                 requestCategories.forEach((rtc) -> {
                         assertEquals(t.getMaxTickets(), rtc.getMaxTickets().intValue());
-                        assertEquals(0, t.getPrice().compareTo(rtc.getPrice()));
+                        assertEquals(0, t.getPrice(event.getCurrency()).getAmount().compareTo(rtc.getPrice()));
                     }
                 );
             }
         );
-
     }
 
     @Test

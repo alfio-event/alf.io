@@ -49,11 +49,12 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-import static alfio.test.util.IntegrationTestUtil.initAdminUser;
-import static alfio.test.util.IntegrationTestUtil.removeAdminUser;
-import static alfio.test.util.IntegrationTestUtil.initEvent;
+import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -107,12 +108,12 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                     new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                     new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                    DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                    DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
             Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
             event = pair.getKey();
             waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event.mustUseFirstAndLastName()), "peppino@garibaldi.com", null, Locale.ENGLISH);
             waitingQueueManager.subscribe(event, new CustomerName("Nino Bixio", "Nino", "Bixio", event.mustUseFirstAndLastName()), "bixio@mille.org", null, Locale.ITALIAN);
-            assertTrue(waitingQueueRepository.countWaitingPeople(event.getId()) == 2);
+            assertEquals(2, (int) waitingQueueRepository.countWaitingPeople(event.getId()));
 
 
             final int parallelism = 10;
@@ -135,7 +136,7 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
             TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null);
+                DESCRIPTION, BigDecimal.TEN, "CHF", false, "", true, null, null, null, null, null);
             eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 
 

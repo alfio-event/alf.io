@@ -45,8 +45,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static alfio.util.OptionalWrapper.optionally;
-
 @RestController
 @RequestMapping("/admin/api")
 @Log4j2
@@ -85,7 +83,8 @@ public class AdditionalServiceApiController {
                             .map(as -> EventModification.AdditionalService.from(as)//.withAdditionalFields() TODO to be implemented
                                             .withText(additionalServiceTextRepository.findAllByAdditionalServiceId(as.getId()))
                                             .withZoneId(event.getZoneId())
-                                            .withPriceContainer(buildPriceContainer(event, as)).build())
+                                            .withPriceContainer(buildPriceContainer(event, as))
+                                            .build(event.getCurrency()))
                             .collect(Collectors.toList()))
             .orElse(Collections.emptyList());
     }
@@ -105,7 +104,8 @@ public class AdditionalServiceApiController {
             .map(event -> {
                 int result = additionalServiceRepository.update(additionalServiceId, additionalService.isFixPrice(),
                     additionalService.getOrdinal(), additionalService.getAvailableQuantity(), additionalService.getMaxQtyPerOrder(), additionalService.getInception().toZonedDateTime(event.getZoneId()),
-                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType(), Optional.ofNullable(additionalService.getPrice()).map(MonetaryUtil::unitToCents).orElse(0));
+                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType(),
+                    Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(event.getCurrency(), p)).orElse(0));
                 Validate.isTrue(result <= 1, "too many records updated");
                 Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
                     forEach(t -> {
@@ -127,7 +127,7 @@ public class AdditionalServiceApiController {
         return eventRepository.findOptionalById(eventId)
             .map(event -> {
                 AffectedRowCountAndKey<Integer> result = additionalServiceRepository.insert(eventId,
-                    Optional.ofNullable(additionalService.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
+                    Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(event.getCurrency(), p)).orElse(0),
                     additionalService.isFixPrice(),
                     additionalService.getOrdinal(),
                     additionalService.getAvailableQuantity(),
@@ -146,7 +146,7 @@ public class AdditionalServiceApiController {
                 return ResponseEntity.ok(EventModification.AdditionalService.from(additionalServiceRepository.getById(result.getKey(), eventId))
                     .withText(additionalServiceTextRepository.findAllByAdditionalServiceId(result.getKey()))
                     .withZoneId(event.getZoneId())
-                    .build());
+                    .build(event.getCurrency()));
             }).orElseThrow(IllegalArgumentException::new);
     }
 

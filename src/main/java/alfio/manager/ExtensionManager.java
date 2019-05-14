@@ -149,7 +149,7 @@ public class ExtensionManager {
         syncCall(extensionEvent, event, organizationId, payload, Boolean.class);
     }
 
-    public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, TotalPrice reservationCost, BillingDetails billingDetails) {
+    public Optional<InvoiceGeneration> handleInvoiceGeneration(PaymentSpecification spec, PriceDescriptor reservationCost, BillingDetails billingDetails) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservationId", spec.getReservationId());
         payload.put("email", spec.getEmail());

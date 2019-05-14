@@ -71,6 +71,8 @@ create view reservation_and_ticket_and_tx as (select
     ticket.discount_cts t_discount_cts,
     ticket.ext_reference t_ext_reference,
 
+    event.currency event_currency_code,
+
     b_transaction.id bt_id,
     b_transaction.gtw_tx_id bt_gtw_tx_id,
     b_transaction.gtw_payment_id bt_gtw_payment_id,
@@ -86,5 +88,6 @@ create view reservation_and_ticket_and_tx as (select
     b_transaction.metadata bt_metadata
 
 from tickets_reservation
+left join event on tickets_reservation.event_id_fk = event.id
 left outer join ticket on tickets_reservation.id = ticket.tickets_reservation_id
 left outer join b_transaction on ticket.tickets_reservation_id = b_transaction.reservation_id);

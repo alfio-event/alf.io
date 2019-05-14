@@ -47,6 +47,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.joda.money.BigMoney;
+import org.joda.money.CurrencyUnit;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -305,7 +307,7 @@ public class AdminReservationManager {
 
     private Result<Triple<TicketReservation, List<Ticket>, Event>> performConfirmation(String reservationId, Event event, TicketReservation original) {
         try {
-            PaymentSpecification spec = new PaymentSpecification(reservationId, null, 0,
+            PaymentSpecification spec = new PaymentSpecification(reservationId, null, BigMoney.zero(CurrencyUnit.of(event.getCurrency())),
                 event, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event.mustUseFirstAndLastName()),
                 original.getBillingAddress(), original.getCustomerReference(), Locale.forLanguageTag(original.getUserLanguage()),
                 false, false, null, null, null, null, false, false);
@@ -491,7 +493,7 @@ public class AdminReservationManager {
     private Result<List<TicketsInfo>> checkCategoryCapacity(TicketsInfo ti, Event event, AdminReservationModification reservation, String username) {
         Result<TicketCategory> ticketCategoryResult = ti.getCategory().isExisting() ? checkExistingCategory(ti, event, username) : createCategory(ti, event, reservation, username);
         return ticketCategoryResult
-            .map(tc -> Collections.singletonList(new TicketsInfo(new Category(tc.getId(), tc.getName(), tc.getPrice()), ti.getAttendees(), ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees())));
+            .map(tc -> Collections.singletonList(new TicketsInfo(new Category(tc.getId(), tc.getName(), tc.getPrice(event.getCurrency()).getAmount()), ti.getAttendees(), ti.isAddSeatsIfNotAvailable(), ti.isUpdateAttendees())));
     }
 
     private Result<TicketCategory> createCategory(TicketsInfo ti, Event event, AdminReservationModification reservation, String username) {
@@ -501,7 +503,7 @@ public class AdminReservationManager {
 
         int tickets = attendees.size();
         TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), tickets,
-            inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), true, "",
+            inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), event.getCurrency(), true, "",
             true, null, null, null, null, null);
         int notAllocated = getNotAllocatedTickets(event);
         int missingTickets = Math.max(tickets - notAllocated, 0);
@@ -539,7 +541,8 @@ public class AdminReservationManager {
             int maxTickets = existing.getMaxTickets() + (tickets - freeTicketsInCategory);
             TicketCategoryModification tcm = new TicketCategoryModification(existingCategoryId, existing.getName(), maxTickets,
                 fromZonedDateTime(existing.getInception(modified.getZoneId())), fromZonedDateTime(existing.getExpiration(event.getZoneId())),
-                Collections.emptyMap(), existing.getPrice(), existing.isAccessRestricted(), "", true, existing.getCode(),
+                Collections.emptyMap(), existing.getPrice(event.getCurrency()).getAmount(), event.getCurrency(),
+                existing.isAccessRestricted(), "", true, existing.getCode(),
                 fromZonedDateTime(existing.getValidCheckInFrom(modified.getZoneId())),
                 fromZonedDateTime(existing.getValidCheckInTo(modified.getZoneId())),
                 fromZonedDateTime(existing.getTicketValidityStart(modified.getZoneId())),
@@ -663,7 +666,7 @@ public class AdminReservationManager {
             TicketReservation reservation = res.getLeft();
             return reservation.getPaymentMethod() != null
                 && reservation.getPaymentMethod().isSupportRefund()
-                && paymentManager.refund(reservation, e, MonetaryUtil.unitToCents(refundAmount), username);
+                && paymentManager.refund(reservation, e, MonetaryUtil.unitToCents(e.getCurrency(), refundAmount), username);
         });
     }
 

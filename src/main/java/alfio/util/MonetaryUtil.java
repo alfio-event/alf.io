@@ -16,10 +16,14 @@
  */
 package alfio.util;
 
-import java.math.BigDecimal;
-import java.util.function.Function;
+import org.joda.money.BigMoney;
+import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
 
-import static java.math.RoundingMode.*;
+import java.math.BigDecimal;
+
+import static java.math.RoundingMode.HALF_UP;
+import static java.math.RoundingMode.UP;
 
 public final class MonetaryUtil {
 
@@ -29,54 +33,76 @@ public final class MonetaryUtil {
     private MonetaryUtil() {
     }
 
-    public static int addVAT(int priceInCents, BigDecimal vat) {
-        return addVAT(new BigDecimal(priceInCents), vat).intValueExact();
+    public static int addVAT(String currencyCode, int priceInCents, BigDecimal vat) {
+        return addVAT(centsToUnit(currencyCode, priceInCents), vat).getAmount().intValueExact();
     }
 
-    public static BigDecimal addVAT(BigDecimal price, BigDecimal vat) {
-        return price.add(price.multiply(vat.divide(HUNDRED, ROUNDING_SCALE, UP))).setScale(0, HALF_UP);
+    public static BigMoney addVAT(BigMoney price, BigDecimal vat) {
+        return price.plus(price.multipliedBy(vat.divide(HUNDRED, ROUNDING_SCALE, UP)));
     }
 
-    public static BigDecimal extractVAT(BigDecimal price, BigDecimal vat) {
-        return price.subtract(price.divide(BigDecimal.ONE.add(vat.divide(HUNDRED, ROUNDING_SCALE, UP)), ROUNDING_SCALE, HALF_DOWN));
+    public static BigMoney extractVAT(BigMoney price, BigDecimal vat) {
+        var scaledPrice = setRoundingSafeScale(price);
+        return scaledPrice.minus(scaledPrice.dividedBy(BigDecimal.ONE.add(vat.divide(HUNDRED, ROUNDING_SCALE, UP)), HALF_UP));
     }
 
-    public static int calcPercentage(int priceInCents, BigDecimal vat) {
-        return calcPercentage((long) priceInCents, vat, BigDecimal::intValueExact);
+    private static BigMoney setRoundingSafeScale(BigMoney src) {
+        return src.withScale(ROUNDING_SCALE);
     }
 
-    public static <T extends Number> T calcPercentage(long priceInCents, BigDecimal vat, Function<BigDecimal, T> converter) {
-        BigDecimal result = new BigDecimal(priceInCents).multiply(vat.divide(HUNDRED, ROUNDING_SCALE, UP))
-            .setScale(0, HALF_UP);
-        return converter.apply(result);
+    public static BigMoney calcPercentage(BigMoney price, BigDecimal percentage) {
+        return price.multipliedBy(percentage.divide(HUNDRED, ROUNDING_SCALE, UP));
     }
 
-    public static BigDecimal calcVat(BigDecimal price, BigDecimal percentage) {
-        return price.multiply(percentage.divide(HUNDRED, ROUNDING_SCALE, HALF_UP));
+    public static BigMoney calcVat(BigMoney price, BigDecimal percentage) {
+        return price.multipliedBy(percentage.divide(HUNDRED, ROUNDING_SCALE, HALF_UP));
     }
 
-    public static BigDecimal centsToUnit(int cents) {
-        return new BigDecimal(cents).divide(HUNDRED, 2, HALF_UP);
+    public static BigMoney centsToUnit(String currencyCode, long cents) {
+        return centsToUnit(CurrencyUnit.of(currencyCode), cents);
     }
 
-    public static BigDecimal centsToUnit(long cents) {
-        return new BigDecimal(cents).divide(HUNDRED, 2, HALF_UP);
+    public static BigMoney centsToUnit(CurrencyUnit currency, long cents) {
+        return BigMoney.ofScale(currency, cents, currency.getDecimalPlaces());
     }
 
-    public static int unitToCents(BigDecimal unit) {
-        return unitToCents(unit, BigDecimal::intValueExact);
+    public static BigDecimal toBigDecimal(BigMoney bigMoney) {
+        return bigMoney.toMoney(HALF_UP).getAmount();
     }
 
-    public static <T extends Number> T unitToCents(BigDecimal unit, Function<BigDecimal, T> converter) {
-        BigDecimal result = unit.multiply(HUNDRED).setScale(0, HALF_UP);
-        return converter.apply(result);
+    public static int unitToCents(BigMoney unit) {
+        int decimalPlaces = unit.getCurrencyUnit().getDecimalPlaces();
+        return unit.multipliedBy(BigDecimal.TEN.pow(decimalPlaces))
+            .rounded(0, HALF_UP)
+            .getAmountMajorInt();
     }
 
-    public static String formatCents(long cents) {
-        return centsToUnit(cents).toPlainString();
+    public static int unitToCents(String currencyCode, BigDecimal unit) {
+        var currencyUnit = CurrencyUnit.of(currencyCode);
+        return unitToCents(Money.of(currencyUnit, unit, HALF_UP));
     }
 
-    public static String formatCents(int cents) {
-        return centsToUnit(cents).toPlainString();
+    public static int unitToCents(Money unit) {
+        return unitToCents(unit.toBigMoney());
+    }
+
+    public static String formatAmount(BigMoney amount) {
+        return formatAmount(amount, true);
+    }
+
+    public static String formatAmount(BigMoney amount, boolean includeCurrencyCode) {
+        var money = amount.toMoney(HALF_UP);
+        if(includeCurrencyCode) {
+            return money.toString();
+        }
+        return money.getAmount().toPlainString();
+    }
+
+    public static String formatCents(String currencyCode, long cents) {
+        return toBigDecimal(centsToUnit(currencyCode, cents)).toPlainString();
+    }
+
+    public static String formatCents(String currencyCode, int cents) {
+        return formatCents(currencyCode, (long) cents);
     }
 }

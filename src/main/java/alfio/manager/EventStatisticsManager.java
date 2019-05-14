@@ -28,6 +28,7 @@ import alfio.util.EventUtil;
 import alfio.util.MonetaryUtil;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.money.CurrencyUnit;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -93,7 +94,8 @@ public class EventStatisticsManager {
         boolean owner = userManager.isOwner(userManager.findUserByUsername(username));
         EventStatisticView statistics = owner ? eventRepository.findStatisticsFor(event.getId()) : EventStatisticView.empty(event.getId());
         EventStatistic eventStatistic = new EventStatistic(event, statistics, displayStatisticsForEvent(event));
-        BigDecimal grossIncome = owner ? MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(event.getId())) : BigDecimal.ZERO;
+        var currency = CurrencyUnit.of(event.getCurrency());
+        BigDecimal grossIncome = owner ? MonetaryUtil.centsToUnit(currency, eventRepository.getGrossIncome(event.getId())).getAmount() : BigDecimal.ZERO;
 
         List<TicketCategory> ticketCategories = loadTicketCategories(event);
         List<Integer> ticketCategoriesIds = ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList());

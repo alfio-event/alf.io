@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 @Getter
+@Deprecated(since = "2.0-M2")
 public class TotalPrice {
     private final int priceWithVAT;
     private final int VAT;

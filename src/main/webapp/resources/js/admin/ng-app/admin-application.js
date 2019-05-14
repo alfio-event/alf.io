@@ -445,7 +445,7 @@
     }]);
 
 
-    var createCategoryValidUntil = function(sticky, categoryEndTime) {
+    var createCategoryValidUntil = function(sticky, categoryEndTime, currencyCode) {
         var now = moment().startOf('hour');
         var inceptionDateTime = {
             date: now.format('YYYY-MM-DD'),
@@ -465,6 +465,7 @@
             inception: inceptionDateTime,
             expiration: expirationDateTime,
             tokenGenerationRequested: false,
+            currencyCode: currencyCode,
             sticky: sticky,
             bounded: false
         };
@@ -655,7 +656,7 @@
             return TicketCategoryEditorService.openCategoryDialog($scope, category, $scope.event, null, null);
         };
         $scope.addCategory = function() {
-            var category = createCategoryValidUntil(true, $scope.event.begin);
+            var category = createCategoryValidUntil(true, $scope.event.begin, $scope.event.currency);
             editCategory(category).then(function(res) {
                 $scope.event.ticketCategories.push(category);
             });
@@ -1009,7 +1010,7 @@
 
         $scope.addCategory = function(event) {
             var eventBegin = moment(event.begin);
-            TicketCategoryEditorService.openCategoryDialog($scope, createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}), event, validationErrorHandler, reloadIfSeatsModification);
+            TicketCategoryEditorService.openCategoryDialog($scope, createCategoryValidUntil(true, {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')}, event.currency), event, validationErrorHandler, reloadIfSeatsModification);
         };
 
         $scope.openConfiguration = function(event, category) {
@@ -1062,6 +1063,7 @@
                 id: category.id,
                 name: category.name,
                 price: category.price,
+                currencyCode: event.currency,
                 description: category.description,
                 maxTickets: category.maxTickets,
                 bounded: category.bounded,

@@ -23,8 +23,8 @@ import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.PaymentResult;
 import alfio.model.Event;
 import alfio.model.OrderSummary;
+import alfio.model.PriceDescriptor;
 import alfio.model.TicketReservation;
-import alfio.model.TotalPrice;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -43,7 +43,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Locale;
 import java.util.Optional;
 
 @Controller
@@ -84,7 +83,7 @@ public class PaymentCallbackController {
                 return paymentManager.lookupProviderByMethod(paymentMethod, new PaymentContext(event))
                     .filter(ExternalProcessing.class::isInstance)
                     .map(provider -> {
-                        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+                        PriceDescriptor reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
                         OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
                         PaymentSpecification paymentSpecification = ((ExternalProcessing)provider).getSpecificationFromRequest(event, reservation, reservationCost, orderSummary).apply(requestParams);
 
@@ -98,7 +97,7 @@ public class PaymentCallbackController {
                         }
 
                         if(paymentResult.isFailed()) {
-                            bindingResult.reject(paymentResult.getErrorCode().orElse(null));
+                            bindingResult.reject(paymentResult.getErrorCode().orElse(""));
                             SessionUtil.addToFlash(bindingResult, redirectAttributes);
                         }
 

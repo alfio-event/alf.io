@@ -20,6 +20,7 @@ import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.TicketCategory;
 import alfio.model.TicketCategoryDescription;
+import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
@@ -83,7 +84,7 @@ public class PublicCategory implements PriceContainer {
     }
 
     public BigDecimal getPrice() {
-        return category.getPrice();
+        return MonetaryUtil.toBigDecimal(category.getPrice(event.getCurrency()));
     }
 
     public ZonedDateTime getInception() {

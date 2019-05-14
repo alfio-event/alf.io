@@ -16,16 +16,13 @@
  */
 package alfio.model.modification;
 
-import alfio.model.TicketCategory;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.ZoneId;
 import java.util.Map;
-import java.util.Optional;
 
 @Getter
 public class TicketCategoryModification {
@@ -41,6 +38,7 @@ public class TicketCategoryModification {
     private final String dateString;
     private final boolean bounded;
     private final String code;
+    private final String currencyCode;
 
     private final DateTimeModification validCheckInFrom;
     private final DateTimeModification validCheckInTo;
@@ -56,6 +54,7 @@ public class TicketCategoryModification {
                                       @JsonProperty("expiration") DateTimeModification expiration,
                                       @JsonProperty("description") Map<String, String> description,
                                       @JsonProperty("price") BigDecimal price,
+                                      @JsonProperty("currencyCode") String currencyCode,
                                       @JsonProperty("tokenGenerationRequested") boolean tokenGenerationRequested,
                                       @JsonProperty("dateString") String dateString,
                                       @JsonProperty("bounded") boolean bounded,
@@ -71,6 +70,7 @@ public class TicketCategoryModification {
         this.expiration = expiration;
         this.description = description;
         this.price = price;
+        this.currencyCode = currencyCode;
         this.tokenGenerationRequested = tokenGenerationRequested;
         this.dateString = dateString;
         this.bounded = bounded;
@@ -82,21 +82,9 @@ public class TicketCategoryModification {
     }
 
     public int getPriceInCents() {
-        return Optional.ofNullable(price).map(MonetaryUtil::unitToCents).orElse(0);
-    }
-
-    public static TicketCategoryModification fromTicketCategory(TicketCategory tc, Map<String, String> ticketCategoryDescriptions, ZoneId zoneId) {
-        return new TicketCategoryModification(tc.getId(),
-                tc.getName(),
-                tc.getMaxTickets(),
-                DateTimeModification.fromZonedDateTime(tc.getInception(zoneId)),
-                DateTimeModification.fromZonedDateTime(tc.getExpiration(zoneId)),
-                ticketCategoryDescriptions,
-                tc.getPrice(),
-                tc.isAccessRestricted(), "", tc.isBounded(), tc.getCode(),
-                DateTimeModification.fromZonedDateTime(tc.getValidCheckInFrom(zoneId)),
-                DateTimeModification.fromZonedDateTime(tc.getValidCheckInTo(zoneId)),
-                DateTimeModification.fromZonedDateTime(tc.getTicketValidityStart()),
-                DateTimeModification.fromZonedDateTime(tc.getTicketValidityEnd()));
+        if (price != null && currencyCode != null) {
+            return MonetaryUtil.unitToCents(currencyCode, price);
+        }
+        return 0;
     }
 }

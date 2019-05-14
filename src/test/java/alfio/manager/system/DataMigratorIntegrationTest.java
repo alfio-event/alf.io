@@ -136,7 +136,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
 
@@ -165,7 +165,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
 
@@ -194,7 +194,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
         
@@ -224,7 +224,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories, null); 
         Event event = eventUsername.getKey();
 
@@ -250,7 +250,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
         try {
@@ -274,7 +274,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
         try {
@@ -316,11 +316,11 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS -1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null),
+                DESCRIPTION, BigDecimal.TEN, "CHF", false, "", true, null, null, null, null, null),
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
         TicketCategory firstCategory = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
@@ -339,7 +339,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
         TicketReservationModification trm = new TicketReservationModification();
@@ -355,6 +355,6 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
         String uuid = ticketsInReservation.get(0).getUuid();
         assertTrue(ticketsInReservation.stream().allMatch(t -> t.getStatus() == Ticket.TicketStatus.PENDING));
         dataMigrator.fixStuckTickets(event.getId());
-        assertTrue(ticketRepository.findByUUID(uuid).getStatus() == Ticket.TicketStatus.RELEASED);
+        assertSame(ticketRepository.findByUUID(uuid).getStatus(), Ticket.TicketStatus.RELEASED);
     }
 }

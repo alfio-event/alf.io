@@ -26,6 +26,8 @@ import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.money.BigMoney;
+import org.joda.money.CurrencyUnit;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
@@ -34,6 +36,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.util.ImageUtil.createQRCode;
+import static alfio.util.MonetaryUtil.centsToUnit;
+import static alfio.util.MonetaryUtil.formatAmount;
 
 
 public enum TemplateResource {
@@ -268,8 +272,10 @@ public enum TemplateResource {
         TicketReservation reservation = sampleTicketReservation();
         Optional<String> vat = Optional.of("VAT-NR");
         List<TicketWithCategory> tickets = Collections.singletonList(new TicketWithCategory(sampleTicket(), sampleCategory()));
-        OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0),
-            Collections.singletonList(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, "8", PriceContainer.VatStatus.INCLUDED, "1.00");
+        var currencyUnit = CurrencyUnit.of(event.getCurrency());
+        var priceDescriptor = new PriceDescriptor(BigMoney.of(currencyUnit, 10.00), BigMoney.of(currencyUnit, 0.80), BigMoney.zero(currencyUnit), 0);
+        OrderSummary orderSummary = new OrderSummary(priceDescriptor, null,
+            List.of(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, "8", PriceContainer.VatStatus.INCLUDED, "1.00");
         String reservationUrl = "http://your-domain.tld/reservation-url/";
         String reservationShortId = "597e7e7b";
         return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId, Optional.of("My Invoice\nAddress"), Optional.empty(), Optional.empty());
@@ -457,7 +463,7 @@ public enum TemplateResource {
             .map(asi -> {
                 Map<String, Object> data = new HashMap<>();
                 data.put("name", titleFinder.apply(asi).map(AdditionalServiceText::getValue).orElse("N/A"));
-                data.put("amount", MonetaryUtil.centsToUnit(asi.getFinalPriceCts()).toString() + event.getCurrency());
+                data.put("amount", formatAmount(centsToUnit(event.getCurrency(), asi.getFinalPriceCts())));
                 data.put("id", asi.getId());
                 return data;
             }).collect(Collectors.toList()));

@@ -182,7 +182,7 @@ class BaseStripeManager {
         Map<String, Object> chargeParams = new HashMap<>();
         chargeParams.put("amount", spec.getPriceWithVAT());
         FeeCalculator.getCalculator(spec.getEvent(), configurationManager)
-            .apply(tickets, (long) spec.getPriceWithVAT())
+            .apply(tickets, spec.getPriceWithVAT())
             .filter(l -> l > 0)
             .ifPresent(fee -> chargeParams.put("application_fee_amount", fee));
         chargeParams.put("currency", spec.getEvent().getCurrency());
@@ -248,8 +248,8 @@ class BaseStripeManager {
             if(requestOptionsOptional.isPresent()) {
                 RequestOptions options = requestOptionsOptional.get();
                 Charge charge = Charge.retrieve(transaction.getTransactionId(), options);
-                String paidAmount = MonetaryUtil.formatCents(charge.getAmount());
-                String refundedAmount = MonetaryUtil.formatCents(charge.getAmountRefunded());
+                String paidAmount = MonetaryUtil.formatCents(event.getCurrency(), charge.getAmount());
+                String refundedAmount = MonetaryUtil.formatCents(event.getCurrency(), charge.getAmountRefunded());
                 List<BalanceTransaction.Fee> fees = retrieveBalanceTransaction(charge.getBalanceTransaction(), options).getFeeDetails();
                 return Optional.of(new PaymentInformation(paidAmount, refundedAmount, getFeeAmount(fees, "stripe_fee"), getFeeAmount(fees, "application_fee")));
             }
@@ -273,7 +273,7 @@ class BaseStripeManager {
         Optional<Integer> amount = Optional.ofNullable(amountToRefund);
         String chargeId = transaction.getTransactionId();
         try {
-            String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
+            String amountOrFull = amount.map(a -> MonetaryUtil.formatCents(event.getCurrency(), a)).orElse("full");
             log.info("Stripe: trying to do a refund for payment {} with amount: {}", chargeId, amountOrFull);
             Map<String, Object> params = new HashMap<>();
             params.put("charge", chargeId);

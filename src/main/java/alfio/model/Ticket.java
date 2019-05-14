@@ -16,7 +16,6 @@
  */
 package alfio.model;
 
-import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -138,11 +137,4 @@ public class Ticket {
         return (firstName != null && lastName != null) ? (firstName + " " + lastName) : fullName;
     }
 
-    public String getFormattedFinalPrice() {
-        return MonetaryUtil.formatCents(finalPriceCts);
-    }
-
-    public String getFormattedNetPrice() {
-        return MonetaryUtil.formatCents(finalPriceCts - vatCts);
-    }
 }

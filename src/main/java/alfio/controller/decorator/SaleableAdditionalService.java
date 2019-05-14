@@ -20,6 +20,7 @@ import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
+import alfio.util.MonetaryUtil;
 import lombok.experimental.Delegate;
 
 import java.math.BigDecimal;
@@ -70,7 +71,7 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean getFree() {
-        return isFixPrice() && getFinalPrice().compareTo(BigDecimal.ZERO) == 0;
+        return isFixPrice() && getFinalPrice().isPositive();
     }
 
     public ZonedDateTime getZonedInception() {
@@ -110,7 +111,7 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public String getFormattedFinalPrice() {
-        return SaleableTicketCategory.getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()).toPlainString();
+        return MonetaryUtil.formatAmount(SaleableTicketCategory.getFinalPriceToDisplay(getFinalPrice().plus(getAppliedDiscount()), getVAT(), getVatStatus()), false);
     }
 
     public boolean getSupportsDiscount() {
@@ -122,7 +123,7 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public String getDiscountedPrice() {
-        return getFinalPrice().toPlainString();
+        return MonetaryUtil.formatAmount(getFinalPrice(), false);
     }
 
     public boolean getVatIncluded() {

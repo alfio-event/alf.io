@@ -109,6 +109,7 @@ class RevolutBankTransferManagerTest {
         when(single.getTransactionBalance()).thenReturn(BigDecimal.ONE);
         String paymentId = UUID.randomUUID().toString();
         when(single.getId()).thenReturn(paymentId);
+        when(single.getCurrency()).thenReturn("CHF");
         var leg = mock(RevolutTransactionDescriptor.TransactionLeg.class);
         when(leg.getAmount()).thenReturn(BigDecimal.ONE);
         when(leg.getCurrency()).thenReturn("CHF");

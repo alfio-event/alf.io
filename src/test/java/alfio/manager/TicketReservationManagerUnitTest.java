@@ -32,6 +32,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import static alfio.test.util.IntegrationTestUtil.toBigMoney;
+import static alfio.util.MonetaryUtil.unitToCents;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -82,6 +84,7 @@ public class TicketReservationManagerUnitTest {
         eventRepository = mock(EventRepository.class);
         reservation = mock(TicketReservation.class);
         event = mock(Event.class);
+        when(event.getCurrency()).thenReturn("CHF");
         ticket = mock(Ticket.class);
         ticketCategory = mock(TicketCategory.class);
         organizationRepository = mock(OrganizationRepository.class);
@@ -151,55 +154,55 @@ public class TicketReservationManagerUnitTest {
         AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
         when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
 
-        TotalPrice included = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        assertEquals(10, included.getPriceWithVAT());
-        assertEquals(1, included.getVAT());
+        PriceDescriptor included = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        assertEquals(10, unitToCents(included.getPriceAfterTax()));
+        assertEquals(1, unitToCents(included.getTax()));
 
-        TotalPrice notIncluded = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        assertEquals(11, notIncluded.getPriceWithVAT());
-        assertEquals(1, notIncluded.getVAT());
+        PriceDescriptor notIncluded = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        assertEquals(11, unitToCents(notIncluded.getPriceAfterTax()));
+        assertEquals(1, unitToCents(notIncluded.getTax()));
     }
 
     @Test
     public void calcReservationCostWithASVatIncludedInherited() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 10, 10);
         //first: event price vat included, additional service VAT inherited
-        TotalPrice first = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        assertEquals(20, first.getPriceWithVAT());
-        assertEquals(2, first.getVAT());
+        PriceDescriptor first = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        assertEquals(20, unitToCents(first.getPriceAfterTax()));
+        assertEquals(2, unitToCents(first.getTax()));
     }
 
     @Test
     public void calcReservationCostWithASVatIncludedASNoVat() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 10, 10);
         //second: event price vat included, additional service VAT n/a
-        TotalPrice second = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        assertEquals(20, second.getPriceWithVAT());
-        assertEquals(1, second.getVAT());
+        PriceDescriptor second = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        assertEquals(20, unitToCents(second.getPriceAfterTax()));
+        assertEquals(1, unitToCents(second.getTax()));
     }
 
     @Test
     public void calcReservationCostWithASVatNotIncludedASInherited() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 10, 10);
         //third: event price vat not included, additional service VAT inherited
-        TotalPrice third = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        assertEquals(22, third.getPriceWithVAT());
-        assertEquals(2, third.getVAT());
+        PriceDescriptor third = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        assertEquals(22, unitToCents(third.getPriceAfterTax()));
+        assertEquals(2, unitToCents(third.getTax()));
     }
 
     @Test
     public void calcReservationCostWithASVatNotIncludedASNone() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 10, 10);
         //fourth: event price vat not included, additional service VAT n/a
-        TotalPrice fourth = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
-        assertEquals(21, fourth.getPriceWithVAT());
-        assertEquals(1, fourth.getVAT());
+        PriceDescriptor fourth = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        assertEquals(21, unitToCents(fourth.getPriceAfterTax()));
+        assertEquals(1, unitToCents(fourth.getTax()));
     }
 
     @Test
     public void testExtractSummaryVatNotIncluded() {
         initReservationWithTicket(1000, false);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1100, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new PriceDescriptor(toBigMoney(1100, "CHF"), toBigMoney(100, "CHF"), toBigMoney(0, "CHF"), 0));
         assertEquals(1, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
     }
@@ -207,7 +210,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncluded() {
         initReservationWithTicket(1000, true);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new PriceDescriptor(toBigMoney(1000, "CHF"), toBigMoney(100, "CHF"), toBigMoney(0, "CHF"), 0));
         assertEquals(1, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
     }
@@ -215,7 +218,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncludedExempt() {
         initReservationWithTicket(1000, true);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new PriceDescriptor(toBigMoney(1000, "CHF"), toBigMoney(100, "CHF"), toBigMoney(0, "CHF"), 0));
         assertEquals(1, summaryRows.size());
         assertEquals("9.09", summaryRows.get(0).getPrice());
     }
@@ -223,7 +226,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatNotIncludedExempt() {
         initReservationWithTicket(1000, true);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new PriceDescriptor(toBigMoney(1000, "CHF"), toBigMoney(100, "CHF"), toBigMoney(0, "CHF"), 0));
         assertEquals(1, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
     }
@@ -231,7 +234,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatNotIncludedASInherited() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(2200, 200, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new PriceDescriptor(toBigMoney(2200, "CHF"), toBigMoney(200, "CHF"), toBigMoney(0, "CHF"), 0));
         assertEquals(2, summaryRows.size());
         summaryRows.forEach(r -> assertEquals(String.format("%s failed", r.getType()), "10.00", r.getPrice()));
     }
@@ -239,7 +242,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncludedASInherited() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 182, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new PriceDescriptor(toBigMoney(2000, "CHF"), toBigMoney(182, "CHF"), toBigMoney(0, "CHF"), 0));
         assertEquals(2, summaryRows.size());
         summaryRows.forEach(r -> assertEquals(String.format("%s failed", r.getType()), "10.00", r.getPrice()));
     }
@@ -247,7 +250,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatNotIncludedASNone() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new PriceDescriptor(toBigMoney(1000, "CHF"), toBigMoney(100, "CHF"), toBigMoney(0, "CHF"), 0));
         assertEquals(2, summaryRows.size());
         summaryRows.forEach(r -> assertEquals(String.format("%s failed", r.getType()), "10.00", r.getPrice()));
     }
@@ -255,7 +258,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncludedASNone() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new PriceDescriptor(toBigMoney(2000, "CHF"), toBigMoney(100, "CHF"), toBigMoney(0, "CHF"), 0));
         assertEquals(2, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
         assertEquals("10.00", summaryRows.get(1).getPrice());

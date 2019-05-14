@@ -154,10 +154,6 @@ public class TicketCategoryWithAdditionalInfo implements StatisticsContainer, Pr
         return ticketCategoryStatisticView.isContainsStuckTickets();
     }
 
-    public BigDecimal getActualPrice() {
-        return getFinalPrice();
-    }
-
     @Override
     public String getCurrencyCode() {
         return event.getCurrency();

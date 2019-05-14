@@ -21,8 +21,8 @@ import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.joda.money.BigMoney;
 
-import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
@@ -85,9 +85,8 @@ public class TicketCategory {
         this.ticketValidityEnd = ticketValidityEnd;
     }
 
-    public BigDecimal getPrice() {
-        //TODO: apply this conversion only for some currency. Not all are cent based.
-        return MonetaryUtil.centsToUnit(srcPriceCts);
+    public BigMoney getPrice(String currencyCode) {
+        return MonetaryUtil.centsToUnit(currencyCode, srcPriceCts);
     }
     
     public boolean getFree() {

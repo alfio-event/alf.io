@@ -19,8 +19,8 @@ package alfio.model.transaction.capabilities;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.model.Event;
 import alfio.model.OrderSummary;
+import alfio.model.PriceDescriptor;
 import alfio.model.TicketReservation;
-import alfio.model.TotalPrice;
 import alfio.model.transaction.Capability;
 
 import java.util.List;
@@ -41,7 +41,7 @@ public interface ExternalProcessing extends Capability {
      */
     Function<Map<String, List<String>>, PaymentSpecification> getSpecificationFromRequest(Event event,
                                                                                           TicketReservation reservation,
-                                                                                          TotalPrice reservationCost,
+                                                                                          PriceDescriptor reservationCost,
                                                                                           OrderSummary orderSummary);
 
 }

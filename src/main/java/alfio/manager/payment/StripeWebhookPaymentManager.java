@@ -46,6 +46,7 @@ import java.util.*;
 import static alfio.model.TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.WAITING_EXTERNAL_CONFIRMATION;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.MonetaryUtil.unitToCents;
 
 @Log4j2
 @Component
@@ -137,7 +138,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             long platformFee = paymentIntentParams.containsKey("application_fee") ? (long) paymentIntentParams.get("application_fee") : 0L;
             transactionRepository.insert(intent.getId(), intent.getId(),
                 paymentSpecification.getReservationId(), ZonedDateTime.now(paymentSpecification.getEvent().getZoneId()),
-                paymentSpecification.getPriceWithVAT(), paymentSpecification.getEvent().getCurrency(), "Payment Intent",
+                unitToCents(paymentSpecification.getPriceWithVAT()), paymentSpecification.getEvent().getCurrency(), "Payment Intent",
                 PaymentProxy.STRIPE.name(), platformFee,0L, Transaction.Status.PENDING, Map.of(CLIENT_SECRET_METADATA, clientSecret));
             return new StripeSCACreditCardToken(intent.getId(), null, clientSecret);
 

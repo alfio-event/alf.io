@@ -16,10 +16,6 @@
  */
 package alfio.controller.decorator;
 
-import alfio.model.PromoCodeDiscount;
-import alfio.util.MonetaryUtil;
-
-import java.math.BigDecimal;
 import java.util.stream.IntStream;
 
 import static java.lang.Math.max;
@@ -31,13 +27,4 @@ class DecoratorUtil {
         return IntStream.rangeClosed(0, maximumSaleableTickets).toArray();
     }
 
-    static int calcDiscount(PromoCodeDiscount d, int finalPriceInCents) {
-        int discount;
-        if(d.getFixedAmount()) {
-            discount = d.getDiscountAmount();
-        } else {
-            discount = MonetaryUtil.calcPercentage(finalPriceInCents, new BigDecimal(d.getDiscountAmount()));
-        }
-        return finalPriceInCents - discount;
-    }
 }

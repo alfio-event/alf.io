@@ -92,6 +92,7 @@
                     var end = moment(promocode.formattedEnd);
                     $scope.promoCodeDescription = ctrl.promoCodeDescription;
                     $scope.promocode = {
+                        currencyCode: ctrl.forEvent ? ctrl.event.currency : '', // TODO fix currency organization-level
                         start: {date: start.format('YYYY-MM-DD'), time: start.format('HH:mm')},
                         end: {date: end.format('YYYY-MM-DD'), time: end.format('HH:mm')},
                         maxUsage: promocode.maxUsage,
@@ -171,6 +172,7 @@
 
 
                     $scope.promocode = {
+                        currencyCode: forEvent ? event.currency : null, // TODO: fix org-level creation
                         discountType :'PERCENTAGE',
                         start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')},
                         end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')},

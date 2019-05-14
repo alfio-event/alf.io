@@ -156,7 +156,8 @@
                     <div class="col-sm-7">{{#i18n}}show-event.promo-code-applied [{{promoCodeDescription}}]{{/i18n}} {{promoCodeDiscount.promoCode}}</div>
                     <div class="col-sm-5">
                         {{#promoCodeDiscount.fixedAmount}}
-                            {{#i18n}}show-event.promo-code-fixed-amount-discount [{{promoCodeDiscount.formattedDiscountAmount}} {{event.currency}}]{{/i18n}}
+
+                            {{#i18n}}show-event.promo-code-fixed-amount-discount [{{#format-price}}{{promoCodeDiscount.discountAmount}}{{/format-price}} {{event.currency}}]{{/i18n}}
                         {{/promoCodeDiscount.fixedAmount}}
                         {{^promoCodeDiscount.fixedAmount}}
                             {{#i18n}}show-event.promo-code-percentage-discount [{{promoCodeDiscount.discountAmount}}%]{{/i18n}}

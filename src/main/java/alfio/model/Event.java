@@ -25,6 +25,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.flywaydb.core.api.MigrationVersion;
+import org.joda.money.BigMoney;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -140,8 +141,8 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         this.status = status;
     }
 
-    public BigDecimal getRegularPrice() {
-        return MonetaryUtil.centsToUnit(srcPriceCts);
+    public BigMoney getRegularPrice() {
+        return MonetaryUtil.centsToUnit(currency, srcPriceCts);
     }
     
     

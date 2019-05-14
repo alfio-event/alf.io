@@ -20,6 +20,8 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
 import alfio.util.MonetaryUtil;
+import org.joda.money.BigMoney;
+import org.joda.money.MoneyUtils;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -41,18 +43,19 @@ public class FeeCalculator {
         this.numTickets = numTickets;
     }
 
-    private long calculate(long price) {
-        long result = percentage ? MonetaryUtil.calcPercentage(price, fee, BigDecimal::longValueExact) : MonetaryUtil.unitToCents(fee);
-        long minFee = MonetaryUtil.unitToCents(minimumFee, BigDecimal::longValueExact) * numTickets;
-        return Math.max(result, minFee);
+    private BigMoney calculate(BigMoney price) {
+        var result = percentage ? MonetaryUtil.calcPercentage(price, fee) : BigMoney.of(price.getCurrencyUnit(), fee);
+        var minFee = BigMoney.of(price.getCurrencyUnit(), minimumFee).multipliedBy(numTickets);
+        return MoneyUtils.max(result, minFee);
     }
 
-    public static BiFunction<Integer, Long, Optional<Long>> getCalculator(EventAndOrganizationId event, ConfigurationManager configurationManager) {
-        return (numTickets, amountInCent) -> {
+    public static BiFunction<Integer, BigMoney, Optional<Long>> getCalculator(EventAndOrganizationId event, ConfigurationManager configurationManager) {
+        return (numTickets, amount) -> {
             if(isPlatformModeEnabled(event, configurationManager)) {
                 String feeAsString = configurationManager.getStringConfigValue(Configuration.from(event, PLATFORM_FEE), "0");
                 String minimumFee = configurationManager.getStringConfigValue(Configuration.from(event, PLATFORM_MINIMUM_FEE), "0");
-                return Optional.of(new FeeCalculator(feeAsString, minimumFee, numTickets).calculate(amountInCent));
+                var fee = new FeeCalculator(feeAsString, minimumFee, numTickets).calculate(amount);
+                return Optional.of((long) MonetaryUtil.unitToCents(fee));
             }
             return Optional.empty();
         };

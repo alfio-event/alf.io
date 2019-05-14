@@ -28,7 +28,6 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.Json;
-import alfio.util.MonetaryUtil;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -60,6 +59,7 @@ import java.util.stream.Collectors;
 
 import static alfio.manager.support.CheckInStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.MonetaryUtil.centsToUnit;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
@@ -237,7 +237,7 @@ public class CheckInManager {
         final TicketStatus ticketStatus = ticket.getStatus();
 
         if (ticketStatus == TicketStatus.TO_BE_PAID) {
-            return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new OnSitePaymentResult(MUST_PAY, "Must pay for ticket", MonetaryUtil.centsToUnit(ticket.getFinalPriceCts()), event.getCurrency()));
+            return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new OnSitePaymentResult(MUST_PAY, "Must pay for ticket", centsToUnit(event.getCurrency(), ticket.getFinalPriceCts()).getAmount(), event.getCurrency()));
         }
 
         if (ticketStatus == TicketStatus.CHECKED_IN) {

@@ -23,6 +23,7 @@ import alfio.model.system.Configuration;
 import alfio.model.transaction.*;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
+import alfio.util.MonetaryUtil;
 import alfio.util.WorkingDaysAdjusters;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -63,7 +64,7 @@ public class BankTransferManager implements PaymentProvider {
         transitionToOfflinePayment(spec);
         PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
         transactionRepository.insert(UUID.randomUUID().toString(), null,
-            spec.getReservationId(), ZonedDateTime.now(UTC), spec.getPriceWithVAT(), spec.getCurrencyCode(),
+            spec.getReservationId(), ZonedDateTime.now(UTC), MonetaryUtil.unitToCents(spec.getPriceWithVAT()), spec.getCurrencyCode(),
             "", PaymentProxy.OFFLINE.name(), 0L, 0L, Transaction.Status.PENDING, Map.of());
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }

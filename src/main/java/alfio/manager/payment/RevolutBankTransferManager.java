@@ -144,7 +144,8 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
             .collect(Collectors.toList()));
     }
 
-    private Predicate<RevolutTransactionDescriptor> transactionMatches(TicketReservationWithTransaction reservationWithTransaction, PaymentContext context) {
+    private Predicate<RevolutTransactionDescriptor> transactionMatches(TicketReservationWithTransaction reservationWithTransaction,
+                                                                       PaymentContext context) {
         var reservation = reservationWithTransaction.getTicketReservation();
         var transaction = reservationWithTransaction.getTransaction();
         String reservationId = reservation.getId().toLowerCase();
@@ -156,10 +157,10 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
             terms = new String[] {shortReservationId, reservationId};
         }
 
-        return revolutTransaction -> revolutTransaction.getTransactionBalance().compareTo(BigDecimal.ZERO) > 0
+        return revolutTransaction -> transaction != null && revolutTransaction.getTransactionBalance().compareTo(BigDecimal.ZERO) > 0
             && Arrays.stream(terms).anyMatch(s -> revolutTransaction.getReference().toLowerCase().contains(s))
-            && transaction.getCurrency().equals(revolutTransaction.getLegs().get(0).getCurrency())
-            && transaction.getPriceInCents() == MonetaryUtil.unitToCents(revolutTransaction.getTransactionBalance());
+            && transaction.getCurrency().equals(revolutTransaction.getCurrency())
+            && transaction.getPriceInCents() == MonetaryUtil.unitToCents(revolutTransaction.getCurrency(), revolutTransaction.getTransactionBalance());
     }
 
     private Result<List<RevolutTransactionDescriptor>> loadTransactions(ZonedDateTime lastCheck, String revolutKey, String revolutUrl, List<String> accounts) {
@@ -219,7 +220,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     public Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
         var metadata = transaction.getMetadata();
         if(metadata != null && metadata.containsKey("counterpartyAccountId")) {
-            return Optional.of(new PaymentInformation(MonetaryUtil.formatCents(transaction.getPriceInCents()), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));
+            return Optional.of(new PaymentInformation(MonetaryUtil.formatCents(event.getCurrency(), transaction.getPriceInCents()), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));
         }
         return Optional.empty();
     }

@@ -82,7 +82,7 @@ public class EventWithAdditionalInfo implements StatisticsContainer, PriceContai
     }
 
     public BigDecimal getVat() {
-        return getVAT();
+        return getVAT().getAmount();
     }
 
     public boolean isAddCategoryEnabled() {

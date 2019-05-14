@@ -49,6 +49,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
+import static alfio.util.MonetaryUtil.unitToCents;
 
 @Component
 @Log4j2
@@ -130,7 +131,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
                 }).orElse(null);
 
                 transactionRepository.insert(charge.getId(), null, spec.getReservationId(),
-                    ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
+                    ZonedDateTime.now(), unitToCents(spec.getPriceWithVAT()), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
                     fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE, Map.of());
                 return PaymentResult.successful(charge.getId());
             }).orElseGet(() -> PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION"));

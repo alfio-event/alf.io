@@ -63,6 +63,7 @@ import java.util.function.Supplier;
 
 import static alfio.model.system.ConfigurationKeys.PAYPAL_ENABLED;
 import static alfio.util.MonetaryUtil.formatCents;
+import static alfio.util.MonetaryUtil.unitToCents;
 
 @Component
 @Log4j2
@@ -247,7 +248,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         return Pair.of(captureId, payment.getId());
     }
 
-    private Optional<PaymentInformation> getInfo(String paymentId, String transactionId, EventAndOrganizationId event, Supplier<String> platformFeeSupplier) {
+    private Optional<PaymentInformation> getInfo(String paymentId, String transactionId, Event event, Supplier<String> platformFeeSupplier) {
         try {
             String refund = null;
 
@@ -271,7 +272,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
             String gatewayFee = Optional.ofNullable(c.getTransactionFee())
                 .map(Currency::getValue)
                 .map(BigDecimal::new)
-                .map(MonetaryUtil::unitToCents)
+                .map(p -> MonetaryUtil.unitToCents(event.getCurrency(), p))
                 .map(String::valueOf)
                 .orElse(null);
             return Optional.of(new PaymentInformation(c.getAmount().getTotal(), refund, gatewayFee, platformFeeSupplier.get()));
@@ -288,7 +289,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
                 return String.valueOf(transaction.getPlatformFee());
             }
             return FeeCalculator.getCalculator(event, configurationManager)
-                    .apply(ticketRepository.countTicketsInReservation(transaction.getReservationId()), (long) transaction.getPriceInCents())
+                    .apply(ticketRepository.countTicketsInReservation(transaction.getReservationId()), transaction.getPaidAmount())
                     .map(String::valueOf)
                     .orElse("0");
         });
@@ -301,11 +302,11 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         String captureId = transaction.getTransactionId();
         try {
             APIContext apiContext = getApiContext(event);
-            String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
+            String amountOrFull = amount.map(a -> MonetaryUtil.formatCents(event.getCurrency(), a)).orElse("full");
             log.info("Paypal: trying to do a refund for payment {} with amount: {}", captureId, amountOrFull);
             Capture capture = Capture.get(apiContext, captureId);
             com.paypal.api.payments.RefundRequest refundRequest = new com.paypal.api.payments.RefundRequest();
-            amount.ifPresent(a -> refundRequest.setAmount(new Amount(capture.getAmount().getCurrency(), formatCents(a))));
+            amount.ifPresent(a -> refundRequest.setAmount(new Amount(capture.getAmount().getCurrency(), formatCents(event.getCurrency(), a))));
             DetailedRefund res = capture.refund(apiContext, refundRequest);
             log.info("Paypal: refund for payment {} executed with success for amount: {}", captureId, amountOrFull);
             return true;
@@ -326,12 +327,12 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
     @Override
     public Function<Map<String, List<String>>, PaymentSpecification> getSpecificationFromRequest(Event event,
                                                                                                  TicketReservation reservation,
-                                                                                                 TotalPrice reservationCost,
+                                                                                                 PriceDescriptor reservationCost,
                                                                                                  OrderSummary orderSummary) {
         return map -> {
             if(hasTokens(map) && hasExactlyOneElementFor(map, "paypalPaymentId", "payerId", "hmac")) {
                 PayPalToken token = new PayPalToken(map.get("payerId").get(0), map.get("paypalPaymentId").get(0), map.get("hmac").get(0));
-                return new PaymentSpecification(reservation.getId(), token, reservationCost.getPriceWithVAT(),
+                return new PaymentSpecification(reservation.getId(), token, reservationCost.getPriceAfterTax(),
                     event, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event.mustUseFirstAndLastName()),
                     reservation.getBillingAddress(), reservation.getCustomerReference(), Locale.forLanguageTag(reservation.getUserLanguage()),
                     reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
@@ -369,7 +370,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
             String captureId = captureAndPaymentId.getLeft();
             String paymentId = captureAndPaymentId.getRight();
             Supplier<String> feeSupplier = () -> FeeCalculator.getCalculator(spec.getEvent(), configurationManager)
-                .apply(ticketRepository.countTicketsInReservation(spec.getReservationId()), (long) spec.getPriceWithVAT())
+                .apply(ticketRepository.countTicketsInReservation(spec.getReservationId()), spec.getPriceWithVAT())
                 .map(String::valueOf)
                 .orElse("0");
             Pair<Long, Long> fees = getInfo(paymentId, captureId, spec.getEvent(), feeSupplier).map(i -> {
@@ -379,7 +380,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
             }).orElseGet(() -> Pair.of(0L, 0L));
             transactionRepository.invalidateForReservation(spec.getReservationId());
             transactionRepository.insert(captureId, paymentId, spec.getReservationId(),
-                ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
+                ZonedDateTime.now(), unitToCents(spec.getPriceWithVAT()), spec.getEvent().getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
                 fees.getLeft(), fees.getRight(), alfio.model.transaction.Transaction.Status.COMPLETE, Map.of());
             return PaymentResult.successful(captureId);
         } catch (Exception e) {

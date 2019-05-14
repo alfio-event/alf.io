@@ -16,7 +16,6 @@
  */
 package alfio.model;
 
-import alfio.util.MonetaryUtil;
 import lombok.Data;
 
 import java.util.List;
@@ -24,6 +23,7 @@ import java.util.stream.Collectors;
 
 @Data
 public class OrderSummary {
+    private final PriceDescriptor priceDescriptor;
     private final TotalPrice originalTotalPrice;
     private final List<SummaryRow> summary;
     private final boolean free;
@@ -80,18 +80,20 @@ public class OrderSummary {
         return refundedAmount;
     }
 
-    public String getTotalNetPrice() {
-        if(free) {
-            return null;
-        }
-        return MonetaryUtil.formatCents(originalTotalPrice.getPriceWithVAT() - originalTotalPrice.getVAT());
-    }
-
-    public int getPriceInCents() {
-        return originalTotalPrice.getPriceWithVAT();
-    }
-
     public String getDescriptionForPayment() {
         return summary.stream().filter(r -> r.getType() != SummaryRow.SummaryType.PROMOTION_CODE).map(SummaryRow::getDescriptionForPayment).collect(Collectors.joining(", "));
+    }
+
+    @Deprecated
+    public TotalPrice getOriginalTotalPrice() {
+        return originalTotalPrice;
+    }
+
+    public PriceDescriptor safeGetPriceDescriptor(String currencyCode) {
+        return hasPriceDescriptor() ? priceDescriptor : PriceDescriptor.from(currencyCode, originalTotalPrice);
+    }
+
+    public boolean hasPriceDescriptor() {
+        return priceDescriptor != null;
     }
 }

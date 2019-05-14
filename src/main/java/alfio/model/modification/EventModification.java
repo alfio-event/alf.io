@@ -24,11 +24,16 @@ import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import org.joda.money.BigMoney;
+import org.joda.money.CurrencyUnit;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static alfio.util.MonetaryUtil.centsToUnit;
+import static alfio.util.MonetaryUtil.toBigDecimal;
 
 
 @Getter
@@ -130,7 +135,7 @@ public class EventModification {
     }
 
     public int getPriceInCents() {
-        return freeOfCharge ? 0 : MonetaryUtil.unitToCents(regularPrice);
+        return freeOfCharge ? 0 : MonetaryUtil.unitToCents(currency, regularPrice);
     }
 
     public PriceContainer.VatStatus getVatStatus() {
@@ -399,12 +404,14 @@ public class EventModification {
                 return this;
             }
 
-            public AdditionalService build() {
+            public AdditionalService build(String currencyCode) {
+                var currencyUnit = CurrencyUnit.of(currencyCode);
+                var zero = BigMoney.zero(currencyUnit);
                 Optional<PriceContainer> priceContainer = Optional.ofNullable(this.priceContainer);
-                BigDecimal finalPrice = priceContainer.map(PriceContainer::getFinalPrice).orElse(BigDecimal.ZERO);
-                String currencyCode = priceContainer.map(PriceContainer::getCurrencyCode).orElse("");
-                return new AdditionalService(src.getId(), Optional.ofNullable(src.getSrcPriceCts()).map(MonetaryUtil::centsToUnit).orElse(BigDecimal.ZERO),
-                    src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
+                var finalPrice = toBigDecimal(priceContainer.map(PriceContainer::getFinalPrice).orElse(zero));
+                var srcPrice = toBigDecimal(Optional.ofNullable(src.getSrcPriceCts()).map(p -> centsToUnit(currencyUnit, p)).orElse(zero));
+
+                return new AdditionalService(src.getId(), srcPrice, src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
                     DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode, src.getType(), src.getSupplementPolicy());
             }
 

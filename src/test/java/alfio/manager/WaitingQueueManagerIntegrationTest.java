@@ -164,7 +164,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, "CHF",false, "", false, null, null, null, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
 
@@ -174,7 +174,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Optional.<String>empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        PriceDescriptor reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
         //FIXME re-enable test
         //PaymentSpecification spec = new PaymentSpecification( reservationId, null, 0, event, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event.mustUseFirstAndLastName()) );
 //        PaymentResult result = ticketReservationManager.performPayment("", null, event, reservationId, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
@@ -191,7 +191,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
 
@@ -211,16 +211,16 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification single = new TicketReservationWithOptionalCodeModification(tr2, Optional.empty());
 
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(multi), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+        PriceDescriptor reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceAfterTax(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
 
         String reservationIdSingle = ticketReservationManager.createTicketReservation(event, Collections.singletonList(single), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCostSingle = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingle);
-        specification = new PaymentSpecification(reservationIdSingle, null, reservationCostSingle.getPriceWithVAT(),
+        PriceDescriptor reservationCostSingle = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingle);
+        specification = new PaymentSpecification(reservationIdSingle, null, reservationCostSingle.getPriceAfterTax(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult resultSingle = ticketReservationManager.performPayment(specification, reservationCostSingle, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
@@ -251,7 +251,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, "CHF", false, "", true, null, null, null, null, null));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
 
@@ -271,16 +271,16 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification single = new TicketReservationWithOptionalCodeModification(tr2, Optional.empty());
 
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(multi), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+        PriceDescriptor reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceAfterTax(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
 
         String reservationIdSingle = ticketReservationManager.createTicketReservation(event, Collections.singletonList(single), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCostSingle = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingle);
-        specification = new PaymentSpecification(reservationIdSingle, null, reservationCost.getPriceWithVAT(),
+        PriceDescriptor reservationCostSingle = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingle);
+        specification = new PaymentSpecification(reservationIdSingle, null, reservationCost.getPriceAfterTax(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult resultSingle = ticketReservationManager.performPayment(specification, reservationCostSingle, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
@@ -310,11 +310,11 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null),
+                DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null),
             new TicketCategoryModification(null, "default2", AVAILABLE_SEATS,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, "CHF", false, "", false, null, null, null, null, null));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
 
@@ -368,8 +368,8 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         tr.setTicketCategoryId(category.getId());
         TicketReservationWithOptionalCodeModification tcm = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(tcm), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
+        PriceDescriptor reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceAfterTax(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult result = ticketReservationManager.performPayment(specification, reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE));
@@ -386,11 +386,11 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", 2,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null),
+                DESCRIPTION, BigDecimal.TEN, "CHF",false, "", true, null, null, null, null, null),
             new TicketCategoryModification(null, "default2", 10,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, "CHF",true, "", true, null, null, null, null, null));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
@@ -404,7 +404,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         ZoneId zoneId = event.getZoneId();
         Result<TicketCategory> ticketCategoryResult = eventManager.updateCategory(first.getId(), event, new TicketCategoryModification(first.getId(), first.getName(), 3,
             fromZonedDateTime(first.getInception(zoneId)), fromZonedDateTime(first.getExpiration(zoneId)), Collections.emptyMap(),
-            first.getPrice(), false, "", true, null, null, null, null, null), eventAndUsername.getValue());
+            first.getPrice(event.getCurrency()).getAmount(), event.getCurrency(), false, "", true, null, null, null, null, null), eventAndUsername.getValue());
         assertTrue(ticketCategoryResult.isSuccess());
         assertEquals(1, ticketRepository.countReleasedTicketInCategory(event.getId(), first.getId()).intValue());
         //now we should have an extra available ticket
@@ -421,11 +421,11 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", 2,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null),
+                DESCRIPTION, BigDecimal.TEN, "CHF",false, "", true, null, null, null, null, null),
             new TicketCategoryModification(null, "default2", 10,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(end.toLocalDate(), end.toLocalTime()),
-                DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, "CHF",true, "", true, null, null, null, null, null));
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
@@ -436,7 +436,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH));
         assertTrue(waitingQueueManager.subscribe(event, new CustomerName("John Doe 2", "John", "Doe 2", event.mustUseFirstAndLastName()), "john@doe2.com", null, Locale.ENGLISH));
         ticketCategoryRepository.update(first.getId(), first.getName(), first.getInception(event.getZoneId()), ZonedDateTime.now(event.getZoneId()).minusMinutes(1L), first.getMaxTickets(), first.isAccessRestricted(),
-            MonetaryUtil.unitToCents(first.getPrice()), first.getCode(), null, null, null, null);
+            MonetaryUtil.unitToCents(first.getPrice(event.getCurrency())), first.getCode(), null, null, null, null);
 
         List<Integer> ticketIds = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
         assertEquals(2, ticketIds.size());
@@ -462,10 +462,10 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "defaultFirst", firstSeats,
                 new DateTimeModification(start.toLocalDate(), start.toLocalTime()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", firstBounded, null, null, null, null, null),
+                DESCRIPTION, BigDecimal.TEN, "CHF", false, "", firstBounded, null, null, null, null, null),
             new TicketCategoryModification(null, "defaultLast", lastSeats,
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", lastBounded, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, "CHF", false, "", lastBounded, null, null, null, null, null));
     }
 }

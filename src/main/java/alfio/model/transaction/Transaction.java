@@ -17,8 +17,10 @@
 package alfio.model.transaction;
 
 import alfio.model.support.JSONData;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
+import org.joda.money.BigMoney;
 
 import java.time.ZonedDateTime;
 import java.util.Map;
@@ -88,5 +90,9 @@ public class Transaction {
     public boolean isPotentialMatch() {
         return status == Status.OFFLINE_MATCHING_PAYMENT_FOUND
             || status == Status.OFFLINE_PENDING_REVIEW;
+    }
+
+    public BigMoney getPaidAmount() {
+        return MonetaryUtil.centsToUnit(currency, priceInCents);
     }
 }

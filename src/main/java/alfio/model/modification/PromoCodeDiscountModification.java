@@ -44,6 +44,7 @@ public class PromoCodeDiscountModification {
     private final Integer maxUsage;
     private final String description;
     private final String emailReference;
+    private final String currencyCode;
 
     @JsonCreator
     public PromoCodeDiscountModification(
@@ -58,7 +59,8 @@ public class PromoCodeDiscountModification {
             @JsonProperty("utcOffset") Integer utcOffset,
             @JsonProperty("maxUsage") Integer maxUsage,
             @JsonProperty("description") String description,
-            @JsonProperty("emailReference") String emailReference) {
+            @JsonProperty("emailReference") String emailReference,
+            @JsonProperty("currencyCode") String currencyCode) {
 
         this.organizationId = organizationId;
         this.eventId = eventId;
@@ -72,6 +74,7 @@ public class PromoCodeDiscountModification {
         this.maxUsage = maxUsage;
         this.description = description;
         this.emailReference = emailReference;
+        this.currencyCode = currencyCode;
     }
     
     public int getDiscountAsPercent() {
@@ -79,6 +82,6 @@ public class PromoCodeDiscountModification {
     }
     
     public int getDiscountInCents() {
-        return MonetaryUtil.unitToCents(discountAmount);
+        return MonetaryUtil.unitToCents(currencyCode, discountAmount);
     }
 }

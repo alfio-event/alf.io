@@ -91,6 +91,10 @@ public class RevolutTransactionDescriptor {
         return legs.stream().map(TransactionLeg::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    public String getCurrency() {
+        return legs.stream().findFirst().map(TransactionLeg::getCurrency).orElseThrow();
+    }
+
     public Map<String, String> getMetadata() {
         return Map.of(
             "counterpartyAccountId", Optional.ofNullable(legs.get(0).counterpartyAccountId).orElse("N/A"),

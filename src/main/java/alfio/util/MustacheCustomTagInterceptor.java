@@ -18,6 +18,7 @@ package alfio.util;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -126,6 +127,20 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
 
         if(fieldNamesAndValues.containsKey(name)) {
             out.write(prefix + fieldNamesAndValues.get(name) + suffix);
+        }
+    };
+
+    static final Function<Object, Mustache.Lambda> PRICE_FORMATTER = (obj) -> (frag, out) -> {
+        if(!(obj instanceof Event)) {
+            log.warn("Event is not present. Not enough information for generating the formatted string.");
+            return;
+        }
+        Event event = (Event)obj;
+        String execution = frag.execute().trim();
+        try {
+            out.write(MonetaryUtil.formatCents(event.getCurrency(), Integer.parseInt(execution)));
+        } catch (NumberFormatException e) {
+            log.warn("{} is not a number", execution);
         }
     };
 
@@ -280,16 +295,18 @@ public class MustacheCustomTagInterceptor extends HandlerInterceptorAdapter {
             ModelAndView modelAndView) throws Exception {
 
         if (modelAndView != null) {
-            modelAndView.addObject("format-date", FORMAT_DATE);
-            modelAndView.addObject("field-has-error", HAS_ERROR.apply(modelAndView));
-            modelAndView.addObject("field-error", FIELD_ERROR.apply(modelAndView));
-            modelAndView.addObject("is-payment-method", IS_PAYMENT_METHOD);
-            modelAndView.addObject("commonmark", RENDER_TO_COMMON_MARK);
-            modelAndView.addObject("country-name", COUNTRY_NAME);
+            modelAndView.addObject("format-date", FORMAT_DATE)
+                .addObject("field-has-error", HAS_ERROR.apply(modelAndView))
+                .addObject("field-error", FIELD_ERROR.apply(modelAndView))
+                .addObject("is-payment-method", IS_PAYMENT_METHOD)
+                .addObject("commonmark", RENDER_TO_COMMON_MARK)
+                .addObject("country-name", COUNTRY_NAME);
+
             Map<String, Object> model = modelAndView.getModel();
-            modelAndView.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get("additional-fields")));
-            modelAndView.addObject("config-flag", CONFIGURATION_FLAG.apply(model.get("event"), configurationManager));
-            modelAndView.addObject("if-config-flag", IF_CONFIGURATION_FLAG.apply(model.get("event"), configurationManager));
+            modelAndView.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get("additional-fields")))
+                .addObject("config-flag", CONFIGURATION_FLAG.apply(model.get("event"), configurationManager))
+                .addObject("if-config-flag", IF_CONFIGURATION_FLAG.apply(model.get("event"), configurationManager))
+                .addObject("format-price", PRICE_FORMATTER.apply(model.get("event")));
         }
 
         super.postHandle(request, response, handler, modelAndView);

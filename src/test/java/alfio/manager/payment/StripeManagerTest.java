@@ -39,6 +39,7 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
 
+import static alfio.test.util.IntegrationTestUtil.toBigMoney;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
@@ -83,7 +84,7 @@ public class StripeManagerTest {
             }
         };
         StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(configurationManager, transactionRepository, baseStripeManager);
-        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
+        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), toBigMoney(100, "CHF"), event, "", customerName );
         PaymentResult result = stripeCreditCardManager.doPayment(spec);
         assertEquals(result, PaymentResult.successful(paymentId));
     }
@@ -97,7 +98,7 @@ public class StripeManagerTest {
             }
         };
         StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(configurationManager, transactionRepository, baseStripeManager);
-        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
+        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), toBigMoney(100, "CHF"), event, "", customerName );
         PaymentResult result = stripeCreditCardManager.doPayment(spec);
         assertEquals(result, PaymentResult.failed("error.STEP2_STRIPE_abort"));
     }
@@ -118,7 +119,7 @@ public class StripeManagerTest {
         when(transactionRepository.insert(anyString(), isNull(), anyString(), any(ZonedDateTime.class), anyInt(), eq("CHF"), anyString(), anyString(), anyLong(), anyLong(), eq(Transaction.Status.COMPLETE), eq(Map.of())))
             .thenThrow(new NullPointerException());
 
-        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );
+        PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), toBigMoney(100, "CHF"), event, "", customerName );
         Assertions.assertThrows(IllegalStateException.class, () -> stripeCreditCardManager.doPayment(spec));
     }
 }

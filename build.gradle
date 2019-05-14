@@ -192,6 +192,7 @@ dependencies {
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
         exclude module : 'spring-boot-starter-logging'
     }
+    implementation "org.joda:joda-money:1.0.1"
 }
 
 // -- license configuration

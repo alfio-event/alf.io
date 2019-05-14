@@ -20,12 +20,13 @@ import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
-import alfio.util.MonetaryUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+
+import static alfio.util.MonetaryUtil.unitToCents;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class AdditionalServicePriceContainer implements PriceContainer {
@@ -42,7 +43,7 @@ public class AdditionalServicePriceContainer implements PriceContainer {
         if(additionalService.isFixPrice()) {
             return additionalService.getSrcPriceCts();
         }
-        return Optional.ofNullable(customAmount).map(MonetaryUtil::unitToCents).orElse(0);
+        return Optional.ofNullable(customAmount).map(a -> unitToCents(currencyCode, a)).orElse(0);
     }
 
     @Override

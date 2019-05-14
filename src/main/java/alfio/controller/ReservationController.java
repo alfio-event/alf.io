@@ -48,6 +48,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.joda.money.BigMoney;
 import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -247,7 +248,7 @@ public class ReservationController {
                 Event event = eventOptional.orElseThrow();
 
 
-                final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+                final PriceDescriptor reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
                 Configuration.ConfigurationPathKey forceAssignmentKey = Configuration.from(event, ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
                 boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
 
@@ -257,7 +258,7 @@ public class ReservationController {
 
                 boolean invoiceOnly = configurationManager.isInvoiceOnly(event);
 
-                if(invoiceOnly && reservationCost.getPriceWithVAT() > 0) {
+                if(invoiceOnly && reservationCost.requiresPayment()) {
                     //override, that's why we save it
                     contactAndTicketsForm.setInvoiceRequested(true);
                 }
@@ -588,7 +589,7 @@ public class ReservationController {
 
                 final TicketReservation ticketReservation = optionalReservation.get();
 
-                final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+                final PriceDescriptor reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
 
                 paymentForm.validate(bindingResult, event, reservationCost);
                 if (bindingResult.hasErrors()) {
@@ -596,7 +597,7 @@ public class ReservationController {
                     return redirectReservation(optionalReservation, eventName, reservationId);
                 }
 
-                if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentMethod(), request, event)) {
+                if(isCaptchaInvalid(reservationCost.getPriceAfterTax(), paymentForm.getPaymentMethod(), request, event)) {
                     log.debug("captcha validation failed.");
                     bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
                 }
@@ -614,7 +615,7 @@ public class ReservationController {
                 if(paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {
                     paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentMethod(), new PaymentContext(event, reservationId));
                 }
-                PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
+                PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceAfterTax(),
                     event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
                     locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),
                     orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
@@ -648,8 +649,8 @@ public class ReservationController {
             });
     }
 
-    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, HttpServletRequest request, EventAndOrganizationId event) {
-        return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
+    private boolean isCaptchaInvalid(BigMoney cost, PaymentProxy paymentMethod, HttpServletRequest request, EventAndOrganizationId event) {
+        return (cost.isZero() || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
                 && configurationManager.isRecaptchaForOfflinePaymentEnabled(event)
                 && !recaptchaService.checkRecaptcha(request);
     }

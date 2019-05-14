@@ -173,7 +173,7 @@ public class EventManager {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
         createOrUpdateEventDescription(eventId, em);
-        createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId());
+        createAllAdditionalServices(eventId, em.getCurrency(), em.getAdditionalServices(), event.getZoneId());
         createAdditionalFields(event, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(event, em);
@@ -192,11 +192,11 @@ public class EventManager {
         extensionManager.handleEventStatusChange(event, status);
     }
 
-    private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {
+    private void createAllAdditionalServices(int eventId, String currencyCode, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {
         Optional.ofNullable(additionalServices)
             .ifPresent(list -> list.forEach(as -> {
                 AffectedRowCountAndKey<Integer> service = additionalServiceRepository.insert(eventId,
-                    Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
+                    Optional.ofNullable(as.getPrice()).map(p -> MonetaryUtil.unitToCents(currencyCode, p)).orElse(0),
                     as.isFixPrice(),
                     as.getOrdinal(),
                     as.getAvailableQuantity(),
@@ -231,7 +231,7 @@ public class EventManager {
         }));
     }
 
-    private void createAdditionalFields(EventAndOrganizationId event, EventModification em) {
+    private void createAdditionalFields(Event event, EventModification em) {
         if (!CollectionUtils.isEmpty(em.getTicketFields())) {
             em.getTicketFields().forEach(f -> insertAdditionalField(event, f, f.getOrder()));
         }
@@ -249,7 +249,7 @@ public class EventManager {
         return CollectionUtils.isNotEmpty(values) ? Json.GSON.toJson(values) : null;
     }
 
-	private void insertAdditionalField(EventAndOrganizationId event, AdditionalField f, int order) {
+	private void insertAdditionalField(Event event, AdditionalField f, int order) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
         Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
         Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as))).orElse(-1);
@@ -270,7 +270,7 @@ public class EventManager {
         });
     }
 
-    private Integer findAdditionalService(EventAndOrganizationId event, EventModification.AdditionalService as) {
+    private Integer findAdditionalService(Event event, EventModification.AdditionalService as) {
         ZoneId utc = ZoneId.of("UTC");
         int eventId = event.getId();
 
@@ -282,7 +282,7 @@ public class EventManager {
             as.getExpiration().toZonedDateTime(eventZoneId).withZoneSameInstant(utc),
             as.getVat(),
             as.getVatType(),
-            Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
+            Optional.ofNullable(as.getPrice()).map(p -> MonetaryUtil.unitToCents(event.getCurrency(), p)).orElse(0),
             as.getType(),
             as.getSupplementPolicy()).getChecksum();
         return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
@@ -823,10 +823,8 @@ public class EventManager {
         return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.BASE_URL)), "/") + "/event/" + event.getShortName() + "/";
     }
 
-    public List<TicketWithReservationAndTransaction> findAllConfirmedTicketsForCSV(String eventName, String username) {
-        EventAndOrganizationId event = getEventAndOrganizationId(eventName, username);
-        checkOwnership(event, username, event.getOrganizationId());
-        return ticketRepository.findAllConfirmedForCSV(event.getId());
+    public List<TicketWithReservationAndTransaction> findAllConfirmedTicketsForCSV(EventAndOrganizationId eventAndOrganizationId) {
+        return ticketRepository.findAllConfirmedForCSV(eventAndOrganizationId.getId());
     }
 
     public List<Event> getPublishedEvents() {
@@ -862,7 +860,7 @@ public class EventManager {
         });
     }
     
-	public void addAdditionalField(EventAndOrganizationId event, AdditionalField field) {
+	public void addAdditionalField(Event event, AdditionalField field) {
 		Integer order = ticketFieldRepository.findMaxOrderValue(event.getId());
 		insertAdditionalField(event, field, order == null ? 0 : order + 1);
 	}

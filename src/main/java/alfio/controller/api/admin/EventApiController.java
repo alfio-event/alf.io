@@ -37,7 +37,6 @@ import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.util.ExportUtils;
-import alfio.util.MonetaryUtil;
 import alfio.util.TemplateManager;
 import alfio.util.Validator;
 import com.opencsv.CSVReader;
@@ -50,6 +49,8 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.joda.money.CurrencyUnit;
+import org.joda.money.Money;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -78,6 +79,8 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static alfio.util.MonetaryUtil.centsToUnit;
+import static alfio.util.MonetaryUtil.formatAmount;
 import static alfio.util.OptionalWrapper.optionally;
 import static alfio.util.Validator.*;
 import static java.util.stream.Collectors.toList;
@@ -315,21 +318,29 @@ public class EventApiController {
 
     private Stream<String[]> exportLines(String eventName, Principal principal, List<String> fields, Map<Integer, TicketCategory> categoriesMap, ZoneId eventZoneId) {
         var username = principal.getName();
-        var eInvoicingEnabled = configurationManager.isItalianEInvoicingEnabled(eventManager.getEventAndOrganizationId(eventName, username));
+        var eventAndOrganizationId = eventManager.getEventAndOrganizationId(eventName, username);
+        var eInvoicingEnabled = configurationManager.isItalianEInvoicingEnabled(eventAndOrganizationId);
 
-        return eventManager.findAllConfirmedTicketsForCSV(eventName, username).stream().map(trs -> {
+        return eventManager.findAllConfirmedTicketsForCSV(eventAndOrganizationId).stream().map(trs -> {
             Ticket t = trs.getTicket();
             TicketReservation reservation = trs.getTicketReservation();
+            var eventCurrencyUnit = trs.getEventCurrencyUnit();
+            Function<Integer, String> formatPrice = (price) -> {
+                if(eventCurrencyUnit == null || price == null) {
+                    return "";
+                }
+                return formatAmount(centsToUnit(eventCurrencyUnit, price));
+            };
             List<String> line = new ArrayList<>();
             if(fields.contains("ID")) {line.add(t.getUuid());}
             if(fields.contains("Creation")) {line.add(t.getCreation().withZoneSameInstant(eventZoneId).toString());}
             if(fields.contains("Category")) {line.add(categoriesMap.get(t.getCategoryId()).getName());}
             if(fields.contains("Event")) {line.add(eventName);}
             if(fields.contains("Status")) {line.add(t.getStatus().toString());}
-            if(fields.contains("OriginalPrice")) {line.add(MonetaryUtil.centsToUnit(t.getSrcPriceCts()).toString());}
-            if(fields.contains("PaidPrice")) {line.add(MonetaryUtil.centsToUnit(t.getFinalPriceCts()).toString());}
-            if(fields.contains("Discount")) {line.add(MonetaryUtil.centsToUnit(t.getDiscountCts()).toString());}
-            if(fields.contains("VAT")) {line.add(MonetaryUtil.centsToUnit(t.getVatCts()).toString());}
+            if(fields.contains("OriginalPrice")) {line.add(formatPrice.apply(t.getSrcPriceCts()));}
+            if(fields.contains("PaidPrice")) {line.add(formatPrice.apply(t.getFinalPriceCts()));}
+            if(fields.contains("Discount")) {line.add(formatPrice.apply(t.getDiscountCts()));}
+            if(fields.contains("VAT")) {line.add(formatPrice.apply(t.getVatCts()));}
             if(fields.contains("ReservationID")) {line.add(t.getTicketsReservationId());}
             if(fields.contains("Full Name")) {line.add(t.getFullName());}
             if(fields.contains("First Name")) {line.add(t.getFirstName());}
@@ -466,7 +477,7 @@ public class EventApiController {
     
     @RequestMapping(value = "/events/{eventName}/additional-field/new", method = POST)
     public ValidationResult addAdditionalField(@PathVariable("eventName") String eventName, @RequestBody EventModification.AdditionalField field, Principal principal, Errors errors) {
-        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
+        Event event = eventManager.getSingleEvent(eventName, principal.getName());
         List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
         return validateAdditionalFields(fields, field, errors).ifSuccess(() -> eventManager.addAdditionalField(event, field));
     }
@@ -544,7 +555,8 @@ public class EventApiController {
                         try {
                             Validate.isTrue(line.length >= 2);
                             reservationID = line[0];
-                            ticketReservationManager.validateAndConfirmOfflinePayment(reservationID, event, new BigDecimal(line[1]), principal.getName());
+                            var paidAmount = Money.of(CurrencyUnit.of(event.getCurrency()), new BigDecimal(line[1]));
+                            ticketReservationManager.validateAndConfirmOfflinePayment(reservationID, event, paidAmount, principal.getName());
                             return Triple.of(Boolean.TRUE, reservationID, "");
                         } catch (Exception e) {
                             return Triple.of(Boolean.FALSE, Optional.ofNullable(reservationID).orElse(""), e.getMessage());

@@ -103,7 +103,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", 20,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false, null, null,
+                Collections.singletonMap("en", "desc"), BigDecimal.TEN, "CHF", false, "", false, null, null,
                 null, null, null));
         EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", null, null, null,
             "eventShortName", "displayName", organization.getId(),

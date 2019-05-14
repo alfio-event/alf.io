@@ -234,26 +234,26 @@ public class DataMigrator {
                 //fill the event prices
                 boolean eventVatIncluded = (boolean) event.get("vat_included");
                 BigDecimal vatPercentage = Optional.ofNullable((BigDecimal) event.get("vat")).orElse(BigDecimal.ZERO);
-                int price = (int) event.get("regular_price_cts");
                 String currencyCode = (String) event.get("currency");
-                int eventSrcPrice = eventVatIncluded ? MonetaryUtil.addVAT(price, vatPercentage) : price;
+                var price = MonetaryUtil.centsToUnit(currencyCode, (int) event.get("regular_price_cts"));
+                var eventSrcPrice = eventVatIncluded ? MonetaryUtil.addVAT(price, vatPercentage) : price;
 
                 List<Pair<String, MapSqlParameterSource>> modifications = new ArrayList<>();
 
                 if (((int) event.get("src_price_cts")) == 0) {
-                    modifications.add(Pair.of("event", new MapSqlParameterSource(srcPriceCtsParam, eventSrcPrice)
+                    modifications.add(Pair.of("event", new MapSqlParameterSource(srcPriceCtsParam, MonetaryUtil.unitToCents(eventSrcPrice))
                         .addValue("vatStatus", eventVatIncluded ? INCLUDED.name() : NOT_INCLUDED.name())
                         .addValue("eventId", eventId)));
                 }
 
                 //ticket categories
-                modifications.addAll(collectTicketCategoryMigrationData(srcPriceCtsParam, eventVatIncluded, vatPercentage, eventIdParam));
+                modifications.addAll(collectTicketCategoryMigrationData(srcPriceCtsParam, eventVatIncluded, vatPercentage, eventIdParam, currencyCode));
 
                 //tickets
                 modifications.addAll(collectTicketMigrationData(srcPriceCtsParam, eventVatIncluded, vatPercentage, currencyCode, eventId, eventIdParam));
 
                 //additional_service
-                modifications.addAll(collectASMigrationData(srcPriceCtsParam, eventVatIncluded, vatPercentage, eventIdParam));
+                modifications.addAll(collectASMigrationData(srcPriceCtsParam, eventVatIncluded, vatPercentage, eventIdParam, currencyCode));
 
                 //additional_service_item
                 modifications.addAll(collectASItemMigrationData(srcPriceCtsParam, eventVatIncluded, vatPercentage, currencyCode, eventIdParam));
@@ -289,7 +289,7 @@ public class DataMigrator {
                 return Pair.of((Integer) item.get("id"), new PriceContainer() {
                     @Override
                     public int getSrcPriceCts() {
-                        return eventVatIncluded ? MonetaryUtil.addVAT(oldPrice, vatPercentage) : oldPrice;
+                        return eventVatIncluded ? MonetaryUtil.addVAT(currencyCode, oldPrice, vatPercentage) : oldPrice;
                     }
 
                     @Override
@@ -320,13 +320,13 @@ public class DataMigrator {
             }).collect(toList());
     }
 
-    private List<Pair<String, MapSqlParameterSource>> collectASMigrationData(String srcPriceCtsParam, boolean eventVatIncluded, BigDecimal vatPercentage, Map<String, Integer> eventIdParam) {
+    private List<Pair<String, MapSqlParameterSource>> collectASMigrationData(String srcPriceCtsParam, boolean eventVatIncluded, BigDecimal vatPercentage, Map<String, Integer> eventIdParam, String currencyCode) {
         return jdbc.queryForList("select id, price_cts, vat_type from additional_service where event_id_fk = :eventId and fix_price = true and price_cts > 0 and src_price_cts = 0", eventIdParam)
             .stream()
             .map(as -> {
                 int priceCts = (int) as.get("price_cts");
                 AdditionalService.VatType vatType = AdditionalService.VatType.valueOf((String) as.get("vat_type"));
-                int srcPrice = vatType == AdditionalService.VatType.INHERITED && eventVatIncluded ? MonetaryUtil.addVAT(priceCts, vatPercentage) : priceCts;
+                int srcPrice = vatType == AdditionalService.VatType.INHERITED && eventVatIncluded ? MonetaryUtil.addVAT(currencyCode, priceCts, vatPercentage) : priceCts;
                 return Pair.of("additional_service", new MapSqlParameterSource(srcPriceCtsParam, srcPrice).addValue("additionalServiceId", as.get("id")));
             }).collect(toList());
     }
@@ -339,7 +339,7 @@ public class DataMigrator {
                 return Pair.of((Integer) ticket.get("id"), new PriceContainer() {
                     @Override
                     public int getSrcPriceCts() {
-                        return eventVatIncluded ? MonetaryUtil.addVAT(oldTicketPrice, vatPercentage) : oldTicketPrice;
+                        return eventVatIncluded ? MonetaryUtil.addVAT(currencyCode, oldTicketPrice, vatPercentage) : oldTicketPrice;
                     }
 
                     @Override
@@ -375,12 +375,12 @@ public class DataMigrator {
             ).collect(toList());
     }
 
-    private List<Pair<String, MapSqlParameterSource>> collectTicketCategoryMigrationData(String srcPriceCtsParam, boolean eventVatIncluded, BigDecimal vatPercentage, Map<String, Integer> eventIdParam) {
+    private List<Pair<String, MapSqlParameterSource>> collectTicketCategoryMigrationData(String srcPriceCtsParam, boolean eventVatIncluded, BigDecimal vatPercentage, Map<String, Integer> eventIdParam, String currencyCode) {
         return jdbc.queryForList("select id, price_cts from ticket_category where event_id = :eventId and price_cts > 0 and src_price_cts = 0", eventIdParam)
             .stream()
             .map(category -> {
                 int oldCategoryPrice = (int) category.get("price_cts");
-                int categorySrcPrice = eventVatIncluded ? MonetaryUtil.addVAT(oldCategoryPrice, vatPercentage) : oldCategoryPrice;
+                int categorySrcPrice = eventVatIncluded ? MonetaryUtil.addVAT(currencyCode, oldCategoryPrice, vatPercentage) : oldCategoryPrice;
                 return Pair.of("category", new MapSqlParameterSource(srcPriceCtsParam, categorySrcPrice).addValue("categoryId", category.get("id")));
             })
             .collect(toList());

@@ -20,6 +20,7 @@ import alfio.model.*;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentToken;
 import lombok.Getter;
+import org.joda.money.BigMoney;
 
 import java.util.Locale;
 
@@ -27,7 +28,7 @@ import java.util.Locale;
 public class PaymentSpecification {
     private final String reservationId;
     private final PaymentToken gatewayToken;
-    private final int priceWithVAT;
+    private final BigMoney priceWithVAT;
     private final Event event;
     private final String email;
     private final CustomerName customerName;
@@ -45,7 +46,7 @@ public class PaymentSpecification {
 
     public PaymentSpecification( String reservationId,
                                  PaymentToken gatewayToken,
-                                 int priceWithVAT,
+                                 BigMoney priceWithVAT,
                                  Event event,
                                  String email,
                                  CustomerName customerName,
@@ -80,20 +81,26 @@ public class PaymentSpecification {
     }
 
     public PaymentSpecification(TicketReservation reservation,
-                                            TotalPrice totalPrice,
-                                            Event event,
-                                            PaymentToken gatewayToken,
-                                            OrderSummary orderSummary,
-                                            boolean tcAccepted,
-                                            boolean privacyAccepted) {
-        this(reservation.getId(), gatewayToken, totalPrice.getPriceWithVAT(),
+                                PriceDescriptor priceDescriptor,
+                                Event event,
+                                PaymentToken gatewayToken,
+                                OrderSummary orderSummary,
+                                boolean tcAccepted,
+                                boolean privacyAccepted) {
+
+        this(reservation.getId(), gatewayToken, priceDescriptor.getPriceAfterTax(),
             event, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event.mustUseFirstAndLastName()),
             reservation.getBillingAddress(), reservation.getCustomerReference(), Locale.forLanguageTag(reservation.getUserLanguage()), reservation.isInvoiceRequested(),
             !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
             reservation.getVatNr(), reservation.getVatStatus(), tcAccepted, privacyAccepted);
     }
 
-    PaymentSpecification( String reservationId, PaymentToken gatewayToken, int priceWithVAT, Event event, String email, CustomerName customerName ) {
+    PaymentSpecification(String reservationId,
+                         PaymentToken gatewayToken,
+                         BigMoney priceWithVAT,
+                         Event event,
+                         String email,
+                         CustomerName customerName ) {
         this(reservationId, gatewayToken, priceWithVAT, event, email, customerName, null, null, null, false, false, null, null, null, null, false, false);
     }
 

@@ -33,7 +33,9 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.util.MonetaryUtil;
 import org.apache.commons.lang3.tuple.Pair;
+import org.joda.money.BigMoney;
 import org.junit.Assert;
 
 import java.math.BigDecimal;
@@ -129,5 +131,9 @@ public class IntegrationTestUtil {
     public static void removeAdminUser(UserRepository userRepository, AuthorityRepository authorityRepository) {
         authorityRepository.revokeAll(UserManager.ADMIN_USERNAME);
         userRepository.deleteUser(userRepository.findIdByUserName(UserManager.ADMIN_USERNAME).get());
+    }
+
+    public static BigMoney toBigMoney(int amount, String currencyCode) {
+        return MonetaryUtil.centsToUnit(currencyCode, amount);
     }
 }

@@ -20,7 +20,10 @@ import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.TicketCategory;
+import alfio.util.MonetaryUtil;
 import lombok.experimental.Delegate;
+import org.joda.money.BigMoney;
+import org.joda.money.Money;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -80,12 +83,12 @@ public class SaleableTicketCategory implements PriceContainer {
     public boolean getSaleInFuture() {
         return getInception(zoneId).isAfter(now);
     }
-    
+
     //jmustache
     public boolean getAccessRestricted() {
         return isAccessRestricted();
     }
-    
+
     public boolean getSouldOut() {
         return soldOut;
     }
@@ -97,7 +100,7 @@ public class SaleableTicketCategory implements PriceContainer {
     public String getFormattedExpiration() {
         return getExpiration(zoneId).format(DateTimeFormatter.ISO_DATE_TIME);
     }
-    
+
     public ZonedDateTime getZonedExpiration() {
         return getExpiration(zoneId);
     }
@@ -131,7 +134,7 @@ public class SaleableTicketCategory implements PriceContainer {
     }
 
     public String getFormattedFinalPrice() {
-        return getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()).toString();
+        return getFinalPriceToDisplay(getFinalPrice().plus(getAppliedDiscount()), getVAT(), getVatStatus()).toString();
     }
 
     public int[] getAmountOfTickets() {
@@ -143,7 +146,7 @@ public class SaleableTicketCategory implements PriceContainer {
     }
 
     public String getDiscountedPrice() {
-        return getFinalPriceToDisplay(getFinalPrice(), getVAT(), getVatStatus()).toString();
+        return MonetaryUtil.formatAmount(getFinalPriceToDisplay(getFinalPrice(), getVAT(), getVatStatus()), false);
     }
 
     public boolean getSupportsDiscount() {
@@ -154,9 +157,9 @@ public class SaleableTicketCategory implements PriceContainer {
         return promoCodeDiscount;
     }
 
-    static BigDecimal getFinalPriceToDisplay(BigDecimal price, BigDecimal vat, VatStatus vatStatus) {
+    static BigMoney getFinalPriceToDisplay(BigMoney price, Money vat, VatStatus vatStatus) {
         if(vatStatus == VatStatus.NOT_INCLUDED) {
-            return price.subtract(vat);
+            return price.minus(vat);
         }
         return price;
     }
