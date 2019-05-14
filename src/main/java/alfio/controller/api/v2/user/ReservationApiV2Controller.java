@@ -25,6 +25,7 @@ import alfio.controller.api.v2.model.ReservationStatusInfo;
 import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
+import alfio.controller.payment.api.PaymentApiController;
 import alfio.controller.support.SessionUtil;
 import alfio.manager.EventManager;
 import alfio.manager.PaymentManager;
@@ -33,6 +34,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.model.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.PaymentToken;
+import alfio.model.transaction.TransactionInitializationToken;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
@@ -42,6 +44,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
+import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -68,6 +71,7 @@ public class ReservationApiV2Controller {
     private final TicketFieldRepository ticketFieldRepository;
     private final MessageSource messageSource;
     private final InvoiceReceiptController invoiceReceiptController;
+    private final PaymentApiController paymentApiController;
 
     /**
      * See {@link ReservationController#showBookingPage(String, String, Model, Locale)}
@@ -246,6 +250,24 @@ public class ReservationApiV2Controller {
                                            Authentication authentication) {
         return invoiceReceiptController.getInvoice(eventName, reservationId, response, authentication);
     }
+
+
+
+    @PostMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/init")
+    public ResponseEntity<TransactionInitializationToken> initTransaction(@PathVariable("eventName") String eventName,
+                                                                          @PathVariable("reservationId") String reservationId,
+                                                                          @PathVariable("method") String paymentMethodStr,
+                                                                          @RequestParam MultiValueMap<String, String> allParams) {
+        return paymentApiController.initTransaction(eventName, reservationId, paymentMethodStr, allParams);
+    }
+
+    @GetMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/status")
+    public ResponseEntity<PaymentResult> getTransactionStatus(@PathVariable("eventName") String eventName,
+                                                              @PathVariable("reservationId") String reservationId,
+                                                              @PathVariable("method") String paymentMethodStr) {
+        return paymentApiController.getTransactionStatus(eventName, reservationId, paymentMethodStr);
+    }
+
 
     private static ReservationInfo.AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, ReservationInfo.Description> description) {
         var fields = t.getFields().stream().map(f -> new ReservationInfo.Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
