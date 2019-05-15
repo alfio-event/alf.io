@@ -203,11 +203,12 @@ public class ReservationApiV2Controller {
         if (modelMap.containsKey("paymentResultStatus")) {
             PaymentResult paymentResult = (PaymentResult) modelMap.get("paymentResultStatus");
             if (paymentResult.isRedirect() && !bindingResult.hasErrors()) {
-                return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, new ReservationPaymentResult(!bindingResult.hasErrors(), true, paymentResult.getRedirectUrl())));
+                return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult,
+                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, paymentResult.getRedirectUrl(), paymentResult.isFailed(), paymentResult.getGatewayIdOrNull())));
             }
         }
 
-        return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, new ReservationPaymentResult(!bindingResult.hasErrors(), false, null)));
+        return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, new ReservationPaymentResult(!bindingResult.hasErrors(), false, null, true, null)));
     }
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/validate-to-overview")
@@ -262,10 +263,19 @@ public class ReservationApiV2Controller {
     }
 
     @GetMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/status")
-    public ResponseEntity<PaymentResult> getTransactionStatus(@PathVariable("eventName") String eventName,
+    public ResponseEntity<ReservationPaymentResult> getTransactionStatus(@PathVariable("eventName") String eventName,
                                                               @PathVariable("reservationId") String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
-        return paymentApiController.getTransactionStatus(eventName, reservationId, paymentMethodStr);
+        var res = paymentApiController.getTransactionStatus(eventName, reservationId, paymentMethodStr);
+
+        if(res.hasBody()) {
+            var paymentResult = res.getBody();
+            return ResponseEntity.ok(new ReservationPaymentResult(paymentResult.isSuccessful(),
+                paymentResult.isRedirect(), paymentResult.getRedirectUrl(),
+                paymentResult.isFailed(), paymentResult.getGatewayIdOrNull()));
+        } else {
+            return ResponseEntity.status(res.getStatusCode()).build();
+        }
     }
 
 

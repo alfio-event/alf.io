@@ -25,4 +25,6 @@ public class ReservationPaymentResult {
     private final boolean success;
     private final boolean redirect;
     private final String redirectUrl;
+    private final boolean failure;
+    private final String gatewayIdOrNull;
 }
