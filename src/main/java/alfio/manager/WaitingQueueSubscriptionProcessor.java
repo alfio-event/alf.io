@@ -17,7 +17,10 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.*;
+import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
+import alfio.model.TicketInfo;
+import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
 import alfio.model.user.Organization;
@@ -77,7 +80,7 @@ public class WaitingQueueSubscriptionProcessor {
                 if(!(ex instanceof TransactionException)) {
                     transactionManager.rollback(transaction);
                 }
-                log.error("cannot process waiting queue for event {}", event.getShortName(), ex);
+                log.error("cannot process waiting list for event {}", event.getShortName(), ex);
             }
         });
         activeEvents.get(false).forEach(eventManager::resetReleasedTickets);

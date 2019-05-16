@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-@DisplayName("Waiting Queue Manager")
+@DisplayName("Waiting List Manager")
 public class WaitingQueueManagerTest {
 
     private WaitingQueueRepository waitingQueueRepository;

@@ -70,7 +70,7 @@ public class WaitingQueueManager {
     public boolean subscribe(Event event, CustomerName customerName, String email, Integer selectedCategoryId, Locale userLanguage) {
         try {
             if(configurationManager.getBooleanConfigValue(Configuration.from(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS), false)) {
-                log.info("waiting queue subscription denied for event {} ({})", event.getShortName(), event.getId());
+                log.info("waiting list subscription denied for event {} ({})", event.getShortName(), event.getId());
                 return false;
             }
             WaitingQueueSubscription.Type subscriptionType = getSubscriptionType(event);
@@ -118,9 +118,9 @@ public class WaitingQueueManager {
 
     private void validateSubscriptionType(EventAndOrganizationId event, WaitingQueueSubscription.Type type) {
         if(type == WaitingQueueSubscription.Type.PRE_SALES) {
-            Validate.isTrue(configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_PRE_REGISTRATION), false), "PRE_SALES Waiting queue is not active");
+            Validate.isTrue(configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_PRE_REGISTRATION), false), "PRE_SALES Waiting list is not active");
         } else {
-            Validate.isTrue(eventStatisticsManager.noSeatsAvailable().test(event), "SOLD_OUT Waiting queue is not active");
+            Validate.isTrue(eventStatisticsManager.noSeatsAvailable().test(event), "SOLD_OUT Waiting list is not active");
         }
     }
 
@@ -156,7 +156,7 @@ public class WaitingQueueManager {
 
     private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> handlePreReservation(Event event, int waitingPeople) {
         List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
-        // Given that this Job runs more than once in a minute, in order to ensure that all the waiting queue subscribers would get a seat *before*
+        // Given that this Job runs more than once in a minute, in order to ensure that all the waiting list subscribers would get a seat *before*
         // all other people, we must process their a little bit before the sale period starts
         Optional<TicketCategory> categoryWithInceptionInFuture = ticketCategories.stream()
                 .min(TicketCategory.COMPARATOR)
@@ -212,7 +212,7 @@ public class WaitingQueueManager {
     private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeats(Event event, Ticket.TicketStatus status, Supplier<Integer> availableSeatSupplier) {
         int availableSeats = availableSeatSupplier.get();
         int eventId = event.getId();
-        log.debug("processing {} subscribers from waiting queue", availableSeats);
+        log.debug("processing {} subscribers from waiting list", availableSeats);
         List<TicketCategory> unboundedCategories = ticketCategoryRepository.findUnboundedOrderByExpirationDesc(eventId);
         Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, status.name(), availableSeats)
             .stream()
