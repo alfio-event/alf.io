@@ -41,7 +41,7 @@
             <ul class="list-unstyled">
                 <li ng-if="ticketCategory.checkedInTickets > 0"><span class="text-left">Checked in</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.checkedInTickets}}</span></li>
                 <li ng-if="ticketCategory.soldTickets > 0"><span class="text-left">Sold</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.soldTickets}}</span></li>
-                <li ng-if="ticketCategory.pendingTickets > 0"><span class="text-left">Reservation in progress</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.pendingTickets}}</span></li>
+                <li ng-if="ticketCategory.pendingTickets > 0"><span class="text-left">Pending</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.pendingTickets}}</span></li>
                 <li ng-if="ticketCategory.notSoldTickets > 0"><span class="text-left">Still Available</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.notSoldTickets}}</span></li>
                 <li ng-if="!ticketCategory.bounded"><span class="text-left">Dynamically allocated</span><span class="text-right pull-right" style="margin-left: 10px">{{event.dynamicAllocation}}</span></li>
             </ul>

@@ -55,9 +55,9 @@
                             meta: 'Sold ('+event.soldTickets+')'
                         },{
                             value: event.pendingTickets + event.releasedTickets,
-                            name: 'Reservation in progress',
+                            name: 'Pending',
                             className: 'slice-pending',
-                            meta: 'Reservation in progress ('+(event.pendingTickets + event.releasedTickets)+')'
+                            meta: 'Pending ('+(event.pendingTickets + event.releasedTickets)+')'
                         },{
                             value: event.notSoldTickets,
                             name: 'Reserved for categories',
