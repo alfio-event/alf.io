@@ -34,10 +34,15 @@ public class TicketCategory {
     //
     private final boolean expired;
     private final boolean saleInFuture;
+    private final Map<String, String> formattedInception;
+    private final Map<String, String> formattedExpiration;
     //
 
     public TicketCategory(SaleableTicketCategory saleableTicketCategory,
-                          Map<String, String> description) {
+                          Map<String, String> description,
+                          Map<String, String> formattedInception,
+                          Map<String, String> formattedExpiration
+                          ) {
         this.description = description;
         this.id = saleableTicketCategory.getId();
         this.name = saleableTicketCategory.getName();
@@ -48,6 +53,8 @@ public class TicketCategory {
         //
         this.expired = saleableTicketCategory.getExpired();
         this.saleInFuture = saleableTicketCategory.getSaleInFuture();
+        this.formattedInception = formattedInception;
+        this.formattedExpiration = formattedExpiration;
         //
     }
 }

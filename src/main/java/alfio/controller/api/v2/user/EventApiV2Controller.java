@@ -38,6 +38,7 @@ import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.MustacheCustomTagInterceptor;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -52,6 +53,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -73,6 +76,7 @@ public class EventApiV2Controller {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final PaymentManager paymentManager;
+    private final CustomResourceBundleMessageSource messageSource;
 
 
     @GetMapping("events")
@@ -157,11 +161,27 @@ public class EventApiV2Controller {
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
             Event event = ((EventDescriptor) model.asMap().get("event")).getEvent();
 
-            var converted = valid.stream().map(stc -> new TicketCategory(stc, applyCommonMark(ticketCategoryDescriptions.get(stc.getId())))).collect(Collectors.toList());
+            var converted = valid.stream()
+                .map(stc -> {
+                    var description = applyCommonMark(ticketCategoryDescriptions.get(stc.getId()));
+                    var expiration = getFormattedDate(event, stc.getZonedExpiration(), "common.ticket-category.date-format");
+                    var inception = getFormattedDate(event, stc.getZonedInception(), "common.ticket-category.date-format");
+                    return new TicketCategory(stc, description, inception, expiration);
+                })
+                .collect(Collectors.toList());
             return new ResponseEntity<>(converted, getCorsHeaders(), HttpStatus.OK);
         } else {
             return ResponseEntity.notFound().headers(getCorsHeaders()).build();
         }
+    }
+
+    private Map<String, String> getFormattedDate(Event event, ZonedDateTime date, String code) {
+        Map<String, String> formatted = new HashMap<>();
+        event.getContentLanguages().stream().forEach(cl -> {
+            var pattern = messageSource.getMessage(code, null, cl.getLocale());
+            formatted.put(cl.getLanguage(), DateTimeFormatter.ofPattern(pattern, cl.getLocale()).format(date));
+        });
+        return formatted;
     }
 
     @GetMapping("event/{eventName}/calendar/{locale}")
