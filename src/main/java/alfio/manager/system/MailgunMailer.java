@@ -109,6 +109,7 @@ class MailgunMailer implements Mailer {
             try(Response resp = client.newCall(request).execute()) {
                 if (!resp.isSuccessful()) {
                     log.warn("sending email was not successful:" + resp);
+                    throw new IllegalStateException("Attempt to send a message failed. Result is: "+resp.code());
                 }
             }
         } catch (IOException e) {
