@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
-public class EventWithAdditionalInfo {
+public class EventWithAdditionalInfo implements DateValidity {
     private final Event event;
     private final String mapUrl;
     private final Organization organization;

@@ -22,6 +22,7 @@ import alfio.controller.api.v2.model.EventWithAdditionalInfo.PaymentProxyWithPar
 import alfio.controller.decorator.EventDescriptor;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
+import alfio.controller.support.Formatters;
 import alfio.manager.EventManager;
 import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
@@ -53,8 +54,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -122,10 +121,10 @@ public class EventApiV2Controller {
                 boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
                 //
 
-                var formattedBeginDate = getFormattedDate(event, event.getBegin(), "common.event.date-format");
-                var formattedBeginTime = getFormattedDate(event, event.getBegin(), "common.event.time-format");
-                var formattedEndDate = getFormattedDate(event, event.getEnd(), "common.event.date-format");
-                var formattedEndTime = getFormattedDate(event, event.getEnd(), "common.event.time-format");
+                var formattedBeginDate = Formatters.getFormattedDate(event, event.getBegin(), "common.event.date-format", messageSource);
+                var formattedBeginTime = Formatters.getFormattedDate(event, event.getBegin(), "common.event.time-format", messageSource);
+                var formattedEndDate = Formatters.getFormattedDate(event, event.getEnd(), "common.event.date-format", messageSource);
+                var formattedEndTime = Formatters.getFormattedDate(event, event.getEnd(), "common.event.time-format", messageSource);
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     canGenerateReceiptOrInvoiceToCustomer, bankAccount, bankAccountOwner,
@@ -170,8 +169,8 @@ public class EventApiV2Controller {
             var converted = valid.stream()
                 .map(stc -> {
                     var description = applyCommonMark(ticketCategoryDescriptions.get(stc.getId()));
-                    var expiration = getFormattedDate(event, stc.getZonedExpiration(), "common.ticket-category.date-format");
-                    var inception = getFormattedDate(event, stc.getZonedInception(), "common.ticket-category.date-format");
+                    var expiration = Formatters.getFormattedDate(event, stc.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
+                    var inception = Formatters.getFormattedDate(event, stc.getZonedInception(), "common.ticket-category.date-format", messageSource);
                     return new TicketCategory(stc, description, inception, expiration);
                 })
                 .collect(Collectors.toList());
@@ -179,15 +178,6 @@ public class EventApiV2Controller {
         } else {
             return ResponseEntity.notFound().headers(getCorsHeaders()).build();
         }
-    }
-
-    private Map<String, String> getFormattedDate(Event event, ZonedDateTime date, String code) {
-        Map<String, String> formatted = new HashMap<>();
-        event.getContentLanguages().stream().forEach(cl -> {
-            var pattern = messageSource.getMessage(code, null, cl.getLocale());
-            formatted.put(cl.getLanguage(), DateTimeFormatter.ofPattern(pattern, cl.getLocale()).format(date));
-        });
-        return formatted;
     }
 
     @GetMapping("event/{eventName}/calendar/{locale}")

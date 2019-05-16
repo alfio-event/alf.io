@@ -21,6 +21,7 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.TicketInfo;
 import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.controller.support.Formatters;
 import alfio.manager.TicketReservationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
@@ -28,6 +29,7 @@ import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketCategoryRepository;
+import alfio.util.CustomResourceBundleMessageSource;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -38,6 +40,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
 @RestController
@@ -50,6 +53,7 @@ public class TicketApiV2Controller {
     private final TicketHelper ticketHelper;
     private final TicketReservationManager ticketReservationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final CustomResourceBundleMessageSource messageSource;
 
 
     @GetMapping("/event/{eventName}/ticket/{ticketIdentifier}/code.png")
@@ -95,6 +99,20 @@ public class TicketApiV2Controller {
 
         boolean deskPaymentRequired = Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired();
 
+
+        //
+        var validityStart = Optional.ofNullable(ticketCategory.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin());
+        var validityEnd = Optional.ofNullable(ticketCategory.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());
+        var sameDay = validityStart.truncatedTo(ChronoUnit.DAYS).equals(validityEnd.truncatedTo(ChronoUnit.DAYS));
+
+
+        var formattedBeginDate = Formatters.getFormattedDate(event, validityStart, "common.event.date-format", messageSource);
+        var formattedBeginTime = Formatters.getFormattedDate(event, validityStart, "common.event.time-format", messageSource);
+        var formattedEndDate = Formatters.getFormattedDate(event, validityEnd, "common.event.date-format", messageSource);
+        var formattedEndTime = Formatters.getFormattedDate(event, validityEnd, "common.event.time-format", messageSource);
+        //
+
+
         return ResponseEntity.ok(new TicketInfo(
             ticket.getFullName(),
             ticket.getEmail(),
@@ -102,7 +120,13 @@ public class TicketApiV2Controller {
             ticketCategory.getName(),
             ticketReservation.getFullName(),
             ticketReservationManager.getShortReservationID(event, ticketReservation),
-            deskPaymentRequired)
+            deskPaymentRequired,
+            event.getTimeZone(),
+            sameDay,
+            formattedBeginDate,
+            formattedBeginTime,
+            formattedEndDate,
+            formattedEndTime)
         );
     }
 
