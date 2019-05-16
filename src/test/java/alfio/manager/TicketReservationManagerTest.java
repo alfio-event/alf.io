@@ -143,6 +143,7 @@ class TicketReservationManagerTest {
         ticket = mock(Ticket.class);
         reservationModification = mock(TicketReservationWithOptionalCodeModification.class);
         ticketReservation = mock(TicketReservation.class);
+        when(ticketReservation.getStatus()).thenReturn(PENDING);
         organization = mock(Organization.class);
         TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
         GroupManager groupManager = mock(GroupManager.class);
@@ -757,6 +758,7 @@ class TicketReservationManagerTest {
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "test@email",
             new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()), "", null, Locale.ENGLISH,
             true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+        when(ticketReservation.getStatus()).thenReturn(IN_PAYMENT);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
