@@ -373,6 +373,8 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
 
+        TicketReservation reservation = null;
+
         try {
             PaymentResult paymentResult;
             ticketReservationRepository.lockReservationForUpdate(spec.getReservationId());
@@ -390,12 +392,16 @@ public class TicketReservationManager {
             }
 
             if (paymentResult.isSuccessful()) {
+                reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
                 transitionToComplete(spec, reservationCost, specialPriceSessionId, paymentProxy);
             } else if(paymentResult.isFailed()) {
                 reTransitionToPending(spec.getReservationId());
             }
             return paymentResult;
         } catch(Exception ex) {
+            if(reservation != null && reservation.getStatus() != IN_PAYMENT) {
+                reTransitionToPending(spec.getReservationId());
+            }
             //it is guaranteed that in this case we're dealing with "local" error (e.g. database failure),
             //thus it is safer to not rollback the reservation status
             log.error("unexpected error during payment confirmation", ex);
@@ -405,6 +411,7 @@ public class TicketReservationManager {
     }
 
     private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
+        TicketReservation reservationById = ticketReservationRepository.findReservationById(spec.getReservationId());
         generateInvoiceNumber(spec, reservationCost);
         completeReservation(spec, specialPriceSessionId, paymentProxy);
     }
