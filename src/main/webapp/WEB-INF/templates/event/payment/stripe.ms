@@ -18,7 +18,7 @@
     <div class="row">
         <div class="col-xs-12">
             <div class="form-group" id="card-element-container">
-                <label for="card-name" class="control-label">{{#i18n}}reservation-page.card.details{{/i18n}}</label>
+                <label for="card-element" class="control-label">{{#i18n}}reservation-page.card.details{{/i18n}}</label>
                 <div>
                     <div id="card-element"></div>
                 </div>
