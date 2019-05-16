@@ -153,6 +153,10 @@ public class EventWithAdditionalInfo {
     public Map<String, String> getFormattedEndTime() {
         return formattedEndTime;
     }
+
+    public String getTimeZone() {
+        return event.getTimeZone();
+    }
     //
 
     @AllArgsConstructor
