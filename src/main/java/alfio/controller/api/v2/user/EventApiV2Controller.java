@@ -122,9 +122,15 @@ public class EventApiV2Controller {
                 boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
                 //
 
+                var formattedBeginDate = getFormattedDate(event, event.getBegin(), "common.event.date-format");
+                var formattedBeginTime = getFormattedDate(event, event.getBegin(), "common.event.time-format");
+                var formattedEndDate = getFormattedDate(event, event.getEnd(), "common.event.date-format");
+                var formattedEndTime = getFormattedDate(event, event.getEnd(), "common.event.time-format");
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
-                    canGenerateReceiptOrInvoiceToCustomer, bankAccount, bankAccountOwner), getCorsHeaders(), HttpStatus.OK);
+                    canGenerateReceiptOrInvoiceToCustomer, bankAccount, bankAccountOwner,
+                    formattedBeginDate, formattedBeginTime,
+                    formattedEndDate, formattedEndTime), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }

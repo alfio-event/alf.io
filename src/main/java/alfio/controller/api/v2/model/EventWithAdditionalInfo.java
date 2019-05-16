@@ -41,6 +41,13 @@ public class EventWithAdditionalInfo {
     private final List<String> bankAccountOwner;
     //
 
+    //date related informations
+    private final Map<String, String> formattedBeginDate; // day, month, year
+    private final Map<String, String> formattedBeginTime; //the hour/minute component
+    private final Map<String, String> formattedEndDate;
+    private final Map<String, String> formattedEndTime;
+    //
+
 
     public String getShortName() {
         return event.getShortName();
@@ -124,6 +131,29 @@ public class EventWithAdditionalInfo {
     public List<String> getBankAccountOwner() {
         return bankAccountOwner;
     }
+
+
+    // date related fields
+    public boolean isSameDay() {
+        return event.getSameDay();
+    }
+
+    public Map<String, String> getFormattedBeginDate() {
+        return formattedBeginDate;
+    }
+
+    public Map<String, String> getFormattedBeginTime() {
+        return formattedBeginTime;
+    }
+
+    public Map<String, String> getFormattedEndDate() {
+        return formattedEndDate;
+    }
+
+    public Map<String, String> getFormattedEndTime() {
+        return formattedEndTime;
+    }
+    //
 
     @AllArgsConstructor
     @Getter
