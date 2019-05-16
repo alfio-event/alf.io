@@ -31,12 +31,23 @@ public class TicketCategory {
     private final boolean free;
     private final String formattedFinalPrice;
 
-    public TicketCategory(SaleableTicketCategory saleableTicketCategory, Map<String, String> description) {
+    //
+    private final boolean expired;
+    private final boolean saleInFuture;
+    //
+
+    public TicketCategory(SaleableTicketCategory saleableTicketCategory,
+                          Map<String, String> description) {
         this.description = description;
         this.id = saleableTicketCategory.getId();
         this.name = saleableTicketCategory.getName();
         this.amountOfTickets = saleableTicketCategory.getAmountOfTickets();
         this.free = saleableTicketCategory.getFree();
         this.formattedFinalPrice = saleableTicketCategory.getFormattedFinalPrice();
+
+        //
+        this.expired = saleableTicketCategory.getExpired();
+        this.saleInFuture = saleableTicketCategory.getSaleInFuture();
+        //
     }
 }

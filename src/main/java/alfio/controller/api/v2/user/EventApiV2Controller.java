@@ -19,6 +19,7 @@ package alfio.controller.api.v2.user;
 import alfio.controller.EventController;
 import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo.PaymentProxyWithParameters;
+import alfio.controller.decorator.EventDescriptor;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.manager.EventManager;
@@ -154,6 +155,8 @@ public class EventApiV2Controller {
             var valid = (List<SaleableTicketCategory>) model.asMap().get("ticketCategories");
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
+            Event event = ((EventDescriptor) model.asMap().get("event")).getEvent();
+
             var converted = valid.stream().map(stc -> new TicketCategory(stc, applyCommonMark(ticketCategoryDescriptions.get(stc.getId())))).collect(Collectors.toList());
             return new ResponseEntity<>(converted, getCorsHeaders(), HttpStatus.OK);
         } else {
