@@ -143,7 +143,8 @@ public class ReservationApiV2Controller {
                 reservation.getHasInvoiceOrReceiptDocument(),
                 reservation.getHasBeenPaid(),
                 tokenAcquired,
-                selectedPaymentProxy != null ? selectedPaymentProxy : reservation.getPaymentMethod()
+                selectedPaymentProxy != null ? selectedPaymentProxy : reservation.getPaymentMethod(),
+                additionalInfo.getAddCompanyBillingDetails()
                 ));
         }));
 

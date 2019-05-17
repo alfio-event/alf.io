@@ -47,10 +47,15 @@ public class ReservationInfo {
     private final String invoiceNumber;
     private final boolean invoiceRequested;
 
+
     private final boolean invoiceOrReceiptDocumentPresent;
     private final boolean paid;
     private final boolean tokenAcquired;
     private final PaymentProxy paymentProxy;
+
+
+    //billing info from additional info
+    private final boolean addCompanyBillingDetails;
 
 
     @AllArgsConstructor
