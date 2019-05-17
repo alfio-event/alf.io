@@ -162,6 +162,11 @@ public class EventWithAdditionalInfo implements DateValidity {
     }
     //
 
+
+    public InvoicingConfiguration getInvoicingConfiguration() {
+        return invoicingConfiguration;
+    }
+
     @AllArgsConstructor
     @Getter
     public static class PaymentProxyWithParameters {
