@@ -342,7 +342,7 @@ public enum TemplateResource {
 
         model.put("isOfflinePayment", reservation.getStatus() == TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
         model.put("hasCustomerReference", StringUtils.isNotBlank(reservation.getCustomerReference()));
-        model.put("paymentReason", event.getShortName() + " " + reservationShortID);
+        model.put("paymentReason", reservationShortID);
         model.put("hasBankAccountOnwer", bankAccountOwner.isPresent());
         bankAccountOwner.ifPresent(owner -> {
             model.put("bankAccountOnwer", StringUtils.replace(owner, "\n", ", "));
