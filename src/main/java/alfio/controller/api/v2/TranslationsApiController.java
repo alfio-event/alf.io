@@ -20,8 +20,11 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.model.LocalizedCountry;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.ConfigurationKeys;
 import alfio.util.CustomResourceBundleMessageSource;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,14 +37,19 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.Configuration.getSystemConfiguration;
+
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v2/")
 public class TranslationsApiController {
 
     private final CustomResourceBundleMessageSource messageSource;
-    private static final String[] EMPTY_ARRAY = new String[]{};
+    private final ConfigurationManager configurationManager;
     private final I18nManager i18nManager;
+
+    private static final String[] EMPTY_ARRAY = new String[]{};
+
 
     @GetMapping("/public/i18n/bundle/{lang}")
     public Map<String, String> getPublicTranslations(@PathVariable("lang") String lang) {
@@ -64,10 +72,24 @@ public class TranslationsApiController {
 
     @GetMapping("/public/i18n/countries/{lang}")
     public List<LocalizedCountry> getCountries(@PathVariable("lang") String lang) {
+        return fromPair(TicketHelper.getLocalizedCountries(Locale.forLanguageTag(lang)));
+    }
+
+    @GetMapping("/public/i18n/countries-vat/{lang}")
+    public List<LocalizedCountry> getCountriesForVat(@PathVariable("lang") String lang) {
+        return fromPair(TicketHelper.getLocalizedCountriesForVat(Locale.forLanguageTag(lang)));
+    }
+
+    @GetMapping("/public/i18n/eu-countries-vat/{lang}")
+    public List<LocalizedCountry> getEuCountriesForVat(@PathVariable("lang") String lang) {
+        var countries = TicketHelper.getLocalizedEUCountriesForVat(Locale.forLanguageTag(lang),
+            configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)));
+        return fromPair(countries);
+    }
+
+    private static List<LocalizedCountry> fromPair(List<Pair<String, String>> countries) {
         var collator = Collator.getInstance(Locale.FRENCH); //<- gives the better sorting experience...
-        return TicketHelper.getLocalizedCountries(Locale.forLanguageTag(lang))
-            .stream()
-            .map(p-> new LocalizedCountry(p.getKey(), p.getValue()))
+        return countries.stream().map(p-> new LocalizedCountry(p.getKey(), p.getValue()))
             .sorted((lc1, lc2) -> collator.compare(lc1.getName(), lc2.getName()))
             .collect(Collectors.toList());
     }
