@@ -139,6 +139,7 @@ public class ReservationApiV2Controller {
                 additionalInfo.hasBeenValidated(),
                 formattedExpirationDate,
                 reservation.getInvoiceNumber(),
+                reservation.isInvoiceRequested(),
                 reservation.getHasInvoiceOrReceiptDocument(),
                 reservation.getHasBeenPaid(),
                 tokenAcquired,

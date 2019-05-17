@@ -45,6 +45,7 @@ public class ReservationInfo {
     private final Map<String, String> formattedExpirationDate; // map of language -> formatted date
 
     private final String invoiceNumber;
+    private final boolean invoiceRequested;
 
     private final boolean invoiceOrReceiptDocumentPresent;
     private final boolean paid;
