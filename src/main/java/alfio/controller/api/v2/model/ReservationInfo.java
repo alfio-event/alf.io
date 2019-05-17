@@ -55,7 +55,7 @@ public class ReservationInfo {
 
 
     //billing info from additional info
-    private final boolean addCompanyBillingDetails;
+    private final Boolean addCompanyBillingDetails;
 
 
     @AllArgsConstructor
