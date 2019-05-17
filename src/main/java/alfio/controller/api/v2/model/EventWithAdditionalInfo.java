@@ -48,6 +48,9 @@ public class EventWithAdditionalInfo implements DateValidity {
     private final Map<String, String> formattedEndTime;
     //
 
+    //
+    private final InvoicingConfiguration invoicingConfiguration;
+    //
 
     public String getShortName() {
         return event.getShortName();
@@ -164,5 +167,17 @@ public class EventWithAdditionalInfo implements DateValidity {
     public static class PaymentProxyWithParameters {
         private final PaymentProxy paymentProxy;
         private final Map<String, ?> parameters;
+    }
+
+
+    @AllArgsConstructor
+    @Getter
+    public static class InvoicingConfiguration {
+        private final boolean euVatCheckingEnabled;
+        private final boolean invoiceAllowed;
+        private final boolean onlyInvoice;
+        private final boolean customerReferenceEnabled;
+        private final boolean enabledItalyEInvoicing;
+        private final boolean vatNumberStrictlyRequired;
     }
 }

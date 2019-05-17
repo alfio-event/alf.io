@@ -23,6 +23,7 @@ import alfio.controller.decorator.EventDescriptor;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.support.Formatters;
+import alfio.manager.EuVatChecker;
 import alfio.manager.EventManager;
 import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
@@ -57,8 +58,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
-import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
+import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
 
 
@@ -76,6 +76,7 @@ public class EventApiV2Controller {
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final PaymentManager paymentManager;
     private final CustomResourceBundleMessageSource messageSource;
+    private final EuVatChecker vatChecker;
 
 
     @GetMapping("events")
@@ -126,10 +127,25 @@ public class EventApiV2Controller {
                 var formattedEndDate = Formatters.getFormattedDate(event, event.getEnd(), "common.event.date-format", messageSource);
                 var formattedEndTime = Formatters.getFormattedDate(event, event.getEnd(), "common.event.time-format", messageSource);
 
+
+                var partialConfig = Configuration.from(event);
+
+                //invoicing information
+                boolean euVatCheckingEnabled = vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
+                boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || euVatCheckingEnabled;
+                boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
+                boolean customerReferenceEnabled = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_CUSTOMER_REFERENCE), false);
+                boolean enabledItalyEInvoicing = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ITALY_E_INVOICING), false);
+                boolean vatNumberStrictlyRequired = configurationManager.getBooleanConfigValue(partialConfig.apply(VAT_NUMBER_IS_REQUIRED), false);
+
+                var invoicingConf = new EventWithAdditionalInfo.InvoicingConfiguration(euVatCheckingEnabled, invoiceAllowed, onlyInvoice,
+                    customerReferenceEnabled, enabledItalyEInvoicing, vatNumberStrictlyRequired);
+                //
+
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     canGenerateReceiptOrInvoiceToCustomer, bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
-                    formattedEndDate, formattedEndTime), getCorsHeaders(), HttpStatus.OK);
+                    formattedEndDate, formattedEndTime, invoicingConf), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
