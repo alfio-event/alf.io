@@ -90,7 +90,7 @@
         <div class="col-xs-12 col-md-6 invoice-business">
             <div class="form-group {{#field-has-error}}[customerReference] has-error{{/field-has-error}}">
                 <label for="customerReference" class="control-label">{{#i18n}}common.customer-reference{{/i18n}}</label>
-                <input type="text" name="customerReference" id="customerReference" class="form-control" maxlength="255" value="{{paymentForm.customerReference}}">
+                <input type="text" name="customerReference" id="customerReference" class="form-control" maxlength="50" value="{{paymentForm.customerReference}}">
                 {{#field-has-error}}[customerReference]<span class="help-block text-danger">{{#i18n}}{{#field-error}}customerReference{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
             </div>
         </div>
