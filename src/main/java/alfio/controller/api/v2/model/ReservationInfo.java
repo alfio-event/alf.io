@@ -18,6 +18,7 @@ package alfio.controller.api.v2.model;
 
 import alfio.model.OrderSummary;
 import alfio.model.TicketReservation;
+import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.model.transaction.PaymentProxy;
 import com.paypal.api.payments.Payment;
 import lombok.AllArgsConstructor;
@@ -56,6 +57,21 @@ public class ReservationInfo {
 
     //billing info from additional info
     private final Boolean addCompanyBillingDetails;
+    //
+    private final String billingAddressCompany;
+    private final String billingAddressLine1;
+    private final String billingAddressLine2;
+    private final String billingAddressZip;
+    private final String billingAddressCity;
+    private final String vatCountryCode;
+    private final String customerReference;
+    private final String vatNr;
+    private final Boolean skipVatNr;
+    private final String italyEInvoicingFiscalCode;
+    private final TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing.ReferenceType italyEInvoicingReferenceType;
+    private final String italyEInvoicingReferenceAddresseeCode;
+    private final String italyEInvoicingReferencePEC;
+    //
 
 
     @AllArgsConstructor

@@ -119,8 +119,14 @@ public class ReservationApiV2Controller {
                 })
                 .collect(Collectors.toList());
 
-            //TODO: will most likely need to expose more of the additional info
+            //
             var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
+
+            var italianInvoicing = additionalInfo.getInvoicingAdditionalInfo().getItalianEInvoicing() == null ?
+                new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(null, null, null, null) :
+                additionalInfo.getInvoicingAdditionalInfo().getItalianEInvoicing();
+            //
+
 
             var shortReservationId =  ticketReservationManager.getShortReservationID(event, reservation);
 
@@ -144,7 +150,20 @@ public class ReservationApiV2Controller {
                 reservation.getHasBeenPaid(),
                 tokenAcquired,
                 selectedPaymentProxy != null ? selectedPaymentProxy : reservation.getPaymentMethod(),
-                additionalInfo.getAddCompanyBillingDetails()
+                additionalInfo.getAddCompanyBillingDetails(),
+                additionalInfo.getBillingAddressCompany(),
+                additionalInfo.getBillingAddressLine1(),
+                additionalInfo.getBillingAddressLine2(),
+                additionalInfo.getBillingAddressZip(),
+                additionalInfo.getBillingAddressCity(),
+                reservation.getVatCountryCode(),
+                reservation.getCustomerReference(),
+                reservation.getVatNr(),
+                additionalInfo.getSkipVatNr(),
+                italianInvoicing.getFiscalCode(),
+                italianInvoicing.getReferenceType(),
+                italianInvoicing.getAddresseeCode(),
+                italianInvoicing.getPec()
                 ));
         }));
 
