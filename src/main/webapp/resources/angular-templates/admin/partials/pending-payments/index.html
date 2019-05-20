@@ -14,6 +14,15 @@
                 <small class="text-muted">Review and confirm each transaction</small>
             </div>
 
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="input-group">
+                        <span class="input-group-addon" id="basic-addon1"><i class="fa fa-search"></i><span class="sr-only">Filter Payments</span></span>
+                        <input type="text" class="form-control" placeholder="Filter Payments" aria-describedby="basic-addon1" data-ng-model="searchStr">
+                    </div>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -26,7 +35,7 @@
                         <th></th>
                     </thead>
                     <tbody>
-                        <tr data-ng-repeat="pending in pendingReservations">
+                        <tr data-ng-repeat="pending in pendingReservations | filter:searchStr">
                             <td>
                                 <a ng-if="event" data-ui-sref="events.single.view-reservation({eventName:eventName, reservationId: pending.ticketReservation.id})" target="_blank"><reservation-identifier event-id="event.id" reservation="pending.ticketReservation"></reservation-identifier></a>
                             </td>
