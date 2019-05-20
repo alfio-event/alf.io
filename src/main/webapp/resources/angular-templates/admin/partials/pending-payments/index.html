@@ -31,6 +31,7 @@
                         <th>Amount</th>
                         <th>Customer's name</th>
                         <th>Customer's email</th>
+                        <th># tickets</th>
                         <th></th>
                         <th></th>
                     </thead>
@@ -43,6 +44,7 @@
                             <td><span ng-if="pending.transaction">{{pending.transaction.priceInCents / 100 | currency:pending.transaction.currency}}</span></td>
                             <td>{{pending.ticketReservation.fullName}}</td>
                             <td>{{pending.ticketReservation.email}}</td>
+                            <td>{{pending.ticketsCount}}</td>
                             <td>
                                 <button type="button" ng-if="pending.transaction && pending.transaction.status == 'OFFLINE_PENDING_REVIEW'" class="btn btn-xs btn-success" ng-click="showTransactionDialog(pending)"><i class="fa fa-check"></i> Matching payment</button>
                             </td>

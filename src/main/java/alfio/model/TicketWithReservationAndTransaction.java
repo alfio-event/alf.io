@@ -36,6 +36,7 @@ public class TicketWithReservationAndTransaction {
     private final TicketReservation ticketReservation;
     private final BillingDetails billingDetails;
     private final Optional<Transaction> transaction;
+    private final Integer ticketsCountInReservation;
 
 
     public TicketWithReservationAndTransaction(@Column("t_id") Integer id,
@@ -104,7 +105,8 @@ public class TicketWithReservationAndTransaction {
                                                @Column("bt_plat_fee") Long platformFee,
                                                @Column("bt_gtw_fee") Long gatewayFee,
                                                @Column("bt_status") Transaction.Status transactionStatus,
-                                               @Column("bt_metadata") @JSONData Map<String, String> metadata
+                                               @Column("bt_metadata") @JSONData Map<String, String> metadata,
+                                               @Column("tickets_count") Integer ticketsCount
                                                ) {
 
         this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
@@ -128,6 +130,8 @@ public class TicketWithReservationAndTransaction {
         } else {
             this.transaction = Optional.empty();
         }
+
+        this.ticketsCountInReservation = ticketsCount;
 
     }
 }
