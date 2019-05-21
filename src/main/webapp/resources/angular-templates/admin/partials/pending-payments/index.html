@@ -26,19 +26,19 @@
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
-                        <th>ID</th>
-                        <th>Expiration Date</th>
-                        <th>Amount</th>
-                        <th>Customer's name</th>
-                        <th>Customer's email</th>
-                        <th># tickets</th>
+                        <th class="cursor-pointer" ng-click="changeSorting('publicId')"><i class="fa" ng-class="sortingIndicator('publicId')"></i> ID</th>
+                        <th class="cursor-pointer" ng-click="changeSorting('ticketReservation.validity')"><i class="fa" ng-class="sortingIndicator('ticketReservation.validity')"></i> Expiration Date</th>
+                        <th class="cursor-pointer" ng-click="changeSorting('transaction.priceInCents')"><i class="fa" ng-class="sortingIndicator('transaction.priceInCents')"></i> Amount</th>
+                        <th class="cursor-pointer" ng-click="changeSorting('ticketReservation.fullName')"><i class="fa" ng-class="sortingIndicator('ticketReservation.fullName')"></i> Customer's name</th>
+                        <th class="cursor-pointer" ng-click="changeSorting('ticketReservation.email')"><i class="fa" ng-class="sortingIndicator('ticketReservation.email')"></i> Customer's email</th>
+                        <th class="cursor-pointer" ng-click="changeSorting('ticketsCount')"><i class="fa" ng-class="sortingIndicator('ticketsCount')"></i> tickets</th>
                         <th></th>
                         <th></th>
                     </thead>
                     <tbody>
                         <tr data-ng-repeat="pending in pendingReservations | filter:searchStr">
                             <td>
-                                <a ng-if="event" data-ui-sref="events.single.view-reservation({eventName:eventName, reservationId: pending.ticketReservation.id})" target="_blank"><reservation-identifier event-id="event.id" reservation="pending.ticketReservation"></reservation-identifier></a>
+                                <a ng-if="event" data-ui-sref="events.single.view-reservation({eventName:eventName, reservationId: pending.ticketReservation.id})" target="_blank">{{pending.publicId}}</a>
                             </td>
                             <td>{{pending.ticketReservation.validity | formatDate}}</td>
                             <td><span ng-if="pending.transaction">{{pending.transaction.priceInCents / 100 | currency:pending.transaction.currency}}</span></td>
