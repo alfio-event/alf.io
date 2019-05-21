@@ -225,7 +225,7 @@ public class EventApiV2Controller {
         String redirectResult = eventController.reserveTicket(eventName, reservation, bindingResult, request, redirectAttributes, locale);
 
         if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, null), getCorsHeaders(), HttpStatus.OK);
+            return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
         } else {
             String reservationIdentifier = redirectResult
                 .substring(redirectResult.lastIndexOf("reservation/")+"reservation/".length())

@@ -41,6 +41,7 @@ import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.ui.Model;
@@ -224,12 +225,14 @@ public class ReservationApiV2Controller {
         if (modelMap.containsKey("paymentResultStatus")) {
             PaymentResult paymentResult = (PaymentResult) modelMap.get("paymentResultStatus");
             if (paymentResult.isRedirect() && !bindingResult.hasErrors()) {
-                return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult,
-                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, paymentResult.getRedirectUrl(), paymentResult.isFailed(), paymentResult.getGatewayIdOrNull())));
+                var body = ValidatedResponse.toResponse(bindingResult,
+                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, paymentResult.getRedirectUrl(), paymentResult.isFailed(), paymentResult.getGatewayIdOrNull()));
+                return ResponseEntity.ok(body);
             }
         }
 
-        return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, new ReservationPaymentResult(!bindingResult.hasErrors(), false, null, true, null)));
+        var body = ValidatedResponse.toResponse(bindingResult, new ReservationPaymentResult(!bindingResult.hasErrors(), false, null, true, null));
+        return ResponseEntity.status(bindingResult.hasErrors() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK).body(body);
     }
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/validate-to-overview")
@@ -243,7 +246,8 @@ public class ReservationApiV2Controller {
         //FIXME check precondition (see ReservationController.redirectIfNotValid)
         reservationController.validateToOverview(eventName, reservationId, contactAndTicketsForm, bindingResult, request, redirectAttributes, Locale.ENGLISH);
 
-        return ResponseEntity.ok(ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors()));
+        var body = ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors());
+        return ResponseEntity.status(bindingResult.hasErrors() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK).body(body);
     }
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/re-send-email")
