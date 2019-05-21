@@ -40,7 +40,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.21.0'
     id 'com.github.hierynomus.license' version '0.15.0'
     id 'net.researchgate.release' version '2.7.0'
-    id 'org.springframework.boot' version '2.1.4.RELEASE'
+    id 'org.springframework.boot' version '2.1.5.RELEASE'
 }
 
 apply plugin: 'java'
