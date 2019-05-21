@@ -112,6 +112,7 @@ class TicketReservationManagerTest {
     private TicketReservationWithOptionalCodeModification reservationModification;
     private TicketReservation ticketReservation;
     private Organization organization;
+    private BillingDocumentRepository billingDocumentRepository;
 
     @BeforeEach
     void init() {
@@ -144,12 +145,17 @@ class TicketReservationManagerTest {
         reservationModification = mock(TicketReservationWithOptionalCodeModification.class);
         ticketReservation = mock(TicketReservation.class);
         when(ticketReservation.getStatus()).thenReturn(PENDING);
+        when(ticketReservation.getUserLanguage()).thenReturn("en");
+        when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
+        when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         organization = mock(Organization.class);
         TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
         GroupManager groupManager = mock(GroupManager.class);
         UserRepository userRepository = mock(UserRepository.class);
         ExtensionManager extensionManager = mock(ExtensionManager.class);
-        BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
+        billingDocumentRepository = mock(BillingDocumentRepository.class);
+        when(ticketCategoryRepository.getByIdAndActive(anyInt(), eq(EVENT_ID))).thenReturn(ticketCategory);
+        when(ticketCategory.getName()).thenReturn("Category Name");
 
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -711,6 +717,7 @@ class TicketReservationManagerTest {
     void confirmPaidReservation() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(true);
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        mockBillingDocument();
         testPaidReservation();
         verify(notificationManager).sendTicketByEmail(any(), any(), any(), any(), any(), any());
     }
@@ -719,6 +726,7 @@ class TicketReservationManagerTest {
     void confirmPaidReservationButDoNotSendEmail() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(false);
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        mockBillingDocument();
         testPaidReservation();
         verify(notificationManager, never()).sendTicketByEmail(any(), any(), any(), any(), any(), any());
     }
@@ -727,7 +735,14 @@ class TicketReservationManagerTest {
     void confirmAndLockTickets() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(false);
         when(ticketRepository.forbidReassignment(any())).thenReturn(1);
+        mockBillingDocument();
         testPaidReservation();
+    }
+
+    private void mockBillingDocument() {
+        BillingDocument document = mock(BillingDocument.class);
+        when(document.getModel()).thenReturn(Map.of());
+        when(billingDocumentRepository.findLatestByReservationId(eq(RESERVATION_ID))).thenReturn(Optional.of(document));
     }
 
     @Test

@@ -411,9 +411,8 @@ public class TicketReservationManager {
     }
 
     private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
-        TicketReservation reservationById = ticketReservationRepository.findReservationById(spec.getReservationId());
         generateInvoiceNumber(spec, reservationCost);
-        completeReservation(spec, specialPriceSessionId, paymentProxy);
+        completeReservation(spec, specialPriceSessionId, paymentProxy, true);
     }
 
     private void generateInvoiceNumber(PaymentSpecification spec, TotalPrice reservationCost) {
@@ -809,13 +808,17 @@ public class TicketReservationManager {
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
      */
-    void completeReservation(PaymentSpecification spec, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
+    void completeReservation(PaymentSpecification spec, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy, boolean sendConfirmationEmails) {
         String reservationId = spec.getReservationId();
         int eventId = spec.getEvent().getId();
+        final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        Locale locale = Locale.forLanguageTag(reservation.getUserLanguage());
         if(paymentProxy != PaymentProxy.OFFLINE) {
             acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent());
-            final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
             extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), eventId);
+            if(sendConfirmationEmails) {
+                sendConfirmationEmail(spec.getEvent(), reservation, locale);
+            }
         }
         //cleanup unused special price codes...
         specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
@@ -829,6 +832,10 @@ public class TicketReservationManager {
 
         if(eventHasPrivacyPolicy(spec.getEvent()) && spec.isPrivacyAccepted()) {
             auditingRepository.insert(reservationId, null, eventId, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getEvent().getPrivacyPolicyUrl())));
+        }
+
+        if(sendConfirmationEmails) {
+            sendReservationCompleteEmailToOrganizer(spec.getEvent(), reservation, locale);
         }
     }
 

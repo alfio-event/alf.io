@@ -310,7 +310,7 @@ public class AdminReservationManager {
                 original.getBillingAddress(), original.getCustomerReference(), Locale.forLanguageTag(original.getUserLanguage()),
                 false, false, null, null, null, null, false, false);
 
-            ticketReservationManager.completeReservation(spec, Optional.empty(), PaymentProxy.ADMIN);
+            ticketReservationManager.completeReservation(spec, Optional.empty(), PaymentProxy.ADMIN, false);
             return loadReservation(reservationId);
         } catch(Exception e) {
             return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);

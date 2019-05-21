@@ -637,11 +637,6 @@ public class ReservationController {
                 }
 
                 //
-                TicketReservation reservation = ticketReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new);
-                sendReservationCompleteEmail(request, event,reservation);
-                sendReservationCompleteEmailToOrganizer(request, event, reservation);
-                //
-
                 SessionUtil.cleanupSession(request);
 
                 return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success";
@@ -683,7 +678,8 @@ public class ReservationController {
             return "redirect:/event/" + eventName + "/";
         }
 
-        sendReservationCompleteEmail(request, event.get(), ticketReservation.orElseThrow(IllegalStateException::new));
+        Locale locale = RequestContextUtils.getLocale(request);
+        ticketReservationManager.sendConfirmationEmail(event.get(), ticketReservation.orElseThrow(IllegalStateException::new), locale);
         return "redirect:/event/" + eventName + "/reservation/" + reservationId + "/success?confirmation-email-sent=true";
     }
 
@@ -699,16 +695,6 @@ public class ReservationController {
 
         Optional<Triple<ValidationResult, Event, Ticket>> result = ticketHelper.assignTicket(eventName, ticketIdentifier, updateTicketOwner, Optional.of(bindingResult), request, model);
         return result.map(t -> "redirect:/event/"+t.getMiddle().getShortName()+"/reservation/"+t.getRight().getTicketsReservationId()+"/success").orElse("redirect:/");
-    }
-
-    private void sendReservationCompleteEmail(HttpServletRequest request, Event event, TicketReservation reservation) {
-        Locale locale = RequestContextUtils.getLocale(request);
-        ticketReservationManager.sendConfirmationEmail(event, reservation, locale);
-    }
-
-    private void sendReservationCompleteEmailToOrganizer(HttpServletRequest request, Event event, TicketReservation reservation) {
-        Locale locale = RequestContextUtils.getLocale(request);
-        ticketReservationManager.sendReservationCompleteEmailToOrganizer(event, reservation, locale);
     }
 
     private boolean isExpressCheckoutEnabled(Event event, OrderSummary orderSummary) {
