@@ -10,7 +10,7 @@
     
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives',
         'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-additional-services', 'alfio-event-statistic',
-        'ui.ace', 'monospaced.qrcode', 'checklist-model', 'group', 'datatables', 'datatables.bootstrap']);
+        'ui.ace', 'monospaced.qrcode', 'checklist-model', 'group']);
 
     var loadEvent = {
         'loadEvent': function($stateParams, EventService) {
