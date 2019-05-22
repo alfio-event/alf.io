@@ -24,7 +24,7 @@
     <div class="col-xs-12">
         <div class="form-group {{#field-has-error}}[billingAddressCompany] has-error{{/field-has-error}}">
             <label for="billingAddressCompany" class="control-label">{{#i18n}}reservation-page-complete.company{{/i18n}}</label>
-            <input id="billingAddressCompany" name="billingAddressCompany" class="form-control" type="text" value="{{paymentForm.billingAddressCompany}}" maxlength="255" placeholder="{{#i18n}}reservation-page.if-applicable{{/i18n}}">
+            <input id="billingAddressCompany" name="billingAddressCompany" class="form-control" type="text" value="{{paymentForm.billingAddressCompany}}" maxlength="255">
             {{#field-has-error}}[billingAddressCompany]<span class="help-block text-danger">{{#i18n}}{{#field-error}}billingAddressCompany{{/field-error}}{{/i18n}}</span>{{/field-has-error}}
         </div>
     </div>
