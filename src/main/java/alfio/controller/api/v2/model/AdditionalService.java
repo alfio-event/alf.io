@@ -19,9 +19,18 @@ package alfio.controller.api.v2.model;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.Map;
+
 @AllArgsConstructor
 @Getter
 public class AdditionalService {
 
+    private final int id;
+    private final alfio.model.AdditionalService.AdditionalServiceType type;
+    private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy;
+
+
+    private final Map<String, String> formattedInception;
+    private final Map<String, String> formattedExpiration;
 
 }

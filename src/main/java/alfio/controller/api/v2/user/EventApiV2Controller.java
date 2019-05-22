@@ -29,7 +29,6 @@ import alfio.manager.EventManager;
 import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.EventDescription;
 import alfio.model.modification.support.LocationDescriptor;
@@ -202,10 +201,19 @@ public class EventApiV2Controller {
                 .map(as -> new SaleableAdditionalService(event, as, null, null, null, 0))
                 .filter(SaleableAdditionalService::isNotExpired)
                 .collect(Collectors.toList());
+
+            // will be used for fetching descriptions and titles for all the languages
+            var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(as -> as.getId()).collect(Collectors.toList());
+
+            var additionalServicesRes = saleableAdditionalServices.stream().map(as -> {
+                var expiration = Formatters.getFormattedDate(event, as.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
+                var inception = Formatters.getFormattedDate(event, as.getZonedInception(), "common.ticket-category.date-format", messageSource);
+                return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(), inception, expiration);
+            }).collect(Collectors.toList());
             //
 
 
-            return new ResponseEntity<>(new ItemsByCategory(converted, Collections.emptyList()), getCorsHeaders(), HttpStatus.OK);
+            return new ResponseEntity<>(new ItemsByCategory(converted, additionalServicesRes), getCorsHeaders(), HttpStatus.OK);
         } else {
             return ResponseEntity.notFound().headers(getCorsHeaders()).build();
         }
