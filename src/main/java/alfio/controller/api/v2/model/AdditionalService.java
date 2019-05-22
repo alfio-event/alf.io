@@ -30,6 +30,8 @@ public class AdditionalService {
     private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy;
 
 
+    private final boolean expired;
+    private final boolean saleInFuture;
     private final Map<String, String> formattedInception;
     private final Map<String, String> formattedExpiration;
 

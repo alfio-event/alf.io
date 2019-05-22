@@ -211,7 +211,7 @@ public class EventApiV2Controller {
                 var inception = Formatters.getFormattedDate(event, as.getZonedInception(), "common.ticket-category.date-format", messageSource);
                 var title = additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.TITLE, Collections.emptyMap());
                 var description = applyCommonMark(additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.DESCRIPTION, Collections.emptyMap()));
-                return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(), inception, expiration, title, description);
+                return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(), as.isExpired(), as.getSaleInFuture(), inception, expiration, title, description);
             }).collect(Collectors.toList());
             //
 
