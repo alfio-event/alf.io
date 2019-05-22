@@ -58,7 +58,9 @@ public interface TicketCategoryDescriptionRepository {
 
         Map<Integer, Map<String, String>> res = new HashMap<>();
         findByTicketCategoryIds(ticketCategoryIds).forEach(t -> {
-            res.putIfAbsent(t.getTicketCategoryId(), new HashMap<>());
+            if (!res.containsKey(t.getTicketCategoryId())) {
+                res.put(t.getTicketCategoryId(), new HashMap<>());
+            }
             res.get(t.getTicketCategoryId()).put(t.getLocale(), t.getDescription());
         });
         return res;

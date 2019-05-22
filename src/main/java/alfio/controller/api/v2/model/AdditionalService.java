@@ -33,4 +33,7 @@ public class AdditionalService {
     private final Map<String, String> formattedInception;
     private final Map<String, String> formattedExpiration;
 
+    private final Map<String, String> title;
+    private final Map<String, String> description;
+
 }

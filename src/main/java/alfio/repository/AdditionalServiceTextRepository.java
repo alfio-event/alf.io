@@ -21,8 +21,7 @@ import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @QueryRepository
 public interface AdditionalServiceTextRepository {
@@ -44,6 +43,35 @@ public interface AdditionalServiceTextRepository {
 
     @Query("update additional_service_description set locale = :locale, type = :type, value = :value where id = :id")
     int update(@Bind("id") int id, @Bind("locale") String locale, @Bind("type") AdditionalServiceText.TextType type, @Bind("value") String value);
+
+
+    @Query("select id, additional_service_id_fk, locale, type, value from additional_service_description where additional_service_id_fk in (:additionalServiceIds)")
+    List<AdditionalServiceText> findAllByAdditionalServiceIds(@Bind("additionalServiceIds") Collection<Integer> additionalServiceIds);
+
+
+    default Map<Integer, Map<AdditionalServiceText.TextType, Map<String, String>>> getDescriptionsByAdditionalServiceIds(Collection<Integer> additionalServiceIds) {
+        if (additionalServiceIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<Integer, Map<AdditionalServiceText.TextType, Map<String, String>>> res = new HashMap<>();
+        findAllByAdditionalServiceIds(additionalServiceIds).forEach(t -> {
+            var id = t.getAdditionalServiceId();
+
+            if (!res.containsKey(id)) {
+                res.put(id, new EnumMap<>(AdditionalServiceText.TextType.class));
+            }
+
+            if(!res.get(id).containsKey(t.getType())) {
+                res.get(id).put(t.getType(), new HashMap<>());
+            }
+
+            res.get(id).get(t.getType()).put(t.getLocale(), t.getValue());
+        });
+
+        return res;
+
+    }
 
     default AdditionalServiceText findBestMatchByLocaleAndType(int additionalServiceId, String locale, AdditionalServiceText.TextType type) {
         return findByLocaleAndType(additionalServiceId, locale, type)

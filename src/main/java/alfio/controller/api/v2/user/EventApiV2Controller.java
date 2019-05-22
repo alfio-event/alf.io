@@ -29,6 +29,7 @@ import alfio.manager.EventManager;
 import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.AdditionalServiceText;
 import alfio.model.Event;
 import alfio.model.EventDescription;
 import alfio.model.modification.support.LocationDescriptor;
@@ -37,10 +38,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
-import alfio.repository.AdditionalServiceRepository;
-import alfio.repository.EventDescriptionRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketCategoryDescriptionRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.MustacheCustomTagInterceptor;
@@ -80,6 +78,7 @@ public class EventApiV2Controller {
     private final CustomResourceBundleMessageSource messageSource;
     private final EuVatChecker vatChecker;
     private final AdditionalServiceRepository additionalServiceRepository;
+    private final AdditionalServiceTextRepository additionalServiceTextRepository;
 
 
     @GetMapping("events")
@@ -187,7 +186,7 @@ public class EventApiV2Controller {
 
             var converted = valid.stream()
                 .map(stc -> {
-                    var description = applyCommonMark(ticketCategoryDescriptions.get(stc.getId()));
+                    var description = applyCommonMark(ticketCategoryDescriptions.getOrDefault(stc.getId(), Collections.emptyMap()));
                     var expiration = Formatters.getFormattedDate(event, stc.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
                     var inception = Formatters.getFormattedDate(event, stc.getZonedInception(), "common.ticket-category.date-format", messageSource);
                     return new TicketCategory(stc, description, inception, expiration);
@@ -205,10 +204,14 @@ public class EventApiV2Controller {
             // will be used for fetching descriptions and titles for all the languages
             var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(as -> as.getId()).collect(Collectors.toList());
 
+            var additionalServiceTexts = additionalServiceTextRepository.getDescriptionsByAdditionalServiceIds(saleableAdditionalServicesIds);
+
             var additionalServicesRes = saleableAdditionalServices.stream().map(as -> {
                 var expiration = Formatters.getFormattedDate(event, as.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
                 var inception = Formatters.getFormattedDate(event, as.getZonedInception(), "common.ticket-category.date-format", messageSource);
-                return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(), inception, expiration);
+                var title = additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.TITLE, Collections.emptyMap());
+                var description = applyCommonMark(additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.DESCRIPTION, Collections.emptyMap()));
+                return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(), inception, expiration, title, description);
             }).collect(Collectors.toList());
             //
 
