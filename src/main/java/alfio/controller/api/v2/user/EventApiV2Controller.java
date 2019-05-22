@@ -20,6 +20,7 @@ import alfio.controller.EventController;
 import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo.PaymentProxyWithParameters;
 import alfio.controller.decorator.EventDescriptor;
+import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.support.Formatters;
@@ -28,6 +29,7 @@ import alfio.manager.EventManager;
 import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.EventDescription;
 import alfio.model.modification.support.LocationDescriptor;
@@ -36,6 +38,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.AdditionalServiceRepository;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryDescriptionRepository;
@@ -77,6 +80,7 @@ public class EventApiV2Controller {
     private final PaymentManager paymentManager;
     private final CustomResourceBundleMessageSource messageSource;
     private final EuVatChecker vatChecker;
+    private final AdditionalServiceRepository additionalServiceRepository;
 
 
     @GetMapping("events")
@@ -175,7 +179,7 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/ticket-categories")
-    public ResponseEntity<List<TicketCategory>> getTicketCategories(@PathVariable("eventName") String eventName, Model model, HttpServletRequest request) {
+    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, Model model, HttpServletRequest request) {
         if ("/event/show-event".equals(eventController.showEvent(eventName, model, request, Locale.ENGLISH))) {
             var valid = (List<SaleableTicketCategory>) model.asMap().get("ticketCategories");
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
@@ -190,7 +194,18 @@ public class EventApiV2Controller {
                     return new TicketCategory(stc, description, inception, expiration);
                 })
                 .collect(Collectors.toList());
-            return new ResponseEntity<>(converted, getCorsHeaders(), HttpStatus.OK);
+
+
+            //
+            var saleableAdditionalServices = additionalServiceRepository.loadAllForEvent(event.getId())
+                .stream()
+                .map(as -> new SaleableAdditionalService(event, as, null, null, null, 0))
+                .filter(SaleableAdditionalService::isNotExpired)
+                .collect(Collectors.toList());
+            //
+
+
+            return new ResponseEntity<>(new ItemsByCategory(converted, Collections.emptyList()), getCorsHeaders(), HttpStatus.OK);
         } else {
             return ResponseEntity.notFound().headers(getCorsHeaders()).build();
         }
