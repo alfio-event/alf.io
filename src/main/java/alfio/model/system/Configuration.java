@@ -44,13 +44,12 @@ public class Configuration implements Comparable<Configuration> {
     public Configuration(@Column("id") int id,
                          @Column("c_key") String key,
                          @Column("c_value") String value,
-                         @Column("description") String description,
                          @Column("configuration_path_level") ConfigurationPathLevel configurationPathLevel) {
         this.id = id;
         this.key = key;
         this.value = value;
-        this.description = description;
         this.configurationKey = ConfigurationKeys.safeValueOf(key);
+        this.description = configurationKey.getDescription();
         this.configurationPathLevel = configurationPathLevel;
         this.basic = this.configurationKey.isBasic();
     }

@@ -414,7 +414,7 @@ public class ConfigurationManager {
     }
 
     private static Function<ConfigurationKeys, Configuration> mapEmptyKeys(ConfigurationPathLevel level) {
-        return k -> new Configuration(-1, k.getValue(), null, k.getDescription(), level);
+        return k -> new Configuration(-1, k.getValue(), null, level);
     }
 
     public void deleteKey(String key) {

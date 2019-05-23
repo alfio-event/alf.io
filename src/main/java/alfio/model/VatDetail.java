@@ -21,11 +21,17 @@ import lombok.Data;
 
 @Data
 public class VatDetail {
+
+    public enum Type {
+        VIES, SKIPPED, EXTRA_EU, FORMAL
+    }
+
     private final String vatNr;
     private final String country;
     private final boolean isValid;
     private final String name;
     private final String address;
+    private final Type type;
     @JsonIgnore
     private final boolean vatExempt;
 

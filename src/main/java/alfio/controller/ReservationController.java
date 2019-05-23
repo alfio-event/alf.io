@@ -130,7 +130,7 @@ public class ReservationController {
 
                     //FIXME recaptcha for free orders
 
-                    boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
+                    boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || vatChecker.isReverseChargeEnabledFor(event.getOrganizationId());
                     boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
 
 
@@ -145,7 +145,7 @@ public class ReservationController {
                         .addAttribute("countries", TicketHelper.getLocalizedCountries(locale))
                         .addAttribute("countriesForVat", TicketHelper.getLocalizedCountriesForVat(locale))
                         .addAttribute("euCountriesForVat", TicketHelper.getLocalizedEUCountriesForVat(locale, configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST))))
-                        .addAttribute("euVatCheckingEnabled", vatChecker.isVatCheckingEnabledFor(event.getOrganizationId()))
+                        .addAttribute("euVatCheckingEnabled", vatChecker.isReverseChargeEnabledFor(event.getOrganizationId()))
                         .addAttribute("invoiceIsAllowed", !orderSummary.getFree() && invoiceAllowed)
                         .addAttribute("onlyInvoice", !orderSummary.getFree() && onlyInvoice)
                         .addAttribute("vatNrIsLinked", orderSummary.isVatExempt() || contactAndTicketsForm.getHasVatCountryCode())
@@ -322,7 +322,7 @@ public class ReservationController {
         String country = contactAndTicketsForm.getVatCountryCode();
 
         // validate VAT presence if EU mode is enabled
-        if(vatChecker.isVatCheckingEnabledFor(event.getOrganizationId()) && isEUCountry(country)) {
+        if(vatChecker.isReverseChargeEnabledFor(event.getOrganizationId()) && isEUCountry(country)) {
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
         }
 
@@ -330,7 +330,7 @@ public class ReservationController {
             Optional<VatDetail> vatDetail = eventRepository.findOptionalByShortName(eventName)
                 .flatMap(e -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r)))
                 .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(e.getKey().getVatStatus()))
-                .filter(e -> vatChecker.isVatCheckingEnabledFor(e.getKey().getOrganizationId()))
+                .filter(e -> vatChecker.isReverseChargeEnabledFor(e.getKey().getOrganizationId()))
                 .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, e.getKey()));
 
 
