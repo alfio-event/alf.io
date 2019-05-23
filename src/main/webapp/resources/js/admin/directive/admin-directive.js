@@ -991,21 +991,8 @@
                 ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
                 ctrl.displayEventData = $state.current.data && $state.current.data.displayEventData;
                 loadEventData();
-                toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
-                    ctrl.currentView = detectCurrentView(toState);
-                    ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
-                    ctrl.displayEventData = toState.data && toState.data.displayEventData;
-                    loadEventData();
-                    if(!ctrl.displayEventData) {
-                        delete ctrl.event;
-                    }
-                }));
+                var displayConfiguration = function() {
 
-                ctrl.isConfiguration = function() {
-                    return ctrl.currentView === 'CONFIGURATION';
-                };
-
-                if(ctrl.isConfiguration()) {
                     ConfigurationService.loadCurrentConfigurationContext(OrganizationService, EventService).then(function(res) {
                         ctrl.organizations = res.organizations;
                         ctrl.settingCategories = [
@@ -1035,8 +1022,29 @@
                             }
                         ];
                     });
-                }
+                };
 
+                toUnbind.push($rootScope.$on('$stateChangeSuccess', function(event, toState, toParams, fromState, fromParams) {
+                    ctrl.currentView = detectCurrentView(toState);
+                    ctrl.isDetail = ctrl.currentView === 'EVENT_DETAIL';
+                    ctrl.displayEventData = toState.data && toState.data.displayEventData;
+                    loadEventData();
+                    if(!ctrl.displayEventData) {
+                        delete ctrl.event;
+                    }
+                    console.log("isConfiguration:", ctrl.isConfiguration(), detectCurrentView($state.current));
+                    if(ctrl.isConfiguration()) {
+                        displayConfiguration();
+                    }
+                }));
+
+                ctrl.isConfiguration = function() {
+                    return ctrl.currentView === 'CONFIGURATION';
+                };
+
+                if(ctrl.isConfiguration()) {
+                    displayConfiguration();
+                }
 
                 ctrl.navigateTo = function(id) {
                     //thanks to http://stackoverflow.com/a/14717011
