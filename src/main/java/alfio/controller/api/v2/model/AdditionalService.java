@@ -29,8 +29,14 @@ public class AdditionalService {
     private final alfio.model.AdditionalService.AdditionalServiceType type;
     private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy;
 
+    //
+    private final boolean fixPrice;
+    private final int availableQuantity;
+    private final int maxQtyPerOrder;
+    //
 
-    private final boolean expired;
+
+    private final boolean expired; //TODO: check, could be useless :)
     private final boolean saleInFuture;
     private final Map<String, String> formattedInception;
     private final Map<String, String> formattedExpiration;
