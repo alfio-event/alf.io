@@ -877,7 +877,7 @@
         }
     }]);
 
-    directives.directive('alfioSidebar', ['EventService', 'UtilsService', 'ConfigurationService', '$state', '$window', '$rootScope', function(EventService, UtilsService, ConfigurationService, $state, $window, $rootScope) {
+    directives.directive('alfioSidebar', ['EventService', 'OrganizationService', 'UtilsService', 'ConfigurationService', '$state', '$window', '$rootScope', function(EventService, OrganizationService, UtilsService, ConfigurationService, $state, $window, $rootScope) {
         return {
             restrict: 'E',
             bindToController: true,
@@ -1005,51 +1005,38 @@
                     return ctrl.currentView === 'CONFIGURATION';
                 };
 
-                /*
-                GENERAL:'General',
-                            RESERVATION_UI:'Reservation UI',
-                            WAITING_LIST:'Waiting List',
-                            MAIL:'E-Mail',
-                            MAP:'Map',
-                            INVOICE:'Invoice',
-                            PAYMENT:'Payment'
-                 */
                 if(ctrl.isConfiguration()) {
-                    ctrl.settingCategories = [
-                        {
-                            id: 'GENERAL',
-                            name: 'General'
-                        },
-                        {
-                            id: 'RESERVATION_UI',
-                            name: 'Reservation UI'
-                        },
-                        {
-                            id: 'WAITING_LIST',
-                            name: 'Waiting List'
-                        },
-                        {
-                            id: 'MAIL',
-                            name: 'E-Mail'
-                        },
-                        {
-                            id: 'MAP',
-                            name: 'Map'
-                        },
-                        {
-                            id: 'INVOICE',
-                            name: 'Invoice'
-                        },
-                        {
-                            id: 'PAYMENT',
-                            name: 'Payment'
-                        }
-                    ];
+                    ConfigurationService.loadCurrentConfigurationContext(OrganizationService, EventService).then(function(res) {
+                        ctrl.organizations = res.organizations;
+                        ctrl.settingCategories = [
+                            {
+                                id: 'GENERAL',
+                                name: 'General'
+                            },
+                            {
+                                id: 'RESERVATION_UI',
+                                name: 'Reservation UI'
+                            },
+                            {
+                                id: 'WAITING_LIST',
+                                name: 'Waiting List'
+                            },
+                            {
+                                id: 'MAIL',
+                                name: 'E-Mail'
+                            },
+                            {
+                                id: 'INVOICE',
+                                name: 'Invoice'
+                            },
+                            {
+                                id: 'PAYMENT',
+                                name: 'Payment'
+                            }
+                        ];
+                    });
                 }
 
-                toUnbind.push($rootScope.$on('ConfigurationMenuLoaded', function(e, organizations) {
-                    ctrl.organizations = organizations;
-                }));
 
                 ctrl.navigateTo = function(id) {
                     //thanks to http://stackoverflow.com/a/14717011
