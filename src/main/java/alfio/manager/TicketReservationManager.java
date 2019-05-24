@@ -835,7 +835,7 @@ public class TicketReservationManager {
         }
 
         if(sendConfirmationEmails) {
-            sendReservationCompleteEmailToOrganizer(spec.getEvent(), reservation, locale);
+            sendReservationCompleteEmailToOrganizer(spec.getEvent(), ticketReservationRepository.findReservationById(reservationId), locale);
         }
     }
 
