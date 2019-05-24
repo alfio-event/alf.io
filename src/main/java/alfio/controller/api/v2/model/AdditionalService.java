@@ -33,6 +33,9 @@ public class AdditionalService {
     private final boolean fixPrice;
     private final int availableQuantity;
     private final int maxQtyPerOrder;
+    private final String formattedFinalPrice;
+    private final boolean vatApplies;
+    private final boolean vatIncluded;
     //
 
 
