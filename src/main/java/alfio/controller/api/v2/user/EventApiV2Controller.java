@@ -213,7 +213,7 @@ public class EventApiV2Controller {
                 var description = applyCommonMark(additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.DESCRIPTION, Collections.emptyMap()));
                 return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(),
                     as.isFixPrice(), as.getAvailableQuantity(), as.getMaxQtyPerOrder(),
-                    as.getFree(), as.getFormattedFinalPrice(), as.getVatApplies(), as.getVatIncluded(),
+                    as.getFree(), as.getFormattedFinalPrice(), as.getVatApplies(), as.getVatIncluded(), as.getVatPercentage(),
                     as.isExpired(), as.getSaleInFuture(),
                     inception, expiration, title, description);
             }).collect(Collectors.toList());
