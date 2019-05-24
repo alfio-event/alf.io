@@ -133,7 +133,7 @@ public class EventApiV2Controller {
                 var partialConfig = Configuration.from(event);
 
                 //invoicing information
-                boolean euVatCheckingEnabled = vatChecker.isVatCheckingEnabledFor(event.getOrganizationId());
+                boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event.getOrganizationId());
                 boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || euVatCheckingEnabled;
                 boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
                 boolean customerReferenceEnabled = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_CUSTOMER_REFERENCE), false);
