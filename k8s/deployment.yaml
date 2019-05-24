@@ -43,7 +43,7 @@ spec:
             secretKeyRef:
               key: password
               name: alfio-postgresql-credentials
-        image: eu.gcr.io/devoxx-registration/alfiov2:0.0.4
+        image: eu.gcr.io/devoxx-registration/alfiov2:0.0.5
         imagePullPolicy: IfNotPresent
         name: alfio-app
         ports:

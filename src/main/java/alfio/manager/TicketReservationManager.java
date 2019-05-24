@@ -835,7 +835,9 @@ public class TicketReservationManager {
         }
 
         if(sendConfirmationEmails) {
-            sendReservationCompleteEmailToOrganizer(spec.getEvent(), ticketReservationRepository.findReservationById(reservationId), locale);
+            TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
+            sendConfirmationEmail(spec.getEvent(), updatedReservation, locale);
+            sendReservationCompleteEmailToOrganizer(spec.getEvent(), updatedReservation, locale);
         }
     }
 
