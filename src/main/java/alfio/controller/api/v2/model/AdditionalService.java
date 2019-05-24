@@ -44,14 +44,4 @@ public class AdditionalService {
 
     private final Map<String, String> title;
     private final Map<String, String> description;
-
-
-    public int[] getAmounts() {
-        if (supplementPolicy == alfio.model.AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_RESERVATION ||
-            supplementPolicy == null) {
-            return IntStream.rangeClosed(0, maxQtyPerOrder).toArray();
-        }
-        return null;
-    }
-
 }
