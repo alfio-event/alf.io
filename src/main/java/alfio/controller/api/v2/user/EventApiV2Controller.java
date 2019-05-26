@@ -85,7 +85,14 @@ public class EventApiV2Controller {
     public ResponseEntity<List<BasicEventInfo>> listEvents() {
         var events = eventManager.getPublishedEvents()
             .stream()
-            .map(e -> new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getLocation()))
+            .map(e -> {
+                var formattedBeginDate = Formatters.getFormattedDate(e, e.getBegin(), "common.event.date-format", messageSource);
+                var formattedBeginTime = Formatters.getFormattedDate(e, e.getBegin(), "common.event.time-format", messageSource);
+                var formattedEndDate = Formatters.getFormattedDate(e, e.getEnd(), "common.event.date-format", messageSource);
+                var formattedEndTime = Formatters.getFormattedDate(e, e.getEnd(), "common.event.time-format", messageSource);
+                return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getLocation(),
+                    e.getTimeZone(), e.getSameDay(), formattedBeginDate, formattedBeginTime, formattedEndDate, formattedEndTime);
+            })
             .collect(Collectors.toList());
         return new ResponseEntity<>(events, getCorsHeaders(), HttpStatus.OK);
     }
