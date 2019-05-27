@@ -36,6 +36,9 @@ public class TicketCategory {
     private final boolean saleInFuture;
     private final Map<String, String> formattedInception;
     private final Map<String, String> formattedExpiration;
+    private final boolean saleableAndLimitNotReached;
+    private final boolean accessRestricted;
+    private final boolean soldOutOrLimitReached;
     //
 
     public TicketCategory(SaleableTicketCategory saleableTicketCategory,
@@ -55,6 +58,12 @@ public class TicketCategory {
         this.saleInFuture = saleableTicketCategory.getSaleInFuture();
         this.formattedInception = formattedInception;
         this.formattedExpiration = formattedExpiration;
+        //
+
+        //
+        this.saleableAndLimitNotReached = saleableTicketCategory.getSaleableAndLimitNotReached();
+        this.accessRestricted = saleableTicketCategory.getAccessRestricted();
+        this.soldOutOrLimitReached = saleableTicketCategory.getSouldOutOrLimitReached();
         //
     }
 }
