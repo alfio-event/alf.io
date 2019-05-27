@@ -27,4 +27,16 @@ public class ItemsByCategory {
 
     private final List<TicketCategory> ticketCategories;
     private final List<AdditionalService> additionalServices;
+
+    private final boolean waitingList;
+    private final boolean preSales;
+    private final List<TicketCategoryForWaitingList> ticketCategoriesForWaitingList;
+
+
+    @AllArgsConstructor
+    @Getter
+    public static class TicketCategoryForWaitingList {
+        private final int id;
+        private final String name;
+    }
 }

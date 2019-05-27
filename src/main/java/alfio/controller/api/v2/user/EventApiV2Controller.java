@@ -23,11 +23,9 @@ import alfio.controller.decorator.EventDescriptor;
 import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
+import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.controller.support.Formatters;
-import alfio.manager.EuVatChecker;
-import alfio.manager.EventManager;
-import alfio.manager.PaymentManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.AdditionalServiceText;
 import alfio.model.Event;
@@ -42,6 +40,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.MustacheCustomTagInterceptor;
+import alfio.util.Validator;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -79,6 +78,7 @@ public class EventApiV2Controller {
     private final EuVatChecker vatChecker;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
+    private final WaitingQueueManager waitingQueueManager;
 
 
     @GetMapping("events")
@@ -183,6 +183,24 @@ public class EventApiV2Controller {
         return res;
     }
 
+    @PostMapping("event/{eventName}/waiting-list/subscribe")
+    public ResponseEntity<ValidatedResponse<Boolean>> subscribeToWaitingList(@PathVariable("eventName") String eventName,
+                                                                             @RequestBody WaitingQueueSubscriptionForm subscription,
+                                                                             BindingResult bindingResult) {
+
+        Optional<ResponseEntity<ValidatedResponse<Boolean>>> res = eventRepository.findOptionalByShortName(eventName).map(event -> {
+            Validator.validateWaitingQueueSubscription(subscription, bindingResult, event);
+            if (bindingResult.hasErrors()) {
+                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ValidatedResponse.toResponse(bindingResult, null));
+            } else {
+                var subscriptionResult = waitingQueueManager.subscribe(event, subscription.toCustomerName(event), subscription.getEmail(), subscription.getSelectedCategory(), subscription.getUserLanguage());
+                return ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), subscriptionResult));
+            }
+        });
+
+        return res.orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @GetMapping("event/{eventName}/ticket-categories")
     public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, Model model, HttpServletRequest request) {
         if ("/event/show-event".equals(eventController.showEvent(eventName, model, request, Locale.ENGLISH))) {
@@ -226,8 +244,14 @@ public class EventApiV2Controller {
             }).collect(Collectors.toList());
             //
 
+            // waiting queue parameters
+            boolean displayWaitingQueueForm = (boolean) model.asMap().get("displayWaitingQueueForm");
+            boolean preSales = (boolean) model.asMap().get("preSales");
+            List<SaleableTicketCategory> unboundedCategories = (List<SaleableTicketCategory>) model.asMap().get("unboundedCategories");
+            var tcForWaitingList = unboundedCategories.stream().map(stc -> new ItemsByCategory.TicketCategoryForWaitingList(stc.getId(), stc.getName())).collect(toList());
+            //
 
-            return new ResponseEntity<>(new ItemsByCategory(converted, additionalServicesRes), getCorsHeaders(), HttpStatus.OK);
+            return new ResponseEntity<>(new ItemsByCategory(converted, additionalServicesRes, displayWaitingQueueForm, preSales, tcForWaitingList), getCorsHeaders(), HttpStatus.OK);
         } else {
             return ResponseEntity.notFound().headers(getCorsHeaders()).build();
         }
@@ -240,15 +264,6 @@ public class EventApiV2Controller {
                             @RequestParam(value = "ticketId", required = false) String ticketId,
                             HttpServletResponse response) throws IOException {
         eventController.calendar(eventName, locale, calendarType, ticketId, response);
-    }
-
-    @PostMapping("tmp/event/{eventName}/promoCode/{promoCode}")
-    @ResponseBody
-    public ValidationResult savePromoCode(@PathVariable("eventName") String eventName,
-                                          @PathVariable("promoCode") String promoCode,
-                                          Model model,
-                                          HttpServletRequest request) {
-        return eventController.savePromoCode(eventName, promoCode, model, request);
     }
 
     @PostMapping(value = "event/{eventName}/reserve-tickets")

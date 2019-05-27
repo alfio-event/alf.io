@@ -20,7 +20,6 @@ import alfio.model.OrderSummary;
 import alfio.model.TicketReservation;
 import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.model.transaction.PaymentProxy;
-import com.paypal.api.payments.Payment;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

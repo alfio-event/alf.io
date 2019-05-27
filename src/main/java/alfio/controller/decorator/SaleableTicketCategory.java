@@ -138,6 +138,11 @@ public class SaleableTicketCategory implements PriceContainer {
         return DecoratorUtil.generateRangeOfTicketQuantity(maxTickets, availableTickets);
     }
 
+
+    public int getMaxTicketsAfterConfiguration() {
+        return maxTickets;
+    }
+
     public int getAvailableTickets() {
         return availableTickets;
     }

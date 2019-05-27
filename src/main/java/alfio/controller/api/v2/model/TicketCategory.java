@@ -21,13 +21,16 @@ import lombok.Getter;
 
 import java.util.Map;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 @Getter
 public class TicketCategory {
 
     private final Map<String, String> description;
     private final int id;
     private final String name;
-    private final int[] amountOfTickets;
+    private final int maximumSaleableTickets;
     private final boolean free;
     private final String formattedFinalPrice;
 
@@ -49,7 +52,7 @@ public class TicketCategory {
         this.description = description;
         this.id = saleableTicketCategory.getId();
         this.name = saleableTicketCategory.getName();
-        this.amountOfTickets = saleableTicketCategory.getAmountOfTickets();
+        this.maximumSaleableTickets = max(0, min(saleableTicketCategory.getMaxTicketsAfterConfiguration(), saleableTicketCategory.getAvailableTickets()));
         this.free = saleableTicketCategory.getFree();
         this.formattedFinalPrice = saleableTicketCategory.getFormattedFinalPrice();
 
