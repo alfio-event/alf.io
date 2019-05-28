@@ -835,7 +835,9 @@ public class TicketReservationManager {
         }
 
         if(sendConfirmationEmails) {
-            sendReservationCompleteEmailToOrganizer(spec.getEvent(), reservation, locale);
+            TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
+            sendConfirmationEmail(spec.getEvent(), updatedReservation, locale);
+            sendReservationCompleteEmailToOrganizer(spec.getEvent(), updatedReservation, locale);
         }
     }
 
@@ -1026,11 +1028,11 @@ public class TicketReservationManager {
     }
 
     public TotalPrice totalReservationCostWithVAT(TicketReservation reservation) {
+        return totalReservationCostWithVAT(eventRepository.findByReservationId(reservation.getId()), reservation, ticketRepository.findTicketsInReservation(reservation.getId()));
+    }
+
+    public TotalPrice totalReservationCostWithVAT(Event event, TicketReservation reservation, List<Ticket> tickets) {
         Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
-
-        Event event = eventRepository.findByReservationId(reservation.getId());
-        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservation.getId());
-
         return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation.getVatStatus(), tickets, collectAdditionalServiceItems(reservation.getId(), event));
     }
 

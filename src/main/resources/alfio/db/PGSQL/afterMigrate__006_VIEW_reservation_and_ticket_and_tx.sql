@@ -52,6 +52,12 @@ create view reservation_and_ticket_and_tx as (select
     tickets_reservation.registration_ts tr_registration_ts,
     tickets_reservation.invoicing_additional_information tr_invoicing_additional_information,
 
+    tickets_reservation.src_price_cts tr_src_price_cts,
+    tickets_reservation.final_price_cts tr_final_price_cts,
+    tickets_reservation.vat_cts tr_vat_cts,
+    tickets_reservation.discount_cts tr_discount_cts,
+    tickets_reservation.currency_code tr_currency_code,
+
     ticket.id t_id,
     ticket.uuid t_uuid,
     ticket.creation t_creation,

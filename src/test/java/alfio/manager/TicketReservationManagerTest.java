@@ -962,7 +962,12 @@ class TicketReservationManagerTest {
             reservation.getVatIncluded(),
             reservation.getCreationTimestamp(),
             reservation.getCustomerReference(),
-            reservation.getRegistrationTimestamp());
+            reservation.getRegistrationTimestamp(),
+            reservation.getSrcPriceCts(),
+            reservation.getFinalPriceCts(),
+            reservation.getVatCts(),
+            reservation.getDiscountCts(),
+            reservation.getCurrencyCode());
     }
 
     @Test
