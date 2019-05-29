@@ -133,6 +133,7 @@ public class EventApiV2Controller {
                     recaptchaApiKey = configurationManager.getStringConfigValue(getSystemConfiguration(RECAPTCHA_API_KEY), null);
                 }
                 //
+                var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePayment, recaptchaApiKey);
 
 
                 //
@@ -164,7 +165,7 @@ public class EventApiV2Controller {
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     canGenerateReceiptOrInvoiceToCustomer, bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
-                    formattedEndDate, formattedEndTime, invoicingConf), getCorsHeaders(), HttpStatus.OK);
+                    formattedEndDate, formattedEndTime, invoicingConf, captchaConf), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
