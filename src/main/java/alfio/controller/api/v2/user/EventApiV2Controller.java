@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
 
@@ -123,6 +124,15 @@ public class EventApiV2Controller {
                 activePaymentMethods.forEach(apm -> {
                     availablePaymentMethods.put(apm.getPaymentMethod(), new PaymentProxyWithParameters(apm, paymentManager.loadModelOptionsFor(Collections.singletonList(apm), event)));
                 });
+
+                //
+                boolean captchaForTicketSelection = configurationManager.isRecaptchaForTicketSelectionEnabled(event);
+                boolean captchaForOfflinePayment = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
+                String recaptchaApiKey = null;
+                if (captchaForTicketSelection || captchaForOfflinePayment) {
+                    recaptchaApiKey = configurationManager.getStringConfigValue(getSystemConfiguration(RECAPTCHA_API_KEY), null);
+                }
+                //
 
 
                 //

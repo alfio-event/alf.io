@@ -52,6 +52,10 @@ public class EventWithAdditionalInfo implements DateValidity {
     private final InvoicingConfiguration invoicingConfiguration;
     //
 
+    //
+    private final CaptchaConfiguration captchaConfiguration;
+    //
+
     public String getShortName() {
         return event.getShortName();
     }
@@ -167,6 +171,10 @@ public class EventWithAdditionalInfo implements DateValidity {
         return invoicingConfiguration;
     }
 
+    public CaptchaConfiguration getCaptchaConfiguration() {
+        return captchaConfiguration;
+    }
+
     @AllArgsConstructor
     @Getter
     public static class PaymentProxyWithParameters {
@@ -184,5 +192,13 @@ public class EventWithAdditionalInfo implements DateValidity {
         private final boolean customerReferenceEnabled;
         private final boolean enabledItalyEInvoicing;
         private final boolean vatNumberStrictlyRequired;
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class CaptchaConfiguration {
+        private final boolean captchaForTicketSelection;
+        private final boolean captchaForOfflinePayment;
+        private final String recaptchaApiKey;
     }
 }
