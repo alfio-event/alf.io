@@ -366,7 +366,7 @@ public class WebSecurityConfig {
                 HttpServletRequest req = (HttpServletRequest) request;
                 HttpServletResponse res = (HttpServletResponse) response;
                 boolean captchaEnabled = configurationManager.getBooleanConfigValue(getSystemConfiguration(ENABLE_CAPTCHA_FOR_LOGIN), true);
-                if(captchaEnabled && requestMatcher.matches(req) && !recaptchaService.checkRecaptcha(req)) {
+                if(captchaEnabled && requestMatcher.matches(req) && !recaptchaService.checkRecaptcha(null, req)) {
                     res.sendRedirect(recaptchaFailureUrl);
                     return;
                 }

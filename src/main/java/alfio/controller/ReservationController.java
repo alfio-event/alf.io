@@ -666,7 +666,7 @@ public class ReservationController {
     private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, HttpServletRequest request, EventAndOrganizationId event) {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
                 && configurationManager.isRecaptchaForOfflinePaymentEnabled(event)
-                && !recaptchaService.checkRecaptcha(request);
+                && !recaptchaService.checkRecaptcha(null, request);
     }
 
     private void assignTickets(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, HttpServletRequest request, boolean preAssign, boolean skipValidation) {

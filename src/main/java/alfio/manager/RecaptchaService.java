@@ -22,6 +22,7 @@ import alfio.util.Json;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import okhttp3.*;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,9 +37,9 @@ public class RecaptchaService {
     private final ConfigurationManager configurationManager;
 
 
-    public boolean checkRecaptcha(HttpServletRequest req) {
+    public boolean checkRecaptcha(String recaptchaResponse, HttpServletRequest req) {
         return configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_SECRET))
-            .map((secret) -> recaptchaRequest(client, secret, req.getParameter("g-recaptcha-response")))
+            .map((secret) -> recaptchaRequest(client, secret, ObjectUtils.firstNonNull(recaptchaResponse, req.getParameter("g-recaptcha-response"))))
             .orElse(true);
     }
 
