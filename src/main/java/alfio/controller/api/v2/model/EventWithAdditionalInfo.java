@@ -198,7 +198,6 @@ public class EventWithAdditionalInfo implements DateValidity {
     @Getter
     public static class CaptchaConfiguration {
         private final boolean captchaForTicketSelection;
-        private final boolean captchaForOfflinePayment;
         private final String recaptchaApiKey;
     }
 }

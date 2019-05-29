@@ -467,6 +467,7 @@ public class ConfigurationManager {
             getStringConfigValue(Configuration.from(event, ConfigurationKeys.VAT_NR)).isPresent();
     }
 
+    @Deprecated
     public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
         return getBooleanConfigValue(Configuration.from(event, ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), false)
             && getStringConfigValue(Configuration.getSystemConfiguration(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), null) != null;

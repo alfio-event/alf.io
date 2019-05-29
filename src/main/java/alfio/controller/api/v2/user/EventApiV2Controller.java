@@ -127,13 +127,12 @@ public class EventApiV2Controller {
 
                 //
                 boolean captchaForTicketSelection = configurationManager.isRecaptchaForTicketSelectionEnabled(event);
-                boolean captchaForOfflinePayment = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
                 String recaptchaApiKey = null;
-                if (captchaForTicketSelection || captchaForOfflinePayment) {
+                if (captchaForTicketSelection) {
                     recaptchaApiKey = configurationManager.getStringConfigValue(getSystemConfiguration(RECAPTCHA_API_KEY), null);
                 }
                 //
-                var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePayment, recaptchaApiKey);
+                var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, recaptchaApiKey);
 
 
                 //
