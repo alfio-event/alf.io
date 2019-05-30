@@ -210,5 +210,6 @@ public class EventWithAdditionalInfo implements DateValidity {
     public static class AssignmentConfiguration {
         private final boolean forceAssignment;
         private final boolean enableAttendeeAutocomplete;
+        private final boolean enableTicketTransfer;
     }
 }

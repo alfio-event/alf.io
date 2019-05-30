@@ -165,7 +165,8 @@ public class EventApiV2Controller {
                 //
                 var forceAssignment = configurationManager.getBooleanConfigValue(partialConfig.apply(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION), false);
                 var enableAttendeeAutocomplete = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ATTENDEE_AUTOCOMPLETE), true);
-                var assignemntConfiguration = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete);
+                var enableTicketTransfer = configurationManager.getBooleanConfigValue(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER), true);
+                var assignemntConfiguration = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete, enableTicketTransfer);
                 //
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
