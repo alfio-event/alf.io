@@ -119,7 +119,7 @@ public class DataMigrator {
                 var byReservationId = ticketSearchRepository.findAllReservationsForEventWithPriceZero(event.getId()).stream()
                                             .collect(groupingBy(trt -> trt.getTicketReservation().getId()));
 
-                log.debug("found {} reservations to fix", byReservationId.size());
+                log.trace("found {} reservations to fix for event {}", byReservationId.size(), event.getShortName());
                 if(!byReservationId.isEmpty()) {
                     var reservationsToUpdate = byReservationId.values().stream()
                         .map(ticketsReservationAndTransactions -> {
@@ -134,11 +134,11 @@ public class DataMigrator {
                                 .addValue("vat", MonetaryUtil.unitToCents(calculator.getVAT()))
                                 .addValue("currencyCode", calculator.getCurrencyCode());
                         }).toArray(MapSqlParameterSource[]::new);
-                    log.debug("updating {} reservations", reservationsToUpdate.length);
+                    log.trace("updating {} reservations", reservationsToUpdate.length);
                     int[] results = jdbc.batchUpdate("update tickets_reservation set src_price_cts = :srcPrice, final_price_cts = :finalPrice, discount_cts = :discount, vat_cts = :vat, currency_code = :currencyCode where id = :reservationId", reservationsToUpdate);
                     int sum = IntStream.of(results).sum();
                     if(sum != reservationsToUpdate.length) {
-                        log.warn("Expected {} rows to be affected, actual number: {}", reservationsToUpdate.length, sum);
+                        log.warn("Expected {} reservations to be affected, actual number: {}", reservationsToUpdate.length, sum);
                     }
                 }
             }
