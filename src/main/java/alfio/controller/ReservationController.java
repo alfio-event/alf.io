@@ -247,7 +247,8 @@ public class ReservationController {
                 Event event = eventOptional.orElseThrow();
 
 
-                final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+                var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
+                final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus()));
                 Configuration.ConfigurationPathKey forceAssignmentKey = Configuration.from(event, ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
                 boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
 
@@ -264,7 +265,9 @@ public class ReservationController {
 
                 CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event.mustUseFirstAndLastName(), false);
 
-                ticketReservationRepository.resetVat(reservationId, event.getVatStatus());
+
+                ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), event.getVatStatus(),
+                    reservation.getSrcPriceCts(), reservationCost.getPriceWithVAT(), reservationCost.getVAT(), Math.abs(reservationCost.getDiscount()), reservation.getCurrencyCode());
                 if(contactAndTicketsForm.isBusiness()) {
                     checkAndApplyVATRules(eventName, reservationId, contactAndTicketsForm, bindingResult, event);
                 }
@@ -338,8 +341,13 @@ public class ReservationController {
                 if (!vatValidation.isValid()) {
                     bindingResult.rejectValue("vatNr", "error.vat");
                 } else {
+                    var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
                     PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
-                    ticketReservationRepository.updateBillingData(vatStatus, StringUtils.trimToNull(vatValidation.getVatNr()), country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
+                    var updatedPrice = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(vatStatus));// update VatStatus to the new value for calculating the new price
+                    ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
+                        updatedPrice.getPriceWithVAT(), updatedPrice.getVAT(), updatedPrice.getDiscount(),
+                        reservation.getCurrencyCode(), StringUtils.trimToNull(vatValidation.getVatNr()),
+                        country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
                     vatChecker.logSuccessfulValidation(vatValidation, reservationId, event.getId());
                 }
             });

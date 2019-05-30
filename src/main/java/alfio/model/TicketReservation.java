@@ -21,6 +21,7 @@ import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
+import lombok.experimental.Wither;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -29,8 +30,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 
 @Getter
-public class TicketReservation {
-
+public class TicketReservation implements PriceContainer {
 
     public enum TicketReservationStatus {
         PENDING, IN_PAYMENT, EXTERNAL_PROCESSING_PAYMENT, WAITING_EXTERNAL_CONFIRMATION, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED, CREDIT_NOTE_ISSUED
@@ -48,24 +48,25 @@ public class TicketReservation {
     private final ZonedDateTime latestReminder;
     private final PaymentProxy paymentMethod;
     private final Boolean reminderSent;
+    private final Integer promoCodeDiscountId;
     private final boolean automatic;
     private final String userLanguage;
     private final boolean directAssignmentRequested;
     private final String invoiceNumber;
     @JsonIgnore
     private final String invoiceModel;
+    @Wither
+    private final PriceContainer.VatStatus vatStatus;
     private final String vatNr;
     private final String vatCountryCode;
     private final boolean invoiceRequested;
+    private final BigDecimal usedVatPercent;
     private final Boolean vatIncluded;
     private final ZonedDateTime creationTimestamp;
-    private final ZonedDateTime registrationTimestamp;
     private final String customerReference;
-    private final Integer promoCodeDiscountId;
+    private final ZonedDateTime registrationTimestamp;
 
 
-    private final PriceContainer.VatStatus vatStatus;
-    private final BigDecimal usedVatPercent;
     private final int srcPriceCts;
     private final int finalPriceCts;
     private final int vatCts;
@@ -100,10 +101,10 @@ public class TicketReservation {
                              @Column("creation_ts") ZonedDateTime creationTimestamp,
                              @Column("customer_reference") String customerReference,
                              @Column("registration_ts") ZonedDateTime registrationTimestamp,
-                             @Column("src_price_cts") int srcPriceCts,
-                             @Column("final_price_cts") int finalPriceCts,
-                             @Column("vat_cts") int vatCts,
-                             @Column("discount_cts") int discountCts,
+                             @Column("src_price_cts") Integer srcPriceCts,
+                             @Column("final_price_cts") Integer finalPriceCts,
+                             @Column("vat_cts") Integer vatCts,
+                             @Column("discount_cts") Integer discountCts,
                              @Column("currency_code") String currencyCode) {
         this.id = id;
         this.validity = validity;
@@ -133,10 +134,10 @@ public class TicketReservation {
         this.registrationTimestamp = registrationTimestamp;
         this.customerReference = customerReference;
 
-        this.srcPriceCts = srcPriceCts;
-        this.finalPriceCts = finalPriceCts;
-        this.vatCts = vatCts;
-        this.discountCts = discountCts;
+        this.srcPriceCts = Optional.ofNullable(srcPriceCts).orElse(0);
+        this.finalPriceCts = Optional.ofNullable(finalPriceCts).orElse(0);
+        this.vatCts = Optional.ofNullable(vatCts).orElse(0);
+        this.discountCts = Optional.ofNullable(discountCts).orElse(0);
         this.currencyCode = currencyCode;
     }
 
@@ -200,5 +201,10 @@ public class TicketReservation {
         } catch(IllegalStateException e) {
         }
         return null;
+    }
+
+    @Override
+    public Optional<BigDecimal> getOptionalVatPercentage() {
+        return Optional.ofNullable(usedVatPercent);
     }
 }

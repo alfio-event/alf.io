@@ -442,7 +442,7 @@ public class DataMigrator {
 
         @Override
         public BigDecimal getAppliedDiscount() {
-            return MonetaryUtil.centsToUnit(totalPrice.getDiscount());
+            return MonetaryUtil.centsToUnit(Math.abs(totalPrice.getDiscount()));
         }
 
         @Override

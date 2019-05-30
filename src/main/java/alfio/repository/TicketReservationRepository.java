@@ -135,8 +135,15 @@ public interface TicketReservationRepository {
     Integer countInvoices(@Bind("eventId") int eventId);
 
 
-    @Query("update tickets_reservation set vat_status = :vatStatus, vat_nr = :vatNr, vat_country = :vatCountry, invoice_requested = :invoiceRequested where id = :reservationId")
+    @Query("update tickets_reservation set vat_status = :vatStatus, src_price_cts = :srcPriceCts, " +
+        " final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode, " +
+        " vat_nr = :vatNr, vat_country = :vatCountry, invoice_requested = :invoiceRequested where id = :reservationId")
     int updateBillingData(@Bind("vatStatus") PriceContainer.VatStatus vatStatus,
+                          @Bind("srcPriceCts") int srcPriceCts,
+                          @Bind("finalPriceCts") int finalPriceCts,
+                          @Bind("vatCts") int vatCts,
+                          @Bind("discountCts") int discountCts,
+                          @Bind("currencyCode") String currencyCode,
                           @Bind("vatNr") String vatNr,
                           @Bind("vatCountry") String country,
                           @Bind("invoiceRequested") boolean invoiceRequested,
@@ -209,8 +216,17 @@ public interface TicketReservationRepository {
     @Query("update tickets_reservation set validated_for_overview = :validated where id = :reservationId")
     int updateValidationStatus(@Bind("reservationId") String reservationId, @Bind("validated") boolean validated);
 
-    @Query("update tickets_reservation set  invoice_requested = false, vat_status = :vatStatus where id = :reservationId")
-    int resetVat(@Bind("reservationId") String reservationId, @Bind("vatStatus") PriceContainer.VatStatus vatStatus);
+    @Query("update tickets_reservation set invoice_requested = :invoiceRequested, vat_status = :vatStatus, src_price_cts = :srcPriceCts, " +
+        " final_price_cts = :finalPriceCts, vat_cts = :vatCts, discount_cts = :discountCts, currency_code = :currencyCode" +
+        " where id = :reservationId")
+    int resetVat(@Bind("reservationId") String reservationId,
+                 @Bind("invoiceRequested") boolean invoiceRequested,
+                 @Bind("vatStatus") PriceContainer.VatStatus vatStatus,
+                 @Bind("srcPriceCts") int srcPriceCts,
+                 @Bind("finalPriceCts") int finalPriceCts,
+                 @Bind("vatCts") int vatCts,
+                 @Bind("discountCts") int discountCts,
+                 @Bind("currencyCode") String currencyCode);
 
 
     default Integer countTicketsInReservationForCategories(String reservationId, Collection<Integer> categories) {
