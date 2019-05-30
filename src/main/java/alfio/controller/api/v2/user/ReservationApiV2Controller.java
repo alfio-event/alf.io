@@ -349,7 +349,7 @@ public class ReservationApiV2Controller {
             ticket.getFirstName(), ticket.getLastName(),
             ticket.getEmail(), ticket.getFullName(),
             ticket.getUserLanguage(),
-            ticket.getAssigned(), tfcdav);
+            ticket.getAssigned(), ticket.getLockedAssignment(), tfcdav);
     }
 
     private Map<String, String> formatDateForLocales(Event event, ZonedDateTime date, String formattingCode) {

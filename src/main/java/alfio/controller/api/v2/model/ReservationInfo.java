@@ -94,6 +94,7 @@ public class ReservationInfo {
         private final String fullName;
         private final String userLanguage;
         private final boolean assigned;
+        private final boolean locked;
         private final List<AdditionalField> ticketFieldConfiguration;
 
         public String getEmail() {
@@ -123,6 +124,8 @@ public class ReservationInfo {
         public String getUserLanguage() {
             return userLanguage;
         }
+
+        public boolean isLocked() { return locked; }
 
         public List<AdditionalField> getTicketFieldConfigurationBeforeStandard() {
             return ticketFieldConfiguration.stream().filter(AdditionalField::isBeforeStandardFields).collect(Collectors.toList());
