@@ -572,6 +572,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(1, eventApiController.getPendingPayments(eventName).size());
         assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal, new BindingAwareModelMap(), new MockHttpServletRequest()));
         assertEquals(0, eventApiController.getPendingPayments(eventName).size());
+        assertEquals(900, eventRepository.getGrossIncome(event.getId()));
     }
 
     private String payOffline(String eventName, String reservationIdentifier) {

@@ -174,7 +174,7 @@ public interface EventRepository {
     @Query("update event set status = 'DISABLED' where org_id in (select org_id from j_user_organization where user_id in (:userIds))")
     int disableEventsForUsers(@Bind("userIds") List<Integer> userIds);
 
-    @Query("select coalesce(sum(final_price_cts),0) from ticket where event_id = :eventId and status in("+TicketRepository.CONFIRMED+")")
+    @Query("select coalesce(sum(final_price_cts),0) from tickets_reservation where event_id_fk = :eventId and status = 'COMPLETE'")
     long getGrossIncome(@Bind("eventId") int eventId);
 
     @Query("select count(*) as total_attendees, COALESCE(SUM(CASE WHEN status = 'CHECKED_IN' THEN 1 ELSE 0 END), 0) as checked_in, CURRENT_TIMESTAMP as last_update from ticket where event_id = :eventId and status in("+TicketRepository.CONFIRMED+")")
