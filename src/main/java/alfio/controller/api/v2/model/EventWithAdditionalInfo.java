@@ -36,7 +36,6 @@ public class EventWithAdditionalInfo implements DateValidity {
     private final Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods;
 
     //payment related informations
-    private final boolean userCanDownloadReceiptOrInvoice;
     private final String bankAccount;
     private final List<String> bankAccountOwner;
     //
@@ -127,10 +126,6 @@ public class EventWithAdditionalInfo implements DateValidity {
         return activePaymentMethods;
     }
 
-    public boolean isUserCanDownloadReceiptOrInvoice() {
-        return userCanDownloadReceiptOrInvoice;
-    }
-
     public String getBankAccount() {
         return bankAccount;
     }
@@ -186,6 +181,7 @@ public class EventWithAdditionalInfo implements DateValidity {
     @AllArgsConstructor
     @Getter
     public static class InvoicingConfiguration {
+        private final boolean userCanDownloadReceiptOrInvoice;
         private final boolean euVatCheckingEnabled;
         private final boolean invoiceAllowed;
         private final boolean onlyInvoice;

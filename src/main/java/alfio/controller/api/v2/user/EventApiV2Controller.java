@@ -138,7 +138,6 @@ public class EventApiV2Controller {
                 //
                 String bankAccount = configurationManager.getStringConfigValue(Configuration.from(event, BANK_ACCOUNT_NR)).orElse("");
                 List<String> bankAccountOwner = Arrays.asList(configurationManager.getStringConfigValue(Configuration.from(event, BANK_ACCOUNT_OWNER)).orElse("").split("\n"));
-                boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
                 //
 
                 var formattedBeginDate = Formatters.getFormattedDate(event, event.getBegin(), "common.event.date-format", messageSource);
@@ -150,6 +149,7 @@ public class EventApiV2Controller {
                 var partialConfig = Configuration.from(event);
 
                 //invoicing information
+                boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
                 boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event.getOrganizationId());
                 boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || euVatCheckingEnabled;
                 boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
@@ -157,12 +157,13 @@ public class EventApiV2Controller {
                 boolean enabledItalyEInvoicing = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ITALY_E_INVOICING), false);
                 boolean vatNumberStrictlyRequired = configurationManager.getBooleanConfigValue(partialConfig.apply(VAT_NUMBER_IS_REQUIRED), false);
 
-                var invoicingConf = new EventWithAdditionalInfo.InvoicingConfiguration(euVatCheckingEnabled, invoiceAllowed, onlyInvoice,
+                var invoicingConf = new EventWithAdditionalInfo.InvoicingConfiguration(canGenerateReceiptOrInvoiceToCustomer,
+                    euVatCheckingEnabled, invoiceAllowed, onlyInvoice,
                     customerReferenceEnabled, enabledItalyEInvoicing, vatNumberStrictlyRequired);
                 //
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
-                    canGenerateReceiptOrInvoiceToCustomer, bankAccount, bankAccountOwner,
+                    bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
                     formattedEndDate, formattedEndTime, invoicingConf, captchaConf), getCorsHeaders(), HttpStatus.OK);
             })
