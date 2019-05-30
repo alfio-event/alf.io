@@ -162,10 +162,16 @@ public class EventApiV2Controller {
                     customerReferenceEnabled, enabledItalyEInvoicing, vatNumberStrictlyRequired);
                 //
 
+                //
+                var forceAssignment = configurationManager.getBooleanConfigValue(partialConfig.apply(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION), false);
+                var enableAttendeeAutocomplete = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ATTENDEE_AUTOCOMPLETE), true);
+                var assignemntConfiguration = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete);
+                //
+
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
-                    formattedEndDate, formattedEndTime, invoicingConf, captchaConf), getCorsHeaders(), HttpStatus.OK);
+                    formattedEndDate, formattedEndTime, invoicingConf, captchaConf, assignemntConfiguration), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }

@@ -72,6 +72,10 @@ public class ReservationInfo {
     private final String italyEInvoicingReferencePEC;
     //
 
+    //reservation info group related info
+    private final boolean containsCategoriesLinkedToGroups;
+    //
+
 
     @AllArgsConstructor
     @Getter

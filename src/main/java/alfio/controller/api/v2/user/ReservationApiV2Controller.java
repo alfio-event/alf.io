@@ -139,6 +139,11 @@ public class ReservationApiV2Controller {
                 selectedPaymentProxy = ((PaymentToken)session.getAttribute(PaymentManager.PAYMENT_TOKEN)).getPaymentProvider();
             }
 
+            //
+            var containsCategoriesLinkedToGroups = ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId());
+            //
+
+
             return Optional.of(new ReservationInfo(reservation.getId(), shortReservationId,
                 reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(),
                 reservation.getValidity().getTime(),
@@ -151,6 +156,7 @@ public class ReservationApiV2Controller {
                 reservation.getHasBeenPaid(),
                 tokenAcquired,
                 selectedPaymentProxy != null ? selectedPaymentProxy : reservation.getPaymentMethod(),
+                //
                 additionalInfo.getAddCompanyBillingDetails(),
                 additionalInfo.getBillingAddressCompany(),
                 additionalInfo.getBillingAddressLine1(),
@@ -161,10 +167,13 @@ public class ReservationApiV2Controller {
                 reservation.getCustomerReference(),
                 reservation.getVatNr(),
                 additionalInfo.getSkipVatNr(),
+                //
                 italianInvoicing.getFiscalCode(),
                 italianInvoicing.getReferenceType(),
                 italianInvoicing.getAddresseeCode(),
-                italianInvoicing.getPec()
+                italianInvoicing.getPec(),
+                //
+                containsCategoriesLinkedToGroups
                 ));
         }));
 

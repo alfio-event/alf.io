@@ -55,6 +55,10 @@ public class EventWithAdditionalInfo implements DateValidity {
     private final CaptchaConfiguration captchaConfiguration;
     //
 
+    //
+    private final AssignmentConfiguration assignmentConfiguration;
+    //
+
     public String getShortName() {
         return event.getShortName();
     }
@@ -170,6 +174,10 @@ public class EventWithAdditionalInfo implements DateValidity {
         return captchaConfiguration;
     }
 
+    public AssignmentConfiguration getAssignmentConfiguration() {
+        return assignmentConfiguration;
+    }
+
     @AllArgsConstructor
     @Getter
     public static class PaymentProxyWithParameters {
@@ -195,5 +203,12 @@ public class EventWithAdditionalInfo implements DateValidity {
     public static class CaptchaConfiguration {
         private final boolean captchaForTicketSelection;
         private final String recaptchaApiKey;
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class AssignmentConfiguration {
+        private final boolean forceAssignment;
+        private final boolean enableAttendeeAutocomplete;
     }
 }
