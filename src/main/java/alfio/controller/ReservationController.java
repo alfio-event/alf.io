@@ -28,6 +28,7 @@ import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
@@ -73,6 +74,7 @@ import java.util.stream.Collectors;
 import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.MonetaryUtil.unitToCents;
 import static java.util.stream.Collectors.toList;
 
 @Controller
@@ -247,7 +249,8 @@ public class ReservationController {
                 Event event = eventOptional.orElseThrow();
 
 
-                final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+                var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
+                final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus()));
                 Configuration.ConfigurationPathKey forceAssignmentKey = Configuration.from(event, ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
                 boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
 
@@ -264,7 +267,9 @@ public class ReservationController {
 
                 CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event.mustUseFirstAndLastName(), false);
 
-                ticketReservationRepository.resetVat(reservationId, event.getVatStatus());
+
+                ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), event.getVatStatus(),
+                    reservation.getSrcPriceCts(), reservationCost.getPriceWithVAT(), reservationCost.getVAT(), Math.abs(reservationCost.getDiscount()), reservation.getCurrencyCode());
                 if(contactAndTicketsForm.isBusiness()) {
                     checkAndApplyVATRules(eventName, reservationId, contactAndTicketsForm, bindingResult, event);
                 }
@@ -338,8 +343,14 @@ public class ReservationController {
                 if (!vatValidation.isValid()) {
                     bindingResult.rejectValue("vatNr", "error.vat");
                 } else {
+                    var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
                     PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
-                    ticketReservationRepository.updateBillingData(vatStatus, StringUtils.trimToNull(vatValidation.getVatNr()), country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
+                    var updatedPrice = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(vatStatus));// update VatStatus to the new value for calculating the new price
+                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), updatedPrice, ticketReservationManager.findTicketsInReservation(reservationId), event);
+                    ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
+                        unitToCents(calculator.getFinalPrice()), unitToCents(calculator.getVAT()), unitToCents(calculator.getAppliedDiscount()),
+                        reservation.getCurrencyCode(), StringUtils.trimToNull(vatValidation.getVatNr()),
+                        country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
                     vatChecker.logSuccessfulValidation(vatValidation, reservationId, event.getId());
                 }
             });

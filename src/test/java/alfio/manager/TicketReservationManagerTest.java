@@ -142,11 +142,17 @@ class TicketReservationManagerTest {
         specialPrice = mock(SpecialPrice.class);
         ticketCategory = mock(TicketCategory.class);
         ticket = mock(Ticket.class);
+
         reservationModification = mock(TicketReservationWithOptionalCodeModification.class);
         ticketReservation = mock(TicketReservation.class);
         when(ticketReservation.getStatus()).thenReturn(PENDING);
         when(ticketReservation.getUserLanguage()).thenReturn("en");
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
+        when(ticketReservation.getSrcPriceCts()).thenReturn(100);
+        when(ticketReservation.getFinalPriceCts()).thenReturn(100);
+        when(ticketReservation.getVatCts()).thenReturn(0);
+        when(ticketReservation.getDiscountCts()).thenReturn(0);
+        when(ticketReservation.getCurrencyCode()).thenReturn("CHF");
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         organization = mock(Organization.class);
         TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
@@ -785,7 +791,7 @@ class TicketReservationManagerTest {
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
     }
 
@@ -807,7 +813,7 @@ class TicketReservationManagerTest {
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(ticketReservationRepository).updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()));
         verify(configurationManager, never()).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("12345"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("12345"), eq("IT"), eq(true), eq(RESERVATION_ID));
     }
 
     @Test
@@ -835,7 +841,7 @@ class TicketReservationManagerTest {
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
     }
 
@@ -856,7 +862,7 @@ class TicketReservationManagerTest {
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
     }
 
     @Test
@@ -962,7 +968,12 @@ class TicketReservationManagerTest {
             reservation.getVatIncluded(),
             reservation.getCreationTimestamp(),
             reservation.getCustomerReference(),
-            reservation.getRegistrationTimestamp());
+            reservation.getRegistrationTimestamp(),
+            reservation.getSrcPriceCts(),
+            reservation.getFinalPriceCts(),
+            reservation.getVatCts(),
+            reservation.getDiscountCts(),
+            reservation.getCurrencyCode());
     }
 
     @Test

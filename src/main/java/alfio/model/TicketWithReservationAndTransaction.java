@@ -86,6 +86,12 @@ public class TicketWithReservationAndTransaction {
                                                @Column("tr_registration_ts") ZonedDateTime reservationRegistrationTimestamp,
                                                @Column("tr_customer_reference") String customerReference,
 
+                                               @Column("tr_src_price_cts") int reservationSrcPriceCts,
+                                               @Column("tr_final_price_cts") int reservationFinalPriceCts,
+                                               @Column("tr_vat_cts") int reservationVatCts,
+                                               @Column("tr_discount_cts") int reservationDiscountCts,
+                                               @Column("tr_currency_code") String reservationCurrencyCode,
+
                                                @Column("tr_billing_address_company") String billingAddressCompany,
                                                @Column("tr_billing_address_line1") String billingAddressLine1,
                                                @Column("tr_billing_address_line2") String billingAddressLine2,
@@ -120,7 +126,7 @@ public class TicketWithReservationAndTransaction {
             reminderSent, promoCodeDiscountId, automatic, trUserLanguage,
             directAssignmentRequested, invoiceNumber, invoiceModel, vatStatus, vatNr, vatCountryCode, invoiceRequested,
             usedVadPercent, vatIncluded, reservationCreationTimestamp, customerReference,
-            reservationRegistrationTimestamp);
+            reservationRegistrationTimestamp, reservationSrcPriceCts, reservationFinalPriceCts, reservationVatCts, reservationDiscountCts, reservationCurrencyCode);
 
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountryCode, vatNr, invoicingAdditionalInfo);
 

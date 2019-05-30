@@ -234,7 +234,13 @@ public class TicketReservationManager {
         
         Optional<PromoCodeDiscount> discount = promotionCodeDiscount.flatMap((promoCodeDiscount) -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
         
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(event.getZoneId()), reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null), locale.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded());
+        ticketReservationRepository.createNewReservation(reservationId,
+            ZonedDateTime.now(event.getZoneId()),
+            reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null),
+            locale.getLanguage(),
+            event.getId(),
+            event.getVat(),
+            event.isVatIncluded());
         list.forEach(t -> reserveTicketsForCategory(event, specialPriceSessionId, reservationId, t, locale, forWaitingQueue, discount.orElse(null)));
 
         int ticketCount = list
@@ -254,11 +260,19 @@ public class TicketReservationManager {
         });
 
         additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, discount.orElse(null)));
+        var totalPrice = totalReservationCostWithVAT(reservationId);
+        var vatStatus = event.getVatStatus();
+        ticketReservationRepository.updateBillingData(event.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), event.getCurrency(), null, null, false, reservationId);
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
         if(isDiscountCodeUsageExceeded(reservationId)) {
             throw new TooManyTicketsForDiscountCodeException();
         }
         return reservationId;
+    }
+
+    private int calculateSrcPrice(PriceContainer.VatStatus vatStatus, TotalPrice totalPrice) {
+        return (vatStatus == PriceContainer.VatStatus.INCLUDED ? totalPrice.getPriceWithVAT() : totalPrice.getPriceWithVAT() - totalPrice.getVAT())
+            + Math.abs(totalPrice.getDiscount());
     }
 
     public Pair<List<TicketReservation>, Integer> findAllReservationsInEvent(int eventId, Integer page, String search, List<TicketReservationStatus> status) {
@@ -373,13 +387,14 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
 
-        TicketReservation reservation = null;
+        TicketReservation reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
 
         try {
             PaymentResult paymentResult;
             ticketReservationRepository.lockReservationForUpdate(spec.getReservationId());
             //save billing data in case we have to go back to PENDING
-            ticketReservationRepository.updateBillingData(spec.getVatStatus(), spec.getVatNr(), spec.getVatCountryCode(), spec.isInvoiceRequested(), spec.getReservationId());
+            ticketReservationRepository.updateBillingData(spec.getVatStatus(), reservation.getSrcPriceCts(), reservation.getFinalPriceCts(),
+                reservation.getVatCts(), reservation.getDiscountCts(), reservation.getCurrencyCode(), spec.getVatNr(), spec.getVatCountryCode(), spec.isInvoiceRequested(), spec.getReservationId());
             if(isDiscountCodeUsageExceeded(spec.getReservationId())) {
                 return PaymentResult.failed(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
             }
@@ -835,7 +850,9 @@ public class TicketReservationManager {
         }
 
         if(sendConfirmationEmails) {
-            sendReservationCompleteEmailToOrganizer(spec.getEvent(), reservation, locale);
+            TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
+            sendConfirmationEmail(spec.getEvent(), updatedReservation, locale);
+            sendReservationCompleteEmailToOrganizer(spec.getEvent(), updatedReservation, locale);
         }
     }
 
@@ -1026,11 +1043,11 @@ public class TicketReservationManager {
     }
 
     public TotalPrice totalReservationCostWithVAT(TicketReservation reservation) {
+        return totalReservationCostWithVAT(eventRepository.findByReservationId(reservation.getId()), reservation, ticketRepository.findTicketsInReservation(reservation.getId()));
+    }
+
+    public TotalPrice totalReservationCostWithVAT(Event event, TicketReservation reservation, List<Ticket> tickets) {
         Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
-
-        Event event = eventRepository.findByReservationId(reservation.getId());
-        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservation.getId());
-
         return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation.getVatStatus(), tickets, collectAdditionalServiceItems(reservation.getId(), event));
     }
 

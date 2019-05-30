@@ -23,6 +23,7 @@ import alfio.model.system.EventMigration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketSearchRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.util.MonetaryUtil;
@@ -46,6 +47,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.repository.TicketRepository.RESET_TICKET;
@@ -69,6 +71,7 @@ public class DataMigrator {
     private final ConfigurationRepository configurationRepository;
     private final NamedParameterJdbcTemplate jdbc;
     private final TicketReservationManager ticketReservationManager;
+    private final TicketSearchRepository ticketSearchRepository;
 
     static {
         PRICE_UPDATE_BY_KEY.put("event", "update event set src_price_cts = :srcPriceCts, vat_status = :vatStatus where id = :eventId");
@@ -87,7 +90,8 @@ public class DataMigrator {
                         PlatformTransactionManager transactionManager,
                         ConfigurationRepository configurationRepository,
                         NamedParameterJdbcTemplate jdbc,
-                        TicketReservationManager ticketReservationManager) {
+                        TicketReservationManager ticketReservationManager,
+                        TicketSearchRepository ticketSearchRepository) {
         this.eventMigrationRepository = eventMigrationRepository;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -98,12 +102,48 @@ public class DataMigrator {
         this.buildTimestamp = ZonedDateTime.parse(buildTimestamp);
         this.transactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         this.ticketReservationManager = ticketReservationManager;
+        this.ticketSearchRepository = ticketSearchRepository;
     }
 
     public void migrateEventsToCurrentVersion() {
-        eventRepository.findAll().forEach(this::migrateEventToCurrentVersion);
+        List<Event> events = eventRepository.findAll();
+        events.forEach(this::migrateEventToCurrentVersion);
         fillReservationsLanguage();
         fillDefaultOptions();
+        fixReservationPrice(events);
+    }
+
+    private void fixReservationPrice(List<Event> events) {
+        transactionTemplate.execute(ts -> {
+            for(Event event : events) {
+                var byReservationId = ticketSearchRepository.findAllReservationsForEventWithPriceZero(event.getId()).stream()
+                                            .collect(groupingBy(trt -> trt.getTicketReservation().getId()));
+
+                log.trace("found {} reservations to fix for event {}", byReservationId.size(), event.getShortName());
+                if(!byReservationId.isEmpty()) {
+                    var reservationsToUpdate = byReservationId.values().stream()
+                        .map(ticketsReservationAndTransactions -> {
+                            var tickets = ticketsReservationAndTransactions.stream().map(TicketWithReservationAndTransaction::getTicket).collect(toList());
+                            var ticketReservation = ticketsReservationAndTransactions.get(0).getTicketReservation();
+                            var totalPrice = ticketReservationManager.totalReservationCostWithVAT(event, ticketReservation, tickets);
+                            var calculator = new ReservationPriceCalculator(ticketReservation, totalPrice, tickets, event);
+                            return new MapSqlParameterSource("reservationId", calculator.reservation.getId())
+                                .addValue("srcPrice", calculator.getSrcPriceCts())
+                                .addValue("finalPrice", MonetaryUtil.unitToCents(calculator.getFinalPrice()))
+                                .addValue("discount", MonetaryUtil.unitToCents(calculator.getAppliedDiscount()))
+                                .addValue("vat", MonetaryUtil.unitToCents(calculator.getVAT()))
+                                .addValue("currencyCode", calculator.getCurrencyCode());
+                        }).toArray(MapSqlParameterSource[]::new);
+                    log.trace("updating {} reservations", reservationsToUpdate.length);
+                    int[] results = jdbc.batchUpdate("update tickets_reservation set src_price_cts = :srcPrice, final_price_cts = :finalPrice, discount_cts = :discount, vat_cts = :vat, currency_code = :currencyCode where id = :reservationId", reservationsToUpdate);
+                    int sum = IntStream.of(results).sum();
+                    if(sum != reservationsToUpdate.length) {
+                        log.warn("Expected {} reservations to be affected, actual number: {}", reservationsToUpdate.length, sum);
+                    }
+                }
+            }
+            return null;
+        });
     }
 
     private void fillDefaultOptions() {
@@ -385,4 +425,5 @@ public class DataMigrator {
             })
             .collect(toList());
     }
+
 }

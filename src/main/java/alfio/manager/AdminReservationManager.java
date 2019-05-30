@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.DuplicateReferenceException;
+import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.TicketPriceContainer;
@@ -242,7 +243,9 @@ public class AdminReservationManager {
                 Optional.ofNullable(r.getPaymentMethod()).map(PaymentProxy::name).orElse(null), customerData.getCustomerReference());
 
             if(StringUtils.isNotBlank(customerData.getVatNr()) || StringUtils.isNotBlank(customerData.getVatCountryCode())) {
-                ticketReservationRepository.updateBillingData(r.getVatStatus(), customerData.getVatNr(), customerData.getVatCountryCode(), r.isInvoiceRequested(), reservationId);
+                ticketReservationRepository.updateBillingData(r.getVatStatus(), r.getSrcPriceCts(), r.getFinalPriceCts(), r.getVatCts(),
+                    r.getDiscountCts(), r.getCurrencyCode(), customerData.getVatNr(), customerData.getVatCountryCode(),
+                    r.isInvoiceRequested(), reservationId);
             }
 
             ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, Json.toJson(arm.getCustomerData().getInvoicingAdditionalInfo()));
@@ -261,7 +264,9 @@ public class AdminReservationManager {
             if(newVatStatus != ObjectUtils.firstNonNull(r.getVatStatus(), event.getVatStatus())) {
                 auditingRepository.insert(reservationId, userRepository.getByUsername(username).getId(), event.getId(), Audit.EventType.FORCE_VAT_APPLICATION, new Date(), Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("vatStatus", newVatStatus)));
                 ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, null);
-                ticketReservationRepository.resetVat(reservationId, newVatStatus);
+                var newPrice = ticketReservationManager.totalReservationCostWithVAT(r.withVatStatus(newVatStatus));
+                ticketReservationRepository.resetVat(reservationId, r.isInvoiceRequested(), newVatStatus, r.getSrcPriceCts(), newPrice.getPriceWithVAT(),
+                    newPrice.getVAT(), Math.abs(newPrice.getDiscount()), r.getCurrencyCode());
             }
         }
 
@@ -576,6 +581,15 @@ public class AdminReservationManager {
             if(removeReservation) {
                 markAsCancelled(reservation, username, e.getId());
                 additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
+            } else {
+                // recalculate totals
+                var totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+                var updatedTickets = ticketRepository.findTicketsInReservation(reservationId);
+                var calculator = new ReservationPriceCalculator(reservation, totalPrice, updatedTickets, e);
+                ticketReservationRepository.updateBillingData(calculator.getVatStatus(),
+                    calculator.getSrcPriceCts(), MonetaryUtil.unitToCents(calculator.getFinalPrice()), MonetaryUtil.unitToCents(calculator.getVAT()),
+                    MonetaryUtil.unitToCents(calculator.getAppliedDiscount()), calculator.getCurrencyCode(), reservation.getVatNr(), reservation.getVatCountryCode(),
+                    reservation.isInvoiceRequested(), reservationId);
             }
         });
     }
