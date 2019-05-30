@@ -32,7 +32,7 @@ buildscript {
 }
 
 plugins {
-    id 'io.franzbecker.gradle-lombok' version '1.14'
+    id 'io.freefair.lombok' version '3.6.4'
     id 'java'
     id 'idea'
     id 'jacoco'
@@ -408,8 +408,6 @@ release {
         signTag = true
     }
 }
-
-lombok {
-    version = '1.18.4'
-    sha256 = ""
-}
+// see https://github.com/freefair/gradle-plugins/issues/31#issuecomment-475355674
+// since we have a custom lombok.config configuration file, we disable automatic override
+generateLombokConfig.enabled = false
