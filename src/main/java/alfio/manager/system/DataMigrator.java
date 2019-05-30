@@ -27,7 +27,6 @@ import alfio.repository.TicketSearchRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.util.MonetaryUtil;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
@@ -54,7 +53,6 @@ import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.repository.TicketRepository.RESET_TICKET;
 import static alfio.util.OptionalWrapper.optionally;
 import static java.util.stream.Collectors.*;
-import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
 
 @Component
 @Transactional(readOnly = true)
@@ -127,7 +125,7 @@ public class DataMigrator {
                             var tickets = ticketsReservationAndTransactions.stream().map(TicketWithReservationAndTransaction::getTicket).collect(toList());
                             var ticketReservation = ticketsReservationAndTransactions.get(0).getTicketReservation();
                             var totalPrice = ticketReservationManager.totalReservationCostWithVAT(event, ticketReservation, tickets);
-                            return new ReservationPriceContainer(ticketReservation, totalPrice, tickets, event);
+                            return new ReservationPriceCalculator(ticketReservation, totalPrice, tickets, event);
                         })
                         .map(priceContainer -> new MapSqlParameterSource("reservationId", priceContainer.reservation.getId())
                                 .addValue("srcPrice", priceContainer.getSrcPriceCts())
@@ -428,36 +426,4 @@ public class DataMigrator {
             .collect(toList());
     }
 
-    @RequiredArgsConstructor
-    private static class ReservationPriceContainer implements PriceContainer {
-        final TicketReservation reservation;
-        final TotalPrice totalPrice;
-        final List<Ticket> tickets;
-        final Event event;
-
-        @Override
-        public int getSrcPriceCts() {
-            return tickets.stream().mapToInt(Ticket::getSrcPriceCts).sum();
-        }
-
-        @Override
-        public BigDecimal getAppliedDiscount() {
-            return MonetaryUtil.centsToUnit(Math.abs(totalPrice.getDiscount()));
-        }
-
-        @Override
-        public String getCurrencyCode() {
-            return event.getCurrency();
-        }
-
-        @Override
-        public Optional<BigDecimal> getOptionalVatPercentage() {
-            return Optional.ofNullable(firstNonNull(reservation.getUsedVatPercent(), event.getVat()));
-        }
-
-        @Override
-        public VatStatus getVatStatus() {
-            return firstNonNull(reservation.getVatStatus(), event.getVatStatus());
-        }
-    }
 }

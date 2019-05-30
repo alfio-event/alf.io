@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.DuplicateReferenceException;
+import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.TicketPriceContainer;
@@ -580,6 +581,15 @@ public class AdminReservationManager {
             if(removeReservation) {
                 markAsCancelled(reservation, username, e.getId());
                 additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
+            } else {
+                // recalculate totals
+                var totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+                var updatedTickets = ticketRepository.findTicketsInReservation(reservationId);
+                var calculator = new ReservationPriceCalculator(reservation, totalPrice, updatedTickets, e);
+                ticketReservationRepository.updateBillingData(calculator.getVatStatus(),
+                    calculator.getSrcPriceCts(), MonetaryUtil.unitToCents(calculator.getFinalPrice()), MonetaryUtil.unitToCents(calculator.getVAT()),
+                    MonetaryUtil.unitToCents(calculator.getAppliedDiscount()), calculator.getCurrencyCode(), reservation.getVatNr(), reservation.getVatCountryCode(),
+                    reservation.isInvoiceRequested(), reservationId);
             }
         });
     }

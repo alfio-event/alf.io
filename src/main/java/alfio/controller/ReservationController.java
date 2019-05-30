@@ -28,6 +28,7 @@ import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
@@ -73,6 +74,7 @@ import java.util.stream.Collectors;
 import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.MonetaryUtil.unitToCents;
 import static java.util.stream.Collectors.toList;
 
 @Controller
@@ -344,8 +346,9 @@ public class ReservationController {
                     var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
                     PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
                     var updatedPrice = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(vatStatus));// update VatStatus to the new value for calculating the new price
+                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), updatedPrice, ticketReservationManager.findTicketsInReservation(reservationId), event);
                     ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
-                        updatedPrice.getPriceWithVAT(), updatedPrice.getVAT(), updatedPrice.getDiscount(),
+                        unitToCents(calculator.getFinalPrice()), unitToCents(calculator.getVAT()), unitToCents(calculator.getAppliedDiscount()),
                         reservation.getCurrencyCode(), StringUtils.trimToNull(vatValidation.getVatNr()),
                         country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
                     vatChecker.logSuccessfulValidation(vatValidation, reservationId, event.getId());
