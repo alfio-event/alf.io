@@ -106,34 +106,34 @@ public class DataMigrator {
     }
 
     public void migrateEventsToCurrentVersion() {
-        eventRepository.findAll().forEach(this::migrateEventToCurrentVersion);
+        List<Event> events = eventRepository.findAll();
+        events.forEach(this::migrateEventToCurrentVersion);
         fillReservationsLanguage();
         fillDefaultOptions();
-        fixReservationPrice();
+        fixReservationPrice(events);
     }
 
-    private void fixReservationPrice() {
+    private void fixReservationPrice(List<Event> events) {
         transactionTemplate.execute(ts -> {
-            for(Integer eventId : eventRepository.findAllActiveIds(ZonedDateTime.now())) {
-                var byReservationId = ticketSearchRepository.findAllReservationsForEventWithPriceZero(eventId).stream()
+            for(Event event : events) {
+                var byReservationId = ticketSearchRepository.findAllReservationsForEventWithPriceZero(event.getId()).stream()
                                             .collect(groupingBy(trt -> trt.getTicketReservation().getId()));
+
                 log.debug("found {} reservations to fix", byReservationId.size());
                 if(!byReservationId.isEmpty()) {
-                    var event = eventRepository.findById(eventId);
                     var reservationsToUpdate = byReservationId.values().stream()
                         .map(ticketsReservationAndTransactions -> {
                             var tickets = ticketsReservationAndTransactions.stream().map(TicketWithReservationAndTransaction::getTicket).collect(toList());
                             var ticketReservation = ticketsReservationAndTransactions.get(0).getTicketReservation();
                             var totalPrice = ticketReservationManager.totalReservationCostWithVAT(event, ticketReservation, tickets);
-                            return new ReservationPriceCalculator(ticketReservation, totalPrice, tickets, event);
-                        })
-                        .map(priceContainer -> new MapSqlParameterSource("reservationId", priceContainer.reservation.getId())
-                                .addValue("srcPrice", priceContainer.getSrcPriceCts())
-                                .addValue("finalPrice", MonetaryUtil.unitToCents(priceContainer.getFinalPrice()))
-                                .addValue("discount", MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()))
-                                .addValue("vat", MonetaryUtil.unitToCents(priceContainer.getVAT()))
-                                .addValue("currencyCode", priceContainer.getCurrencyCode())
-                        ).toArray(MapSqlParameterSource[]::new);
+                            var calculator = new ReservationPriceCalculator(ticketReservation, totalPrice, tickets, event);
+                            return new MapSqlParameterSource("reservationId", calculator.reservation.getId())
+                                .addValue("srcPrice", calculator.getSrcPriceCts())
+                                .addValue("finalPrice", MonetaryUtil.unitToCents(calculator.getFinalPrice()))
+                                .addValue("discount", MonetaryUtil.unitToCents(calculator.getAppliedDiscount()))
+                                .addValue("vat", MonetaryUtil.unitToCents(calculator.getVAT()))
+                                .addValue("currencyCode", calculator.getCurrencyCode());
+                        }).toArray(MapSqlParameterSource[]::new);
                     log.debug("updating {} reservations", reservationsToUpdate.length);
                     int[] results = jdbc.batchUpdate("update tickets_reservation set src_price_cts = :srcPrice, final_price_cts = :finalPrice, discount_cts = :discount, vat_cts = :vat, currency_code = :currencyCode where id = :reservationId", reservationsToUpdate);
                     int sum = IntStream.of(results).sum();
