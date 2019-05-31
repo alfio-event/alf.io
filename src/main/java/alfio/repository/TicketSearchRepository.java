@@ -23,6 +23,7 @@ import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
+import java.util.Collection;
 import java.util.List;
 
 @QueryRepository
@@ -83,8 +84,8 @@ public interface TicketSearchRepository {
                                       @Bind("search") String search,
                                       @Bind("status") List<String> toFilter);
 
-    @Query("select * from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_src_price_cts = 0 and tr_payment_method <> 'NONE' and tickets_count > 0")
-    List<TicketWithReservationAndTransaction> findAllReservationsForEventWithPriceZero(@Bind("eventId") int eventId);
+    @Query("select * from reservation_and_ticket_and_tx where tr_event_id = :eventId and tickets_count > 0 and tr_id in (:reservationIds)")
+    List<TicketWithReservationAndTransaction> loadAllReservationsWithTickets(@Bind("eventId") int eventId, @Bind("reservationIds") Collection<String> reservationIds);
 
 
 }

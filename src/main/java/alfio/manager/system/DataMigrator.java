@@ -28,6 +28,7 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.util.MonetaryUtil;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,35 +116,45 @@ public class DataMigrator {
 
     private void fixReservationPrice(List<Event> events) {
         transactionTemplate.execute(ts -> {
-            for(Event event : events) {
-                var byReservationId = ticketSearchRepository.findAllReservationsForEventWithPriceZero(event.getId()).stream()
-                                            .collect(groupingBy(trt -> trt.getTicketReservation().getId()));
+            Map<Integer, List<String>> candidates = jdbc.queryForList("select id, event_id_fk from tickets_reservation where src_price_cts = 0 and payment_method <> 'NONE' and status not in ('CANCELLED', 'CREDIT_NOTE_ISSUED') order by 2", Map.of())
+                .stream()
+                .map(m -> Pair.of((Integer) m.get("event_id_fk"), (String) m.get("id")))
+                .collect(groupingBy(Pair::getKey, mapping(Pair::getValue, toList())));
 
-                log.trace("found {} reservations to fix for event {}", byReservationId.size(), event.getShortName());
-                if(!byReservationId.isEmpty()) {
-                    var reservationsToUpdate = byReservationId.values().stream()
-                        .map(ticketsReservationAndTransactions -> {
-                            var tickets = ticketsReservationAndTransactions.stream().map(TicketWithReservationAndTransaction::getTicket).collect(toList());
-                            var ticketReservation = ticketsReservationAndTransactions.get(0).getTicketReservation();
-                            var totalPrice = ticketReservationManager.totalReservationCostWithVAT(event, ticketReservation, tickets);
-                            var calculator = new ReservationPriceCalculator(ticketReservation, totalPrice, tickets, event);
-                            return new MapSqlParameterSource("reservationId", calculator.reservation.getId())
-                                .addValue("srcPrice", calculator.getSrcPriceCts())
-                                .addValue("finalPrice", MonetaryUtil.unitToCents(calculator.getFinalPrice()))
-                                .addValue("discount", MonetaryUtil.unitToCents(calculator.getAppliedDiscount()))
-                                .addValue("vat", MonetaryUtil.unitToCents(calculator.getVAT()))
-                                .addValue("currencyCode", calculator.getCurrencyCode());
-                        }).toArray(MapSqlParameterSource[]::new);
-                    log.trace("updating {} reservations", reservationsToUpdate.length);
-                    int[] results = jdbc.batchUpdate("update tickets_reservation set src_price_cts = :srcPrice, final_price_cts = :finalPrice, discount_cts = :discount, vat_cts = :vat, currency_code = :currencyCode where id = :reservationId", reservationsToUpdate);
-                    int sum = IntStream.of(results).sum();
-                    if(sum != reservationsToUpdate.length) {
-                        log.warn("Expected {} reservations to be affected, actual number: {}", reservationsToUpdate.length, sum);
-                    }
-                }
+            for(var entry : candidates.entrySet()) {
+                var event = events.stream().filter(e -> e.getId() == entry.getKey()).findFirst().orElseThrow();
+                ListUtils.partition(entry.getValue(), 1000) // limit query size and batch update size
+                    .forEach(reservations -> fixReservationsForEvent(event, reservations));
             }
             return null;
         });
+    }
+
+    private void fixReservationsForEvent(Event event, List<String> reservations) {
+        var byReservationId = ticketSearchRepository.loadAllReservationsWithTickets(event.getId(), reservations).stream()
+            .collect(groupingBy(trt -> trt.getTicketReservation().getId()));
+        log.trace("found {} reservations to fix for event {}", byReservationId.size(), event.getShortName());
+        if(!byReservationId.isEmpty()) {
+            var reservationsToUpdate = byReservationId.values().stream()
+                .map(ticketsReservationAndTransactions -> {
+                    var tickets = ticketsReservationAndTransactions.stream().map(TicketWithReservationAndTransaction::getTicket).collect(toList());
+                    var ticketReservation = ticketsReservationAndTransactions.get(0).getTicketReservation();
+                    var totalPrice = ticketReservationManager.totalReservationCostWithVAT(event, ticketReservation, tickets);
+                    var calculator = new ReservationPriceCalculator(ticketReservation, totalPrice, tickets, event);
+                    return new MapSqlParameterSource("reservationId", calculator.reservation.getId())
+                        .addValue("srcPrice", calculator.getSrcPriceCts())
+                        .addValue("finalPrice", MonetaryUtil.unitToCents(calculator.getFinalPrice()))
+                        .addValue("discount", MonetaryUtil.unitToCents(calculator.getAppliedDiscount()))
+                        .addValue("vat", MonetaryUtil.unitToCents(calculator.getVAT()))
+                        .addValue("currencyCode", calculator.getCurrencyCode());
+                }).toArray(MapSqlParameterSource[]::new);
+            log.trace("updating {} reservations", reservationsToUpdate.length);
+            int[] results = jdbc.batchUpdate("update tickets_reservation set src_price_cts = :srcPrice, final_price_cts = :finalPrice, discount_cts = :discount, vat_cts = :vat, currency_code = :currencyCode where id = :reservationId", reservationsToUpdate);
+            int sum = IntStream.of(results).sum();
+            if(sum != reservationsToUpdate.length) {
+                log.warn("Expected {} reservations to be affected, actual number: {}", reservationsToUpdate.length, sum);
+            }
+        }
     }
 
     private void fillDefaultOptions() {
