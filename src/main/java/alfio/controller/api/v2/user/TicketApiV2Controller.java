@@ -77,6 +77,14 @@ public class TicketApiV2Controller {
         return "OK".equals(res) ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();
     }
 
+    @DeleteMapping("/event/{eventName}/ticket/{ticketIdentifier}")
+    public ResponseEntity<Boolean> releaseTicket(@PathVariable("eventName") String eventName,
+                                                 @PathVariable("ticketIdentifier") String ticketIdentifier) {
+        var oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
+        oData.ifPresent(triple -> ticketReservationManager.releaseTicket(triple.getLeft(), triple.getMiddle(), triple.getRight()));
+        return ResponseEntity.ok(true);
+    }
+
 
     @GetMapping("/event/{eventName}/ticket/{ticketIdentifier}")
     public ResponseEntity<TicketInfo> getTicketInfo(@PathVariable("eventName") String eventName,
