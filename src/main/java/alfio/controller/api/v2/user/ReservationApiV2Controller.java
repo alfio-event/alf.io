@@ -192,7 +192,7 @@ public class ReservationApiV2Controller {
         }));
 
         //
-        return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
+        return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping("/event/{eventName}/reservation/{reservationId}/status")
