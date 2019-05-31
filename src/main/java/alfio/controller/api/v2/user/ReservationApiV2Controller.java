@@ -31,7 +31,9 @@ import alfio.manager.EventManager;
 import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.PaymentToken;
 import alfio.model.transaction.TransactionInitializationToken;
@@ -59,6 +61,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
+
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v2/public/")
@@ -73,6 +77,7 @@ public class ReservationApiV2Controller {
     private final MessageSource messageSource;
     private final InvoiceReceiptController invoiceReceiptController;
     private final PaymentApiController paymentApiController;
+    private final ConfigurationManager configurationManager;
 
     /**
      * See {@link ReservationController#showBookingPage(String, String, Model, Locale)}
@@ -106,6 +111,10 @@ public class ReservationApiV2Controller {
                 .stream()
                 .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
 
+            // check if the user can cancel ticket
+            boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(reservationId);
+            //
+
             //TODO: cleanup this transformation, we most likely don't need to fully load the ticket category
             var ticketsInReservation = tickets.stream()
                 .collect(Collectors.groupingBy(Ticket::getCategoryId))
@@ -114,7 +123,12 @@ public class ReservationApiV2Controller {
                 .map((e) -> {
                     var tc = eventManager.getTicketCategoryById(e.getKey(), event.getId());
                     var ts = e.getValue().stream().map(t -> {//
-                        return toBookingInfoTicket(t, ticketFields, descriptionsByTicketFieldId, valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()));
+                        // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
+                        boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
+                            (!hasPaidSupplement && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), t.getCategoryId(), ALLOW_FREE_TICKETS_CANCELLATION), false)) && // freeCancellationEnabled
+                            eventManager.checkTicketCancellationPrerequisites().apply(t); // cancellationPrerequisitesMet
+                        //
+                        return toBookingInfoTicket(t, cancellationEnabled, ticketFields, descriptionsByTicketFieldId, valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()));
                     }).collect(Collectors.toList());
                     return new TicketsByTicketCategory(tc.getName(), ts);
                 })
@@ -326,6 +340,7 @@ public class ReservationApiV2Controller {
     }
 
     private static ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket,
+                                                                         boolean cancellationEnabled,
                                                                          List<TicketFieldConfiguration> ticketFields,
                                                                          Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
                                                                          List<TicketFieldValue> ticketFieldValues) {
@@ -349,7 +364,7 @@ public class ReservationApiV2Controller {
             ticket.getFirstName(), ticket.getLastName(),
             ticket.getEmail(), ticket.getFullName(),
             ticket.getUserLanguage(),
-            ticket.getAssigned(), ticket.getLockedAssignment(), tfcdav);
+            ticket.getAssigned(), ticket.getLockedAssignment(), cancellationEnabled, tfcdav);
     }
 
     private Map<String, String> formatDateForLocales(Event event, ZonedDateTime date, String formattingCode) {

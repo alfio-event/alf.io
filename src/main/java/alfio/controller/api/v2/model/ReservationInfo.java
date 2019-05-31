@@ -95,6 +95,7 @@ public class ReservationInfo {
         private final String userLanguage;
         private final boolean assigned;
         private final boolean locked;
+        private final boolean cancellationEnabled;
         private final List<AdditionalField> ticketFieldConfiguration;
 
         public String getEmail() {
@@ -126,6 +127,10 @@ public class ReservationInfo {
         }
 
         public boolean isLocked() { return locked; }
+
+        public boolean isCancellationEnabled() {
+            return cancellationEnabled;
+        }
 
         public List<AdditionalField> getTicketFieldConfigurationBeforeStandard() {
             return ticketFieldConfiguration.stream().filter(AdditionalField::isBeforeStandardFields).collect(Collectors.toList());
