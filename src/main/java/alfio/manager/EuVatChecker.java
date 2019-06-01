@@ -27,7 +27,7 @@ import ch.digitalfondue.vatchecker.EUVatCheckResponse;
 import ch.digitalfondue.vatchecker.EUVatChecker;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
@@ -49,7 +48,7 @@ import static alfio.model.system.ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS;
 
 @Component
 @Log4j2
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class EuVatChecker {
 
     private final ConfigurationManager configurationManager;
@@ -132,7 +131,7 @@ public class EuVatChecker {
     }
 
 
-    private static EUVatCheckResponse validateEUVat(String vat, String countryCode, EUVatChecker client) {
+    static EUVatCheckResponse validateEUVat(String vat, String countryCode, EUVatChecker client) {
 
         if(StringUtils.isEmpty(vat) || StringUtils.length(countryCode) != 2) {
             return null;
@@ -146,7 +145,7 @@ public class EuVatChecker {
         return new VatDetail(vatNr, countryCode, isValid, response.getName(), response.getAddress(), VatDetail.Type.VIES, isValid && reverseChargeEnabled && !organizerCountryCode.equals(countryCode));
     }
 
-    private static String organizerCountry(ConfigurationManager configurationManager, int organizationId) {
+    static String organizerCountry(ConfigurationManager configurationManager, int organizationId) {
         return configurationManager.getStringConfigValue(Configuration.from(organizationId, ConfigurationKeys.COUNTRY_OF_BUSINESS), null);
     }
 
@@ -154,45 +153,8 @@ public class EuVatChecker {
         return configurationManager.getBooleanConfigValue(Configuration.from(organizationId, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE), false);
     }
 
-    private static boolean validationEnabled(ConfigurationManager configurationManager, int organizationId) {
+    static boolean validationEnabled(ConfigurationManager configurationManager, int organizationId) {
         return configurationManager.getBooleanConfigValue(Configuration.from(organizationId, ConfigurationKeys.ENABLE_VIES_VALIDATION), true);
-    }
-
-    @RequiredArgsConstructor
-    public static class SameCountryValidator implements Predicate<String> {
-
-        private final EuVatChecker checker;
-        private final int organizationId;
-        private final int eventId;
-        private final String ticketReservationId;
-
-        @Override
-        public boolean test(String vatNr) {
-
-            if(StringUtils.isEmpty(vatNr)) {
-                log.warn("empty VAT number received for organizationId {}", organizationId);
-            }
-
-            String organizerCountry = organizerCountry(checker.configurationManager, organizationId);
-
-            if(!validationEnabled(checker.configurationManager, organizationId)) {
-                log.warn("VAT checking is not enabled for organizationId {} or country not defined ({})", organizationId, organizerCountry);
-                return false;
-            }
-
-            EUVatCheckResponse result = validateEUVat(vatNr, organizerCountry, checker.client);
-            boolean validStrict = result != null && result.isValid();
-            boolean valid = validStrict;
-
-            if(!valid && StringUtils.isNotBlank(vatNr)) {
-                valid = checker.extensionManager.handleTaxIdValidation(eventId, vatNr, organizerCountry);
-            }
-            if(valid && StringUtils.isNotEmpty(ticketReservationId)) {
-                VatDetail detail = new VatDetail(vatNr, organizerCountry, true, "", "", validStrict ? VatDetail.Type.VIES : VatDetail.Type.FORMAL, false);
-                checker.logSuccessfulValidation(detail, ticketReservationId, eventId);
-            }
-            return valid;
-        }
     }
 
 

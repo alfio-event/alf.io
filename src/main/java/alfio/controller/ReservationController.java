@@ -23,7 +23,6 @@ import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TicketDecorator;
 import alfio.manager.*;
-import alfio.manager.EuVatChecker.SameCountryValidator;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
@@ -43,7 +42,6 @@ import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ErrorsCode;
-import alfio.util.TemplateManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -87,16 +85,15 @@ public class ReservationController {
     private final TicketReservationManager ticketReservationManager;
     private final OrganizationRepository organizationRepository;
 
-    private final TemplateManager templateManager;
     private final MessageSource messageSource;
     private final ConfigurationManager configurationManager;
-    private final NotificationManager notificationManager;
     private final TicketHelper ticketHelper;
     private final TicketFieldRepository ticketFieldRepository;
     private final PaymentManager paymentManager;
     private final EuVatChecker vatChecker;
     private final RecaptchaService recaptchaService;
     private final TicketReservationRepository ticketReservationRepository;
+    private final ExtensionManager extensionManager;
 
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/book", method = RequestMethod.GET)
     public String showBookingPage(@PathVariable("eventName") String eventName,
@@ -296,9 +293,13 @@ public class ReservationController {
                 //
                 contactAndTicketsForm.validate(bindingResult, event,
                     ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()),
-                    new SameCountryValidator(vatChecker, event.getOrganizationId(), event.getId(), reservationId),
+                    new SameCountryValidator(configurationManager, extensionManager, event.getOrganizationId(), event.getId(), reservationId, vatChecker),
                     formValidationParameters);
                 //
+
+                if(!bindingResult.hasErrors()) {
+                    extensionManager.handleReservationValidation(event, reservation, contactAndTicketsForm, bindingResult);
+                }
 
                 if(bindingResult.hasErrors()) {
                     SessionUtil.addToFlash(bindingResult, redirectAttributes);
@@ -610,6 +611,10 @@ public class ReservationController {
                 if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentMethod(), request, event)) {
                     log.debug("captcha validation failed.");
                     bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
+                }
+
+                if(!bindingResult.hasErrors()) {
+                    extensionManager.handleReservationValidation(event, ticketReservation, paymentForm, bindingResult);
                 }
 
                 if (bindingResult.hasErrors()) {
