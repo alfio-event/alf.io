@@ -33,7 +33,7 @@ import static alfio.model.system.ConfigurationKeys.ON_SITE_ENABLED;
 @Component
 @Log4j2
 @AllArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class OnSiteManager implements PaymentProvider {
 
     private final ConfigurationManager configurationManager;
