@@ -16,6 +16,7 @@
  */
 package alfio.config;
 
+import alfio.config.support.ArrayColumnMapper;
 import alfio.config.support.JSONColumnMapper;
 import alfio.config.support.PlatformProvider;
 import alfio.job.Jobs;
@@ -130,8 +131,10 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         return new QueryFactory(platform.getDialect(env), namedParameterJdbcTemplate)
             .addColumnMapperFactory(new ZonedDateTimeMapper.Factory())
             .addColumnMapperFactory(new JSONColumnMapper.Factory())
+            .addColumnMapperFactory(new ArrayColumnMapper.Factory())
             .addParameterConverters(new ZonedDateTimeMapper.Converter())
-            .addParameterConverters(new JSONColumnMapper.Converter());
+            .addParameterConverters(new JSONColumnMapper.Converter())
+            .addParameterConverters(new ArrayColumnMapper.Converter());
     }
 
     @Bean
