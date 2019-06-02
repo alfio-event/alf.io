@@ -277,18 +277,20 @@ public class EventController {
 
 
     enum CodeType {
-        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
+        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, ACCESS_CODE, NOT_FOUND
     }
 
     //not happy with that code...
     private CodeType getCodeType(int eventId, String code) {
         String trimmedCode = StringUtils.trimToNull(code);
+        Optional<PromoCodeDiscount> promoCodeDiscountOptional;
         if(trimmedCode == null) {
             return CodeType.NOT_FOUND;
-        }  else if(specialPriceRepository.getByCode(trimmedCode).isPresent()) {
+        } else if(specialPriceRepository.getByCode(trimmedCode).isPresent()) {
             return CodeType.SPECIAL_PRICE;
-        } else if (promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode).isPresent()) {
-            return CodeType.PROMO_CODE_DISCOUNT;
+        } else if ((promoCodeDiscountOptional = promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode)).isPresent()) {
+            var promoCodeDiscount = promoCodeDiscountOptional.get();
+            return promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT ? CodeType.PROMO_CODE_DISCOUNT : CodeType.ACCESS_CODE;
         } else if (ticketCategoryRepository.findCodeInEvent(eventId, trimmedCode).isPresent()) {
             return CodeType.TICKET_CATEGORY_CODE;
         } else {
@@ -310,13 +312,11 @@ public class EventController {
                 if(!category.isAccessRestricted()) {
                     return makeSimpleReservation(eventName, request, redirectAttributes, locale, null, event, category.getId());
                 } else {
-                    Optional<SpecialPrice> specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
-                    if(specialPrice.isEmpty()) {
-                        return redirectToEvent;
-                    }
-                    savePromoCode(eventName, specialPrice.get().getCode(), model, request.getRequest());
-                    return makeSimpleReservation(eventName, request, redirectAttributes, locale, specialPrice.get().getCode(), event, category.getId());
+                    return initReservationForHiddenCategory(eventName, model, request, redirectAttributes, locale, event, redirectToEvent, category.getId());
                 }
+            } else if (codeType == CodeType.ACCESS_CODE) {
+                var categoryId = promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode).orElseThrow().getHiddenCategoryId();
+                return initReservationForHiddenCategory(eventName, model, request, redirectAttributes, locale, event, redirectToEvent, categoryId);
             } else if (res.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
                 int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).orElseThrow().getTicketCategoryId();
                 return makeSimpleReservation(eventName, request, redirectAttributes, locale, trimmedCode, event, ticketCategoryId);
@@ -325,6 +325,16 @@ public class EventController {
             }
         }).orElse("redirect:/");
     }
+
+    private String initReservationForHiddenCategory(String eventName, Model model, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, Event event, String redirectToEvent, int categoryId) {
+        Optional<SpecialPrice> specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(categoryId).stream().findFirst();
+        if(specialPrice.isEmpty()) {
+            return redirectToEvent;
+        }
+        savePromoCode(eventName, specialPrice.get().getCode(), model, request.getRequest());
+        return makeSimpleReservation(eventName, request, redirectAttributes, locale, specialPrice.get().getCode(), event, categoryId);
+    }
+
 
     private String makeSimpleReservation(String eventName, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, String trimmedCode, Event event, int ticketCategoryId) {
         ReservationForm form = new ReservationForm();
