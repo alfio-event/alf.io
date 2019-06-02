@@ -16,6 +16,7 @@
  */
 package alfio.model.modification;
 
+import alfio.model.PromoCodeDiscount;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -44,21 +45,26 @@ public class PromoCodeDiscountModification {
     private final Integer maxUsage;
     private final String description;
     private final String emailReference;
+    private final PromoCodeDiscount.CodeType codeType;
+    private final Integer hiddenCategoryId;
+
 
     @JsonCreator
     public PromoCodeDiscountModification(
-            @JsonProperty("organizationId") Integer organizationId,
-            @JsonProperty("eventId") Integer eventId,
-            @JsonProperty("promoCode") String promoCode,
-            @JsonProperty("start") DateTimeModification start,
-            @JsonProperty("end") DateTimeModification end,
-            @JsonProperty("discountAmount") BigDecimal discountAmount,
-            @JsonProperty("discountType") DiscountType discountType,
-            @JsonProperty("categories") List<Integer> categories,
-            @JsonProperty("utcOffset") Integer utcOffset,
-            @JsonProperty("maxUsage") Integer maxUsage,
-            @JsonProperty("description") String description,
-            @JsonProperty("emailReference") String emailReference) {
+        @JsonProperty("organizationId") Integer organizationId,
+        @JsonProperty("eventId") Integer eventId,
+        @JsonProperty("promoCode") String promoCode,
+        @JsonProperty("start") DateTimeModification start,
+        @JsonProperty("end") DateTimeModification end,
+        @JsonProperty("discountAmount") BigDecimal discountAmount,
+        @JsonProperty("discountType") DiscountType discountType,
+        @JsonProperty("categories") List<Integer> categories,
+        @JsonProperty("utcOffset") Integer utcOffset,
+        @JsonProperty("maxUsage") Integer maxUsage,
+        @JsonProperty("description") String description,
+        @JsonProperty("emailReference") String emailReference,
+        @JsonProperty("codeType") PromoCodeDiscount.CodeType codeType,
+        @JsonProperty("hiddenCategoryId") Integer hiddenCategoryId) {
 
         this.organizationId = organizationId;
         this.eventId = eventId;
@@ -72,13 +78,25 @@ public class PromoCodeDiscountModification {
         this.maxUsage = maxUsage;
         this.description = description;
         this.emailReference = emailReference;
+        this.codeType = Optional.ofNullable(codeType).orElse(PromoCodeDiscount.CodeType.DISCOUNT);
+        this.hiddenCategoryId = hiddenCategoryId;
     }
     
     public int getDiscountAsPercent() {
-        return discountAmount.intValue();
+        return Optional.ofNullable(discountAmount).map(BigDecimal::intValue).orElse(0);
     }
     
     public int getDiscountInCents() {
         return MonetaryUtil.unitToCents(discountAmount);
+    }
+
+    public int getDiscountValue() {
+        if(codeType != PromoCodeDiscount.CodeType.DISCOUNT) {
+            return 0;
+        }
+        if(discountType == DiscountType.PERCENTAGE) {
+            return getDiscountAsPercent();
+        }
+        return getDiscountInCents();
     }
 }

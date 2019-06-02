@@ -24,7 +24,7 @@
 
         ctrl.$onInit = function() {
             loadData();
-        }
+        };
 
         function loadData() {
             var loader = ctrl.forEvent ? function () {return PromoCodeService.list(ctrl.event.id)} : function() {return PromoCodeService.listOrganization(ctrl.organizationId)};
@@ -88,6 +88,7 @@
                 controller: function($scope) {
                     $scope.cancel = function() {$scope.$dismiss('canceled');};
                     $scope.forEvent = ctrl.forEvent;
+                    $scope.event = ctrl.event;
                     var start = moment(promocode.formattedStart);
                     var end = moment(promocode.formattedEnd);
                     $scope.promoCodeDescription = ctrl.promoCodeDescription;
@@ -96,7 +97,9 @@
                         end: {date: end.format('YYYY-MM-DD'), time: end.format('HH:mm')},
                         maxUsage: promocode.maxUsage,
                         description: promocode.description,
-                        emailReference: promocode.emailReference
+                        emailReference: promocode.emailReference,
+                        codeType: promocode.codeType,
+                        hiddenCategoryId: promocode.hiddenCategoryId
                     };
                     $scope.validCategories = _.map(ctrl.event.ticketCategories, function(c) {
                         var c1 = angular.copy(c, {});
@@ -165,7 +168,11 @@
 
                     if(forEvent) {
                         $scope.validCategories = _.filter(event.ticketCategories, function(tc) {
-                            return !tc.expired;
+                            return !tc.expired && !tc.accessRestricted;
+                        });
+
+                        $scope.restrictedCategories = _.filter(event.ticketCategories, function(tc) {
+                            return !tc.expired && tc.accessRestricted;
                         });
                     }
 
@@ -174,7 +181,9 @@
                         discountType :'PERCENTAGE',
                         start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')},
                         end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')},
-                        categories:[]
+                        categories:[],
+                        codeType: 'DISCOUNT',
+                        hiddenCategoryId: null
                     };
 
                     $scope.addCategory = function addCategory(index, value) {

@@ -770,7 +770,9 @@ public class EventManager {
                              List<Integer> categoriesId,
                              Integer maxUsage,
                              String description,
-                             String emailReference) {
+                             String emailReference,
+                             PromoCodeDiscount.CodeType codeType,
+                             Integer hiddenCategoryId) {
 
         Validate.isTrue(promoCode.length() >= 7, "min length is 7 chars");
         Validate.isTrue((eventId != null && organizationId == null) || (eventId == null && organizationId != null), "eventId or organizationId must be not null");
@@ -787,6 +789,10 @@ public class EventManager {
             Validate.isTrue(discountAmount >= 0, "fixed discount amount cannot be less than zero");
         }
 
+        if(PromoCodeDiscount.CodeType.ACCESS == codeType) {
+            Validate.isTrue(hiddenCategoryId != null, "Hidden category is required");
+        }
+
         //
         categoriesId = Optional.ofNullable(categoriesId).orElse(Collections.emptyList()).stream().filter(Objects::nonNull).collect(toList());
         //
@@ -795,18 +801,19 @@ public class EventManager {
             organizationId = eventRepository.findOrganizationIdByEventId(eventId);
         }
 
-        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId), maxUsage, description, emailReference);
+        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId), maxUsage, description, emailReference, codeType, hiddenCategoryId);
     }
     
     public void deletePromoCode(int promoCodeId) {
         promoCodeRepository.deletePromoCode(promoCodeId);
     }
 
-    public void updatePromoCode(int promoCodeId, ZonedDateTime start, ZonedDateTime end, Integer maxUsage, List<Integer> categories, String description, String emailReference) {
+    public void updatePromoCode(int promoCodeId, ZonedDateTime start, ZonedDateTime end, Integer maxUsage, List<Integer> categories, String description, String emailReference, Integer hiddenCategoryId) {
         Validate.isTrue(StringUtils.length(description) < 1025, "Description can be maximum 1024 chars");
         Validate.isTrue(StringUtils.length(emailReference) < 257, "Description can be maximum 256 chars");
         String categoriesJson = CollectionUtils.isEmpty(categories) ? null : Json.toJson(categories);
-        promoCodeRepository.updateEventPromoCode(promoCodeId, start, end, maxUsage, categoriesJson, description, emailReference);
+
+        promoCodeRepository.updateEventPromoCode(promoCodeId, start, end, maxUsage, categoriesJson, description, emailReference, hiddenCategoryId);
     }
     
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {
