@@ -278,11 +278,11 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/languages")
-    public ResponseEntity<List<Language>> getLanguages(@PathVariable("eventName") String eventName) {
+    public ResponseEntity<List<String>> getLanguages(@PathVariable("eventName") String eventName) {
 
         var languages = i18nManager.getEventLanguages(eventName)
             .stream()
-            .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))
+            .map(cl -> cl.getLocale().getLanguage())
             .collect(Collectors.toList());
 
         if (languages.isEmpty()) {
