@@ -95,7 +95,7 @@ public class TranslationsApiController {
     }
 
     @GetMapping("/public/i18n/languages")
-    public List<Language> getAvailableLanguages() {
+    public List<Language> getSupportedLanguages() {
         return i18nManager.getSupportedLanguages()
             .stream()
             .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))

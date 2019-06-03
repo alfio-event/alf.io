@@ -86,13 +86,16 @@ public class EventApiV2Controller {
 
     @GetMapping("events")
     public ResponseEntity<List<BasicEventInfo>> listEvents() {
+
+        var langs = i18nManager.getSupportedLanguages();
+
         var events = eventManager.getPublishedEvents()
             .stream()
             .map(e -> {
-                var formattedBeginDate = Formatters.getFormattedDate(e, e.getBegin(), "common.event.date-format", messageSource);
-                var formattedBeginTime = Formatters.getFormattedDate(e, e.getBegin(), "common.event.time-format", messageSource);
-                var formattedEndDate = Formatters.getFormattedDate(e, e.getEnd(), "common.event.date-format", messageSource);
-                var formattedEndTime = Formatters.getFormattedDate(e, e.getEnd(), "common.event.time-format", messageSource);
+                var formattedBeginDate = Formatters.getFormattedDate(langs, e.getBegin(), "common.event.date-format", messageSource);
+                var formattedBeginTime = Formatters.getFormattedDate(langs, e.getBegin(), "common.event.time-format", messageSource);
+                var formattedEndDate = Formatters.getFormattedDate(langs, e.getEnd(), "common.event.date-format", messageSource);
+                var formattedEndTime = Formatters.getFormattedDate(langs, e.getEnd(), "common.event.time-format", messageSource);
                 return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getLocation(),
                     e.getTimeZone(), e.getSameDay(), formattedBeginDate, formattedBeginTime, formattedEndDate, formattedEndTime);
             })
