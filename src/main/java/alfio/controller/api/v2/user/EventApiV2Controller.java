@@ -286,9 +286,9 @@ public class EventApiV2Controller {
             .collect(Collectors.toList());
 
         if (languages.isEmpty()) {
-            return ResponseEntity.ok(languages);
-        } else {
             return ResponseEntity.notFound().build();
+        } else {
+            return ResponseEntity.ok(languages);
         }
     }
 
