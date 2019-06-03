@@ -19,11 +19,8 @@ package alfio.controller.api.v1.admin;
 import alfio.extension.ExtensionService;
 import alfio.manager.*;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
-import alfio.model.EventWithAdditionalInfo;
-import alfio.model.ExtensionSupport;
+import alfio.model.*;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
-import alfio.model.TicketCategory;
 import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.group.Group;
 import alfio.model.modification.EventModification;
@@ -211,6 +208,8 @@ public class EventApiV1Controller {
                         Collections.emptyList(),
                         null,
                         null,
+                        null,
+                        PromoCodeDiscount.CodeType.DISCOUNT,
                         null
                     )
                 )

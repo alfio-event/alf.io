@@ -72,7 +72,7 @@ public class SpecialPriceManagerTest {
         i18nManager = mock(I18nManager.class);
         configurationManager = mock(ConfigurationManager.class);
 
-        List<SpecialPrice> specialPrices = asList(new SpecialPrice(0, "123", 0, 0, "FREE", null, null, null, null), new SpecialPrice(0, "456", 0, 0, "FREE", null, null, null, null));
+        List<SpecialPrice> specialPrices = asList(new SpecialPrice(0, "123", 0, 0, "FREE", null, null, null, null, null), new SpecialPrice(0, "456", 0, 0, "FREE", null, null, null, null, null));
         when(i18nManager.getEventLanguages(anyInt())).thenReturn(Collections.singletonList(ContentLanguage.ITALIAN));
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("text");
         when(eventManager.getSingleEvent(anyString(), anyString())).thenReturn(event);

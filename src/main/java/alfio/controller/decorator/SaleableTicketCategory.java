@@ -147,11 +147,11 @@ public class SaleableTicketCategory implements PriceContainer {
     }
 
     public boolean getSupportsDiscount() {
-        return promoCodeDiscount != null && getSaleable();
+        return getPromoCodeDiscount() != null && getSaleable();
     }
 
     public PromoCodeDiscount getPromoCodeDiscount() {
-        return promoCodeDiscount;
+        return (promoCodeDiscount == null || promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT) ? promoCodeDiscount : null;
     }
 
     static BigDecimal getFinalPriceToDisplay(BigDecimal price, BigDecimal vat, VatStatus vatStatus) {

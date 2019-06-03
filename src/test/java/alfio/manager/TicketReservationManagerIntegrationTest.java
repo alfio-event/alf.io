@@ -32,6 +32,7 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,8 +54,7 @@ import java.util.stream.Collectors;
 
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
@@ -63,6 +63,7 @@ import static org.junit.Assert.assertTrue;
 public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
+    public static final String ACCESS_CODE = "MYACCESSCODE";
 
     @Autowired
     private EventManager eventManager;
@@ -90,6 +91,10 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
     private EventRepository eventRepository;
     @Autowired
     private AdditionalServiceRepository additionalServiceRepository;
+    @Autowired
+    private SpecialPriceTokenGenerator specialPriceTokenGenerator;
+    @Autowired
+    private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
 
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
@@ -232,10 +237,10 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         //promo code at event level
-        eventManager.addPromoCode("MYPROMOCODE", event.getId(), null, event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "email@reference.ch");
+        eventManager.addPromoCode("MYPROMOCODE", event.getId(), null, event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "email@reference.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
 
         //promo code at organization level
-        eventManager.addPromoCode("MYFIXEDPROMO", null, event.getOrganizationId(), event.getBegin(), event.getEnd(), 5, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, null, null,"description", "email@reference.ch");
+        eventManager.addPromoCode("MYFIXEDPROMO", null, event.getOrganizationId(), event.getBegin(), event.getEnd(), 5, PromoCodeDiscount.DiscountType.FIXED_AMOUNT, null, null,"description", "email@reference.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(3);
@@ -290,6 +295,80 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             Assert.fail("must not enter here");
         } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException e) {
         }
+
+    }
+
+    @Test
+    public void testAccessCode() {
+        testTicketsWithAccessCode();
+    }
+
+    private Triple<Event, TicketCategory, String> testTicketsWithAccessCode() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null));
+        Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
+
+        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isAccessRestricted).findFirst().orElseThrow();
+
+        specialPriceTokenGenerator.generatePendingCodesForCategory(category.getId());
+
+        //promo code at event level
+        String accessCode = ACCESS_CODE;
+        eventManager.addPromoCode(accessCode, event.getId(), null, event.getBegin(), event.getEnd(), 0, null, null, 3, "description", "email@reference.ch", PromoCodeDiscount.CodeType.ACCESS, category.getId());
+
+        TicketReservationModification tr = new TicketReservationModification();
+        tr.setAmount(3);
+        tr.setTicketCategoryId(category.getId());
+        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+
+        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.of(accessCode), Locale.ENGLISH, false);
+
+        TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+
+        // 3 * 10 chf is the normal price, 10% discount -> 300 discount
+        Assert.assertEquals(3000, totalPrice.getPriceWithVAT());
+        Assert.assertEquals(30, totalPrice.getVAT());
+        Assert.assertEquals(0, totalPrice.getDiscount());
+        Assert.assertEquals(0, totalPrice.getDiscountAppliedCount());
+
+        OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
+        Assert.assertEquals("30.00", orderSummary.getTotalPrice());
+        Assert.assertEquals("0.30", orderSummary.getTotalVAT());
+        Assert.assertEquals(3, orderSummary.getTicketAmount());
+
+        return Triple.of(event, category, reservationId);
+
+    }
+
+    @Test
+    public void testAccessCodeLimit() {
+        var triple = testTicketsWithAccessCode();
+        TicketReservationModification trTooMuch = new TicketReservationModification();
+        trTooMuch.setAmount(1);
+        trTooMuch.setTicketCategoryId(triple.getMiddle().getId());
+        TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
+        try {
+            ticketReservationManager.createTicketReservation(triple.getLeft(), List.of(modTooMuch), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.of(ACCESS_CODE), Locale.ENGLISH, false);
+            Assert.fail("trigger is not working!");
+        } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException e) {
+        }
+    }
+
+    @Test
+    public void testAccessCodeReleaseTickets() {
+        var triple = testTicketsWithAccessCode();
+        TicketReservationModification trTooMuch = new TicketReservationModification();
+        trTooMuch.setAmount(1);
+        trTooMuch.setTicketCategoryId(triple.getMiddle().getId());
+        TicketReservationWithOptionalCodeModification modTooMuch = new TicketReservationWithOptionalCodeModification(trTooMuch, Optional.empty());
+        ticketReservationManager.cancelPendingReservation(triple.getRight(), true, null);
+        waitingQueueSubscriptionProcessor.handleWaitingTickets();
+
+        var newReservationId = ticketReservationManager.createTicketReservation(triple.getLeft(), List.of(modTooMuch), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.of(ACCESS_CODE), Locale.ENGLISH, false);
+        assertNotNull(newReservationId);
 
     }
 

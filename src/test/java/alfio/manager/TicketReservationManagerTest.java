@@ -46,6 +46,8 @@ import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -113,6 +115,7 @@ class TicketReservationManagerTest {
     private TicketReservation ticketReservation;
     private Organization organization;
     private BillingDocumentRepository billingDocumentRepository;
+    private NamedParameterJdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void init() {
@@ -142,6 +145,7 @@ class TicketReservationManagerTest {
         specialPrice = mock(SpecialPrice.class);
         ticketCategory = mock(TicketCategory.class);
         ticket = mock(Ticket.class);
+        jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
 
         reservationModification = mock(TicketReservationWithOptionalCodeModification.class);
         ticketReservation = mock(TicketReservation.class);
@@ -189,7 +193,8 @@ class TicketReservationManagerTest {
             extensionManager,
             ticketSearchRepository,
             groupManager,
-            billingDocumentRepository);
+            billingDocumentRepository,
+            jdbcTemplate);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -512,9 +517,35 @@ class TicketReservationManagerTest {
         when(specialPrice.getStatus()).thenReturn(SpecialPrice.Status.FREE);
         when(specialPriceRepository.getByCode(eq(SPECIAL_PRICE_CODE))).thenReturn(Optional.of(specialPrice));
         Optional<SpecialPrice> renewed = trm.renewSpecialPrice(Optional.of(specialPrice), Optional.of(SPECIAL_PRICE_SESSION_ID));
-        verify(specialPriceRepository).bindToSession(eq(SPECIAL_PRICE_ID), eq(SPECIAL_PRICE_SESSION_ID));
+        verify(specialPriceRepository).bindToSession(eq(SPECIAL_PRICE_ID), eq(SPECIAL_PRICE_SESSION_ID), isNull());
         assertTrue(renewed.isPresent());
         assertSame(specialPrice, renewed.get());
+    }
+
+    @Test
+    void reserveTicketsForCategoryWithAccessCode() {
+        PromoCodeDiscount discount = mock(PromoCodeDiscount.class);
+        when(discount.getCodeType()).thenReturn(PromoCodeDiscount.CodeType.ACCESS);
+        when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
+        when(reservationModification.getAmount()).thenReturn(2);
+        when(discount.getHiddenCategoryId()).thenReturn(TICKET_CATEGORY_ID);
+        int accessCodeId = 666;
+        when(discount.getId()).thenReturn(accessCodeId);
+        when(ticketCategoryRepository.isAccessRestricted(eq(TICKET_CATEGORY_ID))).thenReturn(true);
+        when(ticketReservation.getSrcPriceCts()).thenReturn(1000);
+        when(ticket.getSrcPriceCts()).thenReturn(1000);
+        when(specialPriceRepository.bindToSession(eq(RESERVATION_ID), eq(TICKET_CATEGORY_ID), eq(accessCodeId), eq(2))).thenReturn(2);
+        when(specialPriceRepository.findBySessionIdAndAccessCodeId(eq(RESERVATION_ID), eq(accessCodeId))).thenReturn(List.of(
+            new SpecialPrice(1, "AAAA", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), RESERVATION_ID, null, null, null, accessCodeId),
+            new SpecialPrice(2, "BBBB", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), RESERVATION_ID, null, null, null, accessCodeId)
+        ));
+        when(ticketRepository.selectNotAllocatedTicketsForUpdateSkipLocked(eq(EVENT_ID), eq(2), eq(List.of("FREE")))).thenReturn(List.of(TICKET_ID,2));
+        when(ticketRepository.findById(eq(TICKET_ID), eq(TICKET_CATEGORY_ID))).thenReturn(ticket);
+        String query = "batch-reserve-tickets";
+        when(ticketRepository.batchReserveTicket()).thenReturn(query);
+        trm.reserveTicketsForCategory(event, Optional.empty(), RESERVATION_ID, reservationModification, Locale.ENGLISH, false, discount);
+        verify(jdbcTemplate).batchUpdate(eq(query), any(SqlParameterSource[].class));
+        verify(specialPriceRepository).batchUpdateStatus(eq(List.of(1,2)), eq(SpecialPrice.Status.PENDING), eq(RESERVATION_ID), eq(accessCodeId));
     }
 
     @Test

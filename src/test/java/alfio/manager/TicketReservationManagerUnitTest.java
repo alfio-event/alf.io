@@ -25,6 +25,7 @@ import alfio.util.TemplateManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.math.BigDecimal;
@@ -134,7 +135,8 @@ public class TicketReservationManagerUnitTest {
             extensionManager,
             mock(TicketSearchRepository.class),
             groupManager,
-            billingDocumentRepository);
+            billingDocumentRepository,
+            mock(NamedParameterJdbcTemplate.class));
 
     }
 

@@ -127,4 +127,7 @@ public interface TicketCategoryRepository {
     default Map<Integer, TicketCategoryStatisticView> findStatisticsForEventIdByCategoryId(int eventId) {
         return findStatisticsForEventId(eventId).stream().collect(Collectors.toMap(TicketCategoryStatisticView::getId, Function.identity()));
     }
+
+    @Query("select access_restricted from ticket_category where id = :id")
+    Boolean isAccessRestricted(@Bind("id") Integer hiddenCategoryId);
 }

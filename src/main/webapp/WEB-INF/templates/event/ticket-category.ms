@@ -48,13 +48,7 @@
             {{#saleableAndLimitNotReached}}
                 <input name="reservation[{{-index}}].ticketCategoryId" value="{{id}}" type="hidden">
                 <select aria-labelledby="{{id}}-label" name="reservation[{{-index}}].amount" class="form-control text-align-center" placeholder="0" autocomplete="off" data-ticket-selector>
-                    {{#accessRestricted}}
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                    {{/accessRestricted}}
-                    {{^accessRestricted}}
                         {{#amountOfTickets}}<option value="{{this}}">{{this}}</option>{{/amountOfTickets}}
-                    {{/accessRestricted}}
                 </select>
             {{/saleableAndLimitNotReached}}
             {{^saleableAndLimitNotReached}}
