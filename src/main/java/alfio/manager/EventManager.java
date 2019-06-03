@@ -801,7 +801,11 @@ public class EventManager {
             organizationId = eventRepository.findOrganizationIdByEventId(eventId);
         }
 
-        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId), maxUsage, description, emailReference, codeType, hiddenCategoryId);
+        if(codeType == PromoCodeDiscount.CodeType.ACCESS) {
+            discountType = DiscountType.NONE;
+        }
+
+        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType, Json.GSON.toJson(categoriesId), maxUsage, description, emailReference, codeType, hiddenCategoryId);
     }
     
     public void deletePromoCode(int promoCodeId) {

@@ -40,7 +40,7 @@ public class PromoCodeDiscount {
     }
     
     public enum DiscountType {
-        FIXED_AMOUNT, PERCENTAGE
+        FIXED_AMOUNT, PERCENTAGE, NONE
     }
 
     private final int id;
@@ -112,7 +112,10 @@ public class PromoCodeDiscount {
     }
 
     public static Set<Integer> categoriesOrNull(PromoCodeDiscount code) {
-        Set<Integer> categories = code.getCategories();
-        return CollectionUtils.isEmpty(categories) ? null : categories;
+        if(code.codeType == CodeType.DISCOUNT) {
+            Set<Integer> categories = code.getCategories();
+            return CollectionUtils.isEmpty(categories) ? null : categories;
+        }
+        return Set.of(code.hiddenCategoryId);
     }
 }

@@ -52,7 +52,7 @@ public interface PromoCodeDiscountRepository {
                      @Bind("start") ZonedDateTime start,
                      @Bind("end") ZonedDateTime end,
                      @Bind("discountAmount") int discountAmount,
-                     @Bind("discountType") String discountType,
+                     @Bind("discountType") PromoCodeDiscount.DiscountType discountType,
                      @Bind("categories") String categories,
                      @Bind("maxUsage") Integer maxUsage,
                      @Bind("description") String description,

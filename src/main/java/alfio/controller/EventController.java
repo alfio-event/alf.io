@@ -196,11 +196,13 @@ public class EventController {
             Map<Integer, String> categoriesDescription = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList()), locale.getLanguage());
 
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
-                .filter((c) -> !c.isAccessRestricted() || (specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent()))
+                .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
                 .map((m) -> {
                     int maxTickets = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5);
                     PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null);
-                    if(filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
+                    if(specialCode.isPresent()) {
+                        maxTickets = Math.min(1, maxTickets);
+                    } else if(filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
                         maxTickets = filteredPromoCode.getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(filteredPromoCode.getId(), categoriesOrNull(filteredPromoCode), null, categoriesOrNull(filteredPromoCode) != null ? "X" : null);
                     }
                     return new SaleableTicketCategory(m, categoriesDescription.getOrDefault(m.getId(), ""),
@@ -246,7 +248,8 @@ public class EventController {
                 .addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
                 .addAttribute("locationDescriptor", ld)
                 .addAttribute("pageTitle", "show-event.header.title")
-                .addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
+                .addAttribute("hasPromoCodeDiscount", promoCodeDiscount.filter(c -> c.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT).isPresent())
+                .addAttribute("hasAccessCode", promoCodeDiscount.filter(c -> c.getCodeType() == PromoCodeDiscount.CodeType.ACCESS).isPresent())
                 .addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
                 .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, saleableTicketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable()))
                 .addAttribute("displayCategorySelectionForWaitingQueue", saleableTicketCategories.stream().filter(waitingQueueTargetCategory).count() > 1)
@@ -275,22 +278,30 @@ public class EventController {
         }).orElse(REDIRECT + "/");
     }
 
+    private boolean shouldDisplayRestrictedCategory(Optional<SpecialPrice> specialCode, TicketCategory c, Optional<PromoCodeDiscount> optionalPromoCode) {
+        if(optionalPromoCode.isPresent()) {
+            var promoCode = optionalPromoCode.get();
+            if(promoCode.getCodeType() == PromoCodeDiscount.CodeType.ACCESS && c.getId() == promoCode.getHiddenCategoryId()) {
+                return true;
+            }
+        }
+        return specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent();
+    }
+
 
     enum CodeType {
-        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, ACCESS_CODE, NOT_FOUND
+        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
     }
 
     //not happy with that code...
     private CodeType getCodeType(int eventId, String code) {
         String trimmedCode = StringUtils.trimToNull(code);
-        Optional<PromoCodeDiscount> promoCodeDiscountOptional;
         if(trimmedCode == null) {
             return CodeType.NOT_FOUND;
-        } else if(specialPriceRepository.getByCode(trimmedCode).isPresent()) {
+        }  else if(specialPriceRepository.getByCode(trimmedCode).isPresent()) {
             return CodeType.SPECIAL_PRICE;
-        } else if ((promoCodeDiscountOptional = promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode)).isPresent()) {
-            var promoCodeDiscount = promoCodeDiscountOptional.get();
-            return promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT ? CodeType.PROMO_CODE_DISCOUNT : CodeType.ACCESS_CODE;
+        } else if (promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode).isPresent()) {
+            return CodeType.PROMO_CODE_DISCOUNT;
         } else if (ticketCategoryRepository.findCodeInEvent(eventId, trimmedCode).isPresent()) {
             return CodeType.TICKET_CATEGORY_CODE;
         } else {
@@ -314,9 +325,6 @@ public class EventController {
                 } else {
                     return initReservationForHiddenCategory(eventName, model, request, redirectAttributes, locale, event, redirectToEvent, category.getId());
                 }
-            } else if (codeType == CodeType.ACCESS_CODE) {
-                var categoryId = promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode).orElseThrow().getHiddenCategoryId();
-                return initReservationForHiddenCategory(eventName, model, request, redirectAttributes, locale, event, redirectToEvent, categoryId);
             } else if (res.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
                 int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).orElseThrow().getTicketCategoryId();
                 return makeSimpleReservation(eventName, request, redirectAttributes, locale, trimmedCode, event, ticketCategoryId);
@@ -453,7 +461,10 @@ public class EventController {
     }
 
     private static boolean shouldApplyDiscount(PromoCodeDiscount promoCodeDiscount, TicketCategory ticketCategory) {
-        return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
+        if(promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT) {
+            return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
+        }
+        return ticketCategory.isAccessRestricted() && ticketCategory.getId() == promoCodeDiscount.getHiddenCategoryId();
     }
 
     private boolean isCaptchaInvalid(HttpServletRequest request, EventAndOrganizationId event) {

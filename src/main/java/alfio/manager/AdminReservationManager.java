@@ -454,7 +454,7 @@ public class AdminReservationManager {
             .stream()
             .limit(attendees.size())
             .collect(toList());
-        codes.forEach(c -> specialPriceRepository.updateStatus(c.getId(), SpecialPrice.Status.PENDING.toString(), specialPriceSessionId));
+        codes.forEach(c -> specialPriceRepository.updateStatus(c.getId(), SpecialPrice.Status.PENDING.toString(), specialPriceSessionId, null));
         return codes;
     }
 

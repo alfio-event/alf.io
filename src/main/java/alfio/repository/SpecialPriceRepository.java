@@ -32,6 +32,9 @@ import java.util.stream.Stream;
 @QueryRepository
 public interface SpecialPriceRepository {
 
+    String IS_FREE = " status = 'FREE' and recipient_name is null and recipient_email is null";
+    String SELECT_FREE = "select * from special_price where ticket_category_id = :ticketCategoryId and " + IS_FREE;
+
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId")
     List<SpecialPrice> findAllByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
 
@@ -41,8 +44,19 @@ public interface SpecialPriceRepository {
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId and status = 'FREE'")
     List<SpecialPrice> findActiveByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
 
-    @Query("select * from special_price where ticket_category_id = :ticketCategoryId and status = 'FREE' and recipient_name is null and recipient_email is null")
+    @Query(SELECT_FREE)
     List<SpecialPrice> findActiveNotAssignedByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
+
+    @Query(SELECT_FREE + " limit :limitTo")
+    List<SpecialPrice> findActiveNotAssignedByCategoryIdLimitTo(@Bind("ticketCategoryId") int ticketCategoryId, @Bind("limitTo") int limitTo);
+
+    @Query("update special_price set session_id = :sessionId, access_code_id_fk = :accessCodeId where id in (" +
+        "select id from special_price where ticket_category_id = :ticketCategoryId and " +IS_FREE+ " and access_code_id_fk is null limit :limitTo" +
+        ")")
+    int bindToSession(@Bind("sessionId") String sessionIdentifier, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("accessCodeId") Integer accessCodeId, @Bind("limitTo") int limitTo);
+
+    @Query("select * from special_price where session_id = :sessionId and access_code_id_fk = :accessCodeId")
+    List<SpecialPrice> findBySessionIdAndAccessCodeId(@Bind("sessionId") String sessionIdentifier, @Bind("accessCodeId") int accessCodeId);
 
     @Query("update special_price set sent_ts = :timestamp, recipient_name = :recipientName, recipient_email = :recipientAddress where code = :code")
     int markAsSent(@Bind("timestamp") ZonedDateTime timestamp, @Bind("recipientName") String recipientName, @Bind("recipientAddress") String recipientAddress, @Bind("code") String code);
@@ -55,20 +69,26 @@ public interface SpecialPriceRepository {
 
     @Query("select count(*) from special_price where code = :code")
     Integer countByCode(@Bind("code") String code);
-    
-    @Query("update special_price set status = :status, session_id = :sessionId where id = :id")
-    int updateStatus(@Bind("id") int id, @Bind("status") String status, @Bind("sessionId") String sessionIdentifier);
 
-    @Query("update special_price set session_id = :sessionId where id = :id")
-    int bindToSession(@Bind("id") int id, @Bind("sessionId") String sessionIdentifier);
+    @Query("update special_price set status = :status, session_id = :sessionId, access_code_id_fk = :accessCodeId where id in (:ids)")
+    int batchUpdateStatus(@Bind("ids") List<Integer> ids, @Bind("status") SpecialPrice.Status status, @Bind("sessionId") String sessionIdentifier, @Bind("accessCodeId") Integer accessCodeId);
 
-    @Query("update special_price set session_id = null, status = 'FREE' where session_id = :sessionId and status in ('FREE', 'PENDING')")
+    @Query("update special_price set status = :status, session_id = :sessionId, access_code_id_fk = :accessCodeId where id = :id")
+    int updateStatus(@Bind("id") int id, @Bind("status") String status, @Bind("sessionId") String sessionIdentifier, @Bind("accessCodeId") Integer accessCodeId);
+
+    @Query("update special_price set session_id = :sessionId, access_code_id_fk = :accessCodeId where id = :id")
+    int bindToSession(@Bind("id") int id, @Bind("sessionId") String sessionIdentifier, @Bind("accessCodeId") Integer accessCodeId);
+
+    @Query("update special_price set session_id = null, status = 'FREE', access_code_id_fk = null where session_id = :sessionId and status in ('FREE', 'PENDING')")
     int unbindFromSession(@Bind("sessionId") String sessionIdentifier);
 
-    @Query("update special_price set status = :status where id in (select special_price_id_fk from ticket where tickets_reservation_id in (:reservationIds) and special_price_id_fk is not null)")
+    @Query("update special_price set status = :status where id in (select special_price_id_fk from ticket where tickets_reservation_id in (:reservationIds) and special_price_id_fk is not null) " +
+        " or access_code_id_fk in (select promo_code_id_fk from tickets_reservation where id in(:reservationIds) and promo_code_id_fk is not null)")
     int updateStatusForReservation(@Bind("reservationIds") List<String> reservationIds, @Bind("status") String status);
 
-    @Query("update special_price set status = 'FREE', session_id = null, sent_ts = null, recipient_name = null, recipient_email = null where id in (select special_price_id_fk from ticket where tickets_reservation_id in (:reservationIds) and special_price_id_fk is not null)")
+    @Query("update special_price set status = 'FREE', session_id = null, sent_ts = null, recipient_name = null, recipient_email = null, access_code_id_fk = null " +
+        "where id in (select special_price_id_fk from ticket where tickets_reservation_id in (:reservationIds) and special_price_id_fk is not null) " +
+        "or access_code_id_fk in (select promo_code_id_fk from tickets_reservation where id in (:reservationIds))")
     int resetToFreeAndCleanupForReservation(@Bind("reservationIds") List<String> reservationIds);
 
     @Query("update special_price set code = :code, status = 'FREE', sent_ts = null where id = :id")

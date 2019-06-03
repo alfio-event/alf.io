@@ -88,7 +88,8 @@ public class SaleableAdditionalService implements PriceContainer {
 
     @Override
     public Optional<PromoCodeDiscount> getDiscount() {
-        return Optional.ofNullable(promoCodeDiscount).filter(x -> getType() != AdditionalService.AdditionalServiceType.DONATION);
+        return Optional.ofNullable(promoCodeDiscount)
+            .filter(x -> x.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT && getType() != AdditionalService.AdditionalServiceType.DONATION);
     }
 
     @Override
@@ -114,7 +115,8 @@ public class SaleableAdditionalService implements PriceContainer {
     }
 
     public boolean getSupportsDiscount() {
-        return getType() != AdditionalService.AdditionalServiceType.DONATION && isFixPrice() && promoCodeDiscount != null;
+        return getType() != AdditionalService.AdditionalServiceType.DONATION && isFixPrice()
+            && promoCodeDiscount != null && promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT;
     }
 
     public boolean getUserDefinedPrice() {
