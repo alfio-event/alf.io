@@ -26,6 +26,7 @@ import alfio.controller.form.ReservationForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.controller.support.Formatters;
 import alfio.manager.*;
+import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.AdditionalServiceText;
 import alfio.model.Event;
@@ -80,6 +81,7 @@ public class EventApiV2Controller {
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final WaitingQueueManager waitingQueueManager;
+    private final I18nManager i18nManager;
 
 
     @GetMapping("events")
@@ -272,6 +274,21 @@ public class EventApiV2Controller {
             return new ResponseEntity<>(new ItemsByCategory(converted, additionalServicesRes, displayWaitingQueueForm, preSales, tcForWaitingList), getCorsHeaders(), HttpStatus.OK);
         } else {
             return ResponseEntity.notFound().headers(getCorsHeaders()).build();
+        }
+    }
+
+    @GetMapping("event/{eventName}/languages")
+    public ResponseEntity<List<Language>> getLanguages(@PathVariable("eventName") String eventName) {
+
+        var languages = i18nManager.getEventLanguages(eventName)
+            .stream()
+            .map(cl -> new Language(cl.getLocale().getLanguage(), cl.getDisplayLanguage()))
+            .collect(Collectors.toList());
+
+        if (languages.isEmpty()) {
+            return ResponseEntity.ok(languages);
+        } else {
+            return ResponseEntity.notFound().build();
         }
     }
 
