@@ -1,17 +1,34 @@
 (function() {
     'use strict';
 
-    angular.module('adminApplication').component('promoCodes', {
-        controller: ['$window', '$uibModal', '$q', 'PromoCodeService', 'ConfigurationService', PromoCodeCtrl],
-        templateUrl: '../resources/js/admin/feature/promo-codes/promo-codes.html',
-        bindings: {
-            forEvent: '<',
-            forOrganization: '<',
-            event: '<',
-            organizationId: '<'
-        }
-    });
+    angular.module('adminApplication')
+        .component('promoCodes', {
+            controller: ['$window', '$uibModal', '$q', 'PromoCodeService', 'ConfigurationService', PromoCodeCtrl],
+            templateUrl: '../resources/js/admin/feature/promo-codes/promo-codes.html',
+            bindings: {
+                forEvent: '<',
+                forOrganization: '<',
+                event: '<',
+                organizationId: '<'
+            }
+        })
+        .component('promoCodeList', {
+            controller: [PromoCodeListCtrl],
+            templateUrl: '../resources/js/admin/feature/promo-codes/list.html',
+            bindings: {
+                forEvent: '<',
+                event: '<',
+                organizationId: '<',
+                promocodes: '<',
+                ticketCategoriesById: '<',
+                changeDate: '<',
+                disablePromocode: '<',
+                deletePromocode: '<',
+                isAccess: '<'
+            }
+        });
 
+    function PromoCodeListCtrl() {}
 
     function PromoCodeCtrl($window, $uibModal, $q, PromoCodeService, ConfigurationService) {
         var ctrl = this;
@@ -39,7 +56,12 @@
             }
 
             loader().then(function(res) {
-                ctrl.promocodes = res.data;
+                ctrl.promocodes = res.data.filter(function(pc) {
+                    return pc.codeType === 'DISCOUNT';
+                });
+                ctrl.accesscodes = res.data.filter(function(pc) {
+                    return pc.codeType === 'ACCESS';
+                });
                 angular.forEach(ctrl.promocodes, function(v) {
                     (function(v) {
                         PromoCodeService.countUse(v.id).then(function(val) {
@@ -49,9 +71,13 @@
                 });
 
                 ctrl.ticketCategoriesById = {};
+                ctrl.restrictedCategories = [];
                 if(ctrl.forEvent) {
                     angular.forEach(ctrl.event.ticketCategories, function(v) {
                         ctrl.ticketCategoriesById[v.id] = v;
+                        if(v.accessRestricted) {
+                            ctrl.restrictedCategories.push(v);
+                        }
                     });
                 }
             });
@@ -147,7 +173,7 @@
             });
         }
 
-        function addPromoCode() {
+        function addPromoCode(codeType) {
             var event = ctrl.event;
             var organizationId = ctrl.organizationId;
             var forEvent = ctrl.forEvent;
@@ -182,7 +208,7 @@
                         start : {date: now.format('YYYY-MM-DD'), time: now.format('HH:mm')},
                         end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')},
                         categories:[],
-                        codeType: 'DISCOUNT',
+                        codeType: codeType,
                         hiddenCategoryId: null
                     };
 

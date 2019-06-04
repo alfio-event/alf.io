@@ -2,57 +2,40 @@
     Your event cannot have promo codes!
 </div>
 <div ng-if="$ctrl.forOrganization || ($ctrl.isInternal($ctrl.event) && !$ctrl.event.freeOfCharge)">
-    <div class="page-header">
-        <h3><i class="fa fa-percent"></i> {{$ctrl.promoCodeDescription}} codes</h3>
-        <h5 class="text-muted">Manage/Handle the {{$ctrl.promoCodeDescription}} codes.</h5>
-    </div>
-    <div class="table-responsive">
-        <table class="table" data-ng-if="$ctrl.promocodes.length > 0">
-            <thead>
-            <tr>
-                <th ng-if="$ctrl.forEvent">&nbsp;</th>
-                <th>Code</th>
-                <th width="2%">#</th>
-                <th width="2%">Max</th>
-                <th width="10%">Start</th>
-                <th width="10%">End</th>
-                <th width="6%">Amount</th>
-                <th width="10%" ng-if="$ctrl.forEvent">Categories</th>
-                <th width="15%">Description</th>
-                <th width="10%">Contact</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr data-ng-repeat="promocode in $ctrl.promocodes" data-ng-class="{'text-muted': promocode.expired}">
-                <td ng-if="$ctrl.forEvent"><i class="fa" data-ng-class="{'fa-percent': promocode.codeType === 'DISCOUNT', 'fa-unlock': promocode.codeType === 'ACCESS'}"></i></td>
-                <td>{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span></td>
-                <td class="text-right">{{promocode.useCount}}</td>
-                <td class="text-right">{{promocode.maxUsage}}</td>
-                <td>{{::promocode.formattedStart | formatDate}}</td>
-                <td>{{::promocode.formattedEnd | formatDate}}</td>
-                <td>
-                    <span data-ng-if="promocode.codeType !== 'DISCOUNT'">&nbsp;</span>
-                    <span data-ng-if="promocode.codeType === 'DISCOUNT' && promocode.discountType === 'PERCENTAGE'">-{{::promocode.discountAmount}}%</span>
-                    <span data-ng-if="promocode.codeType === 'DISCOUNT' && promocode.discountType === 'FIXED_AMOUNT'">-{{::promocode.formattedDiscountAmount | currency : ($ctrl.event.currency || "")}}</span>
-                </td>
-                <td ng-if="$ctrl.forEvent">
-                    <div ng-if="promocode.categories.length > 0"><p ng-repeat="categoryId in promocode.categories">{{::$ctrl.ticketCategoriesById[categoryId].name}}</p></div>
-                    <div ng-if="promocode.hiddenCategoryId">{{::$ctrl.ticketCategoriesById[promocode.hiddenCategoryId].name}}</div>
-                    <div class="text-muted" ng-if="promocode.codeType === 'DISCOUNT' && (promocode.categories == null || promocode.categories.length == 0)">Apply to all</div>
-                </td>
-                <td ng-bind="promocode.description"></td>
-                <td ng-bind="promocode.emailReference"></td>
-                <td>
-                    <button class="btn btn-xs btn-default" ng-click="$ctrl.changeDate(promocode)"><i class="fa fa-edit"></i> Edit Settings</button>
-                    <button data-ng-hide="promocode.expired" class="btn btn-xs btn-default" data-ng-click="$ctrl.disablePromocode(promocode)"><i class="fa fa-remove"></i> Disable</button>
-                    <button data-ng-show="promocode.useCount === 0" class="btn btn-xs btn-default" data-ng-click="$ctrl.deletePromocode(promocode)"><i class="fa fa-trash"></i> Delete</button>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+    <div class="wMarginBottom30px">
+        <div class="page-header">
+            <h3><i class="fa fa-percent"></i> {{$ctrl.promoCodeDescription}} codes</h3>
+            <h5 class="text-muted">Manage/Handle the {{$ctrl.promoCodeDescription}} codes.</h5>
+        </div>
+        <promo-code-list for-event="$ctrl.forEvent"
+                         event="$ctrl.event"
+                         organization-id="$ctrl.organizationId"
+                         ticket-categories-by-id="$ctrl.ticketCategoriesById"
+                         change-date="$ctrl.changeDate"
+                         disable-promocode="$ctrl.disablePromocode"
+                         delete-promocode="$ctrl.deletePromocode"
+                         promocodes="$ctrl.promocodes"></promo-code-list>
         <div>
-            <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode()"><i class="fa fa-plus"></i> add {{$ctrl.promoCodeDescription}} code</button>
+            <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode('DISCOUNT')"><i class="fa fa-plus"></i> add {{$ctrl.promoCodeDescription}} Code</button>
+        </div>
+    </div>
+
+    <div data-ng-if="$ctrl.forEvent && $ctrl.restrictedCategories.length > 0" class="wMarginTop30px">
+        <div class="page-header">
+            <h3><i class="fa fa-unlock"></i> Access codes</h3>
+            <h5 class="text-muted">Access codes are special {{$ctrl.promoCodeDescription}} codes that give access to hidden categories. By entering an Access Code, an attendee can register one or more tickets, depending on the configuration.</h5>
+        </div>
+        <promo-code-list for-event="$ctrl.forEvent"
+                         event="$ctrl.event"
+                         organization-id="$ctrl.organizationId"
+                         ticket-categories-by-id="$ctrl.ticketCategoriesById"
+                         change-date="$ctrl.changeDate"
+                         disable-promocode="$ctrl.disablePromocode"
+                         delete-promocode="$ctrl.deletePromocode"
+                         promocodes="$ctrl.accesscodes"
+                         is-access="true"></promo-code-list>
+        <div>
+            <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode('ACCESS')"><i class="fa fa-plus"></i> add Access Code</button>
         </div>
     </div>
 </div>

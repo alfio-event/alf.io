@@ -1,27 +1,9 @@
 <div class="modal-header">
-    <h3>Insert new {{promoCodeDescription}} code</h3>
+    <h3 data-ng-if="promocode.codeType === 'DISCOUNT'">Insert new {{promoCodeDescription}} Code</h3>
+    <h3 data-ng-if="promocode.codeType === 'ACCESS'">Insert new Access Code</h3>
 </div>
 <form name="promoCodeForm" data-ng-submit="update(promoCodeForm, promocode)" novalidate data-error-sensitive>
     <div class="modal-body">
-        <div class="col-xs-12 col-md-8 col-md-offset-2" ng-if="restrictedCategories && restrictedCategories.length > 0">
-            <div class="form-group">
-                <label class="control-label">Code type</label>
-                <div>
-                    <div class="radio-inline">
-                        <label>
-                            <input type="radio" name="codeType" data-ng-model="promocode.codeType" data-ng-value="'DISCOUNT'" required>
-                            Discount Code
-                        </label>
-                    </div>
-                    <div class="radio-inline">
-                        <label>
-                            <input type="radio" name="codeType" data-ng-model="promocode.codeType" data-ng-value="'ACCESS'" required>
-                            Access hidden Category
-                        </label>
-                    </div>
-                </div>
-            </div>
-        </div>
         <div class="col-sm-12 col-md-8 col-md-offset-2">
             <div class="form-group" bs-form-error="promocode.promoCode">
                 <label for="promoCode">name (min length is 7 characters)</label>
