@@ -306,13 +306,13 @@ public class EventApiV2Controller {
 
     @PostMapping(value = "event/{eventName}/reserve-tickets")
     public ResponseEntity<ValidatedResponse<String>> reserveTicket(@PathVariable("eventName") String eventName,
+                                                                   @RequestParam("lang") String lang,
                                                                    @RequestBody ReservationForm reservation,
                                                                    BindingResult bindingResult,
                                                                    ServletWebRequest request,
-                                                                   RedirectAttributes redirectAttributes,
-                                                                   Locale locale) {
+                                                                   RedirectAttributes redirectAttributes) {
 
-        String redirectResult = eventController.reserveTicket(eventName, reservation, bindingResult, request, redirectAttributes, locale);
+        String redirectResult = eventController.reserveTicket(eventName, reservation, bindingResult, request, redirectAttributes, Locale.forLanguageTag(lang));
 
         if (bindingResult.hasErrors()) {
             return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);

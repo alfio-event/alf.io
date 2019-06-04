@@ -233,6 +233,7 @@ public class ReservationApiV2Controller {
     @PostMapping("/event/{eventName}/reservation/{reservationId}")
     public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> handleReservation(@PathVariable("eventName") String eventName,
                                                                                          @PathVariable("reservationId") String reservationId,
+                                                                                         @RequestParam("lang") String lang,
                                                                                          @RequestBody  PaymentForm paymentForm,
                                                                                          BindingResult bindingResult,
                                                                                          Model model,
@@ -241,7 +242,7 @@ public class ReservationApiV2Controller {
                                                                                          HttpSession session) {
         //FIXME check precondition (see ReservationController.redirectIfNotValid)
         reservationController.handleReservation(eventName, reservationId, paymentForm,
-            bindingResult, model, request, Locale.ENGLISH, redirectAttributes,
+            bindingResult, model, request, Locale.forLanguageTag(lang), redirectAttributes,
             session);
 
         var modelMap = model.asMap();
@@ -260,14 +261,15 @@ public class ReservationApiV2Controller {
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/validate-to-overview")
     public ResponseEntity<ValidatedResponse<Boolean>> validateToOverview(@PathVariable("eventName") String eventName,
-                                                             @PathVariable("reservationId") String reservationId,
-                                                             @RequestBody ContactAndTicketsForm contactAndTicketsForm,
-                                                             BindingResult bindingResult,
-                                                             HttpServletRequest request,
-                                                             RedirectAttributes redirectAttributes) {
+                                                                         @PathVariable("reservationId") String reservationId,
+                                                                         @RequestParam("lang") String lang,
+                                                                         @RequestBody ContactAndTicketsForm contactAndTicketsForm,
+                                                                         BindingResult bindingResult,
+                                                                         HttpServletRequest request,
+                                                                         RedirectAttributes redirectAttributes) {
 
         //FIXME check precondition (see ReservationController.redirectIfNotValid)
-        reservationController.validateToOverview(eventName, reservationId, contactAndTicketsForm, bindingResult, request, redirectAttributes, Locale.ENGLISH);
+        reservationController.validateToOverview(eventName, reservationId, contactAndTicketsForm, bindingResult, request, redirectAttributes, Locale.forLanguageTag(lang));
 
         var body = ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors());
         return ResponseEntity.status(bindingResult.hasErrors() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK).body(body);
