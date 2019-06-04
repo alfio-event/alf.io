@@ -82,6 +82,8 @@ public class EventApiV2Controller {
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final WaitingQueueManager waitingQueueManager;
     private final I18nManager i18nManager;
+    private final TicketCategoryRepository ticketCategoryRepository;
+    private final PromoCodeDiscountRepository promoCodeDiscountRepository;
 
 
     @GetMapping("events")
@@ -168,16 +170,25 @@ public class EventApiV2Controller {
                 //
 
                 //
-                var forceAssignment = configurationManager.getBooleanConfigValue(partialConfig.apply(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION), false);
-                var enableAttendeeAutocomplete = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ATTENDEE_AUTOCOMPLETE), true);
-                var enableTicketTransfer = configurationManager.getBooleanConfigValue(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER), true);
-                var assignemntConfiguration = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete, enableTicketTransfer);
+                boolean forceAssignment = configurationManager.getBooleanConfigValue(partialConfig.apply(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION), false);
+                boolean enableAttendeeAutocomplete = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ATTENDEE_AUTOCOMPLETE), true);
+                boolean enableTicketTransfer = configurationManager.getBooleanConfigValue(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER), true);
+                var assignmentConf = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete, enableTicketTransfer);
+                //
+
+
+                //promotion codes
+                boolean hasAccessPromotions = configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.DISPLAY_DISCOUNT_CODE_BOX), true) &&
+                    (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
+                        promoCodeDiscountRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
+                boolean usePartnerCode = configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), false);
+                var promoConf = new EventWithAdditionalInfo.PromotionsConfiguration(hasAccessPromotions, usePartnerCode);
                 //
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
-                    formattedEndDate, formattedEndTime, invoicingConf, captchaConf, assignemntConfiguration), getCorsHeaders(), HttpStatus.OK);
+                    formattedEndDate, formattedEndTime, invoicingConf, captchaConf, assignmentConf, promoConf), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }

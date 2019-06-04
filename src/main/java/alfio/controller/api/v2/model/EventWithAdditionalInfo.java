@@ -59,6 +59,10 @@ public class EventWithAdditionalInfo implements DateValidity {
     private final AssignmentConfiguration assignmentConfiguration;
     //
 
+    //
+    private final PromotionsConfiguration promotionsConfiguration;
+    //
+
     public String getShortName() {
         return event.getShortName();
     }
@@ -178,6 +182,10 @@ public class EventWithAdditionalInfo implements DateValidity {
         return assignmentConfiguration;
     }
 
+    public PromotionsConfiguration getPromotionsConfiguration() {
+        return promotionsConfiguration;
+    }
+
     @AllArgsConstructor
     @Getter
     public static class PaymentProxyWithParameters {
@@ -211,5 +219,12 @@ public class EventWithAdditionalInfo implements DateValidity {
         private final boolean forceAssignment;
         private final boolean enableAttendeeAutocomplete;
         private final boolean enableTicketTransfer;
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class PromotionsConfiguration {
+        private final boolean hasAccessPromotions;
+        private final boolean usePartnerCode;
     }
 }
