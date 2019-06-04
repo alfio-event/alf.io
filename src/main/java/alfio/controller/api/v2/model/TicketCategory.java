@@ -33,6 +33,8 @@ public class TicketCategory {
     private final int maximumSaleableTickets;
     private final boolean free;
     private final String formattedFinalPrice;
+    private final boolean hasDiscount;
+    private final String formattedDiscountedPrice;
 
     //
     private final boolean expired;
@@ -55,6 +57,8 @@ public class TicketCategory {
         this.maximumSaleableTickets = max(0, min(saleableTicketCategory.getMaxTicketsAfterConfiguration(), saleableTicketCategory.getAvailableTickets()));
         this.free = saleableTicketCategory.getFree();
         this.formattedFinalPrice = saleableTicketCategory.getFormattedFinalPrice();
+        this.hasDiscount = saleableTicketCategory.getSupportsDiscount();
+        this.formattedDiscountedPrice = hasDiscount ? saleableTicketCategory.getDiscountedPrice() : "";
 
         //
         this.expired = saleableTicketCategory.getExpired();
