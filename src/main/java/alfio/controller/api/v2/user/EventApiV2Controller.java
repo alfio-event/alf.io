@@ -360,7 +360,19 @@ public class EventApiV2Controller {
                 .replace("/book", "");
             return ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), reservationIdentifier));
         }
+    }
 
+    @GetMapping(value = "event/{eventName}/validate-code")
+    public ResponseEntity<ValidatedResponse<Boolean>> validateCode(@PathVariable("eventName") String eventName,
+                                                                   @RequestParam("code") String code) {
+
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(e -> checkCode(e, code)).map(res -> {
+            if(res.isSuccess()) {
+                return ResponseEntity.ok(res.withValue(true));
+            } else {
+                return new ResponseEntity<>(res.withValue(false), HttpStatus.UNPROCESSABLE_ENTITY);
+            }
+        }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 

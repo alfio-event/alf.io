@@ -44,6 +44,10 @@ public class ValidatedResponse<T> {
         return new ValidatedResponse<>(ValidationResult.failed(transformed), value);
     }
 
+    public<R> ValidatedResponse<R> withValue(R value) {
+        return new ValidatedResponse<>(validationResult, value);
+    }
+
     public boolean isSuccess() {
         return validationResult.isSuccess();
     }
