@@ -366,7 +366,8 @@ public class EventApiV2Controller {
     public ResponseEntity<ValidatedResponse<Boolean>> validateCode(@PathVariable("eventName") String eventName,
                                                                    @RequestParam("code") String code) {
 
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(e -> checkCode(e, code)).map(res -> {
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(e -> {
+            var res = checkCode(e, code);
             if(res.isSuccess()) {
                 return ResponseEntity.ok(res.withValue(true));
             } else {
