@@ -18,19 +18,21 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.EventController;
 import alfio.controller.api.v2.model.*;
+import alfio.controller.api.v2.model.AdditionalService;
+import alfio.controller.api.v2.model.EventWithAdditionalInfo;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo.PaymentProxyWithParameters;
+import alfio.controller.api.v2.model.TicketCategory;
 import alfio.controller.decorator.EventDescriptor;
 import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.controller.support.Formatters;
+import alfio.controller.support.SessionUtil;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.AdditionalServiceText;
-import alfio.model.Event;
-import alfio.model.EventDescription;
+import alfio.model.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
@@ -43,6 +45,8 @@ import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.MustacheCustomTagInterceptor;
 import alfio.util.Validator;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -55,9 +59,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
@@ -83,7 +90,11 @@ public class EventApiV2Controller {
     private final WaitingQueueManager waitingQueueManager;
     private final I18nManager i18nManager;
     private final TicketCategoryRepository ticketCategoryRepository;
+
+    //
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
+    private final SpecialPriceRepository specialPriceRepository;
+    //
 
 
     @GetMapping("events")
@@ -236,7 +247,23 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/ticket-categories")
-    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, Model model, HttpServletRequest request) {
+    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, @RequestParam(value = "code", required = false) String code, Model model, HttpServletRequest request) {
+
+
+        eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).ifPresent(event -> {
+            var codeResult = checkCode(event, code);
+
+            if (codeResult.isSuccess()) {
+                codeResult.getValue().getLeft().ifPresent(specialPrice -> {
+                    SessionUtil.saveSpecialPriceCodeOnRequestAttr(specialPrice.getCode(), request);
+                });
+                codeResult.getValue().getRight().ifPresent(promoCodeDiscount -> {
+                    SessionUtil.savePromotionCodeDiscountOnRequestAttr(promoCodeDiscount.getPromoCode(), request);
+                });
+            }
+        });
+
+
         if ("/event/show-event".equals(eventController.showEvent(eventName, model, request, Locale.ENGLISH))) {
             var valid = (List<SaleableTicketCategory>) model.asMap().get("ticketCategories");
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
@@ -334,6 +361,43 @@ public class EventApiV2Controller {
             return ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), reservationIdentifier));
         }
 
+    }
+
+
+    private ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>> checkCode(EventAndOrganizationId event, String promoCode) {
+        ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
+        ZonedDateTime now = ZonedDateTime.now(eventZoneId);
+        Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
+        Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
+        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
+
+        var result = Pair.of(specialCode, promotionCodeDiscount);
+
+        //
+        if(specialCode.isPresent()) {
+            if (eventManager.getOptionalByIdAndActive(specialCode.get().getTicketCategoryId(), event.getId()).isEmpty()) {
+                return new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", "")), result);
+            }
+
+            if (specialCode.get().getStatus() != SpecialPrice.Status.FREE) {
+                return new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", "")), result);
+            }
+
+        } else if (promotionCodeDiscount.isPresent() && !promotionCodeDiscount.get().isCurrentlyValid(eventZoneId, now)) {
+            return new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", "")), result);
+        } else if (promotionCodeDiscount.isPresent() && isDiscountCodeUsageExceeded(promotionCodeDiscount.get())){
+            return new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("usage", "")), result);
+        } else if(promotionCodeDiscount.isEmpty()) {
+            return new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", "")), result);
+        }
+        //
+
+
+        return new ValidatedResponse<>(ValidationResult.success(), result);
+    }
+
+    private boolean isDiscountCodeUsageExceeded(PromoCodeDiscount discount) {
+        return discount.getMaxUsage() != null && discount.getMaxUsage() <= promoCodeDiscountRepository.countConfirmedPromoCode(discount.getId(), categoriesOrNull(discount), null, categoriesOrNull(discount) != null ? "X" : null);
     }
 
 
