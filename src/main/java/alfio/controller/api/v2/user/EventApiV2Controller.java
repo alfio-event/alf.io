@@ -338,7 +338,14 @@ public class EventApiV2Controller {
                                                                    ServletWebRequest request,
                                                                    RedirectAttributes redirectAttributes) {
 
-        applyPromoCodeInRequest(eventName, reservation.getPromoCode(), request.getRequest());
+        if(StringUtils.trimToNull(reservation.getPromoCode()) != null) {
+            var codeCheck = applyPromoCodeInRequest(eventName, reservation.getPromoCode(), request.getRequest());
+            codeCheck.ifPresent(res -> {
+                if(!res.isSuccess()) {
+                    bindingResult.rejectValue("promoCode", "invalid.promo-code", "invalid.promo-code");
+                }
+            });
+        }
 
         String redirectResult = eventController.reserveTicket(eventName, reservation, bindingResult, request, redirectAttributes, Locale.forLanguageTag(lang));
 
@@ -367,8 +374,8 @@ public class EventApiV2Controller {
     }
 
     //TODO: temporary!
-    private void applyPromoCodeInRequest(String eventName, String code, HttpServletRequest request) {
-        eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).ifPresent(event -> {
+    private Optional<ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>>> applyPromoCodeInRequest(String eventName, String code, HttpServletRequest request) {
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(event -> {
             var codeResult = checkCode(event, code);
 
             if (codeResult.isSuccess()) {
@@ -379,6 +386,7 @@ public class EventApiV2Controller {
                     SessionUtil.savePromotionCodeDiscountOnRequestAttr(promoCodeDiscount.getPromoCode(), request);
                 });
             }
+            return codeResult;
         });
     }
 
