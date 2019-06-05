@@ -156,10 +156,11 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         try {
             var stripeEvent = Webhook.constructEvent(body, signature, getWebhookSignatureKey());
             String eventType = stripeEvent.getType();
+            var dataObjectDeserializer = stripeEvent.getDataObjectDeserializer();
             if(eventType.startsWith("charge.")) {
-                return Optional.of(new StripeChargeTransactionWebhookPayload(eventType, (Charge) stripeEvent.getData().getObject()));
+                return dataObjectDeserializer.getObject().map(obj -> new StripeChargeTransactionWebhookPayload(eventType, (Charge)obj));
             } else if(eventType.startsWith("payment_intent.")) {
-                return Optional.of(new StripePaymentIntentWebhookPayload(eventType, (PaymentIntent) stripeEvent.getData().getObject()));
+                return dataObjectDeserializer.getObject().map(obj -> new StripePaymentIntentWebhookPayload(eventType, (PaymentIntent)obj));
             }
             return Optional.empty();
         } catch (Exception e) {
