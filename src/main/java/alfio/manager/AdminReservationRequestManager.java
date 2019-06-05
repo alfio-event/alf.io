@@ -80,6 +80,21 @@ public class AdminReservationRequestManager {
             return Result.error(ErrorCode.custom("MAX_NUMBER_EXCEEDED", "Maximum allowed attendees per reservation is 100"));
         }
 
+        // #620 - validate reference:
+        var attendeesWithDuplicateReference = body.getTicketsInfo().stream().flatMap(ti -> ti.getAttendees().stream())
+            .filter(attendee -> StringUtils.isNotEmpty(attendee.getReference()))
+            .collect(Collectors.groupingBy(attendee -> attendee.getReference().trim(), Collectors.counting()))
+            .entrySet().stream()
+            .filter(e -> e.getValue() > 1)
+            .map(Map.Entry::getKey)
+            .limit(5) // return max 5 codes
+            .collect(Collectors.toList());
+
+        if(!attendeesWithDuplicateReference.isEmpty()) {
+            return Result.error(ErrorCode.custom("DUPLICATE_REFERENCE", "The following codes are duplicate:" + attendeesWithDuplicateReference));
+        }
+
+
         return eventManager.getOptionalByName(eventName, username)
             .map(event -> adminReservationManager.validateTickets(body, event))
             .map(request -> request.flatMap(pair -> insertRequest(pair.getRight(), pair.getLeft(), singleReservation, username)))
