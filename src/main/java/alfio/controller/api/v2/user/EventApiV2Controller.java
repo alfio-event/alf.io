@@ -249,19 +249,7 @@ public class EventApiV2Controller {
     @GetMapping("event/{eventName}/ticket-categories")
     public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, @RequestParam(value = "code", required = false) String code, Model model, HttpServletRequest request) {
 
-
-        eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).ifPresent(event -> {
-            var codeResult = checkCode(event, code);
-
-            if (codeResult.isSuccess()) {
-                codeResult.getValue().getLeft().ifPresent(specialPrice -> {
-                    SessionUtil.saveSpecialPriceCodeOnRequestAttr(specialPrice.getCode(), request);
-                });
-                codeResult.getValue().getRight().ifPresent(promoCodeDiscount -> {
-                    SessionUtil.savePromotionCodeDiscountOnRequestAttr(promoCodeDiscount.getPromoCode(), request);
-                });
-            }
-        });
+        applyPromoCodeInRequest(eventName, code, request);
 
 
         if ("/event/show-event".equals(eventController.showEvent(eventName, model, request, Locale.ENGLISH))) {
@@ -350,6 +338,8 @@ public class EventApiV2Controller {
                                                                    ServletWebRequest request,
                                                                    RedirectAttributes redirectAttributes) {
 
+        applyPromoCodeInRequest(eventName, reservation.getPromoCode(), request.getRequest());
+
         String redirectResult = eventController.reserveTicket(eventName, reservation, bindingResult, request, redirectAttributes, Locale.forLanguageTag(lang));
 
         if (bindingResult.hasErrors()) {
@@ -374,6 +364,22 @@ public class EventApiV2Controller {
                 return new ResponseEntity<>(res.withValue(false), HttpStatus.UNPROCESSABLE_ENTITY);
             }
         }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    //TODO: temporary!
+    private void applyPromoCodeInRequest(String eventName, String code, HttpServletRequest request) {
+        eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).ifPresent(event -> {
+            var codeResult = checkCode(event, code);
+
+            if (codeResult.isSuccess()) {
+                codeResult.getValue().getLeft().ifPresent(specialPrice -> {
+                    SessionUtil.saveSpecialPriceCodeOnRequestAttr(specialPrice.getCode(), request);
+                });
+                codeResult.getValue().getRight().ifPresent(promoCodeDiscount -> {
+                    SessionUtil.savePromotionCodeDiscountOnRequestAttr(promoCodeDiscount.getPromoCode(), request);
+                });
+            }
+        });
     }
 
 
