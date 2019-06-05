@@ -1032,7 +1032,6 @@
                     if(!ctrl.displayEventData) {
                         delete ctrl.event;
                     }
-                    console.log("isConfiguration:", ctrl.isConfiguration(), detectCurrentView($state.current));
                     if(ctrl.isConfiguration()) {
                         displayConfiguration();
                     }

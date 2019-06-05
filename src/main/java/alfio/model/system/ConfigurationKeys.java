@@ -159,6 +159,9 @@ public enum ConfigurationKeys {
 
     ON_SITE_ENABLED("On site enabled", false, SettingCategory.PAYMENT, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION)),
 
+    SEND_TICKETS_AFTER_IMPORT_ATTENDEE("Send tickets after importing attendees", false, SettingCategory.IMPORT_ATTENDEE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
+    CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE("Create a reservation for each attendee imported", false, SettingCategory.IMPORT_ATTENDEE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
+
     //
     VAT_NR("VAT number", false, SettingCategory.INVOICE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     INVOICE_NUMBER_PATTERN("Invoice number pattern, example: INVOICE-%d", false, SettingCategory.INVOICE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
@@ -226,7 +229,8 @@ public enum ConfigurationKeys {
         MAP("Maps settings"),
         TRANSLATIONS("Translations"),
         PASS_INTEGRATION("Pass Integration"),
-        WAITING_LIST("Waiting List");
+        WAITING_LIST("Waiting List"),
+        IMPORT_ATTENDEE("Import Attendees");
 
         private final String description;
         SettingCategory(String description) {

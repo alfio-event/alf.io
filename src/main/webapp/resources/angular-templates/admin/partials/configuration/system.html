@@ -250,6 +250,15 @@
             </div>
         </div>
 
+        <div class="page-header">
+            <h2>Import Attendees</h2>
+        </div>
+        <div>
+            <div data-ng-repeat="setting in systemConf.importAttendee.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+            </div>
+        </div>
+
 
         <div class="page-header">
             <h2>Internationalization</h2>
