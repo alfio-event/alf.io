@@ -39,9 +39,9 @@
                                     name: stripeEl.getAttribute('data-stripe-contact-name'),
                                     email: stripeEl.getAttribute('data-stripe-email'),
                                     address: {
-                                         line1: stripeEl.getAttribute('data-stripe-contact-address'),
-                                         postal_code: stripeEl.getAttribute('data-stripe-contact-zip'),
-                                         country: stripeEl.getAttribute('data-stripe-contact-country').toLowerCase()
+                                        line1: stripeEl.getAttribute('data-stripe-contact-address'),
+                                        postal_code: stripeEl.getAttribute('data-stripe-contact-zip'),
+                                        country: stripeEl.getAttribute('data-stripe-contact-country').toLowerCase()
                                     }
                                 }
                             }
@@ -76,10 +76,7 @@
                     }, cancelHandler);
                 },
                 init: function() {
-                    console.log("init...");
-                    var options = {
-                        betas: ['payment_intent_beta_3']
-                    };
+                    var options = {};
                     var connectedAccount = stripeEl.getAttribute('data-stripe-on-behalf-of');
                     if(connectedAccount && connectedAccount !== '') {
                         options.stripeAccount = connectedAccount;
