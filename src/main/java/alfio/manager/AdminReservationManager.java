@@ -26,6 +26,7 @@ import alfio.model.decorator.TicketPriceContainer;
 import alfio.model.modification.AdminReservationModification;
 import alfio.model.modification.AdminReservationModification.Attendee;
 import alfio.model.modification.AdminReservationModification.Category;
+import alfio.model.modification.AdminReservationModification.Notification;
 import alfio.model.modification.AdminReservationModification.TicketsInfo;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -107,7 +108,7 @@ public class AdminReservationManager {
     private final FileUploadManager fileUploadManager;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
-    public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username) {
+    public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username, Notification notification) {
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition();
         TransactionTemplate template = new TransactionTemplate(transactionManager, definition);
         return template.execute(status -> {
@@ -118,7 +119,7 @@ public class AdminReservationManager {
                         return e;
                     })).map(event -> ticketReservationRepository.findOptionalReservationById(reservationId)
                         .filter(r -> r.getStatus() == TicketReservationStatus.PENDING || r.getStatus() == TicketReservationStatus.STUCK)
-                        .map(r -> performConfirmation(reservationId, event, r))
+                        .map(r -> performConfirmation(reservationId, event, r, notification))
                         .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
                     ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
                 if(!result.isSuccess()) {
@@ -198,7 +199,7 @@ public class AdminReservationManager {
 
     @Transactional
     public Result<Boolean> notify(String eventName, String reservationId, AdminReservationModification arm, String username) {
-        AdminReservationModification.Notification notification = arm.getNotification();
+        Notification notification = arm.getNotification();
         return getEventTicketReservationPair(eventName, reservationId, username)
             .map(pair -> {
                 Event event = pair.getLeft();
@@ -308,14 +309,14 @@ public class AdminReservationManager {
             .orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
     }
 
-    private Result<Triple<TicketReservation, List<Ticket>, Event>> performConfirmation(String reservationId, Event event, TicketReservation original) {
+    private Result<Triple<TicketReservation, List<Ticket>, Event>> performConfirmation(String reservationId, Event event, TicketReservation original, Notification notification) {
         try {
             PaymentSpecification spec = new PaymentSpecification(reservationId, null, 0,
                 event, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event.mustUseFirstAndLastName()),
                 original.getBillingAddress(), original.getCustomerReference(), Locale.forLanguageTag(original.getUserLanguage()),
                 false, false, null, null, null, null, false, false);
 
-            ticketReservationManager.completeReservation(spec, Optional.empty(), PaymentProxy.ADMIN, false);
+            ticketReservationManager.completeReservation(spec, Optional.empty(), PaymentProxy.ADMIN, notification.isCustomer(), notification.isAttendees());
             return loadReservation(reservationId);
         } catch(Exception e) {
             return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);

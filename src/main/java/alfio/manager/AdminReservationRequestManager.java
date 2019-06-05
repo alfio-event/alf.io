@@ -45,6 +45,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.modification.AdminReservationModification.Notification.orEmpty;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 
@@ -135,7 +136,7 @@ public class AdminReservationRequestManager {
                 String eventName = event.getShortName();
                 String username = user.getUsername();
                 Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.createReservation(request.getBody(), eventName, username)
-                    .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username));
+                    .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username, orEmpty(request.getBody().getNotification())));
                 if(!result.isSuccess()) {
                     status.rollbackToSavepoint(savepoint);
                 }

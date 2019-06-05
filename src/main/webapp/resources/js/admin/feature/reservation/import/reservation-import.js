@@ -66,7 +66,11 @@
                     time: expiration.format('HH:mm')
                 },
                 customerData: {},
-                ticketsInfo: []
+                ticketsInfo: [],
+                notification: {
+                    customer: false,
+                    attendees: false
+                }
             };
             ctrl.addTicketInfo();
         };

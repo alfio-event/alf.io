@@ -482,7 +482,7 @@ public class TicketReservationManager {
 
     private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
         generateInvoiceNumber(spec, reservationCost);
-        completeReservation(spec, specialPriceSessionId, paymentProxy, true);
+        completeReservation(spec, specialPriceSessionId, paymentProxy, true, true);
     }
 
     private void generateInvoiceNumber(PaymentSpecification spec, TotalPrice reservationCost) {
@@ -587,7 +587,7 @@ public class TicketReservationManager {
         CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
         acquireItems(PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), customerName,
             ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress(),
-            ticketReservation.getCustomerReference(), event);
+            ticketReservation.getCustomerReference(), event, true);
 
         Locale language = findReservationLanguage(reservationId);
 
@@ -878,17 +878,14 @@ public class TicketReservationManager {
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
      */
-    void completeReservation(PaymentSpecification spec, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy, boolean sendConfirmationEmails) {
+    void completeReservation(PaymentSpecification spec, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy, boolean sendReservationConfirmationEmail, boolean sendTickets) {
         String reservationId = spec.getReservationId();
         int eventId = spec.getEvent().getId();
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         Locale locale = Locale.forLanguageTag(reservation.getUserLanguage());
         if(paymentProxy != PaymentProxy.OFFLINE) {
-            acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent());
+            acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent(), sendTickets);
             extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), eventId);
-            if(sendConfirmationEmails) {
-                sendConfirmationEmail(spec.getEvent(), reservation, locale);
-            }
         }
         //cleanup unused special price codes...
         specialPriceSessionId.ifPresent(specialPriceRepository::unbindFromSession);
@@ -904,7 +901,7 @@ public class TicketReservationManager {
             auditingRepository.insert(reservationId, null, eventId, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getEvent().getPrivacyPolicyUrl())));
         }
 
-        if(sendConfirmationEmails) {
+        if(sendReservationConfirmationEmail) {
             TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
             sendConfirmationEmail(spec.getEvent(), updatedReservation, locale);
             sendReservationCompleteEmailToOrganizer(spec.getEvent(), updatedReservation, locale);
@@ -916,7 +913,7 @@ public class TicketReservationManager {
     }
 
     private void acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
-                              String userLanguage, String billingAddress, String customerReference, Event event) {
+                              String userLanguage, String billingAddress, String customerReference, Event event, boolean sendTickets) {
 
         TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
 
@@ -955,7 +952,7 @@ public class TicketReservationManager {
             .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
             .forEach(ticket -> {
                 Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
-                if(paymentProxy != PaymentProxy.ADMIN && configurationManager.getBooleanConfigValue(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY), true)) {
+                if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getBooleanConfigValue(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY), true)) {
                     sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                 }
                 extensionManager.handleTicketAssignment(ticket);

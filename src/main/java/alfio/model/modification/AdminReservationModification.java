@@ -16,7 +16,6 @@
  */
 package alfio.model.modification;
 
-import alfio.model.BillingDetails;
 import alfio.model.TicketReservationInvoicingAdditionalInfo;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -207,6 +206,9 @@ public class AdminReservationModification implements Serializable {
 
     @Getter
     public static class Notification {
+
+        public static Notification EMPTY = new Notification(false, false);
+
         private final boolean customer;
         private final boolean attendees;
 
@@ -215,6 +217,10 @@ public class AdminReservationModification implements Serializable {
                             @JsonProperty("attendees") boolean attendees) {
             this.customer = customer;
             this.attendees = attendees;
+        }
+
+        public static Notification orEmpty(Notification notification) {
+            return notification != null ? notification : EMPTY;
         }
     }
 
