@@ -360,15 +360,25 @@ public class EventApiV2Controller {
     }
 
     @GetMapping(value = "event/{eventName}/validate-code")
-    public ResponseEntity<ValidatedResponse<Boolean>> validateCode(@PathVariable("eventName") String eventName,
+    public ResponseEntity<ValidatedResponse<EventCode>> validateCode(@PathVariable("eventName") String eventName,
                                                                    @RequestParam("code") String code) {
 
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(e -> {
             var res = checkCode(e, code);
             if(res.isSuccess()) {
-                return ResponseEntity.ok(res.withValue(true));
+
+                var eventCode = res.getValue().getLeft()
+                    .map(sp -> new EventCode(code, EventCode.EventCodeType.SPECIAL_PRICE, PromoCodeDiscount.DiscountType.NONE, null))
+                    .orElseGet(() -> {
+                        var promoCodeDiscount = res.getValue().getRight().orElseThrow();
+                        var type = promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS ? EventCode.EventCodeType.DISCOUNT : EventCode.EventCodeType.DISCOUNT;
+                        String formattedDiscountAmount =  promoCodeDiscount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT ? promoCodeDiscount.getFormattedDiscountAmount().toString() : Integer.toString(promoCodeDiscount.getDiscountAmount());
+                        return new EventCode(code, type, promoCodeDiscount.getDiscountType(), formattedDiscountAmount);
+                    });
+
+                return ResponseEntity.ok(res.withValue(eventCode));
             } else {
-                return new ResponseEntity<>(res.withValue(false), HttpStatus.UNPROCESSABLE_ENTITY);
+                return new ResponseEntity<>(res.withValue(new EventCode(code,null, null, null)), HttpStatus.UNPROCESSABLE_ENTITY);
             }
         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
