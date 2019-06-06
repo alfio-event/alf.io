@@ -42,6 +42,7 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
+import alfio.util.ErrorsCode;
 import alfio.util.MustacheCustomTagInterceptor;
 import alfio.util.Validator;
 import lombok.AllArgsConstructor;
@@ -342,7 +343,7 @@ public class EventApiV2Controller {
             var codeCheck = applyPromoCodeInRequest(eventName, reservation.getPromoCode(), request.getRequest());
             codeCheck.ifPresent(res -> {
                 if(!res.isSuccess()) {
-                    bindingResult.rejectValue("promoCode", "invalid.promo-code", "invalid.promo-code");
+                    bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND);
                 }
             });
         }
@@ -410,22 +411,24 @@ public class EventApiV2Controller {
 
         var result = Pair.of(specialCode, promotionCodeDiscount);
 
+        var errorResponse = new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND)), result);
+
         //
         if(specialCode.isPresent()) {
             if (eventManager.getOptionalByIdAndActive(specialCode.get().getTicketCategoryId(), event.getId()).isEmpty()) {
-                return new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", "")), result);
+                return errorResponse;
             }
 
             if (specialCode.get().getStatus() != SpecialPrice.Status.FREE) {
-                return new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", "")), result);
+                return errorResponse;
             }
 
         } else if (promotionCodeDiscount.isPresent() && !promotionCodeDiscount.get().isCurrentlyValid(eventZoneId, now)) {
-            return new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", "")), result);
+            return errorResponse;
         } else if (promotionCodeDiscount.isPresent() && isDiscountCodeUsageExceeded(promotionCodeDiscount.get())){
-            return new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("usage", "")), result);
+            return errorResponse;
         } else if(promotionCodeDiscount.isEmpty()) {
-            return new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", "")), result);
+            return errorResponse;
         }
         //
 
