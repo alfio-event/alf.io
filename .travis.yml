@@ -21,4 +21,4 @@ before_script:
 script:
   - TERM=dumb ./gradlew build jacocoTestReport $PROFILE
 after_success:
-  ./gradlew -Djdk.tls.client.protocols="TLSv1,TLSv1.1,TLSv1.2" coveralls
+  ./gradlew coveralls
