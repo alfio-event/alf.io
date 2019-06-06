@@ -33,19 +33,7 @@
                 id: 'STRIPE',
                 pay: function(confirmHandler, cancelHandler) {
                     retrieveSecretKey(eventName, reservationId, function(secret) {
-                        stripeHandler.handleCardPayment(secret, card, {
-                            source_data: {
-                                owner: {
-                                    name: stripeEl.getAttribute('data-stripe-contact-name'),
-                                    email: stripeEl.getAttribute('data-stripe-email'),
-                                    address: {
-                                        line1: stripeEl.getAttribute('data-stripe-contact-address'),
-                                        postal_code: stripeEl.getAttribute('data-stripe-contact-zip'),
-                                        country: stripeEl.getAttribute('data-stripe-contact-country').toLowerCase()
-                                    }
-                                }
-                            }
-                        }).then(function(result) {
+                        stripeHandler.handleCardPayment(secret, card, getMetadata(stripeEl)).then(function(result) {
                             if(result.error) {
                                 cancelHandler(result.error.message);
                             } else {
@@ -117,7 +105,30 @@
         }
     };
 
+
     setup();
+
+    var getMetadata = function(stripeEl) {
+        var nullIfEmpty = function(val) {
+            if(val == null || val === '') {
+                return null;
+            }
+            return val;
+        };
+        return {
+            payment_method_data: {
+                billing_details: {
+                    name: stripeEl.getAttribute('data-stripe-contact-name'),
+                    email: stripeEl.getAttribute('data-stripe-email'),
+                    address: {
+                        line1: nullIfEmpty(stripeEl.getAttribute('data-stripe-contact-address')),
+                        postal_code: nullIfEmpty(stripeEl.getAttribute('data-stripe-contact-zip')),
+                        country: nullIfEmpty(stripeEl.getAttribute('data-stripe-contact-country').toLowerCase())
+                    }
+                }
+            }
+        };
+    };
 
     var retrieveSecretKey = function(eventName, reservationId, successCallback, errorCallback) {
         var url = "/api/events/"+eventName+"/reservation/"+reservationId+"/payment/CREDIT_CARD/init";

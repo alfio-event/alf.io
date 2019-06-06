@@ -30,10 +30,12 @@ import alfio.model.transaction.webhook.StripeChargeTransactionWebhookPayload;
 import alfio.model.transaction.webhook.StripePaymentIntentWebhookPayload;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
+import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.BalanceTransaction;
 import com.stripe.model.Charge;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.StripeObject;
 import com.stripe.net.Webhook;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
@@ -156,16 +158,29 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         try {
             var stripeEvent = Webhook.constructEvent(body, signature, getWebhookSignatureKey());
             String eventType = stripeEvent.getType();
-            var dataObjectDeserializer = stripeEvent.getDataObjectDeserializer();
             if(eventType.startsWith("charge.")) {
-                return dataObjectDeserializer.getObject().map(obj -> new StripeChargeTransactionWebhookPayload(eventType, (Charge)obj));
+                return deserializeObject(stripeEvent).map(obj -> new StripeChargeTransactionWebhookPayload(eventType, (Charge)obj));
             } else if(eventType.startsWith("payment_intent.")) {
-                return dataObjectDeserializer.getObject().map(obj -> new StripePaymentIntentWebhookPayload(eventType, (PaymentIntent)obj));
+                return deserializeObject(stripeEvent).map(obj -> new StripePaymentIntentWebhookPayload(eventType, (PaymentIntent)obj));
             }
             return Optional.empty();
         } catch (Exception e) {
             log.error("got exception while handling stripe webhook", e);
             return Optional.empty();
+        }
+    }
+
+    private Optional<StripeObject> deserializeObject(com.stripe.model.Event stripeEvent) {
+        var dataObjectDeserializer = stripeEvent.getDataObjectDeserializer();
+        var cleanDeserialization = dataObjectDeserializer.getObject();
+        if(cleanDeserialization.isPresent()) {
+            return cleanDeserialization;
+        }
+        log.warn("unable to deserialize payload. Expected version {}, actual {}, falling back to unsafe deserialization", Stripe.API_VERSION, stripeEvent.getApiVersion());
+        try {
+            return Optional.ofNullable(dataObjectDeserializer.deserializeUnsafe());
+        } catch(Exception e) {
+            throw new IllegalArgumentException("Cannot deserialize webhook event.", e);
         }
     }
 
