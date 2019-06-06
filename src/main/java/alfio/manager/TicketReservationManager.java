@@ -1839,10 +1839,11 @@ public class TicketReservationManager {
 
 
         //reload the payment provider, this time within a more sensible context
-        return paymentManager.lookupProviderByMethod(paymentMethod, new PaymentContext(eventRepository.findByReservationId(reservation.getId())))
+        var paymentContext = new PaymentContext(eventRepository.findByReservationId(reservation.getId()));
+        return paymentManager.lookupProviderByMethod(paymentMethod, paymentContext)
             .filter(pp -> pp instanceof SignedWebhookHandler)
             .map(provider -> {
-                var paymentWebhookResult = ((SignedWebhookHandler) provider).processWebhook(transactionPayload, transaction);
+                var paymentWebhookResult = ((SignedWebhookHandler) provider).processWebhook(transactionPayload, transaction, paymentContext);
                 var event = eventRepository.findByReservationId(reservation.getId());
                 switch(paymentWebhookResult.getType()) {
                     case NOT_RELEVANT: {

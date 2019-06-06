@@ -185,12 +185,19 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     @Override
-    public PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction) {
+    public PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction, PaymentContext paymentContext) {
 
         // first of all, we check if we're interested in the current event
         if(!interestingEventTypes.contains(payload.getType())) {
             //we're not interested to other kind of events yet...
             return PaymentWebhookResult.notRelevant(payload.getType());
+        }
+
+        boolean live = Boolean.TRUE.equals(((PaymentIntent) payload.getPayload()).getLivemode());
+        if(!baseStripeManager.getSecretKey(paymentContext.getEvent()).startsWith(live ? "sk_live_" : "sk_test_")) {
+            var description = live ? "live" : "test";
+            log.warn("received a {} event of type {}, which is not compatible with the current configuration", description, payload.getType());
+            return PaymentWebhookResult.notRelevant(description);
         }
 
         // since the transaction should have already been confirmed on the server, we have just to
