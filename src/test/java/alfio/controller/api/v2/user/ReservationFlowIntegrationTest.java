@@ -25,6 +25,7 @@ import alfio.controller.api.v2.model.EventCode;
 import alfio.controller.api.v2.model.ItemsByCategory;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.form.ContactAndTicketsForm;
+import alfio.controller.form.PaymentForm;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.EventManager;
@@ -34,6 +35,7 @@ import alfio.model.*;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
@@ -358,8 +360,24 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
             overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest(), new RedirectAttributesModelMap());
+            assertTrue(overviewRes.getBody().getValue());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING);
+
+            var paymentForm = new PaymentForm();
+            var handleResError = reservationApiV2Controller.handleReservation(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+                new BindingAwareModelMap(), new MockHttpServletRequest(), new RedirectAttributesModelMap(), new MockHttpSession());
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, handleResError.getStatusCode());
+
+
+            paymentForm.setPrivacyPolicyAccepted(true);
+            paymentForm.setTermAndConditionsAccepted(true);
+            paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
+            var handleRes = reservationApiV2Controller.handleReservation(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+                new BindingAwareModelMap(), new MockHttpServletRequest(), new RedirectAttributesModelMap(), new MockHttpSession());
+            assertEquals(HttpStatus.OK, handleRes.getStatusCode());
+
+            checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
         }
 
     }
