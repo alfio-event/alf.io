@@ -19,6 +19,7 @@ package alfio.controller.api.v2.user;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.api.admin.EventApiController;
 import alfio.controller.api.v2.InfoApiController;
 import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.EventCode;
@@ -38,6 +39,7 @@ import alfio.model.modification.TicketReservationModification;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -46,6 +48,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -68,6 +71,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
@@ -77,6 +81,7 @@ import java.util.stream.Collectors;
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class, alfio.controller.ReservationFlowIntegrationTest.ControllerConfiguration.class})
@@ -110,6 +115,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private TicketCategoryRepository ticketCategoryRepository;
+
+    @Autowired
+    private TicketReservationRepository ticketReservationRepository;
+
+    @Autowired
+    private EventApiController eventApiController;
 
     //
     @Autowired
@@ -414,6 +425,22 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, handleRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
+
+            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
+
+            var orderSummary = reservation.getOrderSummary();
+            assertTrue(orderSummary.getNotYetPaid());
+            assertEquals("10.00", orderSummary.getTotalPrice());
+            assertEquals("0.10", orderSummary.getTotalVAT());
+            assertEquals("1.00", orderSummary.getVatPercentage());
+
+            validatePayment(event.getShortName(), reservationId);
+
+            checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE);
+
+            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
+            orderSummary = reservation.getOrderSummary();
+            assertFalse(orderSummary.getNotYetPaid());
         }
 
     }
@@ -429,7 +456,20 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         if (reservationStatus != null) {
             assertEquals(reservationStatus, status.getStatus());
         }
+    }
 
+    private void validatePayment(String eventName, String reservationIdentifier) {
+        Principal principal = mock(Principal.class);
+        Mockito.when(principal.getName()).thenReturn(user);
+        var reservation = ticketReservationRepository.findReservationById(reservationIdentifier);
+        assertEquals(1000, reservation.getFinalPriceCts());
+        assertEquals(1000, reservation.getSrcPriceCts());
+        assertEquals(10, reservation.getVatCts());
+        assertEquals(0, reservation.getDiscountCts());
+        assertEquals(1, eventApiController.getPendingPayments(eventName).size());
+        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal, new BindingAwareModelMap(), new MockHttpServletRequest()));
+        assertEquals(0, eventApiController.getPendingPayments(eventName).size());
+        assertEquals(1000, eventRepository.getGrossIncome(event.getId()));
     }
 
     private void checkCalendar(String eventName) throws IOException {
