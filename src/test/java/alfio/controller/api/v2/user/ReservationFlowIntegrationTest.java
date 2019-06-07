@@ -259,11 +259,28 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("hidden", hiddenCat.getName());
             assertEquals("1.00", hiddenCat.getFormattedFinalPrice());
             assertFalse(hiddenCat.isHasDiscount());
+            assertTrue(hiddenCat.isAccessRestricted());
         }
         //
 
 
         // discount check
+        {
+            var discountCodeRes = eventApiV2Controller.validateCode(event.getShortName(), PROMO_CODE);
+            var discountCode = discountCodeRes.getBody();
+            assertEquals(EventCode.EventCodeType.DISCOUNT, discountCode.getValue().getType());
+            var itemsRes3 = eventApiV2Controller.getTicketCategories(event.getShortName(), PROMO_CODE, new BindingAwareModelMap(), new MockHttpServletRequest());
+
+            var items3 = itemsRes3.getBody();
+
+
+            assertEquals(1, items3.getTicketCategories().size());
+            var visibleCat = items3.getTicketCategories().get(0);
+            assertEquals("default", visibleCat.getName());
+            assertEquals("10.00", visibleCat.getFormattedFinalPrice());
+            assertTrue(visibleCat.isHasDiscount());
+            assertEquals("9.00", visibleCat.getFormattedDiscountedPrice());
+        }
 
     }
 
