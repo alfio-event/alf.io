@@ -39,11 +39,16 @@ import alfio.model.modification.TicketReservationModification;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
@@ -69,6 +74,8 @@ import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
+import javax.imageio.ImageIO;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -121,6 +128,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private EventApiController eventApiController;
+
+    @Autowired
+    private TicketRepository ticketRepository;
 
     //
     @Autowired
@@ -488,6 +498,18 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("Testson", ticket.getLastName());
 
 
+            var ticketPdfMockResp = new MockHttpServletResponse();
+            ticketApiV2Controller.generateTicketPdf(event.getShortName(), ticket.getUuid(), new MockHttpServletRequest(), ticketPdfMockResp);
+            assertEquals("application/pdf", ticketPdfMockResp.getContentType());
+
+            var ticketQRCodeResp = new MockHttpServletResponse();
+            ticketApiV2Controller.showQrCode(event.getShortName(), ticket.getUuid(), ticketQRCodeResp);
+            assertEquals("image/png", ticketQRCodeResp.getContentType());
+
+            var fullTicketInfo = ticketRepository.findByUUID(ticket.getUuid());
+            var qrCodeReader = new QRCodeReader();
+            var qrCodeRead = qrCodeReader.decode(new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(ImageIO.read(new ByteArrayInputStream(ticketQRCodeResp.getContentAsByteArray()))))));
+            assertEquals(fullTicketInfo.ticketCode(event.getPrivateKey()), qrCodeRead.getText());
         }
 
     }

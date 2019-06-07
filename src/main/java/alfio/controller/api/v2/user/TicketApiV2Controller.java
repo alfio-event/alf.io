@@ -30,7 +30,9 @@ import alfio.model.TicketReservation;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TicketCategoryRepository;
 import alfio.util.CustomResourceBundleMessageSource;
+import alfio.util.ImageUtil;
 import lombok.AllArgsConstructor;
+import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -59,7 +61,22 @@ public class TicketApiV2Controller {
     @GetMapping("/event/{eventName}/ticket/{ticketIdentifier}/code.png")
     public void showQrCode(@PathVariable("eventName") String eventName,
                            @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException {
-        ticketController.generateTicketCode(eventName, ticketIdentifier, response);
+        var oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
+        if(oData.isEmpty()) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return;
+        }
+        var event = oData.get().getLeft();
+        var ticket = oData.get().getRight();
+
+        String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
+
+        response.setContentType("image/png");
+
+        try(var os = response.getOutputStream()) {
+            os.write(ImageUtil.createQRCode(qrCodeText));
+            response.flushBuffer();
+        }
     }
 
     @GetMapping("/event/{eventName}/ticket/{ticketIdentifier}/download-ticket")
