@@ -519,6 +519,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             var qrCodeReader = new QRCodeReader();
             var qrCodeRead = qrCodeReader.decode(new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(ImageIO.read(new ByteArrayInputStream(ticketQRCodeResp.getContentAsByteArray()))))));
             assertEquals(fullTicketInfo.ticketCode(event.getPrivateKey()), qrCodeRead.getText());
+
+            //can only be done for free tickets
+            //var releaseTicketFailure = ticketApiV2Controller.releaseTicket(event.getShortName(), ticket.getUuid());
+            //assertEquals(HttpStatus.OK, releaseTicketFailure.getStatusCode());
+            //ticketFoundRes = ticketApiV2Controller.getTicketInfo(event.getShortName(), ticket.getUuid());
+            //
+            //assertEquals(HttpStatus.OK, ticketFoundRes.getStatusCode());
         }
 
     }
