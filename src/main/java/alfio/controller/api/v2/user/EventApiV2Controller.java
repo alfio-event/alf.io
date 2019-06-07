@@ -372,7 +372,7 @@ public class EventApiV2Controller {
                     .map(sp -> new EventCode(code, EventCode.EventCodeType.SPECIAL_PRICE, PromoCodeDiscount.DiscountType.NONE, null))
                     .orElseGet(() -> {
                         var promoCodeDiscount = res.getValue().getRight().orElseThrow();
-                        var type = promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS ? EventCode.EventCodeType.DISCOUNT : EventCode.EventCodeType.DISCOUNT;
+                        var type = promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS ? EventCode.EventCodeType.ACCESS : EventCode.EventCodeType.DISCOUNT;
                         String formattedDiscountAmount =  promoCodeDiscount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT ? promoCodeDiscount.getFormattedDiscountAmount().toString() : Integer.toString(promoCodeDiscount.getDiscountAmount());
                         return new EventCode(code, type, promoCodeDiscount.getDiscountType(), formattedDiscountAmount);
                     });

@@ -19,6 +19,10 @@ package alfio.controller.api.v2.user;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.api.v2.InfoApiController;
+import alfio.controller.api.v2.TranslationsApiController;
+import alfio.controller.api.v2.model.EventCode;
+import alfio.controller.api.v2.model.ItemsByCategory;
 import alfio.controller.api.v2.model.Language;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
@@ -27,6 +31,7 @@ import alfio.model.*;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -39,11 +44,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.support.BindingAwareModelMap;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -87,7 +95,16 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private EventStatisticsManager eventStatisticsManager;
 
+    @Autowired
+    private TicketCategoryRepository ticketCategoryRepository;
+
     //
+    @Autowired
+    private InfoApiController infoApiController;
+
+    @Autowired
+    private TranslationsApiController translationsApiController;
+
     @Autowired
     private EventApiV2Controller eventApiV2Controller;
 
@@ -105,27 +122,55 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
     private static final String PROMO_CODE = "MYPROMOCODE";
 
+    private static final String HIDDEN_CODE = "HIDDENNN";
+
+    private int hiddenCategoryId = Integer.MIN_VALUE;
 
     public void ensureConfiguration() {
 
         IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
-        List<TicketCategoryModification> categories = Collections.singletonList(
+        List<TicketCategoryModification> categories = Arrays.asList(
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null),
+            new TicketCategoryModification(null, "hidden", 2,
+                new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
+                new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
+                DESCRIPTION, BigDecimal.ONE, true, "", true, null, null, null, null, null)
+            );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 
         event = eventAndUser.getKey();
         user = eventAndUser.getValue() + "_owner";
         //promo code at event level
         eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
+
+        hiddenCategoryId = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> t.isAccessRestricted()).collect(Collectors.toList()).get(0).getId();
+
+        eventManager.addPromoCode(HIDDEN_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 0, PromoCodeDiscount.DiscountType.NONE, null, null, "hidden", "test@test.ch", PromoCodeDiscount.CodeType.ACCESS, hiddenCategoryId);
     }
 
     @Test
     public void reservationFlowTest() throws Exception {
+
         assertTrue(eventApiV2Controller.listEvents().getBody().isEmpty());
         ensureConfiguration();
+
+
+        //
+        assertEquals(3, translationsApiController.getSupportedLanguages().size());
+        assertEquals("or", translationsApiController.getPublicTranslations("en").get("common.or"));
+        assertEquals("o", translationsApiController.getPublicTranslations("it").get("common.or"));
+        assertEquals("oder", translationsApiController.getPublicTranslations("de").get("common.or"));
+
+        var alfioInfo = infoApiController.getInfo();
+        assertEquals(false, alfioInfo.isDemoModeEnabled());
+        assertEquals(true, alfioInfo.isDevModeEnabled());
+        assertEquals(false, alfioInfo.isProdModeEnabled());
+        //
+
+
         assertTrue(eventApiV2Controller.listEvents().getBody().isEmpty());
 
 
@@ -134,7 +179,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(1, eventStatistic.size());
         assertTrue(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), DateUtils.addDays(new Date(), 1)).isEmpty());
         EventWithAdditionalInfo eventWithAdditionalInfo = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
-        assertEquals(0, eventWithAdditionalInfo.getNotSoldTickets());
+        assertEquals(2, eventWithAdditionalInfo.getNotSoldTickets()); // <- 2 tickets are the bounded category
         assertEquals(0, eventWithAdditionalInfo.getSoldTickets());
         assertEquals(20, eventWithAdditionalInfo.getAvailableSeats());
         //
@@ -153,8 +198,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getShortName(), events.get(0).getShortName());
 
         //
-        var notFound = eventApiV2Controller.getEvent("NOT_EXISTS");
-        assertEquals(HttpStatus.NOT_FOUND, notFound.getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getEvent("NOT_EXISTS").getStatusCode());
         //
 
         var eventRes = eventApiV2Controller.getEvent(event.getShortName());
@@ -178,6 +222,48 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertNotNull(selectedEvent.getFormattedEndDate().get(lang));
             assertNotNull(selectedEvent.getFormattedEndTime().get(lang));
         }
+
+
+        // check ticket & all, we have 2 ticket categories, 1 hidden
+        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getTicketCategories("NOT_EXISTING", null, new BindingAwareModelMap(), new MockHttpServletRequest()).getStatusCode());
+        {
+            var itemsRes = eventApiV2Controller.getTicketCategories(event.getShortName(), null, new BindingAwareModelMap(), new MockHttpServletRequest());
+            assertEquals(HttpStatus.OK, itemsRes.getStatusCode());
+
+            var items = itemsRes.getBody();
+
+
+            assertEquals(1, items.getTicketCategories().size());
+            var visibleCat = items.getTicketCategories().get(0);
+            assertEquals("default", visibleCat.getName());
+            assertEquals("10.00", visibleCat.getFormattedFinalPrice());
+            assertFalse(visibleCat.isHasDiscount());
+        }
+
+        // hidden category check
+        {
+
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, eventApiV2Controller.validateCode(event.getShortName(), "NOT_EXISTING").getStatusCode());
+
+            var hiddenCodeRes = eventApiV2Controller.validateCode(event.getShortName(), HIDDEN_CODE);
+            assertEquals(HttpStatus.OK, hiddenCodeRes.getStatusCode());
+            var hiddenCode = hiddenCodeRes.getBody();
+            assertEquals(EventCode.EventCodeType.ACCESS, hiddenCode.getValue().getType());
+
+            var itemsRes2 = eventApiV2Controller.getTicketCategories(event.getShortName(), HIDDEN_CODE, new BindingAwareModelMap(), new MockHttpServletRequest());
+            var items2 = itemsRes2.getBody();
+            assertEquals(2, items2.getTicketCategories().size());
+
+            var hiddenCat = items2.getTicketCategories().stream().filter(t -> t.isAccessRestricted()).findFirst().get();
+            assertEquals(hiddenCategoryId, hiddenCat.getId());
+            assertEquals("hidden", hiddenCat.getName());
+            assertEquals("1.00", hiddenCat.getFormattedFinalPrice());
+            assertFalse(hiddenCat.isHasDiscount());
+        }
+        //
+
+
+        // discount check
 
     }
 
