@@ -19,9 +19,11 @@ package alfio.controller.api.v2.user;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.api.v2.model.Language;
 import alfio.manager.EventManager;
+import alfio.manager.EventStatisticsManager;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
+import alfio.model.*;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.repository.EventRepository;
@@ -29,6 +31,7 @@ import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,17 +39,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
@@ -78,6 +83,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private UserManager userManager;
+
+    @Autowired
+    private EventStatisticsManager eventStatisticsManager;
 
     //
     @Autowired
@@ -111,7 +119,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         event = eventAndUser.getKey();
         user = eventAndUser.getValue() + "_owner";
         //promo code at event level
-        //eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
+        eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
     }
 
     @Test
@@ -119,6 +127,18 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertTrue(eventApiV2Controller.listEvents().getBody().isEmpty());
         ensureConfiguration();
         assertTrue(eventApiV2Controller.listEvents().getBody().isEmpty());
+
+
+        //
+        List<EventStatistic> eventStatistic = eventStatisticsManager.getAllEventsWithStatistics(user);
+        assertEquals(1, eventStatistic.size());
+        assertTrue(eventStatisticsManager.getTicketSoldStatistics(event.getId(), new Date(0), DateUtils.addDays(new Date(), 1)).isEmpty());
+        EventWithAdditionalInfo eventWithAdditionalInfo = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
+        assertEquals(0, eventWithAdditionalInfo.getNotSoldTickets());
+        assertEquals(0, eventWithAdditionalInfo.getSoldTickets());
+        assertEquals(20, eventWithAdditionalInfo.getAvailableSeats());
+        //
+
 
 
         //publish the event
@@ -131,5 +151,43 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(HttpStatus.OK, resListEvents.getStatusCode());
         assertEquals(1, events.size());
         assertEquals(event.getShortName(), events.get(0).getShortName());
+
+        //
+        var notFound = eventApiV2Controller.getEvent("NOT_EXISTS");
+        assertEquals(HttpStatus.NOT_FOUND, notFound.getStatusCode());
+        //
+
+        var eventRes = eventApiV2Controller.getEvent(event.getShortName());
+        assertEquals(HttpStatus.OK, eventRes.getStatusCode());
+        var selectedEvent = eventRes.getBody();
+        assertEquals("CHF", selectedEvent.getCurrency());
+
+        checkCalendar(event.getShortName());
+
+        //it, en, de
+        assertEquals(3, selectedEvent.getContentLanguages().size());
+        assertEquals(new HashSet<>(Arrays.asList("it", "en", "de")), new HashSet<>(eventApiV2Controller.getLanguages(event.getShortName()).getBody()));
+        assertEquals(selectedEvent.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toSet()), new HashSet<>(eventApiV2Controller.getLanguages(event.getShortName()).getBody()));
+
+        //check if for each language we have the expected locale dependent entries
+        for (String lang: Arrays.asList("it", "en", "de")) {
+            assertNotNull(selectedEvent.getDescription().get(lang));
+            //
+            assertNotNull(selectedEvent.getFormattedBeginDate().get(lang));
+            assertNotNull(selectedEvent.getFormattedBeginTime().get(lang));
+            assertNotNull(selectedEvent.getFormattedEndDate().get(lang));
+            assertNotNull(selectedEvent.getFormattedEndTime().get(lang));
+        }
+
+    }
+
+    private void checkCalendar(String eventName) throws IOException {
+        MockHttpServletResponse resIcal = new MockHttpServletResponse();
+        eventApiV2Controller.getCalendar(eventName, "en", null, null, resIcal);
+        assertEquals("text/calendar", resIcal.getContentType());
+
+        MockHttpServletResponse resGoogleCal = new MockHttpServletResponse();
+        eventApiV2Controller.getCalendar(eventName, "en", "google", null, resGoogleCal);
+        assertTrue(resGoogleCal.getRedirectedUrl().startsWith("https://www.google.com/calendar/event"));
     }
 }
