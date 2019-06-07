@@ -36,6 +36,7 @@ import alfio.model.*;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -253,6 +254,14 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(HttpStatus.OK, eventRes.getStatusCode());
         var selectedEvent = eventRes.getBody();
         assertEquals("CHF", selectedEvent.getCurrency());
+        assertFalse(selectedEvent.isFree());
+        assertEquals(event.getSameDay(), selectedEvent.isSameDay());
+        assertTrue(selectedEvent.isVatIncluded());
+        assertEquals(event.getShortName(), selectedEvent.getShortName());
+        assertEquals(event.getDisplayName(), selectedEvent.getDisplayName());
+        assertEquals(event.getFileBlobId(), selectedEvent.getFileBlobId());
+        assertEquals(1, selectedEvent.getActivePaymentMethods().size());
+        assertTrue(selectedEvent.getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
 
         checkCalendar(event.getShortName());
 
