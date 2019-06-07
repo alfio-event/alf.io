@@ -24,12 +24,14 @@ import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.EventCode;
 import alfio.controller.api.v2.model.ItemsByCategory;
 import alfio.controller.api.v2.model.Language;
+import alfio.controller.form.ReservationForm;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
+import alfio.model.modification.TicketReservationModification;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.system.ConfigurationRepository;
@@ -47,11 +49,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.MapBindingResult;
 import org.springframework.validation.support.BindingAwareModelMap;
+import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -280,6 +289,45 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("10.00", visibleCat.getFormattedFinalPrice());
             assertTrue(visibleCat.isHasDiscount());
             assertEquals("9.00", visibleCat.getFormattedDiscountedPrice());
+        }
+
+
+        //validation error: select at least one
+        {
+            var form = new ReservationForm();
+            var res = eventApiV2Controller.reserveTicket(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), new RedirectAttributesModelMap());
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, res.getStatusCode());
+            var resBody = res.getBody();
+            assertFalse(resBody.isSuccess());
+            assertEquals(1, resBody.getErrorCount());
+        }
+
+
+        //buy one ticket, without discount
+        {
+            var form = new ReservationForm();
+            var ticketReservation = new TicketReservationModification();
+            ticketReservation.setAmount(1);
+            ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(event.getShortName(), null, new BindingAwareModelMap(), new MockHttpServletRequest()).getBody().getTicketCategories().get(0).getId());
+            form.setReservation(Collections.singletonList(ticketReservation));
+            var res = eventApiV2Controller.reserveTicket(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()), new RedirectAttributesModelMap());
+            assertEquals(HttpStatus.OK, res.getStatusCode());
+            var resBody = res.getBody();
+            assertTrue(resBody.isSuccess());
+            assertEquals(0, resBody.getErrorCount());
+            var reservationId = resBody.getValue();
+
+            var statusRes = reservationApiV2Controller.getReservationStatus(event.getShortName(), reservationId);
+            assertEquals(HttpStatus.OK, statusRes.getStatusCode());
+            var status = statusRes.getBody();
+            assertFalse(status.isValidatedBookingInformations());
+            assertEquals(TicketReservation.TicketReservationStatus.PENDING, status.getStatus());
+
+            var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
+            var reservation = resInfoRes.getBody();
+            assertEquals(reservationId, reservation.getId());
+
         }
 
     }
