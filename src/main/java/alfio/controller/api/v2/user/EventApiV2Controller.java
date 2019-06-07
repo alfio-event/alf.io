@@ -411,7 +411,7 @@ public class EventApiV2Controller {
 
         var result = Pair.of(specialCode, promotionCodeDiscount);
 
-        var errorResponse = new ValidatedResponse(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND)), result);
+        var errorResponse = new ValidatedResponse<>(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND)), result);
 
         //
         if(specialCode.isPresent()) {
