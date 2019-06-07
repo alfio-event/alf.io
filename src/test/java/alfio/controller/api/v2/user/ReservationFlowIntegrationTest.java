@@ -521,11 +521,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(fullTicketInfo.ticketCode(event.getPrivateKey()), qrCodeRead.getText());
 
             //can only be done for free tickets
-            //var releaseTicketFailure = ticketApiV2Controller.releaseTicket(event.getShortName(), ticket.getUuid());
-            //assertEquals(HttpStatus.OK, releaseTicketFailure.getStatusCode());
-            //ticketFoundRes = ticketApiV2Controller.getTicketInfo(event.getShortName(), ticket.getUuid());
-            //
-            //assertEquals(HttpStatus.OK, ticketFoundRes.getStatusCode());
+            var releaseTicketFailure = ticketApiV2Controller.releaseTicket(event.getShortName(), ticket.getUuid());
+            assertEquals(HttpStatus.BAD_REQUEST, releaseTicketFailure.getStatusCode());
+            assertEquals(HttpStatus.OK, ticketApiV2Controller.getTicketInfo(event.getShortName(), ticket.getUuid()).getStatusCode());
+
         }
 
     }

@@ -98,8 +98,12 @@ public class TicketApiV2Controller {
     public ResponseEntity<Boolean> releaseTicket(@PathVariable("eventName") String eventName,
                                                  @PathVariable("ticketIdentifier") String ticketIdentifier) {
         var oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
-        oData.ifPresent(triple -> ticketReservationManager.releaseTicket(triple.getLeft(), triple.getMiddle(), triple.getRight()));
-        return ResponseEntity.ok(true);
+        try {
+            oData.ifPresent(triple -> ticketReservationManager.releaseTicket(triple.getLeft(), triple.getMiddle(), triple.getRight()));
+            return ResponseEntity.ok(true);
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.badRequest().body(false);
+        }
     }
 
 
