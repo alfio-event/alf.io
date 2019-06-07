@@ -24,7 +24,9 @@ import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.EventCode;
 import alfio.controller.api.v2.model.ItemsByCategory;
 import alfio.controller.api.v2.model.Language;
+import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.ReservationForm;
+import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.user.UserManager;
@@ -327,7 +329,38 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
             var reservation = resInfoRes.getBody();
             assertEquals(reservationId, reservation.getId());
+            assertEquals(1, reservation.getTicketsByCategory().size());
+            assertEquals(1, reservation.getTicketsByCategory().get(0).getTickets().size());
 
+            var contactForm = new ContactAndTicketsForm();
+            var validationErrorsRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest(), new RedirectAttributesModelMap());
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, validationErrorsRes.getStatusCode());
+            assertFalse(validationErrorsRes.getBody().isSuccess());
+            assertEquals(4, validationErrorsRes.getBody().getErrorCount()); // first name, last name, email + MISSING_ATTENDEE DATA
+
+
+            // move to overview status
+            contactForm = new ContactAndTicketsForm();
+            contactForm.setEmail("test@test.com");
+            contactForm.setBillingAddress("my billing address");
+            contactForm.setFirstName("full");
+            contactForm.setLastName("name");
+
+            var ticketForm = new UpdateTicketOwnerForm();
+            ticketForm.setFirstName("full");
+            ticketForm.setLastName("name");
+            ticketForm.setEmail("test@test.com");
+            contactForm.setTickets(Collections.singletonMap(reservation.getTicketsByCategory().get(0).getTickets().get(0).getUuid(), ticketForm));
+
+            var overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest(), new RedirectAttributesModelMap());
+            assertEquals(HttpStatus.OK, overviewRes.getStatusCode());
+            //
+
+            var statusRes2 = reservationApiV2Controller.getReservationStatus(event.getShortName(), reservationId);
+            assertEquals(HttpStatus.OK, statusRes2.getStatusCode());
+            var status2 = statusRes2.getBody();
+            assertTrue(status2.isValidatedBookingInformations());
+            assertEquals(TicketReservation.TicketReservationStatus.PENDING, status2.getStatus());
         }
 
     }
