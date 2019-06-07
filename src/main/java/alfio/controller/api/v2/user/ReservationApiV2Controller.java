@@ -205,7 +205,7 @@ public class ReservationApiV2Controller {
                 .map(status -> new ReservationStatusInfo(status.getStatus(), Boolean.TRUE.equals(status.getValidated())));
         }
 
-        return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.badRequest().build());
+        return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 
