@@ -319,11 +319,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(0, resBody.getErrorCount());
             var reservationId = resBody.getValue();
 
-            var statusRes = reservationApiV2Controller.getReservationStatus(event.getShortName(), reservationId);
-            assertEquals(HttpStatus.OK, statusRes.getStatusCode());
-            var status = statusRes.getBody();
-            assertFalse(status.isValidatedBookingInformations());
-            assertEquals(TicketReservation.TicketReservationStatus.PENDING, status.getStatus());
+            checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
+
 
             var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
             assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
@@ -354,15 +351,25 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             var overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest(), new RedirectAttributesModelMap());
             assertEquals(HttpStatus.OK, overviewRes.getStatusCode());
-            //
+            checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING);
 
-            var statusRes2 = reservationApiV2Controller.getReservationStatus(event.getShortName(), reservationId);
-            assertEquals(HttpStatus.OK, statusRes2.getStatusCode());
-            var status2 = statusRes2.getBody();
-            assertTrue(status2.isValidatedBookingInformations());
-            assertEquals(TicketReservation.TicketReservationStatus.PENDING, status2.getStatus());
+            reservationApiV2Controller.backToBook(event.getShortName(), reservationId);
+
+            checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
+
+            overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest(), new RedirectAttributesModelMap());
+
+            checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING);
         }
 
+    }
+
+    private void checkStatus(String reservationId, HttpStatus expectedHttpStatus, boolean validated, TicketReservation.TicketReservationStatus reservationStatus) {
+        var statusRes = reservationApiV2Controller.getReservationStatus(event.getShortName(), reservationId);
+        assertEquals(expectedHttpStatus, statusRes.getStatusCode());
+        var status = statusRes.getBody();
+        assertEquals(validated, status.isValidatedBookingInformations());
+        assertEquals(reservationStatus, status.getStatus());
     }
 
     private void checkCalendar(String eventName) throws IOException {
