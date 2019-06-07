@@ -141,7 +141,6 @@ public class TicketApiV2Controller {
     @PutMapping("/event/{eventName}/ticket/{ticketIdentifier}")
     public ValidatedResponse<Boolean> updateTicketInfo(@PathVariable("eventName") String eventName,
                                               @PathVariable("ticketIdentifier") String ticketIdentifier,
-                                              @RequestParam(value = "single-ticket", required = false, defaultValue = "false") boolean singleTicket,
                                               @RequestBody UpdateTicketOwnerForm updateTicketOwner,
                                               BindingResult bindingResult,
                                               HttpServletRequest request,

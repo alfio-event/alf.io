@@ -393,9 +393,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             contactForm.setLastName("name");
 
             var ticketForm = new UpdateTicketOwnerForm();
-            ticketForm.setFirstName("full");
-            ticketForm.setLastName("name");
-            ticketForm.setEmail("test@test.com");
+            ticketForm.setFirstName("ticketfull");
+            ticketForm.setLastName("ticketname");
+            ticketForm.setEmail("tickettest@test.com");
             contactForm.setTickets(Collections.singletonMap(reservation.getTicketsByCategory().get(0).getTickets().get(0).getUuid(), ticketForm));
 
             var overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest(), new RedirectAttributesModelMap());
@@ -441,6 +441,53 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
             orderSummary = reservation.getOrderSummary();
             assertFalse(orderSummary.getNotYetPaid());
+
+
+            var confRes = reservationApiV2Controller.reSendReservationConfirmationEmail(event.getShortName(), reservationId, new MockHttpServletRequest());
+            assertEquals(HttpStatus.OK, confRes.getStatusCode());
+            assertTrue(confRes.getBody());
+
+            var ticket = reservation.getTicketsByCategory().stream().findFirst().get().getTickets().get(0);
+            assertEquals("tickettest@test.com", ticket.getEmail());
+            assertEquals("ticketfull", ticket.getFirstName());
+            assertEquals("ticketname", ticket.getLastName());
+
+            var ticketNotFoundRes = ticketApiV2Controller.getTicketInfo(event.getShortName(), "DONT_EXISTS");
+            assertEquals(HttpStatus.NOT_FOUND, ticketNotFoundRes.getStatusCode());
+
+            var ticketFoundRes = ticketApiV2Controller.getTicketInfo(event.getShortName(), ticket.getUuid());
+            assertEquals(HttpStatus.OK, ticketFoundRes.getStatusCode());
+            var ticketFoundBody = ticketFoundRes.getBody();
+            assertEquals("tickettest@test.com", ticketFoundBody.getEmail());
+            assertEquals("ticketfull ticketname", ticketFoundBody.getFullName());
+            assertEquals("full name", ticketFoundBody.getReservationFullName());
+            assertTrue(reservationId.startsWith(ticketFoundBody.getReservationId().toLowerCase(Locale.ENGLISH)));
+
+            var sendTicketByEmailRes = ticketApiV2Controller.sendTicketByEmail(event.getShortName(), ticket.getUuid(), new MockHttpServletRequest());
+            assertEquals(HttpStatus.OK, sendTicketByEmailRes.getStatusCode());
+            assertTrue(sendTicketByEmailRes.getBody());
+
+            //update ticket
+            var updateTicketOwnerForm = new UpdateTicketOwnerForm();
+            updateTicketOwnerForm.setFirstName("Test");
+            updateTicketOwnerForm.setLastName("Testson");
+            updateTicketOwnerForm.setEmail("testmctest@test.com");
+            var updateTicketRes = ticketApiV2Controller.updateTicketInfo(event.getShortName(), ticket.getUuid(), updateTicketOwnerForm, new BeanPropertyBindingResult(updateTicketOwnerForm, "ticket"), new MockHttpServletRequest(), null);
+            assertTrue(updateTicketRes.isSuccess());
+
+
+            ticketFoundRes = ticketApiV2Controller.getTicketInfo(event.getShortName(), ticket.getUuid());
+            ticketFoundBody = ticketFoundRes.getBody();
+            assertEquals("testmctest@test.com", ticketFoundBody.getEmail());
+            assertEquals("Test Testson", ticketFoundBody.getFullName());
+            assertEquals("full name", ticketFoundBody.getReservationFullName());
+            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
+            ticket = reservation.getTicketsByCategory().stream().findFirst().get().getTickets().get(0);
+            assertEquals("testmctest@test.com", ticket.getEmail());
+            assertEquals("Test", ticket.getFirstName());
+            assertEquals("Testson", ticket.getLastName());
+
+
         }
 
     }
