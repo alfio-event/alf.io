@@ -1888,7 +1888,7 @@ public class TicketReservationManager {
                         //      - if the reservation has expired, we cancel it and keep its data for reference, and we notify also the organizer.
                         //      - if the reservation is still valid, we can ensure that the user has at least 10 min left to retry
 
-                        log.trace("Event {} for reservation {} has failed with reason: {}", transactionPayload.getType(), reservation.getId(), paymentWebhookResult.getReason());
+                        log.debug("Event {} for reservation {} has failed with reason: {}", transactionPayload.getType(), reservation.getId(), paymentWebhookResult.getReason());
 
                         Date expiration = reservation.getValidity();
                         Date now = new Date();
