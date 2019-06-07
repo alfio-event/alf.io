@@ -1647,10 +1647,17 @@ public class TicketReservationManager {
     }
 
     public void releaseTicket(Event event, TicketReservation ticketReservation, final Ticket ticket) {
-        TicketCategory category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-        if(!CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket)) {
+        var category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
+        var isFree = ticket.getFinalPriceCts() == 0;
+        var enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticket.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false);
+        var conditionsMet = CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket);
+
+        // reported the conditions of TicketDecorator.getCancellationEnabled
+        if (!(isFree && enableFreeCancellation && conditionsMet)) {
             throw new IllegalStateException("Cannot release reserved tickets");
         }
+        //
+
         String reservationId = ticketReservation.getId();
         //#365 - reset UUID when releasing a ticket
         int result = ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), event.getId(), ticket.getId());

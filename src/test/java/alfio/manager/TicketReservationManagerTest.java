@@ -676,6 +676,8 @@ class TicketReservationManagerTest {
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(ticket.getCategoryId()).thenReturn(TICKET_CATEGORY_ID);
+        when(ticket.getFinalPriceCts()).thenReturn(0);
+        when(configurationManager.getBooleanConfigValue(any(), eq(false))).thenReturn(true);
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(organization);
