@@ -181,6 +181,20 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(false, alfioInfo.isDemoModeEnabled());
         assertEquals(true, alfioInfo.isDevModeEnabled());
         assertEquals(false, alfioInfo.isProdModeEnabled());
+
+        //
+
+        assertEquals("Switzerland", translationsApiController.getCountries("en").stream().filter( c-> "CH".equals(c.getIsoCode())).findFirst().get().getName());
+
+        assertEquals("Greece", translationsApiController.getCountries("en").stream().filter(c->"GR".equals(c.getIsoCode())).findFirst().get().getName());
+
+        assertEquals("Suisse", translationsApiController.getCountries("fr").stream().filter( c-> "CH".equals(c.getIsoCode())).findFirst().get().getName());
+        assertEquals("Svizzera", translationsApiController.getCountries("it").stream().filter( c-> "CH".equals(c.getIsoCode())).findFirst().get().getName());
+        assertEquals("Schweiz", translationsApiController.getCountries("de").stream().filter( c-> "CH".equals(c.getIsoCode())).findFirst().get().getName());
+
+        //EL -> greece for vat
+        assertEquals("Greece", translationsApiController.getCountriesForVat("en").stream().filter(c->"EL".equals(c.getIsoCode())).findFirst().get().getName());
+        assertEquals(28, translationsApiController.getEuCountriesForVat("en").size()); //
         //
 
 
