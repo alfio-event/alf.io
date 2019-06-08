@@ -150,7 +150,7 @@ public interface PriceContainer {
         return getDiscount().map(discount -> {
             final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts());
             if(discount.getFixedAmount()) {
-                return MonetaryUtil.centsToUnit(discount.getDiscountAmount());
+                return MonetaryUtil.centsToUnit(Math.min(getSrcPriceCts(), discount.getDiscountAmount()));
             } else {
                 int discountAmount = discount.getDiscountAmount();
                 return price.multiply(new BigDecimal(discountAmount).divide(HUNDRED, 2, UNNECESSARY)).setScale(2, HALF_UP);

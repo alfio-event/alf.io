@@ -1067,13 +1067,13 @@ public class TicketReservationManager {
         int discountAppliedCount = discountedTickets <= 1 || promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT ? discountedTickets : 1;
 
         List<AdditionalServiceItemPriceContainer> asPrices = additionalServiceItems
-            .flatMap(generateASIPriceContainers(event, null))
+            .flatMap(generateASIPriceContainers(event, promoCodeDiscount))
             .collect(toList());
 
         BigDecimal asTotalVAT = calcTotal(asPrices, PriceContainer::getRawVAT);
-        //FIXME discount is not applied to donations, as it wouldn't make sense. Must be implemented for #111
+        BigDecimal asTotalDiscount = calcTotal(asPrices, PriceContainer::getAppliedDiscount);
         BigDecimal asTotalNET = calcTotal(asPrices, PriceContainer::getFinalPrice);
-        return new TotalPrice(unitToCents(totalNET.add(asTotalNET)), unitToCents(totalVAT.add(asTotalVAT)), -(MonetaryUtil.unitToCents(totalDiscount)), discountAppliedCount);
+        return new TotalPrice(unitToCents(totalNET.add(asTotalNET)), unitToCents(totalVAT.add(asTotalVAT)), -(MonetaryUtil.unitToCents(totalDiscount.add(asTotalDiscount))), discountAppliedCount);
     }
 
     private static BigDecimal calcTotal(List<? extends PriceContainer> elements, Function<? super PriceContainer, BigDecimal> operator) {

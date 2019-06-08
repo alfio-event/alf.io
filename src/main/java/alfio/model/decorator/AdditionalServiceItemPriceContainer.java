@@ -68,6 +68,7 @@ public class AdditionalServiceItemPriceContainer implements SummaryPriceContaine
     }
 
     public static AdditionalServiceItemPriceContainer from(AdditionalServiceItem item, AdditionalService additionalService, Event event, PromoCodeDiscount discount) {
-        return new AdditionalServiceItemPriceContainer(item, additionalService, event.getCurrency(), discount, event.getVatStatus(), event.getVat());
+        var discountToApply = discount == null || additionalService.getType() == AdditionalService.AdditionalServiceType.DONATION ? null : discount;
+        return new AdditionalServiceItemPriceContainer(item, additionalService, event.getCurrency(), discountToApply, event.getVatStatus(), event.getVat());
     }
 }
