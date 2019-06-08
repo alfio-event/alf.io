@@ -34,14 +34,12 @@ import alfio.manager.EventStatisticsManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.DateTimeModification;
+import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketRepository;
-import alfio.repository.TicketReservationRepository;
+import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
@@ -133,6 +131,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private TicketRepository ticketRepository;
 
+    @Autowired
+    private TicketFieldRepository ticketFieldRepository;
+
     //
     @Autowired
     private InfoApiController infoApiController;
@@ -184,6 +185,21 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         hiddenCategoryId = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> t.isAccessRestricted()).collect(Collectors.toList()).get(0).getId();
 
         eventManager.addPromoCode(HIDDEN_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 0, PromoCodeDiscount.DiscountType.NONE, null, null, "hidden", "test@test.ch", PromoCodeDiscount.CodeType.ACCESS, hiddenCategoryId);
+
+
+        // add additional fields before and after, with one mandatory
+        var af = new EventModification.AdditionalField(-1, "field1", "text", true, null, null, null,
+            Map.of("en", new EventModification.Description("field en", "", null)), null, null);
+        eventManager.addAdditionalField(event, af);
+
+        var afId = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()).get(0).getId();
+
+        ticketFieldRepository.updateFieldOrder(afId, -1);
+
+        var af2 = new EventModification.AdditionalField(1, "field2", "text", false, null, null, null,
+            Map.of("en", new EventModification.Description("field2 en", "", null)), null, null);
+        eventManager.addAdditionalField(event, af2);
+        //
     }
 
     @Test
@@ -396,6 +412,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(reservationId, reservation.getId());
             assertEquals(1, reservation.getTicketsByCategory().size());
             assertEquals(1, reservation.getTicketsByCategory().get(0).getTickets().size());
+
+            var selectedTicket = reservation.getTicketsByCategory().get(0).getTickets().get(0);
+            assertEquals("field1", selectedTicket.getTicketFieldConfigurationBeforeStandard().get(0).getName());
+            assertEquals("field2", selectedTicket.getTicketFieldConfigurationAfterStandard().get(0).getName());
 
             var contactForm = new ContactAndTicketsForm();
             var validationErrorsRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest(), new RedirectAttributesModelMap());
