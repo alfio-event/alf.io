@@ -60,11 +60,23 @@ class AdditionalServiceItemPriceContainerTest {
     }
 
     @Test
-    void fromSupplement() {
+    void fromSupplementPercentageDiscount() {
         when(additionalService.getType()).thenReturn(AdditionalService.AdditionalServiceType.SUPPLEMENT);
+        when(discount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.PERCENTAGE);
+        when(discount.getCodeType()).thenReturn(PromoCodeDiscount.CodeType.DISCOUNT);
         var priceContainer = AdditionalServiceItemPriceContainer.from(additionalServiceItem, additionalService, event, discount);
         assertNotNull(priceContainer);
         assertTrue(priceContainer.getDiscount().isPresent());
         assertSame(discount, priceContainer.getDiscount().get());
+    }
+
+    @Test
+    void fromSupplement() {
+        when(additionalService.getType()).thenReturn(AdditionalService.AdditionalServiceType.SUPPLEMENT);
+        when(discount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT);
+        when(discount.getCodeType()).thenReturn(PromoCodeDiscount.CodeType.DISCOUNT);
+        var priceContainer = AdditionalServiceItemPriceContainer.from(additionalServiceItem, additionalService, event, discount);
+        assertNotNull(priceContainer);
+        assertFalse(priceContainer.getDiscount().isPresent());
     }
 }
