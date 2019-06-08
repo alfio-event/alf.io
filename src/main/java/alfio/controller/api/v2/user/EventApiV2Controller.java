@@ -250,7 +250,7 @@ public class EventApiV2Controller {
     @GetMapping("event/{eventName}/ticket-categories")
     public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, @RequestParam(value = "code", required = false) String code, Model model, HttpServletRequest request) {
 
-        applyPromoCodeInRequest(eventName, code, request);
+        var appliedPromoCode = applyPromoCodeInRequest(eventName, code, request);
 
 
         if ("/event/show-event".equals(eventController.showEvent(eventName, model, request, Locale.ENGLISH))) {
@@ -269,10 +269,15 @@ public class EventApiV2Controller {
                 .collect(Collectors.toList());
 
 
+            var promoCode = appliedPromoCode.filter(ValidatedResponse::isSuccess)
+                .map(ValidatedResponse::getValue)
+                .map(Pair::getRight)
+                .orElse(Optional.empty());
+
             //
             var saleableAdditionalServices = additionalServiceRepository.loadAllForEvent(event.getId())
                 .stream()
-                .map(as -> new SaleableAdditionalService(event, as, null, null, null, 0))
+                .map(as -> new SaleableAdditionalService(event, as, null, null, promoCode.orElse(null), 0))
                 .filter(SaleableAdditionalService::isNotExpired)
                 .collect(Collectors.toList());
 
@@ -288,7 +293,7 @@ public class EventApiV2Controller {
                 var description = applyCommonMark(additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.DESCRIPTION, Collections.emptyMap()));
                 return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(),
                     as.isFixPrice(), as.getAvailableQuantity(), as.getMaxQtyPerOrder(),
-                    as.getFree(), as.getFormattedFinalPrice(), as.getVatApplies(), as.getVatIncluded(), as.getVatPercentage(),
+                    as.getFree(), as.getFormattedFinalPrice(), as.getSupportsDiscount(), as.getDiscountedPrice(), as.getVatApplies(), as.getVatIncluded(), as.getVatPercentage(),
                     as.isExpired(), as.getSaleInFuture(),
                     inception, expiration, title, description);
             }).collect(Collectors.toList());

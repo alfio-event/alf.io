@@ -38,6 +38,8 @@ public class AdditionalService {
     //
     private final boolean free;
     private final String formattedFinalPrice;
+    private final boolean hasDiscount;
+    private final String formattedDiscountedPrice;
     private final boolean vatApplies;
     private final boolean vatIncluded;
     private final BigDecimal vatPercentage;
