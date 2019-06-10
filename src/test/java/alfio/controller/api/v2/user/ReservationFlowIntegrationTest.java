@@ -25,10 +25,7 @@ import alfio.controller.api.v2.InfoApiController;
 import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.EventCode;
 import alfio.controller.api.v2.model.Language;
-import alfio.controller.form.ContactAndTicketsForm;
-import alfio.controller.form.PaymentForm;
-import alfio.controller.form.ReservationForm;
-import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.controller.form.*;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.user.UserManager;
@@ -37,6 +34,7 @@ import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
@@ -216,6 +214,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         );
         additionalServiceApiController.insert(event.getId(), addServ, new BeanPropertyBindingResult(addServ, "additionalService"));
         //
+
+
+        // enable reservation list and pre sales
+        configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_WAITING_QUEUE.getValue(), "true", "");
+        configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_PRE_REGISTRATION.getValue(), "true", "");
+        //
     }
 
     @Test
@@ -336,6 +340,44 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(1, additionalItem.getDescription().size());
             assertEquals("additional title", additionalItem.getTitle().get("en"));
             assertEquals("<p>additional desc</p>\n", additionalItem.getDescription().get("en"));
+
+            // check presence of reservation list
+            assertFalse(items.isWaitingList());
+            assertFalse(items.isPreSales());
+            //
+
+            // fix dates to enable reservation list
+            var tc = ticketCategoryRepository.getById(visibleCat.getId());
+            ticketCategoryRepository.fixDates(visibleCat.getId(), tc.getInception(event.getZoneId()).plusDays(2), tc.getExpiration(event.getZoneId()));
+            //
+            items = eventApiV2Controller.getTicketCategories(event.getShortName(), null, new BindingAwareModelMap(), new MockHttpServletRequest()).getBody();
+            assertTrue(items.isWaitingList());
+            assertTrue(items.isPreSales());
+            //
+
+            var subForm = new WaitingQueueSubscriptionForm();
+            subForm.setFirstName("first");
+            subForm.setLastName("last");
+            subForm.setPrivacyPolicyAccepted(true);
+            subForm.setTermAndConditionsAccepted(true);
+            subForm.setUserLanguage(Locale.ENGLISH);
+            var subRes = eventApiV2Controller.subscribeToWaitingList(event.getShortName(), subForm, new BeanPropertyBindingResult(subForm, "subForm"));
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, subRes.getStatusCode());
+            assertFalse(subRes.getBody().isSuccess());
+            assertEquals(1, subRes.getBody().getValidationErrors().size());
+            assertEquals("email", subRes.getBody().getValidationErrors().get(0).getFieldName());
+            assertEquals("error.email", subRes.getBody().getValidationErrors().get(0).getCode());
+            //
+
+            subForm.setEmail("email@email.com");
+            //subRes = eventApiV2Controller.subscribeToWaitingList(event.getShortName(), subForm, new BeanPropertyBindingResult(subForm, "subForm"));
+            //assertEquals(HttpStatus.OK, subRes.getStatusCode());
+            //assertTrue(subRes.getBody().isSuccess());
+            //assertEquals(0, subRes.getBody().getErrorCount());
+            //assertTrue(subRes.getBody().getValue());
+
+            //
+            ticketCategoryRepository.fixDates(visibleCat.getId(), tc.getInception(event.getZoneId()).minusDays(2), tc.getExpiration(event.getZoneId()));
         }
 
         // hidden category check
