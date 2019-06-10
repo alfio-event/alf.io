@@ -370,11 +370,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             //
 
             subForm.setEmail("email@email.com");
-            //subRes = eventApiV2Controller.subscribeToWaitingList(event.getShortName(), subForm, new BeanPropertyBindingResult(subForm, "subForm"));
-            //assertEquals(HttpStatus.OK, subRes.getStatusCode());
-            //assertTrue(subRes.getBody().isSuccess());
-            //assertEquals(0, subRes.getBody().getErrorCount());
-            //assertTrue(subRes.getBody().getValue());
+            subRes = eventApiV2Controller.subscribeToWaitingList(event.getShortName(), subForm, new BeanPropertyBindingResult(subForm, "subForm"));
+            assertEquals(HttpStatus.OK, subRes.getStatusCode());
+            assertTrue(subRes.getBody().isSuccess());
+            assertEquals(0, subRes.getBody().getErrorCount());
+            assertTrue(subRes.getBody().getValue());
 
             //
             ticketCategoryRepository.fixDates(visibleCat.getId(), tc.getInception(event.getZoneId()).minusDays(2), tc.getExpiration(event.getZoneId()));
