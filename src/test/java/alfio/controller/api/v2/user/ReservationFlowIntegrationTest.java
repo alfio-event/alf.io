@@ -19,11 +19,11 @@ package alfio.controller.api.v2.user;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.api.admin.AdditionalServiceApiController;
 import alfio.controller.api.admin.EventApiController;
 import alfio.controller.api.v2.InfoApiController;
 import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.EventCode;
-import alfio.controller.api.v2.model.ItemsByCategory;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
@@ -57,7 +57,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
@@ -66,11 +65,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.MapBindingResult;
 import org.springframework.validation.support.BindingAwareModelMap;
 import org.springframework.web.context.request.ServletWebRequest;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
 import javax.imageio.ImageIO;
@@ -133,6 +129,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private TicketFieldRepository ticketFieldRepository;
+
+    @Autowired
+    private AdditionalServiceApiController additionalServiceApiController;
 
     //
     @Autowired
@@ -199,6 +198,23 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         var af2 = new EventModification.AdditionalField(1, "field2", "text", false, null, null, null,
             Map.of("en", new EventModification.Description("field2 en", "", null)), null, null);
         eventManager.addAdditionalField(event, af2);
+        //
+
+
+        // add additional service
+        var addServ = new EventModification.AdditionalService(null, new BigDecimal("40.00"), true, 0, 1, 1,
+
+            new DateTimeModification(ZonedDateTime.now().minusDays(2).toLocalDate(), ZonedDateTime.now().minusDays(2).toLocalTime()),
+            new DateTimeModification(event.getEnd().plusDays(2).toLocalDate(), event.getEnd().plusDays(2).toLocalTime()),
+            event.getVat(), AdditionalService.VatType.INHERITED,
+            null,
+            Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional title", AdditionalServiceText.TextType.TITLE)),
+            Collections.singletonList(new EventModification.AdditionalServiceText(null, "en", "additional desc", AdditionalServiceText.TextType.DESCRIPTION)),
+
+            AdditionalService.AdditionalServiceType.SUPPLEMENT,
+            AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET
+        );
+        additionalServiceApiController.insert(event.getId(), addServ, new BeanPropertyBindingResult(addServ, "additionalService"));
         //
     }
 
@@ -311,6 +327,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("default", visibleCat.getName());
             assertEquals("10.00", visibleCat.getFormattedFinalPrice());
             assertFalse(visibleCat.isHasDiscount());
+
+            assertEquals(1, items.getAdditionalServices().size());
+            var additionalItem = items.getAdditionalServices().get(0);
+            assertEquals("40.00", additionalItem.getFormattedFinalPrice());
+            assertEquals(new BigDecimal("1.00"), additionalItem.getVatPercentage());
+            assertEquals("additional title", additionalItem.getTitle().get("en"));
+            assertEquals("<p>additional desc</p>", additionalItem.getDescription().get("en"));
         }
 
         // hidden category check
@@ -415,7 +438,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             var selectedTicket = reservation.getTicketsByCategory().get(0).getTickets().get(0);
             assertEquals("field1", selectedTicket.getTicketFieldConfigurationBeforeStandard().get(0).getName());
+            assertTrue(selectedTicket.getTicketFieldConfigurationBeforeStandard().get(0).isRequired());
             assertEquals("field2", selectedTicket.getTicketFieldConfigurationAfterStandard().get(0).getName());
+            assertFalse(selectedTicket.getTicketFieldConfigurationAfterStandard().get(0).isRequired());
 
             var contactForm = new ContactAndTicketsForm();
             var validationErrorsRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest(), new RedirectAttributesModelMap());
