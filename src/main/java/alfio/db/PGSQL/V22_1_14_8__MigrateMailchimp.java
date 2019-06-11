@@ -19,7 +19,6 @@ package alfio.db.PGSQL;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import alfio.extension.ScriptingExecutionService;
-import alfio.repository.EventRepository;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
 import ch.digitalfondue.npjt.Bind;
@@ -48,12 +47,9 @@ public class V22_1_14_8__MigrateMailchimp extends BaseSpringJdbcMigration {
             return;
         }
 
-        QueryFactory queryFactory = new QueryFactory("PGSQL", jdbcTemplate);
-
-        EventRepository eventRepository = queryFactory.from(EventRepository.class);
-        ExtensionRepository extensionRepository = queryFactory.from(ExtensionRepository.class);
-        ExtensionLogRepository extensionLogRepository = queryFactory.from(ExtensionLogRepository.class);
-        PluginRepository pluginRepository = queryFactory.from(PluginRepository.class);
+        ExtensionRepository extensionRepository = QueryFactory.from(ExtensionRepository.class, "PGSQL", jdbcTemplate.getDataSource());
+        ExtensionLogRepository extensionLogRepository = QueryFactory.from(ExtensionLogRepository.class, "PGSQL", jdbcTemplate.getDataSource());
+        PluginRepository pluginRepository = QueryFactory.from(PluginRepository.class, "PGSQL", jdbcTemplate.getDataSource());
         ExtensionService extensionService = new ExtensionService(new ScriptingExecutionService(), extensionRepository, extensionLogRepository, new DataSourceTransactionManager(jdbcTemplate.getDataSource()));
 
         extensionService.createOrUpdate(null, null, new Extension("-", "mailchimp", getMailChimpScript(), true));
