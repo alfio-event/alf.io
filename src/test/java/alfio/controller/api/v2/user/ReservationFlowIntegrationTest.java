@@ -622,6 +622,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.BAD_REQUEST, releaseTicketFailure.getStatusCode());
             assertEquals(HttpStatus.OK, ticketApiV2Controller.getTicketInfo(event.getShortName(), ticket.getUuid()).getStatusCode());
 
+
+            //no invoice, but receipt
+            assertEquals(HttpStatus.NOT_FOUND, reservationApiV2Controller.getInvoice(event.getShortName(), reservationId, new MockHttpServletResponse(), null).getStatusCode());
+            assertEquals(HttpStatus.OK, reservationApiV2Controller.getReceipt(event.getShortName(), reservationId, new MockHttpServletResponse(), null).getStatusCode());
+
         }
 
     }
