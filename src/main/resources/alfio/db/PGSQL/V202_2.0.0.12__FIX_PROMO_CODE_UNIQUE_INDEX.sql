@@ -15,5 +15,8 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
+alter table promo_code drop constraint if exists "unique_promo_code_for_org";
+alter table promo_code drop constraint if exists "unique_promo_code_for_event";
+
 create unique index if not exists "unique_promo_code_for_org" on promo_code(promo_code, organization_id_fk) where event_id_fk is null;
 create unique index if not exists "unique_promo_code_for_event" on promo_code(promo_code, event_id_fk) where event_id_fk is not null;
