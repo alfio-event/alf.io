@@ -28,9 +28,9 @@ import alfio.manager.user.UserManager;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.TemplateManager;
-import ch.digitalfondue.npjt.QueryFactory;
-import ch.digitalfondue.npjt.QueryRepositoryScanner;
-import ch.digitalfondue.npjt.mapper.ZonedDateTimeMapper;
+import ch.digitalfondue.npjt.EnableNpjt;
+import ch.digitalfondue.npjt.mapper.ColumnMapperFactory;
+import ch.digitalfondue.npjt.mapper.ParameterConverter;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
 import org.flywaydb.core.Flyway;
@@ -57,6 +57,7 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -67,6 +68,7 @@ import java.util.Set;
 @EnableAsync
 @ComponentScan(basePackages = {"alfio.manager", "alfio.extension"})
 @Log4j2
+@EnableNpjt(basePackages = "alfio.repository")
 public class DataSourceConfiguration implements ResourceLoaderAware {
 
     private static final Set<PlatformProvider> PLATFORM_PROVIDERS = EnumSet.complementOf(EnumSet.of(PlatformProvider.DEFAULT));
@@ -127,19 +129,13 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     }
 
     @Bean
-    public QueryFactory queryFactory(Environment env, PlatformProvider platform, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
-        return new QueryFactory(platform.getDialect(env), namedParameterJdbcTemplate)
-            .addColumnMapperFactory(new ZonedDateTimeMapper.Factory())
-            .addColumnMapperFactory(new JSONColumnMapper.Factory())
-            .addColumnMapperFactory(new ArrayColumnMapper.Factory())
-            .addParameterConverters(new ZonedDateTimeMapper.Converter())
-            .addParameterConverters(new JSONColumnMapper.Converter())
-            .addParameterConverters(new ArrayColumnMapper.Converter());
+    public List<ColumnMapperFactory> getAdditionalColumnMappers() {
+        return Arrays.asList(new JSONColumnMapper.Factory(), new ArrayColumnMapper.Factory());
     }
 
     @Bean
-    public static QueryRepositoryScanner queryRepositoryScanner(QueryFactory queryFactory) {
-        return new QueryRepositoryScanner(queryFactory, "alfio.repository");
+    public List<ParameterConverter> getAdditionalParameterConverters() {
+        return Arrays.asList(new JSONColumnMapper.Converter(), new ArrayColumnMapper.Converter());
     }
 
     @Bean
