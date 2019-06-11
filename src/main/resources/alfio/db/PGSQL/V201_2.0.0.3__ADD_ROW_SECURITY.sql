@@ -102,6 +102,14 @@ create policy a_group_access_policy on a_group to public
     with check (alfio_check_row_access(organization_id_fk));
 --
 
+alter table promo_code drop constraint "unique_promo_code_for_org";
+alter table promo_code drop constraint "unique_promo_code_for_event";
+
+
+create unique index "unique_promo_code_for_org" on promo_code(promo_code, organization_id_fk) where event_id_fk is null;
+create unique index "unique_promo_code_for_event" on promo_code(promo_code, event_id_fk) where event_id_fk is not null;
+--
+
 update promo_code set organization_id_fk = (select org_id from event where event.id = event_id_fk) where organization_id_fk is null;
 alter table promo_code alter column organization_id_fk set not null;
 
@@ -197,6 +205,9 @@ create policy email_message_access_policy on email_message to public
 --
 
 -- admin_reservation_request
+
+delete from admin_reservation_request where (select count(*) from event where event.id = event_id) = 0;
+
 alter table admin_reservation_request add column organization_id_fk integer;
 alter table admin_reservation_request add foreign key(organization_id_fk) references organization(id);
 update admin_reservation_request set organization_id_fk = (select org_id from event where event.id = event_id);
