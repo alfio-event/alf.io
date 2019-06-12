@@ -96,7 +96,10 @@ class BaseStripeManager {
     }
 
     Map<String, ?> getModelOptions(PaymentContext context) {
-        return Collections.singletonMap("stripe_p_key", getPublicKey(context));
+        Map<String, Object> options = new HashMap<>();
+        options.put("enableSCA", configurationManager.getBooleanConfigValue(context.narrow(STRIPE_ENABLE_SCA), false));
+        options.put("stripe_p_key", getPublicKey(context));
+        return options;
     }
 
     StripeConnectURL getConnectURL(Function<ConfigurationKeys, Configuration.ConfigurationPathKey> keyResolver) {

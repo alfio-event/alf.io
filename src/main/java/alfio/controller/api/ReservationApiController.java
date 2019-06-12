@@ -47,12 +47,9 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ReservationApiController {
 
-    private final EventRepository eventRepository;
     private final TicketHelper ticketHelper;
     private final TemplateManager templateManager;
     private final I18nManager i18nManager;
-    private final TicketReservationRepository ticketReservationRepository;
-    private final TicketReservationManager ticketReservationManager;
 
 
     @RequestMapping(value = "/event/{eventName}/ticket/{ticketIdentifier}/assign", method = RequestMethod.POST, headers = "X-Requested-With=XMLHttpRequest")

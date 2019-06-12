@@ -390,7 +390,7 @@ public class EventController {
     
     @RequestMapping(value = "/event/{eventName}/reserve-tickets", method = { RequestMethod.POST, RequestMethod.GET, RequestMethod.HEAD })
     public String reserveTicket(@PathVariable("eventName") String eventName,
-            @ModelAttribute ReservationForm reservation, BindingResult bindingResult, Model model,
+            @ModelAttribute ReservationForm reservation, BindingResult bindingResult,
             ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale) {
 
         return eventRepository.findOptionalByShortName(eventName).map(event -> {
@@ -405,7 +405,7 @@ public class EventController {
 
     private String validateAndReserve(String eventName, ReservationForm reservation, BindingResult bindingResult, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, Event event) {
 
-        if(isCaptchaInvalid(request.getRequest(), event)) {
+        if(isCaptchaInvalid(reservation.getCaptcha(), request.getRequest(), event)) {
             bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
         }
 
@@ -467,9 +467,9 @@ public class EventController {
         return ticketCategory.isAccessRestricted() && ticketCategory.getId() == promoCodeDiscount.getHiddenCategoryId();
     }
 
-    private boolean isCaptchaInvalid(HttpServletRequest request, EventAndOrganizationId event) {
+    private boolean isCaptchaInvalid(String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
         return configurationManager.isRecaptchaForTicketSelectionEnabled(event)
-            && !recaptchaService.checkRecaptcha(request);
+            && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 
 }

@@ -92,7 +92,7 @@ public class RestEventApiController {
     @RequestMapping("events")
     public List<EventListItem> listEvents(HttpServletRequest request) {
         return eventManager.getPublishedEvents().stream()
-            .map(e -> new EventListItem(e, request.getContextPath(), descriptionsLoader.eventDescriptions()))
+            .map(e -> new EventListItem(e, request.getContextPath(), descriptionsLoader.eventDescriptions().load(e)))
             .collect(Collectors.toList());
     }
 
@@ -108,7 +108,7 @@ public class RestEventApiController {
                 .collect(Collectors.toList());
             Organization organization = organizationRepository.getById(e.getOrganizationId());
 
-            return new ResponseEntity<>(new PublicEvent(e, request.getContextPath(), descriptionsLoader.eventDescriptions(), categories, organization), HttpStatus.OK);
+            return new ResponseEntity<>(new PublicEvent(e, request.getContextPath(), descriptionsLoader.eventDescriptions().load(e), categories, organization), HttpStatus.OK);
         }).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 

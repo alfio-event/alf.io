@@ -53,6 +53,7 @@ public class ReservationForm implements Serializable {
     private String promoCode;
     private List<TicketReservationModification> reservation;
     private List<AdditionalServiceReservationModification> additionalService;
+    private String captcha;
 
     private List<TicketReservationModification> selected() {
         return ofNullable(reservation)

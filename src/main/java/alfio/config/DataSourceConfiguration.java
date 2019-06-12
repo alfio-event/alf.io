@@ -27,6 +27,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.EnableNpjt;
 import ch.digitalfondue.npjt.mapper.ColumnMapperFactory;
@@ -160,7 +161,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 
     @Bean
     public MessageSource messageSource() {
-        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+        ResourceBundleMessageSource source = new CustomResourceBundleMessageSource();
         source.setBasenames("alfio.i18n.public", "alfio.i18n.admin");
         source.setDefaultEncoding(StandardCharsets.UTF_8.displayName());
         //since we have all the english translations in the default file, we don't need

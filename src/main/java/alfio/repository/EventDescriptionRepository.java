@@ -21,9 +21,11 @@ import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @QueryRepository
@@ -32,8 +34,18 @@ public interface EventDescriptionRepository {
     @Query("select * from event_description_text where event_id_fk = :eventId")
     List<EventDescription> findByEventId(@Bind("eventId") int eventId);
 
+    @Query("select * from event_description_text where event_id_fk = :eventId and type = :type")
+    List<EventDescription> findByEventIdAndType(@Bind("eventId") int eventId, @Bind("type")EventDescription.EventDescriptionType type);
+
+    @Query("select * from event_description_text where event_id_fk in (:eventIds)")
+    List<EventDescription> findByEventIds(@Bind("eventIds") Collection<Integer> eventIds);
+
     default Map<String, String> findByEventIdAsMap(int eventId) {
         return findByEventId(eventId).stream().collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription));
+    }
+
+    default Map<Integer, List<EventDescription>> findByEventIdsAsMap(Collection<Integer> eventIds) {
+        return findByEventIds(eventIds).stream().collect(Collectors.groupingBy(EventDescription::getEventId));
     }
 
     @Query("select description from event_description_text where event_id_fk = :eventId and type = :type and locale = :locale")

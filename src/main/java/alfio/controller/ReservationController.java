@@ -238,7 +238,7 @@ public class ReservationController {
     @RequestMapping(value = "/event/{eventName}/reservation/{reservationId}/validate-to-overview", method = RequestMethod.POST)
     public String validateToOverview(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
                                      ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult,
-                                     Model model, HttpServletRequest request, Locale locale, RedirectAttributes redirectAttributes) {
+                                     HttpServletRequest request, RedirectAttributes redirectAttributes, Locale locale) {
 
         Optional<Event> eventOptional = eventRepository.findOptionalByShortName(eventName);
         return redirectIfNotValid(contactAndTicketsForm.isBackFromOverview(), contactAndTicketsForm.shouldCancelReservation(), eventName, reservationId, request, eventOptional)
@@ -542,7 +542,7 @@ public class ReservationController {
     }
 
 
-    private String redirectReservation(Optional<TicketReservation> ticketReservation, String eventName, String reservationId) {
+    public String redirectReservation(Optional<TicketReservation> ticketReservation, String eventName, String reservationId) {
         String baseUrl = "redirect:/event/" + eventName + "/reservation/" + reservationId;
         if(ticketReservation.isEmpty()) {
             return baseUrl + "/notfound";
@@ -639,6 +639,10 @@ public class ReservationController {
                 final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                         Optional.ofNullable(paymentForm.getPaymentMethod()));
 
+                //
+                model.addAttribute("paymentResultStatus", status);
+                //
+
                 if (status.isRedirect()) {
                     return "redirect:" + status.getRedirectUrl();
                 }
@@ -662,7 +666,7 @@ public class ReservationController {
     private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, HttpServletRequest request, EventAndOrganizationId event) {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
                 && configurationManager.isRecaptchaForOfflinePaymentEnabled(event)
-                && !recaptchaService.checkRecaptcha(request);
+                && !recaptchaService.checkRecaptcha(null, request);
     }
 
     private void assignTickets(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, HttpServletRequest request, boolean preAssign, boolean skipValidation) {

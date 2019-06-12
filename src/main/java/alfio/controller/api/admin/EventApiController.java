@@ -142,7 +142,7 @@ public class EventApiController {
         return eventManager.getActiveEvents().stream()
             .filter(e -> userOrganizations.contains(e.getOrganizationId()))
             .sorted(Comparator.comparing(e -> e.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
-            .map(s -> new EventListItem(s, request.getContextPath(), descriptionsLoader.eventDescriptions()))
+            .map(s -> new EventListItem(s, request.getContextPath(), descriptionsLoader.eventDescriptions().load(s)))
             .collect(toList());
     }
 

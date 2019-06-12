@@ -217,7 +217,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         //
 
-        reservationApiController = new ReservationApiController(eventRepository, ticketHelper, mock(TemplateManager.class), i18nManager, ticketReservationRepository, ticketReservationManager);
+        reservationApiController = new ReservationApiController(ticketHelper, mock(TemplateManager.class), i18nManager);
         invoiceReceiptController = new InvoiceReceiptController(eventRepository, ticketReservationManager, fileUploadManager, templateManager, configurationManager, extensionManager);
 
         //promo code at event level
@@ -588,7 +588,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
 
-        reservationController.validateToOverview(eventName, reservationIdentifier, contactAndTicketsForm, bindingResult, model, request, Locale.ENGLISH, redirectAttributes);
+        reservationController.validateToOverview(eventName, reservationIdentifier, contactAndTicketsForm, bindingResult, request, redirectAttributes, Locale.ENGLISH);
 
         Assert.assertEquals("/event/overview", reservationController.showOverview(eventName, reservationIdentifier, Locale.ENGLISH, model, new MockHttpSession()));
 
@@ -612,7 +612,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         request.setMethod("POST");
         ServletWebRequest servletWebRequest = new ServletWebRequest(request);
         BindingResult bindingResult = new BeanPropertyBindingResult(reservationForm, "reservation");
-        Model model = new BindingAwareModelMap();
+
         RedirectAttributes redirectAttributes = new RedirectAttributesModelMap();
         TicketReservationModification ticketReservation = new TicketReservationModification();
         ticketReservation.setAmount(1);
@@ -620,7 +620,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         reservationForm.setReservation(Collections.singletonList(ticketReservation));
 
 
-        return eventController.reserveTicket(eventName, reservationForm, bindingResult, model, servletWebRequest, redirectAttributes, Locale.ENGLISH);
+        return eventController.reserveTicket(eventName, reservationForm, bindingResult, servletWebRequest, redirectAttributes, Locale.ENGLISH);
     }
 
 }

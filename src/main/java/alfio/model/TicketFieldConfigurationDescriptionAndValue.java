@@ -19,6 +19,7 @@ package alfio.model;
 import alfio.util.Json;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 import org.apache.commons.collections.CollectionUtils;
@@ -88,7 +89,8 @@ public class TicketFieldConfigurationDescriptionAndValue {
     }
 
     @RequiredArgsConstructor
-    private static class TicketFieldValue {
+    @Getter
+    public static class TicketFieldValue {
         private final int fieldIndex;
         private final int fieldCounter;
         private final String fieldValue;
