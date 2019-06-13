@@ -303,7 +303,7 @@ public class EventApiV2Controller {
             //
             var saleableAdditionalServices = additionalServiceRepository.loadAllForEvent(event.getId())
                 .stream()
-                .map(as -> new SaleableAdditionalService(event, as, null, null, promoCode.orElse(null), 0))
+                .map(as -> new SaleableAdditionalService(event, as, promoCode.orElse(null)))
                 .filter(SaleableAdditionalService::isNotExpired)
                 .collect(Collectors.toList());
 

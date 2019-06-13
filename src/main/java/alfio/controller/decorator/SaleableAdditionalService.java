@@ -31,22 +31,12 @@ public class SaleableAdditionalService implements PriceContainer {
     private final Event event;
     @Delegate(excludes = {Exclusions.class, PriceContainer.class})
     private final AdditionalService additionalService;
-    private final String title;
-    private final String description;
     private final PromoCodeDiscount promoCodeDiscount;
-    private final int index;
 
-    public SaleableAdditionalService(Event event, AdditionalService additionalService, String title, String description, PromoCodeDiscount promoCodeDiscount, int index) {
+    public SaleableAdditionalService(Event event, AdditionalService additionalService, PromoCodeDiscount promoCodeDiscount) {
         this.event = event;
         this.additionalService = additionalService;
-        this.title = title;
-        this.description = description;
         this.promoCodeDiscount = promoCodeDiscount;
-        this.index = index;
-    }
-
-    public SaleableAdditionalService withIndex(int index) {
-        return new SaleableAdditionalService(this.event, this.additionalService, this.title, this.description, this.promoCodeDiscount, index);
     }
 
     public boolean isExpired() {
