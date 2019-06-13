@@ -16,7 +16,6 @@
  */
 package alfio.util;
 
-import alfio.config.WebSecurityConfig;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
@@ -32,14 +31,10 @@ import org.springframework.context.MessageSource;
 import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.security.web.csrf.CsrfToken;
-import org.springframework.web.context.support.ServletContextResource;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.i18n.MustacheLocalizationMessageInterceptor;
-import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -111,14 +106,6 @@ public class TemplateManager {
 
     public String renderString(EventAndOrganizationId event, String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
         return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), modelEnricher(model, Optional.ofNullable(event), locale), locale, templateOutput);
-    }
-
-    //TODO: to be removed when only the rest api will be exposed
-    public String renderServletContextResource(String servletContextResource, EventAndOrganizationId event, Map<String, Object> model, HttpServletRequest request, TemplateOutput templateOutput) {
-        model.put("request", request);
-        model.put(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
-        Locale locale = RequestContextUtils.getLocale(request);
-        return render(new ServletContextResource(request.getServletContext(), servletContextResource), modelEnricher(model, Optional.ofNullable(event), locale), locale, templateOutput);
     }
 
     private Map<String, Object> modelEnricher(Map<String, Object> model, Optional<? extends EventAndOrganizationId> event, Locale locale) {
