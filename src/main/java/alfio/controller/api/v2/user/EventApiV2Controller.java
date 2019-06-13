@@ -16,7 +16,6 @@
  */
 package alfio.controller.api.v2.user;
 
-import alfio.controller.EventController;
 import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.model.AdditionalService;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
@@ -43,6 +42,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -50,7 +50,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -72,7 +71,6 @@ import static java.util.stream.Collectors.toList;
 @AllArgsConstructor
 public class EventApiV2Controller {
 
-    private final EventController eventController;
     private final EventManager eventManager;
     private final EventRepository eventRepository;
     private final ConfigurationManager configurationManager;
@@ -91,11 +89,9 @@ public class EventApiV2Controller {
     private final TicketReservationManager ticketReservationManager;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final EventStatisticsManager eventStatisticsManager;
-
-    //
+    private final RecaptchaService recaptchaService;
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
     private final SpecialPriceRepository specialPriceRepository;
-    //
 
 
     @GetMapping("events")
@@ -395,8 +391,7 @@ public class EventApiV2Controller {
                                                                    @RequestParam("lang") String lang,
                                                                    @RequestBody ReservationForm reservation,
                                                                    BindingResult bindingResult,
-                                                                   ServletWebRequest request,
-                                                                   RedirectAttributes redirectAttributes) {
+                                                                   ServletWebRequest request) {
 
         if(StringUtils.trimToNull(reservation.getPromoCode()) != null) {
             var codeCheck = applyPromoCodeInRequest(eventName, reservation.getPromoCode(), request.getRequest());
@@ -407,16 +402,44 @@ public class EventApiV2Controller {
             });
         }
 
-        String redirectResult = eventController.reserveTicket(eventName, reservation, bindingResult, request, redirectAttributes, Locale.forLanguageTag(lang));
 
-        if (bindingResult.hasErrors()) {
-            return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
-        } else {
-            String reservationIdentifier = redirectResult
-                .substring(redirectResult.lastIndexOf("reservation/")+"reservation/".length())
-                .replace("/book", "");
-            return ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), reservationIdentifier));
-        }
+        Optional<ResponseEntity<ValidatedResponse<String>>> r = eventRepository.findOptionalByShortName(eventName).map(event -> {
+            if (isCaptchaInvalid(reservation.getCaptcha(), request.getRequest(), event)) {
+                bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
+            }
+
+            var reservationIdRes = reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event).flatMap(selected -> {
+                Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
+                try {
+                    String reservationId = ticketReservationManager.createTicketReservation(event,
+                        selected.getLeft(), selected.getRight(), expiration,
+                        SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()),
+                        SessionUtil.retrievePromotionCodeDiscount(request.getRequest()),
+                        Locale.forLanguageTag(lang), false);
+                    return Optional.of(reservationId);
+                } catch (TicketReservationManager.NotEnoughTicketsException nete) {
+                    bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
+                } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
+                    bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
+                } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
+                    bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
+                    SessionUtil.cleanupSession(request.getRequest());
+                } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
+                    bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+                }
+
+                return Optional.empty();
+            });
+
+            if (bindingResult.hasErrors()) {
+                return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
+            } else {
+                var reservationIdentifier = reservationIdRes.orElseThrow(IllegalStateException::new);
+                return ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), reservationIdentifier));
+            }
+        });
+
+        return r.orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @GetMapping(value = "event/{eventName}/validate-code")
@@ -523,5 +546,10 @@ public class EventApiV2Controller {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Access-Control-Allow-Origin", "*");
         return headers;
+    }
+
+    private boolean isCaptchaInvalid(String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
+        return configurationManager.isRecaptchaForTicketSelectionEnabled(event)
+            && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 }
