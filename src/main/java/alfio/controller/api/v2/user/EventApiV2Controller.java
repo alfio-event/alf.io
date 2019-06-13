@@ -22,7 +22,6 @@ import alfio.controller.api.v2.model.AdditionalService;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo.PaymentProxyWithParameters;
 import alfio.controller.api.v2.model.TicketCategory;
-import alfio.controller.decorator.EventDescriptor;
 import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
@@ -41,17 +40,13 @@ import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
-import alfio.util.CustomResourceBundleMessageSource;
-import alfio.util.ErrorsCode;
-import alfio.util.MustacheCustomTagInterceptor;
-import alfio.util.Validator;
+import alfio.util.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -63,6 +58,7 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
@@ -91,6 +87,10 @@ public class EventApiV2Controller {
     private final WaitingQueueManager waitingQueueManager;
     private final I18nManager i18nManager;
     private final TicketCategoryRepository ticketCategoryRepository;
+    private final TicketRepository ticketRepository;
+    private final TicketReservationManager ticketReservationManager;
+    private final PromoCodeDiscountRepository promoCodeRepository;
+    private final EventStatisticsManager eventStatisticsManager;
 
     //
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
@@ -248,16 +248,46 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/ticket-categories")
-    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, @RequestParam(value = "code", required = false) String code, Model model, HttpServletRequest request) {
+    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, @RequestParam(value = "code", required = false) String code, HttpServletRequest request) {
 
         var appliedPromoCode = applyPromoCodeInRequest(eventName, code, request);
 
 
-        if ("/event/show-event".equals(eventController.showEvent(eventName, model, request, Locale.ENGLISH))) {
-            var valid = (List<SaleableTicketCategory>) model.asMap().get("ticketCategories");
+        //
+        return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
+            Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
+            Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
+
+            Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
+                .flatMap((retrievedCode) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), retrievedCode));
+            final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
+            //hide access restricted ticket categories
+            var ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+
+            List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
+                .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
+                .map((m) -> {
+                    int maxTickets = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5);
+                    PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null);
+                    if (specialCode.isPresent()) {
+                        maxTickets = Math.min(1, maxTickets);
+                    } else if (filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
+                        maxTickets = filteredPromoCode.getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(filteredPromoCode.getId(), categoriesOrNull(filteredPromoCode), null, categoriesOrNull(filteredPromoCode) != null ? "X" : null);
+                    }
+                    return new SaleableTicketCategory(m, "",
+                        now, event, ticketReservationManager.countAvailableTickets(event, m), maxTickets,
+                        filteredPromoCode);
+                })
+                .collect(Collectors.toList());
+
+
+            var valid = saleableTicketCategories.stream().filter(tc -> !tc.getExpired()).collect(Collectors.toList());
+
+            //
+
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
-            Event event = ((EventDescriptor) model.asMap().get("event")).getEvent();
+
 
             var converted = valid.stream()
                 .map(stc -> {
@@ -300,16 +330,17 @@ public class EventApiV2Controller {
             //
 
             // waiting queue parameters
-            boolean displayWaitingQueueForm = (boolean) model.asMap().get("displayWaitingQueueForm");
-            boolean preSales = (boolean) model.asMap().get("preSales");
-            List<SaleableTicketCategory> unboundedCategories = (List<SaleableTicketCategory>) model.asMap().get("unboundedCategories");
+            boolean displayWaitingQueueForm = EventUtil.displayWaitingQueueForm(event, saleableTicketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable());
+            boolean preSales = EventUtil.isPreSales(event, saleableTicketCategories);
+            Predicate<SaleableTicketCategory> waitingQueueTargetCategory = tc -> !tc.getExpired() && !tc.isBounded();
+            List<SaleableTicketCategory> unboundedCategories = saleableTicketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList());
             var tcForWaitingList = unboundedCategories.stream().map(stc -> new ItemsByCategory.TicketCategoryForWaitingList(stc.getId(), stc.getName())).collect(toList());
             //
 
             return new ResponseEntity<>(new ItemsByCategory(converted, additionalServicesRes, displayWaitingQueueForm, preSales, tcForWaitingList), getCorsHeaders(), HttpStatus.OK);
-        } else {
+        }).orElseGet(() -> {
             return ResponseEntity.notFound().headers(getCorsHeaders()).build();
-        }
+        });
     }
 
     @GetMapping("event/{eventName}/languages")
@@ -332,8 +363,31 @@ public class EventApiV2Controller {
                             @PathVariable("locale") String locale,
                             @RequestParam(value = "type", required = false) String calendarType,
                             @RequestParam(value = "ticketId", required = false) String ticketId,
-                            HttpServletResponse response) throws IOException {
-        eventController.calendar(eventName, locale, calendarType, ticketId, response);
+                            HttpServletResponse response) {
+
+        eventRepository.findOptionalByShortName(eventName).ifPresentOrElse((ev -> {
+            var description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(ev.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale).orElse("");
+            var category = ticketRepository.findOptionalByUUID(ticketId).map(t -> ticketCategoryRepository.getById(t.getCategoryId())).orElse(null);
+            if ("google".equals(calendarType)) {
+                try {
+                    response.sendRedirect(EventUtil.getGoogleCalendarURL(ev, category, description));
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            } else {
+                EventUtil.getIcalForEvent(ev, category, description).ifPresentOrElse(ical -> {
+                    response.setContentType("text/calendar");
+                    response.setHeader("Content-Disposition", "inline; filename=\"calendar.ics\"");
+                    try (var os = response.getOutputStream()){
+                        os.write(ical);
+                    } catch (IOException e) {
+                        throw new IllegalStateException(e);
+                    }
+                }, () -> {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                });
+            }
+        }), () -> response.setStatus(HttpServletResponse.SC_NOT_FOUND));
     }
 
     @PostMapping(value = "event/{eventName}/reserve-tickets")
@@ -388,6 +442,25 @@ public class EventApiV2Controller {
             }
         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+
+    private boolean shouldDisplayRestrictedCategory(Optional<SpecialPrice> specialCode, alfio.model.TicketCategory c, Optional<PromoCodeDiscount> optionalPromoCode) {
+        if(optionalPromoCode.isPresent()) {
+            var promoCode = optionalPromoCode.get();
+            if(promoCode.getCodeType() == PromoCodeDiscount.CodeType.ACCESS && c.getId() == promoCode.getHiddenCategoryId()) {
+                return true;
+            }
+        }
+        return specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent();
+    }
+
+    private static boolean shouldApplyDiscount(PromoCodeDiscount promoCodeDiscount, alfio.model.TicketCategory ticketCategory) {
+        if(promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT) {
+            return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
+        }
+        return ticketCategory.isAccessRestricted() && ticketCategory.getId() == promoCodeDiscount.getHiddenCategoryId();
+    }
+
 
     //TODO: temporary!
     private Optional<ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>>> applyPromoCodeInRequest(String eventName, String code, HttpServletRequest request) {
