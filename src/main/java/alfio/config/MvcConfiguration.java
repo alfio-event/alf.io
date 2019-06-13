@@ -16,15 +16,11 @@
  */
 package alfio.config;
 
-import alfio.controller.decorator.EventDescriptor;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
-import alfio.model.EventAndOrganizationId;
-import alfio.model.system.Configuration.ConfigurationPathKey;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.MustacheCustomTagInterceptor;
-import alfio.util.TemplateManager;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -199,22 +195,9 @@ public class MvcConfiguration implements WebMvcConfigurer {
                         modelMap.put("demoModeEnabled", demoModeEnabled);
                         modelMap.put("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
                         modelMap.put("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
-
-                        Optional.ofNullable(request.getAttribute("ALFIO_EVENT_NAME")).map(Object::toString).ifPresent(eventName -> {
-
-                            List<?> availableLanguages = i18nManager.getEventLanguages(eventName);
-
-                            modelMap.put("showAvailableLanguagesInPageTop", availableLanguages.size() > 1);
-                            modelMap.put("availableLanguages", availableLanguages);
-                        });
-
+                        
                         modelMap.putIfAbsent("event", null);
                         modelMap.putIfAbsent("pageTitle", "empty");
-                        EventAndOrganizationId event = modelMap.get("event") == null ? null : modelMap.get("event") instanceof EventAndOrganizationId ? (EventAndOrganizationId) modelMap.get("event") : ((EventDescriptor) modelMap.get("event")).getEvent();
-                        ConfigurationPathKey googleAnalyticsKey = Optional.ofNullable(event)
-                            .map(e -> alfio.model.system.Configuration.from(e, GOOGLE_ANALYTICS_KEY))
-                            .orElseGet(() -> alfio.model.system.Configuration.getSystemConfiguration(GOOGLE_ANALYTICS_KEY));
-                        modelMap.putIfAbsent("analyticsEnabled", StringUtils.isNotBlank(configurationManager.getStringConfigValue(googleAnalyticsKey, "")));
 
 
                         if(demoModeEnabled) {
@@ -222,7 +205,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
                             modelMap.putIfAbsent("paypalTestPassword", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_PASSWORD), "<missing>"));
                         }
 
-                        modelMap.putIfAbsent(TemplateManager.VAT_TRANSLATION_TEMPLATE_KEY, TemplateManager.getVATString(event, messageSource, Objects.requireNonNull(RequestContextUtils.getLocaleResolver(request)).resolveLocale(request), configurationManager));
                 });
             }
         };
