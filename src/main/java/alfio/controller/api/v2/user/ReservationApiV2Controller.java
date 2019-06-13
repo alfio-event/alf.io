@@ -54,6 +54,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.support.RequestContextUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -284,13 +285,18 @@ public class ReservationApiV2Controller {
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/re-send-email")
     public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName,
-                                                     @PathVariable("reservationId") String reservationId, HttpServletRequest request) {
-        var res = reservationController.reSendReservationConfirmationEmail(eventName, reservationId, request);
-        if(res.endsWith("confirmation-email-sent=true")) {
-            return ResponseEntity.ok(true);
-        } else {
-            return ResponseEntity.ok(false);
-        }
+                                                                      @PathVariable("reservationId") String reservationId,
+                                                                      @RequestParam("lang") String lang) {
+
+        var res = eventRepository.findOptionalByShortName(eventName).map(event ->
+            ticketReservationManager.findById(reservationId).map(ticketReservation -> {
+                Locale locale = Locale.forLanguageTag(lang);
+                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, locale);
+                return true;
+            }).orElse(false)
+        ).orElse(false);
+
+        return ResponseEntity.ok(res);
     }
 
 
