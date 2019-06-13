@@ -16,23 +16,29 @@
  */
 package alfio.controller.api.v2.user;
 
-import alfio.controller.TicketController;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.TicketInfo;
 import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.Formatters;
+import alfio.controller.support.TemplateProcessor;
+import alfio.manager.ExtensionManager;
+import alfio.manager.FileUploadManager;
+import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.PaymentProxy;
+import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.ImageUtil;
+import alfio.util.LocaleUtil;
+import alfio.util.TemplateManager;
 import lombok.AllArgsConstructor;
-import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -42,7 +48,9 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 import java.util.Optional;
 
 @RestController
@@ -50,12 +58,15 @@ import java.util.Optional;
 @RequestMapping("/api/v2/public/")
 public class TicketApiV2Controller {
 
-
-    private final TicketController ticketController;
     private final TicketHelper ticketHelper;
     private final TicketReservationManager ticketReservationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final CustomResourceBundleMessageSource messageSource;
+    private final ExtensionManager extensionManager;
+    private final FileUploadManager fileUploadManager;
+    private final OrganizationRepository organizationRepository;
+    private final TemplateManager templateManager;
+    private final NotificationManager notificationManager;
 
 
     @GetMapping("/event/{eventName}/ticket/{ticketIdentifier}/code.png")
@@ -82,16 +93,55 @@ public class TicketApiV2Controller {
     @GetMapping("/event/{eventName}/ticket/{ticketIdentifier}/download-ticket")
     public void generateTicketPdf(@PathVariable("eventName") String eventName,
                                   @PathVariable("ticketIdentifier") String ticketIdentifier,
-                                  HttpServletRequest request, HttpServletResponse response) throws IOException {
-        ticketController.generateTicketPdf(eventName, ticketIdentifier, request, response);
+                                  HttpServletRequest request, HttpServletResponse response) {
+
+        ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier).ifPresentOrElse(data -> {
+
+            Ticket ticket = data.getRight();
+            Event event = data.getLeft();
+            TicketReservation ticketReservation = data.getMiddle();
+
+            response.setContentType("application/pdf");
+            response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
+            try (OutputStream os = response.getOutputStream()) {
+                TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
+                Organization organization = organizationRepository.getById(event.getOrganizationId());
+                String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation);
+                TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
+                    ticket, ticketCategory, organization,
+                    templateManager, fileUploadManager,
+                    reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager);
+            } catch (IOException ioe) {
+                throw new IllegalStateException(ioe);
+            }
+        }, () -> {
+            try {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            } catch (IOException ioe) {
+                throw new IllegalStateException(ioe);
+            }
+        });
     }
 
     @PostMapping("/event/{eventName}/ticket/{ticketIdentifier}/send-ticket-by-email")
     public ResponseEntity<Boolean> sendTicketByEmail(@PathVariable("eventName") String eventName,
                                     @PathVariable("ticketIdentifier") String ticketIdentifier,
                                     HttpServletRequest request) {
-        var res = ticketController.sendTicketByEmail(eventName, ticketIdentifier, request);
-        return "OK".equals(res) ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();
+
+        return ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier).map(data -> {
+            Ticket ticket = data.getRight();
+            Event event = data.getLeft();
+            Locale locale = LocaleUtil.getTicketLanguage(ticket, request);
+
+            TicketReservation reservation = data.getMiddle();
+            Organization organization = organizationRepository.getById(event.getOrganizationId());
+            TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
+            notificationManager.sendTicketByEmail(ticket,
+                event, locale, TemplateProcessor.buildPartialEmail(event, organization, reservation, category, templateManager, ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid()), request),
+                reservation, ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()));
+            return ResponseEntity.ok(true);
+
+        }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/event/{eventName}/ticket/{ticketIdentifier}")

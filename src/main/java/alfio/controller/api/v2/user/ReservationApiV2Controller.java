@@ -16,8 +16,7 @@
  */
 package alfio.controller.api.v2.user;
 
-import alfio.controller.InvoiceReceiptController;
-import alfio.controller.ReservationController;
+import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
 import alfio.controller.api.v2.model.ReservationPaymentResult;
@@ -25,63 +24,83 @@ import alfio.controller.api.v2.model.ReservationStatusInfo;
 import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
-import alfio.controller.payment.api.PaymentApiController;
 import alfio.controller.support.SessionUtil;
-import alfio.manager.EventManager;
-import alfio.manager.PaymentManager;
-import alfio.manager.TicketReservationManager;
+import alfio.controller.support.TemplateProcessor;
+import alfio.manager.*;
+import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.system.Configuration;
-import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.PaymentToken;
-import alfio.model.transaction.TransactionInitializationToken;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.*;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
+import alfio.util.ErrorsCode;
+import alfio.util.FileUtil;
+import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSource;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.ui.Model;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static alfio.model.PriceContainer.VatStatus.*;
+import static alfio.model.PriceContainer.VatStatus.INCLUDED_EXEMPT;
+import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
+import static alfio.model.system.ConfigurationKeys.ENABLE_ITALY_E_INVOICING;
+import static alfio.util.MonetaryUtil.unitToCents;
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v2/public/")
+@Log4j2
 public class ReservationApiV2Controller {
 
     private final EventManager eventManager;
     private final EventRepository eventRepository;
-    private final ReservationController reservationController;
     private final TicketReservationManager ticketReservationManager;
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketFieldRepository ticketFieldRepository;
     private final MessageSource messageSource;
-    private final InvoiceReceiptController invoiceReceiptController;
-    private final PaymentApiController paymentApiController;
     private final ConfigurationManager configurationManager;
+    private final PaymentManager paymentManager;
+    private final FileUploadManager fileUploadManager;
+    private final TemplateManager templateManager;
+    private final ExtensionManager extensionManager;
+    private final TicketHelper ticketHelper;
+    private final EuVatChecker vatChecker;
+    private final RecaptchaService recaptchaService;
 
     /**
-     * See {@link ReservationController#showBookingPage(String, String, Model, Locale)}
-     *
      * Note: now it will return for any states of the reservation.
      *
      * @param eventName
@@ -214,8 +233,8 @@ public class ReservationApiV2Controller {
                                                             @PathVariable("reservationId") String reservationId,
                                                             HttpServletRequest request) {
 
-        //FIXME check precondition (see ReservationController.redirectIfNotValid)
-        ticketReservationManager.cancelPendingReservation(reservationId, false, null);
+        getReservationWithPendingStatus(eventName, reservationId)
+            .ifPresent(er -> ticketReservationManager.cancelPendingReservation(reservationId, false, null));
         SessionUtil.cleanupSession(request);
         return ResponseEntity.ok(true);
     }
@@ -224,9 +243,10 @@ public class ReservationApiV2Controller {
     public ResponseEntity<Boolean> backToBook(@PathVariable("eventName") String eventName,
                                               @PathVariable("reservationId") String reservationId) {
 
-        //FIXME check precondition (see ReservationController.redirectIfNotValid)
+        getReservationWithPendingStatus(eventName, reservationId)
+            .ifPresent(er -> ticketReservationRepository.updateValidationStatus(reservationId, false));
 
-        ticketReservationRepository.updateValidationStatus(reservationId, false);
+
         return ResponseEntity.ok(true);
     }
 
@@ -236,25 +256,77 @@ public class ReservationApiV2Controller {
                                                                                          @RequestParam("lang") String lang,
                                                                                          @RequestBody  PaymentForm paymentForm,
                                                                                          BindingResult bindingResult,
-                                                                                         Model model,
                                                                                          HttpServletRequest request,
-                                                                                         RedirectAttributes redirectAttributes,
                                                                                          HttpSession session) {
-        //FIXME check precondition (see ReservationController.redirectIfNotValid)
-        reservationController.handleReservation(eventName, reservationId, paymentForm,
-            bindingResult, model, request, Locale.forLanguageTag(lang), redirectAttributes,
-            session);
 
-        var modelMap = model.asMap();
-        if (modelMap.containsKey("paymentResultStatus")) {
-            PaymentResult paymentResult = (PaymentResult) modelMap.get("paymentResultStatus");
-            if (paymentResult.isRedirect() && !bindingResult.hasErrors()) {
-                var body = ValidatedResponse.toResponse(bindingResult,
-                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, paymentResult.getRedirectUrl(), paymentResult.isFailed(), paymentResult.getGatewayIdOrNull()));
-                return ResponseEntity.ok(body);
+        return getReservationWithPendingStatus(eventName, reservationId).map(er -> {
+
+           var event = er.getLeft();
+           var ticketReservation = er.getRight();
+           var locale = Locale.forLanguageTag(lang);
+
+            if (!ticketReservation.getValidity().after(new Date())) {
+                bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
             }
-        }
 
+
+            final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+
+            paymentForm.validate(bindingResult, event, reservationCost);
+            if (bindingResult.hasErrors()) {
+                return buildReservationPaymentStatus(bindingResult);
+            }
+
+            if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentMethod(), request, event)) {
+                log.debug("captcha validation failed.");
+                bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
+            }
+
+            if(!bindingResult.hasErrors()) {
+                extensionManager.handleReservationValidation(event, ticketReservation, paymentForm, bindingResult);
+            }
+
+            if (bindingResult.hasErrors()) {
+                return buildReservationPaymentStatus(bindingResult);
+            }
+
+            CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
+
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
+
+            PaymentToken paymentToken = (PaymentToken) session.getAttribute(PaymentManager.PAYMENT_TOKEN);
+            if(paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {
+                paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentMethod(), new PaymentContext(event, reservationId));
+            }
+            PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
+                event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
+                locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),
+                orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
+                Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
+
+            final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
+                Optional.ofNullable(paymentForm.getPaymentMethod()));
+
+            if(!status.isSuccessful()) {
+                String errorMessageCode = status.getErrorCode().orElse(StripeCreditCardManager.STRIPE_UNEXPECTED);
+                MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
+                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
+                //SessionUtil.addToFlash(bindingResult, redirectAttributes);
+                SessionUtil.removePaymentToken(request);
+                return buildReservationPaymentStatus(bindingResult);
+            }
+
+            if (status.isRedirect() && !bindingResult.hasErrors()) {
+                var body = ValidatedResponse.toResponse(bindingResult,
+                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, status.getRedirectUrl(), status.isFailed(), status.getGatewayIdOrNull()));
+                return ResponseEntity.ok(body);
+            } else {
+                return buildReservationPaymentStatus(bindingResult);
+            }
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private static ResponseEntity<ValidatedResponse<ReservationPaymentResult>> buildReservationPaymentStatus(BindingResult bindingResult) {
         var body = ValidatedResponse.toResponse(bindingResult, new ReservationPaymentResult(!bindingResult.hasErrors(), false, null, true, null));
         return ResponseEntity.status(bindingResult.hasErrors() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK).body(body);
     }
@@ -265,33 +337,171 @@ public class ReservationApiV2Controller {
                                                                          @RequestParam("lang") String lang,
                                                                          @RequestBody ContactAndTicketsForm contactAndTicketsForm,
                                                                          BindingResult bindingResult,
-                                                                         HttpServletRequest request,
-                                                                         RedirectAttributes redirectAttributes) {
+                                                                         HttpServletRequest request) {
 
-        //FIXME check precondition (see ReservationController.redirectIfNotValid)
-        reservationController.validateToOverview(eventName, reservationId, contactAndTicketsForm, bindingResult, request, redirectAttributes, Locale.forLanguageTag(lang));
 
-        var body = ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors());
-        return ResponseEntity.status(bindingResult.hasErrors() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK).body(body);
+        return getReservationWithPendingStatus(eventName, reservationId).map(er -> {
+            var event = er.getLeft();
+            var reservation = er.getRight();
+            var locale = Locale.forLanguageTag(lang);
+            final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus()));
+            Configuration.ConfigurationPathKey forceAssignmentKey = Configuration.from(event, ConfigurationKeys.FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION);
+            boolean forceAssignment = configurationManager.getBooleanConfigValue(forceAssignmentKey, false);
+
+            if(forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
+                contactAndTicketsForm.setPostponeAssignment(false);
+            }
+
+            boolean invoiceOnly = configurationManager.isInvoiceOnly(event);
+
+            if(invoiceOnly && reservationCost.getPriceWithVAT() > 0) {
+                //override, that's why we save it
+                contactAndTicketsForm.setInvoiceRequested(true);
+            }
+
+            CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event.mustUseFirstAndLastName(), false);
+
+
+            ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), event.getVatStatus(),
+                reservation.getSrcPriceCts(), reservationCost.getPriceWithVAT(), reservationCost.getVAT(), Math.abs(reservationCost.getDiscount()), reservation.getCurrencyCode());
+            if(contactAndTicketsForm.isBusiness()) {
+                checkAndApplyVATRules(eventName, reservationId, contactAndTicketsForm, bindingResult, event);
+            }
+
+            //persist data
+            ticketReservationManager.updateReservation(reservationId, customerName, contactAndTicketsForm.getEmail(),
+                contactAndTicketsForm.getBillingAddressCompany(), contactAndTicketsForm.getBillingAddressLine1(), contactAndTicketsForm.getBillingAddressLine2(),
+                contactAndTicketsForm.getBillingAddressZip(), contactAndTicketsForm.getBillingAddressCity(), contactAndTicketsForm.getVatCountryCode(),
+                contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
+                contactAndTicketsForm.getAddCompanyBillingDetails(), contactAndTicketsForm.canSkipVatNrCheck(), false, locale);
+
+            boolean italyEInvoicing = configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_ITALY_E_INVOICING), false);
+
+            if(italyEInvoicing) {
+                ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId,
+                    new TicketReservationInvoicingAdditionalInfo(getItalianInvoicingInfo(contactAndTicketsForm))
+                );
+            }
+
+            assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, request, true, true);
+            //
+
+            Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);
+            //
+            contactAndTicketsForm.validate(bindingResult, event,
+                ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()),
+                new SameCountryValidator(configurationManager, extensionManager, event.getOrganizationId(), event.getId(), reservationId, vatChecker),
+                formValidationParameters);
+            //
+
+            if(!bindingResult.hasErrors()) {
+                extensionManager.handleReservationValidation(event, reservation, contactAndTicketsForm, bindingResult);
+            }
+
+            if(!bindingResult.hasErrors()) {
+                ticketReservationRepository.updateValidationStatus(reservationId, true);
+            }
+
+            var body = ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors());
+            return ResponseEntity.status(bindingResult.hasErrors() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK).body(body);
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing getItalianInvoicingInfo(ContactAndTicketsForm contactAndTicketsForm) {
+        if("IT".equalsIgnoreCase(contactAndTicketsForm.getVatCountryCode())) {
+            return new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(contactAndTicketsForm.getItalyEInvoicingFiscalCode(),
+                contactAndTicketsForm.getItalyEInvoicingReferenceType(),
+                contactAndTicketsForm.getItalyEInvoicingReferenceAddresseeCode(),
+                contactAndTicketsForm.getItalyEInvoicingReferencePEC());
+        }
+        return null;
+    }
+
+    private void assignTickets(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, HttpServletRequest request, boolean preAssign, boolean skipValidation) {
+        if(!contactAndTicketsForm.isPostponeAssignment()) {
+            contactAndTicketsForm.getTickets().forEach((ticketId, owner) -> {
+                if (preAssign) {
+                    Optional<Errors> bindingResultOptional = skipValidation ? Optional.empty() : Optional.of(bindingResult);
+                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, request, (tr) -> {
+                    }, Optional.empty());
+                } else {
+                    ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {
+                    }, Optional.empty(), true);
+                }
+            });
+        }
+    }
+
+    private void checkAndApplyVATRules(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Event event) {
+        // VAT handling
+        String country = contactAndTicketsForm.getVatCountryCode();
+
+        // validate VAT presence if EU mode is enabled
+        if(vatChecker.isReverseChargeEnabledFor(event.getOrganizationId()) && isEUCountry(country)) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
+        }
+
+        try {
+            Optional<VatDetail> vatDetail = eventRepository.findOptionalByShortName(eventName)
+                .flatMap(e -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r)))
+                .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(e.getKey().getVatStatus()))
+                .filter(e -> vatChecker.isReverseChargeEnabledFor(e.getKey().getOrganizationId()))
+                .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, e.getKey()));
+
+
+            vatDetail.ifPresent(vatValidation -> {
+                if (!vatValidation.isValid()) {
+                    bindingResult.rejectValue("vatNr", "error.vat");
+                } else {
+                    var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
+                    PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
+                    var updatedPrice = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(vatStatus));// update VatStatus to the new value for calculating the new price
+                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), updatedPrice, ticketReservationManager.findTicketsInReservation(reservationId), event);
+                    ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
+                        unitToCents(calculator.getFinalPrice()), unitToCents(calculator.getVAT()), unitToCents(calculator.getAppliedDiscount()),
+                        reservation.getCurrencyCode(), StringUtils.trimToNull(vatValidation.getVatNr()),
+                        country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
+                    vatChecker.logSuccessfulValidation(vatValidation, reservationId, event.getId());
+                }
+            });
+        } catch (IllegalStateException ise) {//vat checker failure
+            bindingResult.rejectValue("vatNr", "error.vatVIESDown");
+        }
+    }
+
+
+    private Optional<Pair<Event, TicketReservation>> getReservationWithPendingStatus(String eventName, String reservationId) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .flatMap(event -> ticketReservationManager.findById(reservationId)
+                .filter(reservation -> reservation.getStatus() == TicketReservation.TicketReservationStatus.PENDING)
+                .flatMap(reservation -> Optional.of(Pair.of(event, reservation))));
     }
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/re-send-email")
     public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName,
-                                                     @PathVariable("reservationId") String reservationId, HttpServletRequest request) {
-        var res = reservationController.reSendReservationConfirmationEmail(eventName, reservationId, request);
-        if(res.endsWith("confirmation-email-sent=true")) {
-            return ResponseEntity.ok(true);
-        } else {
-            return ResponseEntity.ok(false);
-        }
+                                                                      @PathVariable("reservationId") String reservationId,
+                                                                      @RequestParam("lang") String lang) {
+
+
+
+        var res = eventRepository.findOptionalByShortName(eventName).map(event ->
+            ticketReservationManager.findById(reservationId).map(ticketReservation -> {
+                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, Locale.forLanguageTag(lang));
+                return true;
+            }).orElse(false)
+        ).orElse(false);
+
+        return ResponseEntity.ok(res);
     }
 
+
+    //
     @GetMapping("/event/{eventName}/reservation/{reservationId}/receipt")
     public ResponseEntity<Void> getReceipt(@PathVariable("eventName") String eventName,
                                            @PathVariable("reservationId") String reservationId,
                                            HttpServletResponse response,
                                            Authentication authentication) {
-        return invoiceReceiptController.getReceipt(eventName, reservationId, response, authentication);
+        return handleReservationWith(eventName, reservationId, authentication, generatePdfFunction(false, response));
     }
 
     @GetMapping("/event/{eventName}/reservation/{reservationId}/invoice")
@@ -299,9 +509,57 @@ public class ReservationApiV2Controller {
                                            @PathVariable("reservationId") String reservationId,
                                            HttpServletResponse response,
                                            Authentication authentication) {
-        return invoiceReceiptController.getInvoice(eventName, reservationId, response, authentication);
+        return handleReservationWith(eventName, reservationId, authentication, generatePdfFunction(true, response));
+    }
+    //
+
+    private ResponseEntity<Void> handleReservationWith(String eventName, String reservationId, Authentication authentication,
+                                                       BiFunction<Event, TicketReservation, ResponseEntity<Void>> with) {
+        ResponseEntity<Void> notFound = ResponseEntity.notFound().build();
+        ResponseEntity<Void> badRequest = ResponseEntity.badRequest().build();
+
+
+
+        return eventRepository.findOptionalByShortName(eventName).map(event -> {
+                if(canAccessReceiptOrInvoice(event, authentication)) {
+                    return ticketReservationManager.findById(reservationId).map(ticketReservation -> with.apply(event, ticketReservation)).orElse(notFound);
+                } else {
+                    return badRequest;
+                }
+            }
+        ).orElse(notFound);
     }
 
+    private boolean canAccessReceiptOrInvoice(EventAndOrganizationId event, Authentication authentication) {
+        return configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) || !isAnonymous(authentication);
+    }
+
+
+    private boolean isAnonymous(Authentication authentication) {
+        return authentication == null ||
+            authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).anyMatch("ROLE_ANONYMOUS"::equals);
+    }
+
+    private BiFunction<Event, TicketReservation, ResponseEntity<Void>> generatePdfFunction(boolean forInvoice, HttpServletResponse response) {
+        return (event, reservation) -> {
+            if(forInvoice ^ reservation.getInvoiceNumber() != null || reservation.isCancelled()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> billingModel = ticketReservationManager.getOrCreateBillingDocumentModel(event, reservation, null);
+
+            try {
+                FileUtil.sendHeaders(response, event.getShortName(), reservation.getId(), forInvoice ? "invoice" : "receipt");
+                TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()),
+                    templateManager, billingModel, forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF,
+                    extensionManager, response.getOutputStream());
+                return ResponseEntity.ok(null);
+            } catch (IOException ioe) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        };
+    }
+    //----------------
 
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/init")
@@ -309,23 +567,44 @@ public class ReservationApiV2Controller {
                                                                           @PathVariable("reservationId") String reservationId,
                                                                           @PathVariable("method") String paymentMethodStr,
                                                                           @RequestParam MultiValueMap<String, String> allParams) {
-        return paymentApiController.initTransaction(eventName, reservationId, paymentMethodStr, allParams);
+        var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
+
+        if(paymentMethod == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = getEventReservationPair(eventName, reservationId)
+            .map(pair -> {
+                var event = pair.getLeft();
+                return ticketReservationManager.initTransaction(event, reservationId, paymentMethod, allParams)
+                    .map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
+            });
+        return responseEntity.orElseGet(() -> ResponseEntity.badRequest().build());
+    }
+
+    private Optional<Pair<Event, TicketReservation>> getEventReservationPair(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
+            .filter(pair -> pair.getRight().isPresent())
+            .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()));
     }
 
     @GetMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/status")
     public ResponseEntity<ReservationPaymentResult> getTransactionStatus(@PathVariable("eventName") String eventName,
                                                               @PathVariable("reservationId") String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
-        var res = paymentApiController.getTransactionStatus(eventName, reservationId, paymentMethodStr);
 
-        if(res.hasBody()) {
-            var paymentResult = res.getBody();
-            return ResponseEntity.ok(new ReservationPaymentResult(paymentResult.isSuccessful(),
-                paymentResult.isRedirect(), paymentResult.getRedirectUrl(),
-                paymentResult.isFailed(), paymentResult.getGatewayIdOrNull()));
-        } else {
-            return ResponseEntity.status(res.getStatusCode()).build();
+        var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
+
+        if(paymentMethod == null) {
+            return ResponseEntity.badRequest().build();
         }
+
+        return getEventReservationPair(eventName, reservationId)
+            .flatMap(pair -> paymentManager.getTransactionStatus(pair.getRight(), paymentMethod))
+            .map(pr -> ResponseEntity.ok(new ReservationPaymentResult(pr.isSuccessful(), pr.isRedirect(), pr.getRedirectUrl(), pr.isFailed(), pr.getGatewayIdOrNull())))
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 
@@ -379,4 +658,21 @@ public class ReservationApiV2Controller {
         return res;
     }
 
+    private boolean isEUCountry(String countryCode) {
+        return configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)).contains(countryCode);
+    }
+
+    private static PriceContainer.VatStatus determineVatStatus(PriceContainer.VatStatus current, boolean isVatExempt) {
+        if(!isVatExempt) {
+            return current;
+        }
+        return current == NOT_INCLUDED ? NOT_INCLUDED_EXEMPT : INCLUDED_EXEMPT;
+    }
+
+
+    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, HttpServletRequest request, EventAndOrganizationId event) {
+        return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
+            && configurationManager.isRecaptchaForOfflinePaymentEnabled(event)
+            && !recaptchaService.checkRecaptcha(null, request);
+    }
 }
