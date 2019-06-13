@@ -85,19 +85,11 @@ public class SaleableTicketCategory implements PriceContainer {
     public boolean getAccessRestricted() {
         return isAccessRestricted();
     }
-    
-    public boolean getSouldOut() {
-        return soldOut;
-    }
 
     public boolean getSouldOutOrLimitReached() {
         return soldOut || (promoCodeDiscount != null && maxTickets == 0);
     }
 
-    public String getFormattedExpiration() {
-        return getExpiration(zoneId).format(DateTimeFormatter.ISO_DATE_TIME);
-    }
-    
     public ZonedDateTime getZonedExpiration() {
         return getExpiration(zoneId);
     }
@@ -133,11 +125,6 @@ public class SaleableTicketCategory implements PriceContainer {
     public String getFormattedFinalPrice() {
         return getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()).toString();
     }
-
-    public int[] getAmountOfTickets() {
-        return DecoratorUtil.generateRangeOfTicketQuantity(maxTickets, availableTickets);
-    }
-
 
     public int getMaxTicketsAfterConfiguration() {
         return maxTickets;

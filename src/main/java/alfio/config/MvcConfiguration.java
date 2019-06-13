@@ -108,6 +108,11 @@ public class MvcConfiguration implements WebMvcConfigurer {
         ResourceHandlerRegistration reg = registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
         int cacheMinutes = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)) ? 15 : 0;
         reg.setCachePeriod(cacheMinutes * 60);
+
+        //
+        registry
+            .addResourceHandler("/webjars/**")
+            .addResourceLocations("/webjars/");
     }
 
     @Override

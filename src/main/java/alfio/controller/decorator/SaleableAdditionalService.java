@@ -119,10 +119,6 @@ public class SaleableAdditionalService implements PriceContainer {
             && promoCodeDiscount != null && promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT;
     }
 
-    public boolean getUserDefinedPrice() {
-        return !isFixPrice();
-    }
-
     public String getDiscountedPrice() {
         return getFinalPrice().toPlainString();
     }
@@ -141,24 +137,6 @@ public class SaleableAdditionalService implements PriceContainer {
         }
     }
 
-    public boolean getMandatoryOneForTicket() {
-        return getSupplementPolicy() == AdditionalService.SupplementPolicy.MANDATORY_ONE_FOR_TICKET;
-    }
-
-    public boolean getUnlimitedAmount() {
-        return getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT;
-    }
-
-    public boolean getLimitedAmount() {
-        return getSupplementPolicy() == null ||
-            getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_RESERVATION ||
-            getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET;
-    }
-
-    public boolean getMaxAmountPerTicket() {
-        return getSupplementPolicy() == AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET;
-    }
-
     public BigDecimal getVatPercentage() {
         AdditionalService.VatType vatType = getVatType();
         if(vatType == AdditionalService.VatType.INHERITED) {
@@ -171,17 +149,6 @@ public class SaleableAdditionalService implements PriceContainer {
         return getVatType() != AdditionalService.VatType.NONE;
     }
 
-    public int[] getAmountOfTickets() {
-        return DecoratorUtil.generateRangeOfTicketQuantity(additionalService.getMaxQtyPerOrder(), 100);
-    }
-
-    public boolean getSoldOut() {
-        return false;
-    }
-
-    private boolean getAccessRestricted() {
-        return false;
-    }
 
     public String getCurrency() {
         return event.getCurrency();

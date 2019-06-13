@@ -24,7 +24,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Optional;
-import java.util.UUID;
 
 public final class SessionUtil {
     
@@ -34,17 +33,6 @@ public final class SessionUtil {
     private static final String PROMOTIONAL_CODE_DISCOUNT = "PROMOTIONAL_CODE_DISCOUNT";
 
     private SessionUtil() {}
-
-    public static void saveSpecialPriceCode(String specialPriceCode, HttpServletRequest request) {
-        if(StringUtils.isNotEmpty(specialPriceCode)) {
-            request.getSession().setAttribute(SPECIAL_PRICE_CODE_SESSION_ID, UUID.randomUUID().toString());
-            request.getSession().setAttribute(SPECIAL_PRICE_CODE, specialPriceCode);
-        }
-    }
-    
-    public static void savePromotionCodeDiscount(String promoCodeDiscount, HttpServletRequest request) {
-        request.getSession().setAttribute(PROMOTIONAL_CODE_DISCOUNT, promoCodeDiscount);
-    }
 
     public static void saveSpecialPriceCodeOnRequestAttr(String specialPriceCode, HttpServletRequest request) {
         if(StringUtils.isNotEmpty(specialPriceCode)) {
