@@ -41,10 +41,6 @@ public final class MonetaryUtil {
         return price.subtract(price.divide(BigDecimal.ONE.add(vat.divide(HUNDRED, ROUNDING_SCALE, UP)), ROUNDING_SCALE, HALF_DOWN));
     }
 
-    public static int calcPercentage(int priceInCents, BigDecimal vat) {
-        return calcPercentage((long) priceInCents, vat, BigDecimal::intValueExact);
-    }
-
     public static <T extends Number> T calcPercentage(long priceInCents, BigDecimal vat, Function<BigDecimal, T> converter) {
         BigDecimal result = new BigDecimal(priceInCents).multiply(vat.divide(HUNDRED, ROUNDING_SCALE, UP))
             .setScale(0, HALF_UP);

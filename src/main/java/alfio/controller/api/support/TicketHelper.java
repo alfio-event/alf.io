@@ -70,10 +70,6 @@ public class TicketHelper {
     private final ExtensionManager extensionManager;
 
 
-    public List<TicketFieldConfigurationDescriptionAndValue> findTicketFieldConfigurationAndValue(Ticket ticket) {
-        return buildRetrieveFieldValuesFunction().apply(ticket);
-    }
-
     public Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
         return EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
     }

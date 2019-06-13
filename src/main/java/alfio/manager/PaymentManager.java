@@ -201,14 +201,6 @@ public class PaymentManager {
             });
     }
 
-    public PaymentMethod getPaymentMethodForReservation(TicketReservation ticketReservation) {
-        return transactionRepository.loadOptionalByReservationId(ticketReservation.getId())
-            .map(Transaction::getPaymentProxy)
-            .map(PaymentProxy::getPaymentMethod)
-            .orElse(null);
-    }
-
-
     @Data
     public static final class PaymentMethodDTO {
 
