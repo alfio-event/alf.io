@@ -528,7 +528,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             var paymentForm = new PaymentForm();
             var handleResError = reservationApiV2Controller.handleReservation(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
-                new BindingAwareModelMap(), new MockHttpServletRequest(), new RedirectAttributesModelMap(), new MockHttpSession());
+                new MockHttpServletRequest(), new MockHttpSession());
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, handleResError.getStatusCode());
 
 
@@ -536,7 +536,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             paymentForm.setTermAndConditionsAccepted(true);
             paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
             var handleRes = reservationApiV2Controller.handleReservation(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
-                new BindingAwareModelMap(), new MockHttpServletRequest(), new RedirectAttributesModelMap(), new MockHttpSession());
+                new MockHttpServletRequest(), new MockHttpSession());
             assertEquals(HttpStatus.OK, handleRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);

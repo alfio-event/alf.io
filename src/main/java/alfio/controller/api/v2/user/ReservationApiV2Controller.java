@@ -16,7 +16,6 @@
  */
 package alfio.controller.api.v2.user;
 
-import alfio.controller.ReservationController;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
@@ -28,38 +27,39 @@ import alfio.controller.form.PaymentForm;
 import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
+import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.PaymentToken;
-import alfio.model.transaction.TransactionInitializationToken;
+import alfio.model.transaction.*;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
+import alfio.util.ErrorsCode;
 import alfio.util.FileUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSource;
+import org.springframework.context.MessageSourceResolvable;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ValidationUtils;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -82,11 +82,11 @@ import static alfio.util.MonetaryUtil.unitToCents;
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v2/public/")
+@Log4j2
 public class ReservationApiV2Controller {
 
     private final EventManager eventManager;
     private final EventRepository eventRepository;
-    private final ReservationController reservationController;
     private final TicketReservationManager ticketReservationManager;
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketFieldRepository ticketFieldRepository;
@@ -98,6 +98,7 @@ public class ReservationApiV2Controller {
     private final ExtensionManager extensionManager;
     private final TicketHelper ticketHelper;
     private final EuVatChecker vatChecker;
+    private final RecaptchaService recaptchaService;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -255,25 +256,77 @@ public class ReservationApiV2Controller {
                                                                                          @RequestParam("lang") String lang,
                                                                                          @RequestBody  PaymentForm paymentForm,
                                                                                          BindingResult bindingResult,
-                                                                                         Model model,
                                                                                          HttpServletRequest request,
-                                                                                         RedirectAttributes redirectAttributes,
                                                                                          HttpSession session) {
-        //FIXME check precondition (see ReservationController.redirectIfNotValid)
-        reservationController.handleReservation(eventName, reservationId, paymentForm,
-            bindingResult, model, request, Locale.forLanguageTag(lang), redirectAttributes,
-            session);
 
-        var modelMap = model.asMap();
-        if (modelMap.containsKey("paymentResultStatus")) {
-            PaymentResult paymentResult = (PaymentResult) modelMap.get("paymentResultStatus");
-            if (paymentResult.isRedirect() && !bindingResult.hasErrors()) {
-                var body = ValidatedResponse.toResponse(bindingResult,
-                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, paymentResult.getRedirectUrl(), paymentResult.isFailed(), paymentResult.getGatewayIdOrNull()));
-                return ResponseEntity.ok(body);
+        return getReservationWithPendingStatus(eventName, reservationId).map(er -> {
+
+           var event = er.getLeft();
+           var ticketReservation = er.getRight();
+           var locale = Locale.forLanguageTag(lang);
+
+            if (!ticketReservation.getValidity().after(new Date())) {
+                bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
             }
-        }
 
+
+            final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+
+            paymentForm.validate(bindingResult, event, reservationCost);
+            if (bindingResult.hasErrors()) {
+                return buildReservationPaymentStatus(bindingResult);
+            }
+
+            if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentMethod(), request, event)) {
+                log.debug("captcha validation failed.");
+                bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
+            }
+
+            if(!bindingResult.hasErrors()) {
+                extensionManager.handleReservationValidation(event, ticketReservation, paymentForm, bindingResult);
+            }
+
+            if (bindingResult.hasErrors()) {
+                return buildReservationPaymentStatus(bindingResult);
+            }
+
+            CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
+
+            OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
+
+            PaymentToken paymentToken = (PaymentToken) session.getAttribute(PaymentManager.PAYMENT_TOKEN);
+            if(paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {
+                paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentMethod(), new PaymentContext(event, reservationId));
+            }
+            PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
+                event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),
+                locale, ticketReservation.isInvoiceRequested(), !ticketReservation.isDirectAssignmentRequested(),
+                orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
+                Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
+
+            final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
+                Optional.ofNullable(paymentForm.getPaymentMethod()));
+
+            if(!status.isSuccessful()) {
+                String errorMessageCode = status.getErrorCode().orElse(StripeCreditCardManager.STRIPE_UNEXPECTED);
+                MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
+                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
+                //SessionUtil.addToFlash(bindingResult, redirectAttributes);
+                SessionUtil.removePaymentToken(request);
+                return buildReservationPaymentStatus(bindingResult);
+            }
+
+            if (status.isRedirect() && !bindingResult.hasErrors()) {
+                var body = ValidatedResponse.toResponse(bindingResult,
+                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, status.getRedirectUrl(), status.isFailed(), status.getGatewayIdOrNull()));
+                return ResponseEntity.ok(body);
+            } else {
+                return buildReservationPaymentStatus(bindingResult);
+            }
+        }).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private static ResponseEntity<ValidatedResponse<ReservationPaymentResult>> buildReservationPaymentStatus(BindingResult bindingResult) {
         var body = ValidatedResponse.toResponse(bindingResult, new ReservationPaymentResult(!bindingResult.hasErrors(), false, null, true, null));
         return ResponseEntity.status(bindingResult.hasErrors() ? HttpStatus.UNPROCESSABLE_ENTITY : HttpStatus.OK).body(body);
     }
@@ -616,4 +669,10 @@ public class ReservationApiV2Controller {
         return current == NOT_INCLUDED ? NOT_INCLUDED_EXEMPT : INCLUDED_EXEMPT;
     }
 
+
+    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, HttpServletRequest request, EventAndOrganizationId event) {
+        return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
+            && configurationManager.isRecaptchaForOfflinePaymentEnabled(event)
+            && !recaptchaService.checkRecaptcha(null, request);
+    }
 }
