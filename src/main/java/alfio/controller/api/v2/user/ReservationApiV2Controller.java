@@ -16,7 +16,6 @@
  */
 package alfio.controller.api.v2.user;
 
-import alfio.controller.InvoiceReceiptController;
 import alfio.controller.ReservationController;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
@@ -25,27 +24,31 @@ import alfio.controller.api.v2.model.ReservationStatusInfo;
 import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
-import alfio.controller.payment.api.PaymentApiController;
 import alfio.controller.support.SessionUtil;
-import alfio.manager.EventManager;
-import alfio.manager.PaymentManager;
-import alfio.manager.TicketReservationManager;
+import alfio.controller.support.TemplateProcessor;
+import alfio.manager.*;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.system.Configuration;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.transaction.PaymentToken;
 import alfio.model.transaction.TransactionInitializationToken;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
+import alfio.util.FileUtil;
+import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.ui.Model;
 import org.springframework.util.MultiValueMap;
 import org.springframework.validation.BindingResult;
@@ -55,9 +58,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -75,9 +80,11 @@ public class ReservationApiV2Controller {
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketFieldRepository ticketFieldRepository;
     private final MessageSource messageSource;
-    private final InvoiceReceiptController invoiceReceiptController;
-    private final PaymentApiController paymentApiController;
     private final ConfigurationManager configurationManager;
+    private final PaymentManager paymentManager;
+    private final FileUploadManager fileUploadManager;
+    private final TemplateManager templateManager;
+    private final ExtensionManager extensionManager;
 
     /**
      * See {@link ReservationController#showBookingPage(String, String, Model, Locale)}
@@ -286,12 +293,14 @@ public class ReservationApiV2Controller {
         }
     }
 
+
+    //
     @GetMapping("/event/{eventName}/reservation/{reservationId}/receipt")
     public ResponseEntity<Void> getReceipt(@PathVariable("eventName") String eventName,
                                            @PathVariable("reservationId") String reservationId,
                                            HttpServletResponse response,
                                            Authentication authentication) {
-        return invoiceReceiptController.getReceipt(eventName, reservationId, response, authentication);
+        return handleReservationWith(eventName, reservationId, authentication, generatePdfFunction(false, response));
     }
 
     @GetMapping("/event/{eventName}/reservation/{reservationId}/invoice")
@@ -299,9 +308,57 @@ public class ReservationApiV2Controller {
                                            @PathVariable("reservationId") String reservationId,
                                            HttpServletResponse response,
                                            Authentication authentication) {
-        return invoiceReceiptController.getInvoice(eventName, reservationId, response, authentication);
+        return handleReservationWith(eventName, reservationId, authentication, generatePdfFunction(true, response));
+    }
+    //
+
+    private ResponseEntity<Void> handleReservationWith(String eventName, String reservationId, Authentication authentication,
+                                                       BiFunction<Event, TicketReservation, ResponseEntity<Void>> with) {
+        ResponseEntity<Void> notFound = ResponseEntity.notFound().build();
+        ResponseEntity<Void> badRequest = ResponseEntity.badRequest().build();
+
+
+
+        return eventRepository.findOptionalByShortName(eventName).map(event -> {
+                if(canAccessReceiptOrInvoice(event, authentication)) {
+                    return ticketReservationManager.findById(reservationId).map(ticketReservation -> with.apply(event, ticketReservation)).orElse(notFound);
+                } else {
+                    return badRequest;
+                }
+            }
+        ).orElse(notFound);
     }
 
+    private boolean canAccessReceiptOrInvoice(EventAndOrganizationId event, Authentication authentication) {
+        return configurationManager.canGenerateReceiptOrInvoiceToCustomer(event) || !isAnonymous(authentication);
+    }
+
+
+    private boolean isAnonymous(Authentication authentication) {
+        return authentication == null ||
+            authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).anyMatch("ROLE_ANONYMOUS"::equals);
+    }
+
+    private BiFunction<Event, TicketReservation, ResponseEntity<Void>> generatePdfFunction(boolean forInvoice, HttpServletResponse response) {
+        return (event, reservation) -> {
+            if(forInvoice ^ reservation.getInvoiceNumber() != null || reservation.isCancelled()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> billingModel = ticketReservationManager.getOrCreateBillingDocumentModel(event, reservation, null);
+
+            try {
+                FileUtil.sendHeaders(response, event.getShortName(), reservation.getId(), forInvoice ? "invoice" : "receipt");
+                TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()),
+                    templateManager, billingModel, forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF,
+                    extensionManager, response.getOutputStream());
+                return ResponseEntity.ok(null);
+            } catch (IOException ioe) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            }
+        };
+    }
+    //----------------
 
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/init")
@@ -309,23 +366,44 @@ public class ReservationApiV2Controller {
                                                                           @PathVariable("reservationId") String reservationId,
                                                                           @PathVariable("method") String paymentMethodStr,
                                                                           @RequestParam MultiValueMap<String, String> allParams) {
-        return paymentApiController.initTransaction(eventName, reservationId, paymentMethodStr, allParams);
+        var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
+
+        if(paymentMethod == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = getEventReservationPair(eventName, reservationId)
+            .map(pair -> {
+                var event = pair.getLeft();
+                return ticketReservationManager.initTransaction(event, reservationId, paymentMethod, allParams)
+                    .map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
+            });
+        return responseEntity.orElseGet(() -> ResponseEntity.badRequest().build());
+    }
+
+    private Optional<Pair<Event, TicketReservation>> getEventReservationPair(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
+            .filter(pair -> pair.getRight().isPresent())
+            .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()));
     }
 
     @GetMapping("/event/{eventName}/reservation/{reservationId}/payment/{method}/status")
     public ResponseEntity<ReservationPaymentResult> getTransactionStatus(@PathVariable("eventName") String eventName,
                                                               @PathVariable("reservationId") String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
-        var res = paymentApiController.getTransactionStatus(eventName, reservationId, paymentMethodStr);
 
-        if(res.hasBody()) {
-            var paymentResult = res.getBody();
-            return ResponseEntity.ok(new ReservationPaymentResult(paymentResult.isSuccessful(),
-                paymentResult.isRedirect(), paymentResult.getRedirectUrl(),
-                paymentResult.isFailed(), paymentResult.getGatewayIdOrNull()));
-        } else {
-            return ResponseEntity.status(res.getStatusCode()).build();
+        var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
+
+        if(paymentMethod == null) {
+            return ResponseEntity.badRequest().build();
         }
+
+        return getEventReservationPair(eventName, reservationId)
+            .flatMap(pair -> paymentManager.getTransactionStatus(pair.getRight(), paymentMethod))
+            .map(pr -> ResponseEntity.ok(new ReservationPaymentResult(pr.isSuccessful(), pr.isRedirect(), pr.getRedirectUrl(), pr.isFailed(), pr.getGatewayIdOrNull())))
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 
