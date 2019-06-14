@@ -161,8 +161,8 @@
                 <tr>
                     <td class="text-center">{{amount}}</td>
                     <td>{{name}}</td>
-                    <td class="text-right">{{priceBeforeVat}}</td>
-                    <td class="text-right">{{subTotalBeforeVat}}</td>
+                    <td class="text-right">{{price}}</td>
+                    <td class="text-right">{{subTotal}}</td>
                 </tr>
         {{/orderSummary.summary}}
             </tbody>
