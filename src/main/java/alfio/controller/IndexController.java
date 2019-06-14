@@ -16,9 +16,8 @@
  */
 package alfio.controller;
 
-import ch.digitalfondue.jfiveparse.*;
 import lombok.AllArgsConstructor;
-import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StreamUtils;
@@ -27,14 +26,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 
 @Controller
 @AllArgsConstructor
 public class IndexController {
-
-    private final ApplicationContext applicationContext;
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
     public ResponseEntity<String> replyToProxy() {
@@ -76,30 +71,10 @@ public class IndexController {
         "/event/{eventShortName}/ticket/{ticketId}/view"
     }, method = RequestMethod.GET)
     public void replyToIndex(HttpServletResponse response) throws IOException {
-
-        // FIXME, do this at compile time...
-        // fetch version of alfio-public-frontend, do the transformation, etc...
-        final String basePath = "webjars/alfio-public-frontend/6872d70529/alfio-public-frontend/";
-        var resource = applicationContext.getResource(basePath + "index.html");
-
         response.setContentType("text/html");
         response.setCharacterEncoding("UTF-8");
-
-        Parser p = new Parser();
-        try(var is = resource.getInputStream(); var isr = new InputStreamReader(is, StandardCharsets.UTF_8); var os = response.getOutputStream()) {
-            Document d = p.parse(isr);
-            NodeMatcher scriptNodes = Selector.select().element("script").toMatcher();
-
-            d.getAllNodesMatching(scriptNodes).stream().map(Element.class::cast).forEach(elem -> {
-                elem.setAttribute("src", basePath + elem.getAttribute("src"));
-            });
-
-            NodeMatcher cssNodes = Selector.select().element("link").attrValEq("rel", "stylesheet").toMatcher();
-            d.getAllNodesMatching(cssNodes).stream().map(Element.class::cast).forEach(elem -> {
-                elem.setAttribute("href", basePath + elem.getAttribute("href"));
-            });
-
-            StreamUtils.copy(d.getOuterHTML(), StandardCharsets.UTF_8, os);
+        try (var is = new ClassPathResource("alfio-public-frontend-index.html").getInputStream(); var os = response.getOutputStream()) {
+            StreamUtils.copy(is, os);
         }
     }
 }
