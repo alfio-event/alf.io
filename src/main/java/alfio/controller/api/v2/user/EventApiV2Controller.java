@@ -244,18 +244,18 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}/ticket-categories")
-    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, @RequestParam(value = "code", required = false) String code, HttpServletRequest request) {
-
-        var appliedPromoCode = applyPromoCodeInRequest(eventName, code, request);
-
+    public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, @RequestParam(value = "code", required = false) String code) {
 
         //
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
-            Optional<String> maybeSpecialCode = SessionUtil.retrieveSpecialPriceCode(request);
-            Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
 
-            Optional<PromoCodeDiscount> promoCodeDiscount = SessionUtil.retrievePromotionCodeDiscount(request)
-                .flatMap((retrievedCode) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), retrievedCode));
+
+            var appliedPromoCode = checkCode(event, code);
+
+
+            Optional<SpecialPrice> specialCode = appliedPromoCode.getValue().getLeft();
+            Optional<PromoCodeDiscount> promoCodeDiscount = appliedPromoCode.getValue().getRight();
+
             final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             //hide access restricted ticket categories
             var ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
@@ -295,7 +295,7 @@ public class EventApiV2Controller {
                 .collect(Collectors.toList());
 
 
-            var promoCode = appliedPromoCode.filter(ValidatedResponse::isSuccess)
+            var promoCode = Optional.of(appliedPromoCode).filter(ValidatedResponse::isSuccess)
                 .map(ValidatedResponse::getValue)
                 .map(Pair::getRight)
                 .orElse(Optional.empty());
@@ -393,17 +393,24 @@ public class EventApiV2Controller {
                                                                    BindingResult bindingResult,
                                                                    ServletWebRequest request) {
 
-        if(StringUtils.trimToNull(reservation.getPromoCode()) != null) {
-            var codeCheck = applyPromoCodeInRequest(eventName, reservation.getPromoCode(), request.getRequest());
-            codeCheck.ifPresent(res -> {
-                if(!res.isSuccess()) {
-                    bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND);
-                }
-            });
-        }
 
 
         Optional<ResponseEntity<ValidatedResponse<String>>> r = eventRepository.findOptionalByShortName(eventName).map(event -> {
+
+
+            Optional<ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>>> codeCheck = Optional.empty();
+
+            if(StringUtils.trimToNull(reservation.getPromoCode()) != null) {
+                var resCheck = checkCode(event, reservation.getPromoCode());
+                if(!resCheck.isSuccess()) {
+                    bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND);
+                }
+                codeCheck = Optional.of(resCheck);
+            }
+            Optional<String> specialPrice = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getLeft).map(SpecialPrice::getCode);
+            Optional<String> promoCodeDiscount = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getRight).map(PromoCodeDiscount::getPromoCode);
+
+
             if (isCaptchaInvalid(reservation.getCaptcha(), request.getRequest(), event)) {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
@@ -413,8 +420,8 @@ public class EventApiV2Controller {
                 try {
                     String reservationId = ticketReservationManager.createTicketReservation(event,
                         selected.getLeft(), selected.getRight(), expiration,
-                        SessionUtil.retrieveSpecialPriceSessionId(request.getRequest()),
-                        SessionUtil.retrievePromotionCodeDiscount(request.getRequest()),
+                        specialPrice,
+                        promoCodeDiscount,
                         Locale.forLanguageTag(lang), false);
                     return Optional.of(reservationId);
                 } catch (TicketReservationManager.NotEnoughTicketsException nete) {
@@ -483,25 +490,6 @@ public class EventApiV2Controller {
         }
         return ticketCategory.isAccessRestricted() && ticketCategory.getId() == promoCodeDiscount.getHiddenCategoryId();
     }
-
-
-    //TODO: temporary!
-    private Optional<ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>>> applyPromoCodeInRequest(String eventName, String code, HttpServletRequest request) {
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(event -> {
-            var codeResult = checkCode(event, code);
-
-            if (codeResult.isSuccess()) {
-                codeResult.getValue().getLeft().ifPresent(specialPrice -> {
-                    SessionUtil.saveSpecialPriceCodeOnRequestAttr(specialPrice.getCode(), request);
-                });
-                codeResult.getValue().getRight().ifPresent(promoCodeDiscount -> {
-                    SessionUtil.savePromotionCodeDiscountOnRequestAttr(promoCodeDiscount.getPromoCode(), request);
-                });
-            }
-            return codeResult;
-        });
-    }
-
 
     private ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>> checkCode(EventAndOrganizationId event, String promoCode) {
         ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());

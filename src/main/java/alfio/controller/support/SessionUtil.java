@@ -17,7 +17,6 @@
 package alfio.controller.support;
 
 import alfio.manager.PaymentManager;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -33,26 +32,6 @@ public final class SessionUtil {
     private static final String PROMOTIONAL_CODE_DISCOUNT = "PROMOTIONAL_CODE_DISCOUNT";
 
     private SessionUtil() {}
-
-    public static void saveSpecialPriceCodeOnRequestAttr(String specialPriceCode, HttpServletRequest request) {
-        if(StringUtils.isNotEmpty(specialPriceCode)) {
-            request.setAttribute(SPECIAL_PRICE_CODE, specialPriceCode);
-        }
-    }
-
-    public static void savePromotionCodeDiscountOnRequestAttr(String promoCodeDiscount, HttpServletRequest request) {
-        request.setAttribute(PROMOTIONAL_CODE_DISCOUNT, promoCodeDiscount);
-    }
-
-    public static Optional<String> retrieveSpecialPriceCode(HttpServletRequest request) {
-        return Optional.ofNullable((String)request.getSession().getAttribute(SPECIAL_PRICE_CODE))
-            .or(() -> Optional.ofNullable((String)request.getAttribute(SPECIAL_PRICE_CODE)));
-    }
-    
-    public static Optional<String> retrievePromotionCodeDiscount(HttpServletRequest request) {
-        return Optional.ofNullable((String) request.getSession().getAttribute(PROMOTIONAL_CODE_DISCOUNT))
-            .or(() -> Optional.ofNullable((String) request.getAttribute(PROMOTIONAL_CODE_DISCOUNT)));
-    }
 
     public static Optional<String> retrieveSpecialPriceSessionId(HttpServletRequest request) {
         return Optional.ofNullable((String)request.getSession().getAttribute(SPECIAL_PRICE_CODE_SESSION_ID));
