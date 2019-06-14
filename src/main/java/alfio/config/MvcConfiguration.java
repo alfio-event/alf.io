@@ -16,9 +16,7 @@
  */
 package alfio.config;
 
-import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.ContentLanguage;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -44,16 +42,12 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.ui.ModelMap;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.*;
 import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
-import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.servlet.view.mustache.MustacheViewResolver;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateFactory;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
@@ -65,8 +59,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
@@ -79,7 +71,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     private final MessageSource messageSource;
     private final JMustacheTemplateLoader templateLoader;
-    private final I18nManager i18nManager;
     private final ConfigurationManager configurationManager;
     private final Environment environment;
     private static final Cache<ConfigurationKeys, String> configurationCache = Caffeine.newBuilder()
@@ -89,12 +80,10 @@ public class MvcConfiguration implements WebMvcConfigurer {
     @Autowired
     public MvcConfiguration(MessageSource messageSource,
                             JMustacheTemplateLoader templateLoader,
-                            I18nManager i18nManager,
                             ConfigurationManager configurationManager,
                             Environment environment) {
         this.messageSource = messageSource;
         this.templateLoader = templateLoader;
-        this.i18nManager = i18nManager;
         this.configurationManager = configurationManager;
         this.environment = environment;
     }
@@ -119,64 +108,11 @@ public class MvcConfiguration implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(getLocaleChangeInterceptor());
-        registry.addInterceptor(getEventLocaleSetterInterceptor());
         registry.addInterceptor(getTemplateMessagesInterceptor());
         registry.addInterceptor(new MustacheCustomTagInterceptor(configurationManager));
         registry.addInterceptor(getCsrfInterceptor());
         registry.addInterceptor(getCSPInterceptor());
         registry.addInterceptor(getDefaultTemplateObjectsFiller());
-    }
-
-    @Bean
-    public HandlerInterceptor getEventLocaleSetterInterceptor() {
-        return new HandlerInterceptorAdapter() {
-            @Override
-            public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-
-                if(handler instanceof HandlerMethod) {
-                    HandlerMethod handlerMethod = ((HandlerMethod) handler);
-                    RequestMapping reqMapping = handlerMethod.getMethodAnnotation(RequestMapping.class);
-
-                    //check if the request mapping value has the form "/event/{something}"
-                    Pattern eventPattern = Pattern.compile("^/event/\\{(\\w+)}/?.*");
-                    if (reqMapping != null && reqMapping.value().length == 1 && eventPattern.matcher(reqMapping.value()[0]).matches()) {
-
-                        Matcher m = eventPattern.matcher(reqMapping.value()[0]);
-                        m.matches();
-
-                        String pathVariableName = m.group(1);
-
-                        //extract the parameter name
-                        Arrays.stream(handlerMethod.getMethodParameters())
-                            .map(methodParameter -> methodParameter.getParameterAnnotation(PathVariable.class))
-                            .filter(Objects::nonNull)
-                            .map(PathVariable::value)
-                            .filter(pathVariableName::equals)
-                            .findFirst().ifPresent((val) -> {
-
-                                //fetch the parameter value
-                                @SuppressWarnings("unchecked")
-                                String eventName = Optional.ofNullable(((Map<String, Object>)request.getAttribute(HandlerMapping.URI_TEMPLATE_VARIABLES_ATTRIBUTE)).get(val)).orElse("").toString();
-
-
-                                LocaleResolver resolver = Objects.requireNonNull(RequestContextUtils.getLocaleResolver(request));
-                                Locale locale = resolver.resolveLocale(request);
-                                List<ContentLanguage> cl = i18nManager.getEventLanguages(eventName);
-
-                                request.setAttribute("ALFIO_EVENT_NAME", eventName);
-
-                                if(cl.stream().noneMatch(contentLanguage -> contentLanguage.getLanguage().equals(Optional.ofNullable(locale).orElse(Locale.ENGLISH).getLanguage()))) {
-                                    //override the user locale if it's not in the one permitted by the event
-                                    resolver.setLocale(request, response, cl.stream().findFirst().map(ContentLanguage::getLocale).orElse(Locale.ENGLISH));
-                                } else {
-                                    resolver.setLocale(request, response, locale);
-                                }
-                            });
-                    }
-                }
-                return true;
-            }
-        };
     }
 
     @Bean
