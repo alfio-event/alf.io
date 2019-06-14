@@ -20,7 +20,6 @@ import lombok.AllArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
@@ -74,7 +73,7 @@ public class IndexController {
         response.setContentType("text/html");
         response.setCharacterEncoding("UTF-8");
         try (var is = new ClassPathResource("alfio-public-frontend-index.html").getInputStream(); var os = response.getOutputStream()) {
-            StreamUtils.copy(is, os);
+            is.transferTo(os);
         }
     }
 }
