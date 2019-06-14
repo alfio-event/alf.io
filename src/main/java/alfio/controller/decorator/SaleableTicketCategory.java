@@ -31,7 +31,6 @@ public class SaleableTicketCategory implements PriceContainer {
 
     @Delegate
     private final TicketCategory ticketCategory;
-    private final String description;
     private final ZonedDateTime now;
     private final ZoneId zoneId;
     private final Event event;
@@ -42,14 +41,12 @@ public class SaleableTicketCategory implements PriceContainer {
     private final PromoCodeDiscount promoCodeDiscount;
 
     public SaleableTicketCategory(TicketCategory ticketCategory,
-                                  String description,
                                   ZonedDateTime now,
                                   Event event,
                                   int availableTickets,
                                   int maxTickets,
                                   PromoCodeDiscount promoCodeDiscount) {
         this.ticketCategory = ticketCategory;
-        this.description = description;
         this.now = now;
         this.zoneId = event.getZoneId();
         this.event = event;
@@ -115,10 +112,6 @@ public class SaleableTicketCategory implements PriceContainer {
     @Override
     public VatStatus getVatStatus() {
         return event.getVatStatus();
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     public String getFormattedFinalPrice() {

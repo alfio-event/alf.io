@@ -70,7 +70,7 @@ public class AdminWaitingQueueApiController {
         List<SaleableTicketCategory> stcList = eventManager.loadTicketCategories(event)
             .stream()
             .filter(tc -> !tc.isAccessRestricted())
-            .map(tc -> new SaleableTicketCategory(tc, "", now, event, ticketReservationManager.countAvailableTickets(event, tc), tc.getMaxTickets(), null))
+            .map(tc -> new SaleableTicketCategory(tc, now, event, ticketReservationManager.countAvailableTickets(event, tc), tc.getMaxTickets(), null))
             .collect(Collectors.toList());
         boolean active = EventUtil.checkWaitingQueuePreconditions(event, stcList, configurationManager, eventStatisticsManager.noSeatsAvailable());
         boolean paused = active && configurationManager.getBooleanConfigValue(Configuration.from(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS), false);

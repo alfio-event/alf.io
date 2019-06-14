@@ -270,7 +270,7 @@ public class EventApiV2Controller {
                     } else if (filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
                         maxTickets = filteredPromoCode.getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(filteredPromoCode.getId(), categoriesOrNull(filteredPromoCode), null, categoriesOrNull(filteredPromoCode) != null ? "X" : null);
                     }
-                    return new SaleableTicketCategory(m, "",
+                    return new SaleableTicketCategory(m,
                         now, event, ticketReservationManager.countAvailableTickets(event, m), maxTickets,
                         filteredPromoCode);
                 })

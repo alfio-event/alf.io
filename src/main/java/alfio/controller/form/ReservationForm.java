@@ -75,12 +75,6 @@ public class ReservationForm implements Serializable {
         return selected().stream().mapToInt(TicketReservationModification::getAmount).sum();
     }
 
-    private int additionalServicesSelectionCount(AdditionalServiceRepository additionalServiceRepository, int eventId) {
-        return (int) selectedAdditionalServices().stream()
-            .filter(as -> as.getAdditionalServiceId() != null && (additionalServiceRepository.getById(as.getAdditionalServiceId(), eventId).isFixPrice() || Optional.ofNullable(as.getAmount()).filter(a -> a.compareTo(BigDecimal.ZERO) > 0).isPresent()))
-            .count();
-    }
-
     public Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validate(Errors bindingResult,
                                                                                                                                          TicketReservationManager tickReservationManager,
                                                                                                                                          AdditionalServiceRepository additionalServiceRepository,
@@ -143,7 +137,7 @@ public class ReservationForm implements Serializable {
                                          Event event, int maxAmountOfTicket, List<TicketReservationWithOptionalCodeModification> res,
                                          Optional<SpecialPrice> specialCode, ZonedDateTime now, TicketReservationModification r) {
         TicketCategory tc = eventManager.getTicketCategoryById(r.getTicketCategoryId(), event.getId());
-        SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, "", now, event, tickReservationManager.countAvailableTickets(event, tc), maxAmountOfTicket, null);
+        SaleableTicketCategory ticketCategory = new SaleableTicketCategory(tc, now, event, tickReservationManager.countAvailableTickets(event, tc), maxAmountOfTicket, null);
 
         if (!ticketCategory.getSaleable()) {
             bindingResult.reject(ErrorsCode.STEP_1_TICKET_CATEGORY_MUST_BE_SALEABLE);
