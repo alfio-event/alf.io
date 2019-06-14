@@ -79,7 +79,7 @@ public class IndexController {
 
         // FIXME, do this at compile time...
         // fetch version of alfio-public-frontend, do the transformation, etc...
-        final String basePath = "webjars/alfio-public-frontend/8fd67bc9f6/alfio-public-frontend/";
+        final String basePath = "webjars/alfio-public-frontend/6872d70529/alfio-public-frontend/";
         var resource = applicationContext.getResource(basePath + "index.html");
 
         response.setContentType("text/html");
