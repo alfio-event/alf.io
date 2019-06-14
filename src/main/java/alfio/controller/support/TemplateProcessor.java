@@ -68,10 +68,9 @@ public final class TemplateProcessor {
                                                                TicketCategory category,
                                                                TemplateManager templateManager,
                                                                String ticketURL,
-                                                               HttpServletRequest request) {
+                                                               Locale language) {
         return (ticket) -> {
             Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, ticket, category);
-            Locale language = LocaleUtil.getTicketLanguage(ticket, request);
             return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, language);
         };
     }

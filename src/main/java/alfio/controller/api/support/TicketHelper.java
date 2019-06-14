@@ -212,25 +212,26 @@ public class TicketHelper {
                 .map(Locale::forLanguageTag)
                 .orElseGet(() -> RequestContextUtils.getLocale(request));
         TicketCategory category = ticketCategoryRepository.getById(t.getCategoryId());
+        var ticketLanguage = LocaleUtil.getTicketLanguage(t, request);
         ticketReservationManager.updateTicketOwner(t, language, event, updateTicketOwner,
-                getConfirmationTextBuilder(request, event, ticketReservation, t, category),
-                getOwnerChangeTextBuilder(request, t, event),
+                getConfirmationTextBuilder(ticketLanguage, event, ticketReservation, t, category),
+                getOwnerChangeTextBuilder(ticketLanguage, t, event),
                 userDetails);
         if(t.hasBeenSold() && !groupManager.findLinks(event.getId(), t.getCategoryId()).isEmpty()) {
             ticketRepository.forbidReassignment(Collections.singletonList(t.getId()));
         }
     }
 
-    private PartialTicketTextGenerator getOwnerChangeTextBuilder(HttpServletRequest request, Ticket t, Event event) {
+    private PartialTicketTextGenerator getOwnerChangeTextBuilder(Locale ticketLanguage, Ticket t, Event event) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String ticketUrl = ticketReservationManager.ticketUpdateUrl(event, t.getUuid());
-        return TemplateProcessor.buildEmailForOwnerChange(event, t, organization, ticketUrl, templateManager, LocaleUtil.getTicketLanguage(t, request));
+        return TemplateProcessor.buildEmailForOwnerChange(event, t, organization, ticketUrl, templateManager, ticketLanguage);
     }
 
-    private PartialTicketTextGenerator getConfirmationTextBuilder(HttpServletRequest request, Event event, TicketReservation ticketReservation, Ticket ticket, TicketCategory ticketCategory) {
+    private PartialTicketTextGenerator getConfirmationTextBuilder(Locale ticketLanguage, Event event, TicketReservation ticketReservation, Ticket ticket, TicketCategory ticketCategory) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String ticketUrl = ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid());
-        return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, ticketCategory, templateManager, ticketUrl, request);
+        return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, ticketCategory, templateManager, ticketUrl, ticketLanguage);
     }
 
 }

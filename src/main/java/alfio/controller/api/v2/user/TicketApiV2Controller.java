@@ -137,7 +137,7 @@ public class TicketApiV2Controller {
             Organization organization = organizationRepository.getById(event.getOrganizationId());
             TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
             notificationManager.sendTicketByEmail(ticket,
-                event, locale, TemplateProcessor.buildPartialEmail(event, organization, reservation, category, templateManager, ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid()), request),
+                event, locale, TemplateProcessor.buildPartialEmail(event, organization, reservation, category, templateManager, ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid()), locale),
                 reservation, ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()));
             return ResponseEntity.ok(true);
 
