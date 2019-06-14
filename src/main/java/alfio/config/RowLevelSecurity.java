@@ -45,12 +45,15 @@ public class RowLevelSecurity {
 
     private static final OrRequestMatcher IS_PUBLIC_URLS = new OrRequestMatcher(
         new AntPathRequestMatcher("/resources/**"),
+        new AntPathRequestMatcher("/webjars/**"),
         new AntPathRequestMatcher("/event/**"),
         new AntPathRequestMatcher("/"),
         new AntPathRequestMatcher("/file/**"),
         new AntPathRequestMatcher("/api/events/**"),
         new AntPathRequestMatcher("/api/webhook/**"),
         new AntPathRequestMatcher("/api/payment/**"),
+        new AntPathRequestMatcher("/api/v2/info"),
+        new AntPathRequestMatcher("/api/v2/public/**"),
         new AntPathRequestMatcher("/session-expired"),
         new AntPathRequestMatcher("/authentication"));
 
