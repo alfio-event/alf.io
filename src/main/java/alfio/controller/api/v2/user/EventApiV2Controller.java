@@ -439,7 +439,7 @@ public class EventApiV2Controller {
             });
 
             if (bindingResult.hasErrors()) {
-                return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
+                return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, (String) null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
             } else {
                 var reservationIdentifier = reservationIdRes.orElseThrow(IllegalStateException::new);
                 return ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), reservationIdentifier));
