@@ -16,16 +16,22 @@
  */
 package alfio.controller;
 
+import alfio.config.Initializer;
+import alfio.config.WebSecurityConfig;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
@@ -37,15 +43,24 @@ public class LoginController {
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
 
     private final ConfigurationManager configurationManager;
+    private final Environment environment;
 
     @RequestMapping(value="/authentication", method = RequestMethod.GET)
-    public String getLoginPage(@RequestParam(value="failed", required = false) String failed, @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed, Model model, Principal principal) {
+    public String getLoginPage(@RequestParam(value="failed", required = false) String failed, @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed, Model model, Principal principal, HttpServletRequest request) {
         if(principal != null) {
             return REDIRECT_ADMIN;
         }
         model.addAttribute("failed", failed != null);
         model.addAttribute("recaptchaFailed", recaptchaFailed != null);
         model.addAttribute("hasRecaptchaApiKey", false);
+
+        //
+        model.addAttribute("request", request);
+        model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
+        model.addAttribute("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
+        model.addAttribute("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
+        model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
+        //
 
         configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_API_KEY))
             .filter(key -> configurationManager.getBooleanConfigValue(Configuration.getSystemConfiguration(ENABLE_CAPTCHA_FOR_LOGIN), true))

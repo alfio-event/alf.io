@@ -26,7 +26,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.samskivert.mustache.Mustache;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
@@ -39,9 +38,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
-import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
-import org.springframework.ui.ModelMap;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.*;
 import org.springframework.web.servlet.config.annotation.*;
@@ -60,8 +57,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static alfio.model.system.ConfigurationKeys.*;
 
 @Configuration
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
@@ -110,40 +105,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
         registry.addInterceptor(getLocaleChangeInterceptor());
         registry.addInterceptor(getTemplateMessagesInterceptor());
         registry.addInterceptor(new MustacheCustomTagInterceptor(configurationManager));
-        registry.addInterceptor(getCsrfInterceptor());
         registry.addInterceptor(getCSPInterceptor());
-        registry.addInterceptor(getDefaultTemplateObjectsFiller());
-    }
-
-    @Bean
-    public HandlerInterceptorAdapter getDefaultTemplateObjectsFiller() {
-        return new HandlerInterceptorAdapter() {
-            @Override
-            public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
-                Optional.ofNullable(modelAndView)
-                    .filter(mv -> !StringUtils.startsWith(mv.getViewName(), "redirect:"))
-                    .ifPresent(mv -> {
-                        mv.addObject("request", request);
-                        final ModelMap modelMap = mv.getModelMap();
-
-                        boolean demoModeEnabled = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO));
-
-                        modelMap.put("demoModeEnabled", demoModeEnabled);
-                        modelMap.put("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
-                        modelMap.put("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
-                        
-                        modelMap.putIfAbsent("event", null);
-                        modelMap.putIfAbsent("pageTitle", "empty");
-
-
-                        if(demoModeEnabled) {
-                            modelMap.putIfAbsent("paypalTestUsername", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_USERNAME), "<missing>"));
-                            modelMap.putIfAbsent("paypalTestPassword", configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(PAYPAL_DEMO_MODE_PASSWORD), "<missing>"));
-                        }
-
-                });
-            }
-        };
     }
 
     @Bean
@@ -188,17 +150,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
                         + " media-src blob: 'self';"//for loading camera api
                         + " connect-src 'self' https://checkout.stripe.com https://m.stripe.network https://m.stripe.com https://maps.googleapis.com/ https://geocoder.cit.api.here.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
                         + reportUri);
-            }
-        };
-    }
-    
-
-    @Bean
-    public HandlerInterceptor getCsrfInterceptor() {
-        return new HandlerInterceptorAdapter() {
-            @Override
-            public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
-                Optional.ofNullable(modelAndView).ifPresent(mv -> mv.addObject(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName())));
             }
         };
     }
