@@ -1,7 +1,7 @@
 (function () {
     "use strict";
 
-    var BASE_TEMPLATE_URL = "/admin/partials";
+
     var BASE_STATIC_URL = "/resources/angular-templates/admin/partials";
 
     //
@@ -27,7 +27,12 @@
         $stateProvider
             .state('index', {
                 url: "/",
-                templateUrl: BASE_TEMPLATE_URL + "/index.html"
+                template: ['<div class="container" container-fluid-responsive="">',
+                               '<h1>Dashboard</h1>',
+                               '<hr />',
+                               '<active-events-list></active-events-list>',
+                               '<expired-events-list></expired-events-list>',
+                           '</div>'].join('')
             })
             .state('organizations', {
                 url: "/organizations/",

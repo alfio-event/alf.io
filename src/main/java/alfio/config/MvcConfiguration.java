@@ -96,11 +96,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
     }
 
     @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/admin/partials/index.html").setViewName("/admin/partials/main");
-    }
-
-    @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(getLocaleChangeInterceptor());
         registry.addInterceptor(getTemplateMessagesInterceptor());
