@@ -145,6 +145,9 @@ public interface TicketRepository {
     @Query("select * from ticket where uuid = :uuid")
     Ticket findByUUID(@Bind("uuid") String uuid);
 
+    @Query("select category_id from ticket where uuid = :uuid")
+    Integer getTicketCategoryByUIID(@Bind("uuid") String uuid);
+
     @Query("select * from ticket where uuid = :uuid")
     Optional<Ticket> findOptionalByUUID(@Bind("uuid") String uuid);
 

@@ -79,7 +79,7 @@ public class TicketHelper {
     }
 
     public Function<String, Integer> getTicketUUIDToCategoryId() {
-        return (uuid) -> ticketRepository.findByUUID(uuid).getCategoryId();
+        return (uuid) -> ticketRepository.getTicketCategoryByUIID(uuid);
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
