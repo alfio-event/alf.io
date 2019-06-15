@@ -294,7 +294,8 @@ public class ReservationController {
                 contactAndTicketsForm.validate(bindingResult, event,
                     ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()),
                     new SameCountryValidator(configurationManager, extensionManager, event.getOrganizationId(), event.getId(), reservationId, vatChecker),
-                    formValidationParameters);
+                    formValidationParameters,
+                    ticketHelper.getTicketUUIDToCategoryId());
                 //
 
                 if(!bindingResult.hasErrors()) {

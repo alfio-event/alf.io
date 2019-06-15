@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.util.ErrorsCode.STEP_2_INVALID_VAT;
@@ -85,7 +86,7 @@ public class ContactAndTicketsForm implements Serializable {
 
 
 
-    public void validate(BindingResult bindingResult, Event event, List<TicketFieldConfiguration> fieldConf, SameCountryValidator vatValidator, Map<ConfigurationKeys, Boolean> formValidationParameters) {
+    public void validate(BindingResult bindingResult, Event event, List<TicketFieldConfiguration> fieldConf, SameCountryValidator vatValidator, Map<ConfigurationKeys, Boolean> formValidationParameters, Function<String, Integer> fromTicketUUIDToTicketCategoryId) {
 
 
         
@@ -176,7 +177,7 @@ public class ContactAndTicketsForm implements Serializable {
             Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                 .filter(m -> !m.isEmpty())
                 .map(m -> m.entrySet().stream().map(e -> Validator.validateTicketAssignment(e.getValue(),
-                    fieldConf, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator)))
+                    fieldConf, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator, fromTicketUUIDToTicketCategoryId.apply(e.getKey()))))
                 .map(s -> s.collect(Collectors.toList()));
 
             boolean success = validationResults

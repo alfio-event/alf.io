@@ -111,4 +111,8 @@ public class TicketFieldConfiguration {
     public boolean isMinLengthDefined() {
         return minLength != null;
     }
+
+    public boolean rulesApply(Integer ticketCategoryId) {
+        return categoryIds.isEmpty() || categoryIds.contains(ticketCategoryId);
+    }
 }
