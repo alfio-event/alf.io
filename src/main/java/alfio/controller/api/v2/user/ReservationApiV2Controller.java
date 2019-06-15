@@ -307,7 +307,14 @@ public class ReservationApiV2Controller {
             final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()));
 
-            if(!status.isSuccessful()) {
+
+            if (status.isRedirect()) {
+                var body = ValidatedResponse.toResponse(bindingResult,
+                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, status.getRedirectUrl(), status.isFailed(), status.getGatewayIdOrNull()));
+                return ResponseEntity.ok(body);
+            }
+
+            if (!status.isSuccessful()) {
                 String errorMessageCode = status.getErrorCode().orElse(StripeCreditCardManager.STRIPE_UNEXPECTED);
                 MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
                 bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
@@ -316,13 +323,9 @@ public class ReservationApiV2Controller {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-            if (status.isRedirect() && !bindingResult.hasErrors()) {
-                var body = ValidatedResponse.toResponse(bindingResult,
-                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, status.getRedirectUrl(), status.isFailed(), status.getGatewayIdOrNull()));
-                return ResponseEntity.ok(body);
-            } else {
-                return buildReservationPaymentStatus(bindingResult);
-            }
+
+            return buildReservationPaymentStatus(bindingResult);
+
         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
