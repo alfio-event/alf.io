@@ -493,7 +493,7 @@ public class ConfigurationManager {
     }
 
     //
-    public Map<ConfigurationKeys, Optional<Configuration>> getFor(EventAndOrganizationId eventAndOrganizationId, Set<ConfigurationKeys> keys) {
+    public Map<ConfigurationKeys, Optional<Configuration>> getFor(EventAndOrganizationId eventAndOrganizationId, Collection<ConfigurationKeys> keys) {
         var found = configurationRepository.findByEventAndKeys(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
         var res = new EnumMap<ConfigurationKeys, Optional<Configuration>>(ConfigurationKeys.class);
 

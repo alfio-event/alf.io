@@ -61,7 +61,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
-import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.stream.Collectors.toList;
 
@@ -124,11 +123,29 @@ public class EventApiV2Controller {
 
                 var organization = organizationRepository.getById(event.getOrganizationId());
 
-                Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = configurationManager.getStringConfigValueFrom(
-                    Configuration.from(event, ConfigurationKeys.MAPS_PROVIDER),
-                    Configuration.from(event, ConfigurationKeys.MAPS_CLIENT_API_KEY),
-                    Configuration.from(event, ConfigurationKeys.MAPS_HERE_APP_ID),
-                    Configuration.from(event, ConfigurationKeys.MAPS_HERE_APP_CODE));
+                var configurationsValues = configurationManager.getFor(event, Arrays.asList(
+                    MAPS_PROVIDER,
+                    MAPS_CLIENT_API_KEY,
+                    MAPS_HERE_APP_ID,
+                    MAPS_HERE_APP_CODE,
+                    RECAPTCHA_API_KEY,
+                    BANK_ACCOUNT_NR,
+                    BANK_ACCOUNT_OWNER,
+                    ENABLE_CUSTOMER_REFERENCE,
+                    ENABLE_ITALY_E_INVOICING,
+                    VAT_NUMBER_IS_REQUIRED,
+                    FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION,
+                    ENABLE_ATTENDEE_AUTOCOMPLETE,
+                    ENABLE_TICKET_TRANSFER,
+                    DISPLAY_DISCOUNT_CODE_BOX,
+                    USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL
+                ));
+
+                var geoInfoConfiguration = Map.of(
+                    MAPS_PROVIDER, configurationsValues.get(MAPS_PROVIDER).map(Configuration::getValue),
+                    MAPS_CLIENT_API_KEY, configurationsValues.get(MAPS_CLIENT_API_KEY).map(Configuration::getValue),
+                    MAPS_HERE_APP_ID, configurationsValues.get(MAPS_HERE_APP_ID).map(Configuration::getValue),
+                    MAPS_HERE_APP_CODE, configurationsValues.get(MAPS_HERE_APP_CODE).map(Configuration::getValue));
 
                 var ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
 
@@ -144,15 +161,15 @@ public class EventApiV2Controller {
                 boolean captchaForTicketSelection = configurationManager.isRecaptchaForTicketSelectionEnabled(event);
                 String recaptchaApiKey = null;
                 if (captchaForTicketSelection) {
-                    recaptchaApiKey = configurationManager.getStringConfigValue(getSystemConfiguration(RECAPTCHA_API_KEY), null);
+                    recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).map(Configuration::getValue).orElse(null);
                 }
                 //
                 var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, recaptchaApiKey);
 
 
                 //
-                String bankAccount = configurationManager.getStringConfigValue(Configuration.from(event, BANK_ACCOUNT_NR)).orElse("");
-                List<String> bankAccountOwner = Arrays.asList(configurationManager.getStringConfigValue(Configuration.from(event, BANK_ACCOUNT_OWNER)).orElse("").split("\n"));
+                String bankAccount = configurationsValues.get(BANK_ACCOUNT_NR).map(Configuration::getValue).orElse("");
+                List<String> bankAccountOwner = Arrays.asList(configurationsValues.get(BANK_ACCOUNT_OWNER).map(Configuration::getValue).orElse("").split("\n"));
                 //
 
                 var formattedBeginDate = Formatters.getFormattedDate(event, event.getBegin(), "common.event.date-format", messageSource);
@@ -168,9 +185,9 @@ public class EventApiV2Controller {
                 boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event.getOrganizationId());
                 boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || euVatCheckingEnabled;
                 boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
-                boolean customerReferenceEnabled = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_CUSTOMER_REFERENCE), false);
-                boolean enabledItalyEInvoicing = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ITALY_E_INVOICING), false);
-                boolean vatNumberStrictlyRequired = configurationManager.getBooleanConfigValue(partialConfig.apply(VAT_NUMBER_IS_REQUIRED), false);
+                boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).map(Configuration::getValueAsBoolean).orElse(false);
+                boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).map(Configuration::getValueAsBoolean).orElse(false);
+                boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).map(Configuration::getValueAsBoolean).orElse(false);
 
                 var invoicingConf = new EventWithAdditionalInfo.InvoicingConfiguration(canGenerateReceiptOrInvoiceToCustomer,
                     euVatCheckingEnabled, invoiceAllowed, onlyInvoice,
@@ -178,18 +195,18 @@ public class EventApiV2Controller {
                 //
 
                 //
-                boolean forceAssignment = configurationManager.getBooleanConfigValue(partialConfig.apply(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION), false);
-                boolean enableAttendeeAutocomplete = configurationManager.getBooleanConfigValue(partialConfig.apply(ENABLE_ATTENDEE_AUTOCOMPLETE), true);
-                boolean enableTicketTransfer = configurationManager.getBooleanConfigValue(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER), true);
+                boolean forceAssignment = configurationsValues.get(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).map(Configuration::getValueAsBoolean).orElse(false);
+                boolean enableAttendeeAutocomplete = configurationsValues.get(ENABLE_ATTENDEE_AUTOCOMPLETE).map(Configuration::getValueAsBoolean).orElse(true);
+                boolean enableTicketTransfer = configurationsValues.get(ENABLE_TICKET_TRANSFER).map(Configuration::getValueAsBoolean).orElse(true);
                 var assignmentConf = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete, enableTicketTransfer);
                 //
 
 
                 //promotion codes
-                boolean hasAccessPromotions = configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.DISPLAY_DISCOUNT_CODE_BOX), true) &&
+                boolean hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).map(Configuration::getValueAsBoolean).orElse(true) &&
                     (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
                         promoCodeDiscountRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
-                boolean usePartnerCode = configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), false);
+                boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).map(Configuration::getValueAsBoolean).orElse(false);
                 var promoConf = new EventWithAdditionalInfo.PromotionsConfiguration(hasAccessPromotions, usePartnerCode);
                 //
 
