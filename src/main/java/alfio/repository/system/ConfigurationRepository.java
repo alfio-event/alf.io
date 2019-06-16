@@ -21,6 +21,7 @@ import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -80,6 +81,12 @@ public interface ConfigurationRepository {
                                                    @Bind("eventId") int eventId,
                                                    @Bind("ticketCategoryId") int ticketCategoryId,
                                                    @Bind("key") String key);
+
+
+    @Query("(SELECT id, c_key, c_value, description, 'SYSTEM' as configuration_path_level FROM configuration where c_key in (:keys)) UNION ALL " +
+        "(SELECT id, c_key, c_value, description, 'ORGANIZATION' as configuration_path_level FROM configuration_organization where c_key in (:keys) and organization_id_fk = :organizationId) UNION ALL " +
+        "(SELECT id, c_key, c_value, description, 'EVENT' as configuration_path_level FROM configuration_event where c_key in (:keys) and organization_id_fk = :organizationId and event_id_fk = :eventId)")
+    List<Configuration> findByEventAndKeys(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("keys") Collection<String> keys);
     
     @Query("DELETE FROM configuration where c_key = :key")
     void deleteByKey(@Bind("key") String key);
