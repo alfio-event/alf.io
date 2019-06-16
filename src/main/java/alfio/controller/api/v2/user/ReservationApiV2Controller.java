@@ -259,7 +259,7 @@ public class ReservationApiV2Controller {
                                                                                          HttpServletRequest request,
                                                                                          HttpSession session) {
 
-        return getReservationWithPendingStatus(eventName, reservationId).map(er -> {
+        return getReservation(eventName, reservationId).map(er -> {
 
            var event = er.getLeft();
            var ticketReservation = er.getRight();
@@ -473,6 +473,11 @@ public class ReservationApiV2Controller {
         }
     }
 
+    private Optional<Pair<Event, TicketReservation>> getReservation(String eventName, String reservationId) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .flatMap(event -> ticketReservationManager.findById(reservationId)
+                .flatMap(reservation -> Optional.of(Pair.of(event, reservation))));
+    }
 
     private Optional<Pair<Event, TicketReservation>> getReservationWithPendingStatus(String eventName, String reservationId) {
         return eventRepository.findOptionalByShortName(eventName)
