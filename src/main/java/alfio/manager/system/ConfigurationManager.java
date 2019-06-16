@@ -463,8 +463,8 @@ public class ConfigurationManager {
     }
 
     public boolean hasAllConfigurationsForInvoice(EventAndOrganizationId event) {
-        return getStringConfigValue(Configuration.from(event, ConfigurationKeys.INVOICE_ADDRESS)).isPresent() &&
-            getStringConfigValue(Configuration.from(event, ConfigurationKeys.VAT_NR)).isPresent();
+        var r = getFor(event, Set.of(INVOICE_ADDRESS, VAT_NR));
+        return r.get(INVOICE_ADDRESS).isPresent() && r.get(VAT_NR).isPresent();
     }
 
     @Deprecated
