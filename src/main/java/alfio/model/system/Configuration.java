@@ -54,6 +54,14 @@ public class Configuration implements Comparable<Configuration> {
         this.basic = this.configurationKey.isBasic();
     }
 
+    public int getValueAsInt() {
+        return Integer.valueOf(value);
+    }
+
+    public boolean getValueAsBoolean() {
+        return Boolean.parseBoolean(value);
+    }
+
     public ComponentType getComponentType() {
         return configurationKey.getComponentType();
     }

@@ -184,14 +184,20 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
         //check override level up to event level
 
+        assertEquals(5, configurationManager.getFor(event, Collections.singleton(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION)).get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).get().getValueAsInt());
+
         assertEquals(5, configurationManager.getIntConfigValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), -1));
 
         configurationRepository.insertOrganizationLevel(organization.getId(), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "6", "desc");
 
         assertEquals(6, configurationManager.getIntConfigValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), -1));
 
+        assertEquals(6, configurationManager.getFor(event, Collections.singleton(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION)).get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).get().getValueAsInt());
+
         configurationRepository.insertEventLevel(organization.getId(), event.getId(), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "7", "desc");
         assertEquals(7, configurationManager.getIntConfigValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), -1));
+
+        assertEquals(7, configurationManager.getFor(event, Collections.singleton(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION)).get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).get().getValueAsInt());
 
         configurationRepository.insertTicketCategoryLevel(organization.getId(), event.getId(), tc.getId(), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "8", "desc");
 
@@ -308,5 +314,47 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
     }
 
+    @Test
+    public void testBulk() {
+        Event event = eventManager.getSingleEvent("eventShortName", "test");
 
+        var res = configurationManager.getFor(event, Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION));
+
+        assertEquals(3, res.size());
+        assertNotNull(res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION));
+        assertNotNull(res.get(ENABLE_WAITING_QUEUE));
+        assertNotNull(res.get(ENABLE_WAITING_QUEUE_NOTIFICATION));
+        assertTrue(res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).isPresent());
+        assertEquals(5, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).get().getValueAsInt());
+        assertEquals(ConfigurationPathLevel.SYSTEM, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).get().getConfigurationPathLevel());
+        assertTrue(res.get(ENABLE_WAITING_QUEUE).isEmpty());
+        assertTrue(res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).isEmpty());
+
+        configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ENABLE_WAITING_QUEUE.getValue(), "true", "");
+        configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ENABLE_WAITING_QUEUE_NOTIFICATION.getValue(), "false", "");
+
+
+        res = configurationManager.getFor(event, Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION));
+        assertEquals(3, res.size());
+        assertTrue(res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).isPresent());
+        assertTrue(res.get(ENABLE_WAITING_QUEUE).isPresent());
+        assertTrue(res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).isPresent());
+
+        assertEquals(ConfigurationPathLevel.ORGANIZATION, res.get(ENABLE_WAITING_QUEUE).get().getConfigurationPathLevel());
+        assertEquals(ConfigurationPathLevel.ORGANIZATION, res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).get().getConfigurationPathLevel());
+        assertTrue(res.get(ENABLE_WAITING_QUEUE).get().getValueAsBoolean());
+        assertFalse(res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).get().getValueAsBoolean());
+
+
+        configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "20", "");
+        configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE.getValue(), "true", "");
+        configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE_NOTIFICATION.getValue(), "true", "");
+
+        res = configurationManager.getFor(event, Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION));
+
+        assertEquals(ConfigurationPathLevel.EVENT, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).get().getConfigurationPathLevel());
+        assertEquals(20, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).get().getValueAsInt());
+        assertEquals(ConfigurationPathLevel.EVENT, res.get(ENABLE_WAITING_QUEUE).get().getConfigurationPathLevel());
+        assertEquals(ConfigurationPathLevel.EVENT, res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).get().getConfigurationPathLevel());
+    }
 }
