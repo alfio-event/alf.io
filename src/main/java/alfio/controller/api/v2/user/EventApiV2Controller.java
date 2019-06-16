@@ -185,9 +185,9 @@ public class EventApiV2Controller {
                 boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event.getOrganizationId());
                 boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || euVatCheckingEnabled;
                 boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
-                boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).map(Configuration::getValueAsBoolean).orElse(false);
-                boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).map(Configuration::getValueAsBoolean).orElse(false);
-                boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).map(Configuration::getValueAsBoolean).orElse(false);
+                boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).map(Configuration::valueAsBoolean).orElse(false);
+                boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).map(Configuration::valueAsBoolean).orElse(false);
+                boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).map(Configuration::valueAsBoolean).orElse(false);
 
                 var invoicingConf = new EventWithAdditionalInfo.InvoicingConfiguration(canGenerateReceiptOrInvoiceToCustomer,
                     euVatCheckingEnabled, invoiceAllowed, onlyInvoice,
@@ -195,18 +195,18 @@ public class EventApiV2Controller {
                 //
 
                 //
-                boolean forceAssignment = configurationsValues.get(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).map(Configuration::getValueAsBoolean).orElse(false);
-                boolean enableAttendeeAutocomplete = configurationsValues.get(ENABLE_ATTENDEE_AUTOCOMPLETE).map(Configuration::getValueAsBoolean).orElse(true);
-                boolean enableTicketTransfer = configurationsValues.get(ENABLE_TICKET_TRANSFER).map(Configuration::getValueAsBoolean).orElse(true);
+                boolean forceAssignment = configurationsValues.get(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).map(Configuration::valueAsBoolean).orElse(false);
+                boolean enableAttendeeAutocomplete = configurationsValues.get(ENABLE_ATTENDEE_AUTOCOMPLETE).map(Configuration::valueAsBoolean).orElse(true);
+                boolean enableTicketTransfer = configurationsValues.get(ENABLE_TICKET_TRANSFER).map(Configuration::valueAsBoolean).orElse(true);
                 var assignmentConf = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete, enableTicketTransfer);
                 //
 
 
                 //promotion codes
-                boolean hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).map(Configuration::getValueAsBoolean).orElse(true) &&
+                boolean hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).map(Configuration::valueAsBoolean).orElse(true) &&
                     (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
                         promoCodeDiscountRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
-                boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).map(Configuration::getValueAsBoolean).orElse(false);
+                boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).map(Configuration::valueAsBoolean).orElse(false);
                 var promoConf = new EventWithAdditionalInfo.PromotionsConfiguration(hasAccessPromotions, usePartnerCode);
                 //
 
