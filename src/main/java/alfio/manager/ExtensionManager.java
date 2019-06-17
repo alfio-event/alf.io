@@ -244,7 +244,7 @@ public class ExtensionManager {
 
     private <T> T syncCall(ExtensionEvent extensionEvent, Event event, int organizationId, Map<String, Object> payload, Class<T> clazz) {
         return extensionService.executeScriptsForEvent(extensionEvent.name(),
-            toPath(event.getId(), organizationId),
+            toPath(organizationId, event.getId()),
             fillWithBasicInfo(payload, event, organizationId),
             clazz);
     }

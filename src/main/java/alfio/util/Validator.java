@@ -22,6 +22,7 @@ import alfio.manager.GroupManager;
 import alfio.manager.SameCountryValidator;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
+import alfio.model.Ticket;
 import alfio.model.TicketFieldConfiguration;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
@@ -30,6 +31,7 @@ import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -188,8 +190,34 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
+    @AllArgsConstructor
+    public static class TicketFieldsFilterer {
+
+        private final List<TicketFieldConfiguration> additionalFieldsForEvent;
+        private final Function<String, Integer> fromTicketUUIDToTicketCategoryId;
+        private final Set<Integer> additionalServiceIds;
+        private final Optional<Ticket> firstTicketInReservation;
+
+
+        public List<TicketFieldConfiguration> getFieldsForTicket(String ticketUUID) {
+            var isFirstTicket = firstTicketInReservation.map(first -> ticketUUID.equals(first.getUuid())).orElse(false);
+            return filterFieldsForTicket(additionalFieldsForEvent, fromTicketUUIDToTicketCategoryId.apply(ticketUUID), additionalServiceIds, isFirstTicket);
+        }
+    }
+
+
+    private static List<TicketFieldConfiguration> filterFieldsForTicket(List<TicketFieldConfiguration> additionalFieldsForEvent,
+                                                                       Integer ticketCategoryId,
+                                                                       Set<Integer> additionalServiceIds,
+                                                                       boolean isFirstTicket) {
+        return additionalFieldsForEvent.stream()
+            .filter(field -> field.rulesApply(ticketCategoryId))
+            .filter(f -> f.getContext() == TicketFieldConfiguration.Context.ATTENDEE || isFirstTicket && Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
+            .collect(Collectors.toList());
+    }
+
     public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form,
-                                                            List<TicketFieldConfiguration> additionalFieldsForEvent,
+                                                            List<TicketFieldConfiguration> additionalFieldsForTicket,
                                                             Optional<Errors> errorsOptional,
                                                             Event event,
                                                             String baseField,
@@ -225,7 +253,7 @@ public final class Validator {
 
         //
         final String prefixForLambda = prefix;
-        for(TicketFieldConfiguration fieldConf : additionalFieldsForEvent) {
+        for(TicketFieldConfiguration fieldConf : additionalFieldsForTicket) {
 
             boolean isField = form.getAdditional() !=null && form.getAdditional().containsKey(fieldConf.getName());
 

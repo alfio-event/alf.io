@@ -36,13 +36,11 @@ import alfio.model.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
+import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
-import alfio.util.ErrorsCode;
-import alfio.util.FileUtil;
-import alfio.util.TemplateManager;
-import alfio.util.TemplateResource;
+import alfio.util.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
@@ -99,6 +97,7 @@ public class ReservationApiV2Controller {
     private final TicketHelper ticketHelper;
     private final EuVatChecker vatChecker;
     private final RecaptchaService recaptchaService;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -120,8 +119,6 @@ public class ReservationApiV2Controller {
 
             var ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toSet());
 
-            var ticketFields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-
             var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
                 .stream()
                 .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
@@ -134,6 +131,8 @@ public class ReservationApiV2Controller {
             boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(reservationId);
             //
 
+            var ticketFieldsFilterer = getTicketFieldsFilterer(reservationId, event);
+
             //TODO: cleanup this transformation, we most likely don't need to fully load the ticket category
             var ticketsInReservation = tickets.stream()
                 .collect(Collectors.groupingBy(Ticket::getCategoryId))
@@ -142,12 +141,14 @@ public class ReservationApiV2Controller {
                 .map((e) -> {
                     var tc = eventManager.getTicketCategoryById(e.getKey(), event.getId());
                     var ts = e.getValue().stream().map(t -> {//
+
+
                         // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
                         boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
                             (!hasPaidSupplement && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), t.getCategoryId(), ALLOW_FREE_TICKETS_CANCELLATION), false)) && // freeCancellationEnabled
                             eventManager.checkTicketCancellationPrerequisites().apply(t); // cancellationPrerequisitesMet
                         //
-                        return toBookingInfoTicket(t, cancellationEnabled, ticketFields, descriptionsByTicketFieldId, valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()));
+                        return toBookingInfoTicket(t, cancellationEnabled, ticketFieldsFilterer.getFieldsForTicket(t.getUuid()), descriptionsByTicketFieldId, valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()));
                     }).collect(Collectors.toList());
                     return new TicketsByTicketCategory(tc.getName(), ts);
                 })
@@ -214,6 +215,13 @@ public class ReservationApiV2Controller {
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    private Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, EventAndOrganizationId event) {
+        var fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        return new Validator.TicketFieldsFilterer(fields, ticketHelper.getTicketUUIDToCategoryId(),
+            new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(reservationId)),
+            ticketReservationManager.findFirstInReservation(reservationId));
+    }
+
     @GetMapping("/event/{eventName}/reservation/{reservationId}/status")
     public ResponseEntity<ReservationStatusInfo> getReservationStatus(@PathVariable("eventName") String eventName,
                                                                       @PathVariable("reservationId") String reservationId) {
@@ -259,7 +267,7 @@ public class ReservationApiV2Controller {
                                                                                          HttpServletRequest request,
                                                                                          HttpSession session) {
 
-        return getReservationWithPendingStatus(eventName, reservationId).map(er -> {
+        return getReservation(eventName, reservationId).map(er -> {
 
            var event = er.getLeft();
            var ticketReservation = er.getRight();
@@ -307,7 +315,14 @@ public class ReservationApiV2Controller {
             final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
                 Optional.ofNullable(paymentForm.getPaymentMethod()));
 
-            if(!status.isSuccessful()) {
+
+            if (status.isRedirect()) {
+                var body = ValidatedResponse.toResponse(bindingResult,
+                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, status.getRedirectUrl(), status.isFailed(), status.getGatewayIdOrNull()));
+                return ResponseEntity.ok(body);
+            }
+
+            if (!status.isSuccessful()) {
                 String errorMessageCode = status.getErrorCode().orElse(StripeCreditCardManager.STRIPE_UNEXPECTED);
                 MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
                 bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
@@ -316,13 +331,9 @@ public class ReservationApiV2Controller {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-            if (status.isRedirect() && !bindingResult.hasErrors()) {
-                var body = ValidatedResponse.toResponse(bindingResult,
-                    new ReservationPaymentResult(!bindingResult.hasErrors(), true, status.getRedirectUrl(), status.isFailed(), status.getGatewayIdOrNull()));
-                return ResponseEntity.ok(body);
-            } else {
-                return buildReservationPaymentStatus(bindingResult);
-            }
+
+            return buildReservationPaymentStatus(bindingResult);
+
         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
@@ -387,11 +398,12 @@ public class ReservationApiV2Controller {
             //
 
             Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);
+
+            var ticketFieldFilterer = getTicketFieldsFilterer(reservationId, event);
             //
             contactAndTicketsForm.validate(bindingResult, event,
-                ticketFieldRepository.findAdditionalFieldsForEvent(event.getId()),
                 new SameCountryValidator(configurationManager, extensionManager, event.getOrganizationId(), event.getId(), reservationId, vatChecker),
-                formValidationParameters);
+                formValidationParameters, ticketFieldFilterer);
             //
 
             if(!bindingResult.hasErrors()) {
@@ -469,6 +481,11 @@ public class ReservationApiV2Controller {
         }
     }
 
+    private Optional<Pair<Event, TicketReservation>> getReservation(String eventName, String reservationId) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .flatMap(event -> ticketReservationManager.findById(reservationId)
+                .flatMap(reservation -> Optional.of(Pair.of(event, reservation))));
+    }
 
     private Optional<Pair<Event, TicketReservation>> getReservationWithPendingStatus(String eventName, String reservationId) {
         return eventRepository.findOptionalByShortName(eventName)
@@ -629,9 +646,8 @@ public class ReservationApiV2Controller {
 
         var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::getTicketFieldConfigurationId, Function.identity()));
 
-        var tfcdav = ticketFields.stream() //TODO: check
-            // .filter(f -> f.getContext() == ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
-            .filter(tfc -> CollectionUtils.isEmpty(tfc.getCategoryIds()) || tfc.getCategoryIds().contains(ticket.getCategoryId()))
+
+        var tfcdav = ticketFields.stream()
             .sorted(Comparator.comparing(TicketFieldConfiguration::getOrder))
             .map(tfc -> {
                 var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!

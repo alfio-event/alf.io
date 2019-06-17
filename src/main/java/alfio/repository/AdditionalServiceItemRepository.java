@@ -37,6 +37,9 @@ public interface AdditionalServiceItemRepository {
     @Query("select * from additional_service_item where tickets_reservation_uuid = :reservationUuid")
     List<AdditionalServiceItem> findByReservationUuid(@Bind("reservationUuid") String reservationUuid);
 
+    @Query("select additional_service_id_fk from additional_service_item where tickets_reservation_uuid = :reservationUuid")
+    List<Integer> findAdditionalServiceIdsByReservationUuid(@Bind("reservationUuid") String reservationUuid);
+
     @Query("update additional_service_item set status = :status where tickets_reservation_uuid = :reservationUuid")
     int updateItemsStatusWithReservationUUID(@Bind("reservationUuid") String reservationUuid, @Bind("status") AdditionalServiceItemStatus status);
 

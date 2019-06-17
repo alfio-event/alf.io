@@ -83,9 +83,6 @@ public interface TransactionRepository {
     @Query(SELECT_VALID_BY_RESERVATION_ID)
     Optional<Transaction> loadOptionalByReservationId(@Bind("reservationId") String reservationId);
 
-    @Query(SELECT_BY_RESERVATION_ID + " and status = :status")
-    Optional<Transaction> loadOptionalByReservationIdAndStatus(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
-
     @Query("select * from b_transaction where id = :id and status = :status")
     Optional<Transaction> loadOptionalByIdAndStatus(@Bind("id") int id, @Bind("status") Transaction.Status status);
 

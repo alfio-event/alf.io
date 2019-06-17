@@ -463,8 +463,8 @@ public class ConfigurationManager {
     }
 
     public boolean hasAllConfigurationsForInvoice(EventAndOrganizationId event) {
-        return getStringConfigValue(Configuration.from(event, ConfigurationKeys.INVOICE_ADDRESS)).isPresent() &&
-            getStringConfigValue(Configuration.from(event, ConfigurationKeys.VAT_NR)).isPresent();
+        var r = getFor(event, Set.of(INVOICE_ADDRESS, VAT_NR));
+        return r.get(INVOICE_ADDRESS).isPresent() && r.get(VAT_NR).isPresent();
     }
 
     @Deprecated
@@ -491,4 +491,26 @@ public class ConfigurationManager {
     public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
         return getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
     }
+
+    //
+    public Map<ConfigurationKeys, Optional<Configuration>> getFor(EventAndOrganizationId eventAndOrganizationId, Collection<ConfigurationKeys> keys) {
+        var found = configurationRepository.findByEventAndKeys(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
+        var res = new EnumMap<ConfigurationKeys, Optional<Configuration>>(ConfigurationKeys.class);
+
+        for (var k : keys) {
+            res.put(k, Optional.empty());
+        }
+
+        for (var c : found) {
+            res.get(c.getConfigurationKey()).ifPresentOrElse(alreadyPresent -> {
+                //override mechanism, if a configuration path is more precise that the one already present, we will replace it
+                if (alreadyPresent.getConfigurationPathLevel().getPriority() < c.getConfigurationPathLevel().getPriority()) {
+                    res.put(c.getConfigurationKey(), Optional.of(c));
+                }
+            }, () -> res.put(c.getConfigurationKey(), Optional.of(c)));
+        }
+
+        return res;
+    }
+
 }

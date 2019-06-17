@@ -29,10 +29,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.util.ErrorsCode.STEP_2_INVALID_VAT;
@@ -85,7 +82,10 @@ public class ContactAndTicketsForm implements Serializable {
 
 
 
-    public void validate(BindingResult bindingResult, Event event, List<TicketFieldConfiguration> fieldConf, SameCountryValidator vatValidator, Map<ConfigurationKeys, Boolean> formValidationParameters) {
+    public void validate(BindingResult bindingResult, Event event,
+                         SameCountryValidator vatValidator,
+                         Map<ConfigurationKeys, Boolean> formValidationParameters,
+                         Validator.TicketFieldsFilterer ticketFieldsFilterer) {
 
 
         
@@ -175,8 +175,10 @@ public class ContactAndTicketsForm implements Serializable {
         if(!postponeAssignment) {
             Optional<List<ValidationResult>> validationResults = Optional.ofNullable(tickets)
                 .filter(m -> !m.isEmpty())
-                .map(m -> m.entrySet().stream().map(e -> Validator.validateTicketAssignment(e.getValue(),
-                    fieldConf, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator)))
+                .map(m -> m.entrySet().stream().map(e -> {
+                    var filteredForTicket = ticketFieldsFilterer.getFieldsForTicket(e.getKey());
+                    return Validator.validateTicketAssignment(e.getValue(), filteredForTicket, Optional.of(bindingResult), event, "tickets[" + e.getKey() + "]", vatValidator);
+                }))
                 .map(s -> s.collect(Collectors.toList()));
 
             boolean success = validationResults
@@ -195,40 +197,6 @@ public class ContactAndTicketsForm implements Serializable {
 
     public Boolean shouldCancelReservation() {
         return Optional.ofNullable(cancelReservation).orElse(false);
-    }
-
-    public static ContactAndTicketsForm fromExistingReservation(TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
-        ContactAndTicketsForm form = new ContactAndTicketsForm();
-        form.setFirstName(reservation.getFirstName());
-        form.setLastName(reservation.getLastName());
-        form.setBillingAddress(reservation.getBillingAddress());
-        form.setEmail(reservation.getEmail());
-        form.setFullName(reservation.getFullName());
-        form.setVatCountryCode(reservation.getVatCountryCode());
-        form.setVatNr(reservation.getVatNr());
-        form.setInvoiceRequested(reservation.isInvoiceRequested());
-        form.setCustomerReference(reservation.getCustomerReference());
-
-
-        form.setBillingAddressCompany(additionalInfo.getBillingAddressCompany());
-        form.setBillingAddressLine1(additionalInfo.getBillingAddressLine1());
-        form.setBillingAddressLine2(additionalInfo.getBillingAddressLine2());
-        form.setBillingAddressZip(additionalInfo.getBillingAddressZip());
-        form.setBillingAddressCity(additionalInfo.getBillingAddressCity());
-        form.setAddCompanyBillingDetails(additionalInfo.getAddCompanyBillingDetails());
-        form.setSkipVatNr(additionalInfo.getSkipVatNr());
-
-        //https://github.com/alfio-event/alf.io/issues/573
-        Optional.ofNullable(additionalInfo.getInvoicingAdditionalInfo())
-            .map(TicketReservationInvoicingAdditionalInfo::getItalianEInvoicing)
-            .ifPresent(iei -> {
-                form.setItalyEInvoicingFiscalCode(iei.getFiscalCode());
-                form.setItalyEInvoicingReferenceType(iei.getReferenceType());
-                form.setItalyEInvoicingReferenceAddresseeCode(iei.getAddresseeCode());
-                form.setItalyEInvoicingReferencePEC(iei.getPec());
-            });
-
-        return form;
     }
 
     public boolean getHasVatCountryCode() {

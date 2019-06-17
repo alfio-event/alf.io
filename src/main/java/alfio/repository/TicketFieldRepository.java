@@ -142,9 +142,6 @@ public interface TicketFieldRepository extends FieldRepository {
     @Query("select max(field_order) from ticket_field_configuration where event_id_fk = :eventId")
     Integer findMaxOrderValue(@Bind("eventId") int eventId);
 
-    @Query("select count(*) from ticket_field_configuration where event_id_fk = :eventId and field_required = true")
-    Integer countRequiredAdditionalFieldsForEvent(@Bind("eventId") int eventId);
-
     default Map<Integer, TicketFieldDescription> findTranslationsFor(Locale locale, int eventId) {
         return findDescriptions(eventId, locale.getLanguage()).stream().collect(Collectors.toMap(TicketFieldDescription::getTicketFieldConfigurationId, Function.identity()));
     }

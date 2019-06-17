@@ -1344,6 +1344,10 @@ public class TicketReservationManager {
         return ticketRepository.findTicketsInReservation(reservationId);
     }
 
+    public Optional<Ticket> findFirstInReservation(String reservationId) {
+        return ticketRepository.findFirstTicketInReservation(reservationId);
+    }
+
     public List<Triple<AdditionalService, List<AdditionalServiceText>, AdditionalServiceItem>> findAdditionalServicesInReservation(String reservationId) {
         return additionalServiceItemRepository.findByReservationUuid(reservationId).stream()
             .map(asi -> Triple.of(additionalServiceRepository.getById(asi.getAdditionalServiceId(), asi.getEventId()), additionalServiceTextRepository.findAllByAdditionalServiceId(asi.getAdditionalServiceId()), asi))
@@ -1370,7 +1374,7 @@ public class TicketReservationManager {
 
         Map<String, String> preUpdateTicketFields = ticketFieldRepository.findAllByTicketId(ticket.getId()).stream().collect(Collectors.toMap(TicketFieldValue::getName, TicketFieldValue::getValue));
 
-        String newEmail = updateTicketOwner.getEmail().trim();
+        String newEmail = StringUtils.trim(updateTicketOwner.getEmail());
         CustomerName customerName = new CustomerName(updateTicketOwner.getFullName(), updateTicketOwner.getFirstName(), updateTicketOwner.getLastName(), event.mustUseFirstAndLastName(), false);
         ticketRepository.updateTicketOwner(ticket.getUuid(), newEmail, customerName.getFullName(), customerName.getFirstName(), customerName.getLastName());
 

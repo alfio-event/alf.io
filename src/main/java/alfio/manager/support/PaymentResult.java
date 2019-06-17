@@ -58,7 +58,7 @@ public final class PaymentResult {
     }
 
     private PaymentResult setErrorCode( String errorCode ) {
-        this.errorCode = Optional.of(errorCode);
+        this.errorCode = Optional.ofNullable(errorCode);
         return this;
     }
 
@@ -71,7 +71,7 @@ public final class PaymentResult {
     }
 
     private PaymentResult setGatewayId(String gatewayId) {
-        this.gatewayId = Optional.of(gatewayId);
+        this.gatewayId = Optional.ofNullable(gatewayId);
         return this;
     }
 

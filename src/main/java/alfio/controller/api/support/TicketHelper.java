@@ -74,6 +74,10 @@ public class TicketHelper {
         return EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository);
     }
 
+    public Function<String, Integer> getTicketUUIDToCategoryId() {
+        return (uuid) -> ticketRepository.getTicketCategoryByUIID(uuid);
+    }
+
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
                                                                            String ticketIdentifier,
                                                                            UpdateTicketOwnerForm updateTicketOwner,
@@ -111,8 +115,13 @@ public class TicketHelper {
         AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(sameCountryValidator,
             new GroupManager.WhitelistValidator(event.getId(), groupManager));
 
+
+        var additionalServiceIds = new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(t.getTicketsReservationId()));
+
+        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf, (ticketUUID) -> t.getCategoryId(), additionalServiceIds, ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()));
+
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
-        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, fieldConf, bindingResult, event, formPrefix, sameCountryValidator)
+        ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid()), bindingResult, event, formPrefix, sameCountryValidator)
                 .or(Validator.performAdvancedValidation(advancedValidator, context, bindingResult.orElse(null)))
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, request, t, event, ticketReservation, userDetails));
         return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
