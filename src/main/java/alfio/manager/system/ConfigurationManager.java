@@ -128,6 +128,7 @@ public class ConfigurationManager {
         return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()).map(Configuration::getValue);
     }
 
+    @Deprecated
     public Map<ConfigurationKeys, Optional<String>> getStringConfigValueFrom(ConfigurationPathKey... keys) {
         Map<ConfigurationKeys, Optional<String>> res = new HashMap<>();
         for(ConfigurationPathKey key : keys) {

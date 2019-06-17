@@ -18,6 +18,7 @@ package alfio.manager.system;
 
 import alfio.model.EventAndOrganizationId;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
@@ -39,9 +40,7 @@ import javax.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
@@ -54,12 +53,19 @@ class SmtpMailer implements Mailer {
     @Override
     public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text,
                      Optional<String> html, Attachment... attachments) {
+
+        var conf = configurationManager.getFor(event, Set.of(SMTP_FROM_EMAIL, MAIL_REPLY_TO,
+            SMTP_HOST, SMTP_PORT, SMTP_PROTOCOL,
+            SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROPERTIES));
+
         MimeMessagePreparator preparator = (mimeMessage) -> {
+
+
             MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
                     : new MimeMessageHelper(mimeMessage, "UTF-8");
             message.setSubject(subject);
-            message.setFrom(configurationManager.getRequiredValue(Configuration.from(event, SMTP_FROM_EMAIL)), fromName);
-            String replyTo = configurationManager.getStringConfigValue(Configuration.from(event, MAIL_REPLY_TO), "");
+            message.setFrom(conf.get(SMTP_FROM_EMAIL).getRequiredValue(), fromName);
+            String replyTo = conf.get(MAIL_REPLY_TO).getValue().orElse("");
             if(StringUtils.isNotBlank(replyTo)) {
                 message.setReplyTo(replyTo);
             }
@@ -82,20 +88,20 @@ class SmtpMailer implements Mailer {
             message.getMimeMessage().saveChanges();
             message.getMimeMessage().removeHeader("Message-ID");
         };
-        toMailSender(event).send(preparator);
+        toMailSender(conf).send(preparator);
     }
     
-    private JavaMailSender toMailSender(EventAndOrganizationId event) {
+    private static JavaMailSender toMailSender(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf) {
         JavaMailSenderImpl r = new CustomJavaMailSenderImpl();
         r.setDefaultEncoding("UTF-8");
 
-        r.setHost(configurationManager.getRequiredValue(Configuration.from(event, SMTP_HOST)));
-        r.setPort(Integer.valueOf(configurationManager.getRequiredValue(Configuration.from(event, SMTP_PORT))));
-        r.setProtocol(configurationManager.getRequiredValue(Configuration.from(event, SMTP_PROTOCOL)));
-        r.setUsername(configurationManager.getStringConfigValue(Configuration.from(event, SMTP_USERNAME), null));
-        r.setPassword(configurationManager.getStringConfigValue(Configuration.from(event, SMTP_PASSWORD), null));
+        r.setHost(conf.get(SMTP_HOST).getRequiredValue());
+        r.setPort(Integer.valueOf(conf.get(SMTP_PORT).getRequiredValue()));
+        r.setProtocol(conf.get(SMTP_PROTOCOL).getRequiredValue());
+        r.setUsername(conf.get(SMTP_USERNAME).getValue().orElse(null));
+        r.setPassword(conf.get(SMTP_PASSWORD).getValue().orElse(null));
 
-        String properties = configurationManager.getStringConfigValue(Configuration.from(event, SMTP_PROPERTIES), null);
+        String properties = conf.get(SMTP_PROPERTIES).getValue().orElse(null);
 
         if (properties != null) {
             try {
