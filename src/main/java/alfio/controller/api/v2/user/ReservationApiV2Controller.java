@@ -36,6 +36,7 @@ import alfio.model.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
+import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
@@ -99,6 +100,7 @@ public class ReservationApiV2Controller {
     private final TicketHelper ticketHelper;
     private final EuVatChecker vatChecker;
     private final RecaptchaService recaptchaService;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -142,12 +144,18 @@ public class ReservationApiV2Controller {
                 .map((e) -> {
                     var tc = eventManager.getTicketCategoryById(e.getKey(), event.getId());
                     var ts = e.getValue().stream().map(t -> {//
+
+
+                        boolean isFirstTicket = tickets.get(0).getId() == t.getId();
+                        List<AdditionalServiceItem> additionalServiceItems = isFirstTicket ? additionalServiceItemRepository.findByReservationUuid(t.getTicketsReservationId()) : Collections.emptyList();
+                        Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
+
                         // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
                         boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
                             (!hasPaidSupplement && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), t.getCategoryId(), ALLOW_FREE_TICKETS_CANCELLATION), false)) && // freeCancellationEnabled
                             eventManager.checkTicketCancellationPrerequisites().apply(t); // cancellationPrerequisitesMet
                         //
-                        return toBookingInfoTicket(t, cancellationEnabled, ticketFields, descriptionsByTicketFieldId, valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()));
+                        return toBookingInfoTicket(t, cancellationEnabled, ticketFields, descriptionsByTicketFieldId, valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()), additionalServiceIds);
                     }).collect(Collectors.toList());
                     return new TicketsByTicketCategory(tc.getName(), ts);
                 })
@@ -633,13 +641,15 @@ public class ReservationApiV2Controller {
                                                                          boolean cancellationEnabled,
                                                                          List<TicketFieldConfiguration> ticketFields,
                                                                          Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
-                                                                         List<TicketFieldValue> ticketFieldValues) {
+                                                                         List<TicketFieldValue> ticketFieldValues,
+                                                                         Set<Integer> additionalServiceIds) {
 
 
         var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::getTicketFieldConfigurationId, Function.identity()));
 
-        var tfcdav = ticketFields.stream() //TODO: check
-            // .filter(f -> f.getContext() == ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
+
+        var tfcdav = ticketFields.stream()
+            .filter(f -> f.getContext() == TicketFieldConfiguration.Context.ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
             .filter(tfc -> CollectionUtils.isEmpty(tfc.getCategoryIds()) || tfc.getCategoryIds().contains(ticket.getCategoryId()))
             .sorted(Comparator.comparing(TicketFieldConfiguration::getOrder))
             .map(tfc -> {
