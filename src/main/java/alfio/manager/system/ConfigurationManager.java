@@ -22,6 +22,7 @@ import alfio.model.TicketReservation;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
+import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.transaction.PaymentProxy;
@@ -498,7 +499,7 @@ public class ConfigurationManager {
         return buildKeyConfigurationMapResult(keys, found);
     }
 
-    private Map<ConfigurationKeys, MaybeConfiguration> buildKeyConfigurationMapResult(Collection<ConfigurationKeys> keys, List<Configuration> found) {
+    private Map<ConfigurationKeys, MaybeConfiguration> buildKeyConfigurationMapResult(Collection<ConfigurationKeys> keys, List<ConfigurationKeyValuePathLevel> found) {
         var res = new EnumMap<ConfigurationKeys, MaybeConfiguration>(ConfigurationKeys.class);
 
         for (var k : keys) {
@@ -520,10 +521,10 @@ public class ConfigurationManager {
 
     @AllArgsConstructor
     public static class MaybeConfiguration {
-        private final Optional<Configuration> configuration;
+        private final Optional<ConfigurationKeyValuePathLevel> configuration;
         private final ConfigurationKeys key;
 
-        void ifPresentOrElse(Consumer<? super Configuration> action, Runnable emptyAction) {
+        void ifPresentOrElse(Consumer<? super ConfigurationKeyValuePathLevel> action, Runnable emptyAction) {
             configuration.ifPresentOrElse(action, emptyAction);
         }
 
@@ -532,20 +533,23 @@ public class ConfigurationManager {
         }
 
         public Optional<String> getValue() {
-            return configuration.map(Configuration::getValue);
+            return configuration.map(ConfigurationKeyValuePathLevel::getValue);
         }
 
         public Optional<Boolean> getValueAsBoolean() {
-            return configuration.map(Configuration::valueAsBoolean);
+            return configuration.map(ConfigurationKeyValuePathLevel::getValue).map(Boolean::parseBoolean);
         }
 
         public boolean getValueAsBoolean(boolean defaultValue) {
             return getValueAsBoolean().orElse(defaultValue);
         }
 
-        @Deprecated
-        public Configuration get() {
-            return configuration.get();
+        public int getValueAsInt(int defaultValue) {
+            return getValue().map(Integer::parseInt).orElse(defaultValue);
+        }
+
+        public ConfigurationPathLevel getConfigurationPathLevel(ConfigurationPathLevel defaultValue) {
+            return configuration.map(ConfigurationKeyValuePathLevel::getConfigurationPathLevel).orElse(defaultValue);
         }
 
         public String getRequiredValue() {

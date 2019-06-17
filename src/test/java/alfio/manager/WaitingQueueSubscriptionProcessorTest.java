@@ -22,6 +22,7 @@ import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
 import alfio.util.TemplateManager;
@@ -94,7 +95,7 @@ public class WaitingQueueSubscriptionProcessorTest {
     void filterWaitingQueueFlagIsNotActive() {
         when(configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)))
             .thenReturn(Map.of(
-                ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(Optional.of(new Configuration(0, "", "false", null)), ENABLE_WAITING_QUEUE),
+                ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(Optional.of(new ConfigurationKeyValuePathLevel( "", "false", null)), ENABLE_WAITING_QUEUE),
                 ENABLE_PRE_REGISTRATION, new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_PRE_REGISTRATION)
             ));
 
@@ -107,7 +108,7 @@ public class WaitingQueueSubscriptionProcessorTest {
 
         when(configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)))
             .thenReturn(Map.of(
-                ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(Optional.of(new Configuration(0, "", "true", null)), ENABLE_WAITING_QUEUE),
+                ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(Optional.of(new ConfigurationKeyValuePathLevel( "", "true", null)), ENABLE_WAITING_QUEUE),
                 ENABLE_PRE_REGISTRATION, new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_PRE_REGISTRATION)
             ));
 
