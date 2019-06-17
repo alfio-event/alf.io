@@ -37,8 +37,6 @@ public class PaymentForm implements Serializable {
     private Boolean termAndConditionsAccepted;
     private Boolean privacyPolicyAccepted;
     private String hmac;
-    private Boolean backFromOverview;
-    private Boolean cancelReservation;
 
 
     public void validate(BindingResult bindingResult, Event event, TotalPrice reservationCost) {
@@ -55,13 +53,5 @@ public class PaymentForm implements Serializable {
             || (StringUtils.isNotEmpty(event.getPrivacyPolicyUrl()) && (Objects.isNull(privacyPolicyAccepted) || !privacyPolicyAccepted))) {
             bindingResult.reject(ErrorsCode.STEP_2_TERMS_NOT_ACCEPTED);
         }
-    }
-
-    public Boolean shouldCancelReservation() {
-        return Optional.ofNullable(cancelReservation).orElse(false);
-    }
-
-    public boolean isBackFromOverview() {
-        return Optional.ofNullable(backFromOverview).orElse(false);
     }
 }
