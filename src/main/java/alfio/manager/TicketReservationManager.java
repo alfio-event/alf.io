@@ -793,9 +793,12 @@ public class TicketReservationManager {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String reservationUrl = reservationUrl(reservation.getId());
         String reservationShortID = getShortReservationID(event, reservation);
-        Optional<String> invoiceAddress = configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.INVOICE_ADDRESS));
-        Optional<String> bankAccountNr = configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.BANK_ACCOUNT_NR));
-        Optional<String> bankAccountOwner = configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.BANK_ACCOUNT_OWNER));
+
+        var bankingInfo = configurationManager.getFor(event, Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER));
+        Optional<String> invoiceAddress = bankingInfo.get(INVOICE_ADDRESS).map(Configuration::getValue);
+        Optional<String> bankAccountNr = bankingInfo.get(BANK_ACCOUNT_NR).map(Configuration::getValue);
+        Optional<String> bankAccountOwner = bankingInfo.get(BANK_ACCOUNT_OWNER).map(Configuration::getValue);
+
         Map<Integer, List<Ticket>> ticketsByCategory = ticketRepository.findTicketsInReservation(reservation.getId())
             .stream()
             .collect(groupingBy(Ticket::getCategoryId));

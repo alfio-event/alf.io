@@ -23,6 +23,7 @@ import alfio.util.MonetaryUtil;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 import static alfio.model.system.ConfigurationKeys.*;
@@ -50,8 +51,9 @@ public class FeeCalculator {
     public static BiFunction<Integer, Long, Optional<Long>> getCalculator(EventAndOrganizationId event, ConfigurationManager configurationManager) {
         return (numTickets, amountInCent) -> {
             if(isPlatformModeEnabled(event, configurationManager)) {
-                String feeAsString = configurationManager.getStringConfigValue(Configuration.from(event, PLATFORM_FEE), "0");
-                String minimumFee = configurationManager.getStringConfigValue(Configuration.from(event, PLATFORM_MINIMUM_FEE), "0");
+                var fees = configurationManager.getFor(event, Set.of(PLATFORM_FEE, PLATFORM_MINIMUM_FEE));
+                String feeAsString = fees.get(PLATFORM_FEE).map(Configuration::getValue).orElse("0");
+                String minimumFee = fees.get(PLATFORM_MINIMUM_FEE).map(Configuration::getValue).orElse("0");
                 return Optional.of(new FeeCalculator(feeAsString, minimumFee, numTickets).calculate(amountInCent));
             }
             return Optional.empty();
