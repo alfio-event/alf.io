@@ -128,15 +128,6 @@ public class ConfigurationManager {
         return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()).map(Configuration::getValue);
     }
 
-    @Deprecated
-    public Map<ConfigurationKeys, Optional<String>> getStringConfigValueFrom(ConfigurationPathKey... keys) {
-        Map<ConfigurationKeys, Optional<String>> res = new HashMap<>();
-        for(ConfigurationPathKey key : keys) {
-            res.put(key.getKey(), getStringConfigValue(key));
-        }
-        return res;
-    }
-
     public String getRequiredValue(ConfigurationPathKey pathKey) {
         return getStringConfigValue(pathKey)
             .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));
@@ -496,8 +487,18 @@ public class ConfigurationManager {
     }
 
     //
+    public Map<ConfigurationKeys, MaybeConfiguration> getFor(Collection<ConfigurationKeys> keys) {
+        var found = configurationRepository.findByKeysAtSystemLevel(keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
+        return buildKeyConfigurationMapResult(keys, found);
+    }
+
+
     public Map<ConfigurationKeys, MaybeConfiguration> getFor(EventAndOrganizationId eventAndOrganizationId, Collection<ConfigurationKeys> keys) {
         var found = configurationRepository.findByEventAndKeys(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
+        return buildKeyConfigurationMapResult(keys, found);
+    }
+
+    private Map<ConfigurationKeys, MaybeConfiguration> buildKeyConfigurationMapResult(Collection<ConfigurationKeys> keys, List<Configuration> found) {
         var res = new EnumMap<ConfigurationKeys, MaybeConfiguration>(ConfigurationKeys.class);
 
         for (var k : keys) {
