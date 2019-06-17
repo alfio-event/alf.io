@@ -260,6 +260,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Test
     public void reservationFlowTest() throws Exception {
 
+
+        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getLanguages("NO_EVENT").getStatusCode());
+
         assertTrue(eventApiV2Controller.listEvents().getBody().isEmpty());
         ensureConfiguration();
 
@@ -526,6 +529,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
             var contactForm = new ContactAndTicketsForm();
+
+            contactForm.setAddCompanyBillingDetails(true);
+            contactForm.setSkipVatNr(false);
+            contactForm.setInvoiceRequested(true);
             contactForm.setEmail("test@test.com");
             contactForm.setBillingAddress("my billing address");
             contactForm.setFirstName("full");
@@ -547,6 +554,19 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             var failure = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest());
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatusCode());
             assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("tickets["+ticket1.getUuid()+"].additional[field3][0]")).count()); //<- missing mandatory
+
+            //check billing errors
+            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("billingAddressLine1")).count()); //<- missing mandatory
+            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("billingAddressZip")).count()); //<- missing mandatory
+            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("billingAddressCity")).count()); //<- missing mandatory
+            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("vatCountryCode")).count()); //<- missing mandatory
+            //
+
+
+            contactForm.setVatCountryCode("CH");
+            contactForm.setBillingAddressLine1("LINE 1");
+            contactForm.setBillingAddressCity("CITY");
+            contactForm.setBillingAddressZip("ZIP");
 
             ticketForm1.getAdditional().put("field3", Collections.singletonList("missing value"));
             var success = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest());
