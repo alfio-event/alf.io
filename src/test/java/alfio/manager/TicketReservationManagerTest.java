@@ -117,6 +117,12 @@ class TicketReservationManagerTest {
     private BillingDocumentRepository billingDocumentRepository;
     private NamedParameterJdbcTemplate jdbcTemplate;
 
+    private Set<ConfigurationKeys> BANKING_KEY = Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER);
+    private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> BANKING_INFO = Map.of(
+        INVOICE_ADDRESS, new ConfigurationManager.MaybeConfiguration(Optional.empty()),
+        BANK_ACCOUNT_NR, new ConfigurationManager.MaybeConfiguration(Optional.empty()),
+        BANK_ACCOUNT_OWNER,  new ConfigurationManager.MaybeConfiguration(Optional.empty()));
+
     @BeforeEach
     void init() {
         notificationManager = mock(NotificationManager.class);
@@ -345,6 +351,7 @@ class TicketReservationManagerTest {
         TicketReservation reservation = mock(TicketReservation.class);
         when(configurationManager.getIntConfigValue(eq(Configuration.from(event, ASSIGNMENT_REMINDER_START)), anyInt())).thenReturn(10);
         when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+        when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         when(reservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
         when(reservation.getId()).thenReturn("abcd");
         when(reservation.getUserLanguage()).thenReturn("en");
@@ -390,7 +397,7 @@ class TicketReservationManagerTest {
         when(reservation.getValidity()).thenReturn(new Date());
         when(ticketReservationRepository.findReservationById(eq("abcd"))).thenReturn(reservation);
         when(ticketReservationRepository.findOptionalReservationById(eq("abcd"))).thenReturn(Optional.of(reservation));
-
+        when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         when(eventRepository.findByReservationId("abcd")).thenReturn(event);
         when(event.getZoneId()).thenReturn(ZoneId.of("GMT-4"));
         when(event.getBegin()).thenReturn(ZonedDateTime.now(ZoneId.of("GMT-4")).plusDays(1));
@@ -756,6 +763,7 @@ class TicketReservationManagerTest {
     void confirmPaidReservation() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(true);
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         mockBillingDocument();
         testPaidReservation();
         verify(notificationManager).sendTicketByEmail(any(), any(), any(), any(), any(), any());
@@ -765,6 +773,7 @@ class TicketReservationManagerTest {
     void confirmPaidReservationButDoNotSendEmail() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(false);
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         mockBillingDocument();
         testPaidReservation();
         verify(notificationManager, never()).sendTicketByEmail(any(), any(), any(), any(), any(), any());
@@ -773,6 +782,7 @@ class TicketReservationManagerTest {
     @Test
     void confirmAndLockTickets() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(false);
+        when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         when(ticketRepository.forbidReassignment(any())).thenReturn(1);
         mockBillingDocument();
         testPaidReservation();
@@ -856,6 +866,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()), isNull())).thenReturn(1);
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         OnSiteManager onSiteManager = mock(OnSiteManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.ON_SITE), any())).thenReturn(Optional.of(onSiteManager));
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
@@ -883,6 +894,7 @@ class TicketReservationManagerTest {
         initConfirmReservation();
         when(ticketReservationRepository.postponePayment(eq(RESERVATION_ID), any(Date.class), anyString(), anyString(), isNull(), isNull(), anyString(), isNull())).thenReturn(1);
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
+        when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         BankTransferManager bankTransferManager = mock(BankTransferManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.BANK_TRANSFER), any())).thenReturn(Optional.of(bankTransferManager));
         when(bankTransferManager.getTokenAndPay(any())).thenReturn(PaymentResult.successful(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID));
@@ -919,6 +931,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), any(), eq(PaymentProxy.OFFLINE.toString()), isNull())).thenReturn(1);
         when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.of("vatnr"));
+        when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         when(ticketRepository.findTicketsInReservation(eq(RESERVATION_ID))).thenReturn(Collections.emptyList());
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
         when(reservation.getUserLanguage()).thenReturn("en");

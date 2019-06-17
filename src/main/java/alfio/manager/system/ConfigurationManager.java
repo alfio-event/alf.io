@@ -39,6 +39,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -493,24 +494,50 @@ public class ConfigurationManager {
     }
 
     //
-    public Map<ConfigurationKeys, Optional<Configuration>> getFor(EventAndOrganizationId eventAndOrganizationId, Collection<ConfigurationKeys> keys) {
+    public Map<ConfigurationKeys, MaybeConfiguration> getFor(EventAndOrganizationId eventAndOrganizationId, Collection<ConfigurationKeys> keys) {
         var found = configurationRepository.findByEventAndKeys(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
-        var res = new EnumMap<ConfigurationKeys, Optional<Configuration>>(ConfigurationKeys.class);
+        var res = new EnumMap<ConfigurationKeys, MaybeConfiguration>(ConfigurationKeys.class);
 
         for (var k : keys) {
-            res.put(k, Optional.empty());
+            res.put(k, new MaybeConfiguration(Optional.empty()));
         }
 
         for (var c : found) {
             res.get(c.getConfigurationKey()).ifPresentOrElse(alreadyPresent -> {
                 //override mechanism, if a configuration path is more precise that the one already present, we will replace it
                 if (alreadyPresent.getConfigurationPathLevel().getPriority() < c.getConfigurationPathLevel().getPriority()) {
-                    res.put(c.getConfigurationKey(), Optional.of(c));
+                    res.put(c.getConfigurationKey(), new MaybeConfiguration(Optional.of(c)));
                 }
-            }, () -> res.put(c.getConfigurationKey(), Optional.of(c)));
+            }, () -> res.put(c.getConfigurationKey(), new MaybeConfiguration(Optional.of(c))));
         }
 
         return res;
+    }
+
+
+    @AllArgsConstructor
+    public static class MaybeConfiguration {
+        private final Optional<Configuration> configuration;
+
+        void ifPresentOrElse(Consumer<? super Configuration> action, Runnable emptyAction) {
+            configuration.ifPresentOrElse(action, emptyAction);
+        }
+
+        public boolean isPresent() {
+            return configuration.isPresent();
+        }
+
+        public Optional<String> getValue() {
+            return configuration.map(Configuration::getValue);
+        }
+
+        public Optional<Boolean> getValueAsBoolean() {
+            return configuration.map(Configuration::valueAsBoolean);
+        }
+
+        public Configuration get() {
+            return configuration.get();
+        }
     }
 
 }

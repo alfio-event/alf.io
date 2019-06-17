@@ -142,10 +142,10 @@ public class EventApiV2Controller {
                 ));
 
                 var geoInfoConfiguration = Map.of(
-                    MAPS_PROVIDER, configurationsValues.get(MAPS_PROVIDER).map(Configuration::getValue),
-                    MAPS_CLIENT_API_KEY, configurationsValues.get(MAPS_CLIENT_API_KEY).map(Configuration::getValue),
-                    MAPS_HERE_APP_ID, configurationsValues.get(MAPS_HERE_APP_ID).map(Configuration::getValue),
-                    MAPS_HERE_APP_CODE, configurationsValues.get(MAPS_HERE_APP_CODE).map(Configuration::getValue));
+                    MAPS_PROVIDER, configurationsValues.get(MAPS_PROVIDER).getValue(),
+                    MAPS_CLIENT_API_KEY, configurationsValues.get(MAPS_CLIENT_API_KEY).getValue(),
+                    MAPS_HERE_APP_ID, configurationsValues.get(MAPS_HERE_APP_ID).getValue(),
+                    MAPS_HERE_APP_CODE, configurationsValues.get(MAPS_HERE_APP_CODE).getValue());
 
                 var ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
 
@@ -161,15 +161,15 @@ public class EventApiV2Controller {
                 boolean captchaForTicketSelection = configurationManager.isRecaptchaForTicketSelectionEnabled(event);
                 String recaptchaApiKey = null;
                 if (captchaForTicketSelection) {
-                    recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).map(Configuration::getValue).orElse(null);
+                    recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValue().orElse(null);
                 }
                 //
                 var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, recaptchaApiKey);
 
 
                 //
-                String bankAccount = configurationsValues.get(BANK_ACCOUNT_NR).map(Configuration::getValue).orElse("");
-                List<String> bankAccountOwner = Arrays.asList(configurationsValues.get(BANK_ACCOUNT_OWNER).map(Configuration::getValue).orElse("").split("\n"));
+                String bankAccount = configurationsValues.get(BANK_ACCOUNT_NR).getValue().orElse("");
+                List<String> bankAccountOwner = Arrays.asList(configurationsValues.get(BANK_ACCOUNT_OWNER).getValue().orElse("").split("\n"));
                 //
 
                 var formattedBeginDate = Formatters.getFormattedDate(event, event.getBegin(), "common.event.date-format", messageSource);
@@ -185,9 +185,9 @@ public class EventApiV2Controller {
                 boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event.getOrganizationId());
                 boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || euVatCheckingEnabled;
                 boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
-                boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).map(Configuration::valueAsBoolean).orElse(false);
-                boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).map(Configuration::valueAsBoolean).orElse(false);
-                boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).map(Configuration::valueAsBoolean).orElse(false);
+                boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).getValueAsBoolean().orElse(false);
+                boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBoolean().orElse(false);
+                boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).getValueAsBoolean().orElse(false);
 
                 var invoicingConf = new EventWithAdditionalInfo.InvoicingConfiguration(canGenerateReceiptOrInvoiceToCustomer,
                     euVatCheckingEnabled, invoiceAllowed, onlyInvoice,
@@ -195,18 +195,18 @@ public class EventApiV2Controller {
                 //
 
                 //
-                boolean forceAssignment = configurationsValues.get(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).map(Configuration::valueAsBoolean).orElse(false);
-                boolean enableAttendeeAutocomplete = configurationsValues.get(ENABLE_ATTENDEE_AUTOCOMPLETE).map(Configuration::valueAsBoolean).orElse(true);
-                boolean enableTicketTransfer = configurationsValues.get(ENABLE_TICKET_TRANSFER).map(Configuration::valueAsBoolean).orElse(true);
+                boolean forceAssignment = configurationsValues.get(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBoolean().orElse(false);
+                boolean enableAttendeeAutocomplete = configurationsValues.get(ENABLE_ATTENDEE_AUTOCOMPLETE).getValueAsBoolean().orElse(true);
+                boolean enableTicketTransfer = configurationsValues.get(ENABLE_TICKET_TRANSFER).getValueAsBoolean().orElse(true);
                 var assignmentConf = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete, enableTicketTransfer);
                 //
 
 
                 //promotion codes
-                boolean hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).map(Configuration::valueAsBoolean).orElse(true) &&
+                boolean hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBoolean().orElse(true) &&
                     (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
                         promoCodeDiscountRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
-                boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).map(Configuration::valueAsBoolean).orElse(false);
+                boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).getValueAsBoolean().orElse(false);
                 var promoConf = new EventWithAdditionalInfo.PromotionsConfiguration(hasAccessPromotions, usePartnerCode);
                 //
 

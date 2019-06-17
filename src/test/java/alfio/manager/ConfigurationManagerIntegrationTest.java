@@ -327,8 +327,8 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).isPresent());
         assertEquals(5, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).get().valueAsInt());
         assertEquals(ConfigurationPathLevel.SYSTEM, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).get().getConfigurationPathLevel());
-        assertTrue(res.get(ENABLE_WAITING_QUEUE).isEmpty());
-        assertTrue(res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).isEmpty());
+        assertFalse(res.get(ENABLE_WAITING_QUEUE).isPresent());
+        assertFalse(res.get(ENABLE_WAITING_QUEUE_NOTIFICATION).isPresent());
 
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ENABLE_WAITING_QUEUE.getValue(), "true", "");
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ENABLE_WAITING_QUEUE_NOTIFICATION.getValue(), "false", "");
