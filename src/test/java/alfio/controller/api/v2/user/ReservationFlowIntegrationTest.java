@@ -179,6 +179,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     private Event event;
     private String user;
 
+    private Integer additionalServiceId;
+
 
     private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
     private static final String PROMO_CODE = "MYPROMOCODE";
@@ -240,8 +242,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             AdditionalService.AdditionalServiceType.SUPPLEMENT,
             AdditionalService.SupplementPolicy.OPTIONAL_MAX_AMOUNT_PER_TICKET
         );
-        additionalServiceApiController.insert(event.getId(), addServ, new BeanPropertyBindingResult(addServ, "additionalService"));
+        var addServRes = additionalServiceApiController.insert(event.getId(), addServ, new BeanPropertyBindingResult(addServ, "additionalService"));
+        additionalServiceId = addServRes.getBody().getId();
         //
+
+        var af3 = new EventModification.AdditionalField(2, "field3", "text", true, null, null, null,
+            Map.of("en", new EventModification.Description("field3 en", "", null)), addServRes.getBody(), null);
+        eventManager.addAdditionalField(event, af3);
 
 
         // enable reservation list and pre sales
@@ -481,6 +488,71 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, cancelRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.NOT_FOUND, null, null);
+        }
+
+        //buy 2 ticket, with additional service + field
+        {
+            var form = new ReservationForm();
+            var ticketReservation = new TicketReservationModification();
+            ticketReservation.setAmount(2);
+            ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
+            form.setReservation(Collections.singletonList(ticketReservation));
+
+            var additionalService = new AdditionalServiceReservationModification();
+            additionalService.setAdditionalServiceId(additionalServiceId);
+            additionalService.setQuantity(1);
+            form.setAdditionalService(Collections.singletonList(additionalService));
+            var res = eventApiV2Controller.reserveTicket(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals(HttpStatus.OK, res.getStatusCode());
+            var resBody = res.getBody();
+            assertTrue(resBody.isSuccess());
+            assertEquals(0, resBody.getErrorCount());
+            var reservationId = resBody.getValue();
+            checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
+
+            var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
+            var ticketsByCat = resInfoRes.getBody().getTicketsByCategory();
+            assertEquals(1, ticketsByCat.size());
+            assertEquals(2, ticketsByCat.get(0).getTickets().size());
+
+            var ticket1 = ticketsByCat.get(0).getTickets().get(0);
+            assertEquals(1, ticket1.getTicketFieldConfigurationBeforeStandard().size()); // 1
+            assertEquals(2, ticket1.getTicketFieldConfigurationAfterStandard().size()); // 1 + 1 additional service related field (appear only on first ticket)
+
+            var ticket2 = ticketsByCat.get(0).getTickets().get(1);
+            assertEquals(1, ticket2.getTicketFieldConfigurationBeforeStandard().size()); // 1
+            assertEquals(1, ticket2.getTicketFieldConfigurationAfterStandard().size()); // 1
+
+
+            var contactForm = new ContactAndTicketsForm();
+            contactForm.setEmail("test@test.com");
+            contactForm.setBillingAddress("my billing address");
+            contactForm.setFirstName("full");
+            contactForm.setLastName("name");
+            var ticketForm1 = new UpdateTicketOwnerForm();
+            ticketForm1.setFirstName("ticketfull");
+            ticketForm1.setLastName("ticketname");
+            ticketForm1.setEmail("tickettest@test.com");
+            ticketForm1.setAdditional(new HashMap<>(Map.of("field1", Collections.singletonList("value"))));
+
+            var ticketForm2 = new UpdateTicketOwnerForm();
+            ticketForm2.setFirstName("ticketfull");
+            ticketForm2.setLastName("ticketname");
+            ticketForm2.setEmail("tickettest@test.com");
+            ticketForm2.setAdditional(Map.of("field1", Collections.singletonList("value")));
+
+            contactForm.setTickets(Map.of(ticket1.getUuid(), ticketForm1, ticket2.getUuid(), ticketForm2));
+
+            var failure = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest());
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatusCode());
+            assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("tickets["+ticket1.getUuid()+"].additional[field3][0]")).count()); //<- missing mandatory
+
+            ticketForm1.getAdditional().put("field3", Collections.singletonList("missing value"));
+            var success = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest());
+            assertEquals(HttpStatus.OK, success.getStatusCode());
+
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
         }
 
 
