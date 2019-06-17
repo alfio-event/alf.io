@@ -50,7 +50,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
@@ -112,17 +111,21 @@ public class PassKitManager {
     }
 
     private Map<ConfigurationKeys, String> getConfigurationKeys(EventAndOrganizationId event) {
-        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event);
-        if(!configurationManager.getBooleanConfigValue(partial.apply(ENABLE_PASS), false)) {
+
+        var conf = configurationManager.getFor(event, Set.of(ENABLE_PASS,
+            PASSBOOK_TYPE_IDENTIFIER, PASSBOOK_KEYSTORE, PASSBOOK_KEYSTORE_PASSWORD,
+            PASSBOOK_TEAM_IDENTIFIER, PASSBOOK_PRIVATE_KEY_ALIAS));
+
+        if(!conf.get(ENABLE_PASS).getValueAsBoolean(false)) {
             return Map.of();
         }
-        var configValues = configurationManager.getStringConfigValueFrom(
-                partial.apply(PASSBOOK_TYPE_IDENTIFIER),
-                partial.apply(PASSBOOK_KEYSTORE),
-                partial.apply(PASSBOOK_KEYSTORE_PASSWORD),
-                partial.apply(PASSBOOK_TEAM_IDENTIFIER),
-                partial.apply(PASSBOOK_PRIVATE_KEY_ALIAS)
-            );
+        var configValues = Map.of(
+            PASSBOOK_TYPE_IDENTIFIER, conf.get(PASSBOOK_TYPE_IDENTIFIER).getValue(),
+            PASSBOOK_KEYSTORE, conf.get(PASSBOOK_KEYSTORE).getValue(),
+            PASSBOOK_KEYSTORE_PASSWORD, conf.get(PASSBOOK_KEYSTORE_PASSWORD).getValue(),
+            PASSBOOK_TEAM_IDENTIFIER, conf.get(PASSBOOK_TEAM_IDENTIFIER).getValue(),
+            PASSBOOK_PRIVATE_KEY_ALIAS, conf.get(PASSBOOK_PRIVATE_KEY_ALIAS).getValue());
+
         if(configValues.values().stream().anyMatch(Optional::isEmpty)) {
             return Map.of();
         }
