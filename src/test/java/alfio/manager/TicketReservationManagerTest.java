@@ -119,9 +119,9 @@ class TicketReservationManagerTest {
 
     private Set<ConfigurationKeys> BANKING_KEY = Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER);
     private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> BANKING_INFO = Map.of(
-        INVOICE_ADDRESS, new ConfigurationManager.MaybeConfiguration(Optional.empty()),
-        BANK_ACCOUNT_NR, new ConfigurationManager.MaybeConfiguration(Optional.empty()),
-        BANK_ACCOUNT_OWNER,  new ConfigurationManager.MaybeConfiguration(Optional.empty()));
+        INVOICE_ADDRESS, new ConfigurationManager.MaybeConfiguration(Optional.empty(), INVOICE_ADDRESS),
+        BANK_ACCOUNT_NR, new ConfigurationManager.MaybeConfiguration(Optional.empty(), BANK_ACCOUNT_NR),
+        BANK_ACCOUNT_OWNER,  new ConfigurationManager.MaybeConfiguration(Optional.empty(), BANK_ACCOUNT_OWNER));
 
     @BeforeEach
     void init() {

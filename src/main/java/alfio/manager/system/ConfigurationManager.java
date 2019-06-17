@@ -475,8 +475,9 @@ public class ConfigurationManager {
     }
 
     public boolean isRecaptchaForTicketSelectionEnabled(EventAndOrganizationId event) {
-        return getBooleanConfigValue(Configuration.from(event, ENABLE_CAPTCHA_FOR_TICKET_SELECTION), false)
-            && getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null) != null;
+        var res = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_TICKET_SELECTION, RECAPTCHA_API_KEY));
+        return res.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBoolean(false) &&
+            res.get(RECAPTCHA_API_KEY).getValue().orElse(null) != null;
     }
 
     // https://github.com/alfio-event/alf.io/issues/573
@@ -485,8 +486,8 @@ public class ConfigurationManager {
     }
 
     public boolean isInvoiceOnly(EventAndOrganizationId event) {
-        return getBooleanConfigValue(Configuration.from(event, GENERATE_ONLY_INVOICE), false) ||
-            getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+        var res = getFor(event, Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING));
+        return res.get(GENERATE_ONLY_INVOICE).getValueAsBoolean(false) || res.get(ENABLE_ITALY_E_INVOICING).getValueAsBoolean(false);
     }
 
     public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
@@ -499,16 +500,16 @@ public class ConfigurationManager {
         var res = new EnumMap<ConfigurationKeys, MaybeConfiguration>(ConfigurationKeys.class);
 
         for (var k : keys) {
-            res.put(k, new MaybeConfiguration(Optional.empty()));
+            res.put(k, new MaybeConfiguration(Optional.empty(), k));
         }
 
         for (var c : found) {
             res.get(c.getConfigurationKey()).ifPresentOrElse(alreadyPresent -> {
                 //override mechanism, if a configuration path is more precise that the one already present, we will replace it
                 if (alreadyPresent.getConfigurationPathLevel().getPriority() < c.getConfigurationPathLevel().getPriority()) {
-                    res.put(c.getConfigurationKey(), new MaybeConfiguration(Optional.of(c)));
+                    res.put(c.getConfigurationKey(), new MaybeConfiguration(Optional.of(c), c.getConfigurationKey()));
                 }
-            }, () -> res.put(c.getConfigurationKey(), new MaybeConfiguration(Optional.of(c))));
+            }, () -> res.put(c.getConfigurationKey(), new MaybeConfiguration(Optional.of(c), c.getConfigurationKey())));
         }
 
         return res;
@@ -518,6 +519,7 @@ public class ConfigurationManager {
     @AllArgsConstructor
     public static class MaybeConfiguration {
         private final Optional<Configuration> configuration;
+        private final ConfigurationKeys key;
 
         void ifPresentOrElse(Consumer<? super Configuration> action, Runnable emptyAction) {
             configuration.ifPresentOrElse(action, emptyAction);
@@ -535,8 +537,17 @@ public class ConfigurationManager {
             return configuration.map(Configuration::valueAsBoolean);
         }
 
+        public boolean getValueAsBoolean(boolean defaultValue) {
+            return getValueAsBoolean().orElse(defaultValue);
+        }
+
+        @Deprecated
         public Configuration get() {
             return configuration.get();
+        }
+
+        public String getRequiredValue() {
+            return getValue().orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));
         }
     }
 

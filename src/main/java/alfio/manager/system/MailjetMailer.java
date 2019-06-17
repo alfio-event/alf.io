@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.model.system.ConfigurationKeys.*;
+
 @Log4j2
 public class MailjetMailer implements Mailer  {
 
@@ -41,10 +43,13 @@ public class MailjetMailer implements Mailer  {
 
     @Override
     public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text, Optional<String> html, Attachment... attachment) {
-        String apiKeyPublic = configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.MAILJET_APIKEY_PUBLIC));
-        String apiKeyPrivate = configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.MAILJET_APIKEY_PRIVATE));
 
-        String fromEmail = configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.MAILJET_FROM));
+        var conf = configurationManager.getFor(event, Set.of(MAILJET_APIKEY_PUBLIC, MAILJET_APIKEY_PRIVATE, MAILJET_FROM, MAIL_REPLY_TO));
+
+
+        String apiKeyPublic = conf.get(MAILJET_APIKEY_PUBLIC).getRequiredValue();
+        String apiKeyPrivate = conf.get(MAILJET_APIKEY_PRIVATE).getRequiredValue();
+        String fromEmail = conf.get(MAILJET_FROM).getRequiredValue();
 
         //https://dev.mailjet.com/guides/?shell#sending-with-attached-files
         Map<String, Object> mailPayload = new HashMap<>();
@@ -62,7 +67,7 @@ public class MailjetMailer implements Mailer  {
         html.ifPresent(h -> mailPayload.put("Html-part", h));
         mailPayload.put("Recipients", recipients);
 
-        String replyTo = configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.MAIL_REPLY_TO), "");
+        String replyTo = conf.get(MAIL_REPLY_TO).getValue().orElse("");
         if(StringUtils.isNotBlank(replyTo)) {
             mailPayload.put("Headers", Collections.singletonMap("Reply-To", replyTo));
         }

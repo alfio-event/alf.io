@@ -107,8 +107,8 @@ public class WaitingQueueSubscriptionProcessor {
     }
 
     private boolean isWaitingListFormEnabled(EventAndOrganizationId event) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_WAITING_QUEUE), false)
-                || configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_PRE_REGISTRATION), false);
+        var res = configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION));
+        return res.get(ENABLE_WAITING_QUEUE).getValueAsBoolean(false) || res.get(ENABLE_PRE_REGISTRATION).getValueAsBoolean(false);
     }
 
     public void distributeAvailableSeats(Event event) {
