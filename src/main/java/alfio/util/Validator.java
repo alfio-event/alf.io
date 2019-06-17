@@ -217,7 +217,7 @@ public final class Validator {
     }
 
     public static ValidationResult validateTicketAssignment(UpdateTicketOwnerForm form,
-                                                            List<TicketFieldConfiguration> additionalFieldsForEvent,
+                                                            List<TicketFieldConfiguration> additionalFieldsForTicket,
                                                             Optional<Errors> errorsOptional,
                                                             Event event,
                                                             String baseField,
@@ -253,7 +253,7 @@ public final class Validator {
 
         //
         final String prefixForLambda = prefix;
-        for(TicketFieldConfiguration fieldConf : additionalFieldsForEvent) {
+        for(TicketFieldConfiguration fieldConf : additionalFieldsForTicket) {
 
             boolean isField = form.getAdditional() !=null && form.getAdditional().containsKey(fieldConf.getName());
 
