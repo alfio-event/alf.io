@@ -1344,6 +1344,10 @@ public class TicketReservationManager {
         return ticketRepository.findTicketsInReservation(reservationId);
     }
 
+    public Optional<Ticket> findFirstInReservation(String reservationId) {
+        return ticketRepository.findFirstTicketInReservation(reservationId);
+    }
+
     public List<Triple<AdditionalService, List<AdditionalServiceText>, AdditionalServiceItem>> findAdditionalServicesInReservation(String reservationId) {
         return additionalServiceItemRepository.findByReservationUuid(reservationId).stream()
             .map(asi -> Triple.of(additionalServiceRepository.getById(asi.getAdditionalServiceId(), asi.getEventId()), additionalServiceTextRepository.findAllByAdditionalServiceId(asi.getAdditionalServiceId()), asi))
