@@ -655,11 +655,21 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             paymentForm.setPrivacyPolicyAccepted(true);
             paymentForm.setTermAndConditionsAccepted(true);
             paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
+
+            // bank transfer does not have a transaction, it's created on handleReservation call
+            var tStatus = reservationApiV2Controller.getTransactionStatus(event.getShortName(), reservationId, "BANK_TRANSFER");
+            assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
+            //
+
             var handleRes = reservationApiV2Controller.handleReservation(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
                 new MockHttpServletRequest(), new MockHttpSession());
             assertEquals(HttpStatus.OK, handleRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
+
+            tStatus = reservationApiV2Controller.getTransactionStatus(event.getShortName(), reservationId, "BANK_TRANSFER");
+            assertEquals(HttpStatus.OK, tStatus.getStatusCode());
+            assertFalse(tStatus.getBody().isSuccess());
 
             reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
 
@@ -672,6 +682,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             validatePayment(event.getShortName(), reservationId);
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE);
+
+            tStatus = reservationApiV2Controller.getTransactionStatus(event.getShortName(), reservationId, "BANK_TRANSFER");
+            assertEquals(HttpStatus.OK, tStatus.getStatusCode());
+            assertTrue(tStatus.getBody().isSuccess());
 
             reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
             orderSummary = reservation.getOrderSummary();
