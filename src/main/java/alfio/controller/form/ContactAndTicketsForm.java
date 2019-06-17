@@ -199,40 +199,6 @@ public class ContactAndTicketsForm implements Serializable {
         return Optional.ofNullable(cancelReservation).orElse(false);
     }
 
-    public static ContactAndTicketsForm fromExistingReservation(TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
-        ContactAndTicketsForm form = new ContactAndTicketsForm();
-        form.setFirstName(reservation.getFirstName());
-        form.setLastName(reservation.getLastName());
-        form.setBillingAddress(reservation.getBillingAddress());
-        form.setEmail(reservation.getEmail());
-        form.setFullName(reservation.getFullName());
-        form.setVatCountryCode(reservation.getVatCountryCode());
-        form.setVatNr(reservation.getVatNr());
-        form.setInvoiceRequested(reservation.isInvoiceRequested());
-        form.setCustomerReference(reservation.getCustomerReference());
-
-
-        form.setBillingAddressCompany(additionalInfo.getBillingAddressCompany());
-        form.setBillingAddressLine1(additionalInfo.getBillingAddressLine1());
-        form.setBillingAddressLine2(additionalInfo.getBillingAddressLine2());
-        form.setBillingAddressZip(additionalInfo.getBillingAddressZip());
-        form.setBillingAddressCity(additionalInfo.getBillingAddressCity());
-        form.setAddCompanyBillingDetails(additionalInfo.getAddCompanyBillingDetails());
-        form.setSkipVatNr(additionalInfo.getSkipVatNr());
-
-        //https://github.com/alfio-event/alf.io/issues/573
-        Optional.ofNullable(additionalInfo.getInvoicingAdditionalInfo())
-            .map(TicketReservationInvoicingAdditionalInfo::getItalianEInvoicing)
-            .ifPresent(iei -> {
-                form.setItalyEInvoicingFiscalCode(iei.getFiscalCode());
-                form.setItalyEInvoicingReferenceType(iei.getReferenceType());
-                form.setItalyEInvoicingReferenceAddresseeCode(iei.getAddresseeCode());
-                form.setItalyEInvoicingReferencePEC(iei.getPec());
-            });
-
-        return form;
-    }
-
     public boolean getHasVatCountryCode() {
         return !StringUtils.isEmpty(vatCountryCode);
     }
