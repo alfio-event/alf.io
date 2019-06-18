@@ -137,7 +137,7 @@ public class ConfigurationApiController {
 
     @RequestMapping(value = "/eu-countries", method = GET)
     public List<Pair<String, String>> loadEUCountries() {
-        return TicketHelper.getLocalizedEUCountriesForVat(Locale.ENGLISH, configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)));
+        return TicketHelper.getLocalizedEUCountriesForVat(Locale.ENGLISH, configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue());
     }
 
     @RequestMapping(value = "/platform-mode/status/{organizationId}", method = GET)

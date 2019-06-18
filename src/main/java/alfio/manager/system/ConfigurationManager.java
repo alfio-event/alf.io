@@ -496,6 +496,10 @@ public class ConfigurationManager {
 
     //
 
+    public MaybeConfiguration getFor(ConfigurationKeys key) {
+        return getFor(Set.of(key)).get(key);
+    }
+
     public Map<ConfigurationKeys, MaybeConfiguration> getFor(Collection<ConfigurationKeys> keys) {
         var found = configurationRepository.findByKeysAtSystemLevel(keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
         return buildKeyConfigurationMapResult(keys, found);

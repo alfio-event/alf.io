@@ -672,7 +672,7 @@ public class ReservationApiV2Controller {
     }
 
     private boolean isEUCountry(String countryCode) {
-        return configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)).contains(countryCode);
+        return configurationManager.getFor(EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
     }
 
     private static PriceContainer.VatStatus determineVatStatus(PriceContainer.VatStatus current, boolean isVatExempt) {
