@@ -470,7 +470,7 @@ public class ConfigurationManager {
     public boolean isRecaptchaForTicketSelectionEnabled(EventAndOrganizationId event) {
         var res = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_TICKET_SELECTION, RECAPTCHA_API_KEY));
         return res.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBoolean(false) &&
-            res.get(RECAPTCHA_API_KEY).getValue().orElse(null) != null;
+            res.get(RECAPTCHA_API_KEY).getValue(null) != null;
     }
 
     // https://github.com/alfio-event/alf.io/issues/573
@@ -536,12 +536,12 @@ public class ConfigurationManager {
             return configuration.map(ConfigurationKeyValuePathLevel::getValue);
         }
 
-        public Optional<Boolean> getValueAsBoolean() {
-            return configuration.map(ConfigurationKeyValuePathLevel::getValue).map(Boolean::parseBoolean);
+        public String getValue(String defaultValue) {
+            return getValue().orElse(defaultValue);
         }
 
         public boolean getValueAsBoolean(boolean defaultValue) {
-            return getValueAsBoolean().orElse(defaultValue);
+            return getValue().map(Boolean::parseBoolean).orElse(defaultValue);
         }
 
         public int getValueAsInt(int defaultValue) {

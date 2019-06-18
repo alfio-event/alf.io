@@ -67,7 +67,7 @@ public class MailjetMailer implements Mailer  {
         html.ifPresent(h -> mailPayload.put("Html-part", h));
         mailPayload.put("Recipients", recipients);
 
-        String replyTo = conf.get(MAIL_REPLY_TO).getValue().orElse("");
+        String replyTo = conf.get(MAIL_REPLY_TO).getValue("");
         if(StringUtils.isNotBlank(replyTo)) {
             mailPayload.put("Headers", Collections.singletonMap("Reply-To", replyTo));
         }

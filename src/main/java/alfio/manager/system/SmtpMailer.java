@@ -65,7 +65,7 @@ class SmtpMailer implements Mailer {
                     : new MimeMessageHelper(mimeMessage, "UTF-8");
             message.setSubject(subject);
             message.setFrom(conf.get(SMTP_FROM_EMAIL).getRequiredValue(), fromName);
-            String replyTo = conf.get(MAIL_REPLY_TO).getValue().orElse("");
+            String replyTo = conf.get(MAIL_REPLY_TO).getValue("");
             if(StringUtils.isNotBlank(replyTo)) {
                 message.setReplyTo(replyTo);
             }
@@ -98,10 +98,10 @@ class SmtpMailer implements Mailer {
         r.setHost(conf.get(SMTP_HOST).getRequiredValue());
         r.setPort(Integer.valueOf(conf.get(SMTP_PORT).getRequiredValue()));
         r.setProtocol(conf.get(SMTP_PROTOCOL).getRequiredValue());
-        r.setUsername(conf.get(SMTP_USERNAME).getValue().orElse(null));
-        r.setPassword(conf.get(SMTP_PASSWORD).getValue().orElse(null));
+        r.setUsername(conf.get(SMTP_USERNAME).getValue(null));
+        r.setPassword(conf.get(SMTP_PASSWORD).getValue(null));
 
-        String properties = conf.get(SMTP_PROPERTIES).getValue().orElse(null);
+        String properties = conf.get(SMTP_PROPERTIES).getValue(null);
 
         if (properties != null) {
             try {

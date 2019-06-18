@@ -100,7 +100,7 @@ class MailgunMailer implements Mailer {
 
             var from = fromName + " <" + conf.get(MAILGUN_FROM).getRequiredValue() +">";
 
-            var replyTo = conf.get(MAIL_REPLY_TO).getValue().orElse("");
+            var replyTo = conf.get(MAIL_REPLY_TO).getValue("");
 
             RequestBody formBody = prepareBody(event, from, to, replyTo, cc, subject, text, html,
                     attachment);

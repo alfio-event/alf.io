@@ -52,8 +52,8 @@ public class FeeCalculator {
         return (numTickets, amountInCent) -> {
             if(isPlatformModeEnabled(event, configurationManager)) {
                 var fees = configurationManager.getFor(event, Set.of(PLATFORM_FEE, PLATFORM_MINIMUM_FEE));
-                String feeAsString = fees.get(PLATFORM_FEE).getValue().orElse("0");
-                String minimumFee = fees.get(PLATFORM_MINIMUM_FEE).getValue().orElse("0");
+                String feeAsString = fees.get(PLATFORM_FEE).getValue("0");
+                String minimumFee = fees.get(PLATFORM_MINIMUM_FEE).getValue("0");
                 return Optional.of(new FeeCalculator(feeAsString, minimumFee, numTickets).calculate(amountInCent));
             }
             return Optional.empty();
