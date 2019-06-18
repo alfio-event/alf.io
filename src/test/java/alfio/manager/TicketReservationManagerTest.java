@@ -165,7 +165,7 @@ class TicketReservationManagerTest {
         when(ticketReservation.getDiscountCts()).thenReturn(0);
         when(ticketReservation.getCurrencyCode()).thenReturn("CHF");
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
-        organization = mock(Organization.class);
+        organization = new Organization(ORGANIZATION_ID, "org", "desc", ORG_EMAIL);
         TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
         GroupManager groupManager = mock(GroupManager.class);
         UserRepository userRepository = mock(UserRepository.class);
@@ -236,7 +236,6 @@ class TicketReservationManagerTest {
         form.setEmail("new@email.tld");
         form.setFullName(originalName);
         form.setUserLanguage(USER_LANGUAGE);
-        when(organization.getEmail()).thenReturn(ORG_EMAIL);
     }
 
     @Test
@@ -698,8 +697,6 @@ class TicketReservationManagerTest {
     @Test
     void sendEmailToAssigneeOnSuccess() {
         initReleaseTicket();
-        String organizationEmail = "ciccio@test";
-        when(organization.getEmail()).thenReturn(organizationEmail);
         when(ticketCategory.isAccessRestricted()).thenReturn(false);
         when(ticketRepository.releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID))).thenReturn(1);
         when(ticketCategory.isAccessRestricted()).thenReturn(false);
@@ -709,7 +706,7 @@ class TicketReservationManagerTest {
         trm.releaseTicket(event, ticketReservation, ticket);
         verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
         verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(RESERVATION_EMAIL), any(), any(TextTemplateGenerator.class));
-        verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq(organizationEmail), any(), any(TextTemplateGenerator.class));
+        verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq(ORG_EMAIL), any(), any(TextTemplateGenerator.class));
         verify(organizationRepository).getById(eq(ORGANIZATION_ID));
         verify(ticketReservationRepository).remove(eq(expectedReservations));
     }
@@ -765,8 +762,12 @@ class TicketReservationManagerTest {
 
     @Test
     void confirmPaidReservation() {
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(true);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        when(configurationManager.getFor(event, ENABLE_TICKET_TRANSFER)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_TICKET_TRANSFER)
+        );
+        when(configurationManager.getFor(event, SEND_TICKETS_AUTOMATICALLY)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), SEND_TICKETS_AUTOMATICALLY)
+        );
         when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         mockBillingDocument();
         testPaidReservation();
@@ -775,8 +776,12 @@ class TicketReservationManagerTest {
 
     @Test
     void confirmPaidReservationButDoNotSendEmail() {
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(false);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        when(configurationManager.getFor(event, ENABLE_TICKET_TRANSFER)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_TICKET_TRANSFER)
+        );
+        when(configurationManager.getFor(event, SEND_TICKETS_AUTOMATICALLY)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.of(new ConfigurationKeyValuePathLevel(null, "false", null)), SEND_TICKETS_AUTOMATICALLY)
+        );
         when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         mockBillingDocument();
         testPaidReservation();
@@ -785,7 +790,12 @@ class TicketReservationManagerTest {
 
     @Test
     void confirmAndLockTickets() {
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(false);
+        when(configurationManager.getFor(event, ENABLE_TICKET_TRANSFER)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_TICKET_TRANSFER)
+        );
+        when(configurationManager.getFor(event, SEND_TICKETS_AUTOMATICALLY)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), SEND_TICKETS_AUTOMATICALLY)
+        );
         when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         when(ticketRepository.forbidReassignment(any())).thenReturn(1);
         mockBillingDocument();
@@ -793,8 +803,7 @@ class TicketReservationManagerTest {
     }
 
     private void mockBillingDocument() {
-        BillingDocument document = mock(BillingDocument.class);
-        when(document.getModel()).thenReturn(Map.of());
+        BillingDocument document = new BillingDocument(42, 42, "", "42", BillingDocument.Type.INVOICE, "{}", ZonedDateTime.now(), BillingDocument.Status.VALID, "42");
         when(billingDocumentRepository.findLatestByReservationId(eq(RESERVATION_ID))).thenReturn(Optional.of(document));
     }
 
@@ -802,8 +811,13 @@ class TicketReservationManagerTest {
     void lockFailed() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(false);
         when(ticketRepository.forbidReassignment(any())).thenReturn(0);
+        when(configurationManager.getFor(event, SEND_TICKETS_AUTOMATICALLY)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), SEND_TICKETS_AUTOMATICALLY)
+        );
+        when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         try {
             testPaidReservation();
+            //FIXME: this fail, but not for the expected reasons: jackson is unable to serialize mocked values!
             fail();
         } catch (AssertionError e) {
             e.printStackTrace();
@@ -812,6 +826,9 @@ class TicketReservationManagerTest {
 
     private void testPaidReservation() {
         initConfirmReservation();
+        when(configurationManager.getFor(event, ENABLE_TICKET_TRANSFER)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_TICKET_TRANSFER)
+        );
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
@@ -869,7 +886,9 @@ class TicketReservationManagerTest {
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(ZonedDateTime.class), eq(PaymentProxy.ON_SITE.toString()), isNull())).thenReturn(1);
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(ticketReservation));
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        when(configurationManager.getFor(event, ENABLE_TICKET_TRANSFER)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_TICKET_TRANSFER)
+        );
         when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         OnSiteManager onSiteManager = mock(OnSiteManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.ON_SITE), any())).thenReturn(Optional.of(onSiteManager));
@@ -936,6 +955,9 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), any(), eq(PaymentProxy.OFFLINE.toString()), isNull())).thenReturn(1);
         when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.of("vatnr"));
         when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
+        when(configurationManager.getFor(event, ENABLE_TICKET_TRANSFER)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_TICKET_TRANSFER)
+        );
         when(ticketRepository.findTicketsInReservation(eq(RESERVATION_ID))).thenReturn(Collections.emptyList());
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
         when(reservation.getUserLanguage()).thenReturn("en");
@@ -1079,6 +1101,9 @@ class TicketReservationManagerTest {
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(1);
         when(ticketRepository.findByUUID(anyString())).thenReturn(ticket);
         when(messageSource.getMessage(eq("reminder.ticket-additional-info.subject"), any(), any())).thenReturn("subject");
+        when(configurationManager.getFor(event, OPTIONAL_DATA_REMINDER_ENABLED)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), OPTIONAL_DATA_REMINDER_ENABLED)
+        );
         trm.sendReminderForOptionalData();
         verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq("ciccio"), eq("subject"), any(TextTemplateGenerator.class));
     }
@@ -1089,6 +1114,9 @@ class TicketReservationManagerTest {
         when(event.getId()).thenReturn(EVENT_ID);
         when(configurationManager.getFor(any(), eq(ASSIGNMENT_REMINDER_START))).thenReturn(new ConfigurationManager.MaybeConfiguration(Optional.empty(), ASSIGNMENT_REMINDER_START));
         when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+        when(configurationManager.getFor(event, OPTIONAL_DATA_REMINDER_ENABLED)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), OPTIONAL_DATA_REMINDER_ENABLED)
+        );
         when(ticketReservation.latestNotificationTimestamp(any())).thenReturn(Optional.of(ZonedDateTime.now().minusDays(10)));
         String RESERVATION_ID = "abcd";
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
@@ -1113,6 +1141,9 @@ class TicketReservationManagerTest {
         when(event.getId()).thenReturn(EVENT_ID);
         when(configurationManager.getFor(any(), eq(ASSIGNMENT_REMINDER_START))).thenReturn(new ConfigurationManager.MaybeConfiguration(Optional.empty(), ASSIGNMENT_REMINDER_START));
         when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.empty());
+        when(configurationManager.getFor(event, OPTIONAL_DATA_REMINDER_ENABLED)).thenReturn(
+            new ConfigurationManager.MaybeConfiguration(Optional.empty(), OPTIONAL_DATA_REMINDER_ENABLED)
+        );
         when(ticketReservation.latestNotificationTimestamp(any())).thenReturn(Optional.empty());
         String RESERVATION_ID = "abcd";
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);

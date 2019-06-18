@@ -38,6 +38,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.system.ConfigurationKeys.DISPLAY_STATS_IN_EVENT_DETAIL;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -79,7 +80,7 @@ public class EventStatisticsManager {
     }
 
     private boolean displayStatisticsForEvent(EventAndOrganizationId event) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.DISPLAY_STATS_IN_EVENT_DETAIL), true);
+        return configurationManager.getFor(event, DISPLAY_STATS_IN_EVENT_DETAIL).getValueAsBoolean(true);
     }
 
 

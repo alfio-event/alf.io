@@ -407,7 +407,7 @@ public class CheckInManager {
     }
 
     private boolean areStatsEnabled(EventAndOrganizationId event) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(event, CHECK_IN_STATS), true);
+        return configurationManager.getFor(event, CHECK_IN_STATS).getValueAsBoolean(true);
     }
 
     @Getter
