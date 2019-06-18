@@ -18,7 +18,6 @@ package alfio.config;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
-import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -99,7 +98,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(getLocaleChangeInterceptor());
         registry.addInterceptor(getTemplateMessagesInterceptor());
-        registry.addInterceptor(new MustacheCustomTagInterceptor(configurationManager));
         registry.addInterceptor(getCSPInterceptor());
     }
 
@@ -230,7 +228,4 @@ public class MvcConfiguration implements WebMvcConfigurer {
     public CommonsMultipartResolver multipartResolver() {
         return new CommonsMultipartResolver();
     }
-
-
-    
 }

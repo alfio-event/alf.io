@@ -237,7 +237,7 @@ public class EventApiV2Controller {
 
         var res = new HashMap<String, String>();
         in.forEach((k, v) -> {
-            res.put(k, MustacheCustomTagInterceptor.renderToCommonmark(v));
+            res.put(k, MustacheCustomTag.renderToCommonmark(v));
         });
         return res;
     }
