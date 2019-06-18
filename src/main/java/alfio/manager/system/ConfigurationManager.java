@@ -337,8 +337,7 @@ public class ConfigurationManager {
     }
 
     public Predicate<EventAndOrganizationId> areBooleanSettingsEnabledForEvent(boolean defaultValue, ConfigurationKeys... keys) {
-        return event -> Arrays.stream(keys)
-            .allMatch(k -> getBooleanConfigValue(Configuration.from(event).apply(k), defaultValue));
+        return (event) -> getFor(event, Set.of(keys)).entrySet().stream().allMatch(kv -> kv.getValue().getValueAsBooleanOrDefault(defaultValue));
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {

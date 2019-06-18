@@ -143,7 +143,7 @@ public class ConfigurationApiController {
     @RequestMapping(value = "/platform-mode/status/{organizationId}", method = GET)
     public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId) {
         Map<String, Boolean> result = new HashMap<>();
-        boolean platformModeEnabled = configurationManager.getBooleanConfigValue(getSystemConfiguration(PLATFORM_MODE_ENABLED), false);
+        boolean platformModeEnabled = configurationManager.getFor(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
         boolean stripeConnected = platformModeEnabled && StringUtils.isNotBlank(configurationManager.getStringConfigValue(from(organizationId, STRIPE_CONNECTED_ID), null));
         result.put("enabled", platformModeEnabled);
         result.put("stripeConnected", stripeConnected);
