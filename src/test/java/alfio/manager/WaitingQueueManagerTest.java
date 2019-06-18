@@ -40,9 +40,11 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
+import static alfio.model.system.ConfigurationKeys.WAITING_QUEUE_RESERVATION_TIMEOUT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -144,6 +146,7 @@ public class WaitingQueueManagerTest {
         when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(1);
         when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
         when(configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_PRE_REGISTRATION), false)).thenReturn(true);
+        when(configurationManager.getFor(event, WAITING_QUEUE_RESERVATION_TIMEOUT)).thenReturn(new ConfigurationManager.MaybeConfiguration(Optional.empty(), WAITING_QUEUE_RESERVATION_TIMEOUT));
         when(ticketRepository.selectWaitingTicketsForUpdate(eventId, Ticket.TicketStatus.PRE_RESERVED.name(), 1)).thenReturn(Collections.singletonList(ticket));
         when(waitingQueueRepository.loadAllWaitingForUpdate(eventId)).thenReturn(Collections.singletonList(subscription));
         when(waitingQueueRepository.loadWaiting(eventId, 1)).thenReturn(Collections.singletonList(subscription));

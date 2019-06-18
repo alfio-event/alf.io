@@ -1580,7 +1580,7 @@ public class TicketReservationManager {
     private void sendOptionalDataReminder(Pair<Event, List<Ticket>> eventAndTickets) {
         nestedTransactionTemplate.execute(ts -> {
             Event event = eventAndTickets.getLeft();
-            int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(event, ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
+            int daysBeforeStart = configurationManager.getFor(event, ConfigurationKeys.ASSIGNMENT_REMINDER_START).getValueAsInt(10);
             List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
             Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
             tickets.stream()
@@ -1599,7 +1599,7 @@ public class TicketReservationManager {
     Stream<Event> getNotifiableEventsStream() {
         return eventRepository.findAll().stream()
                 .filter(e -> {
-                    int daysBeforeStart = configurationManager.getIntConfigValue(Configuration.from(e, ConfigurationKeys.ASSIGNMENT_REMINDER_START), 10);
+                    int daysBeforeStart = configurationManager.getFor(e, ConfigurationKeys.ASSIGNMENT_REMINDER_START).getValueAsInt(10);
                     //we don't want to define events SO far away, don't we?
                     int days = (int) ChronoUnit.DAYS.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate());
                     return days > 0 && days <= daysBeforeStart;
@@ -1611,7 +1611,7 @@ public class TicketReservationManager {
             nestedTransactionTemplate.execute(ts -> {
                 Event event = p.getLeft();
                 ZoneId eventZoneId = event.getZoneId();
-                int quietPeriod = configurationManager.getIntConfigValue(Configuration.from(event, ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL), 3);
+                int quietPeriod = configurationManager.getFor(event, ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL).getValueAsInt(3);
                 p.getRight().stream()
                     .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
                     .filter(Optional::isPresent)
@@ -1701,7 +1701,7 @@ public class TicketReservationManager {
     }
 
     public int getReservationTimeout(EventAndOrganizationId event) {
-        return configurationManager.getIntConfigValue(Configuration.from(event, RESERVATION_TIMEOUT), 25);
+        return configurationManager.getFor(event, RESERVATION_TIMEOUT).getValueAsInt(25);
     }
 
     public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigDecimal paidAmount, String username) {
@@ -1899,7 +1899,7 @@ public class TicketReservationManager {
 
                         Date expiration = reservation.getValidity();
                         Date now = new Date();
-                        int slackTime = configurationManager.getIntConfigValue(Configuration.from(event).apply(RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT), 10);
+                        int slackTime = configurationManager.getFor(event, RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT).getValueAsInt(10);
                         if(expiration.before(now)) {
                             sendTransactionFailedEmail(event, reservation, paymentMethod, paymentWebhookResult, true);
                             cancelReservation(reservation, false, null);

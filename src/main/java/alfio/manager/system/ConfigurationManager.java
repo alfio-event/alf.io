@@ -443,14 +443,15 @@ public class ConfigurationManager {
     }
 
     public String getShortReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        if(getBooleanConfigValue(Configuration.from(event, USE_INVOICE_NUMBER_AS_ID), false) && reservation.getHasInvoiceNumber()) {
+        var conf = getFor(event, Set.of(USE_INVOICE_NUMBER_AS_ID, PARTIAL_RESERVATION_ID_LENGTH));
+        if(conf.get(USE_INVOICE_NUMBER_AS_ID).getValueAsBoolean(false) && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
-        return StringUtils.substring(reservation.getId(), 0, getIntConfigValue(Configuration.from(event, PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
+        return StringUtils.substring(reservation.getId(), 0, conf.get(PARTIAL_RESERVATION_ID_LENGTH).getValueAsInt(8)).toUpperCase();
     }
 
     public String getPublicReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        if(getBooleanConfigValue(Configuration.from(event, USE_INVOICE_NUMBER_AS_ID), false) && reservation.getHasInvoiceNumber()) {
+        if(getFor(event, USE_INVOICE_NUMBER_AS_ID).getValueAsBoolean(false) && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
         return reservation.getId();
@@ -488,6 +489,7 @@ public class ConfigurationManager {
     }
 
     //
+
     public Map<ConfigurationKeys, MaybeConfiguration> getFor(Collection<ConfigurationKeys> keys) {
         var found = configurationRepository.findByKeysAtSystemLevel(keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
         return buildKeyConfigurationMapResult(keys, found);
@@ -497,6 +499,10 @@ public class ConfigurationManager {
     public Map<ConfigurationKeys, MaybeConfiguration> getFor(EventAndOrganizationId eventAndOrganizationId, Collection<ConfigurationKeys> keys) {
         var found = configurationRepository.findByEventAndKeys(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
         return buildKeyConfigurationMapResult(keys, found);
+    }
+
+    public MaybeConfiguration getFor(EventAndOrganizationId eventAndOrganizationId, ConfigurationKeys key) {
+        return getFor(eventAndOrganizationId, Set.of(key)).get(key);
     }
 
     private Map<ConfigurationKeys, MaybeConfiguration> buildKeyConfigurationMapResult(Collection<ConfigurationKeys> keys, List<ConfigurationKeyValuePathLevel> found) {

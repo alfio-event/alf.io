@@ -279,7 +279,7 @@ public class NotificationManager {
     private int processMessage(int messageId) {
         EmailMessage message = emailMessageRepository.findById(messageId);
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(message.getEventId());
-        if(message.getAttempts() >= configurationManager.getIntConfigValue(Configuration.from(event, ConfigurationKeys.MAIL_ATTEMPTS_COUNT), 10)) {
+        if(message.getAttempts() >= configurationManager.getFor(event, ConfigurationKeys.MAIL_ATTEMPTS_COUNT).getValueAsInt(10)) {
             tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(messageId, ERROR.name(), message.getAttempts(), Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("Message with id " + messageId + " will be discarded");
             return 0;
