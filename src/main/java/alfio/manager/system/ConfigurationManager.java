@@ -469,8 +469,9 @@ public class ConfigurationManager {
 
     @Deprecated
     public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
-        return getBooleanConfigValue(Configuration.from(event, ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), false)
-            && getStringConfigValue(Configuration.getSystemConfiguration(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), null) != null;
+        var conf = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS, ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS));
+        return conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBoolean(false) &&
+            conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValue(null) != null;
     }
 
     public boolean isRecaptchaForTicketSelectionEnabled(EventAndOrganizationId event) {
@@ -490,7 +491,7 @@ public class ConfigurationManager {
     }
 
     public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
-        return getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+        return getFor(event, ENABLE_ITALY_E_INVOICING).getValueAsBoolean(false);
     }
 
     //
