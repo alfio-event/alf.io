@@ -216,7 +216,9 @@ class TicketReservationManagerTest {
         when(specialPrice.getId()).thenReturn(SPECIAL_PRICE_ID);
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
         when(eventRepository.findAll()).thenReturn(Collections.singletonList(event));
-        when(configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.BASE_URL))).thenReturn(BASE_URL);
+        var baseUrlConf = new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.BASE_URL, new ConfigurationKeyValuePathLevel(null, BASE_URL, null));
+        when(configurationManager.getFor(ConfigurationKeys.BASE_URL)).thenReturn(baseUrlConf);
+        when(configurationManager.getFor(any(), eq(ConfigurationKeys.BASE_URL))).thenReturn(baseUrlConf);
         when(configurationManager.hasAllConfigurationsForInvoice(eq(event))).thenReturn(false);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticket.getId()).thenReturn(TICKET_ID);
@@ -988,7 +990,6 @@ class TicketReservationManagerTest {
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(RESERVATION_ID);
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(configurationManager, atLeastOnce()).getStringConfigValue(any());
-        verify(configurationManager, atLeastOnce()).getRequiredValue(any());
         verify(configurationManager, atLeastOnce()).getShortReservationID(eq(event), any(TicketReservation.class));
         verify(ticketRepository).countTicketsInReservation(eq(RESERVATION_ID));
         verify(configurationManager).getBooleanConfigValue(any(), eq(false));

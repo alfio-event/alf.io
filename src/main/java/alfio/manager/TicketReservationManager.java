@@ -816,7 +816,7 @@ public class TicketReservationManager {
         }
         Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, ticketsWithCategory, summary, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner);
         boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
-            && configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)).contains(reservation.getVatCountryCode())
+            && configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(reservation.getVatCountryCode())
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
         model.put("euBusiness", euBusiness);
         model.put("publicId", configurationManager.getPublicReservationID(event, reservation));
@@ -1218,19 +1218,22 @@ public class TicketReservationManager {
     }
 
     String reservationUrl(TicketReservation reservation, Event event) {
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.BASE_URL)), "/")
+        var baseUrl = configurationManager.getFor(event, BASE_URL).getRequiredValue();
+        return StringUtils.removeEnd(baseUrl, "/")
             + "/event/" + event.getShortName() + "/reservation/" + reservation.getId() + "?lang="+reservation.getUserLanguage();
     }
 
     String ticketUrl(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.BASE_URL)), "/")
+        var baseUrl = configurationManager.getFor(event, BASE_URL).getRequiredValue();
+        return StringUtils.removeEnd(baseUrl, "/")
                 + "/event/" + event.getShortName() + "/ticket/" + ticketId + "?lang=" + ticket.getUserLanguage();
     }
 
     public String ticketUpdateUrl(Event event, String ticketId) {
         Ticket ticket = ticketRepository.findByUUID(ticketId);
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.BASE_URL)), "/")
+        var baseUrl = configurationManager.getFor(event, BASE_URL).getRequiredValue();
+        return StringUtils.removeEnd(baseUrl, "/")
             + "/event/" + event.getShortName() + "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
     }
 
@@ -1555,7 +1558,7 @@ public class TicketReservationManager {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 List<String> cc = notificationManager.getCCForEventOrganizer(event);
                 String subject = String.format("There are %d pending offline payments that will expire in event: %s", reservations.size(), event.getDisplayName());
-                String baseUrl = configurationManager.getRequiredValue(Configuration.from(event, BASE_URL));
+                String baseUrl = configurationManager.getFor(event, BASE_URL).getRequiredValue();
                 Map<String, Object> model = TemplateResource.prepareModelForOfflineReservationExpiringEmailForOrganizer(event, reservations, baseUrl);
                 notificationManager.sendSimpleEmail(event, null, organization.getEmail(), cc, subject, () ->
                     templateManager.renderTemplate(event, TemplateResource.OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER, model, Locale.ENGLISH));

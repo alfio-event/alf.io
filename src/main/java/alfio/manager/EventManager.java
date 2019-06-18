@@ -831,7 +831,8 @@ public class EventManager {
     }
 
     public String getEventUrl(Event event) {
-        return StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.BASE_URL)), "/") + "/event/" + event.getShortName() + "/";
+        var baseUrl = configurationManager.getFor(event, ConfigurationKeys.BASE_URL).getRequiredValue();
+        return StringUtils.removeEnd(baseUrl, "/") + "/event/" + event.getShortName() + "/";
     }
 
     public List<TicketWithReservationAndTransaction> findAllConfirmedTicketsForCSV(String eventName, String username) {
