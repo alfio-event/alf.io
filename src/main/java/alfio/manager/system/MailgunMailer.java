@@ -93,14 +93,14 @@ class MailgunMailer implements Mailer {
 
         String apiKey = conf.get(MAILGUN_KEY).getRequiredValue();
         String domain = conf.get(MAILGUN_DOMAIN).getRequiredValue();
-        boolean useEU = conf.get(MAILGUN_EU).getValueAsBoolean(false);
+        boolean useEU = conf.get(MAILGUN_EU).getValueAsBooleanOrDefault(false);
 
         String baseUrl = useEU ? "https://api.eu.mailgun.net/v3/" : "https://api.mailgun.net/v3/";
         try {
 
             var from = fromName + " <" + conf.get(MAILGUN_FROM).getRequiredValue() +">";
 
-            var replyTo = conf.get(MAIL_REPLY_TO).getValue("");
+            var replyTo = conf.get(MAIL_REPLY_TO).getValueOrDefault("");
 
             RequestBody formBody = prepareBody(event, from, to, replyTo, cc, subject, text, html,
                     attachment);

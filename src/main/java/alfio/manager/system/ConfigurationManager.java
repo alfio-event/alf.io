@@ -449,14 +449,14 @@ public class ConfigurationManager {
 
     public String getShortReservationID(EventAndOrganizationId event, TicketReservation reservation) {
         var conf = getFor(event, Set.of(USE_INVOICE_NUMBER_AS_ID, PARTIAL_RESERVATION_ID_LENGTH));
-        if(conf.get(USE_INVOICE_NUMBER_AS_ID).getValueAsBoolean(false) && reservation.getHasInvoiceNumber()) {
+        if(conf.get(USE_INVOICE_NUMBER_AS_ID).getValueAsBooleanOrDefault(false) && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
-        return StringUtils.substring(reservation.getId(), 0, conf.get(PARTIAL_RESERVATION_ID_LENGTH).getValueAsInt(8)).toUpperCase();
+        return StringUtils.substring(reservation.getId(), 0, conf.get(PARTIAL_RESERVATION_ID_LENGTH).getValueAsIntOrDefault(8)).toUpperCase();
     }
 
     public String getPublicReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        if(getFor(event, USE_INVOICE_NUMBER_AS_ID).getValueAsBoolean(false) && reservation.getHasInvoiceNumber()) {
+        if(getFor(event, USE_INVOICE_NUMBER_AS_ID).getValueAsBooleanOrDefault(false) && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
         return reservation.getId();
@@ -470,14 +470,14 @@ public class ConfigurationManager {
     @Deprecated
     public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
         var conf = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS, ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS));
-        return conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBoolean(false) &&
-            conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValue(null) != null;
+        return conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault(false) &&
+            conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueOrDefault(null) != null;
     }
 
     public boolean isRecaptchaForTicketSelectionEnabled(EventAndOrganizationId event) {
         var res = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_TICKET_SELECTION, RECAPTCHA_API_KEY));
-        return res.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBoolean(false) &&
-            res.get(RECAPTCHA_API_KEY).getValue(null) != null;
+        return res.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault(false) &&
+            res.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
     }
 
     // https://github.com/alfio-event/alf.io/issues/573
@@ -487,11 +487,11 @@ public class ConfigurationManager {
 
     public boolean isInvoiceOnly(EventAndOrganizationId event) {
         var res = getFor(event, Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING));
-        return res.get(GENERATE_ONLY_INVOICE).getValueAsBoolean(false) || res.get(ENABLE_ITALY_E_INVOICING).getValueAsBoolean(false);
+        return res.get(GENERATE_ONLY_INVOICE).getValueAsBooleanOrDefault(false) || res.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
     }
 
     public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
-        return getFor(event, ENABLE_ITALY_E_INVOICING).getValueAsBoolean(false);
+        return getFor(event, ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
     }
 
     //
@@ -548,19 +548,19 @@ public class ConfigurationManager {
             return configuration.map(ConfigurationKeyValuePathLevel::getValue);
         }
 
-        public String getValue(String defaultValue) {
+        public String getValueOrDefault(String defaultValue) {
             return getValue().orElse(defaultValue);
         }
 
-        public boolean getValueAsBoolean(boolean defaultValue) {
+        public boolean getValueAsBooleanOrDefault(boolean defaultValue) {
             return getValue().map(Boolean::parseBoolean).orElse(defaultValue);
         }
 
-        public int getValueAsInt(int defaultValue) {
+        public int getValueAsIntOrDefault(int defaultValue) {
             return getValue().map(Integer::parseInt).orElse(defaultValue);
         }
 
-        public ConfigurationPathLevel getConfigurationPathLevel(ConfigurationPathLevel defaultValue) {
+        public ConfigurationPathLevel getConfigurationPathLevelOrDefault(ConfigurationPathLevel defaultValue) {
             return configuration.map(ConfigurationKeyValuePathLevel::getConfigurationPathLevel).orElse(defaultValue);
         }
 

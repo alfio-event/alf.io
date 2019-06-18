@@ -43,7 +43,6 @@ import alfio.repository.TicketReservationRepository;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSource;
@@ -355,7 +354,7 @@ public class ReservationApiV2Controller {
             var reservation = er.getRight();
             var locale = Locale.forLanguageTag(lang);
             final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus()));
-            boolean forceAssignment = configurationManager.getFor(event, FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBoolean(false);
+            boolean forceAssignment = configurationManager.getFor(event, FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBooleanOrDefault(false);
 
             if(forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
                 contactAndTicketsForm.setPostponeAssignment(false);
@@ -384,7 +383,7 @@ public class ReservationApiV2Controller {
                 contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
                 contactAndTicketsForm.getAddCompanyBillingDetails(), contactAndTicketsForm.canSkipVatNrCheck(), false, locale);
 
-            boolean italyEInvoicing = configurationManager.getFor(event, ENABLE_ITALY_E_INVOICING).getValueAsBoolean(false);
+            boolean italyEInvoicing = configurationManager.getFor(event, ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
 
             if(italyEInvoicing) {
                 ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId,

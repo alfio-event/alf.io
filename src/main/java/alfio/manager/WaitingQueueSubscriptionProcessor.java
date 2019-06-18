@@ -22,7 +22,6 @@ import alfio.model.EventAndOrganizationId;
 import alfio.model.TicketInfo;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
-import alfio.model.system.Configuration;
 import alfio.model.user.Organization;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
@@ -108,7 +107,7 @@ public class WaitingQueueSubscriptionProcessor {
 
     private boolean isWaitingListFormEnabled(EventAndOrganizationId event) {
         var res = configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION));
-        return res.get(ENABLE_WAITING_QUEUE).getValueAsBoolean(false) || res.get(ENABLE_PRE_REGISTRATION).getValueAsBoolean(false);
+        return res.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false) || res.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false);
     }
 
     public void distributeAvailableSeats(Event event) {

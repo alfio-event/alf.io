@@ -219,7 +219,7 @@ public class WaitingQueueManager {
             .stream()
             .filter(t -> t.getCategoryId() != null || unboundedCategories.size() > 0)
             .iterator();
-        int expirationTimeout = configurationManager.getFor(event, WAITING_QUEUE_RESERVATION_TIMEOUT).getValueAsInt(4);
+        int expirationTimeout = configurationManager.getFor(event, WAITING_QUEUE_RESERVATION_TIMEOUT).getValueAsIntOrDefault(4);
         ZonedDateTime expiration = ZonedDateTime.now(event.getZoneId()).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());
 
         if(!tickets.hasNext()) {

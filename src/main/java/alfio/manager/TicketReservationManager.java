@@ -929,7 +929,7 @@ public class TicketReservationManager {
         Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
         int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
 
-        if(!configurationManager.getFor(event, ENABLE_TICKET_TRANSFER).getValueAsBoolean(true)) {
+        if(!configurationManager.getFor(event, ENABLE_TICKET_TRANSFER).getValueAsBooleanOrDefault(true)) {
             //automatically lock assignment
             int locked = ticketRepository.forbidReassignment(preUpdateTicket.keySet());
             Validate.isTrue(updatedTickets == locked, "Expected to lock "+updatedTickets+" tickets, locked "+ locked);
@@ -958,7 +958,7 @@ public class TicketReservationManager {
             .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
             .forEach(ticket -> {
                 Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
-                if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getFor(event, SEND_TICKETS_AUTOMATICALLY).getValueAsBoolean(true)) {
+                if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getFor(event, SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault(true)) {
                     sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                 }
                 extensionManager.handleTicketAssignment(ticket);
@@ -1019,7 +1019,7 @@ public class TicketReservationManager {
         try {
             nestedTransactionTemplate.execute((tc) -> {
                 Event event = eventRepository.findByReservationId(reservationId);
-                boolean enabled = configurationManager.getFor(event, AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT).getValueAsBoolean(true);
+                boolean enabled = configurationManager.getFor(event, AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT).getValueAsBooleanOrDefault(true);
                 if (enabled) {
                     deleteOfflinePayment(event, reservationId, true, false, null);
                 } else {
@@ -1529,7 +1529,7 @@ public class TicketReservationManager {
                 .filter(p -> p.getMiddle().isPresent())
                 .filter(p -> {
                     Event event = p.getMiddle().get();
-                    return truncate(addHours(new Date(), configurationManager.getFor(event, OFFLINE_REMINDER_HOURS).getValueAsInt(24)), Calendar.DATE).compareTo(p.getLeft().getValidity()) >= 0;
+                    return truncate(addHours(new Date(), configurationManager.getFor(event, OFFLINE_REMINDER_HOURS).getValueAsIntOrDefault(24)), Calendar.DATE).compareTo(p.getLeft().getValidity()) >= 0;
                 })
                 .map(p -> Triple.of(p.getLeft(), p.getMiddle().orElseThrow(), p.getRight().orElseThrow()))
                 .forEach(p -> {
@@ -1573,7 +1573,7 @@ public class TicketReservationManager {
 
     public void sendReminderForOptionalData() {
         getNotifiableEventsStream()
-                .filter(e -> configurationManager.getFor(e, OPTIONAL_DATA_REMINDER_ENABLED).getValueAsBoolean(true))
+                .filter(e -> configurationManager.getFor(e, OPTIONAL_DATA_REMINDER_ENABLED).getValueAsBooleanOrDefault(true))
                 .filter(e -> ticketFieldRepository.countAdditionalFieldsForEvent(e.getId()) > 0)
                 .map(e -> Pair.of(e, ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(e.getId())))
                 .filter(p -> !p.getRight().isEmpty())
@@ -1583,7 +1583,7 @@ public class TicketReservationManager {
     private void sendOptionalDataReminder(Pair<Event, List<Ticket>> eventAndTickets) {
         nestedTransactionTemplate.execute(ts -> {
             Event event = eventAndTickets.getLeft();
-            int daysBeforeStart = configurationManager.getFor(event, ConfigurationKeys.ASSIGNMENT_REMINDER_START).getValueAsInt(10);
+            int daysBeforeStart = configurationManager.getFor(event, ConfigurationKeys.ASSIGNMENT_REMINDER_START).getValueAsIntOrDefault(10);
             List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
             Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
             tickets.stream()
@@ -1602,7 +1602,7 @@ public class TicketReservationManager {
     Stream<Event> getNotifiableEventsStream() {
         return eventRepository.findAll().stream()
                 .filter(e -> {
-                    int daysBeforeStart = configurationManager.getFor(e, ConfigurationKeys.ASSIGNMENT_REMINDER_START).getValueAsInt(10);
+                    int daysBeforeStart = configurationManager.getFor(e, ConfigurationKeys.ASSIGNMENT_REMINDER_START).getValueAsIntOrDefault(10);
                     //we don't want to define events SO far away, don't we?
                     int days = (int) ChronoUnit.DAYS.between(ZonedDateTime.now(e.getZoneId()).toLocalDate(), e.getBegin().toLocalDate());
                     return days > 0 && days <= daysBeforeStart;
@@ -1614,7 +1614,7 @@ public class TicketReservationManager {
             nestedTransactionTemplate.execute(ts -> {
                 Event event = p.getLeft();
                 ZoneId eventZoneId = event.getZoneId();
-                int quietPeriod = configurationManager.getFor(event, ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL).getValueAsInt(3);
+                int quietPeriod = configurationManager.getFor(event, ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL).getValueAsIntOrDefault(3);
                 p.getRight().stream()
                     .map(id -> findByIdForNotification(id, eventZoneId, quietPeriod))
                     .filter(Optional::isPresent)
@@ -1704,7 +1704,7 @@ public class TicketReservationManager {
     }
 
     public int getReservationTimeout(EventAndOrganizationId event) {
-        return configurationManager.getFor(event, RESERVATION_TIMEOUT).getValueAsInt(25);
+        return configurationManager.getFor(event, RESERVATION_TIMEOUT).getValueAsIntOrDefault(25);
     }
 
     public void validateAndConfirmOfflinePayment(String reservationId, Event event, BigDecimal paidAmount, String username) {
@@ -1902,7 +1902,7 @@ public class TicketReservationManager {
 
                         Date expiration = reservation.getValidity();
                         Date now = new Date();
-                        int slackTime = configurationManager.getFor(event, RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT).getValueAsInt(10);
+                        int slackTime = configurationManager.getFor(event, RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT).getValueAsIntOrDefault(10);
                         if(expiration.before(now)) {
                             sendTransactionFailedEmail(event, reservation, paymentMethod, paymentWebhookResult, true);
                             cancelReservation(reservation, false, null);
@@ -1937,7 +1937,7 @@ public class TicketReservationManager {
         "reservationUrl", reservationUrl(reservation, event));
 
         Locale locale = Locale.forLanguageTag(reservation.getUserLanguage());
-        if(cancelReservation || configurationManager.getFor(event, NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS).getValueAsBoolean(false)) {
+        if(cancelReservation || configurationManager.getFor(event, NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS).getValueAsBooleanOrDefault(false)) {
             notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
                 new Object[]{shortReservationID, event.getDisplayName()}, locale),
                 () -> templateManager.renderTemplate(event, TemplateResource.CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER, model, locale),

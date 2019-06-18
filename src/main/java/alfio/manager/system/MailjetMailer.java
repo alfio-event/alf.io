@@ -17,8 +17,6 @@
 package alfio.manager.system;
 
 import alfio.model.EventAndOrganizationId;
-import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.*;
@@ -67,7 +65,7 @@ public class MailjetMailer implements Mailer  {
         html.ifPresent(h -> mailPayload.put("Html-part", h));
         mailPayload.put("Recipients", recipients);
 
-        String replyTo = conf.get(MAIL_REPLY_TO).getValue("");
+        String replyTo = conf.get(MAIL_REPLY_TO).getValueOrDefault("");
         if(StringUtils.isNotBlank(replyTo)) {
             mailPayload.put("Headers", Collections.singletonMap("Reply-To", replyTo));
         }

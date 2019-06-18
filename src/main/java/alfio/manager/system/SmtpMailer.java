@@ -17,7 +17,6 @@
 package alfio.manager.system;
 
 import alfio.model.EventAndOrganizationId;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -65,7 +64,7 @@ class SmtpMailer implements Mailer {
                     : new MimeMessageHelper(mimeMessage, "UTF-8");
             message.setSubject(subject);
             message.setFrom(conf.get(SMTP_FROM_EMAIL).getRequiredValue(), fromName);
-            String replyTo = conf.get(MAIL_REPLY_TO).getValue("");
+            String replyTo = conf.get(MAIL_REPLY_TO).getValueOrDefault("");
             if(StringUtils.isNotBlank(replyTo)) {
                 message.setReplyTo(replyTo);
             }
@@ -98,10 +97,10 @@ class SmtpMailer implements Mailer {
         r.setHost(conf.get(SMTP_HOST).getRequiredValue());
         r.setPort(Integer.valueOf(conf.get(SMTP_PORT).getRequiredValue()));
         r.setProtocol(conf.get(SMTP_PROTOCOL).getRequiredValue());
-        r.setUsername(conf.get(SMTP_USERNAME).getValue(null));
-        r.setPassword(conf.get(SMTP_PASSWORD).getValue(null));
+        r.setUsername(conf.get(SMTP_USERNAME).getValueOrDefault(null));
+        r.setPassword(conf.get(SMTP_PASSWORD).getValueOrDefault(null));
 
-        String properties = conf.get(SMTP_PROPERTIES).getValue(null);
+        String properties = conf.get(SMTP_PROPERTIES).getValueOrDefault(null);
 
         if (properties != null) {
             try {
