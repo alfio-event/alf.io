@@ -18,7 +18,6 @@ package alfio.config;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
-import alfio.util.MustacheCustomTagInterceptor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -99,7 +98,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(getLocaleChangeInterceptor());
         registry.addInterceptor(getTemplateMessagesInterceptor());
-        registry.addInterceptor(new MustacheCustomTagInterceptor(configurationManager));
         registry.addInterceptor(getCSPInterceptor());
     }
 
@@ -118,14 +116,12 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
                 //
                 String reportUri = "";
-                boolean enabledReport = Boolean.parseBoolean(configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED,  (k) ->
-                    configurationManager.getStringConfigValue(
-                        alfio.model.system.Configuration.getSystemConfiguration(k), "false")
+                boolean enabledReport = Boolean.parseBoolean(configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED,
+                    (k) -> configurationManager.getFor(k).getValueOrDefault("false")
                 ));
                 if (enabledReport) {
-                    reportUri = " report-uri " + configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI, (k) ->
-                        configurationManager.getStringConfigValue(
-                            alfio.model.system.Configuration.getSystemConfiguration(k), "/report-csp-violation")
+                    reportUri = " report-uri " + configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI,
+                        (k) -> configurationManager.getFor(k).getValueOrDefault("/report-csp-violation")
                     );
                 }
                 //
@@ -232,7 +228,4 @@ public class MvcConfiguration implements WebMvcConfigurer {
     public CommonsMultipartResolver multipartResolver() {
         return new CommonsMultipartResolver();
     }
-
-
-    
 }

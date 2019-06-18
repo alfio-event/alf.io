@@ -19,8 +19,7 @@ package alfio.manager;
 import alfio.manager.support.CheckInStatistics;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
-import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -30,6 +29,7 @@ import org.junit.Test;
 import java.util.Date;
 import java.util.Optional;
 
+import static alfio.model.system.ConfigurationKeys.CHECK_IN_STATS;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.*;
@@ -66,7 +66,8 @@ public class CheckInManagerTest {
 
     @Test
     public void getStatistics() {
-        when(configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.CHECK_IN_STATS), true)).thenReturn(true);
+        when(configurationManager.getFor(event, CHECK_IN_STATS))
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(CHECK_IN_STATS, new ConfigurationKeyValuePathLevel(null, "true", null)));
         CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
         assertNotNull(statistics);
         verify(eventRepository).retrieveCheckInStatisticsForEvent(EVENT_ID);
@@ -74,7 +75,8 @@ public class CheckInManagerTest {
 
     @Test
     public void getStatisticsDisabled() {
-        when(configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.CHECK_IN_STATS), true)).thenReturn(false);
+        when(configurationManager.getFor(event, CHECK_IN_STATS))
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(CHECK_IN_STATS, new ConfigurationKeyValuePathLevel(null, "false", null)));
         CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
         assertNull(statistics);
         verify(eventRepository, never()).retrieveCheckInStatisticsForEvent(EVENT_ID);

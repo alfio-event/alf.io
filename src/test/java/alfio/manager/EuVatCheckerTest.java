@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.VatDetail;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import ch.digitalfondue.vatchecker.EUVatCheckResponse;
 import ch.digitalfondue.vatchecker.EUVatChecker;
@@ -41,7 +42,7 @@ public class EuVatCheckerTest {
         configurationManager = mock(ConfigurationManager.class);
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(1, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE)), anyBoolean())).thenReturn(true);
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(1, ConfigurationKeys.ENABLE_VIES_VALIDATION)), anyBoolean())).thenReturn(true);
-        when(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST))).thenReturn("IE");
+        when(configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST)).thenReturn(new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST, new ConfigurationKeyValuePathLevel("", "IE", null)));
         when(configurationManager.getStringConfigValue(eq(Configuration.from(1, ConfigurationKeys.COUNTRY_OF_BUSINESS)), isNull())).thenReturn("IT");
     }
 

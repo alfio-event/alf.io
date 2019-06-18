@@ -17,7 +17,6 @@
 package alfio.manager.system;
 
 import alfio.model.EventAndOrganizationId;
-import alfio.model.system.Configuration;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
@@ -50,7 +49,7 @@ public class MockMailer implements Mailer {
 
         log.info("Email: from: {}, replyTo: {}, to: {}, cc: {}, subject: {}, text: {}, html: {}, attachments: {}",
             fromName,
-            configurationManager.getStringConfigValue(Configuration.from(event, MAIL_REPLY_TO), ""),
+            configurationManager.getFor(event, MAIL_REPLY_TO).getValueOrDefault(""),
             to, cc, subject, text,
             html.orElse("no html"), printedAttachments);
     }

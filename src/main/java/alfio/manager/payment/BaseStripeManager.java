@@ -81,23 +81,23 @@ class BaseStripeManager {
     }
 
     String getSecretKey(EventAndOrganizationId event) {
-        return configurationManager.getRequiredValue(Configuration.from(event, STRIPE_SECRET_KEY));
+        return configurationManager.getFor(event, STRIPE_SECRET_KEY).getRequiredValue();
     }
 
     String getWebhookSignatureKey() {
-        return configurationManager.getRequiredValue(Configuration.getSystemConfiguration(STRIPE_WEBHOOK_KEY));
+        return configurationManager.getFor(STRIPE_WEBHOOK_KEY).getRequiredValue();
     }
 
     String getPublicKey(PaymentContext context) {
         if(isConnectEnabled(context)) {
-            return configurationManager.getRequiredValue(Configuration.getSystemConfiguration(STRIPE_PUBLIC_KEY));
+            return configurationManager.getFor(STRIPE_PUBLIC_KEY).getRequiredValue();
         }
-        return configurationManager.getRequiredValue(context.narrow(STRIPE_PUBLIC_KEY));
+        return configurationManager.getFor(context.getEvent(), STRIPE_PUBLIC_KEY).getRequiredValue();
     }
 
     Map<String, ?> getModelOptions(PaymentContext context) {
         Map<String, Object> options = new HashMap<>();
-        options.put("enableSCA", configurationManager.getBooleanConfigValue(context.narrow(STRIPE_ENABLE_SCA), false));
+        options.put("enableSCA", configurationManager.getFor(context.getEvent(), STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false));
         options.put("stripe_p_key", getPublicKey(context));
         return options;
     }
@@ -113,7 +113,7 @@ class BaseStripeManager {
     }
 
     private boolean isConnectEnabled(PaymentContext context) {
-        return configurationManager.getBooleanConfigValue(context.narrow(PLATFORM_MODE_ENABLED), false);
+        return configurationManager.getFor(context.getEvent(), PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
     }
 
     StripeConnectResult storeConnectedAccountId(String code, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> keyResolver) {
@@ -134,7 +134,7 @@ class BaseStripeManager {
     }
 
     private String getSystemApiKey() {
-        return configurationManager.getRequiredValue(Configuration.getSystemConfiguration(STRIPE_SECRET_KEY));
+        return configurationManager.getFor(STRIPE_SECRET_KEY).getRequiredValue();
     }
 
     Optional<Boolean> processWebhookEvent(String body, String signature) {
@@ -228,7 +228,7 @@ class BaseStripeManager {
     Optional<RequestOptions> options(Event event) {
         RequestOptions.RequestOptionsBuilder builder = RequestOptions.builder();
         if(isConnectEnabled(new PaymentContext(event))) {
-            return configurationManager.getStringConfigValue(Configuration.from(event, STRIPE_CONNECTED_ID))
+            return configurationManager.getFor(event, STRIPE_CONNECTED_ID).getValue()
                 .map(connectedId -> {
                     //connected stripe account
                     builder.setStripeAccount(connectedId);
@@ -240,7 +240,7 @@ class BaseStripeManager {
 
     Optional<String> getConnectedAccount(PaymentContext paymentContext) {
         if(isConnectEnabled(paymentContext)) {
-            return configurationManager.getStringConfigValue(paymentContext.narrow(STRIPE_CONNECTED_ID));
+            return configurationManager.getFor(paymentContext.getEvent(), STRIPE_CONNECTED_ID).getValue();
         }
         return Optional.empty();
     }

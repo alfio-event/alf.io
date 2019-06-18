@@ -17,8 +17,6 @@
 package alfio.controller.api.support;
 
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +25,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static alfio.model.system.ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED;
+import static alfio.model.system.ConfigurationKeys.SECURITY_CSP_REPORT_URI;
 
 
 @RestController
@@ -41,12 +43,11 @@ public class CspReportApiController {
     @RequestMapping(value = "/report-csp-violation", method = RequestMethod.POST)
     public boolean logCspViolation(HttpServletRequest request) throws IOException {
 
+        var conf = configurationManager.getFor(Set.of(SECURITY_CSP_REPORT_ENABLED, SECURITY_CSP_REPORT_URI));
 
-        boolean enabledReport = configurationManager.getBooleanConfigValue(
-            Configuration.getSystemConfiguration(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED), false);
+        boolean enabledReport = conf.get(SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault(false);
 
-        String uri = configurationManager.getStringConfigValue(
-            Configuration.getSystemConfiguration(ConfigurationKeys.SECURITY_CSP_REPORT_URI), "/report-csp-violation");
+        String uri = conf.get(SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
 
         if (enabledReport && "/report-csp-violation".equals(uri)) {
             String report = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));

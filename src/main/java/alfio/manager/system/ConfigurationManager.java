@@ -22,6 +22,7 @@ import alfio.model.TicketReservation;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.Configuration.*;
+import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.transaction.PaymentProxy;
@@ -39,6 +40,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -102,6 +104,7 @@ public class ConfigurationManager {
         return (T) c;
     }
 
+    @Deprecated
     public int getIntConfigValue(ConfigurationPathKey pathKey, int defaultValue) {
         try {
             return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())
@@ -112,6 +115,7 @@ public class ConfigurationManager {
         }
     }
 
+    @Deprecated
     public boolean getBooleanConfigValue(ConfigurationPathKey pathKey, boolean defaultValue) {
         return getStringConfigValue(pathKey)
             .map(Boolean::parseBoolean)
@@ -119,22 +123,17 @@ public class ConfigurationManager {
     }
 
 
+    @Deprecated
     public String getStringConfigValue(ConfigurationPathKey pathKey, String defaultValue) {
         return getStringConfigValue(pathKey).orElse(defaultValue);
     }
 
+    @Deprecated
     public Optional<String> getStringConfigValue(ConfigurationPathKey pathKey) {
         return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()).map(Configuration::getValue);
     }
 
-    public Map<ConfigurationKeys, Optional<String>> getStringConfigValueFrom(ConfigurationPathKey... keys) {
-        Map<ConfigurationKeys, Optional<String>> res = new HashMap<>();
-        for(ConfigurationPathKey key : keys) {
-            res.put(key.getKey(), getStringConfigValue(key));
-        }
-        return res;
-    }
-
+    @Deprecated
     public String getRequiredValue(ConfigurationPathKey pathKey) {
         return getStringConfigValue(pathKey)
             .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));
@@ -338,8 +337,7 @@ public class ConfigurationManager {
     }
 
     public Predicate<EventAndOrganizationId> areBooleanSettingsEnabledForEvent(boolean defaultValue, ConfigurationKeys... keys) {
-        return event -> Arrays.stream(keys)
-            .allMatch(k -> getBooleanConfigValue(Configuration.from(event).apply(k), defaultValue));
+        return (event) -> getFor(event, Set.of(keys)).entrySet().stream().allMatch(kv -> kv.getValue().getValueAsBooleanOrDefault(defaultValue));
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
@@ -449,14 +447,15 @@ public class ConfigurationManager {
     }
 
     public String getShortReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        if(getBooleanConfigValue(Configuration.from(event, USE_INVOICE_NUMBER_AS_ID), false) && reservation.getHasInvoiceNumber()) {
+        var conf = getFor(event, Set.of(USE_INVOICE_NUMBER_AS_ID, PARTIAL_RESERVATION_ID_LENGTH));
+        if(conf.get(USE_INVOICE_NUMBER_AS_ID).getValueAsBooleanOrDefault(false) && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
-        return StringUtils.substring(reservation.getId(), 0, getIntConfigValue(Configuration.from(event, PARTIAL_RESERVATION_ID_LENGTH), 8)).toUpperCase();
+        return StringUtils.substring(reservation.getId(), 0, conf.get(PARTIAL_RESERVATION_ID_LENGTH).getValueAsIntOrDefault(8)).toUpperCase();
     }
 
     public String getPublicReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        if(getBooleanConfigValue(Configuration.from(event, USE_INVOICE_NUMBER_AS_ID), false) && reservation.getHasInvoiceNumber()) {
+        if(getFor(event, USE_INVOICE_NUMBER_AS_ID).getValueAsBooleanOrDefault(false) && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
         return reservation.getId();
@@ -469,13 +468,15 @@ public class ConfigurationManager {
 
     @Deprecated
     public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
-        return getBooleanConfigValue(Configuration.from(event, ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), false)
-            && getStringConfigValue(Configuration.getSystemConfiguration(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS), null) != null;
+        var conf = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS, RECAPTCHA_API_KEY));
+        return conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault(false) &&
+            conf.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
     }
 
     public boolean isRecaptchaForTicketSelectionEnabled(EventAndOrganizationId event) {
-        return getBooleanConfigValue(Configuration.from(event, ENABLE_CAPTCHA_FOR_TICKET_SELECTION), false)
-            && getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null) != null;
+        var res = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_TICKET_SELECTION, RECAPTCHA_API_KEY));
+        return res.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault(false) &&
+            res.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
     }
 
     // https://github.com/alfio-event/alf.io/issues/573
@@ -484,33 +485,104 @@ public class ConfigurationManager {
     }
 
     public boolean isInvoiceOnly(EventAndOrganizationId event) {
-        return getBooleanConfigValue(Configuration.from(event, GENERATE_ONLY_INVOICE), false) ||
-            getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+        var res = getFor(event, Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING));
+        return res.get(GENERATE_ONLY_INVOICE).getValueAsBooleanOrDefault(false) || res.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
     }
 
     public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
-        return getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.ENABLE_ITALY_E_INVOICING), false);
+        return getFor(event, ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
     }
 
     //
-    public Map<ConfigurationKeys, Optional<Configuration>> getFor(EventAndOrganizationId eventAndOrganizationId, Collection<ConfigurationKeys> keys) {
-        var found = configurationRepository.findByEventAndKeys(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
-        var res = new EnumMap<ConfigurationKeys, Optional<Configuration>>(ConfigurationKeys.class);
+
+    public MaybeConfiguration getFor(ConfigurationKeys key) {
+        return getFor(Set.of(key)).get(key);
+    }
+
+    public Map<ConfigurationKeys, MaybeConfiguration> getFor(Collection<ConfigurationKeys> keys) {
+        var found = configurationRepository.findByKeysAtSystemLevel(keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
+        return buildKeyConfigurationMapResult(keys, found);
+    }
+
+
+    public Map<ConfigurationKeys, MaybeConfiguration> getFor(EventAndOrganizationId eventAndOrganizationId, Collection<ConfigurationKeys> keys) {
+        if (eventAndOrganizationId == null) {
+            return getFor(keys);
+        } else {
+            var found = configurationRepository.findByEventAndKeys(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
+            return buildKeyConfigurationMapResult(keys, found);
+        }
+    }
+
+    public MaybeConfiguration getFor(EventAndOrganizationId eventAndOrganizationId, ConfigurationKeys key) {
+        return getFor(eventAndOrganizationId, Set.of(key)).get(key);
+    }
+
+    private Map<ConfigurationKeys, MaybeConfiguration> buildKeyConfigurationMapResult(Collection<ConfigurationKeys> keys, List<ConfigurationKeyValuePathLevel> found) {
+        var res = new EnumMap<ConfigurationKeys, MaybeConfiguration>(ConfigurationKeys.class);
 
         for (var k : keys) {
-            res.put(k, Optional.empty());
+            res.put(k, new MaybeConfiguration(k));
         }
 
         for (var c : found) {
             res.get(c.getConfigurationKey()).ifPresentOrElse(alreadyPresent -> {
                 //override mechanism, if a configuration path is more precise that the one already present, we will replace it
                 if (alreadyPresent.getConfigurationPathLevel().getPriority() < c.getConfigurationPathLevel().getPriority()) {
-                    res.put(c.getConfigurationKey(), Optional.of(c));
+                    res.put(c.getConfigurationKey(), new MaybeConfiguration(c.getConfigurationKey(), c));
                 }
-            }, () -> res.put(c.getConfigurationKey(), Optional.of(c)));
+            }, () -> res.put(c.getConfigurationKey(), new MaybeConfiguration(c.getConfigurationKey(), c)));
         }
 
         return res;
+    }
+
+
+    public static class MaybeConfiguration {
+        private final Optional<ConfigurationKeyValuePathLevel> configuration;
+        private final ConfigurationKeys key;
+
+        public MaybeConfiguration(ConfigurationKeys key) {
+            this.key = key;
+            this.configuration = Optional.empty();
+        }
+
+        public MaybeConfiguration(ConfigurationKeys key, ConfigurationKeyValuePathLevel configuration) {
+            this.configuration = Optional.ofNullable(configuration);
+            this.key = key;
+        }
+
+        void ifPresentOrElse(Consumer<? super ConfigurationKeyValuePathLevel> action, Runnable emptyAction) {
+            configuration.ifPresentOrElse(action, emptyAction);
+        }
+
+        public boolean isPresent() {
+            return configuration.isPresent();
+        }
+
+        public Optional<String> getValue() {
+            return configuration.map(ConfigurationKeyValuePathLevel::getValue);
+        }
+
+        public String getValueOrDefault(String defaultValue) {
+            return getValue().orElse(defaultValue);
+        }
+
+        public boolean getValueAsBooleanOrDefault(boolean defaultValue) {
+            return getValue().map(Boolean::parseBoolean).orElse(defaultValue);
+        }
+
+        public int getValueAsIntOrDefault(int defaultValue) {
+            return getValue().map(Integer::parseInt).orElse(defaultValue);
+        }
+
+        public ConfigurationPathLevel getConfigurationPathLevelOrDefault(ConfigurationPathLevel defaultValue) {
+            return configuration.map(ConfigurationKeyValuePathLevel::getConfigurationPathLevel).orElse(defaultValue);
+        }
+
+        public String getRequiredValue() {
+            return getValue().orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));
+        }
     }
 
 }

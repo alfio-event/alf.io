@@ -28,6 +28,7 @@ import alfio.manager.user.UserManager;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
+import alfio.util.Json;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.npjt.EnableNpjt;
 import ch.digitalfondue.npjt.mapper.ColumnMapperFactory;
@@ -169,6 +170,11 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         source.setFallbackToSystemLocale(false);
         source.setAlwaysUseMessageFormat(true);
         return source;
+    }
+
+    @Bean
+    public Json getJson() {
+        return new Json();
     }
 
     @Bean

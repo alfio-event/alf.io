@@ -69,7 +69,7 @@ public class WaitingQueueManager {
 
     public boolean subscribe(Event event, CustomerName customerName, String email, Integer selectedCategoryId, Locale userLanguage) {
         try {
-            if(configurationManager.getBooleanConfigValue(Configuration.from(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS), false)) {
+            if(configurationManager.getFor(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault(false)) {
                 log.info("waiting list subscription denied for event {} ({})", event.getShortName(), event.getId());
                 return false;
             }
@@ -97,7 +97,7 @@ public class WaitingQueueManager {
         Map<String, Object> model = TemplateResource.buildModelForWaitingQueueJoined(organization, event, name);
         notificationManager.sendSimpleEmail(event, null, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),
                 () -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_JOINED, model, userLanguage));
-        if(configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_WAITING_QUEUE_NOTIFICATION), false)) {
+        if(configurationManager.getFor(event, ENABLE_WAITING_QUEUE_NOTIFICATION).getValueAsBooleanOrDefault(false)) {
             String adminTemplate = messageSource.getMessage("email-waiting-queue.subscribed.admin.text",
                     new Object[] {subscriptionType, event.getDisplayName()}, Locale.ENGLISH);
             notificationManager.sendSimpleEmail(event, null, organization.getEmail(), messageSource.getMessage("email-waiting-queue.subscribed.admin.subject",
@@ -119,7 +119,7 @@ public class WaitingQueueManager {
 
     private void validateSubscriptionType(EventAndOrganizationId event, WaitingQueueSubscription.Type type) {
         if(type == WaitingQueueSubscription.Type.PRE_SALES) {
-            Validate.isTrue(configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_PRE_REGISTRATION), false), "PRE_SALES Waiting list is not active");
+            Validate.isTrue(configurationManager.getFor(event, ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false), "PRE_SALES Waiting list is not active");
         } else {
             Validate.isTrue(eventStatisticsManager.noSeatsAvailable().test(event), "SOLD_OUT Waiting list is not active");
         }
@@ -149,7 +149,7 @@ public class WaitingQueueManager {
             ticketRepository.revertToFree(eventId);
         } else if (waitingPeople > 0 && waitingTickets > 0) {
             return distributeAvailableSeats(event, waitingPeople, waitingTickets);
-        } else if(subscriptions.stream().anyMatch(WaitingQueueSubscription::isPreSales) && configurationManager.getBooleanConfigValue(Configuration.from(event, ENABLE_PRE_REGISTRATION), false)) {
+        } else if(subscriptions.stream().anyMatch(WaitingQueueSubscription::isPreSales) && configurationManager.getFor(event, ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false)) {
             return handlePreReservation(event, waitingPeople);
         }
         return Stream.empty();
@@ -219,7 +219,7 @@ public class WaitingQueueManager {
             .stream()
             .filter(t -> t.getCategoryId() != null || unboundedCategories.size() > 0)
             .iterator();
-        int expirationTimeout = configurationManager.getIntConfigValue(Configuration.from(event, WAITING_QUEUE_RESERVATION_TIMEOUT), 4);
+        int expirationTimeout = configurationManager.getFor(event, WAITING_QUEUE_RESERVATION_TIMEOUT).getValueAsIntOrDefault(4);
         ZonedDateTime expiration = ZonedDateTime.now(event.getZoneId()).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());
 
         if(!tickets.hasNext()) {
