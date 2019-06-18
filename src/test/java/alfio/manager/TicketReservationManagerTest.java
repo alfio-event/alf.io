@@ -967,6 +967,7 @@ class TicketReservationManagerTest {
         when(configurationManager.getFor(event, ENABLE_TICKET_TRANSFER)).thenReturn(
             new ConfigurationManager.MaybeConfiguration(ENABLE_TICKET_TRANSFER)
         );
+        when(configurationManager.getFor(event, PLATFORM_MODE_ENABLED)).thenReturn(new ConfigurationManager.MaybeConfiguration(PLATFORM_MODE_ENABLED));
         when(ticketRepository.findTicketsInReservation(eq(RESERVATION_ID))).thenReturn(Collections.emptyList());
         when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
         when(reservation.getUserLanguage()).thenReturn("en");
@@ -992,7 +993,7 @@ class TicketReservationManagerTest {
         verify(configurationManager, atLeastOnce()).getStringConfigValue(any());
         verify(configurationManager, atLeastOnce()).getShortReservationID(eq(event), any(TicketReservation.class));
         verify(ticketRepository).countTicketsInReservation(eq(RESERVATION_ID));
-        verify(configurationManager).getBooleanConfigValue(any(), eq(false));
+        verify(configurationManager).getFor(eq(event), eq(PLATFORM_MODE_ENABLED));
     }
 
     private static Event copy(Event event) {
