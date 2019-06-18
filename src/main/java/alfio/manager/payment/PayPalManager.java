@@ -155,7 +155,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         payment.setTransactions(transactions);
         RedirectUrls redirectUrls = new RedirectUrls();
 
-        String baseUrl = StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.from(spec.getEvent(), ConfigurationKeys.BASE_URL)), "/");
+        String baseUrl = StringUtils.removeEnd(configurationManager.getFor(spec.getEvent(), ConfigurationKeys.BASE_URL).getRequiredValue(), "/");
         String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/payment/paypal/" + URL_PLACEHOLDER;
 
         UriComponentsBuilder bookUrlBuilder = UriComponentsBuilder.fromUriString(bookUrl)
