@@ -104,6 +104,7 @@ public class ConfigurationManager {
         return (T) c;
     }
 
+    @Deprecated
     public int getIntConfigValue(ConfigurationPathKey pathKey, int defaultValue) {
         try {
             return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())
@@ -114,6 +115,7 @@ public class ConfigurationManager {
         }
     }
 
+    @Deprecated
     public boolean getBooleanConfigValue(ConfigurationPathKey pathKey, boolean defaultValue) {
         return getStringConfigValue(pathKey)
             .map(Boolean::parseBoolean)
@@ -121,14 +123,17 @@ public class ConfigurationManager {
     }
 
 
+    @Deprecated
     public String getStringConfigValue(ConfigurationPathKey pathKey, String defaultValue) {
         return getStringConfigValue(pathKey).orElse(defaultValue);
     }
 
+    @Deprecated
     public Optional<String> getStringConfigValue(ConfigurationPathKey pathKey) {
         return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()).map(Configuration::getValue);
     }
 
+    @Deprecated
     public String getRequiredValue(ConfigurationPathKey pathKey) {
         return getStringConfigValue(pathKey)
             .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));
