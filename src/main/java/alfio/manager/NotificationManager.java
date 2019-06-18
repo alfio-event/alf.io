@@ -23,7 +23,6 @@ import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
@@ -212,8 +211,8 @@ public class NotificationManager {
     }
 
     public List<String> getCCForEventOrganizer(EventAndOrganizationId event) {
-        Configuration.ConfigurationPathKey key = Configuration.from(event, ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC);
-        return Stream.of(StringUtils.split(configurationManager.getStringConfigValue(key, ""), ','))
+        var systemNotificationCC = configurationManager.getFor(event, ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC).getValueOrDefault("");
+        return Stream.of(StringUtils.split(systemNotificationCC, ','))
             .filter(Objects::nonNull)
             .map(String::trim)
             .filter(StringUtils::isNotBlank)

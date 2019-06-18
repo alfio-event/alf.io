@@ -505,7 +505,7 @@ public class TicketReservationManager {
         String invoiceNumber = optionalInvoiceNumber.orElseGet(() -> {
                 int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getEvent().getOrganizationId());
                 invoiceSequencesRepository.incrementSequenceFor(spec.getEvent().getOrganizationId());
-                String pattern = configurationManager.getStringConfigValue(Configuration.from(spec.getEvent(), ConfigurationKeys.INVOICE_NUMBER_PATTERN), "%d");
+                String pattern = configurationManager.getFor(spec.getEvent(), ConfigurationKeys.INVOICE_NUMBER_PATTERN).getValueOrDefault("%d");
                 return String.format(pattern, invoiceSequence);
         });
 
