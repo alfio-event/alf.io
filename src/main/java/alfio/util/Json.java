@@ -42,6 +42,14 @@ public class Json {
         mapper = m;
     }
 
+    public String asJsonString(Object o) {
+        return toJson(o);
+    }
+
+    public <T> T fromJsonString(String value, Class<T> valueType) {
+        return fromJson(value, valueType);
+    }
+
     public static String toJson(Object o) {
         try {
             return mapper.writeValueAsString(o);

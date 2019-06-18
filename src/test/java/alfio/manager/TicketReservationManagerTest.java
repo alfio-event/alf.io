@@ -41,6 +41,7 @@ import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.util.Json;
 import alfio.util.TemplateManager;
 import alfio.util.WorkingDaysAdjusters;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
@@ -117,6 +118,8 @@ class TicketReservationManagerTest {
     private Organization organization;
     private BillingDocumentRepository billingDocumentRepository;
     private NamedParameterJdbcTemplate jdbcTemplate;
+    private Json json;
+    private UserRepository userRepository;
 
     private Set<ConfigurationKeys> BANKING_KEY = Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER);
     private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> BANKING_INFO = Map.of(
@@ -153,6 +156,7 @@ class TicketReservationManagerTest {
         ticketCategory = mock(TicketCategory.class);
         ticket = mock(Ticket.class);
         jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+        json = mock(Json.class);
 
         reservationModification = mock(TicketReservationWithOptionalCodeModification.class);
         ticketReservation = mock(TicketReservation.class);
@@ -168,7 +172,7 @@ class TicketReservationManagerTest {
         organization = new Organization(ORGANIZATION_ID, "org", "desc", ORG_EMAIL);
         TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
         GroupManager groupManager = mock(GroupManager.class);
-        UserRepository userRepository = mock(UserRepository.class);
+        userRepository = mock(UserRepository.class);
         ExtensionManager extensionManager = mock(ExtensionManager.class);
         billingDocumentRepository = mock(BillingDocumentRepository.class);
         when(ticketCategoryRepository.getByIdAndActive(anyInt(), eq(EVENT_ID))).thenReturn(ticketCategory);
@@ -201,7 +205,8 @@ class TicketReservationManagerTest {
             ticketSearchRepository,
             groupManager,
             billingDocumentRepository,
-            jdbcTemplate);
+            jdbcTemplate,
+            json);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -748,6 +753,7 @@ class TicketReservationManagerTest {
             trm.releaseTicket(event, ticketReservation, ticket);
             fail();
         } catch (IllegalArgumentException e) {
+            assertEquals("Expected 1 row to be updated, got 2", e.getMessage());
             verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
             verify(notificationManager, never()).sendSimpleEmail(any(), any(), any(), any(), any(TextTemplateGenerator.class));
         }
@@ -815,13 +821,13 @@ class TicketReservationManagerTest {
             new ConfigurationManager.MaybeConfiguration(Optional.empty(), SEND_TICKETS_AUTOMATICALLY)
         );
         when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
-        try {
-            testPaidReservation();
-            //FIXME: this fail, but not for the expected reasons: jackson is unable to serialize mocked values!
-            fail();
-        } catch (AssertionError e) {
-            e.printStackTrace();
-        }
+        when(userRepository.nullSafeFindIdByUserName(anyString())).thenReturn(Optional.empty());
+        when(json.asJsonString(any())).thenReturn("{}");
+        when(billingDocumentRepository.insert(eq(event.getId()), anyString(), anyString(), any(BillingDocument.Type.class), anyString(), any(ZonedDateTime.class), anyInt()))
+            .thenReturn(new AffectedRowCountAndKey<>(1, 1l));
+
+        testPaidReservation();
+        //FIXME: should fail, but how?? Currently it's not failing
     }
 
     private void testPaidReservation() {
@@ -964,6 +970,11 @@ class TicketReservationManagerTest {
         when(reservation.getPromoCodeDiscountId()).thenReturn(null);
         when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(new Organization(1, "", "", ""));
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+
+        when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(BillingDocument.Type.class), anyString(), any(ZonedDateTime.class), anyInt()))
+            .thenReturn(new AffectedRowCountAndKey<>(1, 1l));
+        when(json.fromJsonString(anyString(), eq(OrderSummary.class))).thenReturn(mock(OrderSummary.class));
+        when(json.asJsonString(any())).thenReturn("{}");
 
         trm.confirmOfflinePayment(event, RESERVATION_ID, "username");
         verify(ticketReservationRepository, atLeastOnce()).findOptionalReservationById(RESERVATION_ID);

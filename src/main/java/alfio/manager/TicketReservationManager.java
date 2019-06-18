@@ -142,6 +142,7 @@ public class TicketReservationManager {
     private final GroupManager groupManager;
     private final BillingDocumentRepository billingDocumentRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final Json json;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -183,7 +184,8 @@ public class TicketReservationManager {
                                     ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository,
                                     GroupManager groupManager,
                                     BillingDocumentRepository billingDocumentRepository,
-                                    NamedParameterJdbcTemplate jdbcTemplate) {
+                                    NamedParameterJdbcTemplate jdbcTemplate,
+                                    Json json) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -216,6 +218,7 @@ public class TicketReservationManager {
         this.groupManager = groupManager;
         this.billingDocumentRepository = billingDocumentRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.json = json;
     }
     
     /**
@@ -678,7 +681,7 @@ public class TicketReservationManager {
         return !summary.getFree() && (!summary.getNotYetPaid() || (summary.getWaitingForPayment() && ticketReservation.isInvoiceRequested()));
     }
 
-    private static List<Mailer.Attachment> generateBillingDocumentAttachment(EventAndOrganizationId event,
+    private List<Mailer.Attachment> generateBillingDocumentAttachment(EventAndOrganizationId event,
                                                                              TicketReservation ticketReservation,
                                                                              Locale language,
                                                                              Map<String, Object> billingDocumentModel,
@@ -686,8 +689,8 @@ public class TicketReservationManager {
         Map<String, String> model = new HashMap<>();
         model.put("reservationId", ticketReservation.getId());
         model.put("eventId", Integer.toString(event.getId()));
-        model.put("language", Json.toJson(language));
-        model.put("reservationEmailModel", Json.toJson(billingDocumentModel));//ticketReservation.getHasInvoiceNumber()
+        model.put("language", json.asJsonString(language));
+        model.put("reservationEmailModel", json.asJsonString(billingDocumentModel));//ticketReservation.getHasInvoiceNumber()
         switch (documentType) {
             case INVOICE:
                 return Collections.singletonList(new Mailer.Attachment("invoice.pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.INVOICE_PDF));
@@ -767,14 +770,14 @@ public class TicketReservationManager {
         Optional<String> vat = getVAT(event);
         String existingModel = reservation.getInvoiceModel();
         boolean existingModelPresent = StringUtils.isNotBlank(existingModel);
-        OrderSummary summary = existingModelPresent ? Json.fromJson(existingModel, OrderSummary.class) : orderSummaryForReservationId(reservation.getId(), event);
+        OrderSummary summary = existingModelPresent ? json.fromJsonString(existingModel, OrderSummary.class) : orderSummaryForReservationId(reservation.getId(), event);
         Map<String, Object> model = prepareModelForReservationEmail(event, reservation, vat, summary);
         String number = reservation.getHasInvoiceNumber() ? reservation.getInvoiceNumber() : UUID.randomUUID().toString();
         if(!existingModelPresent) {
             //we still save invoice/receipt model to tickets_reservation for backward compatibility
-            ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservation.getId(), Json.toJson(summary));
+            ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservation.getId(), json.asJsonString(summary));
         }
-        AffectedRowCountAndKey<Long> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, type, Json.toJson(model), ZonedDateTime.now(), event.getOrganizationId());
+        AffectedRowCountAndKey<Long> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, type, json.asJsonString(model), ZonedDateTime.now(), event.getOrganizationId());
         auditingRepository.insert(reservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.BILLING_DOCUMENT_GENERATED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), singletonList(singletonMap("documentId", doc.getKey())));
         return model;
     }
@@ -1817,7 +1820,7 @@ public class TicketReservationManager {
 
 
     public void updateReservationInvoicingAdditionalInformation(String reservationId, TicketReservationInvoicingAdditionalInfo ticketReservationInvoicingAdditionalInfo) {
-        ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, Json.toJson(ticketReservationInvoicingAdditionalInfo));
+        ticketReservationRepository.updateInvoicingAdditionalInformation(reservationId, json.asJsonString(ticketReservationInvoicingAdditionalInfo));
     }
 
     private static Locale getReservationLocale(TicketReservation reservation) {
@@ -2051,7 +2054,7 @@ public class TicketReservationManager {
             .peek(tr -> {
                 var reservationId = tr.getTicketReservation().getId();
                 auditingRepository.insert(reservationId, null, event.getId(),
-                    MATCHING_PAYMENT_FOUND, new Date(), RESERVATION, reservationId, Json.toJson(List.of(tr.getTransaction().getMetadata())));
+                    MATCHING_PAYMENT_FOUND, new Date(), RESERVATION, reservationId, json.asJsonString(List.of(tr.getTransaction().getMetadata())));
                 pendingReservationsMap.remove(reservationId);
             })
             .collect(groupingBy(tr -> tr.getTransaction().getStatus()));
