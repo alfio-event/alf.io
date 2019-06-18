@@ -776,7 +776,7 @@ class TicketReservationManagerTest {
         );
         when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         mockBillingDocument();
-        testPaidReservation();
+        testPaidReservation(true, true);
         verify(notificationManager).sendTicketByEmail(any(), any(), any(), any(), any(), any());
     }
 
@@ -790,22 +790,19 @@ class TicketReservationManagerTest {
         );
         when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         mockBillingDocument();
-        testPaidReservation();
+        testPaidReservation(true, true);
         verify(notificationManager, never()).sendTicketByEmail(any(), any(), any(), any(), any(), any());
     }
 
     @Test
     void confirmAndLockTickets() {
-        when(configurationManager.getFor(event, ENABLE_TICKET_TRANSFER)).thenReturn(
-            new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_TICKET_TRANSFER)
-        );
         when(configurationManager.getFor(event, SEND_TICKETS_AUTOMATICALLY)).thenReturn(
             new ConfigurationManager.MaybeConfiguration(Optional.empty(), SEND_TICKETS_AUTOMATICALLY)
         );
         when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         when(ticketRepository.forbidReassignment(any())).thenReturn(1);
         mockBillingDocument();
-        testPaidReservation();
+        testPaidReservation(true, true);
     }
 
     private void mockBillingDocument() {
@@ -815,7 +812,6 @@ class TicketReservationManagerTest {
 
     @Test
     void lockFailed() {
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(false);
         when(ticketRepository.forbidReassignment(any())).thenReturn(0);
         when(configurationManager.getFor(event, SEND_TICKETS_AUTOMATICALLY)).thenReturn(
             new ConfigurationManager.MaybeConfiguration(Optional.empty(), SEND_TICKETS_AUTOMATICALLY)
@@ -826,14 +822,14 @@ class TicketReservationManagerTest {
         when(billingDocumentRepository.insert(eq(event.getId()), anyString(), anyString(), any(BillingDocument.Type.class), anyString(), any(ZonedDateTime.class), anyInt()))
             .thenReturn(new AffectedRowCountAndKey<>(1, 1l));
 
-        testPaidReservation();
-        //FIXME: should fail, but how?? Currently it's not failing
+
+        testPaidReservation(false, false);
     }
 
-    private void testPaidReservation() {
+    private void testPaidReservation(boolean enableTicketTransfer, boolean successful) {
         initConfirmReservation();
         when(configurationManager.getFor(event, ENABLE_TICKET_TRANSFER)).thenReturn(
-            new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_TICKET_TRANSFER)
+            new ConfigurationManager.MaybeConfiguration(Optional.of(new ConfigurationKeyValuePathLevel(null, Boolean.toString(enableTicketTransfer), null)), ENABLE_TICKET_TRANSFER)
         );
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull())).thenReturn(1);
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
@@ -851,18 +847,23 @@ class TicketReservationManagerTest {
             true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         when(ticketReservation.getStatus()).thenReturn(IN_PAYMENT);
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.empty(), Optional.of(PaymentProxy.STRIPE));
-        assertTrue(result.isSuccessful());
-        assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
-        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
-        verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
-        verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()));
-        verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
-        verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
-        verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
-        verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
-        verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
-        verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
+        if(successful) {
+            assertTrue(result.isSuccessful());
+            assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
+            verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
+            verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
+            verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()));
+            verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
+            verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());
+            verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
+            verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
+            verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
+            verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
+            verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
+        } else {
+            assertFalse(result.isSuccessful());
+            assertTrue(result.isFailed());
+        }
     }
 
     @Test
