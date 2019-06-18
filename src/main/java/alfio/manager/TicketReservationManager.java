@@ -1650,7 +1650,10 @@ public class TicketReservationManager {
     public void releaseTicket(Event event, TicketReservation ticketReservation, final Ticket ticket) {
         var category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         var isFree = ticket.getFinalPriceCts() == 0;
-        var enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticket.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false);
+
+        var keyForAllowCancellation = ticket.getCategoryId() != null ?
+            Configuration.from(event.getOrganizationId(), event.getId(), ticket.getCategoryId(), ALLOW_FREE_TICKETS_CANCELLATION) : Configuration.from(event, ALLOW_FREE_TICKETS_CANCELLATION);
+        var enableFreeCancellation = configurationManager.getBooleanConfigValue(keyForAllowCancellation, false);
         var conditionsMet = CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket);
 
         // reported the conditions of TicketDecorator.getCancellationEnabled
