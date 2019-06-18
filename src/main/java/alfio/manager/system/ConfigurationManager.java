@@ -506,8 +506,12 @@ public class ConfigurationManager {
 
 
     public Map<ConfigurationKeys, MaybeConfiguration> getFor(EventAndOrganizationId eventAndOrganizationId, Collection<ConfigurationKeys> keys) {
-        var found = configurationRepository.findByEventAndKeys(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
-        return buildKeyConfigurationMapResult(keys, found);
+        if (eventAndOrganizationId == null) {
+            return getFor(keys);
+        } else {
+            var found = configurationRepository.findByEventAndKeys(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
+            return buildKeyConfigurationMapResult(keys, found);
+        }
     }
 
     public MaybeConfiguration getFor(EventAndOrganizationId eventAndOrganizationId, ConfigurationKeys key) {
