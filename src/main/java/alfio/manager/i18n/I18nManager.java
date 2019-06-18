@@ -18,7 +18,6 @@ package alfio.manager.i18n;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +46,7 @@ public class I18nManager {
     }
 
     public List<ContentLanguage> getSupportedLanguages() {
-        return ContentLanguage.findAllFor(configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.SUPPORTED_LANGUAGES), ContentLanguage.ENGLISH_IDENTIFIER));//default to English
+        return ContentLanguage.findAllFor(configurationManager.getFor(ConfigurationKeys.SUPPORTED_LANGUAGES).getValueAsIntOrDefault(ContentLanguage.ENGLISH_IDENTIFIER));//default to English
     }
 
     public List<ContentLanguage> getEventLanguages(String eventName) {
