@@ -469,9 +469,9 @@ public class ConfigurationManager {
 
     @Deprecated
     public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
-        var conf = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS, ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS));
+        var conf = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS, RECAPTCHA_API_KEY));
         return conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault(false) &&
-            conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueOrDefault(null) != null;
+            conf.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
     }
 
     public boolean isRecaptchaForTicketSelectionEnabled(EventAndOrganizationId event) {
@@ -515,26 +515,35 @@ public class ConfigurationManager {
         var res = new EnumMap<ConfigurationKeys, MaybeConfiguration>(ConfigurationKeys.class);
 
         for (var k : keys) {
-            res.put(k, new MaybeConfiguration(Optional.empty(), k));
+            res.put(k, new MaybeConfiguration(k));
         }
 
         for (var c : found) {
             res.get(c.getConfigurationKey()).ifPresentOrElse(alreadyPresent -> {
                 //override mechanism, if a configuration path is more precise that the one already present, we will replace it
                 if (alreadyPresent.getConfigurationPathLevel().getPriority() < c.getConfigurationPathLevel().getPriority()) {
-                    res.put(c.getConfigurationKey(), new MaybeConfiguration(Optional.of(c), c.getConfigurationKey()));
+                    res.put(c.getConfigurationKey(), new MaybeConfiguration(c.getConfigurationKey(), c));
                 }
-            }, () -> res.put(c.getConfigurationKey(), new MaybeConfiguration(Optional.of(c), c.getConfigurationKey())));
+            }, () -> res.put(c.getConfigurationKey(), new MaybeConfiguration(c.getConfigurationKey(), c)));
         }
 
         return res;
     }
 
 
-    @AllArgsConstructor
     public static class MaybeConfiguration {
         private final Optional<ConfigurationKeyValuePathLevel> configuration;
         private final ConfigurationKeys key;
+
+        public MaybeConfiguration(ConfigurationKeys key) {
+            this.key = key;
+            this.configuration = Optional.empty();
+        }
+
+        public MaybeConfiguration(ConfigurationKeys key, ConfigurationKeyValuePathLevel configuration) {
+            this.configuration = Optional.ofNullable(configuration);
+            this.key = key;
+        }
 
         void ifPresentOrElse(Consumer<? super ConfigurationKeyValuePathLevel> action, Runnable emptyAction) {
             configuration.ifPresentOrElse(action, emptyAction);

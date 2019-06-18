@@ -24,7 +24,6 @@ import alfio.model.Event;
 import alfio.model.SpecialPrice;
 import alfio.model.TicketCategory;
 import alfio.model.modification.SendCodeModification;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
@@ -127,7 +126,7 @@ public class SpecialPriceManagerTest {
     @Test
     public void sendAllCodes() throws Exception {
         when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
-            .thenReturn(new ConfigurationManager.MaybeConfiguration(Optional.empty(), USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         assertTrue(specialPriceManager.sendCodeToAssignee(CODES_REQUESTED, "", 0, ""));
         verify(notificationManager, times(CODES_REQUESTED.size())).sendSimpleEmail(eq(event), isNull(), anyString(), anyString(), any());
     }
@@ -135,14 +134,14 @@ public class SpecialPriceManagerTest {
     @Test
     public void sendSuccessfulComplete() throws Exception {
         when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
-            .thenReturn(new ConfigurationManager.MaybeConfiguration(Optional.empty(), USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         sendMessage(null);
     }
 
     @Test
     public void trimLanguageTag() throws Exception {
         when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
-            .thenReturn(new ConfigurationManager.MaybeConfiguration(Optional.empty(), USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", " it")), "", 0, ""));
         ArgumentCaptor<TextTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TextTemplateGenerator.class);
         verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq("me@domain.com"), anyString(), templateCaptor.capture());
@@ -162,7 +161,7 @@ public class SpecialPriceManagerTest {
     void usePartnerCode() {
         when(messageSource.getMessage(eq("show-event.promo-code-type.partner"), isNull(), isNull(), any())).thenReturn("Partner");
         when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
-            .thenReturn(new ConfigurationManager.MaybeConfiguration(Optional.of(new ConfigurationKeyValuePathLevel(null, "true", null)), USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, new ConfigurationKeyValuePathLevel(null, "true", null)));
         sendMessage("Partner");
     }
 

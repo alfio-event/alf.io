@@ -19,9 +19,7 @@ package alfio.manager;
 import alfio.manager.support.CheckInStatistics;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
@@ -69,7 +67,7 @@ public class CheckInManagerTest {
     @Test
     public void getStatistics() {
         when(configurationManager.getFor(event, CHECK_IN_STATS))
-            .thenReturn(new ConfigurationManager.MaybeConfiguration(Optional.of(new ConfigurationKeyValuePathLevel(null, "true", null)), CHECK_IN_STATS));
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(CHECK_IN_STATS, new ConfigurationKeyValuePathLevel(null, "true", null)));
         CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
         assertNotNull(statistics);
         verify(eventRepository).retrieveCheckInStatisticsForEvent(EVENT_ID);
@@ -78,7 +76,7 @@ public class CheckInManagerTest {
     @Test
     public void getStatisticsDisabled() {
         when(configurationManager.getFor(event, CHECK_IN_STATS))
-            .thenReturn(new ConfigurationManager.MaybeConfiguration(Optional.of(new ConfigurationKeyValuePathLevel(null, "false", null)), CHECK_IN_STATS));
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(CHECK_IN_STATS, new ConfigurationKeyValuePathLevel(null, "false", null)));
         CheckInStatistics statistics = checkInManager.getStatistics(EVENT_NAME, USERNAME);
         assertNull(statistics);
         verify(eventRepository, never()).retrieveCheckInStatisticsForEvent(EVENT_ID);

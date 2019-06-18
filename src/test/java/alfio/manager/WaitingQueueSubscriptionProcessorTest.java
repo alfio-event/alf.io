@@ -95,8 +95,8 @@ public class WaitingQueueSubscriptionProcessorTest {
     void filterWaitingQueueFlagIsNotActive() {
         when(configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)))
             .thenReturn(Map.of(
-                ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(Optional.of(new ConfigurationKeyValuePathLevel( "", "false", null)), ENABLE_WAITING_QUEUE),
-                ENABLE_PRE_REGISTRATION, new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_PRE_REGISTRATION)
+                ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(ENABLE_WAITING_QUEUE, new ConfigurationKeyValuePathLevel( "", "false", null)),
+                ENABLE_PRE_REGISTRATION, new ConfigurationManager.MaybeConfiguration(ENABLE_PRE_REGISTRATION)
             ));
 
         processor.handleWaitingTickets();
@@ -108,8 +108,8 @@ public class WaitingQueueSubscriptionProcessorTest {
 
         when(configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)))
             .thenReturn(Map.of(
-                ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(Optional.of(new ConfigurationKeyValuePathLevel( "", "true", null)), ENABLE_WAITING_QUEUE),
-                ENABLE_PRE_REGISTRATION, new ConfigurationManager.MaybeConfiguration(Optional.empty(), ENABLE_PRE_REGISTRATION)
+                ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(ENABLE_WAITING_QUEUE, new ConfigurationKeyValuePathLevel( "", "true", null)),
+                ENABLE_PRE_REGISTRATION, new ConfigurationManager.MaybeConfiguration(ENABLE_PRE_REGISTRATION)
             ));
 
         when(messageSource.getMessage(anyString(), any(), eq(Locale.ENGLISH))).thenReturn("subject");
