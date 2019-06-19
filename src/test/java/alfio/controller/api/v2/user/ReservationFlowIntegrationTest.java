@@ -321,10 +321,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getShortName(), events.get(0).getShortName());
 
         //
-        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getEvent("NOT_EXISTS").getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getEvent("NOT_EXISTS", new MockHttpSession()).getStatusCode());
         //
 
-        var eventRes = eventApiV2Controller.getEvent(event.getShortName());
+        var eventRes = eventApiV2Controller.getEvent(event.getShortName(), new MockHttpSession());
         assertEquals(HttpStatus.OK, eventRes.getStatusCode());
         var selectedEvent = eventRes.getBody();
         assertEquals("CHF", selectedEvent.getCurrency());

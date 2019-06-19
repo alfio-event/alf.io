@@ -41,6 +41,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -53,6 +54,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -113,7 +115,7 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}")
-    public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable("eventName") String eventName) {
+    public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable("eventName") String eventName, HttpSession session) {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
             .map(event -> {
 
@@ -210,9 +212,11 @@ public class EventApiV2Controller {
                 //
 
                 //analytics configuration
-                var googAnalyticsKey = configurationsValues.get(GOOGLE_ANALYTICS_KEY).getValueOrDefault(null);
+                var googAnalyticsKey = StringUtils.trimToNull(configurationsValues.get(GOOGLE_ANALYTICS_KEY).getValueOrDefault(null));
                 var googAnalyticsScrambled = configurationsValues.get(GOOGLE_ANALYTICS_ANONYMOUS_MODE).getValueAsBooleanOrDefault(true);
-                var analyticsConf = new EventWithAdditionalInfo.AnalyticsConfiguration(googAnalyticsKey, googAnalyticsScrambled);
+
+                var clientId = googAnalyticsKey != null && googAnalyticsScrambled && session.getId() != null ? DigestUtils.sha512Hex(session.getId()) : null;
+                var analyticsConf = new EventWithAdditionalInfo.AnalyticsConfiguration(googAnalyticsKey, googAnalyticsScrambled, clientId);
                 //
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,

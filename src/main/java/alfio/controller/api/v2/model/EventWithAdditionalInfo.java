@@ -239,5 +239,6 @@ public class EventWithAdditionalInfo implements DateValidity {
     public static class AnalyticsConfiguration {
         private final String googleAnalyticsKey;
         private final boolean googleAnalyticsScrambledInfo; //<- see GOOGLE_ANALYTICS_ANONYMOUS_MODE
+        private final String clientId;
     }
 }
