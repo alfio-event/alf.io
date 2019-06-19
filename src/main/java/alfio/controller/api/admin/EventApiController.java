@@ -53,7 +53,6 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -513,12 +512,11 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
-    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal,
-                                 Model model, HttpServletRequest request) {
+    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal, HttpServletRequest request) {
         ticketReservationManager.confirmOfflinePayment(loadEvent(eventName, principal), reservationId, principal.getName());
         ticketReservationManager.findById(reservationId)
             .filter(TicketReservation::isDirectAssignmentRequested)
-            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), reservation.getUserLanguage(), Optional.empty(), request, model));
+            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), reservation.getUserLanguage(), Optional.empty(), request));
         return OK;
     }
 

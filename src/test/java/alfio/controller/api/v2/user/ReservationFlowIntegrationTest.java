@@ -912,7 +912,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(10, reservation.getVatCts());
         assertEquals(0, reservation.getDiscountCts());
         assertEquals(1, eventApiController.getPendingPayments(eventName).size());
-        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal, new BindingAwareModelMap(), new MockHttpServletRequest()));
+        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal, new MockHttpServletRequest()));
         assertEquals(0, eventApiController.getPendingPayments(eventName).size());
         assertEquals(1000, eventRepository.getGrossIncome(event.getId()));
     }

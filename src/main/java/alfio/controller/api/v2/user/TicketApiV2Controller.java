@@ -226,7 +226,7 @@ public class TicketApiV2Controller {
             ticketIdentifier,
             updateTicketOwner,
             Optional.of(bindingResult),
-            request, t -> { },
+            request,
             userDetails, false);
 
         return assignmentResult.map(r -> new ValidatedResponse<>(r.getLeft(), r.getLeft().isSuccess())).orElseThrow(IllegalStateException::new);

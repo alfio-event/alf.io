@@ -431,11 +431,9 @@ public class ReservationApiV2Controller {
             contactAndTicketsForm.getTickets().forEach((ticketId, owner) -> {
                 if (preAssign) {
                     Optional<Errors> bindingResultOptional = skipValidation ? Optional.empty() : Optional.of(bindingResult);
-                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, request, (tr) -> {
-                    }, Optional.empty());
+                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, request, Optional.empty());
                 } else {
-                    ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {
-                    }, Optional.empty(), true);
+                    ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), request, Optional.empty(), true);
                 }
             });
         }
