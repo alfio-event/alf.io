@@ -410,7 +410,7 @@ public class EventApiV2Controller {
 
     @PostMapping(value = "event/{eventName}/reserve-tickets")
     public ResponseEntity<ValidatedResponse<String>> reserveTicket(@PathVariable("eventName") String eventName,
-                                                                   @RequestParam("lang") String lang,
+                                                                   @RequestParam(required = false, name = "lang") String lang,
                                                                    @RequestBody ReservationForm reservation,
                                                                    BindingResult bindingResult,
                                                                    ServletWebRequest request) {

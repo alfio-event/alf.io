@@ -93,7 +93,7 @@ public class TicketApiV2Controller {
     @GetMapping("/event/{eventName}/ticket/{ticketIdentifier}/download-ticket")
     public void generateTicketPdf(@PathVariable("eventName") String eventName,
                                   @PathVariable("ticketIdentifier") String ticketIdentifier,
-                                  HttpServletRequest request, HttpServletResponse response) {
+                                  @RequestParam(required = false, name = "lang") String lang, HttpServletResponse response) {
 
         ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier).ifPresentOrElse(data -> {
 
@@ -107,7 +107,7 @@ public class TicketApiV2Controller {
                 TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation);
-                TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, request), event, ticketReservation,
+                TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, Locale.forLanguageTag(lang)), event, ticketReservation,
                     ticket, ticketCategory, organization,
                     templateManager, fileUploadManager,
                     reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager);
@@ -125,13 +125,13 @@ public class TicketApiV2Controller {
 
     @PostMapping("/event/{eventName}/ticket/{ticketIdentifier}/send-ticket-by-email")
     public ResponseEntity<Boolean> sendTicketByEmail(@PathVariable("eventName") String eventName,
-                                    @PathVariable("ticketIdentifier") String ticketIdentifier,
-                                    HttpServletRequest request) {
+                                                     @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                                     @RequestParam(required = false, name = "lang") String lang) {
 
         return ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier).map(data -> {
             Ticket ticket = data.getRight();
             Event event = data.getLeft();
-            Locale locale = LocaleUtil.getTicketLanguage(ticket, request);
+            Locale locale = LocaleUtil.getTicketLanguage(ticket, Locale.forLanguageTag(lang));
 
             TicketReservation reservation = data.getMiddle();
             Organization organization = organizationRepository.getById(event.getOrganizationId());
@@ -211,11 +211,11 @@ public class TicketApiV2Controller {
 
     @PutMapping("/event/{eventName}/ticket/{ticketIdentifier}")
     public ValidatedResponse<Boolean> updateTicketInfo(@PathVariable("eventName") String eventName,
-                                              @PathVariable("ticketIdentifier") String ticketIdentifier,
-                                              @RequestBody UpdateTicketOwnerForm updateTicketOwner,
-                                              BindingResult bindingResult,
-                                              HttpServletRequest request,
-                                              Authentication authentication) {
+                                                       @PathVariable("ticketIdentifier") String ticketIdentifier,
+                                                       @RequestBody UpdateTicketOwnerForm updateTicketOwner,
+                                                       BindingResult bindingResult,
+                                                       @RequestParam(required = false, name = "lang") String lang,
+                                                       Authentication authentication) {
 
         Optional<UserDetails> userDetails = Optional.ofNullable(authentication)
             .map(Authentication::getPrincipal)
@@ -226,7 +226,7 @@ public class TicketApiV2Controller {
             ticketIdentifier,
             updateTicketOwner,
             Optional.of(bindingResult),
-            request,
+            Locale.forLanguageTag(lang),
             userDetails, false);
 
         return assignmentResult.map(r -> new ValidatedResponse<>(r.getLeft(), r.getLeft().isSuccess())).orElseThrow(IllegalStateException::new);

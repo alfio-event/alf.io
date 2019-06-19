@@ -18,19 +18,17 @@ package alfio.util;
 
 import alfio.model.Ticket;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.servlet.support.RequestContextUtils;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Locale;
 import java.util.Optional;
 
 public final class LocaleUtil {
     private LocaleUtil() {}
 
-    public static Locale getTicketLanguage(Ticket t, HttpServletRequest request) {
+    public static Locale getTicketLanguage(Ticket t, Locale locale) {
         return Optional.ofNullable(t.getUserLanguage())
                 .filter(StringUtils::isNotBlank)
                 .map(Locale::forLanguageTag)
-                .orElseGet(() -> RequestContextUtils.getLocale(request));
+                .orElse(locale);
     }
 }
