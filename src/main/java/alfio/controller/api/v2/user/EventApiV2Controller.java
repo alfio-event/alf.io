@@ -216,7 +216,7 @@ public class EventApiV2Controller {
                 var googAnalyticsScrambled = configurationsValues.get(GOOGLE_ANALYTICS_ANONYMOUS_MODE).getValueAsBooleanOrDefault(true);
 
                 var clientId = googAnalyticsKey != null && googAnalyticsScrambled && session.getId() != null ? DigestUtils.sha512Hex(session.getId()) : null;
-                var analyticsConf = new EventWithAdditionalInfo.AnalyticsConfiguration(googAnalyticsKey, googAnalyticsScrambled, clientId);
+                var analyticsConf = new AnalyticsConfiguration(googAnalyticsKey, googAnalyticsScrambled, clientId);
                 //
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
