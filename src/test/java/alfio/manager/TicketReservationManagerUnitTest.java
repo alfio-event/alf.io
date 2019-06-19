@@ -21,6 +21,7 @@ import alfio.model.*;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
+import alfio.util.Json;
 import alfio.util.TemplateManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,6 +75,7 @@ public class TicketReservationManagerUnitTest {
     private UserRepository userRepository;
     private ExtensionManager extensionManager;
     private GroupManager groupManager;
+    private Json json;
 
     @BeforeEach
     public void setUp() {
@@ -108,6 +110,7 @@ public class TicketReservationManagerUnitTest {
         extensionManager = mock(ExtensionManager.class);
         groupManager = mock(GroupManager.class);
         BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
+        json = mock(Json.class);
 
         manager = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -136,7 +139,8 @@ public class TicketReservationManagerUnitTest {
             mock(TicketSearchRepository.class),
             groupManager,
             billingDocumentRepository,
-            mock(NamedParameterJdbcTemplate.class));
+            mock(NamedParameterJdbcTemplate.class),
+            json);
 
     }
 

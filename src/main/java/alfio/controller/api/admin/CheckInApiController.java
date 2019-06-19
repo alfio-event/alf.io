@@ -23,7 +23,6 @@ import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.FullTicketInfo;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -237,7 +236,7 @@ public class CheckInApiController {
     }
 
     private Optional<LabelLayout> loadLabelLayout(EventAndOrganizationId event) {
-        return configurationManager.getStringConfigValue(Configuration.from(event, ConfigurationKeys.LABEL_LAYOUT))
+        return configurationManager.getFor(event, ConfigurationKeys.LABEL_LAYOUT).getValue()
             .flatMap(str -> optionally(() -> Json.fromJson(str, LabelLayout.class)));
     }
 

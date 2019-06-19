@@ -22,11 +22,9 @@ import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.token.StripeCreditCardToken;
-import alfio.repository.AuditingRepository;
 import alfio.repository.TicketRepository;
 import alfio.repository.TransactionRepository;
 import alfio.repository.system.ConfigurationRepository;
-import alfio.repository.user.UserRepository;
 import com.stripe.exception.AuthenticationException;
 import com.stripe.exception.StripeException;
 import com.stripe.model.Charge;
@@ -39,6 +37,7 @@ import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
 
+import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
@@ -49,8 +48,7 @@ public class StripeManagerTest {
     private TransactionRepository transactionRepository;
     private ConfigurationManager configurationManager;
     private ConfigurationRepository configurationRepository;
-    private AuditingRepository auditingRepository;
-    private UserRepository userRepository;
+
     private TicketRepository ticketRepository;
     private Event event;
     private CustomerName customerName;
@@ -62,13 +60,12 @@ public class StripeManagerTest {
     public void setUp() {
         transactionRepository = mock(TransactionRepository.class);
         configurationManager = mock(ConfigurationManager.class);
-        auditingRepository = mock(AuditingRepository.class);
-        userRepository = mock(UserRepository.class);
         ticketRepository = mock(TicketRepository.class);
         event = mock(Event.class);
         customerName = mock(CustomerName.class);
         configurationRepository = mock(ConfigurationRepository.class);
         when(customerName.getFullName()).thenReturn("ciccio");
+        when(configurationManager.getFor(event, PLATFORM_MODE_ENABLED)).thenReturn(new ConfigurationManager.MaybeConfiguration(PLATFORM_MODE_ENABLED));
     }
 
     @Test

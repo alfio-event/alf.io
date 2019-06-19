@@ -21,7 +21,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.audit.ScanAudit;
-import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
@@ -407,7 +406,7 @@ public class CheckInManager {
     }
 
     private boolean areStatsEnabled(EventAndOrganizationId event) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(event, CHECK_IN_STATS), true);
+        return configurationManager.getFor(event, CHECK_IN_STATS).getValueAsBooleanOrDefault(true);
     }
 
     @Getter

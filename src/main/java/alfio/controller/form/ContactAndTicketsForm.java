@@ -46,7 +46,6 @@ public class ContactAndTicketsForm implements Serializable {
     private String lastName;
     private String billingAddress;
     private String customerReference;
-    private Boolean cancelReservation;
 
     private Boolean expressCheckoutRequested;
     private boolean postponeAssignment = false;
@@ -63,7 +62,6 @@ public class ContactAndTicketsForm implements Serializable {
 
     private Boolean addCompanyBillingDetails;
     private Boolean skipVatNr;
-    private Boolean backFromOverview;
     //
 
     // https://github.com/alfio-event/alf.io/issues/573
@@ -195,18 +193,6 @@ public class ContactAndTicketsForm implements Serializable {
         return l.stream().anyMatch(v -> !v.isSuccess() && v.getErrorDescriptors().stream().anyMatch(ed -> ed.getCode().equals(STEP_2_INVALID_VAT)));
     }
 
-    public Boolean shouldCancelReservation() {
-        return Optional.ofNullable(cancelReservation).orElse(false);
-    }
-
-    public boolean getHasVatCountryCode() {
-        return !StringUtils.isEmpty(vatCountryCode);
-    }
-
-    public boolean isBackFromOverview() {
-        return Boolean.TRUE.equals(backFromOverview);
-    }
-
     public boolean canSkipVatNrCheck() {
         return Boolean.TRUE.equals(skipVatNr);
     }
@@ -214,20 +200,6 @@ public class ContactAndTicketsForm implements Serializable {
     public boolean isBusiness() {
         return getAddCompanyBillingDetails() && !canSkipVatNrCheck() && invoiceRequested;
     }
-
-    // https://github.com/alfio-event/alf.io/issues/573
-    public boolean getItalyEInvoicingTypeAddresseeCode() {
-        return italyEInvoicingReferenceType == ItalianEInvoicing.ReferenceType.ADDRESSEE_CODE;
-    }
-
-    public boolean getItalyEInvoicingTypePEC() {
-        return italyEInvoicingReferenceType == ItalianEInvoicing.ReferenceType.PEC;
-    }
-
-    public boolean getItalyEInvoicingTypeNone() {
-        return italyEInvoicingReferenceType == ItalianEInvoicing.ReferenceType.NONE;
-    }
-    //
 
     public boolean getAddCompanyBillingDetails() {
         return Boolean.TRUE.equals(addCompanyBillingDetails);

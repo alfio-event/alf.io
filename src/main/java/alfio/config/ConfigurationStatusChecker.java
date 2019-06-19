@@ -19,7 +19,6 @@ package alfio.config;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.DataMigrator;
 import alfio.manager.user.UserManager;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
 import alfio.model.user.User;
@@ -65,7 +64,7 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
-        boolean initCompleted = configurationManager.getBooleanConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.INIT_COMPLETED), false);
+        boolean initCompleted = configurationManager.getFor(ConfigurationKeys.INIT_COMPLETED).getValueAsBooleanOrDefault(false);
         if (!initCompleted) {
             String adminPassword = PasswordGenerator.generateRandomPassword();
             userRepository.create(UserManager.ADMIN_USERNAME, passwordEncoder.encode(adminPassword), "The", "Administrator", "admin@localhost", true, User.Type.INTERNAL, null, null);

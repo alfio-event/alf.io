@@ -25,20 +25,20 @@ import java.io.Writer;
 import java.util.Collections;
 import java.util.Locale;
 
-import static alfio.util.MustacheCustomTagInterceptor.ADDITIONAL_FIELD_VALUE;
+import static alfio.util.MustacheCustomTag.ADDITIONAL_FIELD_VALUE;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
-public class MustacheCustomTagInterceptorTest {
+public class MustacheCustomTagTest {
 
     private Template.Fragment fragment = Mockito.mock(Template.Fragment.class);
     private Writer out = Mockito.mock(Writer.class);
 
     @Test
     public void translateCountryCode() {
-        assertEquals("Greece", MustacheCustomTagInterceptor.translateCountryCode("GR", null));
-        assertEquals("Greece", MustacheCustomTagInterceptor.translateCountryCode("EL", null));
-        assertEquals("Grecia", MustacheCustomTagInterceptor.translateCountryCode("EL", Locale.ITALIAN));
+        assertEquals("Greece", MustacheCustomTag.translateCountryCode("GR", null));
+        assertEquals("Greece", MustacheCustomTag.translateCountryCode("EL", null));
+        assertEquals("Grecia", MustacheCustomTag.translateCountryCode("EL", Locale.ITALIAN));
     }
 
     @Test

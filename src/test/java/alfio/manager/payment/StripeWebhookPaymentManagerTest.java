@@ -22,6 +22,8 @@ import alfio.model.Audit;
 import alfio.model.Event;
 import alfio.model.TicketReservation;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeyValuePathLevel;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.TransactionWebhookPayload;
@@ -64,6 +66,10 @@ class StripeWebhookPaymentManagerTest {
     private AuditingRepository auditingRepository;
     private Environment environment;
     private TicketReservation ticketReservation;
+
+    private static final ConfigurationManager.MaybeConfiguration STRIPE_SECRET_KEY_CONF =
+        new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.STRIPE_SECRET_KEY,
+            new ConfigurationKeyValuePathLevel(null, "sk_live_", null));
 
     @BeforeEach
     void setup() {
@@ -113,7 +119,7 @@ class StripeWebhookPaymentManagerTest {
         when(ticketReservation.getStatus()).thenReturn(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT);
         var paymentContext = mock(PaymentContext.class);
         when(paymentContext.getEvent()).thenReturn(event);
-        when(configurationManager.getRequiredValue(eq(Configuration.from(event, STRIPE_SECRET_KEY)))).thenReturn("sk_live_");
+        when(configurationManager.getFor(event, STRIPE_SECRET_KEY)).thenReturn(STRIPE_SECRET_KEY_CONF);
         when(paymentIntent.getLivemode()).thenReturn(true);
         var paymentWebhookResult = stripeWebhookPaymentManager.processWebhook(transactionWebhookPayload, transaction, paymentContext);
         assertEquals(PaymentWebhookResult.Type.SUCCESSFUL, paymentWebhookResult.getType());
@@ -136,7 +142,7 @@ class StripeWebhookPaymentManagerTest {
 
         var paymentContext = mock(PaymentContext.class);
         when(paymentContext.getEvent()).thenReturn(event);
-        when(configurationManager.getRequiredValue(eq(Configuration.from(event, STRIPE_SECRET_KEY)))).thenReturn("sk_live_");
+        when(configurationManager.getFor(event, STRIPE_SECRET_KEY)).thenReturn(STRIPE_SECRET_KEY_CONF);
         when(paymentIntent.getLivemode()).thenReturn(true);
 
         var paymentWebhookResult = stripeWebhookPaymentManager.processWebhook(transactionWebhookPayload, transaction, paymentContext);
@@ -164,7 +170,7 @@ class StripeWebhookPaymentManagerTest {
         when(ticketReservation.getStatus()).thenReturn(TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT);
         var paymentContext = mock(PaymentContext.class);
         when(paymentContext.getEvent()).thenReturn(event);
-        when(configurationManager.getRequiredValue(eq(Configuration.from(event, STRIPE_SECRET_KEY)))).thenReturn("sk_live_");
+        when(configurationManager.getFor(event, STRIPE_SECRET_KEY)).thenReturn(STRIPE_SECRET_KEY_CONF);
         when(paymentIntent.getLivemode()).thenReturn(false);
         var paymentWebhookResult = stripeWebhookPaymentManager.processWebhook(transactionWebhookPayload, transaction, paymentContext);
         assertEquals(PaymentWebhookResult.Type.NOT_RELEVANT, paymentWebhookResult.getType());

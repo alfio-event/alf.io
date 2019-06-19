@@ -20,7 +20,7 @@ import alfio.config.Initializer;
 import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.controller.api.support.TicketHelper;
 import alfio.manager.EventNameManager;
-import alfio.util.MustacheCustomTagInterceptor;
+import alfio.util.MustacheCustomTag;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
@@ -83,7 +83,7 @@ public class UtilsApiController {
     
     @RequestMapping(value = "/render-commonmark") 
     public String renderCommonmark(@RequestParam("text") String input) {
-    	return MustacheCustomTagInterceptor.renderToCommonmark(StringEscapeUtils.escapeHtml4(input));
+        return MustacheCustomTag.renderToCommonmark(StringEscapeUtils.escapeHtml4(input));
     }
 
     @RequestMapping(value = "/alfio/info", method = GET)

@@ -137,13 +137,13 @@ public class ConfigurationApiController {
 
     @RequestMapping(value = "/eu-countries", method = GET)
     public List<Pair<String, String>> loadEUCountries() {
-        return TicketHelper.getLocalizedEUCountriesForVat(Locale.ENGLISH, configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)));
+        return TicketHelper.getLocalizedEUCountriesForVat(Locale.ENGLISH, configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue());
     }
 
     @RequestMapping(value = "/platform-mode/status/{organizationId}", method = GET)
     public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId) {
         Map<String, Boolean> result = new HashMap<>();
-        boolean platformModeEnabled = configurationManager.getBooleanConfigValue(getSystemConfiguration(PLATFORM_MODE_ENABLED), false);
+        boolean platformModeEnabled = configurationManager.getFor(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
         boolean stripeConnected = platformModeEnabled && StringUtils.isNotBlank(configurationManager.getStringConfigValue(from(organizationId, STRIPE_CONNECTED_ID), null));
         result.put("enabled", platformModeEnabled);
         result.put("stripeConnected", stripeConnected);

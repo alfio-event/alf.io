@@ -19,6 +19,7 @@ package alfio.manager.payment;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketRepository;
 import com.stripe.exception.*;
@@ -77,9 +78,9 @@ public class StripeCreditCardManagerTest {
 
     @Test
     void testMissingStripeConnectedId() {
-        Function<ConfigurationKeys, Configuration.ConfigurationPathKey> partial = Configuration.from(event);
-        when(configurationManager.getBooleanConfigValue(partial.apply(PLATFORM_MODE_ENABLED), false)).thenReturn(true);
-        when(configurationManager.getStringConfigValue(partial.apply(STRIPE_CONNECTED_ID))).thenReturn(Optional.empty());
+        when(configurationManager.getFor(event, PLATFORM_MODE_ENABLED))
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(PLATFORM_MODE_ENABLED, new ConfigurationKeyValuePathLevel(null, "true", null)));
+        when(configurationManager.getFor(event, STRIPE_CONNECTED_ID)).thenReturn(new ConfigurationManager.MaybeConfiguration(STRIPE_CONNECTED_ID));
         Optional<RequestOptions> options = stripeCreditCardManager.options(event);
         assertNotNull(options);
         assertFalse(options.isPresent());

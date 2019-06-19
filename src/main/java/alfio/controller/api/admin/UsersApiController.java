@@ -202,7 +202,7 @@ public class UsersApiController {
             response.setContentType("application/zip");
             response.setHeader("Content-Disposition", "attachment; filename=apiKeys.zip");
 
-            String baseUrl = configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.BASE_URL)).orElseThrow(IllegalStateException::new);
+            String baseUrl = configurationManager.getFor(ConfigurationKeys.BASE_URL).getRequiredValue();
             try(OutputStream os = response.getOutputStream(); ZipOutputStream zipOS = new ZipOutputStream(os)) {
                 for (User user : userManager.findAllApiKeysFor(organizationId)) {
                     Pair<String, byte[]> result = generateApiKeyQRCode(user, baseUrl);

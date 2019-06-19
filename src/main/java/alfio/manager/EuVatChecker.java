@@ -89,7 +89,7 @@ public class EuVatChecker {
             }
 
 
-            boolean euCountryCode = configurationManager.getRequiredValue(getSystemConfiguration(ConfigurationKeys.EU_COUNTRIES_LIST)).contains(countryCode);
+            boolean euCountryCode = configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
 
             boolean validationEnabled = validationEnabled(configurationManager, organizationId);
             if(euCountryCode && validationEnabled) {

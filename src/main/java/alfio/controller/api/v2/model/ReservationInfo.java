@@ -70,7 +70,7 @@ public class ReservationInfo {
     private final TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing.ReferenceType italyEInvoicingReferenceType;
     private final String italyEInvoicingReferenceAddresseeCode;
     private final String italyEInvoicingReferencePEC;
-    //
+    // https://github.com/alfio-event/alf.io/issues/573
 
     //reservation info group related info
     private final boolean containsCategoriesLinkedToGroups;

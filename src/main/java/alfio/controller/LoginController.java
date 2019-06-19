@@ -19,7 +19,6 @@ package alfio.controller;
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import org.springframework.core.env.Environment;
@@ -62,8 +61,8 @@ public class LoginController {
         model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
         //
 
-        configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_API_KEY))
-            .filter(key -> configurationManager.getBooleanConfigValue(Configuration.getSystemConfiguration(ENABLE_CAPTCHA_FOR_LOGIN), true))
+        configurationManager.getFor(ConfigurationKeys.RECAPTCHA_API_KEY).getValue()
+            .filter(key -> configurationManager.getFor(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true))
             .ifPresent(key -> {
                 model.addAttribute("hasRecaptchaApiKey", true);
                 model.addAttribute("recaptchaApiKey", key);

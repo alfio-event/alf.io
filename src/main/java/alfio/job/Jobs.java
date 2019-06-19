@@ -22,7 +22,6 @@ import alfio.manager.system.AdminJobExecutor;
 import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.User;
 import lombok.AllArgsConstructor;
@@ -91,7 +90,7 @@ public class Jobs {
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             log.trace("running job cleanupForDemoMode");
             try {
-                int expirationDate = configurationManager.getIntConfigValue(Configuration.getSystemConfiguration(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS), 20);
+                int expirationDate = configurationManager.getFor(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS).getValueAsIntOrDefault(20);
                 List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
                 if (!userIds.isEmpty()) {
                     eventManager.disableEventsFromUsers(userIds);

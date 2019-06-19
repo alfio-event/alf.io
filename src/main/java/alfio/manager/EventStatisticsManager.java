@@ -20,8 +20,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.TicketWithStatistic;
-import alfio.model.system.Configuration;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.util.EventUtil;
@@ -38,6 +36,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.system.ConfigurationKeys.DISPLAY_STATS_IN_EVENT_DETAIL;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
@@ -79,7 +78,7 @@ public class EventStatisticsManager {
     }
 
     private boolean displayStatisticsForEvent(EventAndOrganizationId event) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(event, ConfigurationKeys.DISPLAY_STATS_IN_EVENT_DETAIL), true);
+        return configurationManager.getFor(event, DISPLAY_STATS_IN_EVENT_DETAIL).getValueAsBooleanOrDefault(true);
     }
 
 
