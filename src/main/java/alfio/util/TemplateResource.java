@@ -37,7 +37,9 @@ import static alfio.util.ImageUtil.createQRCode;
 
 
 public enum TemplateResource {
-    GOOGLE_ANALYTICS("/alfio/templates/google-analytics.ms", false, "text/plain", TemplateManager.TemplateOutput.TEXT),
+
+    @Deprecated
+    GOOGLE_ANALYTICS("", false, "", TemplateManager.TemplateOutput.TEXT),
 
     CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override

@@ -63,6 +63,8 @@ public class EventWithAdditionalInfo implements DateValidity {
     private final PromotionsConfiguration promotionsConfiguration;
     //
 
+    private final AnalyticsConfiguration analyticsConfiguration;
+
     public String getShortName() {
         return event.getShortName();
     }
@@ -186,6 +188,10 @@ public class EventWithAdditionalInfo implements DateValidity {
         return promotionsConfiguration;
     }
 
+    public AnalyticsConfiguration getAnalyticsConfiguration() {
+        return analyticsConfiguration;
+    }
+
     @AllArgsConstructor
     @Getter
     public static class PaymentProxyWithParameters {
@@ -227,4 +233,5 @@ public class EventWithAdditionalInfo implements DateValidity {
         private final boolean hasAccessPromotions;
         private final boolean usePartnerCode;
     }
+
 }

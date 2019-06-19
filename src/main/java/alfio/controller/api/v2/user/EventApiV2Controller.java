@@ -53,6 +53,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -113,7 +114,7 @@ public class EventApiV2Controller {
     }
 
     @GetMapping("event/{eventName}")
-    public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable("eventName") String eventName) {
+    public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable("eventName") String eventName, HttpSession session) {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
             .map(event -> {
 
@@ -138,7 +139,9 @@ public class EventApiV2Controller {
                     ENABLE_ATTENDEE_AUTOCOMPLETE,
                     ENABLE_TICKET_TRANSFER,
                     DISPLAY_DISCOUNT_CODE_BOX,
-                    USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL
+                    USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL,
+                    GOOGLE_ANALYTICS_KEY,
+                    GOOGLE_ANALYTICS_ANONYMOUS_MODE
                 ));
 
                 var geoInfoConfiguration = Map.of(
@@ -177,9 +180,6 @@ public class EventApiV2Controller {
                 var formattedEndDate = Formatters.getFormattedDate(event, event.getEnd(), "common.event.date-format", messageSource);
                 var formattedEndTime = Formatters.getFormattedDate(event, event.getEnd(), "common.event.time-format", messageSource);
 
-
-                var partialConfig = Configuration.from(event);
-
                 //invoicing information
                 boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
                 boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event.getOrganizationId());
@@ -210,10 +210,15 @@ public class EventApiV2Controller {
                 var promoConf = new EventWithAdditionalInfo.PromotionsConfiguration(hasAccessPromotions, usePartnerCode);
                 //
 
+                //analytics configuration
+                var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
+                //
+
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
-                    formattedEndDate, formattedEndTime, invoicingConf, captchaConf, assignmentConf, promoConf), getCorsHeaders(), HttpStatus.OK);
+                    formattedEndDate, formattedEndTime,
+                    invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
