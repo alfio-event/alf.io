@@ -41,7 +41,6 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -212,11 +211,7 @@ public class EventApiV2Controller {
                 //
 
                 //analytics configuration
-                var googAnalyticsKey = StringUtils.trimToNull(configurationsValues.get(GOOGLE_ANALYTICS_KEY).getValueOrDefault(null));
-                var googAnalyticsScrambled = configurationsValues.get(GOOGLE_ANALYTICS_ANONYMOUS_MODE).getValueAsBooleanOrDefault(true);
-
-                var clientId = googAnalyticsKey != null && googAnalyticsScrambled && session.getId() != null ? DigestUtils.sha512Hex(session.getId()) : null;
-                var analyticsConf = new AnalyticsConfiguration(googAnalyticsKey, googAnalyticsScrambled, clientId);
+                var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
                 //
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,

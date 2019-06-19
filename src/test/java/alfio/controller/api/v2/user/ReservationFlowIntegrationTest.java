@@ -273,10 +273,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals("o", translationsApiController.getPublicTranslations("it").get("common.or"));
         assertEquals("oder", translationsApiController.getPublicTranslations("de").get("common.or"));
 
-        var alfioInfo = infoApiController.getInfo();
+        var alfioInfo = infoApiController.getInfo(new MockHttpSession());
         assertEquals(false, alfioInfo.isDemoModeEnabled());
         assertEquals(true, alfioInfo.isDevModeEnabled());
         assertEquals(false, alfioInfo.isProdModeEnabled());
+        assertEquals(true, alfioInfo.getAnalyticsConfiguration().isGoogleAnalyticsScrambledInfo());
+        assertEquals(null, alfioInfo.getAnalyticsConfiguration().getGoogleAnalyticsKey());
+        assertEquals(null, alfioInfo.getAnalyticsConfiguration().getClientId());
 
         //
 

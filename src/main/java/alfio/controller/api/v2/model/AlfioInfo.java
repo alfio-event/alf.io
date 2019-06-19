@@ -27,4 +27,5 @@ public class AlfioInfo {
     private final boolean demoModeEnabled;
     private final boolean devModeEnabled;
     private final boolean prodModeEnabled;
+    private final AnalyticsConfiguration analyticsConfiguration;
 }

@@ -16,8 +16,18 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.servlet.http.HttpSession;
+import java.util.Map;
+
+import static alfio.model.system.ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE;
+import static alfio.model.system.ConfigurationKeys.GOOGLE_ANALYTICS_KEY;
 
 @AllArgsConstructor
 @Getter
@@ -25,4 +35,14 @@ public class AnalyticsConfiguration {
     private final String googleAnalyticsKey;
     private final boolean googleAnalyticsScrambledInfo; //<- see GOOGLE_ANALYTICS_ANONYMOUS_MODE
     private final String clientId;
+
+
+    public static AnalyticsConfiguration build(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> conf, HttpSession session) {
+        var googAnalyticsKey = StringUtils.trimToNull(conf.get(GOOGLE_ANALYTICS_KEY).getValueOrDefault(null));
+        var googAnalyticsScrambled = conf.get(GOOGLE_ANALYTICS_ANONYMOUS_MODE).getValueAsBooleanOrDefault(true);
+
+        var sessionId = session.getId();
+        var clientId = googAnalyticsKey != null && googAnalyticsScrambled && sessionId != null ? DigestUtils.sha512Hex(sessionId) : null;
+        return new AnalyticsConfiguration(googAnalyticsKey, googAnalyticsScrambled, clientId);
+    }
 }

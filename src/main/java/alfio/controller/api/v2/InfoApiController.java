@@ -18,6 +18,9 @@ package alfio.controller.api.v2;
 
 import alfio.config.Initializer;
 import alfio.controller.api.v2.model.AlfioInfo;
+import alfio.controller.api.v2.model.AnalyticsConfiguration;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -25,20 +28,29 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpSession;
+import java.util.Set;
+
 @RestController
 @RequestMapping("/api/v2/")
 @AllArgsConstructor
 public class InfoApiController {
 
     private final Environment environment;
+    private final ConfigurationManager configurationManager;
 
     @GetMapping("info")
-    public AlfioInfo getInfo() {
+    public AlfioInfo getInfo(HttpSession session) {
 
         var demoMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO));
         var devMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV));
         var prodMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
 
-        return new AlfioInfo(demoMode, devMode, prodMode);
+
+        var conf = configurationManager.getFor(Set.of(ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE, ConfigurationKeys.GOOGLE_ANALYTICS_KEY));
+
+        var analyticsConf = AnalyticsConfiguration.build(conf, session);
+
+        return new AlfioInfo(demoMode, devMode, prodMode, analyticsConf);
     }
 }
