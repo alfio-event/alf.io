@@ -138,7 +138,9 @@ public class EventApiV2Controller {
                     ENABLE_ATTENDEE_AUTOCOMPLETE,
                     ENABLE_TICKET_TRANSFER,
                     DISPLAY_DISCOUNT_CODE_BOX,
-                    USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL
+                    USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL,
+                    GOOGLE_ANALYTICS_KEY,
+                    GOOGLE_ANALYTICS_ANONYMOUS_MODE
                 ));
 
                 var geoInfoConfiguration = Map.of(
@@ -177,9 +179,6 @@ public class EventApiV2Controller {
                 var formattedEndDate = Formatters.getFormattedDate(event, event.getEnd(), "common.event.date-format", messageSource);
                 var formattedEndTime = Formatters.getFormattedDate(event, event.getEnd(), "common.event.time-format", messageSource);
 
-
-                var partialConfig = Configuration.from(event);
-
                 //invoicing information
                 boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
                 boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event.getOrganizationId());
@@ -210,10 +209,17 @@ public class EventApiV2Controller {
                 var promoConf = new EventWithAdditionalInfo.PromotionsConfiguration(hasAccessPromotions, usePartnerCode);
                 //
 
+                //analytics configuration
+                var googAnalyticsKey = configurationsValues.get(GOOGLE_ANALYTICS_KEY).getValueOrDefault(null);
+                var googAnalyticsScrambled = configurationsValues.get(GOOGLE_ANALYTICS_ANONYMOUS_MODE).getValueAsBooleanOrDefault(true);
+                var analyticsConf = new EventWithAdditionalInfo.AnalyticsConfiguration(googAnalyticsKey, googAnalyticsScrambled);
+                //
+
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
-                    formattedEndDate, formattedEndTime, invoicingConf, captchaConf, assignmentConf, promoConf), getCorsHeaders(), HttpStatus.OK);
+                    formattedEndDate, formattedEndTime,
+                    invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
