@@ -32,15 +32,19 @@ import javax.servlet.http.HttpServletRequest;
 public class ControllerExceptionHandler {
 
     @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
     public String exception(Exception ex) {
         log.error("unexpected exception", ex);
-        return "/event/500-internal-server-error";
+        return "unexpected exception";
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
+    @ResponseBody
     public String requestNotSupported(HttpRequestMethodNotSupportedException ex, HttpServletRequest request) {
         log.warn("Request method {} not allowed for request {}", request.getMethod(), request.getRequestURI());
-        return "/event/500-internal-server-error";
+        return "method not supported";
     }
 
     @ExceptionHandler(HttpMessageConversionException.class)
