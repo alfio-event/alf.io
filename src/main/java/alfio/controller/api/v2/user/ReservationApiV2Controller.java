@@ -245,8 +245,8 @@ public class ReservationApiV2Controller {
     }
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/back-to-booking")
-    public ResponseEntity<Boolean> backToBook(@PathVariable("eventName") String eventName,
-                                              @PathVariable("reservationId") String reservationId) {
+    public ResponseEntity<Boolean> backToBooking(@PathVariable("eventName") String eventName,
+                                                 @PathVariable("reservationId") String reservationId) {
 
         getReservationWithPendingStatus(eventName, reservationId)
             .ifPresent(er -> ticketReservationRepository.updateValidationStatus(reservationId, false));
@@ -256,19 +256,19 @@ public class ReservationApiV2Controller {
     }
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}")
-    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> handleReservation(@PathVariable("eventName") String eventName,
-                                                                                         @PathVariable("reservationId") String reservationId,
-                                                                                         @RequestParam(required = false, name = "lang") String lang,
-                                                                                         @RequestBody  PaymentForm paymentForm,
-                                                                                         BindingResult bindingResult,
-                                                                                         HttpServletRequest request,
-                                                                                         HttpSession session) {
+    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> confirmOverview(@PathVariable("eventName") String eventName,
+                                                                                       @PathVariable("reservationId") String reservationId,
+                                                                                       @RequestParam("lang") String lang,
+                                                                                       @RequestBody  PaymentForm paymentForm,
+                                                                                       BindingResult bindingResult,
+                                                                                       HttpServletRequest request,
+                                                                                       HttpSession session) {
 
         return getReservation(eventName, reservationId).map(er -> {
 
            var event = er.getLeft();
            var ticketReservation = er.getRight();
-           var locale = LocaleUtil.forLanguageTag(lang);
+           var locale = LocaleUtil.forLanguageTag(lang, event);
 
             if (!ticketReservation.getValidity().after(new Date())) {
                 bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
@@ -342,7 +342,7 @@ public class ReservationApiV2Controller {
     @PostMapping("/event/{eventName}/reservation/{reservationId}/validate-to-overview")
     public ResponseEntity<ValidatedResponse<Boolean>> validateToOverview(@PathVariable("eventName") String eventName,
                                                                          @PathVariable("reservationId") String reservationId,
-                                                                         @RequestParam(required = false, name = "lang") String lang,
+                                                                         @RequestParam("lang") String lang,
                                                                          @RequestBody ContactAndTicketsForm contactAndTicketsForm,
                                                                          BindingResult bindingResult) {
 
@@ -350,7 +350,7 @@ public class ReservationApiV2Controller {
         return getReservationWithPendingStatus(eventName, reservationId).map(er -> {
             var event = er.getLeft();
             var reservation = er.getRight();
-            var locale = LocaleUtil.forLanguageTag(lang);
+            var locale = LocaleUtil.forLanguageTag(lang, event);
             final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus()));
             boolean forceAssignment = configurationManager.getFor(event, FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBooleanOrDefault(false);
 
@@ -490,13 +490,13 @@ public class ReservationApiV2Controller {
     @PostMapping("/event/{eventName}/reservation/{reservationId}/re-send-email")
     public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName,
                                                                       @PathVariable("reservationId") String reservationId,
-                                                                      @RequestParam(required = false, name = "lang") String lang) {
+                                                                      @RequestParam("lang") String lang) {
 
 
 
         var res = eventRepository.findOptionalByShortName(eventName).map(event ->
             ticketReservationManager.findById(reservationId).map(ticketReservation -> {
-                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang));
+                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang, event));
                 return true;
             }).orElse(false)
         ).orElse(false);

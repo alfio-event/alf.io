@@ -78,18 +78,18 @@ public class TicketHelper {
                                                                            String ticketIdentifier,
                                                                            UpdateTicketOwnerForm updateTicketOwner,
                                                                            Optional<Errors> bindingResult,
-                                                                           Locale locale,
+                                                                           Locale fallbackLocale,
                                                                            Optional<UserDetails> userDetails,
                                                                            boolean addPrefix) {
 
         Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.fetchComplete(eventName, ticketIdentifier)
-                .map(result -> assignTicket(updateTicketOwner, bindingResult, locale, userDetails, result, addPrefix ? "tickets["+ticketIdentifier+"]" : ""));
+                .map(result -> assignTicket(updateTicketOwner, bindingResult, fallbackLocale, userDetails, result, addPrefix ? "tickets["+ticketIdentifier+"]" : ""));
         return triple;
     }
 
     private Triple<ValidationResult, Event, Ticket> assignTicket(UpdateTicketOwnerForm updateTicketOwner,
                                                                  Optional<Errors> bindingResult,
-                                                                 Locale locale,
+                                                                 Locale fallbackLocale,
                                                                  Optional<UserDetails> userDetails,
                                                                  Triple<Event, TicketReservation, Ticket> result,
                                                                  String formPrefix) {
@@ -117,7 +117,7 @@ public class TicketHelper {
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
         ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid()), bindingResult, event, formPrefix, sameCountryValidator)
                 .or(Validator.performAdvancedValidation(advancedValidator, context, bindingResult.orElse(null)))
-                .ifSuccess(() -> updateTicketOwner(updateTicketOwner, locale, t, event, ticketReservation, userDetails));
+                .ifSuccess(() -> updateTicketOwner(updateTicketOwner, fallbackLocale, t, event, ticketReservation, userDetails));
         return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
     }
 
@@ -129,12 +129,12 @@ public class TicketHelper {
                                                                           String ticketIdentifier,
                                                                           UpdateTicketOwnerForm updateTicketOwner,
                                                                           Optional<Errors> bindingResult,
-                                                                          Locale locale,
+                                                                          Locale fallbackLocale,
                                                                           Optional<UserDetails> userDetails) {
 
         Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.from(eventName, reservationId, ticketIdentifier)
             .filter(temp -> PENDING_RESERVATION_STATUSES.contains(temp.getMiddle().getStatus()) && temp.getRight().getStatus() == Ticket.TicketStatus.PENDING)
-            .map(result -> assignTicket(updateTicketOwner, bindingResult, locale, userDetails, result, "tickets["+ticketIdentifier+"]"));
+            .map(result -> assignTicket(updateTicketOwner, bindingResult, fallbackLocale, userDetails, result, "tickets["+ticketIdentifier+"]"));
         return triple;
     }
 
@@ -200,13 +200,13 @@ public class TicketHelper {
             .collect(Collectors.toList());
     }
 
-    private void updateTicketOwner(UpdateTicketOwnerForm updateTicketOwner, Locale locale, Ticket t, Event event, TicketReservation ticketReservation, Optional<UserDetails> userDetails) {
+    private void updateTicketOwner(UpdateTicketOwnerForm updateTicketOwner, Locale fallBackLocale, Ticket t, Event event, TicketReservation ticketReservation, Optional<UserDetails> userDetails) {
         Locale language = Optional.ofNullable(updateTicketOwner.getUserLanguage())
                 .filter(StringUtils::isNotBlank)
                 .map(LocaleUtil::forLanguageTag)
-                .orElse(locale);
+                .orElse(fallBackLocale);
         TicketCategory category = ticketCategoryRepository.getById(t.getCategoryId());
-        var ticketLanguage = LocaleUtil.getTicketLanguage(t, locale);
+        var ticketLanguage = LocaleUtil.getTicketLanguage(t, fallBackLocale);
         ticketReservationManager.updateTicketOwner(t, language, event, updateTicketOwner,
                 getConfirmationTextBuilder(ticketLanguage, event, ticketReservation, t, category),
                 getOwnerChangeTextBuilder(ticketLanguage, t, event),

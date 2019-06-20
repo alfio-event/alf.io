@@ -16,6 +16,7 @@
  */
 package alfio.util;
 
+import alfio.model.Event;
 import alfio.model.Ticket;
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,11 +26,11 @@ import java.util.Optional;
 public final class LocaleUtil {
     private LocaleUtil() {}
 
-    public static Locale getTicketLanguage(Ticket t, Locale locale) {
+    public static Locale getTicketLanguage(Ticket t, Locale fallbackLocale) {
         return Optional.ofNullable(t.getUserLanguage())
                 .filter(StringUtils::isNotBlank)
                 .map(Locale::forLanguageTag)
-                .orElse(locale);
+                .orElse(fallbackLocale);
     }
 
     public static Locale forLanguageTag(String lang) {
@@ -38,5 +39,10 @@ public final class LocaleUtil {
         } else {
             return Locale.forLanguageTag(lang);
         }
+    }
+
+    public static Locale forLanguageTag(String lang, Event event) {
+        //FIXME check if lang is present in event
+        return forLanguageTag(lang);
     }
 }
