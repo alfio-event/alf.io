@@ -444,7 +444,7 @@ public class EventApiV2Controller {
                         selected.getLeft(), selected.getRight(), expiration,
                         specialPrice,
                         promoCodeDiscount,
-                        Locale.forLanguageTag(lang), false);
+                        LocaleUtil.forLanguageTag(lang), false);
                     return Optional.of(reservationId);
                 } catch (TicketReservationManager.NotEnoughTicketsException nete) {
                     bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);

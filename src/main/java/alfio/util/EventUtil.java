@@ -192,7 +192,7 @@ public class EventUtil {
             //WORKAROUND: we only add the additionalServiceItems related fields only if it's the _first_ ticket of the reservation
             boolean isFirstTicket = ticketsInReservation.get(0).getId() == ticket.getId();
 
-            Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(Locale.forLanguageTag(ticket.getUserLanguage()), ticket.getEventId());
+            Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(LocaleUtil.forLanguageTag(ticket.getUserLanguage()), ticket.getEventId());
             Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticket.getId());
             Function<TicketFieldConfiguration, String> extractor = (f) -> Optional.ofNullable(values.get(f.getName())).map(TicketFieldValue::getValue).orElse("");
             List<AdditionalServiceItem> additionalServiceItems = isFirstTicket ? additionalServiceItemRepository.findByReservationUuid(ticket.getTicketsReservationId()) : Collections.emptyList();

@@ -45,6 +45,7 @@ import alfio.model.modification.UploadBase64FileModification;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import com.samskivert.mustache.MustacheException;
@@ -112,7 +113,7 @@ public class ResourceController {
         try (InputStream is = new ClassPathResource(name.classPath()).getInputStream()) {
             is.transferTo(os);
         }
-        Locale loc = Locale.forLanguageTag(locale);
+        Locale loc = LocaleUtil.forLanguageTag(locale);
         String template = new String(os.toByteArray(), StandardCharsets.UTF_8);
 
         response.setContentType("text/plain");
@@ -128,7 +129,7 @@ public class ResourceController {
                                 HttpServletResponse response) throws IOException {
 
 
-        Locale loc = Locale.forLanguageTag(locale);
+        Locale loc = LocaleUtil.forLanguageTag(locale);
 
         if (organizationId != null) {
             Event event;

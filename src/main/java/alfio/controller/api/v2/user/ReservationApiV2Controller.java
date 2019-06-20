@@ -268,7 +268,7 @@ public class ReservationApiV2Controller {
 
            var event = er.getLeft();
            var ticketReservation = er.getRight();
-           var locale = Locale.forLanguageTag(lang);
+           var locale = LocaleUtil.forLanguageTag(lang);
 
             if (!ticketReservation.getValidity().after(new Date())) {
                 bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
@@ -350,7 +350,7 @@ public class ReservationApiV2Controller {
         return getReservationWithPendingStatus(eventName, reservationId).map(er -> {
             var event = er.getLeft();
             var reservation = er.getRight();
-            var locale = Locale.forLanguageTag(lang);
+            var locale = LocaleUtil.forLanguageTag(lang);
             final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus()));
             boolean forceAssignment = configurationManager.getFor(event, FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBooleanOrDefault(false);
 
@@ -496,7 +496,7 @@ public class ReservationApiV2Controller {
 
         var res = eventRepository.findOptionalByShortName(eventName).map(event ->
             ticketReservationManager.findById(reservationId).map(ticketReservation -> {
-                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, Locale.forLanguageTag(lang));
+                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang));
                 return true;
             }).orElse(false)
         ).orElse(false);
@@ -560,7 +560,7 @@ public class ReservationApiV2Controller {
 
             try {
                 FileUtil.sendHeaders(response, event.getShortName(), reservation.getId(), forInvoice ? "invoice" : "receipt");
-                TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()),
+                TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, LocaleUtil.forLanguageTag(reservation.getUserLanguage()),
                     templateManager, billingModel, forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF,
                     extensionManager, response.getOutputStream());
                 return ResponseEntity.ok(null);

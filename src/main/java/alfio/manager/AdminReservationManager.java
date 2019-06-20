@@ -38,10 +38,7 @@ import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.user.UserRepository;
-import alfio.util.Json;
-import alfio.util.MonetaryUtil;
-import alfio.util.TemplateManager;
-import alfio.util.TemplateResource;
+import alfio.util.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
@@ -205,7 +202,7 @@ public class AdminReservationManager {
                 Event event = pair.getLeft();
                 TicketReservation reservation = pair.getRight();
                 if(notification.isCustomer()){
-                    ticketReservationManager.sendConfirmationEmail(event, reservation, Locale.forLanguageTag(reservation.getUserLanguage()));
+                    ticketReservationManager.sendConfirmationEmail(event, reservation, LocaleUtil.forLanguageTag(reservation.getUserLanguage()));
                 }
                 if(notification.isAttendees()) {
                     sendTicketToAttendees(event, reservation, Ticket::getAssigned);
@@ -228,7 +225,7 @@ public class AdminReservationManager {
             .stream()
             .filter(matcher)
             .forEach(t -> {
-                Locale locale = Locale.forLanguageTag(t.getUserLanguage());
+                Locale locale = LocaleUtil.forLanguageTag(t.getUserLanguage());
                 ticketReservationManager.sendTicketByEmail(t, locale, event, ticketReservationManager.getTicketEmailGenerator(event, reservation, locale));
             });
     }
@@ -313,7 +310,7 @@ public class AdminReservationManager {
         try {
             PaymentSpecification spec = new PaymentSpecification(reservationId, null, 0,
                 event, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event.mustUseFirstAndLastName()),
-                original.getBillingAddress(), original.getCustomerReference(), Locale.forLanguageTag(original.getUserLanguage()),
+                original.getBillingAddress(), original.getCustomerReference(), LocaleUtil.forLanguageTag(original.getUserLanguage()),
                 false, false, null, null, null, null, false, false);
 
             ticketReservationManager.completeReservation(spec, Optional.empty(), PaymentProxy.ADMIN, notification.isCustomer(), notification.isAttendees());
@@ -609,7 +606,7 @@ public class AdminReservationManager {
     public Result<Pair<BillingDocument, byte[]>> getSingleBillingDocumentAsPdf(String eventName, String reservationId, long documentId, String username) {
         return loadReservation(eventName, reservationId, username).map(res -> {
             BillingDocument billingDocument = billingDocumentRepository.findById(documentId, reservationId).orElseThrow(IllegalArgumentException::new);
-            Function<Map<String, Object>, Optional<byte[]>> pdfGenerator = model -> TemplateProcessor.buildBillingDocumentPdf(billingDocument.getType(), res.getRight(), fileUploadManager, new Locale(res.getLeft().getUserLanguage()), templateManager, model, extensionManager);
+            Function<Map<String, Object>, Optional<byte[]>> pdfGenerator = model -> TemplateProcessor.buildBillingDocumentPdf(billingDocument.getType(), res.getRight(), fileUploadManager, LocaleUtil.forLanguageTag(res.getLeft().getUserLanguage()), templateManager, model, extensionManager);
             Map<String, Object> billingModel = billingDocument.getModel();
             return Pair.of(billingDocument, pdfGenerator.apply(billingModel).orElse(null));
         });
@@ -739,7 +736,7 @@ public class AdminReservationManager {
 
     private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {
         Map<String, Object> model = TemplateResource.buildModelForTicketHasBeenCancelled(organization, event, ticket);
-        Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
+        Locale locale = LocaleUtil.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
         notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
             new Object[]{event.getDisplayName()}, locale),
             () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));

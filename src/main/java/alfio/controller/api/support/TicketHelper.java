@@ -203,7 +203,7 @@ public class TicketHelper {
     private void updateTicketOwner(UpdateTicketOwnerForm updateTicketOwner, Locale locale, Ticket t, Event event, TicketReservation ticketReservation, Optional<UserDetails> userDetails) {
         Locale language = Optional.ofNullable(updateTicketOwner.getUserLanguage())
                 .filter(StringUtils::isNotBlank)
-                .map(Locale::forLanguageTag)
+                .map(LocaleUtil::forLanguageTag)
                 .orElse(locale);
         TicketCategory category = ticketCategoryRepository.getById(t.getCategoryId());
         var ticketLanguage = LocaleUtil.getTicketLanguage(t, locale);

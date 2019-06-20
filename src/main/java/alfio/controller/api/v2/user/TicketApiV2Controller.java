@@ -107,7 +107,7 @@ public class TicketApiV2Controller {
                 TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation);
-                TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, Locale.forLanguageTag(lang)), event, ticketReservation,
+                TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(lang)), event, ticketReservation,
                     ticket, ticketCategory, organization,
                     templateManager, fileUploadManager,
                     reservationID, os, ticketHelper.buildRetrieveFieldValuesFunction(), extensionManager);
@@ -131,7 +131,7 @@ public class TicketApiV2Controller {
         return ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier).map(data -> {
             Ticket ticket = data.getRight();
             Event event = data.getLeft();
-            Locale locale = LocaleUtil.getTicketLanguage(ticket, Locale.forLanguageTag(lang));
+            Locale locale = LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(lang));
 
             TicketReservation reservation = data.getMiddle();
             Organization organization = organizationRepository.getById(event.getOrganizationId());
@@ -226,7 +226,7 @@ public class TicketApiV2Controller {
             ticketIdentifier,
             updateTicketOwner,
             Optional.of(bindingResult),
-            Locale.forLanguageTag(lang),
+            LocaleUtil.forLanguageTag(lang),
             userDetails, false);
 
         return assignmentResult.map(r -> new ValidatedResponse<>(r.getLeft(), r.getLeft().isSuccess())).orElseThrow(IllegalStateException::new);

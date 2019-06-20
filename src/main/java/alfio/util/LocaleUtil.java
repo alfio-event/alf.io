@@ -31,4 +31,12 @@ public final class LocaleUtil {
                 .map(Locale::forLanguageTag)
                 .orElse(locale);
     }
+
+    public static Locale forLanguageTag(String lang) {
+        if (lang == null) {
+           return Locale.ENGLISH;
+        } else {
+            return Locale.forLanguageTag(lang);
+        }
+    }
 }

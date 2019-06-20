@@ -29,6 +29,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.EventUtil;
 import alfio.util.Json;
+import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.gson.*;
@@ -137,7 +138,7 @@ public class NotificationManager {
                 TicketCategory ticketCategory = Json.fromJson(model.get("ticketCategory"), TicketCategory.class);
                 Event event = eventRepository.findById(ticket.getEventId());
                 Organization organization = organizationRepository.getById(Integer.valueOf(model.get("organizationId"), 10));
-                TemplateProcessor.renderPDFTicket(Locale.forLanguageTag(ticket.getUserLanguage()), event, reservation,
+                TemplateProcessor.renderPDFTicket(LocaleUtil.forLanguageTag(ticket.getUserLanguage()), event, reservation,
                     ticket, ticketCategory, organization, templateManager, fileUploadManager,
                     configurationManager.getShortReservationID(event, reservation), baos, retrieveFieldValues, extensionManager);
             } catch (IOException e) {
@@ -160,7 +161,7 @@ public class NotificationManager {
             } else {
                 Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
                 event = eventRepository.findById(ticket.getEventId());
-                locale = Locale.forLanguageTag(ticket.getUserLanguage());
+                locale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
                 categoryId = ticket.getCategoryId();
             }
             TicketCategory category = Optional.ofNullable(categoryId).map(ticketCategoryRepository::getById).orElse(null);

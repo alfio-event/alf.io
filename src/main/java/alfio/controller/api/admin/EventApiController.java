@@ -36,10 +36,7 @@ import alfio.model.user.User;
 import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketFieldRepository;
-import alfio.util.ExportUtils;
-import alfio.util.MonetaryUtil;
-import alfio.util.TemplateManager;
-import alfio.util.Validator;
+import alfio.util.*;
 import com.opencsv.CSVReader;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -516,7 +513,7 @@ public class EventApiController {
         ticketReservationManager.confirmOfflinePayment(loadEvent(eventName, principal), reservationId, principal.getName());
         ticketReservationManager.findById(reservationId)
             .filter(TicketReservation::isDirectAssignmentRequested)
-            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), reservation.getUserLanguage(), Optional.empty(), Locale.forLanguageTag(lang)));
+            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), reservation.getUserLanguage(), Optional.empty(), LocaleUtil.forLanguageTag(lang)));
         return OK;
     }
 
@@ -584,7 +581,7 @@ public class EventApiController {
                 TicketReservation reservation = pair.getLeft();
                 BillingDocument document = pair.getRight();
                 Map<String, Object> reservationModel = document.getModel();
-                Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, reservationModel, extensionManager);
+                Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), templateManager, reservationModel, extensionManager);
 
                 if(pdf.isPresent()) {
                     zipOS.putNextEntry(new ZipEntry("invoice-" + eventName + "-id-" + reservation.getId() + "-invoice-nr-" + document.getNumber() + ".pdf"));
