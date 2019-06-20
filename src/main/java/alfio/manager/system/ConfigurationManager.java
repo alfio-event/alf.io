@@ -104,7 +104,7 @@ public class ConfigurationManager {
         return (T) c;
     }
 
-    //@Deprecated
+    @Deprecated
     public int getIntConfigValue(ConfigurationPathKey pathKey, int defaultValue) {
         try {
             return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())
@@ -115,7 +115,7 @@ public class ConfigurationManager {
         }
     }
 
-    //@Deprecated
+    @Deprecated
     public boolean getBooleanConfigValue(ConfigurationPathKey pathKey, boolean defaultValue) {
         return getStringConfigValue(pathKey)
             .map(Boolean::parseBoolean)
@@ -123,17 +123,17 @@ public class ConfigurationManager {
     }
 
 
-    //@Deprecated
+    @Deprecated
     public String getStringConfigValue(ConfigurationPathKey pathKey, String defaultValue) {
         return getStringConfigValue(pathKey).orElse(defaultValue);
     }
 
-    //@Deprecated
+    @Deprecated
     public Optional<String> getStringConfigValue(ConfigurationPathKey pathKey) {
         return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()).map(Configuration::getValue);
     }
 
-    //@Deprecated
+    @Deprecated
     public String getRequiredValue(ConfigurationPathKey pathKey) {
         return getStringConfigValue(pathKey)
             .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));
@@ -466,7 +466,7 @@ public class ConfigurationManager {
         return r.get(INVOICE_ADDRESS).isPresent() && r.get(VAT_NR).isPresent();
     }
 
-    //@Deprecated
+    @Deprecated
     public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
         var conf = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS, RECAPTCHA_API_KEY));
         return conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault(false) &&
