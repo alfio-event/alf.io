@@ -888,7 +888,7 @@ public class TicketReservationManager {
         String reservationId = spec.getReservationId();
         int eventId = spec.getEvent().getId();
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
-        Locale locale = Locale.forLanguageTag(reservation.getUserLanguage());
+        Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
         if(paymentProxy != PaymentProxy.OFFLINE) {
             acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent(), sendTickets);
             extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), eventId);
@@ -957,7 +957,7 @@ public class TicketReservationManager {
         findTicketsInReservation(reservationId).stream()
             .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
             .forEach(ticket -> {
-                Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
+                Locale locale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
                 if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getFor(event, SEND_TICKETS_AUTOMATICALLY).getValueAsBooleanOrDefault(true)) {
                     sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                 }
@@ -1147,7 +1147,7 @@ public class TicketReservationManager {
         }
 
         return new OrderSummary(reservationCost,
-            extractSummary(reservation.getId(), reservation.getVatStatus(), event, Locale.forLanguageTag(reservation.getUserLanguage()), discount, reservationCost),
+            extractSummary(reservation.getId(), reservation.getVatStatus(), event, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), discount, reservationCost),
             free,
             formatCents(reservationCost.getPriceWithVAT()),
             formatCents(reservationCost.getVAT()),
@@ -1388,7 +1388,7 @@ public class TicketReservationManager {
         ticketRepository.updateTicketOwner(ticket.getUuid(), newEmail, customerName.getFullName(), customerName.getFirstName(), customerName.getLastName());
 
         //
-        Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(Locale::forLanguageTag).orElse(locale);
+        Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(LocaleUtil::forLanguageTag).orElse(locale);
 
         ticketRepository.updateOptionalTicketInfo(ticket.getUuid(), userLocale.getLanguage());
         ticketFieldRepository.updateOrInsert(updateTicketOwner.getAdditional(), ticket.getId(), event.getId());
@@ -1402,7 +1402,7 @@ public class TicketReservationManager {
         boolean admin = isAdmin(userDetails);
 
         if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
-            Locale oldUserLocale = Locale.forLanguageTag(ticket.getUserLanguage());
+            Locale oldUserLocale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
             String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
             notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
             if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
@@ -1526,7 +1526,7 @@ public class TicketReservationManager {
                 .map(reservation -> {
                     Optional<Ticket> ticket = ticketRepository.findFirstTicketInReservation(reservation.getId());
                     Optional<Event> event = ticket.map(t -> eventRepository.findById(t.getEventId()));
-                    Optional<Locale> locale = ticket.map(t -> Locale.forLanguageTag(t.getUserLanguage()));
+                    Optional<Locale> locale = ticket.map(t -> LocaleUtil.forLanguageTag(t.getUserLanguage()));
                     return Triple.of(reservation, event, locale);
                 })
                 .filter(p -> p.getMiddle().isPresent())
@@ -1595,7 +1595,7 @@ public class TicketReservationManager {
                         int result = ticketRepository.flagTicketAsReminderSent(t.getId());
                         Validate.isTrue(result == 1);
                         Map<String, Object> model = TemplateResource.prepareModelForReminderTicketAdditionalInfo(organizationRepository.getById(event.getOrganizationId()), event, t, ticketUpdateUrl(event, t.getUuid()));
-                        Locale locale = Optional.ofNullable(t.getUserLanguage()).map(Locale::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
+                        Locale locale = Optional.ofNullable(t.getUserLanguage()).map(LocaleUtil::forLanguageTag).orElseGet(() -> findReservationLanguage(t.getTicketsReservationId()));
                         notificationManager.sendSimpleEmail(event, t.getTicketsReservationId(), t.getEmail(), messageSource.getMessage("reminder.ticket-additional-info.subject", new Object[]{event.getDisplayName()}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_TICKET_ADDITIONAL_INFO, model, locale));
                     });
             return null;
@@ -1683,7 +1683,7 @@ public class TicketReservationManager {
         }
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<String, Object> model = TemplateResource.buildModelForTicketHasBeenCancelled(organization, event, ticket);
-        Locale locale = Locale.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
+        Locale locale = LocaleUtil.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
         notificationManager.sendSimpleEmail(event, reservationId, ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
                 new Object[]{event.getDisplayName()}, locale),
                 () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
@@ -1830,7 +1830,7 @@ public class TicketReservationManager {
     }
 
     private static Locale getReservationLocale(TicketReservation reservation) {
-        return StringUtils.isEmpty(reservation.getUserLanguage()) ? Locale.ENGLISH : Locale.forLanguageTag(reservation.getUserLanguage());
+        return StringUtils.isEmpty(reservation.getUserLanguage()) ? Locale.ENGLISH : LocaleUtil.forLanguageTag(reservation.getUserLanguage());
     }
 
     public PaymentWebhookResult processTransactionWebhook(String body, String signature, PaymentMethod paymentMethod) {
@@ -1942,7 +1942,7 @@ public class TicketReservationManager {
         "reason", paymentWebhookResult.getReason(),
         "reservationUrl", reservationUrl(reservation, event));
 
-        Locale locale = Locale.forLanguageTag(reservation.getUserLanguage());
+        Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
         if(cancelReservation || configurationManager.getFor(event, NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS).getValueAsBooleanOrDefault(false)) {
             notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("email-transaction-failed.subject",
                 new Object[]{shortReservationID, event.getDisplayName()}, locale),
@@ -1970,7 +1970,7 @@ public class TicketReservationManager {
             orderSummaryForReservation(reservation, event), false, false);
         if(!acquireGroupMembers(reservationId, event)) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);
-            var errorMessage = messageSource.getMessage("error.STEP2_WHITELIST", null, Locale.forLanguageTag(reservation.getUserLanguage()));
+            var errorMessage = messageSource.getMessage("error.STEP2_WHITELIST", null, LocaleUtil.forLanguageTag(reservation.getUserLanguage()));
             return Optional.of(provider.errorToken(errorMessage));
         }
         var transactionToken = provider.initTransaction(paymentSpecification, params);

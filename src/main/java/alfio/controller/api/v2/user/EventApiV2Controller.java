@@ -408,17 +408,28 @@ public class EventApiV2Controller {
         }), () -> response.setStatus(HttpServletResponse.SC_NOT_FOUND));
     }
 
+    /**
+     * Create a new reservation.
+     *
+     * @param eventName
+     * @param lang
+     * @param reservation
+     * @param bindingResult
+     * @param request
+     * @return
+     */
     @PostMapping(value = "event/{eventName}/reserve-tickets")
-    public ResponseEntity<ValidatedResponse<String>> reserveTicket(@PathVariable("eventName") String eventName,
-                                                                   @RequestParam("lang") String lang,
-                                                                   @RequestBody ReservationForm reservation,
-                                                                   BindingResult bindingResult,
-                                                                   ServletWebRequest request) {
+    public ResponseEntity<ValidatedResponse<String>> reserveTickets(@PathVariable("eventName") String eventName,
+                                                                    @RequestParam("lang") String lang,
+                                                                    @RequestBody ReservationForm reservation,
+                                                                    BindingResult bindingResult,
+                                                                    ServletWebRequest request) {
 
 
 
         Optional<ResponseEntity<ValidatedResponse<String>>> r = eventRepository.findOptionalByShortName(eventName).map(event -> {
 
+            Locale locale = LocaleUtil.forLanguageTag(lang, event);
 
             Optional<ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>>> codeCheck = Optional.empty();
 
@@ -444,7 +455,7 @@ public class EventApiV2Controller {
                         selected.getLeft(), selected.getRight(), expiration,
                         specialPrice,
                         promoCodeDiscount,
-                        Locale.forLanguageTag(lang), false);
+                        locale, false);
                     return Optional.of(reservationId);
                 } catch (TicketReservationManager.NotEnoughTicketsException nete) {
                     bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);

@@ -36,10 +36,7 @@ import alfio.model.user.User;
 import alfio.repository.DynamicFieldTemplateRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketFieldRepository;
-import alfio.util.ExportUtils;
-import alfio.util.MonetaryUtil;
-import alfio.util.TemplateManager;
-import alfio.util.Validator;
+import alfio.util.*;
 import com.opencsv.CSVReader;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -53,7 +50,6 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.ui.Model;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -513,12 +509,15 @@ public class EventApiController {
     }
 
     @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
-    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal,
-                                 Model model, HttpServletRequest request) {
-        ticketReservationManager.confirmOfflinePayment(loadEvent(eventName, principal), reservationId, principal.getName());
+    public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
+        var event = loadEvent(eventName, principal);
+        ticketReservationManager.confirmOfflinePayment(event, reservationId, principal.getName());
         ticketReservationManager.findById(reservationId)
             .filter(TicketReservation::isDirectAssignmentRequested)
-            .ifPresent(reservation -> ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), reservation.getUserLanguage(), Optional.empty(), request, model));
+            .ifPresent(reservation -> {
+                Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage(), event);
+                ticketHelper.directTicketAssignment(eventName, reservationId, reservation.getEmail(), reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), reservation.getUserLanguage(), Optional.empty(), locale);
+            });
         return OK;
     }
 
@@ -586,7 +585,7 @@ public class EventApiController {
                 TicketReservation reservation = pair.getLeft();
                 BillingDocument document = pair.getRight();
                 Map<String, Object> reservationModel = document.getModel();
-                Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()), templateManager, reservationModel, extensionManager);
+                Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), templateManager, reservationModel, extensionManager);
 
                 if(pdf.isPresent()) {
                     zipOS.putNextEntry(new ZipEntry("invoice-" + eventName + "-id-" + reservation.getId() + "-invoice-nr-" + document.getNumber() + ".pdf"));

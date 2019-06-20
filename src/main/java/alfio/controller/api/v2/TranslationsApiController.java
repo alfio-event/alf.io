@@ -23,6 +23,7 @@ import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.util.CustomResourceBundleMessageSource;
+import alfio.util.LocaleUtil;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -62,7 +63,7 @@ public class TranslationsApiController {
     }
 
     private Map<String, String> getBundleAsMap(String baseName, String lang) {
-        var locale = new Locale(lang);
+        var locale = LocaleUtil.forLanguageTag(lang);
         return messageSource.getKeys(baseName, locale)
             .stream()
             .collect(Collectors.toMap(Function.identity(), k -> messageSource.getMessage(k, EMPTY_ARRAY, locale)
@@ -72,17 +73,17 @@ public class TranslationsApiController {
 
     @GetMapping("/public/i18n/countries/{lang}")
     public List<LocalizedCountry> getCountries(@PathVariable("lang") String lang) {
-        return fromPair(TicketHelper.getLocalizedCountries(Locale.forLanguageTag(lang)));
+        return fromPair(TicketHelper.getLocalizedCountries(LocaleUtil.forLanguageTag(lang)));
     }
 
     @GetMapping("/public/i18n/countries-vat/{lang}")
     public List<LocalizedCountry> getCountriesForVat(@PathVariable("lang") String lang) {
-        return fromPair(TicketHelper.getLocalizedCountriesForVat(Locale.forLanguageTag(lang)));
+        return fromPair(TicketHelper.getLocalizedCountriesForVat(LocaleUtil.forLanguageTag(lang)));
     }
 
     @GetMapping("/public/i18n/eu-countries-vat/{lang}")
     public List<LocalizedCountry> getEuCountriesForVat(@PathVariable("lang") String lang) {
-        var countries = TicketHelper.getLocalizedEUCountriesForVat(Locale.forLanguageTag(lang),
+        var countries = TicketHelper.getLocalizedEUCountriesForVat(LocaleUtil.forLanguageTag(lang),
             configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue());
         return fromPair(countries);
     }

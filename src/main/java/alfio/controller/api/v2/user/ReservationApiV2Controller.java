@@ -71,7 +71,6 @@ import java.util.stream.Collectors;
 
 import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.model.PriceContainer.VatStatus.INCLUDED_EXEMPT;
-import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.unitToCents;
 
@@ -246,8 +245,8 @@ public class ReservationApiV2Controller {
     }
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}/back-to-booking")
-    public ResponseEntity<Boolean> backToBook(@PathVariable("eventName") String eventName,
-                                              @PathVariable("reservationId") String reservationId) {
+    public ResponseEntity<Boolean> backToBooking(@PathVariable("eventName") String eventName,
+                                                 @PathVariable("reservationId") String reservationId) {
 
         getReservationWithPendingStatus(eventName, reservationId)
             .ifPresent(er -> ticketReservationRepository.updateValidationStatus(reservationId, false));
@@ -257,19 +256,19 @@ public class ReservationApiV2Controller {
     }
 
     @PostMapping("/event/{eventName}/reservation/{reservationId}")
-    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> handleReservation(@PathVariable("eventName") String eventName,
-                                                                                         @PathVariable("reservationId") String reservationId,
-                                                                                         @RequestParam("lang") String lang,
-                                                                                         @RequestBody  PaymentForm paymentForm,
-                                                                                         BindingResult bindingResult,
-                                                                                         HttpServletRequest request,
-                                                                                         HttpSession session) {
+    public ResponseEntity<ValidatedResponse<ReservationPaymentResult>> confirmOverview(@PathVariable("eventName") String eventName,
+                                                                                       @PathVariable("reservationId") String reservationId,
+                                                                                       @RequestParam("lang") String lang,
+                                                                                       @RequestBody  PaymentForm paymentForm,
+                                                                                       BindingResult bindingResult,
+                                                                                       HttpServletRequest request,
+                                                                                       HttpSession session) {
 
         return getReservation(eventName, reservationId).map(er -> {
 
            var event = er.getLeft();
            var ticketReservation = er.getRight();
-           var locale = Locale.forLanguageTag(lang);
+           var locale = LocaleUtil.forLanguageTag(lang, event);
 
             if (!ticketReservation.getValidity().after(new Date())) {
                 bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
@@ -345,14 +344,13 @@ public class ReservationApiV2Controller {
                                                                          @PathVariable("reservationId") String reservationId,
                                                                          @RequestParam("lang") String lang,
                                                                          @RequestBody ContactAndTicketsForm contactAndTicketsForm,
-                                                                         BindingResult bindingResult,
-                                                                         HttpServletRequest request) {
+                                                                         BindingResult bindingResult) {
 
 
         return getReservationWithPendingStatus(eventName, reservationId).map(er -> {
             var event = er.getLeft();
             var reservation = er.getRight();
-            var locale = Locale.forLanguageTag(lang);
+            var locale = LocaleUtil.forLanguageTag(lang, event);
             final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus()));
             boolean forceAssignment = configurationManager.getFor(event, FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBooleanOrDefault(false);
 
@@ -391,7 +389,7 @@ public class ReservationApiV2Controller {
                 );
             }
 
-            assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, request, true, true);
+            assignTickets(event.getShortName(), reservationId, contactAndTicketsForm, bindingResult, locale, true, true);
             //
 
             Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);
@@ -426,16 +424,14 @@ public class ReservationApiV2Controller {
         return null;
     }
 
-    private void assignTickets(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, HttpServletRequest request, boolean preAssign, boolean skipValidation) {
+    private void assignTickets(String eventName, String reservationId, ContactAndTicketsForm contactAndTicketsForm, BindingResult bindingResult, Locale locale, boolean preAssign, boolean skipValidation) {
         if(!contactAndTicketsForm.isPostponeAssignment()) {
             contactAndTicketsForm.getTickets().forEach((ticketId, owner) -> {
                 if (preAssign) {
                     Optional<Errors> bindingResultOptional = skipValidation ? Optional.empty() : Optional.of(bindingResult);
-                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, request, (tr) -> {
-                    }, Optional.empty());
+                    ticketHelper.preAssignTicket(eventName, reservationId, ticketId, owner, bindingResultOptional, locale, Optional.empty());
                 } else {
-                    ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), request, (tr) -> {
-                    }, Optional.empty(), true);
+                    ticketHelper.assignTicket(eventName, ticketId, owner, Optional.of(bindingResult), locale, Optional.empty(), true);
                 }
             });
         }
@@ -500,7 +496,7 @@ public class ReservationApiV2Controller {
 
         var res = eventRepository.findOptionalByShortName(eventName).map(event ->
             ticketReservationManager.findById(reservationId).map(ticketReservation -> {
-                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, Locale.forLanguageTag(lang));
+                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang, event));
                 return true;
             }).orElse(false)
         ).orElse(false);
@@ -564,7 +560,7 @@ public class ReservationApiV2Controller {
 
             try {
                 FileUtil.sendHeaders(response, event.getShortName(), reservation.getId(), forInvoice ? "invoice" : "receipt");
-                TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, new Locale(reservation.getUserLanguage()),
+                TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, LocaleUtil.forLanguageTag(reservation.getUserLanguage()),
                     templateManager, billingModel, forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF,
                     extensionManager, response.getOutputStream());
                 return ResponseEntity.ok(null);

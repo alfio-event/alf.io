@@ -42,12 +42,9 @@ import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.*;
 import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
-import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
-import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.servlet.view.mustache.MustacheViewResolver;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateFactory;
 import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
-import org.springframework.web.servlet.view.mustache.jmustache.LocalizationMessageInterceptor;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -96,16 +93,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(getLocaleChangeInterceptor());
-        registry.addInterceptor(getTemplateMessagesInterceptor());
         registry.addInterceptor(getCSPInterceptor());
-    }
-
-    @Bean
-    public HandlerInterceptor getLocaleChangeInterceptor(){
-        LocaleChangeInterceptor localeChangeInterceptor= new LocaleChangeInterceptor();
-        localeChangeInterceptor.setParamName("lang");
-        return localeChangeInterceptor;
     }
 
     private HandlerInterceptor getCSPInterceptor() {
@@ -143,19 +131,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
                         + reportUri);
             }
         };
-    }
-
-    @Bean
-    public LocalizationMessageInterceptor getTemplateMessagesInterceptor() {
-        LocalizationMessageInterceptor interceptor = new LocalizationMessageInterceptor();
-        interceptor.setLocaleResolver(getLocaleResolver());
-        interceptor.setMessageSource(messageSource);
-        return interceptor;
-    }
-
-    @Bean(name = "localeResolver")
-    public LocaleResolver getLocaleResolver() {
-        return new SessionLocaleResolver();
     }
 
     @Bean

@@ -16,21 +16,41 @@
  */
 package alfio.util;
 
+import alfio.model.ContentLanguage;
+import alfio.model.Event;
 import alfio.model.Ticket;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.web.servlet.support.RequestContextUtils;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Locale;
 import java.util.Optional;
 
 public final class LocaleUtil {
     private LocaleUtil() {}
 
-    public static Locale getTicketLanguage(Ticket t, HttpServletRequest request) {
+    public static Locale getTicketLanguage(Ticket t, Locale fallbackLocale) {
         return Optional.ofNullable(t.getUserLanguage())
                 .filter(StringUtils::isNotBlank)
                 .map(Locale::forLanguageTag)
-                .orElseGet(() -> RequestContextUtils.getLocale(request));
+                .orElse(fallbackLocale);
+    }
+
+    public static Locale forLanguageTag(String lang) {
+        if (lang == null) {
+           return Locale.ENGLISH;
+        } else {
+            return Locale.forLanguageTag(lang);
+        }
+    }
+
+    public static Locale forLanguageTag(String lang, Event event) {
+        String cleanedUpLang = StringUtils.trimToEmpty(lang).toLowerCase(Locale.ENGLISH);
+        var filteredLang = event.getContentLanguages()
+            .stream()
+            .filter(l -> cleanedUpLang.equalsIgnoreCase(l.getLanguage()))
+            .findFirst()
+            .map(ContentLanguage::getLanguage)
+            //vvv fallback
+            .orElseGet(() -> event.getContentLanguages().stream().findFirst().map(ContentLanguage::getLanguage).orElse("en"));
+        return forLanguageTag(filteredLang);
     }
 }

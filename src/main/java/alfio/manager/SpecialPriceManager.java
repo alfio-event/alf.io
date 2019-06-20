@@ -22,6 +22,7 @@ import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
+import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
@@ -108,7 +109,7 @@ public class SpecialPriceManager {
         Validate.isTrue(!eventLanguages.isEmpty(), "No locales have been defined for the event. Please check the configuration");
         ContentLanguage defaultLocale = eventLanguages.contains(ContentLanguage.ENGLISH) ? ContentLanguage.ENGLISH : eventLanguages.get(0);
         set.forEach(m -> {
-            Locale locale = Locale.forLanguageTag(StringUtils.defaultString(StringUtils.trimToNull(m.getLanguage()), defaultLocale.getLanguage()));
+            Locale locale = LocaleUtil.forLanguageTag(StringUtils.defaultString(StringUtils.trimToNull(m.getLanguage()), defaultLocale.getLanguage()));
             var usePartnerCode = configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).getValueAsBooleanOrDefault(false);
             var promoCodeDescription = messageSource.getMessage("show-event.promo-code-type."+(usePartnerCode ? "partner" : "promotional"), null, null, locale);
             Map<String, Object> model = TemplateResource.prepareModelForSendReservedCode(organization, event, m, eventManager.getEventUrl(event), promoCodeDescription);

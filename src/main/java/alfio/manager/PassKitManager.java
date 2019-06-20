@@ -27,6 +27,7 @@ import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
+import alfio.util.LocaleUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ryantenney.passkit4j.Pass;
@@ -145,7 +146,7 @@ public class PassKitManager {
         // from example: https://github.com/ryantenney/passkit4j/blob/master/src/test/java/com/ryantenney/passkit4j/EventTicketExample.java
         // specification: https://developer.apple.com/library/archive/documentation/UserExperience/Conceptual/PassKit_PG/Creating.html#//apple_ref/doc/uid/TP40012195-CH4-SW6
 
-        var ticketLocale = Locale.forLanguageTag(ticket.getUserLanguage());
+        var ticketLocale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
         String teamIdentifier = config.get(PASSBOOK_TEAM_IDENTIFIER);
         String typeIdentifier = config.get(PASSBOOK_TYPE_IDENTIFIER);
         byte[] keystoreRaw = Base64.getDecoder().decode(config.get(PASSBOOK_KEYSTORE));

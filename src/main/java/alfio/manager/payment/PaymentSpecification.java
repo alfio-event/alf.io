@@ -19,6 +19,7 @@ package alfio.manager.payment;
 import alfio.model.*;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentToken;
+import alfio.util.LocaleUtil;
 import lombok.Getter;
 
 import java.util.Locale;
@@ -88,7 +89,7 @@ public class PaymentSpecification {
                                             boolean privacyAccepted) {
         this(reservation.getId(), gatewayToken, totalPrice.getPriceWithVAT(),
             event, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event.mustUseFirstAndLastName()),
-            reservation.getBillingAddress(), reservation.getCustomerReference(), Locale.forLanguageTag(reservation.getUserLanguage()), reservation.isInvoiceRequested(),
+            reservation.getBillingAddress(), reservation.getCustomerReference(), LocaleUtil.forLanguageTag(reservation.getUserLanguage()), reservation.isInvoiceRequested(),
             !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
             reservation.getVatNr(), reservation.getVatStatus(), tcAccepted, privacyAccepted);
     }

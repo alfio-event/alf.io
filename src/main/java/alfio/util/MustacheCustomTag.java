@@ -119,7 +119,7 @@ public class MustacheCustomTag {
         //
         String[] res = r.split("\\s+");
         Optional<Locale> locale = Arrays.stream(res).filter((s) -> s.startsWith(LOCALE_LABEL)).findFirst()
-                .map((l) -> Locale.forLanguageTag(substring(l, LOCALE_LABEL.length())));
+                .map((l) -> LocaleUtil.forLanguageTag(substring(l, LOCALE_LABEL.length())));
         //
 
         return Pair.of(format, locale);

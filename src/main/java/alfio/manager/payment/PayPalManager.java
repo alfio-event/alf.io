@@ -32,6 +32,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.util.ErrorsCode;
+import alfio.util.LocaleUtil;
 import alfio.util.MonetaryUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -335,7 +336,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
                 PayPalToken token = new PayPalToken(map.get("payerId").get(0), map.get("paypalPaymentId").get(0), map.get("hmac").get(0));
                 return new PaymentSpecification(reservation.getId(), token, reservationCost.getPriceWithVAT(),
                     event, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event.mustUseFirstAndLastName()),
-                    reservation.getBillingAddress(), reservation.getCustomerReference(), Locale.forLanguageTag(reservation.getUserLanguage()),
+                    reservation.getBillingAddress(), reservation.getCustomerReference(), LocaleUtil.forLanguageTag(reservation.getUserLanguage()),
                     reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
                     reservation.getVatNr(), reservation.getVatStatus(), map.containsKey("termAndConditionsAccepted"), map.containsKey("privacyPolicyAccepted"));
             }
