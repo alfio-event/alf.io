@@ -33,7 +33,6 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.i18n.MustacheLocalizationMessageInterceptor;
-import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -69,8 +68,7 @@ public class TemplateManager {
     private static final Formatter DATE_FORMATTER = (o) -> (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o) : String.valueOf(o);
 
     @Autowired
-    public TemplateManager(JMustacheTemplateLoader templateLoader,
-                           MessageSource messageSource,
+    public TemplateManager(MessageSource messageSource,
                            UploadedResourceManager uploadedResourceManager,
                            ConfigurationManager configurationManager) {
         this.messageSource = messageSource;
@@ -83,15 +81,13 @@ public class TemplateManager {
             .standardsMode(false)
             .defaultValue("")
             .nullValue("")
-            .withFormatter(DATE_FORMATTER)
-            .withLoader(templateLoader));
+            .withFormatter(DATE_FORMATTER));
         this.compilers.put(TemplateOutput.HTML, Mustache.compiler()
             .escapeHTML(true)
             .standardsMode(false)
             .defaultValue("")
             .nullValue("")
-            .withFormatter(DATE_FORMATTER)
-            .withLoader(templateLoader));
+            .withFormatter(DATE_FORMATTER));
     }
 
     public String renderTemplate(Optional<? extends EventAndOrganizationId> event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {

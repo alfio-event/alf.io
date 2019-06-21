@@ -26,11 +26,9 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.samskivert.mustache.Mustache;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.MediaType;
@@ -48,11 +46,8 @@ import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplate
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Configuration
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
@@ -60,7 +55,6 @@ import java.util.stream.Collectors;
 @EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 4 * 60 * 60) //4h
 public class MvcConfiguration implements WebMvcConfigurer {
 
-    private final MessageSource messageSource;
     private final JMustacheTemplateLoader templateLoader;
     private final ConfigurationManager configurationManager;
     private final Environment environment;
@@ -69,11 +63,9 @@ public class MvcConfiguration implements WebMvcConfigurer {
         .build();
 
     @Autowired
-    public MvcConfiguration(MessageSource messageSource,
-                            JMustacheTemplateLoader templateLoader,
+    public MvcConfiguration(JMustacheTemplateLoader templateLoader,
                             ConfigurationManager configurationManager,
                             Environment environment) {
-        this.messageSource = messageSource;
         this.templateLoader = templateLoader;
         this.configurationManager = configurationManager;
         this.environment = environment;
@@ -165,17 +157,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
                 .standardsMode(false)
                 .defaultValue("")
                 .nullValue("")
-                .withFormatter(
-                        (o) -> {
-                            if(o instanceof ZonedDateTime) {
-                                return DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o);
-                            } else if(o instanceof DefaultMessageSourceResolvable) {
-                                DefaultMessageSourceResolvable m = ((DefaultMessageSourceResolvable) o);
-                                return m.getCode()+ " " + Arrays.stream(Optional.ofNullable(m.getArguments()).orElse(new Object[]{})).map(x -> "["+x.toString()+"]").collect(Collectors.joining(" "));
-                            } else {
-                                return String.valueOf(o);
-                            }
-                        })
                 .withLoader(templateLoader));
         
         templateFactory.afterPropertiesSet();
