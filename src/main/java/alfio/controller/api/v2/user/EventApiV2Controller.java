@@ -182,7 +182,7 @@ public class EventApiV2Controller {
 
                 //invoicing information
                 boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
-                boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event.getOrganizationId());
+                boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event);
                 boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || euVatCheckingEnabled;
                 boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
                 boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).getValueAsBooleanOrDefault(false);

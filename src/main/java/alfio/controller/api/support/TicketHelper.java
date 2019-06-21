@@ -105,7 +105,7 @@ public class TicketHelper {
 
         final TicketReservation ticketReservation = result.getMiddle();
         List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-        var sameCountryValidator = new SameCountryValidator(configurationManager, extensionManager, event.getOrganizationId(), event.getId(), ticketReservation.getId(), vatChecker);
+        var sameCountryValidator = new SameCountryValidator(configurationManager, extensionManager, event, ticketReservation.getId(), vatChecker);
         AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(sameCountryValidator,
             new GroupManager.WhitelistValidator(event.getId(), groupManager));
 

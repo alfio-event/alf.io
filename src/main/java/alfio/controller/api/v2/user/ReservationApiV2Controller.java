@@ -397,7 +397,7 @@ public class ReservationApiV2Controller {
             var ticketFieldFilterer = getTicketFieldsFilterer(reservationId, event);
             //
             contactAndTicketsForm.validate(bindingResult, event,
-                new SameCountryValidator(configurationManager, extensionManager, event.getOrganizationId(), event.getId(), reservationId, vatChecker),
+                new SameCountryValidator(configurationManager, extensionManager, event, reservationId, vatChecker),
                 formValidationParameters, ticketFieldFilterer);
             //
 
@@ -442,7 +442,7 @@ public class ReservationApiV2Controller {
         String country = contactAndTicketsForm.getVatCountryCode();
 
         // validate VAT presence if EU mode is enabled
-        if(vatChecker.isReverseChargeEnabledFor(event.getOrganizationId()) && isEUCountry(country)) {
+        if(vatChecker.isReverseChargeEnabledFor(event) && isEUCountry(country)) {
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
         }
 
@@ -450,7 +450,7 @@ public class ReservationApiV2Controller {
             Optional<VatDetail> vatDetail = eventRepository.findOptionalByShortName(eventName)
                 .flatMap(e -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r)))
                 .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(e.getKey().getVatStatus()))
-                .filter(e -> vatChecker.isReverseChargeEnabledFor(e.getKey().getOrganizationId()))
+                .filter(e -> vatChecker.isReverseChargeEnabledFor(e.getKey()))
                 .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, e.getKey()));
 
 

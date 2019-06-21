@@ -20,7 +20,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Audit;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.VatDetail;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.AuditingRepository;
 import ch.digitalfondue.vatchecker.EUVatCheckResponse;
@@ -43,7 +42,6 @@ import java.util.function.Supplier;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EventType.*;
-import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS;
 
 @Component
@@ -60,15 +58,15 @@ public class EuVatChecker {
         .expireAfterWrite(15, TimeUnit.MINUTES)
         .build();
 
-    public boolean isReverseChargeEnabledFor(int organizationId) {
-        return reverseChargeEnabled(configurationManager, organizationId);
+    public boolean isReverseChargeEnabledFor(EventAndOrganizationId eventAndOrganizationId) {
+        return reverseChargeEnabled(configurationManager, eventAndOrganizationId);
     }
 
     public Optional<VatDetail> checkVat(String vatNr, String countryCode, EventAndOrganizationId event) {
-        Optional<VatDetail> res = performCheck(vatNr, countryCode, event.getOrganizationId()).apply(configurationManager, client);
+        Optional<VatDetail> res = performCheck(vatNr, countryCode, event).apply(configurationManager, client);
         res.map(detail -> {
            if(!detail.isValid()) {
-               String organizerCountry = organizerCountry(configurationManager, event.getOrganizationId());
+               String organizerCountry = organizerCountry(configurationManager, event);
                boolean valid = extensionManager.handleTaxIdValidation(event.getId(), vatNr, organizerCountry);
                return new VatDetail(detail.getVatNr(), detail.getCountry(), valid, detail.getName(), detail.getAddress(), VatDetail.Type.FORMAL, false);
            } else {
@@ -79,7 +77,7 @@ public class EuVatChecker {
         return res;
     }
 
-    static BiFunction<ConfigurationManager, EUVatChecker, Optional<VatDetail>> performCheck(String vatNr, String countryCode, int organizationId) {
+    static BiFunction<ConfigurationManager, EUVatChecker, Optional<VatDetail>> performCheck(String vatNr, String countryCode, EventAndOrganizationId eventAndOrganizationId) {
         return (configurationManager, client) -> {
             boolean vatNrNotEmpty = StringUtils.isNotEmpty(vatNr);
             boolean validCountryCode = StringUtils.length(StringUtils.trimToNull(countryCode)) == 2;
@@ -91,19 +89,19 @@ public class EuVatChecker {
 
             boolean euCountryCode = configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
 
-            boolean validationEnabled = validationEnabled(configurationManager, organizationId);
+            boolean validationEnabled = validationEnabled(configurationManager, eventAndOrganizationId);
             if(euCountryCode && validationEnabled) {
                 EUVatCheckResponse validationResult = validateEUVat(vatNr, countryCode, client);
                 return Optional.ofNullable(validationResult)
-                    .map(r -> getVatDetail(reverseChargeEnabled(configurationManager, organizationId), r, vatNr, countryCode, organizerCountry(configurationManager, organizationId)));
+                    .map(r -> getVatDetail(reverseChargeEnabled(configurationManager, eventAndOrganizationId), r, vatNr, countryCode, organizerCountry(configurationManager, eventAndOrganizationId)));
             }
 
-            String organizerCountry = organizerCountry(configurationManager, organizationId);
-            if(StringUtils.isEmpty(organizerCountry(configurationManager, organizationId))) {
+            String organizerCountry = organizerCountry(configurationManager, eventAndOrganizationId);
+            if(StringUtils.isEmpty(organizerCountry(configurationManager, eventAndOrganizationId))) {
                 return Optional.empty();
             }
 
-            Supplier<Boolean> applyVatToForeignBusiness = () -> configurationManager.getBooleanConfigValue(Configuration.from(organizationId, APPLY_VAT_FOREIGN_BUSINESS), true);
+            Supplier<Boolean> applyVatToForeignBusiness = () -> configurationManager.getFor(eventAndOrganizationId, APPLY_VAT_FOREIGN_BUSINESS).getValueAsBooleanOrDefault(true);
             boolean vatExempt = !organizerCountry.equals(countryCode) && (euCountryCode || !applyVatToForeignBusiness.get());
             return Optional.of(new VatDetail(vatNr, countryCode, true, "", "", euCountryCode ? VatDetail.Type.SKIPPED : VatDetail.Type.EXTRA_EU, vatExempt));
 
@@ -145,16 +143,16 @@ public class EuVatChecker {
         return new VatDetail(vatNr, countryCode, isValid, response.getName(), response.getAddress(), VatDetail.Type.VIES, isValid && reverseChargeEnabled && !organizerCountryCode.equals(countryCode));
     }
 
-    static String organizerCountry(ConfigurationManager configurationManager, int organizationId) {
-        return configurationManager.getStringConfigValue(Configuration.from(organizationId, ConfigurationKeys.COUNTRY_OF_BUSINESS), null);
+    static String organizerCountry(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
+        return configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.COUNTRY_OF_BUSINESS).getValueOrDefault(null);
     }
 
-    private static boolean reverseChargeEnabled(ConfigurationManager configurationManager, int organizationId) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(organizationId, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE), false);
+    private static boolean reverseChargeEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
+        return configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault(false);
     }
 
-    static boolean validationEnabled(ConfigurationManager configurationManager, int organizationId) {
-        return configurationManager.getBooleanConfigValue(Configuration.from(organizationId, ConfigurationKeys.ENABLE_VIES_VALIDATION), true);
+    static boolean validationEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
+        return configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.ENABLE_VIES_VALIDATION).getValueAsBooleanOrDefault(true);
     }
 
 
