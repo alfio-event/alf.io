@@ -42,7 +42,7 @@ public class AnalyticsConfiguration {
         var googAnalyticsScrambled = conf.get(GOOGLE_ANALYTICS_ANONYMOUS_MODE).getValueAsBooleanOrDefault(true);
 
         var sessionId = session.getId();
-        var clientId = googAnalyticsKey != null && googAnalyticsScrambled && sessionId != null ? DigestUtils.sha512Hex(sessionId) : null;
+        var clientId = googAnalyticsKey != null && googAnalyticsScrambled && sessionId != null ? DigestUtils.sha256Hex(sessionId) : null;
         return new AnalyticsConfiguration(googAnalyticsKey, googAnalyticsScrambled, clientId);
     }
 }
