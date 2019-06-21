@@ -16,19 +16,41 @@
  */
 package alfio.controller;
 
+import alfio.config.Initializer;
+import alfio.config.WebSecurityConfig;
+import alfio.manager.system.ConfigurationManager;
+import alfio.manager.user.UserManager;
+import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.Principal;
+
+import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 
 @Controller
 @AllArgsConstructor
 public class IndexController {
+
+    private static final String REDIRECT_ADMIN = "redirect:/admin/";
+
+    private final ConfigurationManager configurationManager;
+    private final Environment environment;
+    private final UserManager userManager;
+
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
     public ResponseEntity<String> replyToProxy() {
@@ -76,5 +98,59 @@ public class IndexController {
         try (var is = new ClassPathResource("alfio-public-frontend-index.html").getInputStream(); var os = response.getOutputStream()) {
             is.transferTo(os);
         }
+    }
+
+
+    // login related
+    @RequestMapping(value="/authentication", method = RequestMethod.GET)
+    public String getLoginPage(@RequestParam(value="failed", required = false) String failed, @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed, Model model, Principal principal, HttpServletRequest request) {
+        if(principal != null) {
+            return REDIRECT_ADMIN;
+        }
+        model.addAttribute("failed", failed != null);
+        model.addAttribute("recaptchaFailed", recaptchaFailed != null);
+        model.addAttribute("hasRecaptchaApiKey", false);
+
+        //
+        model.addAttribute("request", request);
+        model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
+        model.addAttribute("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
+        model.addAttribute("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
+        model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
+        //
+
+        configurationManager.getFor(ConfigurationKeys.RECAPTCHA_API_KEY).getValue()
+            .filter(key -> configurationManager.getFor(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true))
+            .ifPresent(key -> {
+                model.addAttribute("hasRecaptchaApiKey", true);
+                model.addAttribute("recaptchaApiKey", key);
+            });
+
+        return "/login/login";
+    }
+
+    @RequestMapping(value="/authenticate", method = RequestMethod.POST)
+    public String doLogin() {
+        return REDIRECT_ADMIN;
+    }
+    //
+
+
+    // admin index
+    @RequestMapping("/admin")
+    public String adminHome(Model model, @Value("${alfio.version}") String version, HttpServletRequest request, Principal principal) {
+        model.addAttribute("alfioVersion", version);
+        model.addAttribute("username", principal.getName());
+        model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
+        model.addAttribute("isAdmin", principal.getName().equals("admin"));
+        model.addAttribute("isOwner", userManager.isOwner(userManager.findUserByUsername(principal.getName())));
+        //
+        model.addAttribute("request", request);
+        model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
+        model.addAttribute("devModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV)));
+        model.addAttribute("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
+        model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
+        //
+        return "/admin/index";
     }
 }
