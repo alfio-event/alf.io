@@ -37,13 +37,10 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
-import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.*;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.AbstractDataSource;
@@ -54,7 +51,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
@@ -71,12 +67,9 @@ import java.util.Set;
 @ComponentScan(basePackages = {"alfio.manager", "alfio.extension"})
 @Log4j2
 @EnableNpjt(basePackages = "alfio.repository")
-public class DataSourceConfiguration implements ResourceLoaderAware {
+public class DataSourceConfiguration {
 
     private static final Set<PlatformProvider> PLATFORM_PROVIDERS = EnumSet.complementOf(EnumSet.of(PlatformProvider.DEFAULT));
-
-    @Autowired
-    private ResourceLoader resourceLoader;
 
     @Bean
     @Profile({"!"+Initializer.PROFILE_INTEGRATION_TEST, "travis"})
@@ -183,15 +176,6 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     }
 
     @Bean
-    public JMustacheTemplateLoader getTemplateLoader() {
-        JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
-        loader.setPrefix("/WEB-INF/templates");
-        loader.setSuffix(".ms");
-        loader.setResourceLoader(resourceLoader);
-        return loader;
-    }
-
-    @Bean
     @Profile("!"+Initializer.PROFILE_INTEGRATION_TEST)
     public FileDownloadManager fileDownloadManager() {
         return new FileDownloadManager();
@@ -235,11 +219,6 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     @Bean
     ReservationJobExecutor reservationJobExecutor(TicketReservationManager ticketReservationManager) {
         return new ReservationJobExecutor(ticketReservationManager);
-    }
-
-    @Override
-    public void setResourceLoader(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
     }
 
     /**

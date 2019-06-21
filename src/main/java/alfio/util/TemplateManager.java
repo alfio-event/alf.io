@@ -28,14 +28,13 @@ import com.samskivert.mustache.Template;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
-import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.i18n.MustacheLocalizationMessageInterceptor;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -105,6 +104,14 @@ public class TemplateManager {
         return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), modelEnricher(model, Optional.ofNullable(event), locale), locale, templateOutput);
     }
 
+    public void renderHtml(Resource resource, Map<String, Object> model, OutputStream os) {
+        try (var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
+            compile(resource, TemplateOutput.HTML).execute(model, osw);
+        } catch (IOException ioe) {
+            throw new IllegalStateException(ioe);
+        }
+    }
+
     private Map<String, Object> modelEnricher(Map<String, Object> model, Optional<? extends EventAndOrganizationId> event, Locale locale) {
         Map<String, Object> toEnrich = new HashMap<>(model);
         event.ifPresent(ev -> toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, getVATString(ev, messageSource, locale, configurationManager)));
@@ -121,7 +128,7 @@ public class TemplateManager {
         return configurationManager.getStringConfigValue(vatPathKey, translatedVat);
     }
 
-    private String render(AbstractResource resource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+    private String render(Resource resource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
         try {
             ModelAndView mv = new ModelAndView((String) null, model);
             mv.addObject("format-date", MustacheCustomTag.FORMAT_DATE);
@@ -134,7 +141,7 @@ public class TemplateManager {
         }
     }
 
-    private Template compile(AbstractResource resource, TemplateOutput templateOutput) {
+    private Template compile(Resource resource, TemplateOutput templateOutput) {
         try (InputStreamReader tmpl = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
             return compilers.get(templateOutput).compile(tmpl);
         } catch (IOException ioe) {

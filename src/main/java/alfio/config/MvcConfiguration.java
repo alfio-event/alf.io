@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.samskivert.mustache.Mustache;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -40,9 +39,6 @@ import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.*;
 import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
-import org.springframework.web.servlet.view.mustache.MustacheViewResolver;
-import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateFactory;
-import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -55,7 +51,6 @@ import java.util.concurrent.TimeUnit;
 @EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 4 * 60 * 60) //4h
 public class MvcConfiguration implements WebMvcConfigurer {
 
-    private final JMustacheTemplateLoader templateLoader;
     private final ConfigurationManager configurationManager;
     private final Environment environment;
     private static final Cache<ConfigurationKeys, String> configurationCache = Caffeine.newBuilder()
@@ -63,10 +58,9 @@ public class MvcConfiguration implements WebMvcConfigurer {
         .build();
 
     @Autowired
-    public MvcConfiguration(JMustacheTemplateLoader templateLoader,
+    public MvcConfiguration(
                             ConfigurationManager configurationManager,
                             Environment environment) {
-        this.templateLoader = templateLoader;
         this.configurationManager = configurationManager;
         this.environment = environment;
     }
@@ -125,18 +119,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
         };
     }
 
-    @Bean
-    public ViewResolver getViewResolver(Environment env) throws Exception {
-        MustacheViewResolver viewResolver = new MustacheViewResolver();
-        viewResolver.setSuffix("");
-        viewResolver.setTemplateFactory(getTemplateFactory());
-        viewResolver.setOrder(1);
-        //disable caching if we are in dev mode
-        viewResolver.setCache(env.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
-        viewResolver.setContentType("text/html;charset=UTF-8");
-        return viewResolver;
-    }
-
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
         converters.add(jacksonMessageConverter());
@@ -144,25 +126,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
         converter.setSupportedMediaTypes(Collections.singletonList(MediaType.ALL));
         converters.add(converter);
     }
-
-    @Bean
-    public JMustacheTemplateFactory getTemplateFactory() throws Exception {
-        final JMustacheTemplateFactory templateFactory = new JMustacheTemplateFactory();
-
-        templateFactory.setPrefix("/WEB-INF/templates");
-        templateFactory.setSuffix(".ms");
-        templateFactory.setTemplateLoader(templateLoader);
-        templateFactory.setCompiler(Mustache.compiler()
-                .escapeHTML(true)
-                .standardsMode(false)
-                .defaultValue("")
-                .nullValue("")
-                .withLoader(templateLoader));
-        
-        templateFactory.afterPropertiesSet();
-        return templateFactory;
-    }
-
 
     @Bean
     public MappingJackson2HttpMessageConverter jacksonMessageConverter() {

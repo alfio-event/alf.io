@@ -21,6 +21,7 @@ import alfio.config.WebSecurityConfig;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.system.ConfigurationKeys;
+import alfio.util.TemplateManager;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -50,6 +51,7 @@ public class IndexController {
     private final ConfigurationManager configurationManager;
     private final Environment environment;
     private final UserManager userManager;
+    private final TemplateManager templateManager;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -93,7 +95,7 @@ public class IndexController {
         "/event/{eventShortName}/ticket/{ticketId}/view"
     }, method = RequestMethod.GET)
     public void replyToIndex(HttpServletResponse response) throws IOException {
-        response.setContentType("text/html");
+        response.setContentType("text/html;charset=UTF-8");
         response.setCharacterEncoding("UTF-8");
         try (var is = new ClassPathResource("alfio-public-frontend-index.html").getInputStream(); var os = response.getOutputStream()) {
             is.transferTo(os);
@@ -103,9 +105,14 @@ public class IndexController {
 
     // login related
     @RequestMapping(value="/authentication", method = RequestMethod.GET)
-    public String getLoginPage(@RequestParam(value="failed", required = false) String failed, @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed, Model model, Principal principal, HttpServletRequest request) {
+    public void getLoginPage(@RequestParam(value="failed", required = false) String failed, @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed,
+                             Model model,
+                             Principal principal,
+                             HttpServletRequest request,
+                             HttpServletResponse response) throws IOException {
         if(principal != null) {
-            return REDIRECT_ADMIN;
+            response.sendRedirect("/admin/");
+            return;
         }
         model.addAttribute("failed", failed != null);
         model.addAttribute("recaptchaFailed", recaptchaFailed != null);
@@ -125,8 +132,11 @@ public class IndexController {
                 model.addAttribute("hasRecaptchaApiKey", true);
                 model.addAttribute("recaptchaApiKey", key);
             });
-
-        return "/login/login";
+        try (var os = response.getOutputStream()) {
+            response.setContentType("text/html;charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
+            templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
+        }
     }
 
     @RequestMapping(value="/authenticate", method = RequestMethod.POST)
@@ -138,7 +148,7 @@ public class IndexController {
 
     // admin index
     @RequestMapping("/admin")
-    public String adminHome(Model model, @Value("${alfio.version}") String version, HttpServletRequest request, Principal principal) {
+    public void adminHome(Model model, @Value("${alfio.version}") String version, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
         model.addAttribute("alfioVersion", version);
         model.addAttribute("username", principal.getName());
         model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
@@ -151,6 +161,11 @@ public class IndexController {
         model.addAttribute("prodModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
         model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
         //
-        return "/admin/index";
+
+        try (var os = response.getOutputStream()) {
+            response.setContentType("text/html;charset=UTF-8");
+            response.setCharacterEncoding("UTF-8");
+            templateManager.renderHtml(new ClassPathResource("alfio/web-templates/admin-index.ms"), model.asMap(), os);
+        }
     }
 }
