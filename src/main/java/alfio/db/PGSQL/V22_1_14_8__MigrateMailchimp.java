@@ -36,7 +36,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
-import static alfio.util.OptionalWrapper.optionally;
+import static alfio.util.Wrappers.optionally;
 
 public class V22_1_14_8__MigrateMailchimp extends BaseSpringJdbcMigration {
 

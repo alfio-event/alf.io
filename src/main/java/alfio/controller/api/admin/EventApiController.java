@@ -74,7 +74,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static alfio.util.OptionalWrapper.optionally;
+import static alfio.util.Wrappers.optionally;
 import static alfio.util.Validator.*;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.defaultString;

@@ -52,7 +52,7 @@ import java.util.stream.IntStream;
 
 import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.repository.TicketRepository.RESET_TICKET;
-import static alfio.util.OptionalWrapper.optionally;
+import static alfio.util.Wrappers.optionally;
 import static java.util.stream.Collectors.*;
 
 @Component

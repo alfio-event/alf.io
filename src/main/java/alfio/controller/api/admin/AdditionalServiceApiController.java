@@ -45,8 +45,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static alfio.util.OptionalWrapper.optionally;
-
 @RestController
 @RequestMapping("/admin/api")
 @Log4j2
