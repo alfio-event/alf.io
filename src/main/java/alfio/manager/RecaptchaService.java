@@ -38,7 +38,7 @@ public class RecaptchaService {
 
 
     public boolean checkRecaptcha(String recaptchaResponse, HttpServletRequest req) {
-        return configurationManager.getStringConfigValue(alfio.model.system.Configuration.getSystemConfiguration(ConfigurationKeys.RECAPTCHA_SECRET))
+        return configurationManager.getFor(ConfigurationKeys.RECAPTCHA_SECRET).getValue()
             .map((secret) -> recaptchaRequest(client, secret, ObjectUtils.firstNonNull(recaptchaResponse, req.getParameter("g-recaptcha-response"))))
             .orElse(true);
     }

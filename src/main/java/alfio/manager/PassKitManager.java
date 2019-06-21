@@ -21,7 +21,6 @@ import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.EventDescription;
 import alfio.model.Ticket;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
@@ -249,9 +248,9 @@ public class PassKitManager {
         }
 
         var event = eventOptional.get();
-        var typeIdentifierOptional = configurationManager.getStringConfigValue(Configuration.from(event, PASSBOOK_TYPE_IDENTIFIER));
-        if(typeIdentifierOptional.isEmpty() || !typeIdentifierOptional.get().equals(typeIdentifier)) {
-            log.trace("typeIdentifier does not match. Expected {}, got {}", typeIdentifierOptional.orElse("not-found"), typeIdentifier);
+        var typeIdentifierOptional = configurationManager.getFor(event, PASSBOOK_TYPE_IDENTIFIER);
+        if(!typeIdentifierOptional.isPresent() || !typeIdentifier.equals(typeIdentifierOptional.getValueOrDefault(null))) {
+            log.trace("typeIdentifier does not match. Expected {}, got {}", typeIdentifierOptional.getValueOrDefault("not-found"), typeIdentifier);
             return Optional.empty();
         }
         return ticketRepository.findOptionalByUUID(ticketUuid)

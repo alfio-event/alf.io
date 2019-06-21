@@ -177,6 +177,7 @@ class TicketReservationManagerTest {
         billingDocumentRepository = mock(BillingDocumentRepository.class);
         when(ticketCategoryRepository.getByIdAndActive(anyInt(), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(ticketCategory.getName()).thenReturn("Category Name");
+        when(configurationManager.getFor(event, VAT_NR)).thenReturn(new ConfigurationManager.MaybeConfiguration(VAT_NR));
 
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -962,7 +963,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(copy);
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), any(), eq(PaymentProxy.OFFLINE.toString()), isNull())).thenReturn(1);
-        when(configurationManager.getStringConfigValue(any())).thenReturn(Optional.of("vatnr"));
+        when(configurationManager.getFor(event, VAT_NR)).thenReturn(new ConfigurationManager.MaybeConfiguration(VAT_NR, new ConfigurationKeyValuePathLevel(null, "vatnr", null)));
         when(configurationManager.getFor(event, BANKING_KEY)).thenReturn(BANKING_INFO);
         when(configurationManager.getFor(event, ENABLE_TICKET_TRANSFER)).thenReturn(
             new ConfigurationManager.MaybeConfiguration(ENABLE_TICKET_TRANSFER)
@@ -990,7 +991,6 @@ class TicketReservationManagerTest {
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(RESERVATION_ID);
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
-        verify(configurationManager, atLeastOnce()).getStringConfigValue(any());
         verify(configurationManager, atLeastOnce()).getShortReservationID(eq(event), any(TicketReservation.class));
         verify(ticketRepository).countTicketsInReservation(eq(RESERVATION_ID));
         verify(configurationManager).getFor(eq(event), eq(PLATFORM_MODE_ENABLED));
