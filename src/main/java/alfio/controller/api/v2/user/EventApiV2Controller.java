@@ -484,7 +484,7 @@ public class EventApiV2Controller {
 
     @GetMapping(value = "event/{eventName}/validate-code")
     public ResponseEntity<ValidatedResponse<EventCode>> validateCode(@PathVariable("eventName") String eventName,
-                                                                   @RequestParam("code") String code) {
+                                                                     @RequestParam("code") String code) {
 
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(e -> {
             var res = checkCode(e, code);
@@ -505,6 +505,18 @@ public class EventApiV2Controller {
             }
         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+
+    @GetMapping("event/{eventName}/code/{code}")
+    public void handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code) {
+        String trimmedCode = StringUtils.trimToNull(code);
+        eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(e -> {
+            var checkedCode = checkCode(e, trimmedCode);
+            checkedCode.getValue();
+            return null;
+        });
+    }
+
 
 
     private boolean shouldDisplayRestrictedCategory(Optional<SpecialPrice> specialCode, alfio.model.TicketCategory c, Optional<PromoCodeDiscount> optionalPromoCode) {
@@ -572,5 +584,15 @@ public class EventApiV2Controller {
     private boolean isCaptchaInvalid(String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
         return configurationManager.isRecaptchaForTicketSelectionEnabled(event)
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
+    }
+
+    public static EventCode.EventCodeType from(Optional<SpecialPrice> specialPrice, Optional<PromoCodeDiscount> promoCodeDiscount) {
+        if (specialPrice.isPresent()) {
+            return EventCode.EventCodeType.SPECIAL_PRICE;
+        } else if (promoCodeDiscount.isPresent()) {
+            return promoCodeDiscount.map(pcd -> pcd.getCodeType() == PromoCodeDiscount.CodeType.ACCESS ? EventCode.EventCodeType.ACCESS : EventCode.EventCodeType.DISCOUNT).orElse(EventCode.EventCodeType.NOT_FOUND);
+        } else {
+            return EventCode.EventCodeType.NOT_FOUND;
+        }
     }
 }
