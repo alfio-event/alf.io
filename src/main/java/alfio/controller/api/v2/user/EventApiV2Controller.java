@@ -510,9 +510,32 @@ public class EventApiV2Controller {
     @GetMapping("event/{eventName}/code/{code}")
     public void handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code) {
         String trimmedCode = StringUtils.trimToNull(code);
-        eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(e -> {
+        eventRepository.findOptionalByShortName(eventName).map(e -> {
+
             var checkedCode = checkCode(e, trimmedCode);
-            checkedCode.getValue();
+
+            var codeType = getCodeType(e.getId(), trimmedCode);
+
+            if(checkedCode.isSuccess() && codeType == CodeType.PROMO_CODE_DISCOUNT) {
+                return null;//redirectToEvent
+            } else if(codeType == CodeType.TICKET_CATEGORY_CODE) {
+                var category = ticketCategoryRepository.findCodeInEvent(e.getId(), trimmedCode).get();
+                if(!category.isAccessRestricted()) {
+                    return null; //makeSimpleReservation(eventName, request, redirectAttributes, locale, null, event, category.getId());
+                } else {
+                    var specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
+                    if(!specialPrice.isPresent()) {
+                        return null;//redirectToEvent;
+                    }
+                    //savePromoCode(eventName, specialPrice.get().getCode(), model, request.getRequest());
+                    return null;//makeSimpleReservation(eventName, request, redirectAttributes, locale, specialPrice.get().getCode(), event, category.getId());
+                }
+            } else if (checkedCode.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
+                int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).get().getTicketCategoryId();
+            } else {
+                return null;//redirectToEvent;
+            }
+
             return null;
         });
     }
@@ -586,13 +609,23 @@ public class EventApiV2Controller {
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 
-    public static EventCode.EventCodeType from(Optional<SpecialPrice> specialPrice, Optional<PromoCodeDiscount> promoCodeDiscount) {
-        if (specialPrice.isPresent()) {
-            return EventCode.EventCodeType.SPECIAL_PRICE;
-        } else if (promoCodeDiscount.isPresent()) {
-            return promoCodeDiscount.map(pcd -> pcd.getCodeType() == PromoCodeDiscount.CodeType.ACCESS ? EventCode.EventCodeType.ACCESS : EventCode.EventCodeType.DISCOUNT).orElse(EventCode.EventCodeType.NOT_FOUND);
+    enum CodeType {
+        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
+    }
+
+    //not happy with that code...
+    private CodeType getCodeType(int eventId, String code) {
+        String trimmedCode = StringUtils.trimToNull(code);
+        if(trimmedCode == null) {
+            return CodeType.NOT_FOUND;
+        }  else if(specialPriceRepository.getByCode(trimmedCode).isPresent()) {
+            return CodeType.SPECIAL_PRICE;
+        } else if (promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode).isPresent()) {
+            return CodeType.PROMO_CODE_DISCOUNT;
+        } else if (ticketCategoryRepository.findCodeInEvent(eventId, trimmedCode).isPresent()) {
+            return CodeType.TICKET_CATEGORY_CODE;
         } else {
-            return EventCode.EventCodeType.NOT_FOUND;
+            return CodeType.NOT_FOUND;
         }
     }
 }

@@ -63,6 +63,9 @@ public interface TicketCategoryRepository {
     @Query("select * from ticket_category where id in(:ids)")
     List<TicketCategory> findByIds(@Bind("ids") Collection<Integer> ids);
 
+    @Query("select * from ticket_category where event_id = :eventId and category_code = :code and tc_status = 'ACTIVE'")
+    Optional<TicketCategory> findCodeInEvent(@Bind("eventId") int eventId, @Bind("code") String code);
+
     @Query("select count(*) from ticket_category where event_id = :eventId and tc_status = 'ACTIVE' and bounded = false")
     Integer countUnboundedCategoriesByEventId(@Bind("eventId") int eventId);
 
