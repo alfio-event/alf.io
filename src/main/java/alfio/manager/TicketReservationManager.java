@@ -1357,12 +1357,6 @@ public class TicketReservationManager {
         return ticketRepository.findFirstTicketInReservation(reservationId);
     }
 
-    public List<Triple<AdditionalService, List<AdditionalServiceText>, AdditionalServiceItem>> findAdditionalServicesInReservation(String reservationId) {
-        return additionalServiceItemRepository.findByReservationUuid(reservationId).stream()
-            .map(asi -> Triple.of(additionalServiceRepository.getById(asi.getAdditionalServiceId(), asi.getEventId()), additionalServiceTextRepository.findAllByAdditionalServiceId(asi.getAdditionalServiceId()), asi))
-            .collect(toList());
-    }
-
     public Optional<String> getVAT(EventAndOrganizationId event) {
         return configurationManager.getFor(event, ConfigurationKeys.VAT_NR).getValue();
     }
@@ -1720,12 +1714,6 @@ public class TicketReservationManager {
         OrderSummary orderSummary = optionalOrderSummary.get();
         Validate.isTrue(MonetaryUtil.centsToUnit(orderSummary.getOriginalTotalPrice().getPriceWithVAT()).compareTo(paidAmount) == 0, "paid price differs from due price");
         confirmOfflinePayment(event, reservation.getId(), username);
-    }
-
-    private List<Pair<TicketReservation, OrderSummary>> fetchWaitingForPayment(int eventId, Event event, Locale locale) {
-        return ticketReservationRepository.findAllReservationsWaitingForPaymentInEventId(eventId).stream()
-            .map(id -> Pair.of(ticketReservationRepository.findReservationById(id), orderSummaryForReservationId(id, event)))
-            .collect(toList());
     }
 
     public List<TicketReservationWithTransaction> getPendingPayments(String eventName) {

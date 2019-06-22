@@ -18,7 +18,6 @@ package alfio.manager.support;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
-import alfio.model.system.Configuration;
 import alfio.util.MonetaryUtil;
 
 import java.math.BigDecimal;

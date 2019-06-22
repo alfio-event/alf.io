@@ -211,10 +211,6 @@ public interface TicketRepository {
         " inner join ticket_category tc on t.category_id = tc.id ";
 
     @Query(FIND_FULL_TICKET_INFO +
-            " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null order by t.id asc")
-    List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId);
-
-    @Query(FIND_FULL_TICKET_INFO +
             " where t.event_id = :eventId and t.full_name is not null and t.email_address is not null and t.id in (:ids) order by t.id asc")
     List<FullTicketInfo> findAllFullTicketInfoAssignedByEventId(@Bind("eventId") int eventId, @Bind("ids") List<Integer> ids);
 
