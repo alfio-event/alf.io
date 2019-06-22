@@ -31,6 +31,8 @@ import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.modification.ASReservationWithOptionalCodeModification;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
@@ -448,28 +450,9 @@ public class EventApiV2Controller {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
 
-            var reservationIdRes = reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event).flatMap(selected -> {
-                Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
-                try {
-                    String reservationId = ticketReservationManager.createTicketReservation(event,
-                        selected.getLeft(), selected.getRight(), expiration,
-                        specialPrice,
-                        promoCodeDiscount,
-                        locale, false);
-                    return Optional.of(reservationId);
-                } catch (TicketReservationManager.NotEnoughTicketsException nete) {
-                    bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-                } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
-                    bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
-                } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
-                    bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
-                    SessionUtil.cleanupSession(request.getRequest());
-                } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
-                    bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
-                }
-
-                return Optional.empty();
-            });
+            var reservationIdRes = reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event).flatMap(selected ->
+                createTicketReservation(bindingResult, request, event, locale, specialPrice, promoCodeDiscount, selected)
+            );
 
             if (bindingResult.hasErrors()) {
                 return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, (String) null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
@@ -480,6 +463,34 @@ public class EventApiV2Controller {
         });
 
         return r.orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private Optional<String> createTicketReservation(BindingResult bindingResult,
+                                                     ServletWebRequest request,
+                                                     Event event,
+                                                     Locale locale,
+                                                     Optional<String> specialPrice,
+                                                     Optional<String> promoCodeDiscount,
+                                                     Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>> selected) {
+        Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
+        try {
+            String reservationId = ticketReservationManager.createTicketReservation(event,
+                selected.getLeft(), selected.getRight(), expiration,
+                specialPrice,
+                promoCodeDiscount,
+                locale, false);
+            return Optional.of(reservationId);
+        } catch (TicketReservationManager.NotEnoughTicketsException nete) {
+            bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
+        } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
+            bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
+        } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
+            bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
+            SessionUtil.cleanupSession(request.getRequest());
+        } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
+            bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+        }
+        return Optional.empty();
     }
 
     @GetMapping(value = "event/{eventName}/validate-code")
