@@ -41,7 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Log4j2
 @Transactional
-    public class SpecialPriceTokenGenerator {
+public class SpecialPriceTokenGenerator {
 
     private static final char[] ADMITTED_CHARACTERS = new char[]{
             'A', 'B', 'C', 'D', 'E', 'F',

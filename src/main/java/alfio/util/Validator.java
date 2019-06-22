@@ -18,8 +18,8 @@ package alfio.util;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
-import alfio.manager.EuVatChecker;
 import alfio.manager.GroupManager;
+import alfio.manager.SameCountryValidator;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.TicketFieldConfiguration;
@@ -193,7 +193,7 @@ public final class Validator {
                                                             Optional<Errors> errorsOptional,
                                                             Event event,
                                                             String baseField,
-                                                            EuVatChecker.SameCountryValidator vatValidator) {
+                                                            SameCountryValidator vatValidator) {
         if(errorsOptional.isEmpty()) {
             return ValidationResult.success();//already validated
         }
@@ -230,6 +230,13 @@ public final class Validator {
             boolean isField = form.getAdditional() !=null && form.getAdditional().containsKey(fieldConf.getName());
 
             if(!isField) {
+                if (fieldConf.isRequired()) { // sometimes the field is not propagated, so, if it's required, we need to do some additional work
+                    if (form.getAdditional() == null) {
+                        form.setAdditional(new HashMap<>());
+                    }
+                    form.getAdditional().put(fieldConf.getName(), Collections.singletonList(""));
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"][0]", "error."+fieldConf.getName());
+                }
                 continue;
             }
             
@@ -375,7 +382,7 @@ public final class Validator {
     @RequiredArgsConstructor
     public static class AdvancedTicketAssignmentValidator implements Function<AdvancedValidationContext, Result<Void>> {
 
-        private final EuVatChecker.SameCountryValidator vatValidator;
+        private final SameCountryValidator vatValidator;
         private final GroupManager.WhitelistValidator whitelistValidator;
 
 

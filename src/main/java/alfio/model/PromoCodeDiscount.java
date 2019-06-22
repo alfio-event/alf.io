@@ -33,9 +33,14 @@ import java.util.TreeSet;
 
 @Getter
 public class PromoCodeDiscount {
+
+    public enum CodeType {
+        DISCOUNT,
+        ACCESS
+    }
     
     public enum DiscountType {
-        FIXED_AMOUNT, PERCENTAGE
+        FIXED_AMOUNT, PERCENTAGE, NONE
     }
 
     private final int id;
@@ -50,19 +55,24 @@ public class PromoCodeDiscount {
     private final Integer maxUsage;
     private final String description;
     private final String emailReference;
+    private final CodeType codeType;
+    private final Integer hiddenCategoryId;
     
     public PromoCodeDiscount(@Column("id")int id, 
-            @Column("promo_code") String promoCode, 
-            @Column("event_id_fk") Integer eventId,
-            @Column("organization_id_fk") Integer organizationId,
-            @Column("valid_from") ZonedDateTime utcStart, 
-            @Column("valid_to") ZonedDateTime utcEnd, 
-            @Column("discount_amount") int discountAmount,
-            @Column("discount_type") DiscountType discountType,
-            @Column("categories") String categories,
-            @Column("max_usage") Integer maxUsage,
-            @Column("description") String description,
-            @Column("email_reference") String emailReference) {
+                             @Column("promo_code") String promoCode,
+                             @Column("event_id_fk") Integer eventId,
+                             @Column("organization_id_fk") Integer organizationId,
+                             @Column("valid_from") ZonedDateTime utcStart,
+                             @Column("valid_to") ZonedDateTime utcEnd,
+                             @Column("discount_amount") int discountAmount,
+                             @Column("discount_type") DiscountType discountType,
+                             @Column("categories") String categories,
+                             @Column("max_usage") Integer maxUsage,
+                             @Column("description") String description,
+                             @Column("email_reference") String emailReference,
+                             @Column("code_type") CodeType codeType,
+                             @Column("hidden_category_id") Integer hiddenCategoryId) {
+
         this.id = id;
         this.promoCode = promoCode;
         this.eventId = eventId;
@@ -80,6 +90,8 @@ public class PromoCodeDiscount {
         }
         this.description = description;
         this.emailReference = emailReference;
+        this.codeType = codeType;
+        this.hiddenCategoryId = hiddenCategoryId;
     }
     
     public boolean isCurrentlyValid(ZoneId eventZoneId, ZonedDateTime now) {
@@ -100,7 +112,10 @@ public class PromoCodeDiscount {
     }
 
     public static Set<Integer> categoriesOrNull(PromoCodeDiscount code) {
-        Set<Integer> categories = code.getCategories();
-        return CollectionUtils.isEmpty(categories) ? null : categories;
+        if(code.codeType == CodeType.DISCOUNT) {
+            Set<Integer> categories = code.getCategories();
+            return CollectionUtils.isEmpty(categories) ? null : categories;
+        }
+        return Set.of(code.hiddenCategoryId);
     }
 }

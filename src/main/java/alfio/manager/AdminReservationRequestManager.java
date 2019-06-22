@@ -45,6 +45,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.modification.AdminReservationModification.Notification.orEmpty;
 import static java.util.Collections.singletonList;
 import static java.util.Optional.ofNullable;
 
@@ -79,6 +80,21 @@ public class AdminReservationRequestManager {
         if(singleReservation && body.getTicketsInfo().stream().mapToLong(ti -> ti.getAttendees().size()).sum() > 100) {
             return Result.error(ErrorCode.custom("MAX_NUMBER_EXCEEDED", "Maximum allowed attendees per reservation is 100"));
         }
+
+        // #620 - validate reference:
+        var attendeesWithDuplicateReference = body.getTicketsInfo().stream().flatMap(ti -> ti.getAttendees().stream())
+            .filter(attendee -> StringUtils.isNotEmpty(attendee.getReference()))
+            .collect(Collectors.groupingBy(attendee -> attendee.getReference().trim(), Collectors.counting()))
+            .entrySet().stream()
+            .filter(e -> e.getValue() > 1)
+            .map(Map.Entry::getKey)
+            .limit(5) // return max 5 codes
+            .collect(Collectors.toList());
+
+        if(!attendeesWithDuplicateReference.isEmpty()) {
+            return Result.error(ErrorCode.custom("DUPLICATE_REFERENCE", "The following codes are duplicate:" + attendeesWithDuplicateReference));
+        }
+
 
         return eventManager.getOptionalByName(eventName, username)
             .map(event -> adminReservationManager.validateTickets(body, event))
@@ -120,7 +136,7 @@ public class AdminReservationRequestManager {
                 String eventName = event.getShortName();
                 String username = user.getUsername();
                 Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.createReservation(request.getBody(), eventName, username)
-                    .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username));
+                    .flatMap(r -> adminReservationManager.confirmReservation(eventName, r.getLeft().getId(), username, orEmpty(request.getBody().getNotification())));
                 if(!result.isSuccess()) {
                     status.rollbackToSavepoint(savepoint);
                 }

@@ -299,12 +299,26 @@
                                         <td class="text-right">{{summaryRow.price}}</td>
                                         <td class="text-right">{{summaryRow.subTotal}}</td>
                                     </tr>
+                                    <tr ng-if="!$ctrl.reservationDescriptor.orderSummary.vatExempt && $ctrl.reservationDescriptor.orderSummary.vatStatus === 'NOT_INCLUDED'">
+                                        <th>Taxes</th>
+                                        <td></td>
+                                        <td class="text-center">{{$ctrl.reservationDescriptor.orderSummary.vatPercentage}} %</td>
+                                        <td></td>
+                                        <th class="text-right">{{$ctrl.reservationDescriptor.orderSummary.totalVAT}}</th>
+                                    </tr>
                                     <tr>
                                         <th>Total</th>
                                         <td></td>
                                         <td></td>
                                         <td></td>
                                         <th class="text-right">{{$ctrl.reservationDescriptor.orderSummary.totalPrice}}</th>
+                                    </tr>
+                                    <tr ng-if="!$ctrl.reservationDescriptor.orderSummary.vatExempt && $ctrl.reservationDescriptor.orderSummary.vatStatus === 'INCLUDED'">
+                                        <td>Taxes (included)</td>
+                                        <td></td>
+                                        <td class="text-center">{{$ctrl.reservationDescriptor.orderSummary.vatPercentage}} %</td>
+                                        <td></td>
+                                        <td class="text-right">{{$ctrl.reservationDescriptor.orderSummary.totalVAT}}</td>
                                     </tr>
                                 </tbody>
                             </table>

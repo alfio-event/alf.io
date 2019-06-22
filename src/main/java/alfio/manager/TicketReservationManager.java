@@ -61,6 +61,8 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.context.MessageSource;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -75,6 +77,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -138,6 +141,7 @@ public class TicketReservationManager {
     private final TicketSearchRepository ticketSearchRepository;
     private final GroupManager groupManager;
     private final BillingDocumentRepository billingDocumentRepository;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -178,7 +182,8 @@ public class TicketReservationManager {
                                     UserRepository userRepository,
                                     ExtensionManager extensionManager, TicketSearchRepository ticketSearchRepository,
                                     GroupManager groupManager,
-                                    BillingDocumentRepository billingDocumentRepository) {
+                                    BillingDocumentRepository billingDocumentRepository,
+                                    NamedParameterJdbcTemplate jdbcTemplate) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -210,6 +215,7 @@ public class TicketReservationManager {
         this.ticketSearchRepository = ticketSearchRepository;
         this.groupManager = groupManager;
         this.billingDocumentRepository = billingDocumentRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
     
     /**
@@ -234,7 +240,13 @@ public class TicketReservationManager {
         
         Optional<PromoCodeDiscount> discount = promotionCodeDiscount.flatMap((promoCodeDiscount) -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
         
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(event.getZoneId()), reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null), locale.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded());
+        ticketReservationRepository.createNewReservation(reservationId,
+            ZonedDateTime.now(event.getZoneId()),
+            reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null),
+            locale.getLanguage(),
+            event.getId(),
+            event.getVat(),
+            event.isVatIncluded());
         list.forEach(t -> reserveTicketsForCategory(event, specialPriceSessionId, reservationId, t, locale, forWaitingQueue, discount.orElse(null)));
 
         int ticketCount = list
@@ -254,11 +266,19 @@ public class TicketReservationManager {
         });
 
         additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, discount.orElse(null)));
+        var totalPrice = totalReservationCostWithVAT(reservationId);
+        var vatStatus = event.getVatStatus();
+        ticketReservationRepository.updateBillingData(event.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), event.getCurrency(), null, null, false, reservationId);
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
         if(isDiscountCodeUsageExceeded(reservationId)) {
             throw new TooManyTicketsForDiscountCodeException();
         }
         return reservationId;
+    }
+
+    private int calculateSrcPrice(PriceContainer.VatStatus vatStatus, TotalPrice totalPrice) {
+        return (vatStatus == PriceContainer.VatStatus.INCLUDED ? totalPrice.getPriceWithVAT() : totalPrice.getPriceWithVAT() - totalPrice.getVAT())
+            + Math.abs(totalPrice.getDiscount());
     }
 
     public Pair<List<TicketReservation>, Integer> findAllReservationsInEvent(int eventId, Integer page, String search, List<TicketReservationStatus> status) {
@@ -271,9 +291,19 @@ public class TicketReservationManager {
         return Pair.of(reservationsForEvent, ticketSearchRepository.countReservationsForEvent(eventId, toSearch, toFilter));
     }
 
-    void reserveTicketsForCategory(Event event, Optional<String> specialPriceSessionId, String transactionId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale, boolean forWaitingQueue, PromoCodeDiscount discount) {
-        //first check if there is another pending special price token bound to the current sessionId
-        Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), specialPriceSessionId, ticketReservation);
+    void reserveTicketsForCategory(Event event, Optional<String> specialPriceSessionId, String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale, boolean forWaitingQueue, PromoCodeDiscount discount) {
+
+        List<SpecialPrice> specialPrices;
+        if(discount != null && discount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS
+            && ticketReservation.getTicketCategoryId().equals(discount.getHiddenCategoryId())
+            && ticketCategoryRepository.isAccessRestricted(discount.getHiddenCategoryId())
+        ) {
+            specialPrices = reserveTokens(reservationId, ticketReservation, discount);
+        } else {
+            //first check if there is another pending special price token bound to the current sessionId
+            Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), specialPriceSessionId, ticketReservation);
+            specialPrices = specialPrice.stream().collect(toList());
+        }
 
         List<Integer> reservedForUpdate = reserveTickets(event.getId(), ticketReservation, forWaitingQueue ? asList(TicketStatus.RELEASED, TicketStatus.PRE_RESERVED) : singletonList(TicketStatus.FREE));
         int requested = ticketReservation.getAmount();
@@ -282,19 +312,58 @@ public class TicketReservationManager {
         }
 
         TicketCategory category = ticketCategoryRepository.getByIdAndActive(ticketReservation.getTicketCategoryId(), event.getId());
-        if (specialPrice.isPresent()) {
-            if(reservedForUpdate.size() != 1) {
+        if (!specialPrices.isEmpty()) {
+            if(specialPrices.size() != reservedForUpdate.size()) {
                 throw new NotEnoughTicketsException();
             }
-            SpecialPrice sp = specialPrice.get();
-            ticketRepository.reserveTicket(transactionId, reservedForUpdate.stream().findFirst().orElseThrow(IllegalStateException::new),sp.getId(), locale.getLanguage(), category.getSrcPriceCts());
-            specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), sp.getSessionIdentifier());
+
+            AtomicInteger counter = new AtomicInteger(0);
+            var ticketsAndSpecialPrices = specialPrices.stream().map(sp -> Pair.of(reservedForUpdate.get(counter.getAndIncrement()), sp)).collect(Collectors.toList());
+
+            if(specialPrices.size() == 1) {
+                var ticketId = reservedForUpdate.get(0);
+                var sp = specialPrices.get(0);
+                var accessCodeId = discount != null && discount.getHiddenCategoryId() != null ? discount.getId() : null;
+                ticketRepository.reserveTicket(reservationId, ticketId,sp.getId(), locale.getLanguage(), category.getSrcPriceCts());
+                specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), sp.getSessionIdentifier(), accessCodeId);
+            } else {
+                jdbcTemplate.batchUpdate(ticketRepository.batchReserveTicket(), ticketsAndSpecialPrices.stream().map(
+                    pair -> new MapSqlParameterSource("reservationId", reservationId)
+                        .addValue("ticketId", pair.getKey())
+                        .addValue("specialCodeId", pair.getValue().getId())
+                        .addValue("userLanguage", locale.getLanguage())
+                        .addValue("srcPriceCts", category.getSrcPriceCts())
+                ).toArray(MapSqlParameterSource[]::new));
+
+                var firstSpecialPrice = specialPrices.get(0);
+                specialPriceRepository.batchUpdateStatus(
+                    specialPrices.stream().map(SpecialPrice::getId).collect(toList()),
+                    Status.PENDING,
+                    firstSpecialPrice.getSessionIdentifier(),
+                    Objects.requireNonNull(discount).getId());
+            }
         } else {
-            ticketRepository.reserveTickets(transactionId, reservedForUpdate, ticketReservation.getTicketCategoryId(), locale.getLanguage(), category.getSrcPriceCts());
+            ticketRepository.reserveTickets(reservationId, reservedForUpdate, ticketReservation.getTicketCategoryId(), locale.getLanguage(), category.getSrcPriceCts());
         }
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), category.getId());
         TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getCurrency(), event.getVat(), event.getVatStatus(), discount);
         ticketRepository.updateTicketPrice(reservedForUpdate, category.getId(), event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
+    }
+
+    private List<SpecialPrice> reserveTokens(String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount discount) {
+        try {
+            int count = specialPriceRepository.bindToSession(reservationId, ticketReservation.getTicketCategoryId(), discount.getId(), ticketReservation.getAmount());
+            if(count != ticketReservation.getAmount()) {
+                throw new NotEnoughTicketsException();
+            }
+            return specialPriceRepository.findBySessionIdAndAccessCodeId(reservationId, discount.getId());
+        } catch (Exception e) {
+            log.trace("constraints violated", e);
+            if(e instanceof NotEnoughTicketsException) {
+                throw e;
+            }
+            throw new TooManyTicketsForDiscountCodeException();
+        }
     }
 
     private void reserveAdditionalServicesForReservation(int eventId, String transactionId, ASReservationWithOptionalCodeModification additionalServiceReservation, PromoCodeDiscount discount) {
@@ -373,13 +442,14 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
 
-        TicketReservation reservation = null;
+        TicketReservation reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
 
         try {
             PaymentResult paymentResult;
             ticketReservationRepository.lockReservationForUpdate(spec.getReservationId());
             //save billing data in case we have to go back to PENDING
-            ticketReservationRepository.updateBillingData(spec.getVatStatus(), spec.getVatNr(), spec.getVatCountryCode(), spec.isInvoiceRequested(), spec.getReservationId());
+            ticketReservationRepository.updateBillingData(spec.getVatStatus(), reservation.getSrcPriceCts(), reservation.getFinalPriceCts(),
+                reservation.getVatCts(), reservation.getDiscountCts(), reservation.getCurrencyCode(), spec.getVatNr(), spec.getVatCountryCode(), spec.isInvoiceRequested(), spec.getReservationId());
             if(isDiscountCodeUsageExceeded(spec.getReservationId())) {
                 return PaymentResult.failed(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
             }
@@ -411,9 +481,8 @@ public class TicketReservationManager {
     }
 
     private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
-        TicketReservation reservationById = ticketReservationRepository.findReservationById(spec.getReservationId());
         generateInvoiceNumber(spec, reservationCost);
-        completeReservation(spec, specialPriceSessionId, paymentProxy);
+        completeReservation(spec, specialPriceSessionId, paymentProxy, true, true);
     }
 
     private void generateInvoiceNumber(PaymentSpecification spec, TotalPrice reservationCost) {
@@ -518,7 +587,7 @@ public class TicketReservationManager {
         CustomerName customerName = new CustomerName(ticketReservation.getFullName(), ticketReservation.getFirstName(), ticketReservation.getLastName(), event.mustUseFirstAndLastName());
         acquireItems(PaymentProxy.OFFLINE, reservationId, ticketReservation.getEmail(), customerName,
             ticketReservation.getUserLanguage(), ticketReservation.getBillingAddress(),
-            ticketReservation.getCustomerReference(), event);
+            ticketReservation.getCustomerReference(), event, true);
 
         Locale language = findReservationLanguage(reservationId);
 
@@ -809,12 +878,13 @@ public class TicketReservationManager {
     /**
      * Set the tickets attached to the reservation to the ACQUIRED state and the ticket reservation to the COMPLETE state. Additionally it will save email/fullName/billingaddress/userLanguage.
      */
-    void completeReservation(PaymentSpecification spec, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy) {
+    void completeReservation(PaymentSpecification spec, Optional<String> specialPriceSessionId, PaymentProxy paymentProxy, boolean sendReservationConfirmationEmail, boolean sendTickets) {
         String reservationId = spec.getReservationId();
         int eventId = spec.getEvent().getId();
+        final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        Locale locale = Locale.forLanguageTag(reservation.getUserLanguage());
         if(paymentProxy != PaymentProxy.OFFLINE) {
-            acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent());
-            final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+            acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent(), sendTickets);
             extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), eventId);
         }
         //cleanup unused special price codes...
@@ -830,6 +900,12 @@ public class TicketReservationManager {
         if(eventHasPrivacyPolicy(spec.getEvent()) && spec.isPrivacyAccepted()) {
             auditingRepository.insert(reservationId, null, eventId, Audit.EventType.PRIVACY_POLICY_ACCEPTED, eventTime, Audit.EntityType.RESERVATION, reservationId, singletonList(singletonMap("privacyPolicyUrl", spec.getEvent().getPrivacyPolicyUrl())));
         }
+
+        if(sendReservationConfirmationEmail) {
+            TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
+            sendConfirmationEmail(spec.getEvent(), updatedReservation, locale);
+            sendReservationCompleteEmailToOrganizer(spec.getEvent(), updatedReservation, locale);
+        }
     }
 
     private boolean eventHasPrivacyPolicy(Event event) {
@@ -837,7 +913,7 @@ public class TicketReservationManager {
     }
 
     private void acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
-                              String userLanguage, String billingAddress, String customerReference, Event event) {
+                              String userLanguage, String billingAddress, String customerReference, Event event, boolean sendTickets) {
 
         TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
 
@@ -880,7 +956,7 @@ public class TicketReservationManager {
 
         assignedTicketsByCategory.values().stream().flatMap(List::stream).forEach(ticket -> {
             Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
-            if(paymentProxy != PaymentProxy.ADMIN && configurationManager.getBooleanConfigValue(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY), true)) {
+            if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getBooleanConfigValue(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY), true)) {
                 sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
             }
             extensionManager.handleTicketAssignment(ticket);
@@ -995,13 +1071,13 @@ public class TicketReservationManager {
         int discountAppliedCount = discountedTickets <= 1 || promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT ? discountedTickets : 1;
 
         List<AdditionalServiceItemPriceContainer> asPrices = additionalServiceItems
-            .flatMap(generateASIPriceContainers(event, null))
+            .flatMap(generateASIPriceContainers(event, promoCodeDiscount))
             .collect(toList());
 
         BigDecimal asTotalVAT = calcTotal(asPrices, PriceContainer::getRawVAT);
-        //FIXME discount is not applied to donations, as it wouldn't make sense. Must be implemented for #111
+        BigDecimal asTotalDiscount = calcTotal(asPrices, PriceContainer::getAppliedDiscount);
         BigDecimal asTotalNET = calcTotal(asPrices, PriceContainer::getFinalPrice);
-        return new TotalPrice(unitToCents(totalNET.add(asTotalNET)), unitToCents(totalVAT.add(asTotalVAT)), -(MonetaryUtil.unitToCents(totalDiscount)), discountAppliedCount);
+        return new TotalPrice(unitToCents(totalNET.add(asTotalNET)), unitToCents(totalVAT.add(asTotalVAT)), -(MonetaryUtil.unitToCents(totalDiscount.add(asTotalDiscount))), discountAppliedCount);
     }
 
     private static BigDecimal calcTotal(List<? extends PriceContainer> elements, Function<? super PriceContainer, BigDecimal> operator) {
@@ -1023,11 +1099,11 @@ public class TicketReservationManager {
     }
 
     public TotalPrice totalReservationCostWithVAT(TicketReservation reservation) {
+        return totalReservationCostWithVAT(eventRepository.findByReservationId(reservation.getId()), reservation, ticketRepository.findTicketsInReservation(reservation.getId()));
+    }
+
+    public TotalPrice totalReservationCostWithVAT(Event event, TicketReservation reservation, List<Ticket> tickets) {
         Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
-
-        Event event = eventRepository.findByReservationId(reservation.getId());
-        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservation.getId());
-
         return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation.getVatStatus(), tickets, collectAdditionalServiceItems(reservation.getId(), event));
     }
 
@@ -1255,7 +1331,7 @@ public class TicketReservationManager {
         }
 
         if(price.getStatus() == Status.FREE) {
-            specialPriceRepository.bindToSession(price.getId(), specialPriceSessionId.get());
+            specialPriceRepository.bindToSession(price.getId(), specialPriceSessionId.get(), null);
             return getSpecialPriceByCode(price.getCode());
         } else if(price.getStatus() == Status.PENDING) {
             Optional<Ticket> optionalTicket = ticketRepository.findBySpecialPriceId(price.getId());
@@ -1579,10 +1655,17 @@ public class TicketReservationManager {
     }
 
     public void releaseTicket(Event event, TicketReservation ticketReservation, final Ticket ticket) {
-        TicketCategory category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-        if(!CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket)) {
+        var category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
+        var isFree = ticket.getFinalPriceCts() == 0;
+        var enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticket.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false);
+        var conditionsMet = CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket);
+
+        // reported the conditions of TicketDecorator.getCancellationEnabled
+        if (!(isFree && enableFreeCancellation && conditionsMet)) {
             throw new IllegalStateException("Cannot release reserved tickets");
         }
+        //
+
         String reservationId = ticketReservation.getId();
         //#365 - reset UUID when releasing a ticket
         int result = ticketRepository.releaseTicket(reservationId, UUID.randomUUID().toString(), event.getId(), ticket.getId());
@@ -1771,10 +1854,11 @@ public class TicketReservationManager {
 
 
         //reload the payment provider, this time within a more sensible context
-        return paymentManager.lookupProviderByMethod(paymentMethod, new PaymentContext(eventRepository.findByReservationId(reservation.getId())))
+        var paymentContext = new PaymentContext(eventRepository.findByReservationId(reservation.getId()));
+        return paymentManager.lookupProviderByMethod(paymentMethod, paymentContext)
             .filter(pp -> pp instanceof SignedWebhookHandler)
             .map(provider -> {
-                var paymentWebhookResult = ((SignedWebhookHandler) provider).processWebhook(transactionPayload, transaction);
+                var paymentWebhookResult = ((SignedWebhookHandler) provider).processWebhook(transactionPayload, transaction, paymentContext);
                 var event = eventRepository.findByReservationId(reservation.getId());
                 switch(paymentWebhookResult.getType()) {
                     case NOT_RELEVANT: {
@@ -1812,7 +1896,7 @@ public class TicketReservationManager {
                         //      - if the reservation has expired, we cancel it and keep its data for reference, and we notify also the organizer.
                         //      - if the reservation is still valid, we can ensure that the user has at least 10 min left to retry
 
-                        log.trace("Event {} for reservation {} has failed with reason: {}", transactionPayload.getType(), reservation.getId(), paymentWebhookResult.getReason());
+                        log.debug("Event {} for reservation {} has failed with reason: {}", transactionPayload.getType(), reservation.getId(), paymentWebhookResult.getReason());
 
                         Date expiration = reservation.getValidity();
                         Date now = new Date();

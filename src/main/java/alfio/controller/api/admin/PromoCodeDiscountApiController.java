@@ -18,7 +18,6 @@ package alfio.controller.api.admin;
 
 import alfio.manager.EventManager;
 import alfio.model.PromoCodeDiscount;
-import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.modification.PromoCodeDiscountModification;
 import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
 import alfio.repository.EventRepository;
@@ -53,11 +52,11 @@ public class PromoCodeDiscountApiController {
         Integer organizationId = promoCode.getOrganizationId();
         ZoneId zoneId = zoneIdFromEventId(eventId, promoCode.getUtcOffset());
         
-        int discount = promoCode.getDiscountType() == DiscountType.FIXED_AMOUNT ? promoCode.getDiscountInCents() : promoCode.getDiscountAsPercent();
+        int discount = promoCode.getDiscountValue();
 
         eventManager.addPromoCode(promoCode.getPromoCode(), eventId, organizationId, promoCode.getStart().toZonedDateTime(zoneId),
             promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories(), promoCode.getMaxUsage(),
-            promoCode.getDescription(), promoCode.getEmailReference());
+            promoCode.getDescription(), promoCode.getEmailReference(), promoCode.getCodeType(), promoCode.getHiddenCategoryId());
     }
 
     @RequestMapping(value = "/promo-code/{promoCodeId}", method = POST)
@@ -66,7 +65,7 @@ public class PromoCodeDiscountApiController {
         ZoneId zoneId = zoneIdFromEventId(pcd.getEventId(), promoCode.getUtcOffset());
         eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId),
             promoCode.getEnd().toZonedDateTime(zoneId), promoCode.getMaxUsage(), promoCode.getCategories(),
-            promoCode.getDescription(), promoCode.getEmailReference());
+            promoCode.getDescription(), promoCode.getEmailReference(), promoCode.getHiddenCategoryId());
     }
 
     private ZoneId zoneIdFromEventId(Integer eventId, Integer utcOffset) {

@@ -18,6 +18,7 @@ function getScriptMetadata() {
             //'WAITING_QUEUE_SUBSCRIPTION', //fired on waiting queue subscription. No results expected.
             //'EVENT_CREATED', //fired when an event has been created. Return boolean for synchronous variant, no results expected for the asynchronous one.
             //'EVENT_STATUS_CHANGE', //fired when an event status has changed (normally, from DRAFT to PUBLIC). Return boolean for synchronous variant, no results expected for the asynchronous one.
+            //'RESERVATION_VALIDATION', //fired on reservation validation.
             'INVOICE_GENERATION' //fired on invoice generation. Returns the invoice model.
         ]
         //,

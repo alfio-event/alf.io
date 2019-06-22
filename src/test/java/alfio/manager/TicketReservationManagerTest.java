@@ -46,6 +46,8 @@ import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -113,6 +115,8 @@ class TicketReservationManagerTest {
     private TicketReservationWithOptionalCodeModification reservationModification;
     private TicketReservation ticketReservation;
     private Organization organization;
+    private BillingDocumentRepository billingDocumentRepository;
+    private NamedParameterJdbcTemplate jdbcTemplate;
 
     @BeforeEach
     void init() {
@@ -142,16 +146,28 @@ class TicketReservationManagerTest {
         specialPrice = mock(SpecialPrice.class);
         ticketCategory = mock(TicketCategory.class);
         ticket = mock(Ticket.class);
+        jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
+
         reservationModification = mock(TicketReservationWithOptionalCodeModification.class);
         ticketReservation = mock(TicketReservation.class);
         when(ticketReservation.getStatus()).thenReturn(PENDING);
+        when(ticketReservation.getUserLanguage()).thenReturn("en");
+        when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
+        when(ticketReservation.getSrcPriceCts()).thenReturn(100);
+        when(ticketReservation.getFinalPriceCts()).thenReturn(100);
+        when(ticketReservation.getVatCts()).thenReturn(0);
+        when(ticketReservation.getDiscountCts()).thenReturn(0);
+        when(ticketReservation.getCurrencyCode()).thenReturn("CHF");
+        when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         organization = mock(Organization.class);
         when(organization.getId()).thenReturn(ORG_ID);
         TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
         GroupManager groupManager = mock(GroupManager.class);
         UserRepository userRepository = mock(UserRepository.class);
         ExtensionManager extensionManager = mock(ExtensionManager.class);
-        BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
+        billingDocumentRepository = mock(BillingDocumentRepository.class);
+        when(ticketCategoryRepository.getByIdAndActive(anyInt(), eq(EVENT_ID))).thenReturn(ticketCategory);
+        when(ticketCategory.getName()).thenReturn("Category Name");
 
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -179,7 +195,8 @@ class TicketReservationManagerTest {
             extensionManager,
             ticketSearchRepository,
             groupManager,
-            billingDocumentRepository);
+            billingDocumentRepository,
+            jdbcTemplate);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
@@ -502,9 +519,35 @@ class TicketReservationManagerTest {
         when(specialPrice.getStatus()).thenReturn(SpecialPrice.Status.FREE);
         when(specialPriceRepository.getByCode(eq(SPECIAL_PRICE_CODE))).thenReturn(Optional.of(specialPrice));
         Optional<SpecialPrice> renewed = trm.renewSpecialPrice(Optional.of(specialPrice), Optional.of(SPECIAL_PRICE_SESSION_ID));
-        verify(specialPriceRepository).bindToSession(eq(SPECIAL_PRICE_ID), eq(SPECIAL_PRICE_SESSION_ID));
+        verify(specialPriceRepository).bindToSession(eq(SPECIAL_PRICE_ID), eq(SPECIAL_PRICE_SESSION_ID), isNull());
         assertTrue(renewed.isPresent());
         assertSame(specialPrice, renewed.get());
+    }
+
+    @Test
+    void reserveTicketsForCategoryWithAccessCode() {
+        PromoCodeDiscount discount = mock(PromoCodeDiscount.class);
+        when(discount.getCodeType()).thenReturn(PromoCodeDiscount.CodeType.ACCESS);
+        when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
+        when(reservationModification.getAmount()).thenReturn(2);
+        when(discount.getHiddenCategoryId()).thenReturn(TICKET_CATEGORY_ID);
+        int accessCodeId = 666;
+        when(discount.getId()).thenReturn(accessCodeId);
+        when(ticketCategoryRepository.isAccessRestricted(eq(TICKET_CATEGORY_ID))).thenReturn(true);
+        when(ticketReservation.getSrcPriceCts()).thenReturn(1000);
+        when(ticket.getSrcPriceCts()).thenReturn(1000);
+        when(specialPriceRepository.bindToSession(eq(RESERVATION_ID), eq(TICKET_CATEGORY_ID), eq(accessCodeId), eq(2))).thenReturn(2);
+        when(specialPriceRepository.findBySessionIdAndAccessCodeId(eq(RESERVATION_ID), eq(accessCodeId))).thenReturn(List.of(
+            new SpecialPrice(1, "AAAA", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), RESERVATION_ID, null, null, null, accessCodeId),
+            new SpecialPrice(2, "BBBB", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), RESERVATION_ID, null, null, null, accessCodeId)
+        ));
+        when(ticketRepository.selectNotAllocatedTicketsForUpdateSkipLocked(eq(EVENT_ID), eq(2), eq(List.of("FREE")))).thenReturn(List.of(TICKET_ID,2));
+        when(ticketRepository.findById(eq(TICKET_ID), eq(TICKET_CATEGORY_ID))).thenReturn(ticket);
+        String query = "batch-reserve-tickets";
+        when(ticketRepository.batchReserveTicket()).thenReturn(query);
+        trm.reserveTicketsForCategory(event, Optional.empty(), RESERVATION_ID, reservationModification, Locale.ENGLISH, false, discount);
+        verify(jdbcTemplate).batchUpdate(eq(query), any(SqlParameterSource[].class));
+        verify(specialPriceRepository).batchUpdateStatus(eq(List.of(1,2)), eq(SpecialPrice.Status.PENDING), eq(RESERVATION_ID), eq(accessCodeId));
     }
 
     @Test
@@ -635,6 +678,8 @@ class TicketReservationManagerTest {
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(ticket.getCategoryId()).thenReturn(TICKET_CATEGORY_ID);
+        when(ticket.getFinalPriceCts()).thenReturn(0);
+        when(configurationManager.getBooleanConfigValue(any(), eq(false))).thenReturn(true);
         when(ticketReservation.getId()).thenReturn(RESERVATION_ID);
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(organizationRepository.getById(eq(ORGANIZATION_ID))).thenReturn(organization);
@@ -713,6 +758,7 @@ class TicketReservationManagerTest {
     void confirmPaidReservation() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(true);
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(ORGANIZATION_ID, EVENT_ID, TICKET_CATEGORY_ID, ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        mockBillingDocument();
         testPaidReservation();
         verify(notificationManager).sendTicketByEmail(any(), any(), any(), any(), any(), any());
     }
@@ -721,6 +767,7 @@ class TicketReservationManagerTest {
     void confirmPaidReservationButDoNotSendEmail() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(false);
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(ORGANIZATION_ID, EVENT_ID, TICKET_CATEGORY_ID, ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        mockBillingDocument();
         testPaidReservation();
         verify(notificationManager, never()).sendTicketByEmail(any(), any(), any(), any(), any(), any());
     }
@@ -729,7 +776,14 @@ class TicketReservationManagerTest {
     void confirmAndLockTickets() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(ORGANIZATION_ID, EVENT_ID, TICKET_CATEGORY_ID, ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(false);
         when(ticketRepository.forbidReassignment(any())).thenReturn(1);
+        mockBillingDocument();
         testPaidReservation();
+    }
+
+    private void mockBillingDocument() {
+        BillingDocument document = mock(BillingDocument.class);
+        when(document.getModel()).thenReturn(Map.of());
+        when(billingDocumentRepository.findLatestByReservationId(eq(RESERVATION_ID))).thenReturn(Optional.of(document));
     }
 
     @Test
@@ -773,7 +827,7 @@ class TicketReservationManagerTest {
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
     }
 
@@ -795,7 +849,7 @@ class TicketReservationManagerTest {
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(ticketReservationRepository).updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()));
         verify(configurationManager, never()).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("12345"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("12345"), eq("IT"), eq(true), eq(RESERVATION_ID));
     }
 
     @Test
@@ -823,7 +877,7 @@ class TicketReservationManagerTest {
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
     }
 
@@ -844,7 +898,7 @@ class TicketReservationManagerTest {
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
     }
 
     @Test
@@ -950,7 +1004,12 @@ class TicketReservationManagerTest {
             reservation.getVatIncluded(),
             reservation.getCreationTimestamp(),
             reservation.getCustomerReference(),
-            reservation.getRegistrationTimestamp());
+            reservation.getRegistrationTimestamp(),
+            reservation.getSrcPriceCts(),
+            reservation.getFinalPriceCts(),
+            reservation.getVatCts(),
+            reservation.getDiscountCts(),
+            reservation.getCurrencyCode());
     }
 
     @Test

@@ -22,17 +22,17 @@ import alfio.config.Initializer;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.modification.*;
-import alfio.model.modification.AdminReservationModification.Attendee;
-import alfio.model.modification.AdminReservationModification.Category;
-import alfio.model.modification.AdminReservationModification.CustomerData;
-import alfio.model.modification.AdminReservationModification.TicketsInfo;
+import alfio.model.modification.AdminReservationModification.*;
 import alfio.model.result.Result;
 import alfio.repository.*;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +48,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.IntStream;
 
+import static alfio.model.modification.AdminReservationModification.Notification.EMPTY;
 import static alfio.test.util.IntegrationTestUtil.*;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.*;
@@ -78,6 +79,13 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
     private SpecialPriceRepository specialPriceRepository;
     @Autowired
     private EventRepository eventRepository;
+    @Autowired
+    private ConfigurationRepository configurationRepository;
+
+    @Before
+    public void init() {
+        IntegrationTestUtil.ensureMinimalConfiguration(configurationRepository);
+    }
 
     @Test
     public void testReserveFromExistingCategory() throws Exception {
@@ -182,7 +190,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
         TicketCategory categoryModified = ticketCategoryRepository.getByIdAndActive(categoryId, event.getId());
         assertEquals(categoryModified.getMaxTickets(), attendees);
         ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.PENDING)));
-        adminReservationManager.confirmReservation(event.getShortName(), data.getLeft().getId(), username);
+        adminReservationManager.confirmReservation(event.getShortName(), data.getLeft().getId(), username, EMPTY);
         ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.TAKEN)));
         assertFalse(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(event.getId()).contains(data.getLeft().getId()));
     }
@@ -228,7 +236,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             ticketRepository.findFirstTicketInReservation(reservationId).get().getId());
 
         ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.PENDING)));
-        adminReservationManager.confirmReservation(event.getShortName(), data.getLeft().getId(), username);
+        adminReservationManager.confirmReservation(event.getShortName(), data.getLeft().getId(), username, EMPTY);
         ticketCategoryRepository.findByEventId(event.getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.TAKEN)));
         assertFalse(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(event.getId()).contains(data.getLeft().getId()));
     }
@@ -242,12 +250,32 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
                 DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
         Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
         assertNotNull(testResult);
-        Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.confirmReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), testResult.getMiddle());
+        Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.confirmReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), testResult.getMiddle(), EMPTY);
         assertTrue(result.isSuccess());
         Triple<TicketReservation, List<Ticket>, Event> triple = result.getData();
         assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, triple.getLeft().getStatus());
         triple.getMiddle().forEach(t -> assertEquals(Ticket.TicketStatus.ACQUIRED, t.getStatus()));
         assertTrue(emailMessageRepository.findByEventId(triple.getRight().getId(), 0, 50, null).isEmpty());
+        ticketCategoryRepository.findByEventId(triple.getRight().getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.TAKEN)));
+        assertFalse(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(triple.getRight().getId()).contains(triple.getLeft().getId()));
+    }
+
+    @Test
+    public void testConfirmReservationSendConfirmationEmail() {
+        List<TicketCategoryModification> categories = Collections.singletonList(
+            new TicketCategoryModification(null, "default", 1,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        int attendees = 2;
+        Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(attendees), false, true, 0, AVAILABLE_SEATS);
+        assertNotNull(testResult);
+        Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.confirmReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), testResult.getMiddle(), new Notification(true, true));
+        assertTrue(result.isSuccess());
+        Triple<TicketReservation, List<Ticket>, Event> triple = result.getData();
+        assertEquals(TicketReservation.TicketReservationStatus.COMPLETE, triple.getLeft().getStatus());
+        triple.getMiddle().forEach(t -> assertEquals(Ticket.TicketStatus.ACQUIRED, t.getStatus()));
+        assertEquals(attendees + 2, emailMessageRepository.findByEventId(triple.getRight().getId(), 0, 50, null).size());
         ticketCategoryRepository.findByEventId(triple.getRight().getId()).forEach(tc -> assertTrue(specialPriceRepository.findAllByCategoryId(tc.getId()).stream().allMatch(sp -> sp.getStatus() == SpecialPrice.Status.TAKEN)));
         assertFalse(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(triple.getRight().getId()).contains(triple.getLeft().getId()));
     }

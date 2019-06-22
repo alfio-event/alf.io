@@ -46,10 +46,34 @@
         .service('ConfigurationService', ConfigurationService)
         .directive('basicConfigurationNeeded', basicConfigurationNeeded);
 
-    function ConfigurationService($http, HttpErrorHandler) {
+    function ConfigurationService($http, HttpErrorHandler, $q, $timeout) {
+        var configurationCache = null;
         return {
             loadSettingCategories: function() {
                 return $http.get('/admin/api/configuration/setting-categories').error(HttpErrorHandler.handle);
+            },
+            loadCurrentConfigurationContext: function(OrganizationService, EventService) {
+                if(configurationCache == null) {
+                    configurationCache = $q(function(resolve, reject) {
+                        $q.all([OrganizationService.getAllOrganizations(), EventService.getAllEvents()]).then(function(results) {
+                            var organizations = results[0].data;
+                            var events = results[1].data;
+                            resolve({
+                                organizations: _.map(organizations, function(org) {
+                                    org.events = _.filter(events, function(e) {return !e.expired && e.organizationId === org.id});
+                                    return org;
+                                })
+                            });
+                        }, function(e) {
+                            reject(e);
+                        });
+                    })
+                }
+                $timeout(function() {
+                    configurationCache = null;
+                }, 10000);
+                return configurationCache;
+
             },
             loadAll: function() {
                 return $http.get('/admin/api/configuration/load').error(HttpErrorHandler.handle);
@@ -141,19 +165,13 @@
         };
     }
 
-    ConfigurationService.$inject = ['$http', 'HttpErrorHandler'];
+    ConfigurationService.$inject = ['$http', 'HttpErrorHandler', '$q', '$timeout'];
 
-    function ConfigurationController(OrganizationService, EventService, $q, $rootScope) {
+    function ConfigurationController(OrganizationService, EventService, $q, ConfigurationService) {
         var configCtrl = this;
         configCtrl.loading = true;
-        $q.all([OrganizationService.getAllOrganizations(), EventService.getAllEvents()]).then(function(results) {
-            var organizations = results[0].data;
-            var events = results[1].data;
-            configCtrl.organizations = _.map(organizations, function(org) {
-                org.events = _.filter(events, function(e) {return !e.expired && e.organizationId === org.id});
-                return org;
-            });
-            $rootScope.$emit('ConfigurationMenuLoaded', configCtrl.organizations);
+        ConfigurationService.loadCurrentConfigurationContext(OrganizationService, EventService).then(function(res) {
+            configCtrl.organizations = res.organizations;
             configCtrl.loading = false;
         }, function(e) {
             alert(e);
@@ -174,7 +192,7 @@
         }
     }
 
-    ConfigurationController.$inject = ['OrganizationService', 'EventService', '$q', '$rootScope'];
+    ConfigurationController.$inject = ['OrganizationService', 'EventService', '$q', 'ConfigurationService'];
 
     function SystemConfigurationController(ConfigurationService, EventService, ExtensionService, NotificationHandler, $rootScope, $q) {
         var systemConf = this;

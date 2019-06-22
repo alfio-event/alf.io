@@ -30,10 +30,12 @@ import alfio.model.transaction.webhook.StripeChargeTransactionWebhookPayload;
 import alfio.model.transaction.webhook.StripePaymentIntentWebhookPayload;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
+import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.BalanceTransaction;
 import com.stripe.model.Charge;
 import com.stripe.model.PaymentIntent;
+import com.stripe.model.StripeObject;
 import com.stripe.net.Webhook;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
@@ -157,9 +159,9 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             var stripeEvent = Webhook.constructEvent(body, signature, getWebhookSignatureKey());
             String eventType = stripeEvent.getType();
             if(eventType.startsWith("charge.")) {
-                return Optional.of(new StripeChargeTransactionWebhookPayload(eventType, (Charge) stripeEvent.getData().getObject()));
+                return deserializeObject(stripeEvent).map(obj -> new StripeChargeTransactionWebhookPayload(eventType, (Charge)obj));
             } else if(eventType.startsWith("payment_intent.")) {
-                return Optional.of(new StripePaymentIntentWebhookPayload(eventType, (PaymentIntent) stripeEvent.getData().getObject()));
+                return deserializeObject(stripeEvent).map(obj -> new StripePaymentIntentWebhookPayload(eventType, (PaymentIntent)obj));
             }
             return Optional.empty();
         } catch (Exception e) {
@@ -168,13 +170,34 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         }
     }
 
+    private Optional<StripeObject> deserializeObject(com.stripe.model.Event stripeEvent) {
+        var dataObjectDeserializer = stripeEvent.getDataObjectDeserializer();
+        var cleanDeserialization = dataObjectDeserializer.getObject();
+        if(cleanDeserialization.isPresent()) {
+            return cleanDeserialization;
+        }
+        log.warn("unable to deserialize payload. Expected version {}, actual {}, falling back to unsafe deserialization", Stripe.API_VERSION, stripeEvent.getApiVersion());
+        try {
+            return Optional.ofNullable(dataObjectDeserializer.deserializeUnsafe());
+        } catch(Exception e) {
+            throw new IllegalArgumentException("Cannot deserialize webhook event.", e);
+        }
+    }
+
     @Override
-    public PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction) {
+    public PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction, PaymentContext paymentContext) {
 
         // first of all, we check if we're interested in the current event
         if(!interestingEventTypes.contains(payload.getType())) {
             //we're not interested to other kind of events yet...
             return PaymentWebhookResult.notRelevant(payload.getType());
+        }
+
+        boolean live = Boolean.TRUE.equals(((PaymentIntent) payload.getPayload()).getLivemode());
+        if(!baseStripeManager.getSecretKey(paymentContext.getEvent()).startsWith(live ? "sk_live_" : "sk_test_")) {
+            var description = live ? "live" : "test";
+            log.warn("received a {} event of type {}, which is not compatible with the current configuration", description, payload.getType());
+            return PaymentWebhookResult.notRelevant(description);
         }
 
         // since the transaction should have already been confirmed on the server, we have just to

@@ -16,7 +16,7 @@
  */
 package alfio.controller.form;
 
-import alfio.manager.EuVatChecker;
+import alfio.manager.SameCountryValidator;
 import alfio.model.*;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
@@ -85,7 +85,7 @@ public class ContactAndTicketsForm implements Serializable {
 
 
 
-    public void validate(BindingResult bindingResult, Event event, List<TicketFieldConfiguration> fieldConf, EuVatChecker.SameCountryValidator vatValidator, Map<ConfigurationKeys, Boolean> formValidationParameters) {
+    public void validate(BindingResult bindingResult, Event event, List<TicketFieldConfiguration> fieldConf, SameCountryValidator vatValidator, Map<ConfigurationKeys, Boolean> formValidationParameters) {
 
 
         

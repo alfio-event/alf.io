@@ -44,7 +44,7 @@
         };
     }
 
-    function ReservationImportCtrl(AdminImportService, PriceCalculator, $timeout, $state) {
+    function ReservationImportCtrl(AdminImportService, PriceCalculator, $timeout, $state, ConfigurationService, $q) {
         var ctrl = this;
 
         var handleError = function(error) {
@@ -66,7 +66,11 @@
                     time: expiration.format('HH:mm')
                 },
                 customerData: {},
-                ticketsInfo: []
+                ticketsInfo: [],
+                notification: {
+                    customer: false,
+                    attendees: false
+                }
             };
             ctrl.addTicketInfo();
         };
@@ -75,6 +79,11 @@
             ctrl.languages = ctrl.event.contentLanguages;
             init();
 
+            $q.all([ConfigurationService.loadSingleConfigForEvent(ctrl.event.id, 'SEND_TICKETS_AFTER_IMPORT_ATTENDEE'), ConfigurationService.loadSingleConfigForEvent(ctrl.event.id, 'CREATE_RESERVATION_FOR_EACH_IMPORTED_ATTENDEE')])
+                .then(function(result) {
+                    ctrl.reservation.notification.attendees = ('true' === result[0].data); //default is false
+                    ctrl.createSingleReservations = ('true' === result[1].data); //default is false
+                });
             if(ctrl.languages.length === 1) {
                 ctrl.reservation.language = ctrl.languages[0].locale;
             }
@@ -254,6 +263,9 @@
                     complete: function() {
                         ctrl.parsing = false;
                         self.attendees = attendees;
+                        if(attendees.length > 100) {
+                            ctrl.createSingleReservations = true;
+                        }
                     }
                 });
             }, 100);
