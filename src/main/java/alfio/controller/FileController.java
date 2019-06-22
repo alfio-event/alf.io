@@ -54,7 +54,9 @@ public class FileController {
                 response.setContentLength(metadata.getContentSize());
                 response.setHeader("ETag", digest);
                 response.setHeader("Cache-Control", MAX_AGE_6_MONTH);
-                manager.outputFile(digest, response.getOutputStream());
+                try (var os = response.getOutputStream()) {
+                    manager.outputFile(digest, os);
+                }
             }
         } else {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
