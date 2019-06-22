@@ -18,7 +18,9 @@
         <div class="row">
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/ticket/{{uuid}}/view" target="_blank" class="btn btn-primary btn-block"><i class="fa fa-search-plus"></i> {{#i18n}}reservation-page-complete.show-ticket{{/i18n}}</a></div>
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="{{request.contextPath}}/event/{{event.shortName}}/ticket/{{uuid}}/download-ticket" class="btn btn-primary btn-block"><i class="fa fa-download"></i> {{#i18n}}reservation-page-complete.download-ticket{{/i18n}}</a></div>
+            {{#if-config-flag}}[SEND_TICKETS_AUTOMATICALLY]
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><form method="post" action="{{request.contextPath}}/event/{{event.shortName}}/ticket/{{uuid}}/send-ticket-by-email" class="form-inline" data-ticket-uuid="{{uuid}}"><button type="button" class="btn btn-primary btn-block send-ticket-by-email"><i class="fa fa-envelope-o"></i> {{#i18n}}reservation-page-complete.send-ticket-by-email-to [{{email}}]{{/i18n}}</button><input type="hidden" name="{{_csrf.parameterName}}" value="{{_csrf.token}}"></form></div>
+            {{/if-config-flag}}
             <div class="col-lg-3 col-sm-6 col-xs-12 wMarginBottom"><a href="#ticket-{{uuid}}" class="btn btn-primary btn-block update-ticket-owner"><i class="fa fa-edit"></i> {{#i18n}}reservation-page-complete.update-ticket-owner{{/i18n}}</a></div>
         </div>
         <div id="success-{{uuid}}" class="alert alert-success wMarginTop wMarginBottom hidden alert-dismissible" role="alert">

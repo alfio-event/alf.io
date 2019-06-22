@@ -324,6 +324,7 @@ class TicketReservationManagerTest {
         final String originalEmail = "me@myaddress.com";
         final String originalName = "First Last";
         Ticket original = mock(Ticket.class);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(true);
         when(original.getTicketsReservationId()).thenReturn(RESERVATION_ID);
         when(original.getStatus()).thenReturn(TicketStatus.ACQUIRED);
         Ticket modified = mock(Ticket.class);
