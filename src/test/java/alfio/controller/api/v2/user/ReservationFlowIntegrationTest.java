@@ -19,6 +19,7 @@ package alfio.controller.api.v2.user;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.IndexController;
 import alfio.controller.api.AttendeeApiController;
 import alfio.controller.api.admin.AdditionalServiceApiController;
 import alfio.controller.api.admin.CheckInApiController;
@@ -173,6 +174,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private TicketApiV2Controller ticketApiV2Controller;
+
+    @Autowired
+    private IndexController indexController;
     //
 
     private Event event;
@@ -355,6 +359,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertNotNull(selectedEvent.getFormattedEndDate().get(lang));
             assertNotNull(selectedEvent.getFormattedEndTime().get(lang));
         }
+
+
+        assertEquals("redirect:/api/v2/public/event/" + event.getShortName() + "/code/MY_CODE", indexController.redirectCode(event.getShortName(), "MY_CODE"));
 
 
         // check ticket & all, we have 2 ticket categories, 1 hidden
