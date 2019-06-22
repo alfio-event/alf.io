@@ -22,6 +22,16 @@
             </div>
         </div>
 
+        <div class="page-header" id="RESERVATION_UI" data-ng-if="categoryConf.reservationUi">
+            <h2>Reservation Process</h2>
+            <span>Customizations for the public-facing reservation process</span>
+        </div>
+        <div>
+            <div data-ng-repeat="setting in categoryConf.reservationUi.settings">
+                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+            </div>
+        </div>
+
         <div class="page-header" data-ng-if="categoryConf.mail">
             <h3>E-Mail</h3>
             <span>E-Mail settings</span>

@@ -847,17 +847,6 @@ public class TicketReservationManager {
         Map<Integer, Ticket> preUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
         int updatedTickets = ticketRepository.updateTicketsStatusWithReservationId(reservationId, ticketStatus.toString());
 
-        if(!configurationManager.getBooleanConfigValue(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER), true)) {
-            //automatically lock assignment
-            int locked = ticketRepository.forbidReassignment(preUpdateTicket.keySet());
-            Validate.isTrue(updatedTickets == locked, "Expected to lock "+updatedTickets+" tickets, locked "+ locked);
-            Map<Integer, Ticket> postUpdateTicket = ticketRepository.findTicketsInReservation(reservationId).stream().collect(toMap(Ticket::getId, Function.identity()));
-
-            postUpdateTicket.forEach((id, ticket) -> {
-                auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId());
-            });
-        }
-
         List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
         Map<Integer, Ticket> postUpdateTicket = ticketsInReservation.stream().collect(toMap(Ticket::getId, Function.identity()));
         postUpdateTicket.forEach((id, ticket) -> auditUpdateTicket(preUpdateTicket.get(id), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId()));
@@ -872,15 +861,30 @@ public class TicketReservationManager {
         waitingQueueManager.fireReservationConfirmed(reservationId);
         //we must notify the plugins about ticket assignment and send them by email
         TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
-        findTicketsInReservation(reservationId).stream()
+        var assignedTicketsByCategory = findTicketsInReservation(reservationId).stream()
             .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
-            .forEach(ticket -> {
-                Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
-                if(paymentProxy != PaymentProxy.ADMIN && configurationManager.getBooleanConfigValue(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY), true)) {
-                    sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
-                }
-                extensionManager.handleTicketAssignment(ticket);
-            });
+            .collect(Collectors.groupingBy(Ticket::getCategoryId));
+
+        var ticketToBeLocked = assignedTicketsByCategory.entrySet().stream()
+            .filter(e -> !configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), e.getKey(), ENABLE_TICKET_TRANSFER), true))
+            .flatMap(e -> e.getValue().stream().map(Ticket::getId)).collect(toList());
+
+        if(!ticketToBeLocked.isEmpty()) {
+            //automatically lock assignment
+            int ticketToLockCount = ticketToBeLocked.size();
+            int locked = ticketRepository.forbidReassignment(ticketToBeLocked);
+            Validate.isTrue(ticketToLockCount == locked, "Expected to lock "+ticketToLockCount+" tickets, locked "+ locked);
+            ticketRepository.findTicketsInReservation(reservationId).stream().filter(t -> ticketToBeLocked.contains(t.getId())).forEach(ticket ->
+                auditUpdateTicket(preUpdateTicket.get(ticket.getId()), Collections.emptyMap(), ticket, Collections.emptyMap(), event.getId()));
+        }
+
+        assignedTicketsByCategory.values().stream().flatMap(List::stream).forEach(ticket -> {
+            Locale locale = Locale.forLanguageTag(ticket.getUserLanguage());
+            if(paymentProxy != PaymentProxy.ADMIN && configurationManager.getBooleanConfigValue(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY), true)) {
+                sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
+            }
+            extensionManager.handleTicketAssignment(ticket);
+        });
 
     }
 
@@ -1297,6 +1301,10 @@ public class TicketReservationManager {
         String newEmail = updateTicketOwner.getEmail().trim();
         CustomerName customerName = new CustomerName(updateTicketOwner.getFullName(), updateTicketOwner.getFirstName(), updateTicketOwner.getLastName(), event.mustUseFirstAndLastName(), false);
         ticketRepository.updateTicketOwner(ticket.getUuid(), newEmail, customerName.getFullName(), customerName.getFirstName(), customerName.getLastName());
+
+        if(!configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticket.getCategoryId(), ENABLE_TICKET_TRANSFER), true)) {
+            ticketRepository.forbidReassignment(List.of(ticket.getId()));
+        }
 
         //
         Locale userLocale = Optional.ofNullable(StringUtils.trimToNull(updateTicketOwner.getUserLanguage())).map(Locale::forLanguageTag).orElse(locale);

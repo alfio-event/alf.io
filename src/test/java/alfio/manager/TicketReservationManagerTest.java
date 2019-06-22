@@ -87,6 +87,7 @@ class TicketReservationManagerTest {
     private static final String GATEWAY_TOKEN = "token";
     private static final String BASE_URL = "http://my-website/";
     private static final String ORG_EMAIL = "org@org.org";
+    private static final int ORG_ID = 22;
 
 
     private TicketReservationManager trm;
@@ -145,6 +146,7 @@ class TicketReservationManagerTest {
         ticketReservation = mock(TicketReservation.class);
         when(ticketReservation.getStatus()).thenReturn(PENDING);
         organization = mock(Organization.class);
+        when(organization.getId()).thenReturn(ORG_ID);
         TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
         GroupManager groupManager = mock(GroupManager.class);
         UserRepository userRepository = mock(UserRepository.class);
@@ -710,7 +712,7 @@ class TicketReservationManagerTest {
     @Test
     void confirmPaidReservation() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(true);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(ORGANIZATION_ID, EVENT_ID, TICKET_CATEGORY_ID, ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
         testPaidReservation();
         verify(notificationManager).sendTicketByEmail(any(), any(), any(), any(), any(), any());
     }
@@ -718,14 +720,14 @@ class TicketReservationManagerTest {
     @Test
     void confirmPaidReservationButDoNotSendEmail() {
         when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(SEND_TICKETS_AUTOMATICALLY)), eq(true))).thenReturn(false);
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(ORGANIZATION_ID, EVENT_ID, TICKET_CATEGORY_ID, ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(true);
         testPaidReservation();
         verify(notificationManager, never()).sendTicketByEmail(any(), any(), any(), any(), any(), any());
     }
 
     @Test
     void confirmAndLockTickets() {
-        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(event).apply(ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(false);
+        when(configurationManager.getBooleanConfigValue(eq(Configuration.from(ORGANIZATION_ID, EVENT_ID, TICKET_CATEGORY_ID, ENABLE_TICKET_TRANSFER)), eq(true))).thenReturn(false);
         when(ticketRepository.forbidReassignment(any())).thenReturn(1);
         testPaidReservation();
     }
@@ -752,6 +754,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.findTicketsInReservation(eq(RESERVATION_ID))).thenReturn(List.of(ticket));
         when(ticket.getFullName()).thenReturn("Giuseppe Garibaldi");
         when(ticket.getUserLanguage()).thenReturn("en");
+        when(ticket.getCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         StripeCreditCardManager stripeCreditCardManager = mock(StripeCreditCardManager.class);
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.CREDIT_CARD), any())).thenReturn(Optional.of(stripeCreditCardManager));
         when(stripeCreditCardManager.getTokenAndPay(any())).thenReturn(PaymentResult.successful(TRANSACTION_ID));
