@@ -42,6 +42,7 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -62,6 +63,7 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -553,13 +555,13 @@ public class EventApiV2Controller {
     }
 
     private Optional<String> makeSimpleReservation(Event event,
-                                                   Locale locale,
                                                    int ticketCategoryId,
                                                    String promoCode,
                                                    ServletWebRequest request,
                                                    Optional<SpecialPrice> specialPrice,
-                                                   Optional<PromoCodeDiscount> promoCodeDiscount
-                                       ) {
+                                                   Optional<PromoCodeDiscount> promoCodeDiscount) {
+
+        Locale locale = getMatchingLocale(request, event);
         ReservationForm form = new ReservationForm();
         form.setPromoCode(promoCode);
         TicketReservationModification reservation = new TicketReservationModification();
@@ -570,7 +572,21 @@ public class EventApiV2Controller {
         return createTicketReservation(form, bindingRes, request, event, locale, specialPrice.map(SpecialPrice::getCode), promoCodeDiscount.map(PromoCodeDiscount::getPromoCode));
     }
 
-
+    /**
+     * From a given request, return the best locale for the user
+     *
+     * @param request
+     * @param event
+     * @return
+     */
+    private static Locale getMatchingLocale(ServletWebRequest request, Event event) {
+        var allowedLanguages = event.getContentLanguages().stream().map(ContentLanguage::getLanguage).collect(Collectors.toSet());
+        var l = request.getNativeRequest(HttpServletRequest.class).getLocales();
+        List<Locale> locales = l != null ? IteratorUtils.toList(l.asIterator()) : Collections.emptyList();
+        var selectedLocale = locales.stream().map(Locale::getLanguage).filter(allowedLanguages::contains).findFirst()
+            .orElseGet(() -> event.getContentLanguages().stream().findFirst().get().getLanguage());
+        return LocaleUtil.forLanguageTag(selectedLocale);
+    }
 
     private boolean shouldDisplayRestrictedCategory(Optional<SpecialPrice> specialCode, alfio.model.TicketCategory c, Optional<PromoCodeDiscount> optionalPromoCode) {
         if(optionalPromoCode.isPresent()) {
