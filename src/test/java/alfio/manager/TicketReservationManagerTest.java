@@ -158,6 +158,7 @@ class TicketReservationManagerTest {
         when(ticketReservation.getDiscountCts()).thenReturn(0);
         when(ticketReservation.getCurrencyCode()).thenReturn("CHF");
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
+        when(ticketReservationRepository.getAdditionalInfo(any())).thenReturn(mock(TicketReservationAdditionalInfo.class));
         organization = mock(Organization.class);
         TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
         GroupManager groupManager = mock(GroupManager.class);
