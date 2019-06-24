@@ -326,7 +326,7 @@ public class TicketReservationManager {
                 var sp = specialPrices.get(0);
                 var accessCodeId = discount != null && discount.getHiddenCategoryId() != null ? discount.getId() : null;
                 ticketRepository.reserveTicket(reservationId, ticketId,sp.getId(), locale.getLanguage(), category.getSrcPriceCts());
-                specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), sp.getSessionIdentifier(), accessCodeId);
+                specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), null, accessCodeId);
             } else {
                 jdbcTemplate.batchUpdate(ticketRepository.batchReserveTicket(), ticketsAndSpecialPrices.stream().map(
                     pair -> new MapSqlParameterSource("reservationId", reservationId)
@@ -335,12 +335,9 @@ public class TicketReservationManager {
                         .addValue("userLanguage", locale.getLanguage())
                         .addValue("srcPriceCts", category.getSrcPriceCts())
                 ).toArray(MapSqlParameterSource[]::new));
-
-                var firstSpecialPrice = specialPrices.get(0);
                 specialPriceRepository.batchUpdateStatus(
                     specialPrices.stream().map(SpecialPrice::getId).collect(toList()),
                     Status.PENDING,
-                    firstSpecialPrice.getSessionIdentifier(),
                     Objects.requireNonNull(discount).getId());
             }
         } else {

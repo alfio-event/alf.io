@@ -67,8 +67,8 @@ public interface SpecialPriceRepository {
     @Query("select count(*) from special_price where code = :code")
     Integer countByCode(@Bind("code") String code);
 
-    @Query("update special_price set status = :status, session_id = :sessionId, access_code_id_fk = :accessCodeId where id in (:ids)")
-    int batchUpdateStatus(@Bind("ids") List<Integer> ids, @Bind("status") SpecialPrice.Status status, @Bind("sessionId") String sessionIdentifier, @Bind("accessCodeId") Integer accessCodeId);
+    @Query("update special_price set status = :status, session_id = null, access_code_id_fk = :accessCodeId where id in (:ids)")
+    int batchUpdateStatus(@Bind("ids") List<Integer> ids, @Bind("status") SpecialPrice.Status status, @Bind("accessCodeId") Integer accessCodeId);
 
     @Query("update special_price set status = :status, session_id = :sessionId, access_code_id_fk = :accessCodeId where id = :id")
     int updateStatus(@Bind("id") int id, @Bind("status") String status, @Bind("sessionId") String sessionIdentifier, @Bind("accessCodeId") Integer accessCodeId);

@@ -369,7 +369,6 @@ public class AdminReservationManager {
         final TicketsInfo empty = new TicketsInfo(null, null, false, false);
         return input.flatMap(t -> {
             String reservationId = UUID.randomUUID().toString();
-            String specialPriceSessionId = UUID.randomUUID().toString();
             Date validity = Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant());
             ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(event.getZoneId()), validity, null,
                 arm.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded());
@@ -379,7 +378,7 @@ public class AdminReservationManager {
                 customerData.getBillingAddress(), null, null, customerData.getCustomerReference());
 
             Result<List<Ticket>> result = flattenTicketsInfo(event, empty, t)
-                .map(pair -> reserveForTicketsInfo(event, arm, reservationId, specialPriceSessionId, pair))
+                .map(pair -> reserveForTicketsInfo(event, arm, reservationId, pair))
                 .reduce(this::reduceReservationResults)
                 .orElseGet(() -> Result.error(ErrorCode.custom("", "unknown error")));
 
@@ -387,7 +386,7 @@ public class AdminReservationManager {
         });
     }
 
-    private Result<List<Ticket>> reserveForTicketsInfo(Event event, AdminReservationModification arm, String reservationId, String specialPriceSessionId, Pair<TicketCategory, TicketsInfo> pair) {
+    private Result<List<Ticket>> reserveForTicketsInfo(Event event, AdminReservationModification arm, String reservationId, Pair<TicketCategory, TicketsInfo> pair) {
         TicketCategory category = pair.getLeft();
         TicketsInfo ticketsInfo = pair.getRight();
         int categoryId = category.getId();
@@ -400,7 +399,7 @@ public class AdminReservationManager {
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), categoryId);
         TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getCurrency(), event.getVat(), event.getVatStatus(), null);
         ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
-        List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(specialPriceSessionId, categoryId, attendees) : Collections.emptyList();
+        List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(categoryId, attendees) : Collections.emptyList();
         assignTickets(event, attendees, categoryId, reservedForUpdate, codes, reservationId, arm.getLanguage(), category.getSrcPriceCts());
         List<Ticket> tickets = reservedForUpdate.stream().map(id -> ticketRepository.findById(id, categoryId)).collect(toList());
         return Result.success(tickets);
@@ -446,13 +445,13 @@ public class AdminReservationManager {
             });
     }
 
-    private List<SpecialPrice> bindSpecialPriceTokens(String specialPriceSessionId, int categoryId, List<Attendee> attendees) {
+    private List<SpecialPrice> bindSpecialPriceTokens(int categoryId, List<Attendee> attendees) {
         specialPriceTokenGenerator.generatePendingCodesForCategory(categoryId);
         List<SpecialPrice> codes = specialPriceRepository.findActiveNotAssignedByCategoryId(categoryId)
             .stream()
             .limit(attendees.size())
             .collect(toList());
-        codes.forEach(c -> specialPriceRepository.updateStatus(c.getId(), SpecialPrice.Status.PENDING.toString(), specialPriceSessionId, null));
+        codes.forEach(c -> specialPriceRepository.updateStatus(c.getId(), SpecialPrice.Status.PENDING.toString(), null, null));
         return codes;
     }
 

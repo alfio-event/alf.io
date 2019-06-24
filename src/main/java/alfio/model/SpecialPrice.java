@@ -33,7 +33,7 @@ public class SpecialPrice {
     private final int priceInCents;
     private final int ticketCategoryId;
     private final Status status;
-    private final String sessionIdentifier;
+    //private final String sessionIdentifier;
     private final ZonedDateTime sentTimestamp;
     private final String recipientName;
     private final String recipientEmail;
@@ -44,7 +44,7 @@ public class SpecialPrice {
                         @Column("price_cts") int priceInCents,
                         @Column("ticket_category_id") int ticketCategoryId,
                         @Column("status") String status,
-                        @Column("session_id") String sessionIdentifier,
+                        //@Column("session_id") String sessionIdentifier,
                         @Column("sent_ts") ZonedDateTime sentTimestamp,
                         @Column("recipient_name") String recipientName,
                         @Column("recipient_email") String recipientEmail,
@@ -54,7 +54,7 @@ public class SpecialPrice {
         this.priceInCents = priceInCents;
         this.ticketCategoryId = ticketCategoryId;
         this.status = Status.valueOf(status);
-        this.sessionIdentifier = sessionIdentifier;
+        //this.sessionIdentifier = sessionIdentifier;
         this.sentTimestamp = sentTimestamp;
         this.recipientName = recipientName;
         this.recipientEmail = recipientEmail;

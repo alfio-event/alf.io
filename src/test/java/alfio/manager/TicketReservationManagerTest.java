@@ -533,8 +533,8 @@ class TicketReservationManagerTest {
         when(ticket.getSrcPriceCts()).thenReturn(1000);
         when(specialPriceRepository.bindToSession(eq(RESERVATION_ID), eq(TICKET_CATEGORY_ID), eq(accessCodeId), eq(2))).thenReturn(2);
         when(specialPriceRepository.findBySessionIdAndAccessCodeId(eq(RESERVATION_ID), eq(accessCodeId))).thenReturn(List.of(
-            new SpecialPrice(1, "AAAA", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), RESERVATION_ID, null, null, null, accessCodeId),
-            new SpecialPrice(2, "BBBB", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), RESERVATION_ID, null, null, null, accessCodeId)
+            new SpecialPrice(1, "AAAA", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), null, null, null, accessCodeId),
+            new SpecialPrice(2, "BBBB", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), null, null, null, accessCodeId)
         ));
         when(ticketRepository.selectNotAllocatedTicketsForUpdateSkipLocked(eq(EVENT_ID), eq(2), eq(List.of("FREE")))).thenReturn(List.of(TICKET_ID,2));
         when(ticketRepository.findById(eq(TICKET_ID), eq(TICKET_CATEGORY_ID))).thenReturn(ticket);
@@ -542,7 +542,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.batchReserveTicket()).thenReturn(query);
         trm.reserveTicketsForCategory(event, RESERVATION_ID, reservationModification, Locale.ENGLISH, false, discount);
         verify(jdbcTemplate).batchUpdate(eq(query), any(SqlParameterSource[].class));
-        verify(specialPriceRepository).batchUpdateStatus(eq(List.of(1,2)), eq(SpecialPrice.Status.PENDING), eq(RESERVATION_ID), eq(accessCodeId));
+        verify(specialPriceRepository).batchUpdateStatus(eq(List.of(1,2)), eq(SpecialPrice.Status.PENDING), eq(accessCodeId));
     }
 
     @Test
@@ -562,7 +562,7 @@ class TicketReservationManagerTest {
         when(ticketReservationRepository.remove(eq(singletonList(RESERVATION_ID)))).thenReturn(1);
         when(specialPriceRepository.getByCode(eq(SPECIAL_PRICE_CODE))).thenReturn(Optional.of(specialPrice));
         when(specialPrice.getStatus()).thenReturn(SpecialPrice.Status.PENDING);
-        when(specialPrice.getSessionIdentifier()).thenReturn(SPECIAL_PRICE_SESSION_ID);
+        //when(specialPrice.getSessionIdentifier()).thenReturn(SPECIAL_PRICE_SESSION_ID);
         //verify(specialPriceRepository).resetToFreeAndCleanupForReservation(eq(singletonList(RESERVATION_ID)));
         //verify(ticketRepository).resetCategoryIdForUnboundedCategories(eq(singletonList(RESERVATION_ID)));
         //verify(ticketRepository).releaseExpiredTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID), anyString());
