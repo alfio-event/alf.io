@@ -150,6 +150,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private SpecialPriceTokenGenerator specialPriceTokenGenerator;
 
+    @Autowired
+    private SpecialPriceRepository specialPriceRepository;
+
     //
     @Autowired
     private CheckInApiController checkInApiController;
@@ -461,12 +464,20 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         // check reservation auto creation with code: TODO: will need to check all the flows
         {
+
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
             var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
             var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals(reservationId, reservationInfo.getBody().getId());
+
+            assertEquals(1, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
+
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
         }
 
 
