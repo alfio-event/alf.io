@@ -33,6 +33,7 @@ import alfio.controller.form.*;
 import alfio.manager.CheckInManager;
 import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
+import alfio.manager.SpecialPriceTokenGenerator;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
@@ -67,6 +68,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -145,6 +147,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private AdditionalServiceApiController additionalServiceApiController;
 
+    @Autowired
+    private SpecialPriceTokenGenerator specialPriceTokenGenerator;
+
     //
     @Autowired
     private CheckInApiController checkInApiController;
@@ -190,6 +195,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     private static final String HIDDEN_CODE = "HIDDENNN";
 
+    private static final String URL_CODE_HIDDEN = "CODE_CODE_CODE";
+
     private int hiddenCategoryId = Integer.MIN_VALUE;
 
     public void ensureConfiguration() {
@@ -203,7 +210,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "hidden", 2,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ONE, true, "", true, null, null, null, null, null)
+                DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null)
             );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 
@@ -258,6 +265,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_WAITING_QUEUE.getValue(), "true", "");
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_PRE_REGISTRATION.getValue(), "true", "");
         //
+
+        specialPriceTokenGenerator.generatePendingCodes();
     }
 
     @Test
@@ -449,6 +458,16 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertTrue(hiddenCat.isAccessRestricted());
         }
         //
+
+        // check reservation auto creation with code: TODO: will need to check all the flows
+        {
+            var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
+            assertEquals(reservationId, reservationInfo.getBody().getId());
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
+        }
 
 
         // discount check
