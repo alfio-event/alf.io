@@ -543,9 +543,7 @@ public class EventApiV2Controller {
                         return Optional.empty(); //<- failure? TODO: add error code in query string?
                     }
                     var specialPriceP = specialPrice.get();
-
-                    //<-FIXME currently this case does not work,
-                    // I receive a InvalidSpecialPriceTokenException
+                    // <- work only when TicketReservationManager.renewSpecialPrice is commented out
                     return makeSimpleReservation(e, specialPriceP.getTicketCategoryId(), specialPriceP.getCode(), request, maybePromoCodeDiscount);
                 }
             } else if (checkedCode.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {

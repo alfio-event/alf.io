@@ -406,7 +406,7 @@ public class TicketReservationManager {
             return Optional.empty();
         }
 
-        Optional<SpecialPrice> specialPrice = renewSpecialPrice(token, specialPriceSessionId);
+        Optional<SpecialPrice> specialPrice = token;//renewSpecialPrice(token, specialPriceSessionId);
 
         if(token.isPresent() && specialPrice.isEmpty()) {
             //there is a special price in the request but this isn't valid anymore
@@ -1320,7 +1320,7 @@ public class TicketReservationManager {
         return specialPriceRepository.getByCode(code);
     }
 
-    public Optional<SpecialPrice> renewSpecialPrice(Optional<SpecialPrice> specialPrice, Optional<String> specialPriceSessionId) {
+    /*public Optional<SpecialPrice> renewSpecialPrice(Optional<SpecialPrice> specialPrice, Optional<String> specialPriceSessionId) {
         Validate.isTrue(specialPrice.isPresent(), "special price is not present");
 
         SpecialPrice price = specialPrice.get();
@@ -1347,7 +1347,7 @@ public class TicketReservationManager {
         }
 
         return specialPrice;
-    }
+    }*/
 
     public List<Ticket> findTicketsInReservation(String reservationId) {
         return ticketRepository.findTicketsInReservation(reservationId);
