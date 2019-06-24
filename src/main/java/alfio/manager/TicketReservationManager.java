@@ -234,7 +234,6 @@ public class TicketReservationManager {
                                           List<TicketReservationWithOptionalCodeModification> list,
                                           List<ASReservationWithOptionalCodeModification> additionalServices,
                                           Date reservationExpiration,
-                                          Optional<String> specialPriceSessionId,
                                           Optional<String> promotionCodeDiscount,
                                           Locale locale,
                                           boolean forWaitingQueue) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
@@ -249,7 +248,7 @@ public class TicketReservationManager {
             event.getId(),
             event.getVat(),
             event.isVatIncluded());
-        list.forEach(t -> reserveTicketsForCategory(event, specialPriceSessionId, reservationId, t, locale, forWaitingQueue, discount.orElse(null)));
+        list.forEach(t -> reserveTicketsForCategory(event, reservationId, t, locale, forWaitingQueue, discount.orElse(null)));
 
         int ticketCount = list
             .stream()
@@ -293,7 +292,7 @@ public class TicketReservationManager {
         return Pair.of(reservationsForEvent, ticketSearchRepository.countReservationsForEvent(eventId, toSearch, toFilter));
     }
 
-    void reserveTicketsForCategory(Event event, Optional<String> specialPriceSessionId, String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale, boolean forWaitingQueue, PromoCodeDiscount discount) {
+    void reserveTicketsForCategory(Event event, String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale, boolean forWaitingQueue, PromoCodeDiscount discount) {
 
         List<SpecialPrice> specialPrices;
         if(discount != null && discount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS
@@ -303,7 +302,7 @@ public class TicketReservationManager {
             specialPrices = reserveTokens(reservationId, ticketReservation, discount);
         } else {
             //first check if there is another pending special price token bound to the current sessionId
-            Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), specialPriceSessionId, ticketReservation);
+            Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), Optional.empty(), ticketReservation);
             specialPrices = specialPrice.stream().collect(toList());
         }
 
@@ -1319,35 +1318,6 @@ public class TicketReservationManager {
     public Optional<SpecialPrice> getSpecialPriceByCode(String code) {
         return specialPriceRepository.getByCode(code);
     }
-
-    /*public Optional<SpecialPrice> renewSpecialPrice(Optional<SpecialPrice> specialPrice, Optional<String> specialPriceSessionId) {
-        Validate.isTrue(specialPrice.isPresent(), "special price is not present");
-
-        SpecialPrice price = specialPrice.get();
-
-        if(specialPriceSessionId.isEmpty()) {
-            log.warn("cannot renew special price {}: session identifier not found or not matching", price.getCode());
-            return Optional.empty();
-        }
-
-        if(price.getStatus() == Status.PENDING && !StringUtils.equals(price.getSessionIdentifier(), specialPriceSessionId.get())) {
-            log.warn("cannot renew special price {}: session identifier not found or not matching", price.getCode());
-            return Optional.empty();
-        }
-
-        if(price.getStatus() == Status.FREE) {
-            specialPriceRepository.bindToSession(price.getId(), specialPriceSessionId.get(), null);
-            return getSpecialPriceByCode(price.getCode());
-        } else if(price.getStatus() == Status.PENDING) {
-            Optional<Ticket> optionalTicket = ticketRepository.findBySpecialPriceId(price.getId());
-            if(optionalTicket.isPresent()) {
-                cancelPendingReservation(optionalTicket.get().getTicketsReservationId(), false, null);
-                return getSpecialPriceByCode(price.getCode());
-            }
-        }
-
-        return specialPrice;
-    }*/
 
     public List<Ticket> findTicketsInReservation(String reservationId) {
         return ticketRepository.findTicketsInReservation(reservationId);

@@ -133,7 +133,6 @@ public class WaitingQueueSubscriptionProcessor {
         return ticketReservationManager.createTicketReservation(event,
                 Collections.singletonList(reservation), Collections.emptyList(), Date.from(expiration.toInstant()),
                 Optional.empty(),
-                Optional.empty(),
                 locale, true);
     }
 

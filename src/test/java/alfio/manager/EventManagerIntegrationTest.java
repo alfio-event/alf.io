@@ -682,7 +682,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         trm.setTicketCategoryId(ticketCategoryRepository.findByEventId(event.getId()).get(0).getId());
         TicketReservationWithOptionalCodeModification reservation = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
         ticketReservationManager.createTicketReservation(event, Collections.singletonList(reservation), Collections.emptyList(),
-            DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+            DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
         TicketCategoryModification tcm = new TicketCategoryModification(null, "new", 1,
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now()),
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1)),

@@ -476,7 +476,6 @@ public class EventApiV2Controller {
             try {
                 String reservationId = ticketReservationManager.createTicketReservation(event,
                     selected.getLeft(), selected.getRight(), expiration,
-                    Optional.empty(), //<- FIXME check specialPriceSessionId
                     promoCodeDiscount,
                     locale, false);
                 return Optional.of(reservationId);
