@@ -19,7 +19,6 @@ package alfio.util;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
@@ -123,9 +122,7 @@ public class TemplateManager {
         String locale = messageSource.getMessage("locale", null, loc);
         String translatedVat = messageSource.getMessage("common.vat", null, loc);
         ConfigurationKeys vatKey = ConfigurationKeys.valueOf("TRANSLATION_OVERRIDE_VAT_"+locale.toUpperCase(Locale.ENGLISH));
-        Configuration.ConfigurationPathKey vatPathKey = Optional.ofNullable(event).map(e -> alfio.model.system.Configuration.from(e, vatKey))
-            .orElseGet(() -> alfio.model.system.Configuration.getSystemConfiguration(vatKey));
-        return configurationManager.getStringConfigValue(vatPathKey, translatedVat);
+        return configurationManager.getFor(event, vatKey).getValueOrDefault(translatedVat);
     }
 
     private String render(Resource resource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {

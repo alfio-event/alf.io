@@ -302,7 +302,7 @@ public class TicketReservationManager {
             specialPrices = reserveTokens(reservationId, ticketReservation, discount);
         } else {
             //first check if there is another pending special price token bound to the current sessionId
-            Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), Optional.empty(), ticketReservation);
+            Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), ticketReservation);
             specialPrices = specialPrice.stream().collect(toList());
         }
 
@@ -398,19 +398,20 @@ public class TicketReservationManager {
         return ticketRepository.selectNotAllocatedTicketsForUpdateSkipLocked(eventId, qty, statusesAsString);
     }
 
-    Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, Optional<String> specialPriceSessionId, TicketReservationWithOptionalCodeModification ticketReservation) {
+    Optional<SpecialPrice> fixToken(Optional<SpecialPrice> token, int ticketCategoryId, int eventId, TicketReservationWithOptionalCodeModification ticketReservation) {
 
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticketCategoryId, eventId);
         if(!ticketCategory.isAccessRestricted()) {
             return Optional.empty();
         }
 
-        Optional<SpecialPrice> specialPrice = token;//renewSpecialPrice(token, specialPriceSessionId);
+        Optional<SpecialPrice> specialPrice = token;//note, we don't use anymore, renewSpecialPrice(token, specialPriceSessionId);
 
-        if(token.isPresent() && specialPrice.isEmpty()) {
+        // TODO: check. this condition cannot be true. In theory, you cannot have an invalid one when you enter here
+        //if(token.isPresent() && specialPrice.isEmpty()) {
             //there is a special price in the request but this isn't valid anymore
-            throw new InvalidSpecialPriceTokenException();
-        }
+            //throw new InvalidSpecialPriceTokenException();
+        //}
 
         boolean canAccessRestrictedCategory = specialPrice.isPresent()
                 && specialPrice.get().getStatus() == SpecialPrice.Status.FREE

@@ -73,12 +73,6 @@ public interface SpecialPriceRepository {
     @Query("update special_price set status = :status, session_id = :sessionId, access_code_id_fk = :accessCodeId where id = :id")
     int updateStatus(@Bind("id") int id, @Bind("status") String status, @Bind("sessionId") String sessionIdentifier, @Bind("accessCodeId") Integer accessCodeId);
 
-    @Query("update special_price set session_id = :sessionId, access_code_id_fk = :accessCodeId where id = :id")
-    int bindToSession(@Bind("id") int id, @Bind("sessionId") String sessionIdentifier, @Bind("accessCodeId") Integer accessCodeId);
-
-    @Query("update special_price set session_id = null, status = 'FREE', access_code_id_fk = null where session_id = :sessionId and status in ('FREE', 'PENDING')")
-    int unbindFromSession(@Bind("sessionId") String sessionIdentifier);
-
     @Query("update special_price set status = :status where id in (select special_price_id_fk from ticket where tickets_reservation_id in (:reservationIds) and special_price_id_fk is not null) " +
         " or access_code_id_fk in (select promo_code_id_fk from tickets_reservation where id in(:reservationIds) and promo_code_id_fk is not null)")
     int updateStatusForReservation(@Bind("reservationIds") List<String> reservationIds, @Bind("status") String status);
