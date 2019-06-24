@@ -30,10 +30,7 @@ import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.EventCode;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.form.*;
-import alfio.manager.CheckInManager;
-import alfio.manager.EventManager;
-import alfio.manager.EventStatisticsManager;
-import alfio.manager.SpecialPriceTokenGenerator;
+import alfio.manager.*;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
@@ -165,6 +162,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private ScanAuditRepository scanAuditRepository;
+
+    @Autowired
+    private AdminReservationManager adminReservationManager;
     //
 
     //
@@ -466,7 +466,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         {
 
             assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
-
             var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
             var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
@@ -478,6 +477,24 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
 
             assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+        }
+
+        // check reservation auto creation with deletion from the admin side
+        {
+
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
+            assertEquals(reservationId, reservationInfo.getBody().getId());
+
+            assertEquals(1, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            adminReservationManager.removeReservation(event.getShortName(), reservationId, false, false, user);
+
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
         }
 
 

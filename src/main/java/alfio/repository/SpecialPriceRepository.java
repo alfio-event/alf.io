@@ -88,6 +88,11 @@ public interface SpecialPriceRepository {
         "or access_code_id_fk in (select promo_code_id_fk from tickets_reservation where id in (:reservationIds))")
     int resetToFreeAndCleanupForReservation(@Bind("reservationIds") List<String> reservationIds);
 
+
+    @Query("update special_price set status = 'FREE', session_id = null, sent_ts = null, recipient_name = null, recipient_email = null, access_code_id_fk = null " +
+        " where id in (select special_price_id_fk from ticket where ticket.id in (:ticketIds) and special_price_id_fk is not null) ")
+    int resetToFreeAndCleanupForTickets(@Bind("ticketIds") List<Integer> ticketIds);
+
     @Query("update special_price set code = :code, status = 'FREE', sent_ts = null where id = :id")
     int updateCode(@Bind("code") String code, @Bind("id") int id);
 

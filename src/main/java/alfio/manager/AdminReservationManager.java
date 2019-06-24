@@ -656,6 +656,8 @@ public class AdminReservationManager {
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
 
+            specialPriceRepository.resetToFreeAndCleanupForReservation(List.of(reservationId));
+
             removeTicketsFromReservation(reservation, e, tickets.stream().map(Ticket::getId).collect(toList()), notify, username, removeReservation, false);
 
             additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
@@ -713,6 +715,7 @@ public class AdminReservationManager {
 
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
         ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
+        specialPriceRepository.resetToFreeAndCleanupForTickets(ticketIds);
 
         List<String> reservationIds = ticketRepository.findReservationIds(ticketIds);
         List<String> ticketUUIDs = ticketRepository.findUUIDs(ticketIds);
