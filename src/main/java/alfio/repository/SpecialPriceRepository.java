@@ -49,7 +49,7 @@ public interface SpecialPriceRepository {
     List<SpecialPrice> findActiveNotAssignedByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
 
     @Query(type= QueryType.MODIFYING_WITH_RETURN, value = "update special_price set access_code_id_fk = :accessCodeId where id in (" +
-        "select id from special_price where ticket_category_id = :ticketCategoryId and " +IS_FREE+ " and access_code_id_fk is null limit :limitTo" +
+        "select id from special_price where ticket_category_id = :ticketCategoryId and " +IS_FREE+ " and access_code_id_fk is null for update skip locked limit :limitTo" +
         ") returning *")
     List<SpecialPrice> bindToAccessCode(@Bind("ticketCategoryId") int ticketCategoryId, @Bind("accessCodeId") int accessCodeId, @Bind("limitTo") int limitTo);
 
@@ -61,6 +61,9 @@ public interface SpecialPriceRepository {
 
     @Query("select * from special_price where code = :code")
     Optional<SpecialPrice> getByCode(@Bind("code") String code);
+
+    @Query("select * from special_price where code = :code for update skip locked")
+    Optional<SpecialPrice> getForUpdateByCode(@Bind("code") String code);
 
     @Query("select count(*) from special_price where code = :code")
     Integer countByCode(@Bind("code") String code);

@@ -402,13 +402,12 @@ public class TicketReservationManager {
             return Optional.empty();
         }
 
-        Optional<SpecialPrice> specialPrice = token;//note, we don't use anymore, renewSpecialPrice(token, specialPriceSessionId);
+        Optional<SpecialPrice> specialPrice = token.map(SpecialPrice::getCode).flatMap(specialPriceRepository::getForUpdateByCode);
 
-        // TODO: check. this condition cannot be true. In theory, you cannot have an invalid one when you enter here
-        //if(token.isPresent() && specialPrice.isEmpty()) {
+        if(token.isPresent() && specialPrice.isEmpty()) {
             //there is a special price in the request but this isn't valid anymore
-            //throw new InvalidSpecialPriceTokenException();
-        //}
+            throw new InvalidSpecialPriceTokenException();
+        }
 
         boolean canAccessRestrictedCategory = specialPrice.isPresent()
                 && specialPrice.get().getStatus() == SpecialPrice.Status.FREE
