@@ -531,8 +531,7 @@ class TicketReservationManagerTest {
         when(ticketCategoryRepository.isAccessRestricted(eq(TICKET_CATEGORY_ID))).thenReturn(true);
         when(ticketReservation.getSrcPriceCts()).thenReturn(1000);
         when(ticket.getSrcPriceCts()).thenReturn(1000);
-        when(specialPriceRepository.bindToSession(eq(RESERVATION_ID), eq(TICKET_CATEGORY_ID), eq(accessCodeId), eq(2))).thenReturn(2);
-        when(specialPriceRepository.findBySessionIdAndAccessCodeId(eq(RESERVATION_ID), eq(accessCodeId))).thenReturn(List.of(
+        when(specialPriceRepository.bindToAccessCode(eq(TICKET_CATEGORY_ID), eq(accessCodeId), eq(2))).thenReturn(List.of(
             new SpecialPrice(1, "AAAA", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), null, null, null, accessCodeId),
             new SpecialPrice(2, "BBBB", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), null, null, null, accessCodeId)
         ));
