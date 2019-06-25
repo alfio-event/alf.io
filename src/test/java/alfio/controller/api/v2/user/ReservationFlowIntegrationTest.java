@@ -165,6 +165,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private AdminReservationManager adminReservationManager;
+
+    @Autowired
+    private TicketReservationManager ticketReservationManager;
+
+    @Autowired
+    private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     //
 
     //
@@ -459,6 +465,24 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("1.00", hiddenCat.getFormattedFinalPrice());
             assertFalse(hiddenCat.isHasDiscount());
             assertTrue(hiddenCat.isAccessRestricted());
+
+            // do a reservation for a hidden category+cancel
+            var form = new ReservationForm();
+            var ticketReservation = new TicketReservationModification();
+            form.setPromoCode(HIDDEN_CODE);
+            ticketReservation.setAmount(1);
+            ticketReservation.setTicketCategoryId(hiddenCat.getId());
+            form.setReservation(Collections.singletonList(ticketReservation));
+            var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals(HttpStatus.OK, res.getStatusCode());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), res.getBody().getValue(), new MockHttpSession());
+            assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
+            assertEquals("1.00", reservationInfo.getBody().getOrderSummary().getTotalPrice());
+            assertEquals("hidden", reservationInfo.getBody().getOrderSummary().getSummary().get(0).getName());
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue(), new MockHttpServletRequest());
+
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
+            assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
         }
         //
 
@@ -477,6 +501,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
 
             assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
+            assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
         }
 
         // check reservation auto creation with deletion from the admin side
@@ -494,6 +521,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             adminReservationManager.removeReservation(event.getShortName(), reservationId, false, false, user);
 
             assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
+            assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
 
         }
 

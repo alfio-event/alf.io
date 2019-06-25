@@ -1708,7 +1708,7 @@ public class TicketReservationManager {
         return additionalServiceItemRepository.hasPaidSupplements(reservationId);
     }
 
-    void revertTicketsToFreeIfAccessRestricted(int eventId) {
+    public int revertTicketsToFreeIfAccessRestricted(int eventId) {
         List<Integer> restrictedCategories = ticketCategoryRepository.findByEventId(eventId).stream()
             .filter(TicketCategory::isAccessRestricted)
             .map(TicketCategory::getId)
@@ -1718,7 +1718,9 @@ public class TicketReservationManager {
             if(count > 0) {
                 log.debug("reverted {} tickets for categories {}", count, restrictedCategories);
             }
+            return count;
         }
+        return 0;
     }
 
 

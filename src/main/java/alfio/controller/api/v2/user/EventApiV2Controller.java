@@ -527,7 +527,6 @@ public class EventApiV2Controller {
 
             var codeType = getCodeType(e.getId(), trimmedCode);
 
-            var maybeSpecialPrice = checkedCode.getValue().getLeft();
             var maybePromoCodeDiscount = checkedCode.getValue().getRight();
 
             if(checkedCode.isSuccess() && codeType == CodeType.PROMO_CODE_DISCOUNT) {
