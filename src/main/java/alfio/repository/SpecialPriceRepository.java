@@ -51,7 +51,7 @@ public interface SpecialPriceRepository {
     @Query(type= QueryType.MODIFYING_WITH_RETURN, value = "update special_price set access_code_id_fk = :accessCodeId where id in (" +
         "select id from special_price where ticket_category_id = :ticketCategoryId and " +IS_FREE+ " and access_code_id_fk is null limit :limitTo" +
         ") returning *")
-    List<SpecialPrice> bindToAccessCode(@Bind("ticketCategoryId") int ticketCategoryId, @Bind("accessCodeId") Integer accessCodeId, @Bind("limitTo") int limitTo);
+    List<SpecialPrice> bindToAccessCode(@Bind("ticketCategoryId") int ticketCategoryId, @Bind("accessCodeId") int accessCodeId, @Bind("limitTo") int limitTo);
 
     @Query("update special_price set sent_ts = :timestamp, recipient_name = :recipientName, recipient_email = :recipientAddress where code = :code")
     int markAsSent(@Bind("timestamp") ZonedDateTime timestamp, @Bind("recipientName") String recipientName, @Bind("recipientAddress") String recipientAddress, @Bind("code") String code);
