@@ -259,7 +259,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
 	        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
 	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
 	        Date expiration = DateUtils.addDays(new Date(), 1);
-	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Locale.ENGLISH, false);
 	        dataMigrator.fillReservationsLanguage();
 	        TicketReservation ticketReservation = ticketReservationManager.findById(reservationId).get();
 	        assertEquals("en", ticketReservation.getUserLanguage());
@@ -283,7 +283,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
 	        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
 	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
 	        Date expiration = DateUtils.addDays(new Date(), 1);
-	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Locale.ENGLISH, false);
 //	        ticketReservationManager.performPayment("TOKEN", null, event, reservationId, "email@email.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, null, null, new TotalPrice(1000, 10, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE), false, null, null, null, false, false);
 	        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
 	        UpdateTicketOwnerForm first = new UpdateTicketOwnerForm();
@@ -347,7 +347,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
         trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
         TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
         Date expiration = DateUtils.addDays(new Date(), 1);
-        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Locale.ENGLISH, false);
         //simulate the effect of a reservation cancellation after #392, as described in #391
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservation.TicketReservationStatus.CANCELLED.name());
         List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);

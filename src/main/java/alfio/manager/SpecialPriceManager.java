@@ -36,7 +36,6 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static alfio.model.system.Configuration.from;
 import static alfio.model.system.ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL;
 import static java.util.stream.Collectors.toList;
 

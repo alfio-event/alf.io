@@ -16,7 +16,6 @@
  */
 package alfio.controller.api.admin;
 
-import alfio.controller.api.support.DescriptionsLoader;
 import alfio.controller.api.support.EventListItem;
 import alfio.controller.api.support.PageAndContent;
 import alfio.controller.api.support.TicketHelper;
@@ -34,6 +33,7 @@ import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.DynamicFieldTemplateRepository;
+import alfio.repository.EventDescriptionRepository;
 import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.util.*;
@@ -93,7 +93,7 @@ public class EventApiController {
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
     private final TicketFieldRepository ticketFieldRepository;
-    private final DescriptionsLoader descriptionsLoader;
+    private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketHelper ticketHelper;
     private final DynamicFieldTemplateRepository dynamicFieldTemplateRepository;
     private final UserManager userManager;
@@ -138,7 +138,7 @@ public class EventApiController {
         return eventManager.getActiveEvents().stream()
             .filter(e -> userOrganizations.contains(e.getOrganizationId()))
             .sorted(Comparator.comparing(e -> e.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
-            .map(s -> new EventListItem(s, request.getContextPath(), descriptionsLoader.eventDescriptions().load(s)))
+            .map(s -> new EventListItem(s, request.getContextPath(), eventDescriptionRepository.findByEventId(s.getId())))
             .collect(toList());
     }
 

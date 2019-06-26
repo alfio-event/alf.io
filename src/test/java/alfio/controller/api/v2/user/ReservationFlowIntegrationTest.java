@@ -19,6 +19,7 @@ package alfio.controller.api.v2.user;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.controller.IndexController;
 import alfio.controller.api.AttendeeApiController;
 import alfio.controller.api.admin.AdditionalServiceApiController;
 import alfio.controller.api.admin.CheckInApiController;
@@ -29,9 +30,7 @@ import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.EventCode;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.form.*;
-import alfio.manager.CheckInManager;
-import alfio.manager.EventManager;
-import alfio.manager.EventStatisticsManager;
+import alfio.manager.*;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
@@ -66,6 +65,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -144,6 +144,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private AdditionalServiceApiController additionalServiceApiController;
 
+    @Autowired
+    private SpecialPriceTokenGenerator specialPriceTokenGenerator;
+
+    @Autowired
+    private SpecialPriceRepository specialPriceRepository;
+
     //
     @Autowired
     private CheckInApiController checkInApiController;
@@ -156,6 +162,15 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private ScanAuditRepository scanAuditRepository;
+
+    @Autowired
+    private AdminReservationManager adminReservationManager;
+
+    @Autowired
+    private TicketReservationManager ticketReservationManager;
+
+    @Autowired
+    private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     //
 
     //
@@ -173,6 +188,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private TicketApiV2Controller ticketApiV2Controller;
+
+    @Autowired
+    private IndexController indexController;
     //
 
     private Event event;
@@ -185,6 +203,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     private static final String PROMO_CODE = "MYPROMOCODE";
 
     private static final String HIDDEN_CODE = "HIDDENNN";
+
+    private static final String URL_CODE_HIDDEN = "CODE_CODE_CODE";
 
     private int hiddenCategoryId = Integer.MIN_VALUE;
 
@@ -199,7 +219,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "hidden", 2,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ONE, true, "", true, null, null, null, null, null)
+                DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null)
             );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 
@@ -254,6 +274,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_WAITING_QUEUE.getValue(), "true", "");
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_PRE_REGISTRATION.getValue(), "true", "");
         //
+
+        specialPriceTokenGenerator.generatePendingCodes();
     }
 
     @Test
@@ -357,6 +379,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         }
 
 
+        assertEquals("redirect:/api/v2/public/event/" + event.getShortName() + "/code/MY_CODE", indexController.redirectCode(event.getShortName(), "MY_CODE"));
+
+
         // check ticket & all, we have 2 ticket categories, 1 hidden
         assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getTicketCategories("NOT_EXISTING", null).getStatusCode());
         {
@@ -440,8 +465,80 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("1.00", hiddenCat.getFormattedFinalPrice());
             assertFalse(hiddenCat.isHasDiscount());
             assertTrue(hiddenCat.isAccessRestricted());
+
+            // do a reservation for a hidden category+cancel
+            var form = new ReservationForm();
+            var ticketReservation = new TicketReservationModification();
+            form.setPromoCode(HIDDEN_CODE);
+            ticketReservation.setAmount(1);
+            ticketReservation.setTicketCategoryId(hiddenCat.getId());
+            form.setReservation(Collections.singletonList(ticketReservation));
+            var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals(HttpStatus.OK, res.getStatusCode());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), res.getBody().getValue(), new MockHttpSession());
+            assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
+            assertEquals("1.00", reservationInfo.getBody().getOrderSummary().getTotalPrice());
+            assertEquals("hidden", reservationInfo.getBody().getOrderSummary().getSummary().get(0).getName());
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue(), new MockHttpServletRequest());
+
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
+            assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
         }
         //
+
+        // check reservation auto creation with code: TODO: will need to check all the flows
+        {
+
+            // code not found
+            var notFoundRes = eventApiV2Controller.handleCode(event.getShortName(), "NOT_EXIST", new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals("/event/" + event.getShortName(), notFoundRes.getHeaders().getLocation().getPath());
+            assertEquals("errors=error.STEP_1_CODE_NOT_FOUND", notFoundRes.getHeaders().getLocation().getQuery());
+            //
+
+            // promo code, we expect a redirect to event with the code in the query string
+            var redirectPromoCodeRes = eventApiV2Controller.handleCode(event.getShortName(), PROMO_CODE, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals("/event/" + event.getShortName(), redirectPromoCodeRes.getHeaders().getLocation().getPath());
+            assertEquals("code=MYPROMOCODE", redirectPromoCodeRes.getHeaders().getLocation().getQuery());
+
+
+            // code existing
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
+            assertEquals(reservationId, reservationInfo.getBody().getId());
+
+            assertEquals(1, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
+
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
+            assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
+        }
+
+        // check reservation auto creation with deletion from the admin side
+        {
+
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
+            assertEquals(reservationId, reservationInfo.getBody().getId());
+
+            assertEquals(1, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            adminReservationManager.removeReservation(event.getShortName(), reservationId, false, false, user);
+
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
+            assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
+
+        }
 
 
         // discount check

@@ -39,7 +39,7 @@ class MailgunMailer implements Mailer {
     private final ConfigurationManager configurationManager;
 
     
-    private static RequestBody prepareBody(EventAndOrganizationId event, String from, String to, String replyTo, List<String> cc, String subject, String text,
+    private static RequestBody prepareBody(String from, String to, String replyTo, List<String> cc, String subject, String text,
                                     Optional<String> html, Attachment... attachments) {
 
 
@@ -102,8 +102,7 @@ class MailgunMailer implements Mailer {
 
             var replyTo = conf.get(MAIL_REPLY_TO).getValueOrDefault("");
 
-            RequestBody formBody = prepareBody(event, from, to, replyTo, cc, subject, text, html,
-                    attachment);
+            RequestBody formBody = prepareBody(from, to, replyTo, cc, subject, text, html, attachment);
 
             Request request = new Request.Builder()
                     .url(baseUrl + domain + "/messages")

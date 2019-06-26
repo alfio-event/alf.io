@@ -178,10 +178,6 @@ public class CheckInManager {
         return ticketRepository.findByUUIDForUpdate(uuid);
     }
 
-    public List<FullTicketInfo> findAllFullTicketInfo(int eventId) {
-        return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId);
-    }
-
     public TicketAndCheckInResult evaluateTicketStatus(int eventId, String ticketIdentifier, Optional<String> ticketCode) {
         return extractStatus(eventRepository.findOptionalById(eventId), ticketRepository.findOptionalByUUID(ticketIdentifier), ticketIdentifier, ticketCode);
     }

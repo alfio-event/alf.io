@@ -52,9 +52,9 @@ public class PassKitApiController {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
         } else {
             Pair<EventAndOrganizationId, Ticket> pair = validationResult.get();
-            try {
+            try (var os = response.getOutputStream()) {
                 response.setContentType("application/vnd.apple.pkpass");
-                passKitManager.writePass(pair.getRight(), pair.getLeft(), response.getOutputStream());
+                passKitManager.writePass(pair.getRight(), pair.getLeft(), os);
             } catch (Exception e) {
                 log.warn("Error during pass generation", e);
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

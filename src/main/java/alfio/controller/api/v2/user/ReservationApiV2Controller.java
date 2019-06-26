@@ -309,8 +309,7 @@ public class ReservationApiV2Controller {
                 orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
                 Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
 
-            final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, SessionUtil.retrieveSpecialPriceSessionId(request),
-                Optional.ofNullable(paymentForm.getPaymentMethod()));
+            final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, Optional.ofNullable(paymentForm.getPaymentMethod()));
 
 
             if (status.isRedirect()) {

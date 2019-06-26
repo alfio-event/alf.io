@@ -31,6 +31,7 @@ import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.Configuration;
@@ -41,15 +42,18 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
+import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -58,6 +62,7 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -440,7 +445,7 @@ public class EventApiV2Controller {
                 }
                 codeCheck = Optional.of(resCheck);
             }
-            Optional<String> specialPrice = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getLeft).map(SpecialPrice::getCode);
+
             Optional<String> promoCodeDiscount = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getRight).map(PromoCodeDiscount::getPromoCode);
 
 
@@ -448,28 +453,7 @@ public class EventApiV2Controller {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
 
-            var reservationIdRes = reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event).flatMap(selected -> {
-                Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
-                try {
-                    String reservationId = ticketReservationManager.createTicketReservation(event,
-                        selected.getLeft(), selected.getRight(), expiration,
-                        specialPrice,
-                        promoCodeDiscount,
-                        locale, false);
-                    return Optional.of(reservationId);
-                } catch (TicketReservationManager.NotEnoughTicketsException nete) {
-                    bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-                } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
-                    bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
-                } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
-                    bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
-                    SessionUtil.cleanupSession(request.getRequest());
-                } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
-                    bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
-                }
-
-                return Optional.empty();
-            });
+            Optional<String> reservationIdRes = createTicketReservation(reservation, bindingResult, request, event, locale, promoCodeDiscount);
 
             if (bindingResult.hasErrors()) {
                 return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, (String) null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
@@ -482,9 +466,37 @@ public class EventApiV2Controller {
         return r.orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    private Optional<String> createTicketReservation(ReservationForm reservation,
+                                                     BindingResult bindingResult,
+                                                     ServletWebRequest request,
+                                                     Event event,
+                                                     Locale locale,
+                                                     Optional<String> promoCodeDiscount) {
+        return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event).flatMap(selected -> {
+            Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
+            try {
+                String reservationId = ticketReservationManager.createTicketReservation(event,
+                    selected.getLeft(), selected.getRight(), expiration,
+                    promoCodeDiscount,
+                    locale, false);
+                return Optional.of(reservationId);
+            } catch (TicketReservationManager.NotEnoughTicketsException nete) {
+                bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
+            } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
+                bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
+            } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
+                bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
+                SessionUtil.cleanupSession(request.getRequest());
+            } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
+                bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+            }
+            return Optional.empty();
+        });
+    }
+
     @GetMapping(value = "event/{eventName}/validate-code")
     public ResponseEntity<ValidatedResponse<EventCode>> validateCode(@PathVariable("eventName") String eventName,
-                                                                   @RequestParam("code") String code) {
+                                                                     @RequestParam("code") String code) {
 
         return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(e -> {
             var res = checkCode(e, code);
@@ -506,6 +518,99 @@ public class EventApiV2Controller {
         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+
+    @GetMapping("event/{eventName}/code/{code}")
+    public ResponseEntity<Void> handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, ServletWebRequest request) {
+        String trimmedCode = StringUtils.trimToNull(code);
+        Map<String, String> queryStrings = new HashMap<>();
+
+        Function<Pair<Optional<String>, BindingResult>, Optional<String>> handleErrors = (res) -> {
+            if (res.getRight().hasErrors()) {
+                queryStrings.put("errors", res.getRight().getAllErrors().stream().map(oe -> oe.getCode()).collect(Collectors.joining(",")));
+            }
+            return res.getLeft();
+        };
+
+        var url = eventRepository.findOptionalByShortName(eventName).flatMap(e -> {
+
+            var checkedCode = checkCode(e, trimmedCode);
+
+            var codeType = getCodeType(e.getId(), trimmedCode);
+
+            var maybePromoCodeDiscount = checkedCode.getValue().getRight();
+
+            if(checkedCode.isSuccess() && codeType == CodeType.PROMO_CODE_DISCOUNT) {
+                queryStrings.put("code", trimmedCode);
+                return Optional.empty();
+            } else if(codeType == CodeType.TICKET_CATEGORY_CODE) {
+                var category = ticketCategoryRepository.findCodeInEvent(e.getId(), trimmedCode).get();
+                if(!category.isAccessRestricted()) {
+                    var res = makeSimpleReservation(e, category.getId(), trimmedCode, request, maybePromoCodeDiscount);
+                    return handleErrors.apply(res);
+                } else {
+                    var specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
+                    if(!specialPrice.isPresent()) {
+                        queryStrings.put("errors", ErrorsCode.STEP_1_CODE_NOT_FOUND);
+                        return Optional.empty();
+                    }
+                    var specialPriceP = specialPrice.get();
+                    // <- work only when TicketReservationManager.renewSpecialPrice is commented out
+                    var res = makeSimpleReservation(e, specialPriceP.getTicketCategoryId(), specialPriceP.getCode(), request, maybePromoCodeDiscount);
+                    return handleErrors.apply(res);
+                }
+            } else if (checkedCode.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
+                int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).get().getTicketCategoryId();
+                var res = makeSimpleReservation(e, ticketCategoryId, trimmedCode, request, maybePromoCodeDiscount);
+                return handleErrors.apply(res);
+            } else {
+                queryStrings.put("errors", ErrorsCode.STEP_1_CODE_NOT_FOUND);
+                return Optional.empty();
+            }
+        }).map(reservationId ->
+            UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}")
+                .build(Map.of("eventShortName", eventName, "reservationId", reservationId))
+                .toString())
+            .orElseGet(() -> {
+                    var backToEvent = UriComponentsBuilder.fromPath("/event/{eventShortName}");
+                    queryStrings.forEach(backToEvent::queryParam);
+                    return backToEvent.build(Map.of("eventShortName", eventName)).toString();
+                }
+            );
+        return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY).header(HttpHeaders.LOCATION, url).build();
+    }
+
+    private Pair<Optional<String>, BindingResult> makeSimpleReservation(Event event,
+                                                   int ticketCategoryId,
+                                                   String promoCode,
+                                                   ServletWebRequest request,
+                                                   Optional<PromoCodeDiscount> promoCodeDiscount) {
+
+        Locale locale = getMatchingLocale(request, event);
+        ReservationForm form = new ReservationForm();
+        form.setPromoCode(promoCode);
+        TicketReservationModification reservation = new TicketReservationModification();
+        reservation.setAmount(1);
+        reservation.setTicketCategoryId(ticketCategoryId);
+        form.setReservation(Collections.singletonList(reservation));
+        var bindingRes = new BeanPropertyBindingResult(form, "reservationForm");
+        return Pair.of(createTicketReservation(form, bindingRes, request, event, locale, promoCodeDiscount.map(PromoCodeDiscount::getPromoCode)), bindingRes);
+    }
+
+    /**
+     * From a given request, return the best locale for the user
+     *
+     * @param request
+     * @param event
+     * @return
+     */
+    private static Locale getMatchingLocale(ServletWebRequest request, Event event) {
+        var allowedLanguages = event.getContentLanguages().stream().map(ContentLanguage::getLanguage).collect(Collectors.toSet());
+        var l = request.getNativeRequest(HttpServletRequest.class).getLocales();
+        List<Locale> locales = l != null ? IteratorUtils.toList(l.asIterator()) : Collections.emptyList();
+        var selectedLocale = locales.stream().map(Locale::getLanguage).filter(allowedLanguages::contains).findFirst()
+            .orElseGet(() -> event.getContentLanguages().stream().findFirst().get().getLanguage());
+        return LocaleUtil.forLanguageTag(selectedLocale);
+    }
 
     private boolean shouldDisplayRestrictedCategory(Optional<SpecialPrice> specialCode, alfio.model.TicketCategory c, Optional<PromoCodeDiscount> optionalPromoCode) {
         if(optionalPromoCode.isPresent()) {
@@ -572,5 +677,25 @@ public class EventApiV2Controller {
     private boolean isCaptchaInvalid(String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
         return configurationManager.isRecaptchaForTicketSelectionEnabled(event)
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
+    }
+
+    enum CodeType {
+        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
+    }
+
+    //not happy with that code...
+    private CodeType getCodeType(int eventId, String code) {
+        String trimmedCode = StringUtils.trimToNull(code);
+        if(trimmedCode == null) {
+            return CodeType.NOT_FOUND;
+        }  else if(specialPriceRepository.getByCode(trimmedCode).isPresent()) {
+            return CodeType.SPECIAL_PRICE;
+        } else if (promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode).isPresent()) {
+            return CodeType.PROMO_CODE_DISCOUNT;
+        } else if (ticketCategoryRepository.findCodeInEvent(eventId, trimmedCode).isPresent()) {
+            return CodeType.TICKET_CATEGORY_CODE;
+        } else {
+            return CodeType.NOT_FOUND;
+        }
     }
 }
