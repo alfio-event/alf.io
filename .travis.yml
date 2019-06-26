@@ -15,6 +15,12 @@ matrix:
       env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql10"
       addons:
         postgresql: "10"
+        sonarcloud:
+          organization: "alfio-event"
+          token:
+              secure: "NP89kR383hQ1Cd/ynzruiGo3n17FUlOyCQCNQrrCQPTe7HNAMqht66fR10SyoZzUype4pBbyLIEUqC4hs89ZQRaRFtTPQWgk0KNQpax/wkf1zi8wusrWYBuyiCoN5riibAlu8qav7OKTpv8P3OP/Zt1KgvKabmcy6S5tOi0VV4s="
+      after_script:
+         - sonar-scanner
 
 before_script:
   - psql -c 'create database alfio;' -U postgres
@@ -23,8 +29,3 @@ script:
   - sonar-scanner
 after_success:
   ./gradlew coveralls
-addons:
-    sonarcloud:
-        organization: "alfio-event"
-        token:
-            secure: "NP89kR383hQ1Cd/ynzruiGo3n17FUlOyCQCNQrrCQPTe7HNAMqht66fR10SyoZzUype4pBbyLIEUqC4hs89ZQRaRFtTPQWgk0KNQpax/wkf1zi8wusrWYBuyiCoN5riibAlu8qav7OKTpv8P3OP/Zt1KgvKabmcy6S5tOi0VV4s="
