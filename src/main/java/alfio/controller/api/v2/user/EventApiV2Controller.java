@@ -444,7 +444,7 @@ public class EventApiV2Controller {
                 }
                 codeCheck = Optional.of(resCheck);
             }
-            Optional<String> specialPrice = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getLeft).map(SpecialPrice::getCode);
+
             Optional<String> promoCodeDiscount = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getRight).map(PromoCodeDiscount::getPromoCode);
 
 
@@ -534,7 +534,7 @@ public class EventApiV2Controller {
             } else if(codeType == CodeType.TICKET_CATEGORY_CODE) {
                 var category = ticketCategoryRepository.findCodeInEvent(e.getId(), trimmedCode).get();
                 if(!category.isAccessRestricted()) {
-                    return makeSimpleReservation(e, category.getId(), trimmedCode, request, maybePromoCodeDiscount);
+                    return makeSimpleReservation(e, category.getId(), trimmedCode, request, maybePromoCodeDiscount).getLeft();
                 } else {
                     var specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
                     if(!specialPrice.isPresent()) {
@@ -542,11 +542,11 @@ public class EventApiV2Controller {
                     }
                     var specialPriceP = specialPrice.get();
                     // <- work only when TicketReservationManager.renewSpecialPrice is commented out
-                    return makeSimpleReservation(e, specialPriceP.getTicketCategoryId(), specialPriceP.getCode(), request, maybePromoCodeDiscount);
+                    return makeSimpleReservation(e, specialPriceP.getTicketCategoryId(), specialPriceP.getCode(), request, maybePromoCodeDiscount).getLeft();
                 }
             } else if (checkedCode.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
                 int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).get().getTicketCategoryId();
-                return makeSimpleReservation(e, ticketCategoryId, trimmedCode, request, maybePromoCodeDiscount);
+                return makeSimpleReservation(e, ticketCategoryId, trimmedCode, request, maybePromoCodeDiscount).getLeft();
             } else {
                 return Optional.empty(); // <- failure? TODO: add error code in query string?
             }
@@ -560,7 +560,7 @@ public class EventApiV2Controller {
         return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY).header(HttpHeaders.LOCATION, url).build();
     }
 
-    private Optional<String> makeSimpleReservation(Event event,
+    private Pair<Optional<String>, BindingResult> makeSimpleReservation(Event event,
                                                    int ticketCategoryId,
                                                    String promoCode,
                                                    ServletWebRequest request,
@@ -574,7 +574,7 @@ public class EventApiV2Controller {
         reservation.setTicketCategoryId(ticketCategoryId);
         form.setReservation(Collections.singletonList(reservation));
         var bindingRes = new BeanPropertyBindingResult(form, "reservationForm");
-        return createTicketReservation(form, bindingRes, request, event, locale, promoCodeDiscount.map(PromoCodeDiscount::getPromoCode));
+        return Pair.of(createTicketReservation(form, bindingRes, request, event, locale, promoCodeDiscount.map(PromoCodeDiscount::getPromoCode)), bindingRes);
     }
 
     /**
