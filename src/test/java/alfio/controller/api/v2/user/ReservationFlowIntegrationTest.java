@@ -676,7 +676,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
 
             var orderSummary = reservation.getOrderSummary();
-            assertTrue(orderSummary.getNotYetPaid());
+            assertTrue(orderSummary.isNotYetPaid());
             assertEquals("10.00", orderSummary.getTotalPrice());
             assertEquals("0.10", orderSummary.getTotalVAT());
             assertEquals("1.00", orderSummary.getVatPercentage());
@@ -691,7 +691,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
             orderSummary = reservation.getOrderSummary();
-            assertFalse(orderSummary.getNotYetPaid());
+            assertFalse(orderSummary.isNotYetPaid());
 
 
             var confRes = reservationApiV2Controller.reSendReservationConfirmationEmail(event.getShortName(), reservationId, "en");

@@ -17,8 +17,8 @@
 package alfio.controller.api.v2.model;
 
 import alfio.model.OrderSummary;
-import alfio.model.TicketReservation;
-import alfio.model.TicketReservationInvoicingAdditionalInfo;
+import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing.ReferenceType;
 import alfio.model.transaction.PaymentProxy;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -37,10 +37,10 @@ public class ReservationInfo {
     private final String email;
     private final long validity;
     private final List<TicketsByTicketCategory> ticketsByCategory;
-    private final OrderSummary orderSummary; //<- TODO: rewrap it so the model is kept inside v2.user.model
+    private final ReservationInfoOrderSummary orderSummary; //<- TODO: rewrap it so the model is kept inside v2.user.model
 
 
-    private final TicketReservation.TicketReservationStatus status;
+    private final TicketReservationStatus status;
     private final boolean validatedBookingInformations;
     private final Map<String, String> formattedExpirationDate; // map of language -> formatted date
 
@@ -67,7 +67,7 @@ public class ReservationInfo {
     private final String vatNr;
     private final Boolean skipVatNr;
     private final String italyEInvoicingFiscalCode;
-    private final TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing.ReferenceType italyEInvoicingReferenceType;
+    private final ReferenceType italyEInvoicingReferenceType;
     private final String italyEInvoicingReferenceAddresseeCode;
     private final String italyEInvoicingReferencePEC;
     // https://github.com/alfio-event/alf.io/issues/573
@@ -169,5 +169,44 @@ public class ReservationInfo {
     public static class Field {
         private final int fieldIndex;
         private final String fieldValue;
+    }
+
+
+    @Getter
+    public static class ReservationInfoOrderSummary {
+
+        private final List<ReservationInfoOrderSummaryRow> summary;
+        private final String totalPrice;
+        private final boolean free;
+        private final boolean displayVat;
+        private final int priceInCents;
+        private final String descriptionForPayment;
+        private final String totalVAT;
+        private final String vatPercentage;
+        private final boolean notYetPaid;
+
+        public ReservationInfoOrderSummary(OrderSummary orderSummary) {
+            this.summary = orderSummary.getSummary()
+                .stream()
+                .map(s -> new ReservationInfoOrderSummaryRow(s.getName(), s.getAmount(), s.getPrice(), s.getSubTotal()))
+                .collect(Collectors.toList());
+            this.totalPrice = orderSummary.getTotalPrice();
+            this.free = orderSummary.getFree();
+            this.displayVat = orderSummary.getDisplayVat();
+            this.priceInCents = orderSummary.getPriceInCents();
+            this.descriptionForPayment = orderSummary.getDescriptionForPayment();
+            this.totalVAT = orderSummary.getTotalVAT();
+            this.vatPercentage = orderSummary.getVatPercentage();
+            this.notYetPaid = orderSummary.getNotYetPaid();
+        }
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class ReservationInfoOrderSummaryRow {
+        private final String name;
+        private final int amount;
+        private final String price;
+        private final String subTotal;
     }
 }

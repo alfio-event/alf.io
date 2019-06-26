@@ -178,7 +178,7 @@ public class ReservationApiV2Controller {
             return Optional.of(new ReservationInfo(reservation.getId(), shortReservationId,
                 reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(),
                 reservation.getValidity().getTime(),
-                ticketsInReservation, orderSummary, reservation.getStatus(),
+                ticketsInReservation, new ReservationInfo.ReservationInfoOrderSummary(orderSummary), reservation.getStatus(),
                 additionalInfo.hasBeenValidated(),
                 formattedExpirationDate,
                 reservation.getInvoiceNumber(),
