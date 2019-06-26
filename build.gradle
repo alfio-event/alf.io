@@ -54,6 +54,7 @@ plugins {
     id 'com.github.hierynomus.license' version '0.15.0'
     id 'net.researchgate.release' version '2.8.0'
     id 'org.springframework.boot' version '2.1.5.RELEASE'
+    id 'org.sonarqube' version '2.7'
 }
 
 apply plugin: 'java'
