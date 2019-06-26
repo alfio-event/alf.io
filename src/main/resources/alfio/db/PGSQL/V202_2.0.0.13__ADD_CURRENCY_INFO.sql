@@ -15,12 +15,9 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-drop view if exists admin_reservation_request_stats;
-drop view if exists auditing_user;
-drop view if exists events_statistics;
-drop view if exists ticket_category_statistics;
-drop view if exists ticket_and_reservation_and_tx;
-drop view if exists latest_ticket_update;
-drop view if exists reservation_and_ticket_and_tx;
-drop view if exists ticket_category_with_currency;
-drop view if exists additional_service_with_currency;
+alter table ticket add column currency_code varchar(10);
+update ticket set currency_code = (select currency from event where id = event_id) where ticket.currency_code is null;
+
+alter table additional_service_item add column currency_code varchar(10);
+update additional_service_item set currency_code = (select currency from event where id = event_id_fk) where additional_service_item.currency_code is null;
+

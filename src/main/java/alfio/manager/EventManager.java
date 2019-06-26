@@ -283,7 +283,8 @@ public class EventManager {
             as.getVatType(),
             Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
             as.getType(),
-            as.getSupplementPolicy()).getChecksum();
+            as.getSupplementPolicy(),
+            as.getCurrencyCode()).getChecksum();
         return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
     }
 
@@ -660,7 +661,7 @@ public class EventManager {
             throw new IllegalStateException("Tickets have already been sold (or are in the process of being sold) for this category. Therefore price update is not allowed.");
         }
         //there's no need to calculate final price, vat etc, since these values will be updated at the time of reservation
-        ticketRepository.updateTicketPrice(updated.getId(), event.getId(), updated.getSrcPriceCts(), 0, 0, 0);
+        ticketRepository.updateTicketPrice(updated.getId(), event.getId(), updated.getSrcPriceCts(), 0, 0, 0, original.getCurrencyCode());
     }
 
     void handleTokenModification(TicketCategory original, TicketCategory updated, int addedTickets) {

@@ -159,11 +159,6 @@ public class TicketCategoryWithAdditionalInfo implements StatisticsContainer, Pr
     }
 
     @Override
-    public String getCurrencyCode() {
-        return event.getCurrency();
-    }
-
-    @Override
     public Optional<BigDecimal> getOptionalVatPercentage() {
         return Optional.ofNullable(event.getVat());
     }

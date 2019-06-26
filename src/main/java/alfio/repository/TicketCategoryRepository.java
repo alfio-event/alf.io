@@ -48,41 +48,41 @@ public interface TicketCategoryRepository {
                                            @Bind("ticketValidityStart") ZonedDateTime ticketValidityStart,
                                            @Bind("ticketValidityEnd") ZonedDateTime ticketValidityEnd);
 
-    @Query("select * from ticket_category where id = :id and event_id = :eventId and tc_status = 'ACTIVE'")
+    @Query("select * from ticket_category_with_currency where id = :id and event_id = :eventId and tc_status = 'ACTIVE'")
     TicketCategory getByIdAndActive(@Bind("id") int id, @Bind("eventId") int eventId);
 
-    @Query("select * from ticket_category where id = :id and event_id = :eventId and tc_status = 'ACTIVE'")
+    @Query("select * from ticket_category_with_currency where id = :id and event_id = :eventId and tc_status = 'ACTIVE'")
     Optional<TicketCategory> getOptionalByIdAndActive(@Bind("id") int id, @Bind("eventId") int eventId);
 
-    @Query("select * from ticket_category where id = :id and tc_status = 'ACTIVE'")
+    @Query("select * from ticket_category_with_currency where id = :id and tc_status = 'ACTIVE'")
     Optional<TicketCategory> getByIdAndActive(@Bind("id") int id);
 
-    @Query("select * from ticket_category where id = :id")
+    @Query("select * from ticket_category_with_currency where id = :id")
     TicketCategory getById(@Bind("id") int id);
 
-    @Query("select * from ticket_category where id in(:ids)")
+    @Query("select * from ticket_category_with_currency where id in(:ids)")
     List<TicketCategory> findByIds(@Bind("ids") Collection<Integer> ids);
 
-    @Query("select * from ticket_category where event_id = :eventId and category_code = :code and tc_status = 'ACTIVE'")
+    @Query("select * from ticket_category_with_currency where event_id = :eventId and category_code = :code and tc_status = 'ACTIVE'")
     Optional<TicketCategory> findCodeInEvent(@Bind("eventId") int eventId, @Bind("code") String code);
 
-    @Query("select count(*) from ticket_category where event_id = :eventId and tc_status = 'ACTIVE' and bounded = false")
+    @Query("select count(*) from ticket_category_with_currency where event_id = :eventId and tc_status = 'ACTIVE' and bounded = false")
     Integer countUnboundedCategoriesByEventId(@Bind("eventId") int eventId);
 
-    @Query("select * from ticket_category where event_id = :eventId and tc_status = 'ACTIVE' and bounded = false order by expiration desc")
+    @Query("select * from ticket_category_with_currency where event_id = :eventId and tc_status = 'ACTIVE' and bounded = false order by expiration desc")
     List<TicketCategory> findUnboundedOrderByExpirationDesc(@Bind("eventId") int eventId);
 
-    @Query("select * from ticket_category where event_id = :eventId  and tc_status = 'ACTIVE' order by inception asc, expiration asc, id asc")
+    @Query("select * from ticket_category_with_currency where event_id = :eventId  and tc_status = 'ACTIVE' order by inception asc, expiration asc, id asc")
     List<TicketCategory> findAllTicketCategories(@Bind("eventId") int eventId);
     
-    @Query("select * from ticket_category where event_id = :eventId")
+    @Query("select * from ticket_category_with_currency where event_id = :eventId")
     List<TicketCategory> findByEventId(@Bind("eventId") int eventId);
 
     default Map<Integer, TicketCategory> findByEventIdAsMap(int eventId) {
         return findByEventId(eventId).stream().collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
     }
     
-    @Query("select count(*) from ticket_category where event_id = :eventId and access_restricted = true")
+    @Query("select count(*) from ticket_category_with_currency where event_id = :eventId and access_restricted = true")
     Integer countAccessRestrictedRepositoryByEventId(@Bind("eventId") int eventId);
 
     @Query("update ticket_category set name = :name, inception = :inception, expiration = :expiration, " +

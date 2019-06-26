@@ -34,7 +34,6 @@ public class TicketPriceContainer implements SummaryPriceContainer {
     @Delegate(excludes = OverridePriceContainer.class)
     private final Ticket ticket;
     private final PromoCodeDiscount promoCodeDiscount;
-    private final String currencyCode;
     private final BigDecimal vatPercentage;
     private final VatStatus vatStatus;
 
@@ -42,11 +41,6 @@ public class TicketPriceContainer implements SummaryPriceContainer {
     public Optional<PromoCodeDiscount> getDiscount() {
         return Optional.ofNullable(promoCodeDiscount)
             .filter(discount -> discount.getCategories().isEmpty() || discount.getCategories().contains(getCategoryId()));
-    }
-
-    @Override
-    public String getCurrencyCode() {
-        return currencyCode;
     }
 
     @Override
@@ -66,11 +60,9 @@ public class TicketPriceContainer implements SummaryPriceContainer {
         return getSrcPriceCts();
     }
 
-    public static TicketPriceContainer from(Ticket t, VatStatus reservationVatStatus, String currency, BigDecimal vat, VatStatus eventVatStatus, PromoCodeDiscount discount) {
-        VatStatus vatStatus = Optional.ofNullable(reservationVatStatus)
-            .filter(s -> s == VatStatus.INCLUDED_EXEMPT || s == VatStatus.NOT_INCLUDED_EXEMPT)
-            .orElse(eventVatStatus);
-        return new TicketPriceContainer(t, discount, currency, vat, vatStatus);
+    public static TicketPriceContainer from(Ticket t, VatStatus reservationVatStatus, BigDecimal vat, VatStatus eventVatStatus, PromoCodeDiscount discount) {
+        VatStatus vatStatus = Optional.ofNullable(reservationVatStatus).orElse(eventVatStatus);
+        return new TicketPriceContainer(t, discount, vat, vatStatus);
     }
 
     @Override

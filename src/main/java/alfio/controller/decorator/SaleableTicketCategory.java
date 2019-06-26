@@ -100,11 +100,6 @@ public class SaleableTicketCategory implements PriceContainer {
     }
 
     @Override
-    public String getCurrencyCode() {
-        return event.getCurrency();
-    }
-
-    @Override
     public Optional<BigDecimal> getOptionalVatPercentage() {
         return Optional.ofNullable(event.getVat());
     }

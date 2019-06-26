@@ -41,6 +41,7 @@ public class AdditionalServiceItem {
     private final Integer finalPriceCts;
     private final Integer vatCts;
     private final Integer discountCts;
+    private final String  currencyCode;
 
     public AdditionalServiceItem(@Column("id") int id,
                                  @Column("uuid") String uuid,
@@ -53,7 +54,8 @@ public class AdditionalServiceItem {
                                  @Column("src_price_cts") Integer srcPriceCts,
                                  @Column("final_price_cts") Integer finalPriceCts,
                                  @Column("vat_cts") Integer vatCts,
-                                 @Column("discount_cts") Integer discountCts) {
+                                 @Column("discount_cts") Integer discountCts,
+                                 @Column("currency_code") String currencyCode) {
         this.id = id;
         this.uuid = uuid;
         this.utcCreation = utcCreation;
@@ -66,5 +68,6 @@ public class AdditionalServiceItem {
         this.finalPriceCts = finalPriceCts;
         this.vatCts = vatCts;
         this.discountCts = discountCts;
+        this.currencyCode = currencyCode;
     }
 }

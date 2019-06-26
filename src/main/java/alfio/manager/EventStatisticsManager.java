@@ -128,7 +128,7 @@ public class EventStatisticsManager {
         String toSearch = prepareSearchTerm(search);
         final int pageSize = 30;
         return ticketSearchRepository.findAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId, page * pageSize, pageSize, toSearch).stream()
-            .map(t -> new TicketWithStatistic(t.getTicket(), event, t.getTicketReservation(), event.getZoneId(), t.getTransaction()))
+            .map(t -> new TicketWithStatistic(t.getTicket(), t.getTicketReservation(), event.getZoneId(), t.getTransaction()))
             .sorted()
             .collect(Collectors.toList());
     }

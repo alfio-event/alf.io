@@ -76,6 +76,7 @@ create view reservation_and_ticket_and_tx as (select
     ticket.vat_cts t_vat_cts,
     ticket.discount_cts t_discount_cts,
     ticket.ext_reference t_ext_reference,
+    ticket.currency_code t_currency_code,
 
     b_transaction.id bt_id,
     b_transaction.gtw_tx_id bt_gtw_tx_id,
