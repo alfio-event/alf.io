@@ -62,6 +62,7 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -522,6 +523,14 @@ public class EventApiV2Controller {
     public ResponseEntity<Void> handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, ServletWebRequest request) {
         String trimmedCode = StringUtils.trimToNull(code);
         Map<String, String> queryStrings = new HashMap<>();
+
+        Function<Pair<Optional<String>, BindingResult>, Optional<String>> handleErrors = (res) -> {
+            if (res.getRight().hasErrors()) {
+                queryStrings.put("errors", res.getRight().getAllErrors().stream().map(oe -> oe.getCode()).collect(Collectors.joining(",")));
+            }
+            return res.getLeft();
+        };
+
         var url = eventRepository.findOptionalByShortName(eventName).flatMap(e -> {
 
             var checkedCode = checkCode(e, trimmedCode);
@@ -537,7 +546,7 @@ public class EventApiV2Controller {
                 var category = ticketCategoryRepository.findCodeInEvent(e.getId(), trimmedCode).get();
                 if(!category.isAccessRestricted()) {
                     var res = makeSimpleReservation(e, category.getId(), trimmedCode, request, maybePromoCodeDiscount);
-                    return res.getLeft();
+                    return handleErrors.apply(res);
                 } else {
                     var specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
                     if(!specialPrice.isPresent()) {
@@ -547,20 +556,12 @@ public class EventApiV2Controller {
                     var specialPriceP = specialPrice.get();
                     // <- work only when TicketReservationManager.renewSpecialPrice is commented out
                     var res = makeSimpleReservation(e, specialPriceP.getTicketCategoryId(), specialPriceP.getCode(), request, maybePromoCodeDiscount);
-
-                    if (res.getRight().hasErrors()) {
-                        queryStrings.put("errors", res.getRight().getAllErrors().stream().map(oe -> oe.getCode()).collect(Collectors.joining(",")));
-                    }
-
-                    return res.getLeft();
+                    return handleErrors.apply(res);
                 }
             } else if (checkedCode.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
                 int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).get().getTicketCategoryId();
                 var res = makeSimpleReservation(e, ticketCategoryId, trimmedCode, request, maybePromoCodeDiscount);
-                if (res.getRight().hasErrors()) {
-                    queryStrings.put("errors", res.getRight().getAllErrors().stream().map(oe -> oe.getCode()).collect(Collectors.joining(",")));
-                }
-                return res.getLeft();
+                return handleErrors.apply(res);
             } else {
                 queryStrings.put("errors", ErrorsCode.STEP_1_CODE_NOT_FOUND);
                 return Optional.empty();
