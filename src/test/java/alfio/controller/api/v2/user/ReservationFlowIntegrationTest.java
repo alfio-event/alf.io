@@ -489,6 +489,19 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         // check reservation auto creation with code: TODO: will need to check all the flows
         {
 
+            // code not found
+            var notFoundRes = eventApiV2Controller.handleCode(event.getShortName(), "NOT_EXIST", new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals("/event/" + event.getShortName(), notFoundRes.getHeaders().getLocation().getPath());
+            assertEquals("errors=error.STEP_1_CODE_NOT_FOUND", notFoundRes.getHeaders().getLocation().getQuery());
+            //
+
+            // promo code, we expect a redirect to event with the code in the query string
+            var redirectPromoCodeRes = eventApiV2Controller.handleCode(event.getShortName(), PROMO_CODE, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals("/event/" + event.getShortName(), redirectPromoCodeRes.getHeaders().getLocation().getPath());
+            assertEquals("code=MYPROMOCODE", redirectPromoCodeRes.getHeaders().getLocation().getQuery());
+
+
+            // code existing
             assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
             var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());

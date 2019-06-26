@@ -521,6 +521,7 @@ public class EventApiV2Controller {
     @GetMapping("event/{eventName}/code/{code}")
     public ResponseEntity<Void> handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, ServletWebRequest request) {
         String trimmedCode = StringUtils.trimToNull(code);
+        Map<String, String> queryStrings = new HashMap<>();
         var url = eventRepository.findOptionalByShortName(eventName).flatMap(e -> {
 
             var checkedCode = checkCode(e, trimmedCode);
@@ -530,32 +531,49 @@ public class EventApiV2Controller {
             var maybePromoCodeDiscount = checkedCode.getValue().getRight();
 
             if(checkedCode.isSuccess() && codeType == CodeType.PROMO_CODE_DISCOUNT) {
-                return Optional.empty();//TODO: redirectToEvent with code in query string?
+                queryStrings.put("code", trimmedCode);
+                return Optional.empty();
             } else if(codeType == CodeType.TICKET_CATEGORY_CODE) {
                 var category = ticketCategoryRepository.findCodeInEvent(e.getId(), trimmedCode).get();
                 if(!category.isAccessRestricted()) {
-                    return makeSimpleReservation(e, category.getId(), trimmedCode, request, maybePromoCodeDiscount).getLeft();
+                    var res = makeSimpleReservation(e, category.getId(), trimmedCode, request, maybePromoCodeDiscount);
+                    return res.getLeft();
                 } else {
                     var specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
                     if(!specialPrice.isPresent()) {
-                        return Optional.empty(); //<- failure? TODO: add error code in query string?
+                        queryStrings.put("errors", ErrorsCode.STEP_1_CODE_NOT_FOUND);
+                        return Optional.empty();
                     }
                     var specialPriceP = specialPrice.get();
                     // <- work only when TicketReservationManager.renewSpecialPrice is commented out
-                    return makeSimpleReservation(e, specialPriceP.getTicketCategoryId(), specialPriceP.getCode(), request, maybePromoCodeDiscount).getLeft();
+                    var res = makeSimpleReservation(e, specialPriceP.getTicketCategoryId(), specialPriceP.getCode(), request, maybePromoCodeDiscount);
+
+                    if (res.getRight().hasErrors()) {
+                        queryStrings.put("errors", res.getRight().getAllErrors().stream().map(oe -> oe.getCode()).collect(Collectors.joining(",")));
+                    }
+
+                    return res.getLeft();
                 }
             } else if (checkedCode.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
                 int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).get().getTicketCategoryId();
-                return makeSimpleReservation(e, ticketCategoryId, trimmedCode, request, maybePromoCodeDiscount).getLeft();
+                var res = makeSimpleReservation(e, ticketCategoryId, trimmedCode, request, maybePromoCodeDiscount);
+                if (res.getRight().hasErrors()) {
+                    queryStrings.put("errors", res.getRight().getAllErrors().stream().map(oe -> oe.getCode()).collect(Collectors.joining(",")));
+                }
+                return res.getLeft();
             } else {
-                return Optional.empty(); // <- failure? TODO: add error code in query string?
+                queryStrings.put("errors", ErrorsCode.STEP_1_CODE_NOT_FOUND);
+                return Optional.empty();
             }
         }).map(reservationId ->
             UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}")
                 .build(Map.of("eventShortName", eventName, "reservationId", reservationId))
                 .toString())
-            .orElseGet(() ->
-                UriComponentsBuilder.fromPath("/event/{eventShortName}").build(Map.of("eventShortName", eventName)).toString()
+            .orElseGet(() -> {
+                    var backToEvent = UriComponentsBuilder.fromPath("/event/{eventShortName}");
+                    queryStrings.forEach(backToEvent::queryParam);
+                    return backToEvent.build(Map.of("eventShortName", eventName)).toString();
+                }
             );
         return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY).header(HttpHeaders.LOCATION, url).build();
     }
