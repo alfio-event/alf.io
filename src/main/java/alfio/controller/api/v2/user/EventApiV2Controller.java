@@ -472,7 +472,7 @@ public class EventApiV2Controller {
                                                      Event event,
                                                      Locale locale,
                                                      Optional<String> promoCodeDiscount) {
-        return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event).flatMap(selected -> {
+        return reservation.validate(bindingResult, ticketReservationManager, eventManager, event).flatMap(selected -> {
             Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
             try {
                 String reservationId = ticketReservationManager.createTicketReservation(event,
