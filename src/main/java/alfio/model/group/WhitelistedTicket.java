@@ -18,6 +18,7 @@ package alfio.model.group;
 
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
+import org.apache.commons.lang3.ObjectUtils;
 
 @Getter
 public class WhitelistedTicket {
@@ -34,7 +35,7 @@ public class WhitelistedTicket {
         this.groupMemberId = groupMemberId;
         this.groupLinkId = groupLinkId;
         this.ticketId = ticketId;
-        this.requiresUniqueValue = requiresUniqueValue != null ? requiresUniqueValue : false;
+        this.requiresUniqueValue = ObjectUtils.firstNonNull(requiresUniqueValue, Boolean.FALSE);
     }
 
 }

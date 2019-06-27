@@ -192,7 +192,7 @@ public class GroupManager {
                 return false;
             }
         }
-        groupRepository.insertWhitelistedTicket(item.getId(), configuration.getId(), ticket.getId(), preventDuplication ? true : null);
+        groupRepository.insertWhitelistedTicket(item.getId(), configuration.getId(), ticket.getId(), preventDuplication ? Boolean.TRUE : null);
         Map<String, Object> modifications = new HashMap<>();
         modifications.put("itemId", item.getId());
         modifications.put("configurationId", configuration.getId());

@@ -28,6 +28,7 @@ import alfio.model.result.Result;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.http.ResponseEntity;
@@ -243,11 +244,11 @@ public class AdminReservationApiController {
         private final Boolean forceInvoiceUpdate;
 
         public Boolean getNotify() {
-            return notify != null ? notify : false;
+            return ObjectUtils.firstNonNull(notify, Boolean.FALSE);
         }
 
         public Boolean getForceInvoiceUpdate() {
-            return forceInvoiceUpdate != null ? forceInvoiceUpdate : false;
+            return ObjectUtils.firstNonNull(forceInvoiceUpdate, Boolean.FALSE);
         }
     }
 

@@ -24,6 +24,7 @@ import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -284,7 +285,7 @@ public class EventModification {
         @JsonCreator
         public RestrictedValue(@JsonProperty("value") String value, @JsonProperty("enabled") Boolean enabled) {
             this.value = value;
-            this.enabled = enabled != null ? enabled : true;
+            this.enabled = ObjectUtils.firstNonNull(enabled, Boolean.TRUE);
         }
     }
 
