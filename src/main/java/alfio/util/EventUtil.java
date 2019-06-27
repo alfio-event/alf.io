@@ -19,7 +19,6 @@ package alfio.util;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.system.Configuration;
 import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
