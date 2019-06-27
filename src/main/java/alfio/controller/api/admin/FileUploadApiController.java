@@ -23,17 +23,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.imgscalr.Scalr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -47,7 +42,7 @@ public class FileUploadApiController {
         this.fileUploadManager = fileUploadManager;
     }
 
-    @RequestMapping(value = "/file/upload", method = POST)
+    @PostMapping("/file/upload")
     public ResponseEntity<String> uploadFile(@RequestParam(required = false, value = "resizeImage", defaultValue = "false") Boolean resizeImage,
                                              @RequestBody UploadBase64FileModification upload) {
         try {

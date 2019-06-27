@@ -494,7 +494,7 @@ public class EventApiV2Controller {
         });
     }
 
-    @GetMapping(value = "event/{eventName}/validate-code")
+    @GetMapping("event/{eventName}/validate-code")
     public ResponseEntity<ValidatedResponse<EventCode>> validateCode(@PathVariable("eventName") String eventName,
                                                                      @RequestParam("code") String code) {
 

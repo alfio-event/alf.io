@@ -40,7 +40,7 @@ public class FileController {
         this.manager = manager;
     }
 
-    @GetMapping(value = "/file/{digest}")
+    @GetMapping("/file/{digest}")
     public void showFile(@PathVariable("digest") String digest, HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         Optional<FileBlobMetadata> res = manager.findMetadata(digest);
