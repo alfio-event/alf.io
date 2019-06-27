@@ -279,9 +279,9 @@ public class EventApiController {
         ZoneId eventZoneId = event.getZoneId();
 
         if ("excel".equals(format)) {
-            exportTicketExcel(eventName, response, principal, fields, categoriesMap, eventZoneId);
+            exportTicketExcel(event.getShortName(), response, principal, fields, categoriesMap, eventZoneId);
         } else {
-            exportTicketCSV(eventName, response, principal, fields, categoriesMap, eventZoneId);
+            exportTicketCSV(event.getShortName(), response, principal, fields, categoriesMap, eventZoneId);
         }
     }
 
@@ -368,7 +368,7 @@ public class EventApiController {
 
     @RequestMapping("/events/{eventName}/sponsor-scan/export")
     public void downloadSponsorScanExport(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
-        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
+        var event = eventManager.getSingleEvent(eventName, principal.getName());
         List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
 
         List<String> header = new ArrayList<>();
@@ -404,9 +404,9 @@ public class EventApiController {
         });
 
         if ("excel".equals(format)) {
-            exportSponsorScanExcel(eventName, header, sponsorScans, response);
+            exportSponsorScanExcel(event.getShortName(), header, sponsorScans, response);
         } else {
-            exportSponsorScanCSV(eventName, header, sponsorScans, response);
+            exportSponsorScanCSV(event.getShortName(), header, sponsorScans, response);
         }
     }
 

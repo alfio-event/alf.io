@@ -30,7 +30,7 @@ import java.util.Comparator;
 @Getter
 public class TicketCategory {
 
-    public static Comparator<TicketCategory> COMPARATOR = (tc1, tc2) -> new CompareToBuilder().append(tc1.utcInception, tc2.utcInception).append(tc1.utcExpiration, tc2.utcExpiration).toComparison();
+    public static final Comparator<TicketCategory> COMPARATOR = (tc1, tc2) -> new CompareToBuilder().append(tc1.utcInception, tc2.utcInception).append(tc1.utcExpiration, tc2.utcExpiration).toComparison();
 
     public enum Status {
         ACTIVE, NOT_ACTIVE
