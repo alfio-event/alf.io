@@ -16,7 +16,11 @@
  */
 package alfio.util;
 
+import org.apache.commons.lang3.StringUtils;
+import org.joda.money.CurrencyUnit;
+
 import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.function.Function;
 
 import static java.math.RoundingMode.*;
@@ -51,28 +55,40 @@ public final class MonetaryUtil {
         return price.multiply(percentage.divide(HUNDRED, ROUNDING_SCALE, HALF_UP));
     }
 
-    public static BigDecimal centsToUnit(int cents) {
-        return new BigDecimal(cents).divide(HUNDRED, 2, HALF_UP);
+    public static BigDecimal centsToUnit(int cents, String currencyCode) {
+        if(cents == 0 || StringUtils.isEmpty(currencyCode)) {
+            return BigDecimal.ZERO;
+        }
+        var currencyUnit = CurrencyUnit.of(currencyCode);
+        int scale = currencyUnit.getDecimalPlaces();
+        return new BigDecimal(cents).divide(BigDecimal.TEN.pow(scale), scale, HALF_UP);
     }
 
-    public static BigDecimal centsToUnit(long cents) {
-        return new BigDecimal(cents).divide(HUNDRED, 2, HALF_UP);
+    public static BigDecimal centsToUnit(long cents, String currencyCode) {
+        var currencyUnit = CurrencyUnit.of(currencyCode);
+        int scale = currencyUnit.getDecimalPlaces();
+        return new BigDecimal(cents).divide(BigDecimal.TEN.pow(scale), scale, HALF_UP);
     }
 
-    public static int unitToCents(BigDecimal unit) {
-        return unitToCents(unit, BigDecimal::intValueExact);
+    public static int unitToCents(BigDecimal unit, String currencyCode) {
+        return unitToCents(unit, currencyCode, BigDecimal::intValueExact);
     }
 
-    public static <T extends Number> T unitToCents(BigDecimal unit, Function<BigDecimal, T> converter) {
-        BigDecimal result = unit.multiply(HUNDRED).setScale(0, HALF_UP);
+    public static <T extends Number> T unitToCents(BigDecimal unit, String currencyCode, Function<BigDecimal, T> converter) {
+        int scale = CurrencyUnit.of(currencyCode).getDecimalPlaces();
+        BigDecimal result = unit.multiply(BigDecimal.TEN.pow(scale)).setScale(0, HALF_UP);
         return converter.apply(result);
     }
 
-    public static String formatCents(long cents) {
-        return centsToUnit(cents).toPlainString();
+    public static String formatCents(long cents, String currencyCode) {
+        return centsToUnit(cents, currencyCode).toPlainString();
     }
 
-    public static String formatCents(int cents) {
-        return centsToUnit(cents).toPlainString();
+    public static String formatCents(int cents, String currencyCode) {
+        return centsToUnit(cents, currencyCode).toPlainString();
+    }
+
+    public static String formatUnit(BigDecimal unit) {
+        return Objects.requireNonNull(unit).toPlainString();
     }
 }

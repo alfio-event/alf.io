@@ -70,7 +70,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.model.PriceContainer.VatStatus.*;
-import static alfio.model.PriceContainer.VatStatus.INCLUDED_EXEMPT;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.unitToCents;
 
@@ -458,11 +457,12 @@ public class ReservationApiV2Controller {
                     bindingResult.rejectValue("vatNr", "error.vat");
                 } else {
                     var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
+                    var currencyCode = reservation.getCurrencyCode();
                     PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
                     var updatedPrice = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(vatStatus));// update VatStatus to the new value for calculating the new price
                     var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), updatedPrice, ticketReservationManager.findTicketsInReservation(reservationId), event);
                     ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
-                        unitToCents(calculator.getFinalPrice()), unitToCents(calculator.getVAT()), unitToCents(calculator.getAppliedDiscount()),
+                        unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode), unitToCents(calculator.getAppliedDiscount(), currencyCode),
                         reservation.getCurrencyCode(), StringUtils.trimToNull(vatValidation.getVatNr()),
                         country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
                     vatChecker.logSuccessfulValidation(vatValidation, reservationId, event.getId());

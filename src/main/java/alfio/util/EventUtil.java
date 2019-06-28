@@ -19,7 +19,6 @@ package alfio.util;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.system.Configuration;
 import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
@@ -36,6 +35,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -140,8 +140,8 @@ public class EventUtil {
             .addValue("srcPriceCts", srcPriceCts);
     }
 
-    public static int evaluatePrice(int price, boolean freeOfCharge) {
-        return freeOfCharge ? 0 : price;
+    public static int evaluatePrice(BigDecimal price, boolean freeOfCharge, String currencyCode) {
+        return freeOfCharge ? 0 : MonetaryUtil.unitToCents(Objects.requireNonNull(price), Objects.requireNonNull(currencyCode));
     }
 
     public static int determineAvailableSeats(TicketCategoryStatisticView tc, EventStatisticView e) {

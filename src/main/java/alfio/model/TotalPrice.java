@@ -26,16 +26,19 @@ public class TotalPrice {
     private final int VAT;
     private final int discount;
     private final int discountAppliedCount;
+    private final String currencyCode;
 
     @JsonCreator
     public TotalPrice(@JsonProperty("priceWithVAT") int priceWithVAT,
                       @JsonProperty("vat") int vat,
                       @JsonProperty("discount") int discount,
-                      @JsonProperty("discountAppliedCount") int discountAppliedCount) {
+                      @JsonProperty("discountAppliedCount") int discountAppliedCount,
+                      @JsonProperty("currencyCode") String currencyCode) {
         this.priceWithVAT = priceWithVAT;
         this.VAT = vat;
         this.discount = discount;
         this.discountAppliedCount = discountAppliedCount;
+        this.currencyCode = currencyCode;
     }
 
     public boolean requiresPayment() {

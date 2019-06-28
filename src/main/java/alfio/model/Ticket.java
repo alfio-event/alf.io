@@ -142,10 +142,10 @@ public class Ticket {
     }
 
     public String getFormattedFinalPrice() {
-        return MonetaryUtil.formatCents(finalPriceCts);
+        return MonetaryUtil.formatCents(finalPriceCts, currencyCode);
     }
 
     public String getFormattedNetPrice() {
-        return MonetaryUtil.formatCents(finalPriceCts - vatCts);
+        return MonetaryUtil.formatCents(finalPriceCts - vatCts, currencyCode);
     }
 }

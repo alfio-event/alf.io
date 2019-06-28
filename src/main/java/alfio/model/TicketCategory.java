@@ -89,8 +89,7 @@ public class TicketCategory {
     }
 
     public BigDecimal getPrice() {
-        //TODO: apply this conversion only for some currency. Not all are cent based.
-        return MonetaryUtil.centsToUnit(srcPriceCts);
+        return MonetaryUtil.centsToUnit(srcPriceCts, currencyCode);
     }
     
     public boolean getFree() {

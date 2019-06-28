@@ -40,7 +40,7 @@ public class ReservationPriceCalculator implements PriceContainer {
 
     @Override
     public BigDecimal getAppliedDiscount() {
-        return MonetaryUtil.centsToUnit(Math.abs(totalPrice.getDiscount()));
+        return MonetaryUtil.centsToUnit(Math.abs(totalPrice.getDiscount()), reservation.getCurrencyCode());
     }
 
     @Override

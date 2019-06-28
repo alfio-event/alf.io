@@ -36,7 +36,6 @@ import alfio.util.LocaleUtil;
 import alfio.util.MonetaryUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.paypal.api.payments.Currency;
 import com.paypal.api.payments.Transaction;
 import com.paypal.api.payments.*;
 import com.paypal.base.rest.APIContext;
@@ -272,10 +271,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
             }
             Capture c = Capture.get(apiContext, transactionId);
             String gatewayFee = Optional.ofNullable(c.getTransactionFee())
-                .map(Currency::getValue)
-                .map(BigDecimal::new)
-                .map(MonetaryUtil::unitToCents)
-                .map(String::valueOf)
+                .map(currency -> MonetaryUtil.formatUnit(new BigDecimal(currency.getValue())))
                 .orElse(null);
             return Optional.of(new PaymentInformation(c.getAmount().getTotal(), refund, gatewayFee, platformFeeSupplier.get()));
         } catch (PayPalRESTException ex) {
@@ -290,7 +286,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
             if(transaction.getPlatformFee() > 0) {
                 return String.valueOf(transaction.getPlatformFee());
             }
-            return FeeCalculator.getCalculator(event, configurationManager)
+            return FeeCalculator.getCalculator(event, configurationManager, transaction.getCurrency())
                     .apply(ticketRepository.countTicketsInReservation(transaction.getReservationId()), (long) transaction.getPriceInCents())
                     .map(String::valueOf)
                     .orElse("0");
@@ -304,11 +300,12 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         String captureId = transaction.getTransactionId();
         try {
             APIContext apiContext = getApiContext(event);
-            String amountOrFull = amount.map(MonetaryUtil::formatCents).orElse("full");
+            var transactionCurrency = transaction.getCurrency();
+            String amountOrFull = amount.map(a -> MonetaryUtil.formatCents(a, transactionCurrency)).orElse("full");
             log.info("Paypal: trying to do a refund for payment {} with amount: {}", captureId, amountOrFull);
             Capture capture = Capture.get(apiContext, captureId);
             com.paypal.api.payments.RefundRequest refundRequest = new com.paypal.api.payments.RefundRequest();
-            amount.ifPresent(a -> refundRequest.setAmount(new Amount(capture.getAmount().getCurrency(), formatCents(a))));
+            amount.ifPresent(a -> refundRequest.setAmount(new Amount(capture.getAmount().getCurrency(), formatCents(a, transactionCurrency))));
             DetailedRefund res = capture.refund(apiContext, refundRequest);
             log.info("Paypal: refund for payment {} executed with success for amount: {}", captureId, amountOrFull);
             return true;
@@ -371,7 +368,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
             Pair<String, String> captureAndPaymentId = commitPayment(spec.getReservationId(), gatewayToken, spec.getEvent());
             String captureId = captureAndPaymentId.getLeft();
             String paymentId = captureAndPaymentId.getRight();
-            Supplier<String> feeSupplier = () -> FeeCalculator.getCalculator(spec.getEvent(), configurationManager)
+            Supplier<String> feeSupplier = () -> FeeCalculator.getCalculator(spec.getEvent(), configurationManager, spec.getCurrencyCode())
                 .apply(ticketRepository.countTicketsInReservation(spec.getReservationId()), (long) spec.getPriceWithVAT())
                 .map(String::valueOf)
                 .orElse("0");

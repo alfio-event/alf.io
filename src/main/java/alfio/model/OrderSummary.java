@@ -84,7 +84,7 @@ public class OrderSummary {
         if(free) {
             return null;
         }
-        return MonetaryUtil.formatCents(originalTotalPrice.getPriceWithVAT() - originalTotalPrice.getVAT());
+        return MonetaryUtil.formatCents(originalTotalPrice.getPriceWithVAT() - originalTotalPrice.getVAT(), originalTotalPrice.getCurrencyCode());// FIXME can be null
     }
 
     public int getPriceInCents() {

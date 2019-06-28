@@ -22,12 +22,12 @@ import java.math.BigDecimal;
 
 import static org.junit.Assert.assertEquals;
 
-public class MonetaryUtilTest {
+class MonetaryUtilTest {
 
     private static final int price = 10000;
 
     @Test
-    public void addVAT() throws Exception {
+    void addVAT() {
         assertEquals(10750, MonetaryUtil.addVAT(price, new BigDecimal("7.50")));
         assertEquals(10800, MonetaryUtil.addVAT(price, new BigDecimal("8.00")));
         assertEquals(8000, MonetaryUtil.addVAT(7407, new BigDecimal("8.00")));
@@ -39,18 +39,26 @@ public class MonetaryUtilTest {
     }
 
     @Test
-    public void centsToUnit() throws Exception {
-        assertEquals(new BigDecimal("100.00"), MonetaryUtil.centsToUnit(10000));
-        assertEquals(new BigDecimal("100.01"), MonetaryUtil.centsToUnit(10001));
-        assertEquals(new BigDecimal("100.99"), MonetaryUtil.centsToUnit(10099));
-        assertEquals(new BigDecimal("97.50"), MonetaryUtil.centsToUnit(9750));
+    void centsToUnit() {
+        assertEquals(new BigDecimal("100.00"), MonetaryUtil.centsToUnit(10000, "CHF"));
+        assertEquals(new BigDecimal("100.01"), MonetaryUtil.centsToUnit(10001, "CHF"));
+        assertEquals(new BigDecimal("100.99"), MonetaryUtil.centsToUnit(10099, "CHF"));
+        assertEquals(new BigDecimal("97.50"), MonetaryUtil.centsToUnit(9750, "CHF"));
+
+        assertEquals(new BigDecimal("101"), MonetaryUtil.centsToUnit(101, "JPY"));
+        assertEquals(new BigDecimal("101.000"), MonetaryUtil.centsToUnit(101000, "BHD"));
     }
 
     @Test
-    public void unitToCents() throws Exception {
-        assertEquals(10000, MonetaryUtil.unitToCents(new BigDecimal("100.00")));
-        assertEquals(10001, MonetaryUtil.unitToCents(new BigDecimal("100.01")));
-        assertEquals(10099, MonetaryUtil.unitToCents(new BigDecimal("100.99")));
-        assertEquals(10100, MonetaryUtil.unitToCents(new BigDecimal("100.999")));
+    void unitToCents() {
+        assertEquals(10000, MonetaryUtil.unitToCents(new BigDecimal("100.00"), "CHF"));
+        assertEquals(10001, MonetaryUtil.unitToCents(new BigDecimal("100.01"), "CHF"));
+        assertEquals(10099, MonetaryUtil.unitToCents(new BigDecimal("100.99"), "CHF"));
+        assertEquals(10100, MonetaryUtil.unitToCents(new BigDecimal("100.999"), "CHF"));
+
+        assertEquals(101, MonetaryUtil.unitToCents(new BigDecimal("101"), "JPY"));
+        assertEquals(101000, MonetaryUtil.unitToCents(new BigDecimal("101.000"), "BHD"));
+
+
     }
 }

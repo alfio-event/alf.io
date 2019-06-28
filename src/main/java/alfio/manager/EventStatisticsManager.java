@@ -92,7 +92,7 @@ public class EventStatisticsManager {
         boolean owner = userManager.isOwner(userManager.findUserByUsername(username));
         EventStatisticView statistics = owner ? eventRepository.findStatisticsFor(event.getId()) : EventStatisticView.empty(event.getId());
         EventStatistic eventStatistic = new EventStatistic(event, statistics, displayStatisticsForEvent(event));
-        BigDecimal grossIncome = owner ? MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(event.getId())) : BigDecimal.ZERO;
+        BigDecimal grossIncome = owner ? MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(event.getId()), event.getCurrency()) : BigDecimal.ZERO;
 
         List<TicketCategory> ticketCategories = loadTicketCategories(event);
         List<Integer> ticketCategoriesIds = ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList());

@@ -270,7 +270,7 @@ public enum TemplateResource {
         TicketReservation reservation = sampleTicketReservation();
         Optional<String> vat = Optional.of("VAT-NR");
         List<TicketWithCategory> tickets = Collections.singletonList(new TicketWithCategory(sampleTicket(), sampleCategory()));
-        OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0),
+        OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0, "CHF"),
             Collections.singletonList(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, "8", PriceContainer.VatStatus.INCLUDED, "1.00");
         String reservationUrl = "http://your-domain.tld/reservation-url/";
         String reservationShortId = "597e7e7b";
@@ -459,7 +459,7 @@ public enum TemplateResource {
             .map(asi -> {
                 Map<String, Object> data = new HashMap<>();
                 data.put("name", titleFinder.apply(asi).map(AdditionalServiceText::getValue).orElse("N/A"));
-                data.put("amount", MonetaryUtil.centsToUnit(asi.getFinalPriceCts()).toString() + event.getCurrency());
+                data.put("amount", MonetaryUtil.centsToUnit(asi.getFinalPriceCts(), asi.getCurrencyCode()).toString() + event.getCurrency());
                 data.put("id", asi.getId());
                 return data;
             }).collect(Collectors.toList()));

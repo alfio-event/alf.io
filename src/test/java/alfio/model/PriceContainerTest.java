@@ -112,9 +112,9 @@ public class PriceContainerTest {
                 PriceContainer priceContainer = p.getRight();
                 BigDecimal finalPrice = priceContainer.getFinalPrice();
                 Integer price = p.getLeft();
-                BigDecimal netPrice = MonetaryUtil.centsToUnit(price);
+                BigDecimal netPrice = MonetaryUtil.centsToUnit(price, "CHF");
                 BigDecimal vatAmount = finalPrice.subtract(netPrice);
-                int result = MonetaryUtil.unitToCents(vatAmount.subtract(MonetaryUtil.calcVat(netPrice, priceContainer.getVatPercentageOrZero())).abs());
+                int result = MonetaryUtil.unitToCents(vatAmount.subtract(MonetaryUtil.calcVat(netPrice, priceContainer.getVatPercentageOrZero())).abs(), "CHF");
                 if(result >= 2) {
                     BigDecimal calcVatPerc = vatAmount.divide(finalPrice, 5, RoundingMode.HALF_UP).multiply(new BigDecimal("100.00")).setScale(2, RoundingMode.HALF_UP);
                     fail(String.format("Expected percentage: %s, got %s, vat %s v. %s", calcVatPerc, priceContainer.getOptionalVatPercentage(), vatAmount, MonetaryUtil.calcVat(netPrice, priceContainer.getVatPercentageOrZero())));

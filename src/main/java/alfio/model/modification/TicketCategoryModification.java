@@ -16,16 +16,12 @@
  */
 package alfio.model.modification;
 
-import alfio.model.TicketCategory;
-import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.ZoneId;
 import java.util.Map;
-import java.util.Optional;
 
 @Getter
 public class TicketCategoryModification {
@@ -81,22 +77,4 @@ public class TicketCategoryModification {
         this.ticketValidityEnd = ticketValidityEnd;
     }
 
-    public int getPriceInCents() {
-        return Optional.ofNullable(price).map(MonetaryUtil::unitToCents).orElse(0);
-    }
-
-    public static TicketCategoryModification fromTicketCategory(TicketCategory tc, Map<String, String> ticketCategoryDescriptions, ZoneId zoneId) {
-        return new TicketCategoryModification(tc.getId(),
-                tc.getName(),
-                tc.getMaxTickets(),
-                DateTimeModification.fromZonedDateTime(tc.getInception(zoneId)),
-                DateTimeModification.fromZonedDateTime(tc.getExpiration(zoneId)),
-                ticketCategoryDescriptions,
-                tc.getPrice(),
-                tc.isAccessRestricted(), "", tc.isBounded(), tc.getCode(),
-                DateTimeModification.fromZonedDateTime(tc.getValidCheckInFrom(zoneId)),
-                DateTimeModification.fromZonedDateTime(tc.getValidCheckInTo(zoneId)),
-                DateTimeModification.fromZonedDateTime(tc.getTicketValidityStart()),
-                DateTimeModification.fromZonedDateTime(tc.getTicketValidityEnd()));
-    }
 }

@@ -55,7 +55,7 @@ public class TicketPriceContainer implements SummaryPriceContainer {
 
     public int getSummarySrcPriceCts() {
         if(VatStatus.isVatExempt(getVatStatus())) {
-            return unitToCents(getFinalPrice());
+            return unitToCents(getFinalPrice(), getCurrencyCode());
         }
         return getSrcPriceCts();
     }

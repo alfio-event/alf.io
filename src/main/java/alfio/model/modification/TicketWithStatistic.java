@@ -93,17 +93,17 @@ public class TicketWithStatistic implements Comparable<TicketWithStatistic>, Pri
 
     @Override
     public BigDecimal getAppliedDiscount() {
-        return MonetaryUtil.centsToUnit(ticket.getDiscountCts());
+        return MonetaryUtil.centsToUnit(ticket.getDiscountCts(), ticket.getCurrencyCode());
     }
 
     @Override
     public BigDecimal getFinalPrice() {
-        return MonetaryUtil.centsToUnit(ticket.getFinalPriceCts());
+        return MonetaryUtil.centsToUnit(ticket.getFinalPriceCts(), ticket.getCurrencyCode());
     }
 
     @Override
     public BigDecimal getVAT() {
-        return MonetaryUtil.centsToUnit(ticket.getVatCts());
+        return MonetaryUtil.centsToUnit(ticket.getVatCts(), ticket.getCurrencyCode());
     }
 
     @Override
