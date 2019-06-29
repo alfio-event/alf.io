@@ -31,7 +31,6 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.i18n.MustacheLocalizationMessageInterceptor;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -131,7 +130,7 @@ public class TemplateManager {
             mv.addObject("format-date", MustacheCustomTag.FORMAT_DATE);
             mv.addObject("country-name", COUNTRY_NAME);
             mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get("additional-fields")));
-            mv.addObject(MustacheLocalizationMessageInterceptor.DEFAULT_MODEL_KEY, new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
+            mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
             return compile(resource, templateOutput).execute(mv.getModel());
         } catch (Exception e) {
             throw new IllegalStateException(e);
