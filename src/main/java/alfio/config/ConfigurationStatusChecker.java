@@ -77,9 +77,9 @@ public class ConfigurationStatusChecker implements ApplicationListener<ContextRe
 
             configurationManager.saveSystemConfiguration(INIT_COMPLETED, "true");
 
-            ofNullable(System.getProperty("maps.clientApiKey")).ifPresent((clientApiKey) -> configurationManager.saveSystemConfiguration(MAPS_CLIENT_API_KEY, clientApiKey));
-            ofNullable(System.getProperty("recaptcha.apiKey")).ifPresent((clientApiKey) -> configurationManager.saveSystemConfiguration(RECAPTCHA_API_KEY, clientApiKey));
-            ofNullable(System.getProperty("recaptcha.secret")).ifPresent((clientApiKey) -> configurationManager.saveSystemConfiguration(RECAPTCHA_SECRET, clientApiKey));
+            ofNullable(System.getProperty("maps.clientApiKey")).ifPresent(clientApiKey -> configurationManager.saveSystemConfiguration(MAPS_CLIENT_API_KEY, clientApiKey));
+            ofNullable(System.getProperty("recaptcha.apiKey")).ifPresent(clientApiKey -> configurationManager.saveSystemConfiguration(RECAPTCHA_API_KEY, clientApiKey));
+            ofNullable(System.getProperty("recaptcha.secret")).ifPresent(clientApiKey -> configurationManager.saveSystemConfiguration(RECAPTCHA_SECRET, clientApiKey));
 
         }
         log.info("performing migration from previous version, if any");

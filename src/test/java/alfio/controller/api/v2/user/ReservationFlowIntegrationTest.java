@@ -400,7 +400,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(1, items.getAdditionalServices().size());
             var additionalItem = items.getAdditionalServices().get(0);
             assertEquals("40.00", additionalItem.getFormattedFinalPrice());
-            assertEquals(new BigDecimal("1.00"), additionalItem.getVatPercentage());
+            assertEquals("1.00", additionalItem.getVatPercentage());
             assertEquals(1, additionalItem.getTitle().size()); //TODO: check: if there are missing lang, we should at least copy them (?)
             assertEquals(1, additionalItem.getDescription().size());
             assertEquals("additional title", additionalItem.getTitle().get("en"));

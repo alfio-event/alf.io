@@ -346,7 +346,7 @@ public class EventApiV2Controller {
                 var description = applyCommonMark(additionalServiceTexts.getOrDefault(as.getId(), Collections.emptyMap()).getOrDefault(AdditionalServiceText.TextType.DESCRIPTION, Collections.emptyMap()));
                 return new AdditionalService(as.getId(), as.getType(), as.getSupplementPolicy(),
                     as.isFixPrice(), as.getAvailableQuantity(), as.getMaxQtyPerOrder(),
-                    as.getFree(), as.getFormattedFinalPrice(), as.getSupportsDiscount(), as.getDiscountedPrice(), as.getVatApplies(), as.getVatIncluded(), as.getVatPercentage(),
+                    as.getFree(), as.getFormattedFinalPrice(), as.getSupportsDiscount(), as.getDiscountedPrice(), as.getVatApplies(), as.getVatIncluded(), as.getVatPercentage().toString(),
                     as.isExpired(), as.getSaleInFuture(),
                     inception, expiration, title, description);
             }).collect(Collectors.toList());
@@ -472,7 +472,7 @@ public class EventApiV2Controller {
                                                      Event event,
                                                      Locale locale,
                                                      Optional<String> promoCodeDiscount) {
-        return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event).flatMap(selected -> {
+        return reservation.validate(bindingResult, ticketReservationManager, eventManager, event).flatMap(selected -> {
             Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
             try {
                 String reservationId = ticketReservationManager.createTicketReservation(event,
@@ -494,7 +494,7 @@ public class EventApiV2Controller {
         });
     }
 
-    @GetMapping(value = "event/{eventName}/validate-code")
+    @GetMapping("event/{eventName}/validate-code")
     public ResponseEntity<ValidatedResponse<EventCode>> validateCode(@PathVariable("eventName") String eventName,
                                                                      @RequestParam("code") String code) {
 

@@ -27,7 +27,6 @@ import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
-import alfio.repository.AdditionalServiceRepository;
 import alfio.util.ErrorsCode;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -77,7 +76,6 @@ public class ReservationForm implements Serializable {
 
     public Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validate(Errors bindingResult,
                                                                                                                                          TicketReservationManager tickReservationManager,
-                                                                                                                                         AdditionalServiceRepository additionalServiceRepository,
                                                                                                                                          EventManager eventManager,
                                                                                                                                          Event event) {
         int selectionCount = ticketSelectionCount();

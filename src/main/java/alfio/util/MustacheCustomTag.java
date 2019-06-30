@@ -57,7 +57,7 @@ public class MustacheCustomTag {
 
     static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
         String execution = frag.execute().trim();
-        ZonedDateTime d = ZonedDateTime.parse(substring(execution, 0, execution.indexOf(" ")));
+        ZonedDateTime d = ZonedDateTime.parse(substring(execution, 0, execution.indexOf(' ')));
         Pair<String, Optional<Locale>> p = parseParams(execution);
         if (p.getRight().isPresent()) {
             out.write(DateTimeFormatter.ofPattern(p.getLeft(), p.getRight().get()).format(d));
@@ -114,7 +114,7 @@ public class MustacheCustomTag {
 
         int indexLocale = r.indexOf(LOCALE_LABEL), end = Math.min(r.length(),
                 indexLocale != -1 ? indexLocale : r.length());
-        String format = substring(r, r.indexOf(" "), end);
+        String format = substring(r, r.indexOf(' '), end);
 
         //
         String[] res = r.split("\\s+");

@@ -21,7 +21,6 @@ import alfio.manager.FileUploadManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
 import alfio.model.user.Organization;
-import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import ch.digitalfondue.jfiveparse.Parser;
@@ -38,7 +37,6 @@ import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.core.io.ClassPathResource;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;

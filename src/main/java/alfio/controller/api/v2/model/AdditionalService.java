@@ -19,7 +19,6 @@ package alfio.controller.api.v2.model;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.math.BigDecimal;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -42,7 +41,7 @@ public class AdditionalService {
     private final String formattedDiscountedPrice;
     private final boolean vatApplies;
     private final boolean vatIncluded;
-    private final BigDecimal vatPercentage;
+    private final String vatPercentage;
     //
 
 

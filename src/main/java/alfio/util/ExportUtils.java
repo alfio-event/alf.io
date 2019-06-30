@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 
 public class ExportUtils {
 
-    public static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
+    private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
 
     public static void exportExcel(String fileName, String sheetName, String[] header, Stream<String[]> data, HttpServletResponse response) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

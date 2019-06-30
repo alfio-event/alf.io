@@ -36,13 +36,13 @@ public class WebhookApiController {
     //private final TicketReservationManager ticketReservationManager;
     private final StripeCreditCardManager stripeCreditCardManager;
 
-    @RequestMapping(value = "/mollie/event/{eventName}/reservation/{reservationId}", method = RequestMethod.POST)
+    @PostMapping("/mollie/event/{eventName}/reservation/{reservationId}")
     public void handleMollie(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
         // mollieManager.handleWebhook(eventName, reservationId, null);
         // call ticketReservationManager.performPayment... if handlewebhoook return status paid
     }
 
-    @RequestMapping(value = "/stripe/notification", method = RequestMethod.POST)
+    @PostMapping("/stripe/notification")
     public ResponseEntity<Boolean> handleStripeMessage(@RequestHeader(value = "Stripe-Signature", required = false) String stripeSignature, HttpServletRequest request) {
         return RequestUtils.readRequest(request)
             .flatMap(b -> stripeCreditCardManager.processWebhookEvent(b, stripeSignature))

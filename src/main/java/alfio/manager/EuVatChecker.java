@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EventType.*;
@@ -101,8 +101,8 @@ public class EuVatChecker {
                 return Optional.empty();
             }
 
-            Supplier<Boolean> applyVatToForeignBusiness = () -> configurationManager.getFor(eventAndOrganizationId, APPLY_VAT_FOREIGN_BUSINESS).getValueAsBooleanOrDefault(true);
-            boolean vatExempt = !organizerCountry.equals(countryCode) && (euCountryCode || !applyVatToForeignBusiness.get());
+            BooleanSupplier applyVatToForeignBusiness = () -> configurationManager.getFor(eventAndOrganizationId, APPLY_VAT_FOREIGN_BUSINESS).getValueAsBooleanOrDefault(true);
+            boolean vatExempt = !organizerCountry.equals(countryCode) && (euCountryCode || !applyVatToForeignBusiness.getAsBoolean());
             return Optional.of(new VatDetail(vatNr, countryCode, true, "", "", euCountryCode ? VatDetail.Type.SKIPPED : VatDetail.Type.EXTRA_EU, vatExempt));
 
         };

@@ -48,14 +48,14 @@ public class LocationApiController {
         return e.getMessage();
     }
 
-    @RequestMapping("/location/timezones")
+    @GetMapping("/location/timezones")
     public List<String> getTimezones() {
         List<String> s = new ArrayList<>(ZoneId.getAvailableZoneIds());
         s.sort(String::compareTo);
         return s;
     }
 
-    @RequestMapping("/location/timezone")
+    @GetMapping("/location/timezone")
     public String getTimezone(@RequestParam("lat") double lat, @RequestParam("lng") double lng) {
         String tzId = TimezoneMapper.tzNameAt(lat, lng);
         return getTimezones().contains(tzId) ? tzId : null;
@@ -63,7 +63,7 @@ public class LocationApiController {
 
 
 
-    @RequestMapping("/location/static-map-image")
+    @GetMapping("/location/static-map-image")
     public String getMapImage(
         @RequestParam(name = "lat", required = false) String lat,
         @RequestParam(name = "lng", required = false) String lng) {
@@ -79,11 +79,11 @@ public class LocationApiController {
         return res;
     }
 
-    @RequestMapping("/location/map-provider-client-api-key")
+    @GetMapping("/location/map-provider-client-api-key")
     public ProviderAndKeys getGeoInfoProviderAndKeys() {
         Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf();
         ConfigurationKeys.GeoInfoProvider provider = LocationDescriptor.getProvider(geoInfoConfiguration);
-        Map<ConfigurationKeys, String> apiKeys = new HashMap<>();
+        Map<ConfigurationKeys, String> apiKeys = new EnumMap<>(ConfigurationKeys.class);
         geoInfoConfiguration.forEach((k,v) -> v.ifPresent(value -> apiKeys.put(k, value)));
         return new ProviderAndKeys(provider, apiKeys);
     }

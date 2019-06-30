@@ -91,11 +91,11 @@ public class MvcConfiguration implements WebMvcConfigurer {
                 //
                 String reportUri = "";
                 boolean enabledReport = Boolean.parseBoolean(configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED,
-                    (k) -> configurationManager.getFor(k).getValueOrDefault("false")
+                    k -> configurationManager.getFor(k).getValueOrDefault("false")
                 ));
                 if (enabledReport) {
                     reportUri = " report-uri " + configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI,
-                        (k) -> configurationManager.getFor(k).getValueOrDefault("/report-csp-violation")
+                        k -> configurationManager.getFor(k).getValueOrDefault("/report-csp-violation")
                     );
                 }
                 //
