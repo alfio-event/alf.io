@@ -41,7 +41,7 @@
                                 <a ng-if="event" data-ui-sref="events.single.view-reservation({eventName:eventName, reservationId: pending.ticketReservation.id})" target="_blank">{{pending.publicId}}</a>
                             </td>
                             <td>{{pending.ticketReservation.validity | formatDate}}</td>
-                            <td><span ng-if="pending.transaction">{{pending.transaction.priceInCents / 100 | currency:pending.transaction.currency}}</span></td>
+                            <td><span ng-if="pending.transaction">{{pending.transaction.formattedAmount | money:pending.transaction.currency}}</span></td>
                             <td>{{pending.ticketReservation.fullName}}</td>
                             <td>{{pending.ticketReservation.email}}</td>
                             <td>{{pending.ticketsCount}}</td>

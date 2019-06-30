@@ -55,9 +55,9 @@
                         <dt data-ng-class="{'text-warning': !ticket.fullName}">Assignee</dt>
                         <dd>{{::ticket.fullName}} <span data-ng-if="ticket.email">&lt;{{::ticket.email}}&gt;</span></dd>
                         <dt data-ng-if="ticket.appliedDiscount > 0">Discount</dt>
-                        <dd data-ng-if="ticket.appliedDiscount > 0"><samp>- {{::ticket.appliedDiscount | currency:ticket.currencyCode}}</samp></dd>
+                        <dd data-ng-if="ticket.appliedDiscount > 0"><samp>- {{::ticket.appliedDiscount | money:ticket.currencyCode}}</samp></dd>
                         <dt data-ng-if="ticket.paid">Payment</dt>
-                        <dd data-ng-if="ticket.paid"><samp>{{::ticket.finalPrice | currency:ticket.currencyCode}}</samp> ({{::ticket.ticketReservation.paymentMethod}}) on {{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</dd>
+                        <dd data-ng-if="ticket.paid"><samp>{{::ticket.finalPrice | money:ticket.currencyCode}}</samp> ({{::ticket.ticketReservation.paymentMethod}}) on {{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</dd>
                         <dt data-ng-if="ticket.paid">Transaction info</dt>
                         <dd data-ng-if="ticket.paid"><samp>{{::ticket.transaction.transactionId}}</samp> on {{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</dd>
                     </dl>

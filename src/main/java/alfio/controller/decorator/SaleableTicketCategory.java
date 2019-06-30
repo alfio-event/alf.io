@@ -20,6 +20,7 @@ import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.TicketCategory;
+import alfio.util.MonetaryUtil;
 import lombok.experimental.Delegate;
 
 import java.math.BigDecimal;
@@ -110,7 +111,7 @@ public class SaleableTicketCategory implements PriceContainer {
     }
 
     public String getFormattedFinalPrice() {
-        return getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()).toString();
+        return MonetaryUtil.formatUnit(getFinalPriceToDisplay(getFinalPrice().add(getAppliedDiscount()), getVAT(), getVatStatus()), getCurrencyCode());
     }
 
     public int getMaxTicketsAfterConfiguration() {
@@ -122,7 +123,7 @@ public class SaleableTicketCategory implements PriceContainer {
     }
 
     public String getDiscountedPrice() {
-        return getFinalPriceToDisplay(getFinalPrice(), getVAT(), getVatStatus()).toString();
+        return MonetaryUtil.formatUnit(getFinalPriceToDisplay(getFinalPrice(), getVAT(), getVatStatus()), getCurrencyCode());
     }
 
     public boolean getSupportsDiscount() {

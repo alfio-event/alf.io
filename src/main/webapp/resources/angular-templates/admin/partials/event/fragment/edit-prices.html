@@ -50,7 +50,7 @@
                             <span class="input-group-addon">
                                 <input type="checkbox" data-ng-model="obj.vatIncluded" name="vatIncluded" id="vatIncluded">
                             </span>
-                    <span class="form-control text-muted">Price VAT included: {{calculateTotalPrice(obj) | currency : (obj.currency || "")}}</span>
+                    <span class="form-control text-muted">Price VAT included: {{calculateTotalPrice(obj) | money : (obj.currency || "")}}</span>
                 </div>
             </div>
         </div>

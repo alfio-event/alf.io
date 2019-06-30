@@ -88,7 +88,8 @@ public final class MonetaryUtil {
         return centsToUnit(cents, currencyCode).toPlainString();
     }
 
-    public static String formatUnit(BigDecimal unit) {
-        return Objects.requireNonNull(unit).toPlainString();
+    public static String formatUnit(BigDecimal unit, String currencyCode) {
+        var currencyUnit = CurrencyUnit.of(Objects.requireNonNull(currencyCode));
+        return Objects.requireNonNull(unit).setScale(currencyUnit.getDecimalPlaces(), HALF_UP).toPlainString();
     }
 }

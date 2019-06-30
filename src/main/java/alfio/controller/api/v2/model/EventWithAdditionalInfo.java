@@ -16,12 +16,14 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.model.Event;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.joda.money.CurrencyUnit;
 
 import java.util.List;
 import java.util.Map;
@@ -79,6 +81,14 @@ public class EventWithAdditionalInfo implements DateValidity {
 
     public String getWebsiteUrl() {
         return event.getWebsiteUrl();
+    }
+
+    public CurrencyDescriptor getCurrencyDescriptor() {
+        if(event.isFreeOfCharge()) {
+            return null;
+        }
+        var currencyUnit = CurrencyUnit.of(event.getCurrency());
+        return new CurrencyDescriptor(currencyUnit.getCode(), currencyUnit.toCurrency().getDisplayName(), currencyUnit.getSymbol(), currencyUnit.getDecimalPlaces());
     }
 
     public List<Language> getContentLanguages() {

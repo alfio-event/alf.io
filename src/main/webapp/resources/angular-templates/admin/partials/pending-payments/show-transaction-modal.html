@@ -8,7 +8,7 @@
         <dt>Transaction timestamp</dt>
         <dd ng-bind="$ctrl.paymentInfo.transaction.timestamp | formatDate"></dd>
         <dt>Paid amount</dt>
-        <dd>{{$ctrl.paymentInfo.transaction.priceInCents / 100 | currency:$ctrl.paymentInfo.transaction.currency}}</dd>
+        <dd>{{$ctrl.paymentInfo.transaction.priceInCents / 100 | money:$ctrl.paymentInfo.transaction.currency}}</dd>
     </dl>
 </div>
 <div class="modal-footer">

@@ -138,6 +138,12 @@
         return function(o) {
             return Object.keys(o);
         }
+    });
+
+    filters.filter('money', function() {
+        return function(amount, currency, hideCurrency) {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency, currencyDisplay: 'code' }).format(amount);
+        }
     })
 
 })();

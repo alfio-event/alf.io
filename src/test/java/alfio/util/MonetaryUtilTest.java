@@ -58,7 +58,19 @@ class MonetaryUtilTest {
 
         assertEquals(101, MonetaryUtil.unitToCents(new BigDecimal("101"), "JPY"));
         assertEquals(101000, MonetaryUtil.unitToCents(new BigDecimal("101.000"), "BHD"));
+    }
 
+    @Test
+    void formatCents() {
+        assertEquals("1000", MonetaryUtil.formatCents(1000, "JPY"));
+        assertEquals("10.00", MonetaryUtil.formatCents(1000, "EUR"));
+        assertEquals("1.000", MonetaryUtil.formatCents(1000, "BHD"));
+    }
 
+    @Test
+    void formatUnit() {
+        assertEquals("1000.00", MonetaryUtil.formatUnit(new BigDecimal("1000.00"), "CHF"));
+        assertEquals("1000", MonetaryUtil.formatUnit(new BigDecimal("1000.00"), "JPY"));
+        assertEquals("1000.000", MonetaryUtil.formatUnit(new BigDecimal("1000.000"), "BHD"));
     }
 }

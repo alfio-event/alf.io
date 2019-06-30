@@ -271,7 +271,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
             }
             Capture c = Capture.get(apiContext, transactionId);
             String gatewayFee = Optional.ofNullable(c.getTransactionFee())
-                .map(currency -> MonetaryUtil.formatUnit(new BigDecimal(currency.getValue())))
+                .map(currency -> MonetaryUtil.formatUnit(new BigDecimal(currency.getValue()), currency.getCurrency()))
                 .orElse(null);
             return Optional.of(new PaymentInformation(c.getAmount().getTotal(), refund, gatewayFee, platformFeeSupplier.get()));
         } catch (PayPalRESTException ex) {
