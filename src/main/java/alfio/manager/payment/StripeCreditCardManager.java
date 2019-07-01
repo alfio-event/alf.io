@@ -129,6 +129,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
                         Optional.ofNullable( BaseStripeManager.getFeeAmount(feeDetails, "stripe_fee")).map(Long::parseLong).orElse(0L));
                 }).orElse(null);
 
+                PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
                 transactionRepository.insert(charge.getId(), null, spec.getReservationId(),
                     ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
                     fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE, Map.of());

@@ -21,7 +21,6 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.*;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.ExternalProcessing;
@@ -78,10 +77,13 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
     private final TransactionRepository transactionRepository;
 
     private APIContext getApiContext(EventAndOrganizationId event) {
-        int orgId = event.getOrganizationId();
-        boolean isLive = configurationManager.getBooleanConfigValue(Configuration.from(orgId, ConfigurationKeys.PAYPAL_LIVE_MODE), false);
-        String clientId = configurationManager.getRequiredValue(Configuration.from(orgId, ConfigurationKeys.PAYPAL_CLIENT_ID));
-        String clientSecret = configurationManager.getRequiredValue(Configuration.from(orgId, ConfigurationKeys.PAYPAL_CLIENT_SECRET));
+
+        var paypalConf = configurationManager.getFor(event,
+            Set.of(ConfigurationKeys.PAYPAL_LIVE_MODE, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET));
+
+        boolean isLive = paypalConf.get(ConfigurationKeys.PAYPAL_LIVE_MODE).getValueAsBooleanOrDefault(false);
+        String clientId = paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_ID).getRequiredValue();
+        String clientSecret = paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_SECRET).getRequiredValue();
         return new APIContext(clientId, clientSecret, isLive ? "live" : "sandbox");
     }
 
@@ -380,7 +382,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
                 Long gatewayFee = Optional.ofNullable(i.getFee()).map(Long::parseLong).orElse(0L);
                 return Pair.of(platformFee, gatewayFee);
             }).orElseGet(() -> Pair.of(0L, 0L));
-            transactionRepository.invalidateForReservation(spec.getReservationId());
+            PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
             transactionRepository.insert(captureId, paymentId, spec.getReservationId(),
                 ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
                 fees.getLeft(), fees.getRight(), alfio.model.transaction.Transaction.Status.COMPLETE, Map.of());
