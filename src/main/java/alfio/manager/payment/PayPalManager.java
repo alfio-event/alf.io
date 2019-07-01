@@ -23,7 +23,6 @@ import alfio.model.Event;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
-import alfio.model.transaction.capabilities.ExternalProcessing;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.model.transaction.token.PayPalToken;
@@ -31,7 +30,6 @@ import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.util.ErrorsCode;
-import alfio.util.LocaleUtil;
 import alfio.util.MonetaryUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -58,7 +56,6 @@ import java.security.MessageDigest;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static alfio.model.system.ConfigurationKeys.PAYPAL_ENABLED;
@@ -67,7 +64,7 @@ import static alfio.util.MonetaryUtil.formatCents;
 @Component
 @Log4j2
 @AllArgsConstructor
-public class PayPalManager implements PaymentProvider, ExternalProcessing, RefundRequest, PaymentInfo {
+public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInfo {
 
     private final ConfigurationManager configurationManager;
     private final MessageSource messageSource;
@@ -212,10 +209,6 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         }
     }
 
-    private boolean hasTokens(Map<String, List<String>> params) {
-        return params.containsKey("payerId") && params.containsKey("paypalPaymentId");
-    }
-
     private Pair<String, String> commitPayment(String reservationId, PayPalToken payPalToken, EventAndOrganizationId event) throws PayPalRESTException {
 
         Payment payment = new Payment().setId(payPalToken.getPaymentId());
@@ -322,32 +315,14 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
+
+        var paypalConf = configurationManager.getFor(context.getEvent(),
+            Set.of(PAYPAL_ENABLED, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET));
+
         return paymentMethod == PaymentMethod.PAYPAL &&
-            configurationManager.getBooleanConfigValue(context.narrow(PAYPAL_ENABLED), false )
-            && configurationManager.getStringConfigValue(context.narrow(ConfigurationKeys.PAYPAL_CLIENT_ID)).isPresent()
-            && configurationManager.getStringConfigValue(context.narrow(ConfigurationKeys.PAYPAL_CLIENT_SECRET)).isPresent();
-    }
-
-    @Override
-    public Function<Map<String, List<String>>, PaymentSpecification> getSpecificationFromRequest(Event event,
-                                                                                                 TicketReservation reservation,
-                                                                                                 TotalPrice reservationCost,
-                                                                                                 OrderSummary orderSummary) {
-        return map -> {
-            if(hasTokens(map) && hasExactlyOneElementFor(map, "paypalPaymentId", "payerId", "hmac")) {
-                PayPalToken token = new PayPalToken(map.get("payerId").get(0), map.get("paypalPaymentId").get(0), map.get("hmac").get(0));
-                return new PaymentSpecification(reservation.getId(), token, reservationCost.getPriceWithVAT(),
-                    event, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event.mustUseFirstAndLastName()),
-                    reservation.getBillingAddress(), reservation.getCustomerReference(), LocaleUtil.forLanguageTag(reservation.getUserLanguage()),
-                    reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
-                    reservation.getVatNr(), reservation.getVatStatus(), map.containsKey("termAndConditionsAccepted"), map.containsKey("privacyPolicyAccepted"));
-            }
-            return null;
-        };
-    }
-
-    private static boolean hasExactlyOneElementFor(Map<String, List<String>> map, String... keys) {
-        return Arrays.stream(keys).allMatch(k -> map.containsKey(k) && map.getOrDefault(k, Collections.emptyList()).size() == 1);
+            paypalConf.get(PAYPAL_ENABLED).getValueAsBooleanOrDefault(false)
+            && paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_ID).isPresent()
+            && paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_SECRET).isPresent();
     }
 
     @Override
