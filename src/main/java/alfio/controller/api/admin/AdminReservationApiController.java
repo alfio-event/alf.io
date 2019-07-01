@@ -19,7 +19,6 @@ package alfio.controller.api.admin;
 import alfio.controller.api.support.PageAndContent;
 import alfio.manager.AdminReservationManager;
 import alfio.manager.EventManager;
-import alfio.manager.FileUploadManager;
 import alfio.manager.TicketReservationManager;
 import alfio.model.*;
 import alfio.model.modification.AdminReservationModification;
@@ -52,20 +51,19 @@ public class AdminReservationApiController {
     private final AdminReservationManager adminReservationManager;
     private final EventManager eventManager;
     private final TicketReservationManager ticketReservationManager;
-    private final FileUploadManager fileUploadManager;
 
-    @RequestMapping(value = "/event/{eventName}/new", method = RequestMethod.POST)
+    @PostMapping("/event/{eventName}/new")
     public Result<String> createNew(@PathVariable("eventName") String eventName, @RequestBody AdminReservationModification reservation, Principal principal) {
         return adminReservationManager.createReservation(reservation, eventName, principal.getName()).map(r -> r.getLeft().getId());
     }
 
 
-    @RequestMapping(value = "/event/{eventName}/reservations/all-status", method = RequestMethod.GET)
+    @GetMapping("/event/{eventName}/reservations/all-status")
     public TicketReservation.TicketReservationStatus[] getAllStatus(@PathVariable("eventName") String eventName) {
         return TicketReservation.TicketReservationStatus.values();
     }
 
-    @RequestMapping(value = "/event/{eventName}/reservations/list", method = RequestMethod.GET)
+    @GetMapping("/event/{eventName}/reservations/list")
     public PageAndContent<List<TicketReservation>> findAll(@PathVariable("eventName") String eventName,
                                                           @RequestParam(value = "page", required = false) Integer page,
                                                           @RequestParam(value = "search", required = false) String search,
@@ -78,19 +76,19 @@ public class AdminReservationApiController {
             }).orElseGet(() -> new PageAndContent<>(Collections.emptyList(), 0));
     }
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}/confirm", method = RequestMethod.PUT)
+    @PutMapping("/event/{eventName}/{reservationId}/confirm")
     public Result<TicketReservationDescriptor> confirmReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.confirmReservation(eventName, reservationId, principal.getName(), AdminReservationModification.Notification.EMPTY)
             .map(triple -> toReservationDescriptor(reservationId, triple));
     }
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}", method = RequestMethod.POST)
+    @PostMapping("/event/{eventName}/{reservationId}")
     public Result<Boolean> updateReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
                                              @RequestBody AdminReservationModification arm, Principal principal) {
         return adminReservationManager.updateReservation(eventName, reservationId, arm, principal.getName());
     }
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}/notify", method = RequestMethod.PUT)
+    @PutMapping("/event/{eventName}/{reservationId}/notify")
     public Result<Boolean> notifyReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
                                              @RequestBody AdminReservationModification arm, Principal principal) {
         return adminReservationManager.notify(eventName, reservationId, arm, principal.getName());
@@ -104,7 +102,7 @@ public class AdminReservationApiController {
         return adminReservationManager.notifyAttendees(eventName, reservationId, ids, principal.getName());
     }
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}/audit", method = RequestMethod.GET)
+    @GetMapping("/event/{eventName}/{reservationId}/audit")
     public Result<List<Audit>> getAudit(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.getAudit(eventName, reservationId, principal.getName());
     }
@@ -155,13 +153,13 @@ public class AdminReservationApiController {
         }
     }
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}", method = RequestMethod.GET)
+    @GetMapping("/event/{eventName}/{reservationId}")
     public Result<TicketReservationDescriptor> loadReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.loadReservation(eventName, reservationId, principal.getName())
             .map(triple -> toReservationDescriptor(reservationId, triple));
     }
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}/ticket/{ticketId}", method = RequestMethod.GET)
+    @GetMapping("/event/{eventName}/{reservationId}/ticket/{ticketId}")
     public Result<Ticket> loadTicket(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @PathVariable("ticketId") int ticketId, Principal principal) {
         return adminReservationManager.loadReservation(eventName, reservationId, principal.getName()).flatMap(triple -> {
             //not optimal
@@ -170,7 +168,7 @@ public class AdminReservationApiController {
     }
 
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}/remove-tickets", method = RequestMethod.POST)
+    @PostMapping("/event/{eventName}/{reservationId}/remove-tickets")
     public Result<Boolean> removeTickets(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
                                              @RequestBody RemoveTicketsModification toRemove, Principal principal) {
 
@@ -183,12 +181,12 @@ public class AdminReservationApiController {
         return Result.success(true);
     }
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}/payment-info", method = RequestMethod.GET)
+    @GetMapping("/event/{eventName}/{reservationId}/payment-info")
     public Result<TransactionAndPaymentInfo> getPaymentInfo(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.getPaymentInfo(eventName, reservationId, principal.getName());
     }
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}/cancel", method = RequestMethod.POST)
+    @PostMapping("/event/{eventName}/{reservationId}/cancel")
     public Result<Boolean> removeReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @RequestParam("refund") boolean refund,
                                              @RequestParam(value = "notify", defaultValue = "false") boolean notify,
                                              Principal principal) {
@@ -196,7 +194,7 @@ public class AdminReservationApiController {
         return Result.success(true);
     }
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}/credit", method = RequestMethod.POST)
+    @PostMapping("/event/{eventName}/{reservationId}/credit")
     public Result<Boolean> creditReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @RequestParam("refund") boolean refund,
                                              @RequestParam(value = "notify", defaultValue = "false") boolean notify,
                                              Principal principal) {
@@ -209,7 +207,7 @@ public class AdminReservationApiController {
         return adminReservationManager.regenerateBillingDocument(eventName, reservationId, principal.getName());
     }
 
-    @RequestMapping(value = "/event/{eventName}/{reservationId}/refund", method = RequestMethod.POST)
+    @PostMapping("/event/{eventName}/{reservationId}/refund")
     public Result<Boolean> refund(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @RequestBody RefundAmount amount, Principal principal) {
         return adminReservationManager.refund(eventName, reservationId, new BigDecimal(amount.amount), principal.getName());
     }
