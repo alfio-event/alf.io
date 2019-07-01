@@ -122,11 +122,11 @@ public class AdminWaitingQueueApiController {
         var header = new String[] {"Type", "Firstname", "Lastname", "Email", "Language", "Status", "Date"};
         var lines = convertSubscriptions(found, event);
         if ("excel".equals(format)) {
-            ExportUtils.exportExcel(eventName + "-waiting-queue.xlsx", "waiting-queue",
+            ExportUtils.exportExcel(event.getShortName() + "-waiting-queue.xlsx", "waiting-queue",
                 header,
                 lines, response);
         } else {
-            ExportUtils.exportCsv(eventName + "-waiting-queue.csv", header, lines, response);
+            ExportUtils.exportCsv(event.getShortName() + "-waiting-queue.csv", header, lines, response);
         }
     }
 

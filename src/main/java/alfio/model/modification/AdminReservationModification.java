@@ -207,7 +207,7 @@ public class AdminReservationModification implements Serializable {
     @Getter
     public static class Notification {
 
-        public static Notification EMPTY = new Notification(false, false);
+        public static final Notification EMPTY = new Notification(false, false);
 
         private final boolean customer;
         private final boolean attendees;

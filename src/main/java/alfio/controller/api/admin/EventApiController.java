@@ -74,8 +74,8 @@ import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static alfio.util.Wrappers.optionally;
 import static alfio.util.Validator.*;
+import static alfio.util.Wrappers.optionally;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.springframework.web.bind.annotation.RequestMethod.*;
@@ -271,7 +271,7 @@ public class EventApiController {
     private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
     private static final List<String> ITALIAN_E_INVOICING_FIELDS = List.of("Fiscal Code", "Reference Type", "Addressee Code", "PEC");
 
-    @RequestMapping("/events/{eventName}/export")
+    @GetMapping("/events/{eventName}/export")
     public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
         List<String> fields = Arrays.asList(Optional.ofNullable(request.getParameterValues("fields")).orElse(new String[] {}));
         Event event = loadEvent(eventName, principal);
@@ -366,7 +366,7 @@ public class EventApiController {
         });
     }
 
-    @RequestMapping("/events/{eventName}/sponsor-scan/export")
+    @GetMapping("/events/{eventName}/sponsor-scan/export")
     public void downloadSponsorScanExport(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
         var event = eventManager.getSingleEvent(eventName, principal.getName());
         List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
@@ -423,7 +423,7 @@ public class EventApiController {
         ExportUtils.exportCsv(eventName + "-sponsor-scan.csv", header.toArray(new String[0]), sponsorScans, response);
     }
 
-    @RequestMapping("/events/{eventName}/fields")
+    @GetMapping("/events/{eventName}/fields")
     public List<SerializablePair<String, String>> getAllFields(@PathVariable("eventName") String eventName, Principal principal) {
         var eventAndOrganizationId = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         List<SerializablePair<String, String>> fields = new ArrayList<>(FIXED_PAIRS);
@@ -434,7 +434,7 @@ public class EventApiController {
         return fields;
     }
 
-    @RequestMapping("/events/{eventName}/additional-field")
+    @GetMapping("/events/{eventName}/additional-field")
     public List<TicketFieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("eventName") String eventName) {
         final Map<Integer, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
         return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
@@ -442,7 +442,7 @@ public class EventApiController {
             .collect(toList());
     }
 
-    @RequestMapping("/events/{eventName}/additional-field/{id}/stats")
+    @GetMapping("/events/{eventName}/additional-field/{id}/stats")
     public List<RestrictedValueStats> getStats(@PathVariable("eventName") String eventName, @PathVariable("id") Integer id, Principal principal) {
         if(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName()).filter(event -> ticketFieldRepository.findById(id).getEventId() == event.getId()).isEmpty()) {
             return Collections.emptyList();
@@ -496,12 +496,12 @@ public class EventApiController {
 
 
 
-    @RequestMapping(value = "/events/{eventName}/pending-payments")
+    @GetMapping(value = "/events/{eventName}/pending-payments")
     public List<TicketReservationWithTransaction> getPendingPayments(@PathVariable("eventName") String eventName) {
         return ticketReservationManager.getPendingPayments(eventName);
     }
 
-    @RequestMapping(value = "/events/{eventName}/pending-payments-count")
+    @GetMapping(value = "/events/{eventName}/pending-payments-count")
     public Integer getPendingPaymentsCount(@PathVariable("eventName") String eventName, Principal principal) {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.getPendingPaymentsCount(e.getId()))
@@ -578,7 +578,7 @@ public class EventApiController {
         Event event = loadEvent(eventName, principal);
 
         response.setContentType("application/zip");
-        response.setHeader("Content-Disposition", "attachment; filename=" + eventName + "-invoices.zip");
+        response.setHeader("Content-Disposition", "attachment; filename=" + event.getShortName() + "-invoices.zip");
 
         try(OutputStream os = response.getOutputStream(); ZipOutputStream zipOS = new ZipOutputStream(os)) {
             for (Pair<TicketReservation, BillingDocument> pair : ticketReservationManager.findAllInvoices(event.getId())) {

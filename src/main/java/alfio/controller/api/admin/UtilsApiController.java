@@ -31,10 +31,7 @@ import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MissingServletRequestParameterException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
@@ -81,7 +78,7 @@ public class UtilsApiController {
         return unique;
     }
     
-    @RequestMapping(value = "/render-commonmark") 
+    @GetMapping(value = "/render-commonmark")
     public String renderCommonmark(@RequestParam("text") String input) {
         return MustacheCustomTag.renderToCommonmark(StringEscapeUtils.escapeHtml4(input));
     }

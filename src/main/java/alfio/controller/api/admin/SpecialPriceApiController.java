@@ -60,7 +60,7 @@ public class SpecialPriceApiController {
         return e.getMessage();
     }
 
-    @RequestMapping(value = "/events/{eventName}/categories/{categoryId}/link-codes")
+    @PostMapping(value = "/events/{eventName}/categories/{categoryId}/link-codes")
     public List<SendCodeModification> linkAssigneeToCodes(@PathVariable("eventName") String eventName,
                                                           @PathVariable("categoryId") int categoryId,
                                                           @RequestBody UploadBase64FileModification file,

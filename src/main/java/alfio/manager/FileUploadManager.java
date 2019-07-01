@@ -52,7 +52,8 @@ public class FileUploadManager {
         .expireAfterWrite(20, TimeUnit.MINUTES)
         .removalListener((String key, File value, RemovalCause cause) -> {
             if(value != null) {
-                value.delete();
+                boolean result = value.delete();
+                log.trace("deleted {}: {}", key, result);
             }
         })
         .build();

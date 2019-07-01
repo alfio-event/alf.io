@@ -52,7 +52,8 @@ public final class TemplateProcessor {
     private static final Cache<String, File> FONT_CACHE = Caffeine.newBuilder()
         .removalListener((String key, File value, RemovalCause cause) -> {
             if(value != null) {
-                value.delete();
+                boolean result = value.delete();
+                log.trace("value {} deleted: {}", key, result);
             }
         })
         .build();

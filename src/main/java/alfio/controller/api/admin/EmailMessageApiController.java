@@ -27,10 +27,7 @@ import lombok.experimental.Delegate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.ZoneId;
@@ -52,7 +49,7 @@ public class EmailMessageApiController {
         this.eventManager = eventManager;
     }
 
-    @RequestMapping("/")
+    @GetMapping("/")
     public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable("eventName") String eventName,
                                                                                     @RequestParam(value = "page", required = false) Integer page,
                                                                                     @RequestParam(value = "search", required = false) String search,
@@ -65,7 +62,7 @@ public class EmailMessageApiController {
             .collect(Collectors.toList()), found.getLeft());
     }
 
-    @RequestMapping("/{messageId}")
+    @GetMapping("/{messageId}")
     public LightweightEmailMessage loadEmailMessage(@PathVariable("eventName") String eventName, @PathVariable("messageId") int messageId, Principal principal) {
         Event event = eventManager.getSingleEvent(eventName, principal.getName());
         return notificationManager.loadSingleMessageForEvent(event.getId(), messageId).map(m -> new LightweightEmailMessage(m, event.getZoneId(), false)).orElseThrow(IllegalArgumentException::new);

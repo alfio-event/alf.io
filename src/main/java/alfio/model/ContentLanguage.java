@@ -19,7 +19,6 @@ package alfio.model;
 import alfio.util.LocaleUtil;
 import lombok.EqualsAndHashCode;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
@@ -38,7 +37,7 @@ public class ContentLanguage {
     public static final ContentLanguage PORTUGUESE = new ContentLanguage(LocaleUtil.forLanguageTag("pt"),0b1000000, LocaleUtil.forLanguageTag("pt"), "pt");
     public static final ContentLanguage TURKISH = new ContentLanguage(LocaleUtil.forLanguageTag("tr"),0b10000000, LocaleUtil.forLanguageTag("tr"), "tr");
 
-    public static final List<ContentLanguage> ALL_LANGUAGES = Arrays.asList(ITALIAN, ENGLISH, GERMAN, DUTCH, FRENCH, ROMANIAN, PORTUGUESE, TURKISH);
+    public static final List<ContentLanguage> ALL_LANGUAGES = List.of(ITALIAN, ENGLISH, GERMAN, DUTCH, FRENCH, ROMANIAN, PORTUGUESE, TURKISH);
     public static final int ALL_LANGUAGES_IDENTIFIER = ALL_LANGUAGES.stream().mapToInt(ContentLanguage::getValue).reduce(0, (a,b) -> a|b);
 
     public static List<ContentLanguage> findAllFor(int bitMask) {
