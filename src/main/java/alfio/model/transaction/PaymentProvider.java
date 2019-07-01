@@ -27,6 +27,8 @@ public interface PaymentProvider {
 
     boolean accept(PaymentMethod paymentMethod, PaymentContext context);
 
+    boolean accept(Transaction transaction);
+
     default PaymentResult getToken(PaymentSpecification spec) {
         return PaymentResult.initialized(UUID.randomUUID().toString());
     }

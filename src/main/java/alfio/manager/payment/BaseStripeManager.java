@@ -63,6 +63,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 @AllArgsConstructor
 class BaseStripeManager {
 
+    static final String STRIPE_MANAGER_TYPE_KEY = "stripeManagerType";
     static final String SUCCEEDED = "succeeded";
     private final ConfigurationManager configurationManager;
     private final ConfigurationRepository configurationRepository;

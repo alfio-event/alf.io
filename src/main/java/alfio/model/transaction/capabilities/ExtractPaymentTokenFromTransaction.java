@@ -14,22 +14,15 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.support;
+package alfio.model.transaction.capabilities;
 
-import alfio.manager.PaymentManager;
+import alfio.model.transaction.Capability;
+import alfio.model.transaction.PaymentToken;
+import alfio.model.transaction.Transaction;
 
-import javax.servlet.http.HttpServletRequest;
+import java.util.Optional;
 
-public final class SessionUtil {
+public interface ExtractPaymentTokenFromTransaction extends Capability {
 
-    private SessionUtil() {}
-
-
-    public static void cleanupSession(HttpServletRequest request) {
-        removePaymentToken(request);
-    }
-
-    public static void removePaymentToken(HttpServletRequest request) {
-        request.getSession().removeAttribute(PaymentManager.PAYMENT_TOKEN);
-    }
+    Optional<PaymentToken> extractToken(Transaction transaction);
 }

@@ -16,6 +16,7 @@
  */
 package alfio.manager.payment;
 
+import alfio.manager.PaymentManager;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
@@ -23,6 +24,7 @@ import alfio.model.Event;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
+import alfio.model.transaction.capabilities.ExtractPaymentTokenFromTransaction;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.model.transaction.token.PayPalToken;
@@ -30,6 +32,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.util.ErrorsCode;
+import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -64,7 +67,7 @@ import static alfio.util.MonetaryUtil.formatCents;
 @Component
 @Log4j2
 @AllArgsConstructor
-public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInfo {
+public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInfo, ExtractPaymentTokenFromTransaction {
 
     private final ConfigurationManager configurationManager;
     private final MessageSource messageSource;
@@ -72,6 +75,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketRepository ticketRepository;
     private final TransactionRepository transactionRepository;
+    private final Json json;
 
     private APIContext getApiContext(EventAndOrganizationId event) {
 
@@ -326,6 +330,11 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     }
 
     @Override
+    public boolean accept(alfio.model.transaction.Transaction transaction) {
+        return PaymentProxy.PAYPAL == transaction.getPaymentProxy();
+    }
+
+    @Override
     public PaymentResult getToken(PaymentSpecification spec) {
         try {
             PaymentToken gatewayToken = spec.getGatewayToken();
@@ -371,6 +380,23 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
             }
             throw new IllegalStateException(e);
         }
+    }
+
+    public void saveToken(String reservationId, Event event, PayPalToken token) {
+        PaymentManagerUtils.invalidateExistingTransactions(reservationId, transactionRepository);
+        transactionRepository.insert(reservationId, token.getPaymentId(), reservationId,
+            ZonedDateTime.now(), 0, event.getCurrency(), "Paypal token", PaymentProxy.PAYPAL.name(), 0, 0,
+            alfio.model.transaction.Transaction.Status.PENDING, Map.of(PaymentManager.PAYMENT_TOKEN, json.asJsonString(token)));
+    }
+
+    @Override
+    public Optional<PaymentToken> extractToken(alfio.model.transaction.Transaction transaction) {
+        var jsonPaymentToken = transaction.getMetadata().getOrDefault(PaymentManager.PAYMENT_TOKEN, null);
+        return Optional.ofNullable(jsonPaymentToken).map(t -> json.fromJsonString(t, PayPalToken.class));
+    }
+
+    public void removeToken(String reservationId) {
+        PaymentManagerUtils.invalidateExistingTransactions(reservationId, transactionRepository);
     }
 
 }

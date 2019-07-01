@@ -18,9 +18,7 @@ package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProvider;
+import alfio.model.transaction.*;
 import alfio.repository.TransactionRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -42,6 +40,11 @@ public class OnSiteManager implements PaymentProvider {
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
         return paymentMethod == PaymentMethod.ON_SITE && configurationManager.getBooleanConfigValue(context.narrow(ON_SITE_ENABLED), false);
+    }
+
+    @Override
+    public boolean accept(Transaction transaction) {
+        return PaymentProxy.ON_SITE == transaction.getPaymentProxy();
     }
 
     @Override

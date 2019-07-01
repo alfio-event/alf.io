@@ -24,7 +24,6 @@ import alfio.controller.api.v2.model.ReservationStatusInfo;
 import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
-import alfio.controller.support.SessionUtil;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.payment.PaymentSpecification;
@@ -60,7 +59,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -105,8 +103,7 @@ public class ReservationApiV2Controller {
      */
     @GetMapping("/event/{eventName}/reservation/{reservationId}")
     public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("eventName") String eventName,
-                                                              @PathVariable("reservationId") String reservationId,
-                                                              HttpSession session) {
+                                                              @PathVariable("reservationId") String reservationId) {
 
         Optional<ReservationInfo> res = eventRepository.findOptionalByShortName(eventName).flatMap(event -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
 
@@ -164,11 +161,9 @@ public class ReservationApiV2Controller {
 
             var formattedExpirationDate = reservation.getValidity() != null ? formatDateForLocales(event, ZonedDateTime.ofInstant(reservation.getValidity().toInstant(), event.getZoneId()), "datetime.pattern") : null;
 
-            boolean tokenAcquired = session.getAttribute(PaymentManager.PAYMENT_TOKEN) != null;
-            PaymentProxy selectedPaymentProxy = null;
-            if (tokenAcquired) {
-                selectedPaymentProxy = ((PaymentToken)session.getAttribute(PaymentManager.PAYMENT_TOKEN)).getPaymentProvider();
-            }
+            var paymentToken = paymentManager.getPaymentToken(reservationId);
+            boolean tokenAcquired = paymentToken.isPresent();
+            PaymentProxy selectedPaymentProxy = paymentToken.map(PaymentToken::getPaymentProvider).orElse(null);
 
             //
             var containsCategoriesLinkedToGroups = ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId());
@@ -235,12 +230,10 @@ public class ReservationApiV2Controller {
 
     @DeleteMapping("/event/{eventName}/reservation/{reservationId}")
     public ResponseEntity<Boolean> cancelPendingReservation(@PathVariable("eventName") String eventName,
-                                                            @PathVariable("reservationId") String reservationId,
-                                                            HttpServletRequest request) {
+                                                            @PathVariable("reservationId") String reservationId) {
 
         getReservationWithPendingStatus(eventName, reservationId)
             .ifPresent(er -> ticketReservationManager.cancelPendingReservation(reservationId, false, null));
-        SessionUtil.cleanupSession(request);
         return ResponseEntity.ok(true);
     }
 
@@ -261,8 +254,7 @@ public class ReservationApiV2Controller {
                                                                                        @RequestParam("lang") String lang,
                                                                                        @RequestBody  PaymentForm paymentForm,
                                                                                        BindingResult bindingResult,
-                                                                                       HttpServletRequest request,
-                                                                                       HttpSession session) {
+                                                                                       HttpServletRequest request) {
 
         return getReservation(eventName, reservationId).map(er -> {
 
@@ -299,7 +291,7 @@ public class ReservationApiV2Controller {
 
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
-            PaymentToken paymentToken = (PaymentToken) session.getAttribute(PaymentManager.PAYMENT_TOKEN);
+            PaymentToken paymentToken = paymentManager.getPaymentToken(reservationId).orElse(null);
             if(paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {
                 paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentMethod(), new PaymentContext(event, reservationId));
             }
@@ -323,7 +315,7 @@ public class ReservationApiV2Controller {
                 MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
                 bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
                 //SessionUtil.addToFlash(bindingResult, redirectAttributes);
-                SessionUtil.removePaymentToken(request);
+                //SessionUtil.removePaymentToken(request);
                 return buildReservationPaymentStatus(bindingResult);
             }
 

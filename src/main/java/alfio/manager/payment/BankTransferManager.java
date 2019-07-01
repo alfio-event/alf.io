@@ -116,4 +116,9 @@ public class BankTransferManager implements PaymentProvider {
         int waitingPeriod = configurationManager.getFor(paymentContext.getEvent(), OFFLINE_PAYMENT_DAYS).getValueAsIntOrDefault(5);
         return OptionalInt.of( Math.min(daysToBegin, waitingPeriod) );
     }
+
+    @Override
+    public boolean accept(Transaction transaction) {
+        return PaymentProxy.OFFLINE == transaction.getPaymentProxy();
+    }
 }

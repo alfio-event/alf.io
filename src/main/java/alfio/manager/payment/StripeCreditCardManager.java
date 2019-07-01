@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import static alfio.manager.payment.BaseStripeManager.STRIPE_MANAGER_TYPE_KEY;
 import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
 
 @Component
@@ -55,6 +56,7 @@ import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
 public class StripeCreditCardManager implements PaymentProvider, ClientServerTokenRequest, RefundRequest, PaymentInfo {
 
     public static final String STRIPE_UNEXPECTED = "error.STEP2_STRIPE_unexpected";
+    private static final String STRIPE_MANAGER = StripeCreditCardManager.class.getName();
 
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
@@ -118,6 +120,14 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     }
 
     @Override
+    public boolean accept(Transaction transaction) {
+        //note, only StripeWebhookPaymentManager set 'clientSecret' in the metadata, this is a fallback for old cases
+        var hasMetadata = !transaction.getMetadata().isEmpty();
+        var isCCManager = STRIPE_MANAGER.equals(transaction.getMetadata().get(STRIPE_MANAGER_TYPE_KEY)) || transaction.getMetadata().get("clientSecret") == null;
+        return transaction.getPaymentProxy() == PaymentProxy.STRIPE && (!hasMetadata || (hasMetadata && isCCManager));
+    }
+
+    @Override
     public PaymentResult doPayment( PaymentSpecification spec ) {
         try {
             final Optional<Charge> optionalCharge = baseStripeManager.chargeCreditCard(spec);
@@ -132,7 +142,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
                 PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
                 transactionRepository.insert(charge.getId(), null, spec.getReservationId(),
                     ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
-                    fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE, Map.of());
+                    fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE, Map.of(STRIPE_MANAGER_TYPE_KEY, STRIPE_MANAGER));
                 return PaymentResult.successful(charge.getId());
             }).orElseGet(() -> PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION"));
         } catch (Exception e) {

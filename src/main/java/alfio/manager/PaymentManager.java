@@ -23,6 +23,7 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.ClientServerTokenRequest;
+import alfio.model.transaction.capabilities.ExtractPaymentTokenFromTransaction;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.AuditingRepository;
@@ -59,6 +60,14 @@ public class PaymentManager {
                                                                     PaymentContext context,
                                                                     List<Class<? extends Capability>> capabilities) {
         return doLookupProvidersByMethodAndCapabilities(paymentMethod, context, capabilities).findFirst();
+    }
+
+    Optional<PaymentProvider> lookupByTransaction(Transaction transaction) {
+        return paymentProviders.stream().filter(p -> p.accept(transaction)).findFirst();
+    }
+
+    Optional<PaymentProvider> lookupByTransactionAndCapabilities(Transaction transaction, List<Class<? extends Capability>> capabilities) {
+        return paymentProviders.stream().filter(p -> p.accept(transaction)).filter(p -> capabilities.stream().allMatch(c -> c.isInstance(p))).findFirst();
     }
 
     List<PaymentProvider> lookupProvidersByMethodAndCapabilities(PaymentMethod paymentMethod,
@@ -199,6 +208,19 @@ public class PaymentManager {
                         return PaymentResult.initialized(transaction.getPaymentId());
                 }
             });
+    }
+
+    public Optional<PaymentToken> getPaymentToken(String reservationId) {
+        return transactionRepository.loadOptionalByReservationId(reservationId)
+            .filter(t->t.getStatus() == Transaction.Status.PENDING)
+            .flatMap(t -> {
+            if(t.getMetadata().containsKey(PAYMENT_TOKEN)) {
+                return lookupByTransactionAndCapabilities(t, List.of(ExtractPaymentTokenFromTransaction.class))
+                    .map(ExtractPaymentTokenFromTransaction.class::cast)
+                    .flatMap(paymentProvider -> paymentProvider.extractToken(t));
+            }
+            return Optional.empty();
+        });
     }
 
     @Data

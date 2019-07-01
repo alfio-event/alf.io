@@ -23,9 +23,7 @@ import alfio.model.EventAndOrganizationId;
 import alfio.model.TicketReservation;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProvider;
+import alfio.model.transaction.*;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.util.ErrorsCode;
@@ -144,5 +142,10 @@ public class MollieCreditCardManager implements PaymentProvider {
             log.warn(e);
             return PaymentResult.failed( ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION );
         }
+    }
+
+    @Override
+    public boolean accept(Transaction transaction) {
+        return PaymentProxy.MOLLIE == transaction.getPaymentProxy();
     }
 }
