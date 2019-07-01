@@ -753,10 +753,13 @@ public class EventManager {
     public boolean toggleTicketLocking(String eventName, int categoryId, int ticketId, String username) {
         EventAndOrganizationId event = getEventAndOrganizationId(eventName, username);
         checkOwnership(event, username, event.getOrganizationId());
-        ticketCategoryRepository.findByEventId(event.getId()).stream().filter(tc -> tc.getId() == categoryId).findFirst().orElseThrow(IllegalArgumentException::new);
-        Ticket ticket = ticketRepository.findById(ticketId, categoryId);
-        Validate.isTrue(ticketRepository.toggleTicketLocking(ticketId, categoryId, !ticket.getLockedAssignment()) == 1, "unwanted result from ticket locking");
-        return true;
+        var existingCategory = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(tc -> tc.getId() == categoryId).findFirst();
+        if(existingCategory.isPresent()) {
+            Ticket ticket = ticketRepository.findById(ticketId, categoryId);
+            Validate.isTrue(ticketRepository.toggleTicketLocking(ticketId, categoryId, !ticket.getLockedAssignment()) == 1, "unwanted result from ticket locking");
+            return true;
+        }
+        throw new IllegalArgumentException("Invalid category");
     }
 
     public void addPromoCode(String promoCode,

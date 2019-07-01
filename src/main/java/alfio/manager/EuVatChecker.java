@@ -64,7 +64,7 @@ public class EuVatChecker {
 
     public Optional<VatDetail> checkVat(String vatNr, String countryCode, EventAndOrganizationId event) {
         Optional<VatDetail> res = performCheck(vatNr, countryCode, event).apply(configurationManager, client);
-        res.map(detail -> {
+        return res.map(detail -> {
            if(!detail.isValid()) {
                String organizerCountry = organizerCountry(configurationManager, event);
                boolean valid = extensionManager.handleTaxIdValidation(event.getId(), vatNr, organizerCountry);
@@ -73,8 +73,6 @@ public class EuVatChecker {
                return detail;
            }
         });
-
-        return res;
     }
 
     static BiFunction<ConfigurationManager, EUVatChecker, Optional<VatDetail>> performCheck(String vatNr, String countryCode, EventAndOrganizationId eventAndOrganizationId) {

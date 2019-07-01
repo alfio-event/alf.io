@@ -722,7 +722,7 @@ public class TicketReservationManager {
     }
 
     @Transactional
-    void issueCreditNoteForReservation(Event event, String reservationId, String username) {
+    public void issueCreditNoteForReservation(Event event, String reservationId, String username) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.CREDIT_NOTE_ISSUED.toString());
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
@@ -745,7 +745,7 @@ public class TicketReservationManager {
      * @param reservation
      */
     @Transactional
-    void ensureBillingDocumentIsPresent(Event event, TicketReservation reservation, String username) {
+    public void ensureBillingDocumentIsPresent(Event event, TicketReservation reservation, String username) {
         if(reservation.getStatus() == PENDING || reservation.getStatus() == CANCELLED) {
             return;
         }
@@ -756,7 +756,7 @@ public class TicketReservationManager {
     }
 
     @Transactional
-    Map<String, Object> createBillingDocumentModel(Event event, TicketReservation reservation, String username) {
+    public Map<String, Object> createBillingDocumentModel(Event event, TicketReservation reservation, String username) {
         return createBillingDocumentModel(event, reservation, username, reservation.getHasInvoiceNumber() ? INVOICE : RECEIPT);
     }
 

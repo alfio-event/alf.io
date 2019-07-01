@@ -80,7 +80,6 @@ public class GroupManager {
         });
     }
 
-    @Transactional
     Group createNew(String name, String description, int organizationId) {
         AffectedRowCountAndKey<Integer> insert = groupRepository.insert(name, description, organizationId);
         return groupRepository.getById(insert.getKey());
@@ -113,7 +112,6 @@ public class GroupManager {
             || (modification.getType() == LIMITED_QUANTITY && modification.getMaxAllocation() != null && original.getMaxAllocation() != null && modification.getMaxAllocation().compareTo(original.getMaxAllocation()) < 0);
     }
 
-    @Transactional
     boolean isGroupLinked(int eventId, int categoryId) {
         return CollectionUtils.isNotEmpty(findLinks(eventId, categoryId));
     }
@@ -138,7 +136,7 @@ public class GroupManager {
     }
 
     @Transactional
-    boolean isAllowed(String value, int eventId, int categoryId) {
+    public boolean isAllowed(String value, int eventId, int categoryId) {
 
         List<LinkedGroup> configurations = findLinks(eventId, categoryId);
         if(CollectionUtils.isEmpty(configurations)) {
@@ -158,7 +156,6 @@ public class GroupManager {
         return groupRepository.findActiveConfigurationsFor(eventId, categoryId);
     }
 
-    @Transactional
     Result<Integer> insertMembers(int groupId, List<GroupMemberModification> members) {
 
         Map<String, List<GroupMemberModification>> grouped = members.stream().collect(Collectors.groupingBy(GroupMemberModification::getValue));
@@ -170,7 +167,7 @@ public class GroupManager {
     }
 
     @Transactional
-    boolean acquireMemberForTicket(Ticket ticket) {
+    public boolean acquireMemberForTicket(Ticket ticket) {
         List<LinkedGroup> configurations = findLinks(ticket.getEventId(), ticket.getCategoryId());
         if(CollectionUtils.isEmpty(configurations)) {
             return true;
@@ -212,7 +209,7 @@ public class GroupManager {
     }
 
     @Transactional
-    void deleteWhitelistedTicketsForReservation(String reservationId) {
+    public void deleteWhitelistedTicketsForReservation(String reservationId) {
         List<Integer> tickets = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
         if(!tickets.isEmpty()) {
             int result = groupRepository.deleteExistingWhitelistedTickets(tickets);
