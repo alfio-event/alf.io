@@ -57,7 +57,7 @@ public class AdminWaitingQueueApiController {
     private final ConfigurationManager configurationManager;
     private final EventStatisticsManager eventStatisticsManager;
 
-    @RequestMapping(value = "/status", method = RequestMethod.GET)
+    @GetMapping("/status")
     public Map<String, Boolean> getStatusForEvent(@PathVariable("eventName") String eventName, Principal principal) {
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(this::loadStatus)
@@ -79,7 +79,7 @@ public class AdminWaitingQueueApiController {
         return result;
     }
 
-    @RequestMapping(value = "/status", method = RequestMethod.PUT)
+    @PutMapping("/status")
     public Map<String, Boolean> setStatusForEvent(@PathVariable("eventName") String eventName, @RequestBody SetStatusForm form, Principal principal) {
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
@@ -90,7 +90,7 @@ public class AdminWaitingQueueApiController {
             }).orElse(Collections.emptyMap());
     }
 
-    @RequestMapping(value = "/count", method = RequestMethod.GET)
+    @GetMapping("/count")
     public Integer countWaitingPeople(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
         Optional<Integer> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.countSubscribers(e.getId()));
@@ -101,7 +101,7 @@ public class AdminWaitingQueueApiController {
         return 0;
     }
 
-    @RequestMapping(value = "/load", method = RequestMethod.GET)
+    @GetMapping("/load")
     public List<WaitingQueueSubscription> loadAllSubscriptions(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
         Optional<List<WaitingQueueSubscription>> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.loadAllSubscriptionsForEvent(e.getId()));
@@ -137,14 +137,14 @@ public class AdminWaitingQueueApiController {
             s.getCreation().withZoneSameInstant(event.getZoneId()).toString()});
     }
 
-    @RequestMapping(value = "/subscriber/{subscriberId}", method = RequestMethod.DELETE)
+    @DeleteMapping("/subscriber/{subscriberId}")
     public ResponseEntity<Map<String, Object>> removeSubscriber(@PathVariable("eventName") String eventName,
                                                                 @PathVariable("subscriberId") int subscriberId,
                                                                 Principal principal) {
         return performStatusModification(eventName, subscriberId, principal, WaitingQueueSubscription.Status.CANCELLED, WaitingQueueSubscription.Status.WAITING);
     }
 
-    @RequestMapping(value = "/subscriber/{subscriberId}/restore", method = RequestMethod.PUT)
+    @PutMapping("/subscriber/{subscriberId}/restore")
     public ResponseEntity<Map<String, Object>> restoreSubscriber(@PathVariable("eventName") String eventName,
                                                                      @PathVariable("subscriberId") int subscriberId,
                                                                      Principal principal) {

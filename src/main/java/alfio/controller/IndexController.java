@@ -47,6 +47,7 @@ import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 public class IndexController {
 
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
+    private static final String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";
 
     private final ConfigurationManager configurationManager;
     private final Environment environment;
@@ -59,7 +60,7 @@ public class IndexController {
         return ResponseEntity.ok("Up and running!");
     }
 
-    @RequestMapping(value = "/healthz", method = RequestMethod.GET)
+    @GetMapping("/healthz")
     public ResponseEntity<String> replyToK8s() {
         return ResponseEntity.ok("Up and running!");
     }
@@ -95,7 +96,7 @@ public class IndexController {
         "/event/{eventShortName}/ticket/{ticketId}/view"
     })
     public void replyToIndex(HttpServletResponse response) throws IOException {
-        response.setContentType("text/html;charset=UTF-8");
+        response.setContentType(TEXT_HTML_CHARSET_UTF_8);
         response.setCharacterEncoding("UTF-8");
         try (var is = new ClassPathResource("alfio-public-frontend-index.html").getInputStream(); var os = response.getOutputStream()) {
             is.transferTo(os);
@@ -141,7 +142,7 @@ public class IndexController {
                 model.addAttribute("recaptchaApiKey", key);
             });
         try (var os = response.getOutputStream()) {
-            response.setContentType("text/html;charset=UTF-8");
+            response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding("UTF-8");
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
         }
@@ -171,7 +172,7 @@ public class IndexController {
         //
 
         try (var os = response.getOutputStream()) {
-            response.setContentType("text/html;charset=UTF-8");
+            response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding("UTF-8");
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/admin-index.ms"), model.asMap(), os);
         }
