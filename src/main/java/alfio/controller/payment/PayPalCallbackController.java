@@ -22,7 +22,6 @@ import alfio.model.Event;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.token.PayPalToken;
 import alfio.repository.EventRepository;
-import alfio.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

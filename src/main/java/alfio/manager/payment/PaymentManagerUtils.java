@@ -16,6 +16,7 @@
  */
 package alfio.manager.payment;
 
+import alfio.model.transaction.PaymentProxy;
 import alfio.repository.TransactionRepository;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
@@ -26,8 +27,13 @@ import org.apache.commons.lang3.Validate;
 class PaymentManagerUtils {
 
     static void invalidateExistingTransactions(String reservationId, TransactionRepository transactionRepository) {
+        invalidateExistingTransactions(reservationId, transactionRepository, null);
+    }
+
+
+    static void invalidateExistingTransactions(String reservationId, TransactionRepository transactionRepository, PaymentProxy paymentProxy) {
         // temporary, until we allow multiple transactions for a reservation
-        int invalidated = transactionRepository.invalidateForReservation(reservationId);
+        int invalidated = transactionRepository.invalidateForReservation(reservationId, paymentProxy != null ? paymentProxy.name() : null);
         if(invalidated > 0) {
             log.debug("invalidated {} existing transactions", invalidated);
         }

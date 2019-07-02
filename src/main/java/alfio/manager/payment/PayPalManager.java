@@ -396,7 +396,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     }
 
     public void removeToken(String reservationId) {
-        PaymentManagerUtils.invalidateExistingTransactions(reservationId, transactionRepository);
+        PaymentManagerUtils.invalidateExistingTransactions(reservationId, transactionRepository, PaymentProxy.PAYPAL);
     }
 
 }

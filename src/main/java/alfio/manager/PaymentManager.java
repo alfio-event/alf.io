@@ -223,6 +223,17 @@ public class PaymentManager {
         });
     }
 
+    public boolean removePaymentTokenReservation(String reservationId) {
+        return transactionRepository.loadOptionalByReservationId(reservationId).filter(t->t.getStatus() == Transaction.Status.PENDING)
+            .map(t -> {
+                if (t.getMetadata().containsKey(PAYMENT_TOKEN)) {
+                    return transactionRepository.invalidateById(t.getId()) == 1;
+                } else {
+                    return false;
+                }
+            }).orElse(false);
+    }
+
     @Data
     public static final class PaymentMethodDTO {
 

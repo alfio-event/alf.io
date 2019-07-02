@@ -584,6 +584,14 @@ public class ReservationApiV2Controller {
         return responseEntity.orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
+    @DeleteMapping("/event/{eventName}/reservation/{reservationId}/payment/token")
+    public ResponseEntity<Boolean> removeToken(@PathVariable("eventName") String eventName,
+                                               @PathVariable("reservationId") String reservationId) {
+
+        var res = getEventReservationPair(eventName, reservationId).map(et -> paymentManager.removePaymentTokenReservation(et.getRight().getId())).orElse(false);
+        return ResponseEntity.ok(res);
+    }
+
     private Optional<Pair<Event, TicketReservation>> getEventReservationPair(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
         return eventRepository.findOptionalByShortName(eventName)
             .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
