@@ -17,13 +17,11 @@
 package alfio.model;
 
 import alfio.util.Json;
-import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
 import org.apache.commons.collections.CollectionUtils;
 
-import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
@@ -100,11 +98,6 @@ public class PromoCodeDiscount {
     
     public boolean isExpired(ZoneId eventZoneId, ZonedDateTime now) {
         return now.isAfter(utcEnd.withZoneSameInstant(eventZoneId));
-    }
-    
-    public BigDecimal getFormattedDiscountAmount() {
-        //TODO: apply this conversion only for some currency. Not all are cent based.
-        return MonetaryUtil.centsToUnit(discountAmount);
     }
     
     public boolean getFixedAmount() {

@@ -143,7 +143,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     }
 
     public BigDecimal getRegularPrice() {
-        return MonetaryUtil.centsToUnit(srcPriceCts);
+        return MonetaryUtil.centsToUnit(srcPriceCts, currency);
     }
     
     

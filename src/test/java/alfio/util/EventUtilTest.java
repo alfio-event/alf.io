@@ -26,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Collections;
@@ -35,7 +36,8 @@ import java.util.function.Predicate;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class EventUtilTest {
 
@@ -289,13 +291,13 @@ public class EventUtilTest {
     @Test
     @DisplayName("return price if event is not free of charge")
     void evaluatePriceIfEventIsNotFreeOfCharge() {
-        assertEquals(hundred, EventUtil.evaluatePrice(hundred, false));
+        assertEquals(hundred, EventUtil.evaluatePrice(new BigDecimal("100.00"), false, "CHF"));
     }
 
     @Test
     @DisplayName("return price if event is not free of charge")
     void evaluatePriceIfEventIsFreeOfCharge() {
-        assertEquals(0, EventUtil.evaluatePrice(hundred, true));
+        assertEquals(0, EventUtil.evaluatePrice(new BigDecimal("100.00"), true, "CHF"));
     }
 
 

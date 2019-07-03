@@ -436,7 +436,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH));
         assertTrue(waitingQueueManager.subscribe(event, new CustomerName("John Doe 2", "John", "Doe 2", event.mustUseFirstAndLastName()), "john@doe2.com", null, Locale.ENGLISH));
         ticketCategoryRepository.update(first.getId(), first.getName(), first.getInception(event.getZoneId()), ZonedDateTime.now(event.getZoneId()).minusMinutes(1L), first.getMaxTickets(), first.isAccessRestricted(),
-            MonetaryUtil.unitToCents(first.getPrice()), first.getCode(), null, null, null, null);
+            MonetaryUtil.unitToCents(first.getPrice(), first.getCurrencyCode()), first.getCode(), null, null, null, null);
 
         List<Integer> ticketIds = ticketRepository.findTicketsInReservation(reservationId).stream().map(Ticket::getId).collect(Collectors.toList());
         assertEquals(2, ticketIds.size());

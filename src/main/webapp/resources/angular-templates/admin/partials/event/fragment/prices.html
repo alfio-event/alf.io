@@ -10,7 +10,7 @@
     <div class="panel-body">
         <dl class="dl-horizontal">
             <dt>Tickets Price</dt>
-            <dd><span data-ng-if="event.freeOfCharge">Free of charge</span> <span data-ng-if="!event.freeOfCharge">{{event.regularPrice | currency : (event.currency || "")}}</span></dd>
+            <dd><span data-ng-if="event.freeOfCharge">Free of charge</span> <span data-ng-if="!event.freeOfCharge">{{event.regularPrice | money : (event.currency || "")}}</span></dd>
             <dt data-ng-if="!event.freeOfCharge">Payment methods</dt>
             <dd data-ng-if="!event.freeOfCharge">{{event.allowedPaymentProxies | translatePaymentProxies}} <div class="text-warning" data-ng-if="(allowedPaymentProxies | paymentMethodFilter : true : event.currency).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter : true : event.currency">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check that the provider support the selected currency or the <a data-ui-sref="configuration.organization({organizationId: event.organizationId})">configuration</a>.</div></dd>
             <dt>Max tickets</dt>
@@ -18,7 +18,7 @@
             <dt data-ng-if="!event.freeOfCharge">VAT (%)</dt>
             <dd data-ng-if="!event.freeOfCharge">{{event.vatPercentage | currency:""}}</dd>
             <dt data-ng-if="!event.freeOfCharge">Final Price</dt>
-            <dd data-ng-if="!event.freeOfCharge">{{event.finalPrice | currency : (event.currency || "")}}</dd>
+            <dd data-ng-if="!event.freeOfCharge">{{event.finalPrice | money : (event.currency || "")}}</dd>
         </dl>
     </div>
 </div>

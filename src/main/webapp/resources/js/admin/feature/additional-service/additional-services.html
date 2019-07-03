@@ -33,7 +33,7 @@
                     <div class="col-sm-4"><strong>Price</strong></div>
                     <div class="col-sm-8">
                         <span data-ng-if="!item.fixPrice">User-defined</span>
-                        <span data-ng-if="item.fixPrice">{{item.price  | currency : (item.currency || "")}}</span>
+                        <span data-ng-if="item.fixPrice">{{item.price  | money : (item.currency || "")}}</span>
                     </div>
                 </div>
                 <div class="row">

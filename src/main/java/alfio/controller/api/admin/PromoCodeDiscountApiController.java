@@ -52,7 +52,7 @@ public class PromoCodeDiscountApiController {
         Integer organizationId = promoCode.getOrganizationId();
         ZoneId zoneId = zoneIdFromEventId(eventId, promoCode.getUtcOffset());
         
-        int discount = promoCode.getDiscountValue();
+        int discount = promoCode.getDiscountValue(eventRepository.getEventCurrencyCode(eventId));
 
         eventManager.addPromoCode(promoCode.getPromoCode(), eventId, organizationId, promoCode.getStart().toZonedDateTime(zoneId),
             promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories(), promoCode.getMaxUsage(),

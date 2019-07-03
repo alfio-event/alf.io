@@ -159,7 +159,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         return revolutTransaction -> revolutTransaction.getTransactionBalance().compareTo(BigDecimal.ZERO) > 0
             && Arrays.stream(terms).anyMatch(s -> revolutTransaction.getReference().toLowerCase().contains(s))
             && transaction.getCurrency().equals(revolutTransaction.getLegs().get(0).getCurrency())
-            && transaction.getPriceInCents() == MonetaryUtil.unitToCents(revolutTransaction.getTransactionBalance());
+            && transaction.getPriceInCents() == MonetaryUtil.unitToCents(revolutTransaction.getTransactionBalance(), transaction.getCurrency());
     }
 
     private Result<List<RevolutTransactionDescriptor>> loadTransactions(ZonedDateTime lastCheck, String revolutKey, String revolutUrl, List<String> accounts) {
@@ -219,7 +219,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     public Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
         var metadata = transaction.getMetadata();
         if(metadata != null && metadata.containsKey("counterpartyAccountId")) {
-            return Optional.of(new PaymentInformation(MonetaryUtil.formatCents(transaction.getPriceInCents()), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));
+            return Optional.of(new PaymentInformation(MonetaryUtil.formatCents(transaction.getPriceInCents(), transaction.getCurrency()), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));
         }
         return Optional.empty();
     }

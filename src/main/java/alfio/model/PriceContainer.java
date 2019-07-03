@@ -110,7 +110,7 @@ public interface PriceContainer {
      */
     @JsonIgnore
     default BigDecimal getFinalPrice() {
-        final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts());
+        final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
         BigDecimal discountedPrice = price.subtract(getAppliedDiscount());
         if(getVatStatus() != VatStatus.INCLUDED) {
             return discountedPrice.add(getVAT(discountedPrice, getVatStatus(), getVatPercentageOrZero()));
@@ -125,7 +125,7 @@ public interface PriceContainer {
      */
     @JsonIgnore
     default BigDecimal getVAT() {
-        final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts());
+        final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
         return getVAT(price.subtract(getAppliedDiscount()), getVatStatus(), getVatPercentageOrZero());
     }
 
@@ -137,7 +137,7 @@ public interface PriceContainer {
      */
     @JsonIgnore
     default BigDecimal getRawVAT() {
-        final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts());
+        final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
         return getVatStatus().extractRawVAT(price.subtract(getAppliedDiscount()), getVatPercentageOrZero());
     }
 
@@ -148,9 +148,9 @@ public interface PriceContainer {
     @JsonIgnore
     default BigDecimal getAppliedDiscount() {
         return getDiscount().map(discount -> {
-            final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts());
+            final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
             if(discount.getFixedAmount()) {
-                return MonetaryUtil.centsToUnit(Math.min(getSrcPriceCts(), discount.getDiscountAmount()));
+                return MonetaryUtil.centsToUnit(Math.min(getSrcPriceCts(), discount.getDiscountAmount()), getCurrencyCode());
             } else {
                 int discountAmount = discount.getDiscountAmount();
                 return price.multiply(new BigDecimal(discountAmount).divide(HUNDRED, 2, UNNECESSARY)).setScale(2, HALF_UP);

@@ -91,6 +91,8 @@ class TicketReservationManagerTest {
     private static final String GATEWAY_TOKEN = "token";
     private static final String BASE_URL = "http://my-website/";
     private static final String ORG_EMAIL = "org@org.org";
+    private static final String EVENT_CURRENCY = "CHF";
+    private static final String CATEGORY_CURRENCY = "EUR";
 
 
     private TicketReservationManager trm;
@@ -155,6 +157,7 @@ class TicketReservationManagerTest {
         specialPrice = mock(SpecialPrice.class);
         ticketCategory = mock(TicketCategory.class);
         ticket = mock(Ticket.class);
+        when(ticket.getCurrencyCode()).thenReturn("CHF");
         jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
         json = mock(Json.class);
 
@@ -167,7 +170,7 @@ class TicketReservationManagerTest {
         when(ticketReservation.getFinalPriceCts()).thenReturn(100);
         when(ticketReservation.getVatCts()).thenReturn(0);
         when(ticketReservation.getDiscountCts()).thenReturn(0);
-        when(ticketReservation.getCurrencyCode()).thenReturn("CHF");
+        when(ticketReservation.getCurrencyCode()).thenReturn(EVENT_CURRENCY);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticketReservationRepository.getAdditionalInfo(any())).thenReturn(mock(TicketReservationAdditionalInfo.class));
         organization = new Organization(ORGANIZATION_ID, "org", "desc", ORG_EMAIL);
@@ -178,6 +181,7 @@ class TicketReservationManagerTest {
         billingDocumentRepository = mock(BillingDocumentRepository.class);
         when(ticketCategoryRepository.getByIdAndActive(anyInt(), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(ticketCategory.getName()).thenReturn("Category Name");
+        when(ticketCategory.getCurrencyCode()).thenReturn(CATEGORY_CURRENCY);
         when(configurationManager.getFor(event, VAT_NR)).thenReturn(new ConfigurationManager.MaybeConfiguration(VAT_NR));
 
         trm = new TicketReservationManager(eventRepository,
@@ -213,6 +217,7 @@ class TicketReservationManagerTest {
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);
         when(event.mustUseFirstAndLastName()).thenReturn(false);
+        when(event.getCurrency()).thenReturn(EVENT_CURRENCY);
         when(ticketCategoryRepository.getByIdAndActive(eq(TICKET_CATEGORY_ID), eq(EVENT_ID))).thenReturn(ticketCategory);
         when(specialPrice.getCode()).thenReturn(SPECIAL_PRICE_CODE);
         when(specialPrice.getId()).thenReturn(SPECIAL_PRICE_ID);
@@ -582,7 +587,7 @@ class TicketReservationManagerTest {
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, false, null);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0);
+        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0, CATEGORY_CURRENCY);
     }
 
     @Test
@@ -594,7 +599,7 @@ class TicketReservationManagerTest {
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, true, null);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0);
+        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0, CATEGORY_CURRENCY);
     }
 
     @Test
@@ -606,7 +611,7 @@ class TicketReservationManagerTest {
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, false, null);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0);
+        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0, CATEGORY_CURRENCY);
     }
 
     @Test
@@ -618,7 +623,7 @@ class TicketReservationManagerTest {
         when(reservationModification.getTicketCategoryId()).thenReturn(TICKET_CATEGORY_ID);
         when(ticketRepository.findById(1, TICKET_CATEGORY_ID)).thenReturn(ticket);
         trm.reserveTicketsForCategory(event, "trid", reservationModification, Locale.ENGLISH, true, null);
-        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0);
+        verify(ticketRepository).reserveTickets("trid", ids, TICKET_CATEGORY_ID, Locale.ENGLISH.getLanguage(), 0, CATEGORY_CURRENCY);
     }
 
     //cleanup expired reservations
@@ -825,7 +830,7 @@ class TicketReservationManagerTest {
             new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()), "", null, Locale.ENGLISH,
             true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         when(ticketReservation.getStatus()).thenReturn(IN_PAYMENT);
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.of(PaymentProxy.STRIPE));
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), Optional.of(PaymentProxy.STRIPE));
         if(successful) {
             assertTrue(result.isSuccessful());
             assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
@@ -837,7 +842,7 @@ class TicketReservationManagerTest {
             verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
             verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
             verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
-            verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
+            verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
             verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
         } else {
             assertFalse(result.isSuccessful());
@@ -855,7 +860,7 @@ class TicketReservationManagerTest {
         when(paymentManager.lookupProviderByMethod(eq(PaymentMethod.CREDIT_CARD), any())).thenReturn(Optional.of(stripeCreditCardManager));
         when(stripeCreditCardManager.getTokenAndPay(any())).thenReturn(PaymentResult.failed("error-code"));
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "email@user", new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()), null, null, Locale.ENGLISH, true, false, null, "IT", "12345", PriceContainer.VatStatus.INCLUDED, true, false);
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.of(PaymentProxy.STRIPE));
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), Optional.of(PaymentProxy.STRIPE));
         assertFalse(result.isSuccessful());
         assertFalse(result.getGatewayId().isPresent());
         assertEquals(Optional.of("error-code"), result.getErrorCode());
@@ -863,7 +868,7 @@ class TicketReservationManagerTest {
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(ticketReservationRepository).updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()));
         verify(configurationManager, never()).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("12345"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("12345"), eq("IT"), eq(true), eq(RESERVATION_ID));
     }
 
     @Test
@@ -884,7 +889,7 @@ class TicketReservationManagerTest {
             new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()),
             "", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), anyString(), anyString(), anyString(), isNull(), isNull(), eq(Locale.ENGLISH.getLanguage()), isNull(), any(), any(), isNull())).thenReturn(1);
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.of(PaymentProxy.ON_SITE));
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), Optional.of(PaymentProxy.ON_SITE));
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()), isNull());
@@ -894,7 +899,7 @@ class TicketReservationManagerTest {
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
         verify(ticketRepository, atLeastOnce()).findTicketsInReservation(anyString());
     }
 
@@ -910,13 +915,13 @@ class TicketReservationManagerTest {
         PaymentSpecification spec = new PaymentSpecification(RESERVATION_ID, new StripeCreditCardToken(GATEWAY_TOKEN), 100, event, "test@email",
             new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()),
             "", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
-        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0), Optional.of(PaymentProxy.OFFLINE));
+        PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0,"CHF"), Optional.of(PaymentProxy.OFFLINE));
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));
         verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
-        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq("CHF"), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
+        verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
     }
 
     @Test

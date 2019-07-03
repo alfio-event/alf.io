@@ -38,7 +38,10 @@ import alfio.model.user.Organization;
 import alfio.model.user.User;
 import alfio.repository.*;
 import alfio.repository.user.UserRepository;
-import alfio.util.*;
+import alfio.util.Json;
+import alfio.util.LocaleUtil;
+import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ObjectUtils;
@@ -71,6 +74,7 @@ import static alfio.model.Audit.EntityType.TICKET;
 import static alfio.model.Audit.EventType.*;
 import static alfio.model.modification.DateTimeModification.fromZonedDateTime;
 import static alfio.util.EventUtil.generateEmptyTickets;
+import static alfio.util.MonetaryUtil.unitToCents;
 import static alfio.util.Wrappers.optionally;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -371,7 +375,7 @@ public class AdminReservationManager {
             String reservationId = UUID.randomUUID().toString();
             Date validity = Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant());
             ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(event.getZoneId()), validity, null,
-                arm.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded());
+                arm.getLanguage(), event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
             ticketReservationRepository.updateTicketReservation(reservationId, TicketReservationStatus.PENDING.name(), customerData.getEmailAddress(),
                 customerData.getFullName(), customerData.getFirstName(), customerData.getLastName(), arm.getLanguage(),
@@ -395,10 +399,11 @@ public class AdminReservationManager {
         if (reservedForUpdate.size() == 0 || reservedForUpdate.size() != attendees.size()) {
             return Result.error(ErrorCode.CategoryError.NOT_ENOUGH_SEATS);
         }
-        ticketRepository.reserveTickets(reservationId, reservedForUpdate, categoryId, arm.getLanguage(), category.getSrcPriceCts());
+        var currencyCode = category.getCurrencyCode();
+        ticketRepository.reserveTickets(reservationId, reservedForUpdate, categoryId, arm.getLanguage(), category.getSrcPriceCts(), currencyCode);
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), categoryId);
-        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getCurrency(), event.getVat(), event.getVatStatus(), null);
-        ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
+        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getVat(), event.getVatStatus(), null);
+        ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), unitToCents(priceContainer.getFinalPrice(), currencyCode), unitToCents(priceContainer.getVAT(), currencyCode), unitToCents(priceContainer.getAppliedDiscount(), currencyCode), currencyCode);
         List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(categoryId, attendees) : Collections.emptyList();
         assignTickets(event, attendees, categoryId, reservedForUpdate, codes, reservationId, arm.getLanguage(), category.getSrcPriceCts());
         List<Ticket> tickets = reservedForUpdate.stream().map(id -> ticketRepository.findById(id, categoryId)).collect(toList());
@@ -476,7 +481,7 @@ public class AdminReservationManager {
                 if(!attendee.getAdditionalInfo().isEmpty()) {
                     ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());
                 }
-                specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts));
+                specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts, event.getCurrency()));
             }
         }
     }
@@ -581,11 +586,12 @@ public class AdminReservationManager {
             } else {
                 // recalculate totals
                 var totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+                var currencyCode = totalPrice.getCurrencyCode();
                 var updatedTickets = ticketRepository.findTicketsInReservation(reservationId);
                 var calculator = new ReservationPriceCalculator(reservation, totalPrice, updatedTickets, e);
                 ticketReservationRepository.updateBillingData(calculator.getVatStatus(),
-                    calculator.getSrcPriceCts(), MonetaryUtil.unitToCents(calculator.getFinalPrice()), MonetaryUtil.unitToCents(calculator.getVAT()),
-                    MonetaryUtil.unitToCents(calculator.getAppliedDiscount()), calculator.getCurrencyCode(), reservation.getVatNr(), reservation.getVatCountryCode(),
+                    calculator.getSrcPriceCts(), unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode),
+                    unitToCents(calculator.getAppliedDiscount(), currencyCode), calculator.getCurrencyCode(), reservation.getVatNr(), reservation.getVatCountryCode(),
                     reservation.isInvoiceRequested(), reservationId);
             }
         });
@@ -676,7 +682,7 @@ public class AdminReservationManager {
             TicketReservation reservation = res.getLeft();
             return reservation.getPaymentMethod() != null
                 && reservation.getPaymentMethod().isSupportRefund()
-                && paymentManager.refund(reservation, e, MonetaryUtil.unitToCents(refundAmount), username);
+                && paymentManager.refund(reservation, e, unitToCents(refundAmount, reservation.getCurrencyCode()), username);
         });
     }
 

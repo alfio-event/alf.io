@@ -33,27 +33,29 @@ public class FeeCalculator {
     private final BigDecimal minimumFee;
     private final boolean percentage;
     private final int numTickets;
+    private final String currencyCode;
 
-    private FeeCalculator(String feeAsString, String minimumFeeAsString, int numTickets) {
+    private FeeCalculator(String feeAsString, String minimumFeeAsString, String currencyCode, int numTickets) {
         this.percentage = feeAsString.endsWith("%");
         this.fee = new BigDecimal(defaultIfEmpty(substringBefore(feeAsString, "%"), "0"));
         this.minimumFee = new BigDecimal(defaultIfEmpty(trimToNull(minimumFeeAsString), "0"));
         this.numTickets = numTickets;
+        this.currencyCode = currencyCode;
     }
 
     private long calculate(long price) {
-        long result = percentage ? MonetaryUtil.calcPercentage(price, fee, BigDecimal::longValueExact) : MonetaryUtil.unitToCents(fee);
-        long minFee = MonetaryUtil.unitToCents(minimumFee, BigDecimal::longValueExact) * numTickets;
+        long result = percentage ? MonetaryUtil.calcPercentage(price, fee, BigDecimal::longValueExact) : MonetaryUtil.unitToCents(fee, currencyCode);
+        long minFee = MonetaryUtil.unitToCents(minimumFee, currencyCode, BigDecimal::longValueExact) * numTickets;
         return Math.max(result, minFee);
     }
 
-    public static BiFunction<Integer, Long, Optional<Long>> getCalculator(EventAndOrganizationId event, ConfigurationManager configurationManager) {
+    public static BiFunction<Integer, Long, Optional<Long>> getCalculator(EventAndOrganizationId event, ConfigurationManager configurationManager, String currencyCode) {
         return (numTickets, amountInCent) -> {
             if(isPlatformModeEnabled(event, configurationManager)) {
                 var fees = configurationManager.getFor(event, Set.of(PLATFORM_FEE, PLATFORM_MINIMUM_FEE));
                 String feeAsString = fees.get(PLATFORM_FEE).getValueOrDefault("0");
                 String minimumFee = fees.get(PLATFORM_MINIMUM_FEE).getValueOrDefault("0");
-                return Optional.of(new FeeCalculator(feeAsString, minimumFee, numTickets).calculate(amountInCent));
+                return Optional.of(new FeeCalculator(feeAsString, minimumFee, currencyCode, numTickets).calculate(amountInCent));
             }
             return Optional.empty();
         };

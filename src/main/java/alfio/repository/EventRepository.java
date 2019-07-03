@@ -59,6 +59,9 @@ public interface EventRepository {
         return TimeZone.getTimeZone(getTimeZoneByEventId(eventId)).toZoneId();
     }
 
+    @Query("select currency from event where id = :eventId")
+    String getEventCurrencyCode(@Bind("eventId") int eventId);
+
     @Query("select time_zone from event where id = :eventId")
     String getTimeZoneByEventId(@Bind("eventId") int eventId);
 

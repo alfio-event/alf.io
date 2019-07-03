@@ -35,7 +35,7 @@
                     </span>
                     <i class="ml-1 fa fa fa-money fa-1_5x" ng-if="!$ctrl.event.freeOfCharge"></i><span class="sr-only">Ticket Price</span>
                     <span class="text-muted" ng-if="!$ctrl.event.freeOfCharge">
-                        {{$ctrl.ticketCategory.price | currency : ($ctrl.event.currency || "")}} <span ng-if="!$ctrl.event.vatIncluded"><i class="text-muted">+ VAT</i></span>
+                        {{$ctrl.ticketCategory.price | money : ($ctrl.event.currency || "")}} <span ng-if="!$ctrl.event.vatIncluded"><i class="text-muted">+ VAT</i></span>
                     </span>
                 </h5>
                 <h5 ng-if="$ctrl.hasCustomCheckIn()">

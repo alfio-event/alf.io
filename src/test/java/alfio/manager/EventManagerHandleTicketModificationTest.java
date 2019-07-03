@@ -30,10 +30,8 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.*;
 
 @DisplayName("EventManager: handle Ticket modifications")
@@ -108,7 +106,7 @@ public class EventManagerHandleTicketModificationTest {
         when(updated.getSrcPriceCts()).thenReturn(10);
         eventManager.handlePriceChange(event, original, updated);
         verify(ticketRepository, never()).selectTicketInCategoryForUpdate(anyInt(), anyInt(), anyInt(), any());
-        verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt(), eq(0), eq(0), eq(0));
+        verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt(), eq(0), eq(0), eq(0), anyString());
     }
 
     @Test
@@ -120,19 +118,20 @@ public class EventManagerHandleTicketModificationTest {
         when(updated.getId()).thenReturn(20);
         when(ticketRepository.selectTicketInCategoryForUpdate(eq(eventId), eq(originalCategoryId), eq(2), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(singletonList(1));
         assertThrows(IllegalStateException.class, () -> eventManager.handlePriceChange(event, original, updated));
-        verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt(), eq(0), eq(0), eq(0));
+        verify(ticketRepository, never()).updateTicketPrice(anyInt(), anyInt(), anyInt(), eq(0), eq(0), eq(0), anyString());
     }
 
     @Test
     @DisplayName("update tickets if constraints are verified")
     void updateTicketsIfConstraintsVerified() {
+        when(original.getCurrencyCode()).thenReturn("CHF");
         when(original.getSrcPriceCts()).thenReturn(10);
         when(updated.getSrcPriceCts()).thenReturn(11);
         when(updated.getMaxTickets()).thenReturn(2);
         when(updated.getId()).thenReturn(updatedCategoryId);
         when(ticketRepository.selectTicketInCategoryForUpdate(eq(eventId), eq(updatedCategoryId), eq(2), eq(singletonList(Ticket.TicketStatus.FREE.name())))).thenReturn(Arrays.asList(1, 2));
         eventManager.handlePriceChange(event, original, updated);
-        verify(ticketRepository, times(1)).updateTicketPrice(updatedCategoryId, eventId, 11, 0, 0, 0);
+        verify(ticketRepository, times(1)).updateTicketPrice(updatedCategoryId, eventId, 11, 0, 0, 0, "CHF");
     }
 
 }

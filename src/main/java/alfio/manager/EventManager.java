@@ -172,7 +172,7 @@ public class EventManager {
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
         createOrUpdateEventDescription(eventId, em);
-        createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId());
+        createAllAdditionalServices(eventId, em.getAdditionalServices(), event.getZoneId(), event.getCurrency());
         createAdditionalFields(event, em);
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(event, em);
@@ -191,11 +191,11 @@ public class EventManager {
         extensionManager.handleEventStatusChange(event, status);
     }
 
-    private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId) {
+    private void createAllAdditionalServices(int eventId, List<EventModification.AdditionalService> additionalServices, ZoneId zoneId, String currencyCode) {
         Optional.ofNullable(additionalServices)
             .ifPresent(list -> list.forEach(as -> {
                 AffectedRowCountAndKey<Integer> service = additionalServiceRepository.insert(eventId,
-                    Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
+                    Optional.ofNullable(as.getPrice()).map(p -> MonetaryUtil.unitToCents(p, currencyCode)).orElse(0),
                     as.isFixPrice(),
                     as.getOrdinal(),
                     as.getAvailableQuantity(),
@@ -251,7 +251,7 @@ public class EventManager {
 	private void insertAdditionalField(EventAndOrganizationId event, AdditionalField f, int order) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
         Optional<EventModification.AdditionalService> linkedAdditionalService = Optional.ofNullable(f.getLinkedAdditionalService());
-        Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as))).orElse(-1);
+        Integer additionalServiceId = linkedAdditionalService.map(as -> Optional.ofNullable(as.getId()).orElseGet(() -> findAdditionalService(event, as, eventRepository.getEventCurrencyCode(event.getId())))).orElse(-1);
         Context context = linkedAdditionalService.isPresent() ? Context.ADDITIONAL_SERVICE : Context.ATTENDEE;
         int configurationId = ticketFieldRepository.insertConfiguration(event.getId(), f.getName(), order, f.getType(), serializedRestrictedValues,
             f.getMaxLength(), f.getMinLength(), f.isRequired(), context, additionalServiceId, generateJsonForList(f.getLinkedCategoriesIds())).getKey();
@@ -269,7 +269,7 @@ public class EventManager {
         });
     }
 
-    private Integer findAdditionalService(EventAndOrganizationId event, EventModification.AdditionalService as) {
+    private Integer findAdditionalService(EventAndOrganizationId event, EventModification.AdditionalService as, String currencyCode) {
         ZoneId utc = ZoneId.of("UTC");
         int eventId = event.getId();
 
@@ -281,9 +281,10 @@ public class EventManager {
             as.getExpiration().toZonedDateTime(eventZoneId).withZoneSameInstant(utc),
             as.getVat(),
             as.getVatType(),
-            Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
+            Optional.ofNullable(as.getPrice()).map(p -> MonetaryUtil.unitToCents(p, currencyCode)).orElse(0),
             as.getType(),
-            as.getSupplementPolicy()).getChecksum();
+            as.getSupplementPolicy(),
+            currencyCode).getChecksum();
         return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
     }
 
@@ -537,7 +538,7 @@ public class EventManager {
         Validate.isTrue(notAssignedTickets > 0 || em.getTicketCategories().stream().allMatch(TicketCategoryModification::isBounded), "Cannot add an unbounded category if there aren't any free tickets");
 
         em.getTicketCategories().forEach(tc -> {
-            final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
+            final int price = evaluatePrice(tc.getPrice(), freeOfCharge, event.getCurrency());
             final int maxTickets = tc.isBounded() ? tc.getMaxTickets() : 0;
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
@@ -556,7 +557,7 @@ public class EventManager {
     private Integer insertCategory(TicketCategoryModification tc, Event event) {
         ZoneId zoneId = event.getZoneId();
         int eventId = event.getId();
-        final int price = evaluatePrice(tc.getPriceInCents(), event.isFreeOfCharge());
+        final int price = evaluatePrice(tc.getPrice(), event.isFreeOfCharge(), event.getCurrency());
         final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
             tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.isBounded() ? tc.getMaxTickets() : 0, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
             toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
@@ -606,7 +607,7 @@ public class EventManager {
                                 boolean resetTicketsToFree) {
 
         int eventId = event.getId();
-        final int price = evaluatePrice(tc.getPriceInCents(), freeOfCharge);
+        final int price = evaluatePrice(tc.getPrice(), freeOfCharge, event.getCurrency());
         TicketCategory original = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         ticketCategoryRepository.update(tc.getId(), tc.getName(), tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), tc.isTokenGenerationRequested(), price, StringUtils.trimToNull(tc.getCode()),
@@ -644,7 +645,7 @@ public class EventManager {
             List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, addedTickets, singletonList(TicketStatus.FREE.name()));
             Validate.isTrue(addedTickets >= 0, "Cannot reduce capacity to "+newSize+". Minimum size allowed is "+confirmed);
             Validate.isTrue(ids.size() >= addedTickets, "not enough tickets");
-            Validate.isTrue(ids.size() == 0 || ticketRepository.moveToAnotherCategory(ids, original.getId(), updated.getPriceInCents()) == ids.size(), "not enough tickets");
+            Validate.isTrue(ids.size() == 0 || ticketRepository.moveToAnotherCategory(ids, original.getId(), MonetaryUtil.unitToCents(updated.getPrice(), original.getCurrencyCode())) == ids.size(), "not enough tickets");
         } else {
             reallocateTickets(ticketCategoryRepository.findStatisticWithId(original.getId(), event.getId()), Optional.empty(), event);
         }
@@ -660,7 +661,7 @@ public class EventManager {
             throw new IllegalStateException("Tickets have already been sold (or are in the process of being sold) for this category. Therefore price update is not allowed.");
         }
         //there's no need to calculate final price, vat etc, since these values will be updated at the time of reservation
-        ticketRepository.updateTicketPrice(updated.getId(), event.getId(), updated.getSrcPriceCts(), 0, 0, 0);
+        ticketRepository.updateTicketPrice(updated.getId(), event.getId(), updated.getSrcPriceCts(), 0, 0, 0, original.getCurrencyCode());
     }
 
     void handleTokenModification(TicketCategory original, TicketCategory updated, int addedTickets) {

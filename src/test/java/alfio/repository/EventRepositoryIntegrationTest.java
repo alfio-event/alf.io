@@ -134,8 +134,8 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
         TicketCategoryWithAdditionalInfo firstCategory = eventWithAdditionalInfo.getTicketCategories().get(0);
         List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), 5, Collections.singletonList(TicketRepository.FREE));
         String reservationId = "12345678";
-        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded());
-        int reserved = ticketRepository.reserveTickets(reservationId, ids, firstCategory.getId(), "it", 100);
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
+        int reserved = ticketRepository.reserveTickets(reservationId, ids, firstCategory.getId(), "it", 100, "CHF");
         assertEquals(5, reserved);
 
         ticketRepository.updateTicketsStatusWithReservationId(reservationId, Ticket.TicketStatus.ACQUIRED.name());

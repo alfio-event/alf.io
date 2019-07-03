@@ -42,7 +42,7 @@ public class AdditionalServicePriceContainer implements PriceContainer {
         if(additionalService.isFixPrice()) {
             return additionalService.getSrcPriceCts();
         }
-        return Optional.ofNullable(customAmount).map(MonetaryUtil::unitToCents).orElse(0);
+        return Optional.ofNullable(customAmount).map(a -> MonetaryUtil.unitToCents(a, currencyCode)).orElse(0);
     }
 
     @Override

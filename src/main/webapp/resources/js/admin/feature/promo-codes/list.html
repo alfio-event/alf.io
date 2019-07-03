@@ -23,7 +23,7 @@
             <td>{{::promocode.formattedEnd | formatDate}}</td>
             <td ng-if="!$ctrl.isAccess">
                 <span data-ng-if="promocode.codeType === 'DISCOUNT' && promocode.discountType === 'PERCENTAGE'">-{{::promocode.discountAmount}}%</span>
-                <span data-ng-if="promocode.codeType === 'DISCOUNT' && promocode.discountType === 'FIXED_AMOUNT'">-{{::promocode.formattedDiscountAmount | currency : ($ctrl.event.currency || "")}}</span>
+                <span data-ng-if="promocode.codeType === 'DISCOUNT' && promocode.discountType === 'FIXED_AMOUNT'">-{{::promocode.formattedDiscountAmount | money : ($ctrl.event.currency || "")}}</span>
             </td>
             <td ng-if="$ctrl.forEvent">
                 <div ng-if="promocode.categories.length > 0"><p ng-repeat="categoryId in promocode.categories">{{::$ctrl.ticketCategoriesById[categoryId].name}}</p></div>

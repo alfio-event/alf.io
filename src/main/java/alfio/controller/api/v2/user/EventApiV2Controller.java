@@ -16,11 +16,11 @@
  */
 package alfio.controller.api.v2.user;
 
-import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.model.AdditionalService;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
-import alfio.controller.api.v2.model.EventWithAdditionalInfo.PaymentProxyWithParameters;
+import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.model.TicketCategory;
+import alfio.controller.api.v2.model.EventWithAdditionalInfo.PaymentProxyWithParameters;
 import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
@@ -497,7 +497,7 @@ public class EventApiV2Controller {
     public ResponseEntity<ValidatedResponse<EventCode>> validateCode(@PathVariable("eventName") String eventName,
                                                                      @RequestParam("code") String code) {
 
-        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName).map(e -> {
+        return eventRepository.findOptionalByShortName(eventName).map(e -> {
             var res = checkCode(e, code);
             if(res.isSuccess()) {
 
@@ -506,7 +506,7 @@ public class EventApiV2Controller {
                     .orElseGet(() -> {
                         var promoCodeDiscount = res.getValue().getRight().orElseThrow();
                         var type = promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS ? EventCode.EventCodeType.ACCESS : EventCode.EventCodeType.DISCOUNT;
-                        String formattedDiscountAmount =  promoCodeDiscount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT ? promoCodeDiscount.getFormattedDiscountAmount().toString() : Integer.toString(promoCodeDiscount.getDiscountAmount());
+                        String formattedDiscountAmount =  promoCodeDiscount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT ? MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), e.getCurrency()) : Integer.toString(promoCodeDiscount.getDiscountAmount());
                         return new EventCode(code, type, promoCodeDiscount.getDiscountType(), formattedDiscountAmount);
                     });
 

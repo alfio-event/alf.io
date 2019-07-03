@@ -21,9 +21,11 @@ import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.controller.api.support.TicketHelper;
 import alfio.manager.EventNameManager;
 import alfio.util.MustacheCustomTag;
+import alfio.util.Wrappers;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
+import org.joda.money.CurrencyUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -93,10 +95,11 @@ public class UtilsApiController {
     }
 
     @RequestMapping(value = "/currencies", method = GET)
-    public List<CurrencyDescriptor> getCurrencies() {
-        return Currency.getAvailableCurrencies().stream()
-            .filter(c -> c.getDefaultFractionDigits() == 2 && !CURRENCIES_BLACKLIST.contains(c.getCurrencyCode())) //currencies which don't support cents are filtered out. Support will be implemented in the next version
-            .map(c -> new CurrencyDescriptor(c.getCurrencyCode(), c.getDisplayName(), c.getSymbol(), c.getDefaultFractionDigits()))
+    public List<CurrencyDescriptor> getCurrencies(Locale locale) {
+        return CurrencyUnit.registeredCurrencies().stream()
+            //we don't support pseudo currencies, as it is very unlikely that payment providers would support them
+            .filter(c -> !c.isPseudoCurrency() && !CURRENCIES_BLACKLIST.contains(c.getCode()) && Wrappers.optionally(() -> Currency.getInstance(c.getCode())).isPresent())
+            .map(c -> new CurrencyDescriptor(c.getCode(), c.toCurrency().getDisplayName(locale), c.getSymbol(locale), c.getDecimalPlaces()))
             .collect(Collectors.toList());
     }
 

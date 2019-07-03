@@ -315,6 +315,7 @@ public class EventApiController {
 
         return eventManager.findAllConfirmedTicketsForCSV(eventName, username).stream().map(trs -> {
             Ticket t = trs.getTicket();
+            var currencyCode = t.getCurrencyCode();
             TicketReservation reservation = trs.getTicketReservation();
             List<String> line = new ArrayList<>();
             if(fields.contains("ID")) {line.add(t.getUuid());}
@@ -322,10 +323,10 @@ public class EventApiController {
             if(fields.contains("Category")) {line.add(categoriesMap.get(t.getCategoryId()).getName());}
             if(fields.contains("Event")) {line.add(eventName);}
             if(fields.contains("Status")) {line.add(t.getStatus().toString());}
-            if(fields.contains("OriginalPrice")) {line.add(MonetaryUtil.centsToUnit(t.getSrcPriceCts()).toString());}
-            if(fields.contains("PaidPrice")) {line.add(MonetaryUtil.centsToUnit(t.getFinalPriceCts()).toString());}
-            if(fields.contains("Discount")) {line.add(MonetaryUtil.centsToUnit(t.getDiscountCts()).toString());}
-            if(fields.contains("VAT")) {line.add(MonetaryUtil.centsToUnit(t.getVatCts()).toString());}
+            if(fields.contains("OriginalPrice")) {line.add(MonetaryUtil.centsToUnit(t.getSrcPriceCts(), currencyCode).toString());}
+            if(fields.contains("PaidPrice")) {line.add(MonetaryUtil.centsToUnit(t.getFinalPriceCts(), currencyCode).toString());}
+            if(fields.contains("Discount")) {line.add(MonetaryUtil.centsToUnit(t.getDiscountCts(), currencyCode).toString());}
+            if(fields.contains("VAT")) {line.add(MonetaryUtil.centsToUnit(t.getVatCts(), currencyCode).toString());}
             if(fields.contains("ReservationID")) {line.add(t.getTicketsReservationId());}
             if(fields.contains("Full Name")) {line.add(t.getFullName());}
             if(fields.contains("First Name")) {line.add(t.getFirstName());}
