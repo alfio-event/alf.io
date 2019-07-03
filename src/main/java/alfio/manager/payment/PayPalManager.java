@@ -16,15 +16,15 @@
  */
 package alfio.manager.payment;
 
+import alfio.manager.PaymentManager;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.*;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
-import alfio.model.transaction.capabilities.ExternalProcessing;
+import alfio.model.transaction.capabilities.ExtractPaymentTokenFromTransaction;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.model.transaction.token.PayPalToken;
@@ -32,7 +32,7 @@ import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.util.ErrorsCode;
-import alfio.util.LocaleUtil;
+import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -59,7 +59,6 @@ import java.security.MessageDigest;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static alfio.model.system.ConfigurationKeys.PAYPAL_ENABLED;
@@ -68,7 +67,7 @@ import static alfio.util.MonetaryUtil.formatCents;
 @Component
 @Log4j2
 @AllArgsConstructor
-public class PayPalManager implements PaymentProvider, ExternalProcessing, RefundRequest, PaymentInfo {
+public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInfo, ExtractPaymentTokenFromTransaction {
 
     private final ConfigurationManager configurationManager;
     private final MessageSource messageSource;
@@ -76,12 +75,16 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketRepository ticketRepository;
     private final TransactionRepository transactionRepository;
+    private final Json json;
 
     private APIContext getApiContext(EventAndOrganizationId event) {
-        int orgId = event.getOrganizationId();
-        boolean isLive = configurationManager.getBooleanConfigValue(Configuration.from(orgId, ConfigurationKeys.PAYPAL_LIVE_MODE), false);
-        String clientId = configurationManager.getRequiredValue(Configuration.from(orgId, ConfigurationKeys.PAYPAL_CLIENT_ID));
-        String clientSecret = configurationManager.getRequiredValue(Configuration.from(orgId, ConfigurationKeys.PAYPAL_CLIENT_SECRET));
+
+        var paypalConf = configurationManager.getFor(event,
+            Set.of(ConfigurationKeys.PAYPAL_LIVE_MODE, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET));
+
+        boolean isLive = paypalConf.get(ConfigurationKeys.PAYPAL_LIVE_MODE).getValueAsBooleanOrDefault(false);
+        String clientId = paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_ID).getRequiredValue();
+        String clientSecret = paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_SECRET).getRequiredValue();
         return new APIContext(clientId, clientSecret, isLive ? "live" : "sandbox");
     }
 
@@ -210,10 +213,6 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
         }
     }
 
-    private boolean hasTokens(Map<String, List<String>> params) {
-        return params.containsKey("payerId") && params.containsKey("paypalPaymentId");
-    }
-
     private Pair<String, String> commitPayment(String reservationId, PayPalToken payPalToken, EventAndOrganizationId event) throws PayPalRESTException {
 
         Payment payment = new Payment().setId(payPalToken.getPaymentId());
@@ -320,32 +319,19 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
+
+        var paypalConf = configurationManager.getFor(context.getEvent(),
+            Set.of(PAYPAL_ENABLED, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET));
+
         return paymentMethod == PaymentMethod.PAYPAL &&
-            configurationManager.getBooleanConfigValue(context.narrow(PAYPAL_ENABLED), false )
-            && configurationManager.getStringConfigValue(context.narrow(ConfigurationKeys.PAYPAL_CLIENT_ID)).isPresent()
-            && configurationManager.getStringConfigValue(context.narrow(ConfigurationKeys.PAYPAL_CLIENT_SECRET)).isPresent();
+            paypalConf.get(PAYPAL_ENABLED).getValueAsBooleanOrDefault(false)
+            && paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_ID).isPresent()
+            && paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_SECRET).isPresent();
     }
 
     @Override
-    public Function<Map<String, List<String>>, PaymentSpecification> getSpecificationFromRequest(Event event,
-                                                                                                 TicketReservation reservation,
-                                                                                                 TotalPrice reservationCost,
-                                                                                                 OrderSummary orderSummary) {
-        return map -> {
-            if(hasTokens(map) && hasExactlyOneElementFor(map, "paypalPaymentId", "payerId", "hmac")) {
-                PayPalToken token = new PayPalToken(map.get("payerId").get(0), map.get("paypalPaymentId").get(0), map.get("hmac").get(0));
-                return new PaymentSpecification(reservation.getId(), token, reservationCost.getPriceWithVAT(),
-                    event, reservation.getEmail(), new CustomerName(reservation.getFullName(), reservation.getFirstName(), reservation.getLastName(), event.mustUseFirstAndLastName()),
-                    reservation.getBillingAddress(), reservation.getCustomerReference(), LocaleUtil.forLanguageTag(reservation.getUserLanguage()),
-                    reservation.isInvoiceRequested(), !reservation.isDirectAssignmentRequested(), orderSummary, reservation.getVatCountryCode(),
-                    reservation.getVatNr(), reservation.getVatStatus(), map.containsKey("termAndConditionsAccepted"), map.containsKey("privacyPolicyAccepted"));
-            }
-            return null;
-        };
-    }
-
-    private static boolean hasExactlyOneElementFor(Map<String, List<String>> map, String... keys) {
-        return Arrays.stream(keys).allMatch(k -> map.containsKey(k) && map.getOrDefault(k, Collections.emptyList()).size() == 1);
+    public boolean accept(alfio.model.transaction.Transaction transaction) {
+        return PaymentProxy.PAYPAL == transaction.getPaymentProxy();
     }
 
     @Override
@@ -380,7 +366,7 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
                 Long gatewayFee = Optional.ofNullable(i.getFee()).map(Long::parseLong).orElse(0L);
                 return Pair.of(platformFee, gatewayFee);
             }).orElseGet(() -> Pair.of(0L, 0L));
-            transactionRepository.invalidateForReservation(spec.getReservationId());
+            PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
             transactionRepository.insert(captureId, paymentId, spec.getReservationId(),
                 ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
                 fees.getLeft(), fees.getRight(), alfio.model.transaction.Transaction.Status.COMPLETE, Map.of());
@@ -394,6 +380,23 @@ public class PayPalManager implements PaymentProvider, ExternalProcessing, Refun
             }
             throw new IllegalStateException(e);
         }
+    }
+
+    public void saveToken(String reservationId, Event event, PayPalToken token) {
+        PaymentManagerUtils.invalidateExistingTransactions(reservationId, transactionRepository);
+        transactionRepository.insert(reservationId, token.getPaymentId(), reservationId,
+            ZonedDateTime.now(), 0, event.getCurrency(), "Paypal token", PaymentProxy.PAYPAL.name(), 0, 0,
+            alfio.model.transaction.Transaction.Status.PENDING, Map.of(PaymentManager.PAYMENT_TOKEN, json.asJsonString(token)));
+    }
+
+    @Override
+    public Optional<PaymentToken> extractToken(alfio.model.transaction.Transaction transaction) {
+        var jsonPaymentToken = transaction.getMetadata().getOrDefault(PaymentManager.PAYMENT_TOKEN, null);
+        return Optional.ofNullable(jsonPaymentToken).map(t -> json.fromJsonString(t, PayPalToken.class));
+    }
+
+    public void removeToken(String reservationId) {
+        PaymentManagerUtils.invalidateExistingTransactions(reservationId, transactionRepository, PaymentProxy.PAYPAL);
     }
 
 }

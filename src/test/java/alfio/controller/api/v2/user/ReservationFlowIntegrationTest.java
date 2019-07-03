@@ -475,11 +475,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             form.setReservation(Collections.singletonList(ticketReservation));
             var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             assertEquals(HttpStatus.OK, res.getStatusCode());
-            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), res.getBody().getValue(), new MockHttpSession());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), res.getBody().getValue());
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals("1.00", reservationInfo.getBody().getOrderSummary().getTotalPrice());
             assertEquals("hidden", reservationInfo.getBody().getOrderSummary().getSummary().get(0).getName());
-            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue(), new MockHttpServletRequest());
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
 
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
@@ -505,13 +505,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
             var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
-            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals(reservationId, reservationInfo.getBody().getId());
 
             assertEquals(1, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
 
-            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
 
             assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
 
@@ -525,7 +525,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
             var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
-            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals(reservationId, reservationInfo.getBody().getId());
 
@@ -586,7 +586,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
-            var cancelRes = reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
+            var cancelRes = reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, cancelRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.NOT_FOUND, null, null);
@@ -612,7 +612,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             var reservationId = resBody.getValue();
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
-            var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
             var ticketsByCat = resInfoRes.getBody().getTicketsByCategory();
             assertEquals(1, ticketsByCat.size());
@@ -671,7 +671,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             var success = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.OK, success.getStatusCode());
 
-            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
         }
 
 
@@ -692,7 +692,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
 
-            var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
             var reservation = resInfoRes.getBody();
             assertEquals(reservationId, reservation.getId());
@@ -747,7 +747,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             var paymentForm = new PaymentForm();
             var handleResError = reservationApiV2Controller.confirmOverview(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
-                new MockHttpServletRequest(), new MockHttpSession());
+                new MockHttpServletRequest());
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, handleResError.getStatusCode());
 
 
@@ -761,7 +761,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             //
 
             var handleRes = reservationApiV2Controller.confirmOverview(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
-                new MockHttpServletRequest(), new MockHttpSession());
+                new MockHttpServletRequest());
             assertEquals(HttpStatus.OK, handleRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
@@ -770,7 +770,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, tStatus.getStatusCode());
             assertFalse(tStatus.getBody().isSuccess());
 
-            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
+            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId).getBody();
 
             var orderSummary = reservation.getOrderSummary();
             assertTrue(orderSummary.isNotYetPaid());
@@ -786,7 +786,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, tStatus.getStatusCode());
             assertTrue(tStatus.getBody().isSuccess());
 
-            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
+            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId).getBody();
             orderSummary = reservation.getOrderSummary();
             assertFalse(orderSummary.isNotYetPaid());
 
@@ -833,7 +833,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("testmctest@test.com", ticketFoundBody.getEmail());
             assertEquals("Test Testson", ticketFoundBody.getFullName());
             assertEquals("full name", ticketFoundBody.getReservationFullName());
-            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
+            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId).getBody();
             ticket = reservation.getTicketsByCategory().stream().findFirst().get().getTickets().get(0);
             assertEquals("testmctest@test.com", ticket.getEmail());
             assertEquals("Test", ticket.getFirstName());

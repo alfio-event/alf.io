@@ -16,8 +16,8 @@
  */
 package alfio.controller.payment;
 
-import alfio.manager.PaymentManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.payment.PayPalManager;
 import alfio.model.Event;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.token.PayPalToken;
@@ -28,9 +28,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import javax.servlet.http.HttpSession;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
@@ -42,15 +40,14 @@ public class PayPalCallbackController {
 
     private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
+    private final PayPalManager payPalManager;
 
     @GetMapping("/confirm")
     public String payPalSuccess(@PathVariable("eventName") String eventName,
                                 @PathVariable("reservationId") String reservationId,
                                 @RequestParam(value = "paymentId", required = false) String payPalPaymentId,
                                 @RequestParam(value = "PayerID", required = false) String payPalPayerID,
-                                @RequestParam(value = "hmac") String hmac,
-                                RedirectAttributes redirectAttributes,
-                                HttpSession session) {
+                                @RequestParam(value = "hmac") String hmac) {
 
         Optional<Event> optionalEvent = eventRepository.findOptionalByShortName(eventName);
         if(optionalEvent.isEmpty()) {
@@ -60,30 +57,26 @@ public class PayPalCallbackController {
         Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
 
         if(optionalReservation.isEmpty()) {
-            return "redirect:/event/"+eventName;
+            return "redirect:/event/" + eventName;
         }
+
+        var res = optionalReservation.get();
+        var ev = optionalEvent.get();
 
         if (isNotBlank(payPalPayerID) && isNotBlank(payPalPaymentId)) {
-            redirectAttributes.addFlashAttribute("paypalCheckoutConfirmation", true)
-                 .addFlashAttribute("tokenAcquired", true);
-            session.setAttribute(PaymentManager.PAYMENT_TOKEN, new PayPalToken(payPalPayerID, payPalPaymentId, hmac));
+            var token = new PayPalToken(payPalPayerID, payPalPaymentId, hmac);
+            payPalManager.saveToken(res.getId(), ev, token);
+            return "redirect:/event/" + ev.getShortName() + "/reservation/" +res.getId() + "/overview";
         } else {
-            return payPalCancel(eventName, reservationId, redirectAttributes, session);
+            return payPalCancel(ev.getShortName(), res.getId());
         }
-
-        return "redirect:/event/"+eventName+"/reservation/"+reservationId+"/overview";
     }
 
     @GetMapping("/cancel")
     public String payPalCancel(@PathVariable("eventName") String eventName,
-                               @PathVariable("reservationId") String reservationId,
-                               RedirectAttributes redirectAttributes,
-                               HttpSession session) {
+                               @PathVariable("reservationId") String reservationId) {
 
-        session.removeAttribute(PaymentManager.PAYMENT_TOKEN);
-
-        redirectAttributes.addFlashAttribute("tokenAcquired", false)
-             .addFlashAttribute("payPalCancelled", true);
+        payPalManager.removeToken(reservationId);
         return "redirect:/event/"+eventName+"/reservation/"+reservationId+"/overview";
     }
 }

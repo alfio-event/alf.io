@@ -223,4 +223,9 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         }
         return Optional.empty();
     }
+
+    @Override
+    public boolean accept(Transaction transaction) {
+        return false;
+    }
 }

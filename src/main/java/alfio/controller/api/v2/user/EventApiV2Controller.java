@@ -26,7 +26,6 @@ import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.controller.support.Formatters;
-import alfio.controller.support.SessionUtil;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.system.ConfigurationManager;
@@ -486,7 +485,7 @@ public class EventApiV2Controller {
                 bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
             } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
                 bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
-                SessionUtil.cleanupSession(request.getRequest());
+                //SessionUtil.cleanupSession(request.getRequest());
             } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
                 bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
             }
