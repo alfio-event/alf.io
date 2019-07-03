@@ -56,6 +56,10 @@ public final class MonetaryUtil {
     }
 
     public static BigDecimal centsToUnit(int cents, String currencyCode) {
+        return centsToUnit((long) cents, currencyCode);
+    }
+
+    public static BigDecimal centsToUnit(long cents, String currencyCode) {
         if(cents == 0 || StringUtils.isEmpty(currencyCode)) {
             return BigDecimal.ZERO;
         }
@@ -64,31 +68,35 @@ public final class MonetaryUtil {
         return new BigDecimal(cents).divide(BigDecimal.TEN.pow(scale), scale, HALF_UP);
     }
 
-    public static BigDecimal centsToUnit(long cents, String currencyCode) {
-        var currencyUnit = CurrencyUnit.of(currencyCode);
-        int scale = currencyUnit.getDecimalPlaces();
-        return new BigDecimal(cents).divide(BigDecimal.TEN.pow(scale), scale, HALF_UP);
-    }
-
     public static int unitToCents(BigDecimal unit, String currencyCode) {
+        if (StringUtils.isEmpty(currencyCode)) {
+            return 0;
+        }
         return unitToCents(unit, currencyCode, BigDecimal::intValueExact);
     }
 
     public static <T extends Number> T unitToCents(BigDecimal unit, String currencyCode, Function<BigDecimal, T> converter) {
-        int scale = CurrencyUnit.of(currencyCode).getDecimalPlaces();
+        int scale = StringUtils.isEmpty(currencyCode) ? 2 : CurrencyUnit.of(currencyCode).getDecimalPlaces();
         BigDecimal result = unit.multiply(BigDecimal.TEN.pow(scale)).setScale(0, HALF_UP);
         return converter.apply(result);
     }
 
-    public static String formatCents(long cents, String currencyCode) {
-        return centsToUnit(cents, currencyCode).toPlainString();
+    public static String formatCents(int cents, String currencyCode) {
+        return formatCents((long) cents, currencyCode);
     }
 
-    public static String formatCents(int cents, String currencyCode) {
+    public static String formatCents(long cents, String currencyCode) {
+        if (StringUtils.isEmpty(currencyCode)) {
+            return "0";
+        }
         return centsToUnit(cents, currencyCode).toPlainString();
     }
 
     public static String formatUnit(BigDecimal unit, String currencyCode) {
+        if (StringUtils.isEmpty(currencyCode)) {
+            return "0";
+        }
+
         var currencyUnit = CurrencyUnit.of(Objects.requireNonNull(currencyCode));
         return Objects.requireNonNull(unit).setScale(currencyUnit.getDecimalPlaces(), HALF_UP).toPlainString();
     }
