@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.*;
@@ -35,8 +36,7 @@ import java.util.List;
 import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -62,10 +62,10 @@ public class TicketReservationManagerUnitTest {
     private TransactionRepository transactionRepository;
     private NotificationManager notificationManager;
     private MessageSource messageSource;
+    private MessageSourceManager messageSourceManager;
     private TemplateManager templateManager;
     private PlatformTransactionManager transactionManager;
     private WaitingQueueManager waitingQueueManager;
-    private FileUploadManager fileUploadManager;
     private TicketFieldRepository ticketFieldRepository;
     private AdditionalServiceRepository additionalServiceRepository;
     private AdditionalServiceItemRepository additionalServiceItemRepository;
@@ -98,10 +98,10 @@ public class TicketReservationManagerUnitTest {
         transactionRepository = mock(TransactionRepository.class);
         notificationManager = mock(NotificationManager.class);
         messageSource = mock(MessageSource.class);
+        messageSourceManager = mock(MessageSourceManager.class);
         templateManager = mock(TemplateManager.class);
         transactionManager = mock(PlatformTransactionManager.class);
         waitingQueueManager = mock(WaitingQueueManager.class);
-        fileUploadManager = mock(FileUploadManager.class);
         ticketFieldRepository = mock(TicketFieldRepository.class);
         additionalServiceRepository = mock(AdditionalServiceRepository.class);
         additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
@@ -113,6 +113,9 @@ public class TicketReservationManagerUnitTest {
         groupManager = mock(GroupManager.class);
         BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
         json = mock(Json.class);
+
+        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
 
         manager = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -126,7 +129,7 @@ public class TicketReservationManagerUnitTest {
             specialPriceRepository,
             transactionRepository,
             notificationManager,
-            messageSource,
+            messageSourceManager,
             templateManager,
             transactionManager,
             waitingQueueManager,

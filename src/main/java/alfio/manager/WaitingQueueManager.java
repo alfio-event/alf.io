@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.TicketReservationModification;
@@ -36,7 +37,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.context.MessageSource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 
@@ -61,7 +61,7 @@ public class WaitingQueueManager {
     private final EventStatisticsManager eventStatisticsManager;
     private final NotificationManager notificationManager;
     private final TemplateManager templateManager;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final OrganizationRepository organizationRepository;
     private final EventRepository eventRepository;
     private final ExtensionManager extensionManager;
@@ -92,6 +92,7 @@ public class WaitingQueueManager {
     }
 
     private void notifySubscription(Event event, CustomerName name, String email, Locale userLanguage, WaitingQueueSubscription.Type subscriptionType) {
+        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<String, Object> model = TemplateResource.buildModelForWaitingQueueJoined(organization, event, name);
         notificationManager.sendSimpleEmail(event, null, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),

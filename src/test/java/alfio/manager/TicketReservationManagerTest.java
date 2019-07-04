@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.BankTransferManager;
 import alfio.manager.payment.OnSiteManager;
 import alfio.manager.payment.PaymentSpecification;
@@ -99,6 +100,7 @@ class TicketReservationManagerTest {
 
     private NotificationManager notificationManager;
     private MessageSource messageSource;
+    private MessageSourceManager messageSourceManager;
     private TicketReservationRepository ticketReservationRepository;
     private TicketFieldRepository ticketFieldRepository;
     private ConfigurationManager configurationManager;
@@ -133,6 +135,7 @@ class TicketReservationManagerTest {
     void init() {
         notificationManager = mock(NotificationManager.class);
         messageSource = mock(MessageSource.class);
+        messageSourceManager = mock(MessageSourceManager.class);
         ticketReservationRepository = mock(TicketReservationRepository.class);
         ticketFieldRepository = mock(TicketFieldRepository.class);
         configurationManager = mock(ConfigurationManager.class);
@@ -184,6 +187,9 @@ class TicketReservationManagerTest {
         when(ticketCategory.getCurrencyCode()).thenReturn(CATEGORY_CURRENCY);
         when(configurationManager.getFor(event, VAT_NR)).thenReturn(new ConfigurationManager.MaybeConfiguration(VAT_NR));
 
+        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
+
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
             ticketRepository,
@@ -196,7 +202,7 @@ class TicketReservationManagerTest {
             specialPriceRepository,
             transactionRepository,
             notificationManager,
-            messageSource,
+            messageSourceManager,
             templateManager,
             transactionManager,
             waitingQueueManager,

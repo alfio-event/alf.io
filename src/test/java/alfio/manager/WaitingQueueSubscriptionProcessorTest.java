@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
@@ -58,6 +59,7 @@ public class WaitingQueueSubscriptionProcessorTest {
     private TicketReservationWithOptionalCodeModification reservation;
     private WaitingQueueSubscriptionProcessor processor;
     private TicketRepository ticketRepository;
+    private MessageSourceManager messageSourceManager;
 
 
     @BeforeEach
@@ -68,6 +70,7 @@ public class WaitingQueueSubscriptionProcessorTest {
         waitingQueueManager = mock(WaitingQueueManager.class);
         notificationManager = mock(NotificationManager.class);
         messageSource = mock(MessageSource.class);
+        messageSourceManager = mock(MessageSourceManager.class);
         templateManager = mock(TemplateManager.class);
         waitingQueueRepository = mock(WaitingQueueRepository.class);
         transactionManager = mock(PlatformTransactionManager.class);
@@ -79,13 +82,15 @@ public class WaitingQueueSubscriptionProcessorTest {
         when(event.getId()).thenReturn(eventId);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(eventManager.getActiveEvents()).thenReturn(Collections.singletonList(event));
+        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
         processor = new WaitingQueueSubscriptionProcessor(eventManager,
             ticketReservationManager,
             configurationManager,
             waitingQueueManager,
             notificationManager,
             waitingQueueRepository,
-            messageSource,
+            messageSourceManager,
             templateManager,
             ticketRepository,
             transactionManager);

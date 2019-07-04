@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
@@ -55,6 +56,7 @@ public class SpecialPriceManagerTest {
     private SpecialPriceRepository specialPriceRepository;
     private TemplateManager templateManager;
     private MessageSource messageSource;
+    private MessageSourceManager messageSourceManager;
     private I18nManager i18nManager;
     private SpecialPriceManager specialPriceManager;
     private ConfigurationManager configurationManager;
@@ -68,12 +70,15 @@ public class SpecialPriceManagerTest {
         notificationManager = mock(NotificationManager.class);
         specialPriceRepository = mock(SpecialPriceRepository.class);
         templateManager = mock(TemplateManager.class);
+        messageSourceManager = mock(MessageSourceManager.class);
         messageSource = mock(MessageSource.class);
         i18nManager = mock(I18nManager.class);
         configurationManager = mock(ConfigurationManager.class);
 
         List<SpecialPrice> specialPrices = asList(new SpecialPrice(0, "123", 0, 0, "FREE", null, null, null, null), new SpecialPrice(0, "456", 0, 0, "FREE", null, null, null,  null));
         when(i18nManager.getEventLanguages(anyInt())).thenReturn(Collections.singletonList(ContentLanguage.ITALIAN));
+        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("text");
         when(eventManager.getSingleEvent(anyString(), anyString())).thenReturn(event);
         when(eventManager.getEventAndOrganizationId(anyString(), anyString())).thenReturn(event);
@@ -88,7 +93,7 @@ public class SpecialPriceManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(specialPriceRepository.markAsSent(any(), anyString(), anyString(), anyString())).thenReturn(1);
         setRestricted(ticketCategory, true);
-        specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSource, i18nManager, configurationManager);
+        specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSourceManager, i18nManager, configurationManager);
     }
 
     @Test

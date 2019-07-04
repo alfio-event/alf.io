@@ -16,12 +16,12 @@
  */
 package alfio.manager;
 
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -41,7 +41,6 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
@@ -61,6 +60,7 @@ public class WaitingQueueManagerTest {
     private NotificationManager notificationManager;
     private TemplateManager templateManager;
     private MessageSource messageSource;
+    private MessageSourceManager messageSourceManager;
     private OrganizationRepository organizationRepository;
     private EventRepository eventRepository;
     private ExtensionManager extensionManager;
@@ -80,12 +80,15 @@ public class WaitingQueueManagerTest {
         notificationManager = mock(NotificationManager.class);
         templateManager = mock(TemplateManager.class);
         messageSource = mock(MessageSource.class);
+        messageSourceManager = mock(MessageSourceManager.class);
         organizationRepository = mock(OrganizationRepository.class);
         eventRepository = mock(EventRepository.class);
         extensionManager = mock(ExtensionManager.class);
         event = mock(Event.class);
         when(event.getId()).thenReturn(eventId);
-        manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, notificationManager, templateManager, messageSource, organizationRepository, eventRepository, extensionManager);
+        manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, notificationManager, templateManager, messageSourceManager, organizationRepository, eventRepository, extensionManager);
+        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
     }
 
     @AfterEach

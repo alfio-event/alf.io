@@ -22,6 +22,7 @@ import alfio.config.support.PlatformProvider;
 import alfio.job.Jobs;
 import alfio.job.executor.ReservationJobExecutor;
 import alfio.manager.*;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
@@ -165,13 +166,18 @@ public class DataSourceConfiguration {
     }
 
     @Bean
+    public MessageSourceManager messageSourceManager(MessageSource messageSource) {
+        return new MessageSourceManager(messageSource);
+    }
+
+    @Bean
     public Json getJson() {
         return new Json();
     }
 
     @Bean
-    public TemplateManager getTemplateManager(UploadedResourceManager uploadedResourceManager, ConfigurationManager configurationManager) {
-        return new TemplateManager(messageSource(), uploadedResourceManager, configurationManager);
+    public TemplateManager getTemplateManager(MessageSourceManager messageSourceManager, UploadedResourceManager uploadedResourceManager, ConfigurationManager configurationManager) {
+        return new TemplateManager(messageSourceManager, uploadedResourceManager, configurationManager);
     }
 
     @Bean
