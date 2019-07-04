@@ -168,14 +168,19 @@
             </tbody>
             <tfoot>
                 {{^orderSummary.free}}
-                    {{#orderSummary.displayVat}}
+                    {{#orderSummary.displayVat}}{{^ticketReservation.vatIncluded}}
                         <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
-                    {{/orderSummary.displayVat}}
+                   	{{/ticketReservation.vatIncluded}}{{/orderSummary.displayVat}}
                     {{^orderSummary.displayVat}}
                         <tr><th colspan="4" class="no-padding">{{#i18n}}invoice.vat-voided [{{vatTranslation}}]{{/i18n}}</th></tr>
                     {{/orderSummary.displayVat}}
                 {{/orderSummary.free}}
                 <tr><th colspan="3" class="strong" class="no-padding">{{#i18n}}reservation-page.total{{/i18n}}</th><th class="text-right strong">{{event.currency}} {{orderSummary.totalPrice}}</th></tr>
+                {{^orderSummary.free}}
+                    {{#orderSummary.displayVat}}{{#ticketReservation.vatIncluded}}
+                        <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat-included [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
+                   	{{/ticketReservation.vatIncluded}}{{/orderSummary.displayVat}}
+                {{/orderSummary.free}}
             </tfoot>
         </table>
 
