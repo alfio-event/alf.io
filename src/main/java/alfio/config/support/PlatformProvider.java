@@ -256,10 +256,6 @@ public enum PlatformProvider {
         }
     };
 
-    private static final String POSTGRESQL_DRIVER = "org.postgresql.Driver";
-    public static final String PGSQL = "PGSQL";
-
-
     public String getUrl(Environment env) {
         return env.getRequiredProperty("datasource.url");
     }
@@ -270,14 +266,6 @@ public enum PlatformProvider {
 
     public String getPassword(Environment env) {
         return env.getRequiredProperty("datasource.password");
-    }
-
-    public String getDriverClassName(Environment env) {
-        return POSTGRESQL_DRIVER;
-    }
-
-    public String getDialect(Environment env) {
-        return PGSQL;
     }
 
     public int getMaxActive(Environment env) {

@@ -90,7 +90,7 @@ public class DataSourceConfiguration {
             dataSource.setJdbcUrl(platform.getUrl(env));
             dataSource.setUsername(platform.getUsername(env));
             dataSource.setPassword(platform.getPassword(env));
-            dataSource.setDriverClassName(platform.getDriverClassName(env));
+            dataSource.setDriverClassName("org.postgresql.Driver");
             dataSource.setMaximumPoolSize(platform.getMaxActive(env));
             dataSource.setMinimumIdle(platform.getMinIdle(env));
             dataSource.setConnectionTimeout(1000L);
@@ -135,7 +135,6 @@ public class DataSourceConfiguration {
 
     @Bean
     public Flyway migrator(Environment env, PlatformProvider platform, DataSource dataSource) {
-        String sqlDialect = platform.getDialect(env);
         Flyway migration = new Flyway();
         migration.setDataSource(dataSource);
 
@@ -143,7 +142,7 @@ public class DataSourceConfiguration {
         migration.setTarget(MigrationVersion.LATEST);
         migration.setOutOfOrder(true);
 
-        migration.setLocations("alfio/db/" + sqlDialect + "/");
+        migration.setLocations("alfio/db/PGSQL/");
         migration.migrate();
         return migration;
     }
