@@ -27,6 +27,7 @@ import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.repository.system.AdminJobQueueRepository;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.Json;
@@ -166,8 +167,8 @@ public class DataSourceConfiguration {
     }
 
     @Bean
-    public MessageSourceManager messageSourceManager(MessageSource messageSource) {
-        return new MessageSourceManager(messageSource);
+    public MessageSourceManager messageSourceManager(MessageSource messageSource, ConfigurationRepository configurationRepository) {
+        return new MessageSourceManager(messageSource, configurationRepository);
     }
 
     @Bean
