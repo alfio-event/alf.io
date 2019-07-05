@@ -75,7 +75,7 @@ public interface TicketCategoryRepository {
     @Query("select * from ticket_category_with_currency where event_id = :eventId  and tc_status = 'ACTIVE' order by inception asc, expiration asc, id asc")
     List<TicketCategory> findAllTicketCategories(@Bind("eventId") int eventId);
     
-    @Query("select * from ticket_category_with_currency where event_id = :eventId")
+    @Query("select * from ticket_category_with_currency where event_id = :eventId and tc_status = 'ACTIVE'")
     List<TicketCategory> findByEventId(@Bind("eventId") int eventId);
 
     default Map<Integer, TicketCategory> findByEventIdAsMap(int eventId) {
@@ -130,4 +130,7 @@ public interface TicketCategoryRepository {
 
     @Query("select access_restricted from ticket_category where id = :id")
     Boolean isAccessRestricted(@Bind("id") Integer hiddenCategoryId);
+
+    @Query("update ticket_category set tc_status = 'NOT_ACTIVE' from (select count(*) cnt from ticket where category_id = :categoryId and status in ('PENDING', 'ACQUIRED', 'CHECKED_IN')) tkts where id = :categoryId and tkts.cnt = 0")
+    int deleteCategoryIfEmpty(@Bind("categoryId") int categoryId);
 }

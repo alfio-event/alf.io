@@ -83,6 +83,7 @@
                                             <i class="fa fa-envelope-o"></i> send invitations
                                         </a>
                                         <a class="btn btn-sm btn-default" data-ng-click="openConfiguration(event, ticketCategory)"><i class="fa fa-wrench"></i> options</a>
+                                        <a class="btn btn-sm btn-danger" ng-if="canBeDeleted(ticketCategory)" ng-click="deleteCategory(ticketCategory, event)"><i class="fa fa-trash"></i> delete</a>
                                     </div>
                                 </div>
                             </div>
@@ -95,7 +96,7 @@
                         </div>
                         <div class="row form-inline text-danger" data-ng-if="ticketCategory.containingOrphans">
                             <div class="col-xs-12" data-ng-form="moveTickets">
-                                <i class="fa fa-warning"></i> This category contains orphan (not sold) tickets. Move them to another category:
+                                <i class="fa fa-warning"></i> This category contains reserved tickets that cannot be sold anymore. Move them to another category:
                                 <select class="form-control input-sm" data-ng-model="targetCategoryId" required data-ng-options="category.id as category.name for category in validCategories"></select>
                                 <button class="btn btn-sm btn-warning" data-ng-click="moveOrphans(ticketCategory, targetCategoryId, event.id)">apply</button>
                                 <button data-ng-if="event.containingUnboundedCategories" class="btn btn-sm btn-warning" data-ng-click="unbindTickets(event, ticketCategory)">Assign to dynamic categories</button>

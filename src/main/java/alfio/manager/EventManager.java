@@ -956,4 +956,29 @@ public class EventManager {
     public Optional<TicketCategory> getOptionalByIdAndActive(int ticketCategoryId, int eventId) {
         return ticketCategoryRepository.getOptionalByIdAndActive(ticketCategoryId, eventId);
     }
+
+    public void deleteCategory(String eventName, int categoryId, String username) {
+        var optionalEvent = getOptionalEventAndOrganizationIdByName(eventName, username);
+        if(optionalEvent.isEmpty()) {
+            throw new IllegalArgumentException("Event not found");
+        }
+        int eventId = optionalEvent.get().getId();
+        var optionalCategory = getOptionalByIdAndActive(categoryId, eventId);
+        if(optionalCategory.isEmpty()) {
+            throw new IllegalArgumentException("Category not found");
+        }
+        var category = optionalCategory.get();
+        int result = ticketCategoryRepository.deleteCategoryIfEmpty(category.getId());
+        if(result != 1) {
+            log.debug("cannot delete category. Expected result 1, got {}", result);
+            throw new IllegalStateException("Cannot delete category");
+        }
+        if(category.isBounded()) {
+            int ticketsCount = category.getMaxTickets();
+            var ticketIds = ticketRepository.selectTicketInCategoryForUpdate(eventId, categoryId, ticketsCount, List.of(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
+            Validate.isTrue(ticketIds.size() == ticketsCount, "Error while deleting category. Please ensure that there is no pending reservation.");
+            ticketRepository.resetTickets(ticketIds);
+            Validate.isTrue(ticketsCount == ticketRepository.unbindTicketsFromCategory(eventId, categoryId, ticketIds), "Cannot remove tickets from category.");
+        }
+    }
 }

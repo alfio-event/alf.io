@@ -109,6 +109,9 @@
                     eventId: eventId
                 }).error(HttpErrorHandler.handle);
             },
+            deleteCategory: function(category, event) {
+                return $http['delete']('/admin/api/events/'+event.shortName+'/category/'+category.id).error(HttpErrorHandler.handle);
+            },
             unbindTickets: function(event, category) {
                 return $http['put']('/admin/api/events/'+event.shortName+'/category/'+category.id+'/unbind-tickets').error(HttpErrorHandler.handle);
             },

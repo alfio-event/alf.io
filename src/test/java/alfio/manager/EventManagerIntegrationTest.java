@@ -50,6 +50,7 @@ import java.util.*;
 
 import static alfio.test.util.IntegrationTestUtil.*;
 import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
@@ -695,6 +696,82 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         Result<TicketCategory> result = eventManager.updateCategory(categoryID, event, tcm, username);
         assertFalse(result.isSuccess());
     }
+
+    @Test
+    public void deleteUnboundedTicketCategorySuccess() {
+        List<TicketCategoryModification> cat = List.of(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+        Pair<Event, String> pair = initEvent(cat, organizationRepository, userManager, eventManager, eventRepository);
+        var event = pair.getLeft();
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        assertEquals(1, categories.size());
+        int categoryId = categories.get(0).getId();
+        eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight());
+        assertEquals(0, ticketCategoryRepository.findAllTicketCategories(event.getId()).size());
+        assertEquals(AVAILABLE_SEATS, (int) ticketRepository.countFreeTicketsForUnbounded(event.getId()));
+    }
+
+    @Test
+    public void deleteUnboundedTicketCategoryFailure() {
+        List<TicketCategoryModification> cat = Collections.singletonList(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+        Pair<Event, String> pair = initEvent(cat, organizationRepository, userManager, eventManager, eventRepository);
+        var event = pair.getLeft();
+        var tickets = ticketRepository.selectNotAllocatedTicketsForUpdate(event.getId(), 1, List.of(Ticket.TicketStatus.FREE.name()));
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        assertEquals(1, categories.size());
+        int categoryId = categories.get(0).getId();
+        String reservationId = UUID.randomUUID().toString();
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
+        int result = ticketRepository.reserveTickets(reservationId, tickets, categoryId, "en", 0, "CHF");
+        assertEquals(1, result);
+        assertThrows(IllegalStateException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));
+    }
+
+    @Test
+    public void deleteBoundedTicketCategorySuccess() {
+        List<TicketCategoryModification> cat = List.of(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Pair<Event, String> pair = initEvent(cat, organizationRepository, userManager, eventManager, eventRepository);
+        var event = pair.getLeft();
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        assertEquals(1, categories.size());
+        int categoryId = categories.get(0).getId();
+        eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight());
+        assertEquals(0, ticketCategoryRepository.findAllTicketCategories(event.getId()).size());
+        waitingQueueSubscriptionProcessor.handleWaitingTickets();
+        assertEquals(AVAILABLE_SEATS, (int) ticketRepository.countFreeTicketsForUnbounded(event.getId()));
+    }
+
+    @Test
+    public void deleteBoundedTicketCategoryFailure() {
+        List<TicketCategoryModification> cat = Collections.singletonList(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null));
+        Pair<Event, String> pair = initEvent(cat, organizationRepository, userManager, eventManager, eventRepository);
+        var event = pair.getLeft();
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        assertEquals(1, categories.size());
+        int categoryId = categories.get(0).getId();
+        var tickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), categoryId, 1, List.of(Ticket.TicketStatus.FREE.name()));
+        String reservationId = UUID.randomUUID().toString();
+        ticketReservationRepository.createNewReservation(reservationId, ZonedDateTime.now(), DateUtils.addDays(new Date(), 1), null, "en", event.getId(), event.getVat(), event.isVatIncluded(), event.getCurrency());
+        int result = ticketRepository.reserveTickets(reservationId, tickets, categoryId, "en", 0, "CHF");
+        assertEquals(1, result);
+        assertThrows(IllegalStateException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));
+    }
+
 
     private Pair<Event, String> generateAndEditEvent(int newEventSize) {
         List<TicketCategoryModification> categories = Collections.singletonList(
