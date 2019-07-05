@@ -19,12 +19,12 @@
                     <td ng-bind="$ctrl.ticket.firstName"></td>
                     <td ng-bind="$ctrl.ticket.lastName"></td>
                     <td ng-bind="$ctrl.ticket.email"></td>
-                    <td>{{$ctrl.ticket.formattedFinalPrice}} {{$ctrl.event.currency}}</td>
+                    <td>{{$ctrl.ticket.finalPrice | money:$ctrl.ticket.currencyCode}}</td>
                 </tbody>
             </table>
         </div>
         <div ng-if="$ctrl.paymentInfo.supportRefund" class="checkbox">
-            <label><input type="checkbox" ng-model="$ctrl.toRefund[$ctrl.ticketId]"> refund {{$ctrl.event.currency}} {{$ctrl.ticket.formattedFinalPrice}}</label>
+            <label><input type="checkbox" ng-model="$ctrl.toRefund[$ctrl.ticketId]"> refund {{$ctrl.ticket.finalPrice | money:$ctrl.ticket.currencyCode}}</label>
         </div>
         <div ng-if="$ctrl.paymentInfo.supportRefund && $ctrl.toRefund[$ctrl.ticketId]" class="checkbox">
             <label><input type="checkbox" ng-model="$ctrl.updateInvoice"> Update invoice</label>

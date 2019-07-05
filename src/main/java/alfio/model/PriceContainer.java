@@ -108,7 +108,6 @@ public interface PriceContainer {
      * Returns the price AFTER tax
      * @return net + tax
      */
-    @JsonIgnore
     default BigDecimal getFinalPrice() {
         final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
         BigDecimal discountedPrice = price.subtract(getAppliedDiscount());
