@@ -19,9 +19,8 @@ package alfio.manager.i18n;
 import alfio.model.EventAndOrganizationId;
 import alfio.repository.system.ConfigurationRepository;
 import org.springframework.context.MessageSource;
-import org.springframework.stereotype.Component;
 
-@Component
+
 public class MessageSourceManager {
 
     private final MessageSource messageSource;
