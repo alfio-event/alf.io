@@ -156,6 +156,7 @@ dependencies {
     compile 'commons-codec:commons-codec:1.12'
     compile 'net.sf.biweekly:biweekly:0.6.3'
     compile 'com.atlassian.commonmark:commonmark:0.12.1'
+    compile 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.12.1'
     compile 'com.ryantenney.passkit4j:passkit4j:2.0.1'
     compile 'com.github.ben-manes.caffeine:caffeine:2.7.0'
     compile 'de.danielbechler:java-object-diff:0.95'

@@ -835,20 +835,24 @@
             restrict: 'E',
             bindToController: true,
             scope: {
-                text: '='
+                text: '=',
+                buttonText: '@'
             },
             controllerAs: 'ctrl',
-            template:'<span><a class="btn btn-xs btn-default" ng-click="ctrl.openModal()"><i class="fa fa-eye"></i> preview</a></span>',
+            template:'<span><a class="btn btn-xs btn-default" ng-click="ctrl.openModal()"><i class="fa fa-eye"></i> {{ctrl.buttonText}}</a></span>',
             controller: function() {
                 var ctrl = this;
+                if(!ctrl.buttonText) {
+                    ctrl.buttonText = 'preview';
+                }
 
                 ctrl.openModal = function() {
                     if (ctrl.text) {
                         UtilsService.renderCommonMark(ctrl.text)
                             .then(function (res) {
                                     return $uibModal.open({
-                                        size: 'sm',
-                                        template: '<div class="modal-header"><h1>Preview</h1></div><div class="modal-body" ng-bind-html="text"></div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
+                                        size: 'lg',
+                                        template: '<div class="modal-header"><h1>Preview</h1></div><div class="modal-body markdown-content" ng-bind-html="text"></div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
                                         backdrop: 'static',
                                         controller: function ($scope) {
                                             $scope.ok = function () {

@@ -59,9 +59,12 @@
                 </dl>
             </div>
             <div class="col-md-5 hidden-xs hidden-sm">
-                <div data-ng-repeat="cl in event.contentLanguages">
-                    <p class="text-muted"><display-commonmark-preview text="event.description[cl.locale]"></display-commonmark-preview> {{event.description[cl.locale]}}</p>
-                </div>
+                <uib-tabset>
+                    <uib-tab heading="{{cl.locale}}" data-ng-repeat="cl in event.contentLanguages">
+                        <div style="padding-top:2px; text-align:right"><display-commonmark-preview text="event.description[cl.locale]"></display-commonmark-preview></div>
+                        <pre class="white text-muted">{{event.description[cl.locale]}}</pre>
+                    </uib-tab>
+                </uib-tabset>
             </div>
         </div>
     </div>
