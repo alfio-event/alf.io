@@ -323,7 +323,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
-        TicketCategory firstCategory = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory firstCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
         int firstCategoryID = firstCategory.getId();
         ticketCategoryRepository.updateSeatsAvailability(firstCategoryID, AVAILABLE_SEATS + 1);
         dataMigrator.fixCategoriesSize(event);
@@ -355,6 +355,6 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
         String uuid = ticketsInReservation.get(0).getUuid();
         assertTrue(ticketsInReservation.stream().allMatch(t -> t.getStatus() == Ticket.TicketStatus.PENDING));
         dataMigrator.fixStuckTickets(event.getId());
-        assertTrue(ticketRepository.findByUUID(uuid).getStatus() == Ticket.TicketStatus.RELEASED);
+        assertSame(ticketRepository.findByUUID(uuid).getStatus(), Ticket.TicketStatus.RELEASED);
     }
 }

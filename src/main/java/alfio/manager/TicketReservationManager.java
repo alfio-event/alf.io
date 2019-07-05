@@ -1733,7 +1733,7 @@ public class TicketReservationManager {
     }
 
     public int revertTicketsToFreeIfAccessRestricted(int eventId) {
-        List<Integer> restrictedCategories = ticketCategoryRepository.findByEventId(eventId).stream()
+        List<Integer> restrictedCategories = ticketCategoryRepository.findAllTicketCategories(eventId).stream()
             .filter(TicketCategory::isAccessRestricted)
             .map(TicketCategory::getId)
             .collect(toList());

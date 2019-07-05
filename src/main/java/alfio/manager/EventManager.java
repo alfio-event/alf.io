@@ -149,7 +149,7 @@ public class EventManager {
     }
 
     public List<TicketCategory> loadTicketCategories(EventAndOrganizationId event) {
-        return ticketCategoryRepository.findByEventId(event.getId());
+        return ticketCategoryRepository.findAllTicketCategories(event.getId());
     }
 
     public Organization loadOrganizer(EventAndOrganizationId event, String username) {
@@ -320,7 +320,7 @@ public class EventManager {
         int eventId = original.getId();
         int seatsDifference = em.getAvailableSeats() - eventRepository.countExistingTickets(original.getId());
         if(seatsDifference < 0) {
-            int allocatedSeats = ticketCategoryRepository.findByEventId(original.getId()).stream()
+            int allocatedSeats = ticketCategoryRepository.findAllTicketCategories(original.getId()).stream()
                     .filter(TicketCategory::isBounded)
                     .mapToInt(TicketCategory::getMaxTickets)
                     .sum();
@@ -498,7 +498,7 @@ public class EventManager {
         //FIXME: the date should be inserted as ZonedDateTime !
         Date creationDate = Date.from(creation.toInstant());
 
-        List<TicketCategory> categories = ticketCategoryRepository.findByEventId(event.getId());
+        List<TicketCategory> categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         Stream<MapSqlParameterSource> boundedTickets = categories.stream()
                 .filter(IS_CATEGORY_BOUNDED)
                 .flatMap(tc -> generateTicketsForCategory(tc, event, creationDate, 0));
@@ -754,7 +754,7 @@ public class EventManager {
     public boolean toggleTicketLocking(String eventName, int categoryId, int ticketId, String username) {
         EventAndOrganizationId event = getEventAndOrganizationId(eventName, username);
         checkOwnership(event, username, event.getOrganizationId());
-        var existingCategory = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(tc -> tc.getId() == categoryId).findFirst();
+        var existingCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(tc -> tc.getId() == categoryId).findFirst();
         if(existingCategory.isPresent()) {
             Ticket ticket = ticketRepository.findById(ticketId, categoryId);
             Validate.isTrue(ticketRepository.toggleTicketLocking(ticketId, categoryId, !ticket.getLockedAssignment()) == 1, "unwanted result from ticket locking");

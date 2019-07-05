@@ -134,7 +134,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertFalse(tickets.isEmpty());
         assertEquals(AVAILABLE_SEATS, tickets.size());
         assertEquals(AVAILABLE_SEATS, tickets.stream().filter(t -> t.getCategoryId() == null).count());
-        List<TicketCategory> ticketCategories = ticketCategoryRepository.findByEventId(event.getId());
+        List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         assertEquals(1, ticketCategories.size());
         assertEquals(0, ticketCategories.get(0).getMaxTickets());
     }
@@ -370,7 +370,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
-        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), "default", 20,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
@@ -453,7 +453,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
         assertEquals(Integer.valueOf(AVAILABLE_SEATS), ticketRepository.countFreeTicketsForUnbounded(event.getId()));
-        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), AVAILABLE_SEATS,
             DateTimeModification.fromZonedDateTime(category.getUtcInception()),
@@ -476,7 +476,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         String username = pair.getRight();
         assertEquals(Integer.valueOf(0), ticketRepository.countFreeTicketsForUnbounded(event.getId()));
 
-        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), AVAILABLE_SEATS,
@@ -503,7 +503,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 10,
@@ -525,7 +525,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         List<Integer> tickets = ticketRepository.selectTicketInCategoryForUpdate(event.getId(), category.getId(), 1, Collections.singletonList(Ticket.TicketStatus.FREE.name()));
@@ -553,7 +553,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 11,
@@ -578,7 +578,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         TicketCategoryModification tcm = new TicketCategoryModification(category.getId(), category.getName(), 9,
@@ -608,7 +608,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getLeft();
         String username = pair.getRight();
 
-        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         Map<String, String> categoryDescription = ticketCategoryDescriptionRepository.descriptionForTicketCategory(category.getId());
 
         specialPriceTokenGenerator.generatePendingCodesForCategory(category.getId());
@@ -680,7 +680,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(Integer.valueOf(AVAILABLE_SEATS), ticketRepository.countFreeTicketsForUnbounded(event.getId()));
         TicketReservationModification trm = new TicketReservationModification();
         trm.setAmount(1);
-        trm.setTicketCategoryId(ticketCategoryRepository.findByEventId(event.getId()).get(0).getId());
+        trm.setTicketCategoryId(ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0).getId());
         TicketReservationWithOptionalCodeModification reservation = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
         ticketReservationManager.createTicketReservation(event, Collections.singletonList(reservation), Collections.emptyList(),
             DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);

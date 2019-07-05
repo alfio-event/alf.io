@@ -225,7 +225,7 @@ public class DataMigrator {
     }
 
     void fixCategoriesSize(EventAndOrganizationId event) {
-        ticketCategoryRepository.findByEventId(event.getId()).stream()
+        ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
             .filter(TicketCategory::isBounded)
             .forEach(tc -> {
                 Integer result = jdbc.queryForObject("select count(*) from ticket where event_id = :eventId and category_id = :categoryId and status <> 'INVALIDATED'", new MapSqlParameterSource("eventId", tc.getEventId()).addValue("categoryId", tc.getId()), Integer.class);

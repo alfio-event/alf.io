@@ -46,9 +46,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.net.URISyntaxException;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -169,7 +167,7 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
         String shortName = controller.create(eventCreationRequest,mockPrincipal).getBody();
         Event event = eventManager.getSingleEvent(shortName,username);
-        List<TicketCategory> tickets = ticketCategoryRepository.findByEventId(event.getId());
+        List<TicketCategory> tickets = ticketCategoryRepository.findAllTicketCategories(event.getId());
 
 
 

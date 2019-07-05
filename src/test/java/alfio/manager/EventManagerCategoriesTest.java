@@ -66,7 +66,7 @@ public class EventManagerCategoriesTest {
     @DisplayName("create tickets for the unbounded category")
     void createTicketsForUnboundedCategory() {
         List<TicketCategory> categories = generateCategoryStream().limit(3).collect(Collectors.toList());
-        when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
+        when(ticketCategoryRepository.findAllTicketCategories(eq(eventId))).thenReturn(categories);
         MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event, availableSeats, Ticket.TicketStatus.FREE);
         assertNotNull(parameterSources);
         assertEquals(availableSeats, parameterSources.length);
@@ -77,7 +77,7 @@ public class EventManagerCategoriesTest {
     @DisplayName("create tickets for the unbounded categories")
     void createTicketsForUnboundedCategories() {
         List<TicketCategory> categories = generateCategoryStream().limit(6).collect(Collectors.toList());
-        when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
+        when(ticketCategoryRepository.findAllTicketCategories(eq(eventId))).thenReturn(categories);
         MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event, availableSeats, Ticket.TicketStatus.FREE);
         assertNotNull(parameterSources);
         assertEquals(availableSeats, parameterSources.length);
@@ -88,7 +88,7 @@ public class EventManagerCategoriesTest {
     @DisplayName("create tickets only for the bounded categories")
     void createTicketsOnlyForBounded() {
         List<TicketCategory> categories = generateCategoryStream().limit(2).collect(Collectors.toList());
-        when(ticketCategoryRepository.findByEventId(eq(eventId))).thenReturn(categories);
+        when(ticketCategoryRepository.findAllTicketCategories(eq(eventId))).thenReturn(categories);
         MapSqlParameterSource[] parameterSources = eventManager.prepareTicketsBulkInsertParameters(ZonedDateTime.now(), event, availableSeats, Ticket.TicketStatus.FREE);
         assertNotNull(parameterSources);
         assertEquals(availableSeats, parameterSources.length);

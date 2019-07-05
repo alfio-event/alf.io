@@ -108,7 +108,7 @@ public class WaitingQueueManager {
 
     private WaitingQueueSubscription.Type getSubscriptionType(Event event) {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        return ticketCategoryRepository.findByEventId(event.getId()).stream()
+        return ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
                 .filter(tc -> !tc.isAccessRestricted())
                 .filter(tc -> now.isAfter(tc.getInception(event.getZoneId())))
                 .findFirst()
