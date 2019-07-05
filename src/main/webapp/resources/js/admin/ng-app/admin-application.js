@@ -816,8 +816,6 @@
                     }
 
                 });
-            GroupService.loadActiveLinks($state.params.eventName).then(function(confResult) {
-            });
         });
         $scope.allocationStrategyRadioClass = 'radio';
         $scope.evaluateCategoryStatusClass = function(index, category) {
@@ -863,6 +861,18 @@
 
         $scope.isReady = function(token) {
             return token.status === 'WAITING';
+        };
+
+        $scope.canBeDeleted = function(category) {
+            return category.checkedInTickets + category.soldTickets + category.pendingTickets === 0
+        };
+
+        $scope.deleteCategory = function(category, event) {
+            EventService.deleteCategory(category, event).then(function(result) {
+                if(result === 'OK') {
+                    loadData();
+                }
+            });
         };
 
         $scope.moveOrphans = function(srcCategory, targetCategoryId, eventId) {

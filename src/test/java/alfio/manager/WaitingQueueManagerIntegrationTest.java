@@ -166,7 +166,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
-        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS);
@@ -197,7 +197,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS - 1);
@@ -257,7 +257,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory bounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS - 1);
@@ -320,7 +320,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        List<TicketCategory> ticketCategories = ticketCategoryRepository.findByEventId(event.getId());
+        List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         TicketCategory first = ticketCategories.get(0);
         TicketCategory second = ticketCategories.get(1);
 
@@ -395,7 +395,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
-        List<TicketCategory> ticketCategories = ticketCategoryRepository.findByEventId(event.getId());
+        List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         TicketCategory first = ticketCategories.stream().filter(tc -> !tc.isAccessRestricted()).findFirst().orElseThrow(IllegalStateException::new);
         reserveTickets(event, first, 2);
         assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH));
@@ -430,7 +430,7 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ENABLE_WAITING_QUEUE, "true");
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
-        List<TicketCategory> ticketCategories = ticketCategoryRepository.findByEventId(event.getId());
+        List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         TicketCategory first = ticketCategories.stream().filter(tc -> !tc.isAccessRestricted()).findFirst().orElseThrow(IllegalStateException::new);
         String reservationId = reserveTickets(event, first, 2);
         assertTrue(waitingQueueManager.subscribe(event, customerJohnDoe(event), "john@doe.com", null, Locale.ENGLISH));

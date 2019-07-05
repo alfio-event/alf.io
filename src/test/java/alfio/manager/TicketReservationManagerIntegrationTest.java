@@ -116,7 +116,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(2);
-        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
         tr.setTicketCategoryId(category.getId());
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
@@ -142,8 +142,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 
-        TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
-        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory bounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         assertEquals(0, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId(), 0, null).size());
         assertEquals(Integer.valueOf(0), eventStatisticsManager.countModifiedTicket(event.getId(), bounded.getId(), null));
@@ -234,7 +234,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         //promo code at event level
         eventManager.addPromoCode("MYPROMOCODE", event.getId(), null, event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "email@reference.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
@@ -310,7 +310,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         var firstAsKey = additionalServiceRepository.insert(event.getId(), 1000, true, 1, 100, 1, ZonedDateTime.now().minusHours(1), ZonedDateTime.now().plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
         var secondAsKey = additionalServiceRepository.insert(event.getId(), 500, true, 2, 100, 1, ZonedDateTime.now().minusHours(1), ZonedDateTime.now().plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.DONATION, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
 
-        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         //promo code at event level
         eventManager.addPromoCode("MYPROMOCODE", event.getId(), null, event.getBegin(), event.getEnd(), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "email@reference.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
@@ -353,7 +353,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
                 DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategory category = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isAccessRestricted).findFirst().orElseThrow();
+        TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isAccessRestricted).findFirst().orElseThrow();
 
         specialPriceTokenGenerator.generatePendingCodesForCategory(category.getId());
 
@@ -427,7 +427,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             BigDecimal.TEN, AdditionalService.VatType.INHERITED, Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository, additionalServices).getKey();
 
-        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(3);
@@ -469,7 +469,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS + 1);
@@ -488,7 +488,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
                 DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
-        TicketCategory unbounded = ticketCategoryRepository.findByEventId(event.getId()).get(0);
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
 
         TicketReservationModification tr = new TicketReservationModification();
         tr.setAmount(AVAILABLE_SEATS / 2 + 1);
@@ -526,7 +526,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 
-        TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory bounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
 
 
         TicketReservationModification tr = new TicketReservationModification();
@@ -564,7 +564,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 
-        TicketCategory bounded = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory bounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
 
 
         TicketReservationModification tr = new TicketReservationModification();

@@ -109,6 +109,29 @@
                     eventId: eventId
                 }).error(HttpErrorHandler.handle);
             },
+            deleteCategory: function(category, event) {
+
+                var modal = $uibModal.open({
+                    size:'md',
+                    templateUrl: '/resources/angular-templates/admin/partials/event/fragment/delete-category-modal.html',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        $scope.cancel = function() {
+                            modal.dismiss('canceled');
+                        };
+
+                        $scope.deleteCategory = function() {
+                            $http['delete']('/admin/api/events/'+event.shortName+'/category/'+category.id)
+                                .error(HttpErrorHandler.handle)
+                                .then(function() {
+                                    modal.close('OK');
+                                });
+                        };
+                        $scope.category = category;
+                    }
+                });
+                return modal.result;
+            },
             unbindTickets: function(event, category) {
                 return $http['put']('/admin/api/events/'+event.shortName+'/category/'+category.id+'/unbind-tickets').error(HttpErrorHandler.handle);
             },

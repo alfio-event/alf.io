@@ -109,7 +109,7 @@ public class EventStatisticsManager {
     }
 
     private List<TicketCategory> loadTicketCategories(EventAndOrganizationId event) {
-        return ticketCategoryRepository.findByEventId(event.getId());
+        return ticketCategoryRepository.findAllTicketCategories(event.getId());
     }
 
     private Event getEventAndCheckOwnership(String eventName, String username) {
