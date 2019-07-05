@@ -45,8 +45,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.util.Wrappers.optionally;
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @Log4j2
 @RestController
@@ -70,17 +68,17 @@ public class CheckInApiController {
         private String code;
     }
     
-    @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}", method = GET)
+    @GetMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
     public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
         return checkInManager.evaluateTicketStatus(eventId, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
-    @RequestMapping(value = "/check-in/event/{eventName}/ticket/{ticketIdentifier}", method = GET)
+    @GetMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}")
     public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
         return checkInManager.evaluateTicketStatus(eventName, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
-    @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}", method = POST)
+    @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
     public TicketAndCheckInResult checkIn(@PathVariable("eventId") int eventId,
                                           @PathVariable("ticketIdentifier") String ticketIdentifier,
                                           @RequestBody TicketCode ticketCode,
@@ -88,7 +86,7 @@ public class CheckInApiController {
         return checkInManager.checkIn(eventId, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), principal.getName());
     }
 
-    @RequestMapping(value = "/check-in/event/{eventName}/ticket/{ticketIdentifier}", method = POST)
+    @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}")
     public TicketAndCheckInResult checkIn(@PathVariable("eventName") String eventName,
                                           @PathVariable("ticketIdentifier") String ticketIdentifier,
                                           @RequestBody TicketCode ticketCode,
@@ -118,7 +116,7 @@ public class CheckInApiController {
             .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     }
 
-    @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/manual-check-in", method = POST)
+    @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/manual-check-in")
     public boolean manualCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
@@ -126,7 +124,7 @@ public class CheckInApiController {
         return checkInManager.manualCheckIn(eventId, ticketIdentifier, principal.getName());
     }
 
-    @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/revert-check-in", method = POST)
+    @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/revert-check-in")
     public boolean revertCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
@@ -134,7 +132,7 @@ public class CheckInApiController {
         return checkInManager.revertCheckIn(eventId, ticketIdentifier, principal.getName());
     }
 
-    @RequestMapping(value = "/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)
+    @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment")
     public TicketAndCheckInResult confirmOnSitePayment(@PathVariable("eventName") String eventName,
                                                        @PathVariable("ticketIdentifier") String ticketIdentifier,
                                                        @RequestBody TicketCode ticketCode,
@@ -145,19 +143,19 @@ public class CheckInApiController {
         return checkInManager.confirmOnSitePayment(eventName, ticketIdentifier, Optional.ofNullable(ticketCode).map(TicketCode::getCode), username, auditUser);
     }
 
-    @RequestMapping(value = "/check-in/event/{eventName}/statistics", method = GET)
+    @GetMapping("/check-in/event/{eventName}/statistics")
     public CheckInStatistics getStatistics(@PathVariable("eventName") String eventName, Principal principal) {
         return checkInManager.getStatistics(eventName, principal.getName());
     }
     
-    @RequestMapping(value = "/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment", method = POST)
+    @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment")
     public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
         return checkInManager.confirmOnSitePayment(ticketIdentifier)
             .map(s -> new OnSitePaymentConfirmation(true, "ok"))
             .orElseGet(() -> new OnSitePaymentConfirmation(false, "Ticket with uuid " + ticketIdentifier + " not found"));
     }
 
-    @RequestMapping(value = "/check-in/{eventId}/ticket-identifiers", method = GET)
+    @GetMapping("/check-in/{eventId}/ticket-identifiers")
     public List<Integer> findAllIdentifiersForAdminCheckIn(@PathVariable("eventId") int eventId,
                                                @RequestParam(value = "changedSince", required = false) Long changedSince,
                                                HttpServletResponse response,
@@ -166,7 +164,7 @@ public class CheckInApiController {
         return checkInManager.getAttendeesIdentifiers(eventId, changedSince == null ? new Date(0) : new Date(changedSince), principal.getName());
     }
 
-    @RequestMapping(value = "/check-in/{eventId}/tickets", method = POST)
+    @PostMapping("/check-in/{eventId}/tickets")
     public List<FullTicketInfo> findAllTicketsForAdminCheckIn(@PathVariable("eventId") int eventId,
                                                               @RequestBody List<Integer> ids,
                                                               Principal principal) {
@@ -174,7 +172,7 @@ public class CheckInApiController {
         return checkInManager.getAttendeesInformation(eventId, ids, principal.getName());
     }
 
-    @RequestMapping(value = "/check-in/{eventName}/label-layout", method = GET)
+    @GetMapping("/check-in/{eventName}/label-layout")
     public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable("eventName") String eventName, Principal principal) {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .filter(checkInManager.isOfflineCheckInAndLabelPrintingEnabled())
@@ -182,7 +180,7 @@ public class CheckInApiController {
             .orElseGet(() -> new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED));
     }
 
-    @RequestMapping(value = "/check-in/{eventName}/offline-identifiers", method = GET)
+    @GetMapping("/check-in/{eventName}/offline-identifiers")
     public List<Integer> getOfflineIdentifiers(@PathVariable("eventName") String eventName,
                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
                                               HttpServletResponse resp,
@@ -196,7 +194,7 @@ public class CheckInApiController {
         return ids.orElse(Collections.emptyList());
     }
 
-    @RequestMapping(value = "/check-in/{eventName}/offline", method = POST)
+    @PostMapping("/check-in/{eventName}/offline")
     public Map<String, String> getOfflineEncryptedInfo(@PathVariable("eventName") String eventName,
                                                        @RequestParam(value = "additionalField", required = false) List<String> additionalFields,
                                                        @RequestBody List<Integer> ids,
