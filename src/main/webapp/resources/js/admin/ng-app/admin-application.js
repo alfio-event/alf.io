@@ -868,13 +868,11 @@
         };
 
         $scope.deleteCategory = function(category, event) {
-            if($window.confirm('Do you really want to delete '+category.name+'?')) {
-                EventService.deleteCategory(category, event).success(function(result) {
-                    if(result === 'OK') {
-                        loadData();
-                    }
-                });
-            }
+            EventService.deleteCategory(category, event).then(function(result) {
+                if(result === 'OK') {
+                    loadData();
+                }
+            });
         };
 
         $scope.moveOrphans = function(srcCategory, targetCategoryId, eventId) {
