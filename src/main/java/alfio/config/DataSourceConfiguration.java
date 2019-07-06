@@ -153,7 +153,8 @@ public class DataSourceConfiguration {
      }
 
     @Bean
-    public CustomResourceBundleMessageSource messageSource() {
+    public MessageSourceManager messageSourceManager(ConfigurationRepository configurationRepository) {
+
         var source = new CustomResourceBundleMessageSource();
         source.setBasenames("alfio.i18n.public", "alfio.i18n.admin");
         source.setDefaultEncoding(StandardCharsets.UTF_8.displayName());
@@ -161,12 +162,8 @@ public class DataSourceConfiguration {
         //the fallback to the system locale.
         source.setFallbackToSystemLocale(false);
         source.setAlwaysUseMessageFormat(true);
-        return source;
-    }
 
-    @Bean
-    public MessageSourceManager messageSourceManager(CustomResourceBundleMessageSource messageSource, ConfigurationRepository configurationRepository, Json json) {
-        return new MessageSourceManager(messageSource, configurationRepository, json);
+        return new MessageSourceManager(source, configurationRepository);
     }
 
     @Bean

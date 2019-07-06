@@ -19,8 +19,6 @@ package alfio.manager.i18n;
 import alfio.model.EventAndOrganizationId;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
-import alfio.util.Json;
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.AbstractMessageSource;
 
@@ -36,14 +34,11 @@ public class MessageSourceManager {
 
     private final CustomResourceBundleMessageSource messageSource;
     private final ConfigurationRepository configurationRepository;
-    private final Json json;
 
     public MessageSourceManager(CustomResourceBundleMessageSource messageSource,
-                                ConfigurationRepository configurationRepository,
-                                Json json) {
+                                ConfigurationRepository configurationRepository) {
         this.messageSource = messageSource;
         this.configurationRepository = configurationRepository;
-        this.json = json;
     }
 
     public Set<String> getKeys(String basename, Locale locale) {
@@ -51,14 +46,12 @@ public class MessageSourceManager {
     }
 
     public MessageSource getMessageSourceForEvent(EventAndOrganizationId eventAndOrganizationId) {
-        Map<String, Map<String, String>> res = json.fromJsonString(configurationRepository.getEventOverrideMessages(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId()), new TypeReference<>() {
-        });
+        Map<String, Map<String, String>> res = configurationRepository.getEventOverrideMessages(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId());
         return new MessageSourceWithOverride(messageSource, res);
     }
 
     public MessageSource getRootMessageSource() {
-        Map<String, Map<String, String>> res = json.fromJsonString(configurationRepository.getSystemOverrideMessages(), new TypeReference<>() {
-        });
+        Map<String, Map<String, String>> res = configurationRepository.getSystemOverrideMessages();
         return new MessageSourceWithOverride(messageSource, res);
     }
 
