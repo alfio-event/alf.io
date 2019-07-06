@@ -281,8 +281,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     public void reservationFlowTest() throws Exception {
 
 
-        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getLanguages("NO_EVENT").getStatusCode());
-
         assertTrue(eventApiV2Controller.listEvents().getBody().isEmpty());
         ensureConfiguration();
 
@@ -371,8 +369,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         //it, en, de
         assertEquals(3, selectedEvent.getContentLanguages().size());
-        assertEquals(new HashSet<>(Arrays.asList("it", "en", "de")), new HashSet<>(eventApiV2Controller.getLanguages(event.getShortName()).getBody()));
-        assertEquals(selectedEvent.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toSet()), new HashSet<>(eventApiV2Controller.getLanguages(event.getShortName()).getBody()));
+
+        assertEquals(selectedEvent.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toSet()), Set.of("it", "en", "de"));
 
         //check if for each language we have the expected locale dependent entries
         for (String lang: Arrays.asList("it", "en", "de")) {

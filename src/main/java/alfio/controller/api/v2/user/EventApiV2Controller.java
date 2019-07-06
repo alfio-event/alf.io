@@ -376,21 +376,6 @@ public class EventApiV2Controller {
         });
     }
 
-    @GetMapping("event/{eventName}/languages")
-    public ResponseEntity<List<String>> getLanguages(@PathVariable("eventName") String eventName) {
-
-        var languages = i18nManager.getEventLanguages(eventName)
-            .stream()
-            .map(cl -> cl.getLocale().getLanguage())
-            .collect(Collectors.toList());
-
-        if (languages.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        } else {
-            return ResponseEntity.ok(languages);
-        }
-    }
-
     @GetMapping("event/{eventName}/calendar/{locale}")
     public void getCalendar(@PathVariable("eventName") String eventName,
                             @PathVariable("locale") String locale,
