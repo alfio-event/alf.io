@@ -26,6 +26,7 @@ import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
@@ -34,7 +35,6 @@ import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
-import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
@@ -60,7 +60,7 @@ public class TicketApiV2Controller {
     private final TicketHelper ticketHelper;
     private final TicketReservationManager ticketReservationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
-    private final CustomResourceBundleMessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final ExtensionManager extensionManager;
     private final FileUploadManager fileUploadManager;
     private final OrganizationRepository organizationRepository;
@@ -182,6 +182,8 @@ public class TicketApiV2Controller {
         var validityEnd = Optional.ofNullable(ticketCategory.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd());
         var sameDay = validityStart.truncatedTo(ChronoUnit.DAYS).equals(validityEnd.truncatedTo(ChronoUnit.DAYS));
 
+
+        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
 
         var formattedBeginDate = Formatters.getFormattedDate(event, validityStart, "common.event.date-format", messageSource);
         var formattedBeginTime = Formatters.getFormattedDate(event, validityStart, "common.event.time-format", messageSource);

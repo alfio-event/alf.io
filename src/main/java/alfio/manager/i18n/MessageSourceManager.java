@@ -18,24 +18,67 @@ package alfio.manager.i18n;
 
 import alfio.model.EventAndOrganizationId;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.util.CustomResourceBundleMessageSource;
+import alfio.util.Json;
+import com.fasterxml.jackson.core.type.TypeReference;
 import org.springframework.context.MessageSource;
+import org.springframework.context.support.AbstractMessageSource;
+
+import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 
 public class MessageSourceManager {
 
-    private final MessageSource messageSource;
-    private final ConfigurationRepository configurationRepository;
+    private static final String[] EMPTY_ARRAY = new String[]{};
 
-    public MessageSourceManager(MessageSource messageSource, ConfigurationRepository configurationRepository) {
+    private final CustomResourceBundleMessageSource messageSource;
+    private final ConfigurationRepository configurationRepository;
+    private final Json json;
+
+    public MessageSourceManager(CustomResourceBundleMessageSource messageSource,
+                                ConfigurationRepository configurationRepository,
+                                Json json) {
         this.messageSource = messageSource;
         this.configurationRepository = configurationRepository;
+        this.json = json;
+    }
+
+    public Set<String> getKeys(String basename, Locale locale) {
+        return messageSource.getKeys(basename, locale);
     }
 
     public MessageSource getMessageSourceForEvent(EventAndOrganizationId eventAndOrganizationId) {
-        return messageSource;
+        Map<String, Map<String, String>> res = json.fromJsonString(configurationRepository.getEventOverrideMessages(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId()), new TypeReference<>() {
+        });
+        return new MessageSourceWithOverride(messageSource, res);
     }
 
     public MessageSource getRootMessageSource() {
-        return messageSource;
+        Map<String, Map<String, String>> res = json.fromJsonString(configurationRepository.getSystemOverrideMessages(), new TypeReference<>() {
+        });
+        return new MessageSourceWithOverride(messageSource, res);
+    }
+
+    private static final class MessageSourceWithOverride extends AbstractMessageSource {
+
+        private final MessageSource messageSource;
+        private final Map<String, Map<String, String>> override;
+
+        MessageSourceWithOverride(MessageSource messageSource, Map<String, Map<String, String>> override) {
+            this.messageSource = messageSource;
+            this.override = override;
+        }
+
+        @Override
+        protected MessageFormat resolveCode(String s, Locale locale) {
+            var language = locale.getLanguage();
+            if (override.containsKey(language) && override.get(language).containsKey(s)) {
+                return new MessageFormat(override.get(language).get(s), locale);
+            }
+            return new MessageFormat(messageSource.getMessage(s, EMPTY_ARRAY, locale), locale);
+        }
     }
 }

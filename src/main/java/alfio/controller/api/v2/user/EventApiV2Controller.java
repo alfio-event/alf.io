@@ -28,6 +28,7 @@ import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.controller.support.Formatters;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.TicketReservationModification;
@@ -82,7 +83,7 @@ public class EventApiV2Controller {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final PaymentManager paymentManager;
-    private final CustomResourceBundleMessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final EuVatChecker vatChecker;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
@@ -106,6 +107,9 @@ public class EventApiV2Controller {
         var events = eventManager.getPublishedEvents()
             .stream()
             .map(e -> {
+
+                var messageSource = messageSourceManager.getMessageSourceForEvent(e);
+
                 var formattedBeginDate = Formatters.getFormattedDate(langs, e.getBegin(), "common.event.date-format", messageSource);
                 var formattedBeginTime = Formatters.getFormattedDate(langs, e.getBegin(), "common.event.time-format", messageSource);
                 var formattedEndDate = Formatters.getFormattedDate(langs, e.getEnd(), "common.event.date-format", messageSource);
@@ -121,6 +125,8 @@ public class EventApiV2Controller {
     public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable("eventName") String eventName, HttpSession session) {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
             .map(event -> {
+
+                var messageSource = messageSourceManager.getMessageSourceForEvent(event);
 
                 var descriptions = applyCommonMark(eventDescriptionRepository.findByEventIdAndType(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION)
                     .stream()
@@ -275,7 +281,7 @@ public class EventApiV2Controller {
         //
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
 
-
+            var messageSource = messageSourceManager.getMessageSourceForEvent(event);
             var appliedPromoCode = checkCode(event, code);
 
 

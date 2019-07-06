@@ -22,7 +22,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;

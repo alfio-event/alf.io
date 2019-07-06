@@ -39,9 +39,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.*;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -155,8 +153,8 @@ public class DataSourceConfiguration {
      }
 
     @Bean
-    public MessageSource messageSource() {
-        ResourceBundleMessageSource source = new CustomResourceBundleMessageSource();
+    public CustomResourceBundleMessageSource messageSource() {
+        var source = new CustomResourceBundleMessageSource();
         source.setBasenames("alfio.i18n.public", "alfio.i18n.admin");
         source.setDefaultEncoding(StandardCharsets.UTF_8.displayName());
         //since we have all the english translations in the default file, we don't need
@@ -167,8 +165,8 @@ public class DataSourceConfiguration {
     }
 
     @Bean
-    public MessageSourceManager messageSourceManager(MessageSource messageSource, ConfigurationRepository configurationRepository) {
-        return new MessageSourceManager(messageSource, configurationRepository);
+    public MessageSourceManager messageSourceManager(CustomResourceBundleMessageSource messageSource, ConfigurationRepository configurationRepository, Json json) {
+        return new MessageSourceManager(messageSource, configurationRepository, json);
     }
 
     @Bean

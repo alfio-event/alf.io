@@ -20,9 +20,9 @@ import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.api.v2.model.LocalizedCountry;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
-import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.LocaleUtil;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
@@ -38,14 +38,12 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.Configuration.getSystemConfiguration;
-
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api/v2/")
 public class TranslationsApiController {
 
-    private final CustomResourceBundleMessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final ConfigurationManager configurationManager;
     private final I18nManager i18nManager;
 
@@ -64,7 +62,8 @@ public class TranslationsApiController {
 
     private Map<String, String> getBundleAsMap(String baseName, String lang) {
         var locale = LocaleUtil.forLanguageTag(lang);
-        return messageSource.getKeys(baseName, locale)
+        var messageSource = messageSourceManager.getRootMessageSource();
+        return messageSourceManager.getKeys(baseName, locale)
             .stream()
             .collect(Collectors.toMap(Function.identity(), k -> messageSource.getMessage(k, EMPTY_ARRAY, locale)
                 //replace all placeholder {0} -> {{0}} so it can be consumed by ngx-translate

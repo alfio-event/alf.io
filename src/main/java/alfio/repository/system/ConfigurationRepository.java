@@ -130,4 +130,14 @@ public interface ConfigurationRepository {
 
     @Query("SELECT organization_id_fk FROM configuration_organization where c_key = :key and c_value = :value")
     Optional<Integer> findOrganizationIdByKeyAndValue(@Bind("key") String key, @Bind("value") String value);
+
+
+    @Query("select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1")
+    String getSystemOverrideMessages();
+
+    @Query("select coalesce(jsonb_recursive_merge(jsonb_recursive_merge(a.c_value, b.c_value), c.c_value), '{}'::jsonb) from "+
+        "(select c_value::jsonb from configuration where c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) a, "+
+        "(select c_value::jsonb from configuration_organization where organization_id_fk = :orgId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) b,"+
+        "(select c_value::jsonb from configuration_event where organization_id_fk = :orgId and event_id_fk = :eventId and c_key = 'TRANSLATION_OVERRIDE' union all select '{}'::jsonb limit 1) c")
+    String getEventOverrideMessages(@Bind("orgId") int orgId, @Bind("eventId") int eventId);
 }

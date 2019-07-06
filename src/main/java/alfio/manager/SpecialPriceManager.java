@@ -29,7 +29,6 @@ import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
