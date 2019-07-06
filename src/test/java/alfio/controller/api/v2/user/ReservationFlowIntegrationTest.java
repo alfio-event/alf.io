@@ -359,6 +359,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getFileBlobId(), selectedEvent.getFileBlobId());
         assertEquals(1, selectedEvent.getActivePaymentMethods().size());
         assertTrue(selectedEvent.getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
+        assertTrue(selectedEvent.getI18nOverride().isEmpty());
+
+        configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(),"TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("common.vat", "EVENT.vat"))), "");
+        eventRes = eventApiV2Controller.getEvent(event.getShortName(), new MockHttpSession());
+        selectedEvent = eventRes.getBody();
+        assertFalse(selectedEvent.getI18nOverride().isEmpty());
+        assertEquals("EVENT.vat", selectedEvent.getI18nOverride().get("en").get("common.vat"));
 
         checkCalendar(event.getShortName());
 

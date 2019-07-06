@@ -50,10 +50,6 @@ public class Json {
         return fromJson(value, valueType);
     }
 
-    public <T> T fromJsonString(String value, TypeReference<T> reference) {
-        return fromJson(value, reference);
-    }
-
     public static String toJson(Object o) {
         try {
             return mapper.writeValueAsString(o);

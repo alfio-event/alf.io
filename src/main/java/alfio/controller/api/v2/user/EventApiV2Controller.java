@@ -224,11 +224,16 @@ public class EventApiV2Controller {
                 var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
                 //
 
+                //
+                var i18nOverride = messageSourceManager.getEventMessageSourceOverride(event);
+                //
+
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
                     formattedEndDate, formattedEndTime,
-                    invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf), getCorsHeaders(), HttpStatus.OK);
+                    invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
+                    i18nOverride), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }

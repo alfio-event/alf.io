@@ -46,13 +46,17 @@ public class MessageSourceManager {
     }
 
     public MessageSource getMessageSourceForEvent(EventAndOrganizationId eventAndOrganizationId) {
-        Map<String, Map<String, String>> res = configurationRepository.getEventOverrideMessages(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId());
+        var res = getEventMessageSourceOverride(eventAndOrganizationId);
         return new MessageSourceWithOverride(messageSource, res);
     }
 
     public MessageSource getRootMessageSource() {
-        Map<String, Map<String, String>> res = configurationRepository.getSystemOverrideMessages();
+        var res = configurationRepository.getSystemOverrideMessages();
         return new MessageSourceWithOverride(messageSource, res);
+    }
+
+    public Map<String, Map<String, String>> getEventMessageSourceOverride(EventAndOrganizationId eventAndOrganizationId) {
+        return configurationRepository.getEventOverrideMessages(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId());
     }
 
     private static final class MessageSourceWithOverride extends AbstractMessageSource {
