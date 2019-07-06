@@ -30,8 +30,6 @@ import java.util.Set;
 
 public class MessageSourceManager {
 
-    private static final String[] EMPTY_ARRAY = new String[]{};
-
     private final CustomResourceBundleMessageSource messageSource;
     private final ConfigurationRepository configurationRepository;
 
@@ -61,10 +59,10 @@ public class MessageSourceManager {
 
     private static final class MessageSourceWithOverride extends AbstractMessageSource {
 
-        private final MessageSource messageSource;
+        private final CustomResourceBundleMessageSource messageSource;
         private final Map<String, Map<String, String>> override;
 
-        MessageSourceWithOverride(MessageSource messageSource, Map<String, Map<String, String>> override) {
+        private MessageSourceWithOverride(CustomResourceBundleMessageSource messageSource, Map<String, Map<String, String>> override) {
             this.messageSource = messageSource;
             this.override = override;
         }
@@ -75,7 +73,7 @@ public class MessageSourceManager {
             if (override.containsKey(language) && override.get(language).containsKey(s)) {
                 return new MessageFormat(override.get(language).get(s), locale);
             }
-            return new MessageFormat(messageSource.getMessage(s, EMPTY_ARRAY, locale), locale);
+            return messageSource.getMessageFormatFor(s, locale);
         }
     }
 }
