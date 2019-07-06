@@ -109,6 +109,9 @@ public interface PriceContainer {
      * @return net + tax
      */
     default BigDecimal getFinalPrice() {
+        if(getSrcPriceCts() == 0) {
+            return BigDecimal.ZERO;
+        }
         final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
         BigDecimal discountedPrice = price.subtract(getAppliedDiscount());
         if(getVatStatus() != VatStatus.INCLUDED) {
