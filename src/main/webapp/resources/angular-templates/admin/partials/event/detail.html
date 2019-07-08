@@ -118,7 +118,10 @@
                                 <div ng-repeat="(status, tokens) in tokensByStatus">
                                     <h5><strong>{{status}}</strong></h5>
                                     <ul class="list-inline">
-                                        <li data-ng-repeat="token in ::tokens">{{::token.code}}</li>
+                                        <li data-ng-repeat="token in ::tokens">
+                                            <a ng-if="token.status === 'TAKEN'" data-ui-sref="events.single.reservationsList({eventName: event.shortName, search: token.code})" title="Find reservation">{{::token.code}}</a>
+                                            <span data-ng-if="token.status !== 'TAKEN'">{{::token.code}}</span>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>
