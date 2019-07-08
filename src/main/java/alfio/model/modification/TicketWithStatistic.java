@@ -43,17 +43,21 @@ public class TicketWithStatistic implements Comparable<TicketWithStatistic>, Pri
     private final ZoneId zoneId;
     @JsonIgnore
     private final Optional<Transaction> tx;
+    private final String promoCodeOrToken;
+    @JsonIgnore
     private final Function<ZonedDateTime, LocalDateTime> dateMapper;
 
     public TicketWithStatistic(Ticket ticket,
                                TicketReservation ticketReservation,
                                ZoneId zoneId,
-                               Optional<Transaction> tx) {
+                               Optional<Transaction> tx,
+                               String promoCodeOrToken) {
         this.ticket = ticket;
         this.ticketReservation = ticketReservation;
         this.zoneId = zoneId;
         this.tx = tx;
         this.dateMapper = d -> d.withZoneSameInstant(this.zoneId).toLocalDateTime();
+        this.promoCodeOrToken = promoCodeOrToken;
     }
 
     public boolean isStuck() {

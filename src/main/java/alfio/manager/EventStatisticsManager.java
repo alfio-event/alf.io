@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 import static alfio.model.system.ConfigurationKeys.DISPLAY_STATS_IN_EVENT_DETAIL;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
 
 @Component
 @AllArgsConstructor
@@ -128,7 +129,7 @@ public class EventStatisticsManager {
         String toSearch = prepareSearchTerm(search);
         final int pageSize = 30;
         return ticketSearchRepository.findAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId, page * pageSize, pageSize, toSearch).stream()
-            .map(t -> new TicketWithStatistic(t.getTicket(), t.getTicketReservation(), event.getZoneId(), t.getTransaction()))
+            .map(t -> new TicketWithStatistic(t.getTicket(), t.getTicketReservation(), event.getZoneId(), t.getTransaction(), firstNonNull(t.getPromoCode(), t.getSpecialPriceToken())))
             .sorted()
             .collect(Collectors.toList());
     }
