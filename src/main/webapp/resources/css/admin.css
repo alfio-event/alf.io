@@ -725,3 +725,7 @@ span.path {
 .boolean-option > label {
     margin-left: 10px;
 }
+
+.width-100 {
+    width: 100%;
+}
