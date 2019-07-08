@@ -206,13 +206,21 @@ public enum ConfigurationKeys {
     //
 
     //FIXME refactor
+    @Deprecated
     TRANSLATION_OVERRIDE_VAT_EN("Override the default tax term EN: VAT", false, SettingCategory.TRANSLATIONS, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    TRANSLATION_OVERRIDE_VAT_DE("Override the default tax term DE: Mehrwertsteuer", false, SettingCategory.TRANSLATIONS, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    @Deprecated
+    TRANSLATION_OVERRIDE_VAT_DE("Override the default tax term DE: Mehrwertsteuer", true, SettingCategory.TRANSLATIONS, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    @Deprecated
     TRANSLATION_OVERRIDE_VAT_FR("Override the default tax term FR: TVA", false, SettingCategory.TRANSLATIONS, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    @Deprecated
     TRANSLATION_OVERRIDE_VAT_IT("Override the default tax term IT: IVA", false, SettingCategory.TRANSLATIONS, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    @Deprecated
     TRANSLATION_OVERRIDE_VAT_NL("Override the default tax term NL: BTW", false, SettingCategory.TRANSLATIONS, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    @Deprecated
     TRANSLATION_OVERRIDE_VAT_RO("Override the default tax term RO: TVA", false, SettingCategory.TRANSLATIONS, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    @Deprecated
     TRANSLATION_OVERRIDE_VAT_PT("Override the default tax term PT: IVA", false, SettingCategory.TRANSLATIONS, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    @Deprecated
     TRANSLATION_OVERRIDE_VAT_TR("Override the default tax term TR: KDV", false, SettingCategory.TRANSLATIONS, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
 
     //

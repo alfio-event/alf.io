@@ -18,15 +18,12 @@ package alfio.util;
 
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
-import alfio.model.system.ConfigurationKeys;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
 import com.samskivert.mustache.Mustache.Formatter;
 import com.samskivert.mustache.Template;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
@@ -61,17 +58,13 @@ public class TemplateManager {
     private final Map<TemplateOutput, Compiler> compilers;
 
     private final UploadedResourceManager uploadedResourceManager;
-    private final ConfigurationManager configurationManager;
 
     private static final Formatter DATE_FORMATTER = o -> (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o) : String.valueOf(o);
 
-    @Autowired
     public TemplateManager(MessageSourceManager messageSourceManager,
-                           UploadedResourceManager uploadedResourceManager,
-                           ConfigurationManager configurationManager) {
+                           UploadedResourceManager uploadedResourceManager) {
         this.messageSourceManager = messageSourceManager;
         this.uploadedResourceManager = uploadedResourceManager;
-        this.configurationManager = configurationManager;
 
         this.compilers = new EnumMap<>(TemplateOutput.class);
         this.compilers.put(TemplateOutput.TEXT, Mustache.compiler()
@@ -113,16 +106,8 @@ public class TemplateManager {
 
     private Map<String, Object> modelEnricher(Map<String, Object> model, Optional<? extends EventAndOrganizationId> event, Locale locale) {
         Map<String, Object> toEnrich = new HashMap<>(model);
-        event.ifPresent(ev -> toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, getVATString(ev, messageSourceManager.getMessageSourceForEvent(ev), locale, configurationManager)));
+        event.ifPresent(ev -> toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, messageSourceManager.getMessageSourceForEvent(ev).getMessage("common.vat", null, locale)));
         return toEnrich;
-    }
-
-
-    public static String getVATString(EventAndOrganizationId event, MessageSource messageSource, Locale loc, ConfigurationManager configurationManager) {
-        String locale = messageSource.getMessage("locale", null, loc);
-        String translatedVat = messageSource.getMessage("common.vat", null, loc);
-        ConfigurationKeys vatKey = ConfigurationKeys.valueOf("TRANSLATION_OVERRIDE_VAT_"+locale.toUpperCase(Locale.ENGLISH));
-        return configurationManager.getFor(event, vatKey).getValueOrDefault(translatedVat);
     }
 
     private String render(Resource resource, Map<String, Object> model, Locale locale, EventAndOrganizationId eventAndOrganizationId, TemplateOutput templateOutput) {

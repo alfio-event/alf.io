@@ -33,3 +33,21 @@ select
     from jsonb_each(a) e1(ka, va)
     full join jsonb_each(b) e2(kb, vb) on ka = kb
 $$;
+
+-- migrate deprecation of TRANSLATION_OVERRIDE_VAT_*
+
+
+--
+with t(lang, res) as (select lower(right(c_key, 2)), json_build_object('common.vat', c_value) from configuration where c_key like 'TRANSLATION_OVERRIDE_VAT_%')
+insert into configuration(c_key, c_value, description) select 'TRANSLATION_OVERRIDE', json_object_agg(lang, res), 'Translation override (json)' from t  having json_object_agg(lang, res) is not null;
+
+-- org
+with t_org(organization_id_fk, lang, res) as (select organization_id_fk, lower(right(c_key, 2)), json_build_object('common.vat', c_value) from configuration_organization where c_key like 'TRANSLATION_OVERRIDE_VAT_%')
+insert into configuration_organization(organization_id_fk, c_key, c_value, description)
+select organization_id_fk, 'TRANSLATION_OVERRIDE', json_object_agg(lang, res), 'Translation override (json)' from t_org group by organization_id_fk having json_object_agg(lang, res) is not null;
+
+
+-- event
+with t_ev(organization_id_fk, event_id_fk, lang, res) as (select organization_id_fk, event_id_fk, lower(right(c_key, 2)), json_build_object('common.vat', c_value) from configuration_event where c_key like 'TRANSLATION_OVERRIDE_VAT_%')
+insert into configuration_event(organization_id_fk, event_id_fk, c_key, c_value, description)
+select organization_id_fk, event_id_fk, 'TRANSLATION_OVERRIDE', json_object_agg(lang, res), 'Translation override (json)' from t_ev group by organization_id_fk, event_id_fk having json_object_agg(lang, res) is not null;
