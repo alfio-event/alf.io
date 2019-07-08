@@ -5,14 +5,15 @@
         bindings: {
             event: '<'
         },
-        controller: ['EventService', '$filter', '$location', ReservationsListCtrl],
+        controller: ['EventService', '$filter', '$location', '$stateParams', ReservationsListCtrl],
         templateUrl: '../resources/js/admin/feature/reservations-list/reservations-list.html'
     });
     
     
     
-    function ReservationsListCtrl(EventService, $filter, $location) {
+    function ReservationsListCtrl(EventService, $filter, $location, $stateParams) {
         var ctrl = this;
+        console.log("stateParams", $stateParams);
 
         var currentSearch = $location.search();
 
@@ -20,7 +21,7 @@
         ctrl.currentPage = currentSearch.page || 1;
         ctrl.currentPagePendingPayment = currentSearch.pendingPaymentPage || 1;
         ctrl.currentPageCancelled = currentSearch.cancelledPage || 1;
-        ctrl.toSearch = currentSearch.search || '';
+        ctrl.toSearch = currentSearch.search || $stateParams.search || '';
         ctrl.selectedTab = currentSearch.t || 1;
 
         ctrl.itemsPerPage = 50;

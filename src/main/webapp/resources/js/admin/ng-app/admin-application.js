@@ -217,7 +217,7 @@
                 }
             })
             .state('events.single.reservationsList', {
-                url: '/reservations/',
+                url: '/reservations/?search',
                 template: '<reservations-list event="ctrl.event"></reservations-list>',
                 controller: function(getEvent) {
                     this.event = getEvent.data.event;
