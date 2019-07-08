@@ -471,8 +471,8 @@ public class AdminReservationManager {
         Optional<Iterator<SpecialPrice>> specialPriceIterator = Optional.of(codes).filter(c -> !c.isEmpty()).map(Collection::iterator);
         for(int i=0; i<reservedForUpdate.size(); i++) {
             Attendee attendee = attendees.get(i);
+            Integer ticketId = reservedForUpdate.get(i);
             if(!attendee.isEmpty()) {
-                Integer ticketId = reservedForUpdate.get(i);
                 ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmailAddress(), attendee.getFullName(), attendee.getFirstName(), attendee.getLastName());
                 if(StringUtils.isNotBlank(attendee.getReference()) || attendee.isReassignmentForbidden()) {
                     updateExtRefAndLocking(categoryId, attendee, ticketId);
@@ -480,8 +480,8 @@ public class AdminReservationManager {
                 if(!attendee.getAdditionalInfo().isEmpty()) {
                     ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());
                 }
-                specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts));
             }
+            specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts));
         }
     }
 
@@ -716,6 +716,7 @@ public class AdminReservationManager {
 
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
         ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
+        specialPriceRepository.resetToFreeAndCleanupForTickets(ticketIds);
 
         List<String> reservationIds = ticketRepository.findReservationIds(ticketIds);
         List<String> ticketUUIDs = ticketRepository.findUUIDs(ticketIds);
