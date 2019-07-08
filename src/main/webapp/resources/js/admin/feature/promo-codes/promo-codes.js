@@ -56,13 +56,14 @@
             }
 
             loader().then(function(res) {
-                ctrl.promocodes = res.data.filter(function(pc) {
+                ctrl.allCodes = res.data;
+                ctrl.promocodes = ctrl.allCodes.filter(function(pc) {
                     return pc.codeType === 'DISCOUNT';
                 });
-                ctrl.accesscodes = res.data.filter(function(pc) {
+                ctrl.accesscodes = ctrl.allCodes.filter(function(pc) {
                     return pc.codeType === 'ACCESS';
                 });
-                angular.forEach(ctrl.promocodes, function(v) {
+                angular.forEach(ctrl.allCodes, function(v) {
                     (function(v) {
                         PromoCodeService.countUse(v.id).then(function(val) {
                             v.useCount = parseInt(val.data, 10);
