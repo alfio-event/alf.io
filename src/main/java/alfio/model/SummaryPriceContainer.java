@@ -28,7 +28,7 @@ public interface SummaryPriceContainer extends PriceContainer {
     Integer getFinalPriceCts();
 
     static int getSummaryPriceBeforeVatCts(List<? extends SummaryPriceContainer> elements) {
-        var currencyCode = elements.size() > 0 ? elements.get(0).getCurrencyCode() : null;
+        var currencyCode = !elements.isEmpty() ? elements.get(0).getCurrencyCode() : null;
         return elements.stream().map(item -> {
             PriceContainer.VatStatus vatStatus = item.getVatStatus();
             if(vatStatus == PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT) {

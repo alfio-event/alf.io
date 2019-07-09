@@ -305,7 +305,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
             Capture capture = Capture.get(apiContext, captureId);
             com.paypal.api.payments.RefundRequest refundRequest = new com.paypal.api.payments.RefundRequest();
             amount.ifPresent(a -> refundRequest.setAmount(new Amount(capture.getAmount().getCurrency(), formatCents(a, transactionCurrency))));
-            DetailedRefund res = capture.refund(apiContext, refundRequest);
+            capture.refund(apiContext, refundRequest);
             log.info("Paypal: refund for payment {} executed with success for amount: {}", captureId, amountOrFull);
             return true;
         } catch(PayPalRESTException ex) {

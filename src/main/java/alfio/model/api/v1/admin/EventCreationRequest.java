@@ -65,7 +65,7 @@ public class EventCreationRequest{
         }
 
         int locales = description.stream()
-            .map((x) -> ContentLanguage.ALL_LANGUAGES.stream().filter((l)-> l.getLanguage().equals(x.lang)).findFirst())
+            .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l-> l.getLanguage().equals(x.lang)).findFirst())
             .filter(Optional::isPresent)
             .map(Optional::get)
             .mapToInt(ContentLanguage::getValue).reduce(0,(x,y) -> x | y);
@@ -89,7 +89,7 @@ public class EventCreationRequest{
             description.stream().collect(Collectors.toMap(DescriptionRequest::getLang,DescriptionRequest::getBody)),
             new DateTimeModification(startDate.toLocalDate(),startDate.toLocalTime()),
             new DateTimeModification(endDate.toLocalDate(),endDate.toLocalTime()),
-            tickets.freeOfCharge ? BigDecimal.ZERO : tickets.categories.stream().map((x) -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ONE).max(BigDecimal.ONE),
+            tickets.freeOfCharge ? BigDecimal.ZERO : tickets.categories.stream().map(x -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ONE).max(BigDecimal.ONE),
             tickets.currency,
             tickets.max,
             tickets.taxPercentage,
@@ -114,7 +114,7 @@ public class EventCreationRequest{
         int locales = original.getLocales();
         if(description != null){
             locales = description.stream()
-                .map((x) -> ContentLanguage.ALL_LANGUAGES.stream().filter((l) -> l.getFlag().equals(x.lang)).findFirst())
+                .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l -> l.getFlag().equals(x.lang)).findFirst())
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .mapToInt(ContentLanguage::getValue).reduce(0, (x, y) -> x | y);
@@ -140,7 +140,7 @@ public class EventCreationRequest{
             description != null ? description.stream().collect(Collectors.toMap(DescriptionRequest::getLang,DescriptionRequest::getBody)) : null,
             startDate != null ? new DateTimeModification(startDate.toLocalDate(),startDate.toLocalTime()) : new DateTimeModification(original.getBegin().toLocalDate(),original.getEnd().toLocalTime()),
             endDate != null ? new DateTimeModification(endDate.toLocalDate(),endDate.toLocalTime()) : new DateTimeModification(original.getEnd().toLocalDate(),original.getEnd().toLocalTime()),
-            tickets != null && tickets.categories != null ? tickets.categories.stream().map((x) -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ZERO).max(original.getRegularPrice()) : original.getRegularPrice(),
+            tickets != null && tickets.categories != null ? tickets.categories.stream().map(x -> x.price).max(BigDecimal::compareTo).orElse(BigDecimal.ZERO).max(original.getRegularPrice()) : original.getRegularPrice(),
             tickets != null ? first(tickets.currency,original.getCurrency()) : original.getCurrency(),
             tickets != null ? tickets.max : original.getAvailableSeats(),
             tickets != null ? first(tickets.taxPercentage,original.getVat()) : original.getVat(),
@@ -233,10 +233,10 @@ public class EventCreationRequest{
                 null,
                 capacity > 0,
                 accessCode,
-                customValidityOpt.flatMap((x) -> Optional.ofNullable(x.checkInFrom)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
-                customValidityOpt.flatMap((x) -> Optional.ofNullable(x.checkInTo)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
-                customValidityOpt.flatMap((x) -> Optional.ofNullable(x.validityStart)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
-                customValidityOpt.flatMap((x) -> Optional.ofNullable(x.validityEnd)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null)
+                customValidityOpt.flatMap(x -> Optional.ofNullable(x.checkInFrom)).map(x -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
+                customValidityOpt.flatMap(x -> Optional.ofNullable(x.checkInTo)).map(x -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
+                customValidityOpt.flatMap(x -> Optional.ofNullable(x.validityStart)).map(x -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
+                customValidityOpt.flatMap(x -> Optional.ofNullable(x.validityEnd)).map(x -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null)
             );
         }
     }
