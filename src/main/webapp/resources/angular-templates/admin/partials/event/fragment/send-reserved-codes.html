@@ -76,7 +76,7 @@
                     </thead>
                     <tbody>
                     <tr data-ng-repeat="c in codes">
-                        <td>{{c.code}}</td>
+                        <td><span data-ng-if="c.status === 'FREE'">{{c.code}}</span><span data-ng-if="c.status !== 'FREE'"><a data-ui-sref="events.single.reservationsList({eventName: eventName, search: c.code})" title="Find reservation">{{c.code}}</a></span> <i class="fa fa-check text-success" title="Confirmed" data-ng-if="c.status == 'TAKEN'"></i></td>
                         <td>{{c.recipientName}} &lt;{{c.recipientEmail}}&gt;</td>
                         <td>{{c.sentTimestamp | formatDate}}</td>
                         <td><button data-ng-if="c.status == 'FREE'" class="btn btn-sm btn-default pull-right" data-ng-click="clearRecipient(c.id, c.code)"><i class="fa fa-trash"></i> clear</button></td>
