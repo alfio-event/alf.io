@@ -11,6 +11,9 @@
             <h1>Configuration for {{eventConf.event.displayName}}</h1>
         </div>
 
+        <uib-tabset>
+            <uib-tab index="0" heading="Settings">
+
         <form name="settingsForm" novalidate data-ng-submit="eventConf.saveSettings(settingsForm)" class="wMarginTop30px">
             <div class="page-header" id="GENERAL">
                 <h2>General</h2>
@@ -254,5 +257,9 @@
 
             <control-buttons data-form-obj="eventConf" data-success-text="Save" data-cancel-handler="eventConf.cancel"></control-buttons>
         </form>
+        </uib-tab>
+        <uib-tab index="1" heading="Internationalization">
+        </uib-tab>
+    </uib-tabset>
     </div>
 </div>
