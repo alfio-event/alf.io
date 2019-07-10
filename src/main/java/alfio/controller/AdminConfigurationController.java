@@ -44,6 +44,7 @@ public class AdminConfigurationController {
 
     private static final String STRIPE_CONNECT_ORG = "stripe.connect.org";
     private static final String STRIPE_CONNECT_STATE_PREFIX = "stripe.connect.state.";
+    private static final String REDIRECT_ADMIN = "redirect:/admin/";
     private final StripeCreditCardManager stripeCreditCardManager;
     private final UserManager userManager;
 
@@ -57,7 +58,7 @@ public class AdminConfigurationController {
             session.setAttribute(STRIPE_CONNECT_ORG, orgId);
             return "redirect:" + connectURL.getAuthorizationURL();
         }
-        return "redirect:/admin/";
+        return REDIRECT_ADMIN;
     }
 
 
@@ -86,11 +87,11 @@ public class AdminConfigurationController {
                 } else if(stateVerified && StringUtils.isNotEmpty(errorCode)) {
                     log.warn("error from stripe. {}={}", errorCode, errorDescription);
                     redirectAttributes.addFlashAttribute("errorMessage", StringUtils.defaultString(errorDescription, errorCode));
-                    return "redirect:/admin/";
+                    return REDIRECT_ADMIN;
                 }
                 redirectAttributes.addFlashAttribute("errorMessage", "Couldn't connect your account. Please retry.");
-                return "redirect:/admin/";
-            }).orElse("redirect:/admin/");
+                return REDIRECT_ADMIN;
+            }).orElse(REDIRECT_ADMIN);
     }
 
 }

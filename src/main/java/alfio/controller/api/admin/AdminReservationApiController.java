@@ -161,10 +161,14 @@ public class AdminReservationApiController {
 
     @GetMapping("/event/{eventName}/{reservationId}/ticket/{ticketId}")
     public Result<Ticket> loadTicket(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @PathVariable("ticketId") int ticketId, Principal principal) {
-        return adminReservationManager.loadReservation(eventName, reservationId, principal.getName()).flatMap(triple -> {
+        return adminReservationManager.loadReservation(eventName, reservationId, principal.getName()).flatMap(triple ->
             //not optimal
-            return triple.getMiddle().stream().filter(t -> t.getId() == ticketId).findFirst().map(Result::success).orElse(Result.error(ErrorCode.custom("not_found", "not found")));
-        });
+            triple.getMiddle().stream()
+                .filter(t -> t.getId() == ticketId)
+                .findFirst()
+                .map(Result::success)
+                .orElse(Result.error(ErrorCode.custom("not_found", "not found")))
+        );
     }
 
 
