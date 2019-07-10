@@ -90,6 +90,8 @@
     <script src="{{request.contextPath}}/resources/js/admin/feature/ticket-category/ticket-category.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/group/groups.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/feature/util/reservation-identifier.js"></script>
+    <script src="{{request.contextPath}}/resources/js/admin/feature/internationalization-editor/internationalization-editor.js"></script>
+
 
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />
 
