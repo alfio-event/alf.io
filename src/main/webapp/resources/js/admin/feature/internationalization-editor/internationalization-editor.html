@@ -1,1 +1,9 @@
-internationalization editor
+<div class="page-header">
+    <h2><i class="fa fa-language"></i> Internationalization</h2>
+</div>
+
+<uib-tabset>
+    <uib-tab heading="{{lang.locale}}" ng-repeat="lang in $ctrl.allLanguages" select="$ctrl.loadForLocale(lang.locale)">
+        <pre>{{$ctrl.bundle[lang.locale]|json}}</pre>
+    </uib-tab>
+</uib-tabset>

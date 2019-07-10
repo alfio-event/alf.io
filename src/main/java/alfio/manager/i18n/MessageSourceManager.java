@@ -49,8 +49,15 @@ public class MessageSourceManager {
     }
 
     public MessageSource getRootMessageSource() {
-        var res = configurationRepository.getSystemOverrideMessages();
-        return new MessageSourceWithOverride(messageSource, res);
+        return getRootMessageSource(true);
+    }
+
+    public MessageSource getRootMessageSource(boolean withSystemOverride) {
+        if (withSystemOverride) {
+            return new MessageSourceWithOverride(messageSource, configurationRepository.getSystemOverrideMessages());
+        } else {
+            return messageSource;
+        }
     }
 
     public Map<String, Map<String, String>> getEventMessageSourceOverride(EventAndOrganizationId eventAndOrganizationId) {

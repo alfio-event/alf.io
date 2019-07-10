@@ -26,10 +26,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.util.LocaleUtil;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.text.Collator;
 import java.util.List;
@@ -51,18 +48,20 @@ public class TranslationsApiController {
 
 
     @GetMapping("/public/i18n/bundle/{lang}")
-    public Map<String, String> getPublicTranslations(@PathVariable("lang") String lang) {
-        return getBundleAsMap("alfio.i18n.public", lang);
+    public Map<String, String> getPublicTranslations(@PathVariable("lang") String lang,
+                                                     @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
+        return getBundleAsMap("alfio.i18n.public", withSystemOverride, lang);
     }
 
     @GetMapping("/admin/i18n/bundle/{lang}")
-    public Map<String, String> getAdminTranslations(@PathVariable("lang") String lang) {
-        return getBundleAsMap("alfio.i18n.admin", lang);
+    public Map<String, String> getAdminTranslations(@PathVariable("lang") String lang,
+                                                    @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
+        return getBundleAsMap("alfio.i18n.admin", withSystemOverride, lang);
     }
 
-    private Map<String, String> getBundleAsMap(String baseName, String lang) {
+    private Map<String, String> getBundleAsMap(String baseName, boolean withSystemOverride, String lang) {
         var locale = LocaleUtil.forLanguageTag(lang);
-        var messageSource = messageSourceManager.getRootMessageSource();
+        var messageSource = messageSourceManager.getRootMessageSource(withSystemOverride);
         return messageSourceManager.getKeys(baseName, locale)
             .stream()
             .collect(Collectors.toMap(Function.identity(), k -> messageSource.getMessage(k, EMPTY_ARRAY, locale)

@@ -15,12 +15,14 @@
     function InternationalizationEditorCtrl(ConfigurationService, EventService, $http) {
         var ctrl = this;
 
+        ctrl.loadForLocale = loadForLocale;
+
+        ctrl.bundle = {};
+
         ctrl.$onInit = function() {
             loadAllLanguages();
             loadOverride();
         }
-
-
 
         function loadAllLanguages() {
             EventService.getAllLanguages().then(function(res) {
@@ -46,6 +48,12 @@
                 ctrl.translationsKey = translations;
                 ctrl.translationsData = JSON.parse(translations.value || '{}');
             })
+        }
+
+        function loadForLocale(locale) {
+            $http.get('/api/v2/public/i18n/bundle/'+locale, {params: {withSystemOverride: false}}).then(function(res) {
+                ctrl.bundle[locale] = res.data;
+            });
         }
 
     }
