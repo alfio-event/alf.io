@@ -224,7 +224,7 @@ public enum ConfigurationKeys {
     TRANSLATION_OVERRIDE_VAT_TR("Override the default tax term TR: KDV", false, SettingCategory.TRANSLATIONS, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
 
     //
-    TRANSLATION_OVERRIDE("Translation override (json)", true, SettingCategory.TRANSLATIONS, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT));
+    TRANSLATION_OVERRIDE("Translation override (json)", false, SettingCategory.TRANSLATIONS, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT));
 
     @Getter
     public enum SettingCategory {
