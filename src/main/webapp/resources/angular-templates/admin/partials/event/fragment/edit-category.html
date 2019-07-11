@@ -152,7 +152,9 @@
 
 <div class="form-group" bs-form-error="ticketCategory.code">
     <label for="{{buildPrefix($index, 'code')}}">Access Code</label> <a class="btn btn-xs btn-default" ng-click="toggleAccessCodeCollapse()"><i class="fa fa-info-circle"></i> help</a>
-    <input type="text" ng-model="ticketCategory.code" id="{{buildPrefix($index, 'code')}}" name="{{buildPrefix($index, 'code')}}" class="form-control" >
+    <input type="text" ng-model="ticketCategory.code" id="{{buildPrefix($index, 'code')}}" name="{{buildPrefix($index, 'code')}}" class="form-control" pattern="^[A-Za-z0-9_\-:@!$*,;]*$">
+    <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.code" data-show-existing-errors="showExistingErrors"></field-error>
+    <span id="helpBlock" class="help-block">Allowed characters: Letters, numbers, and <code>-:_@!$*,;</code>. Spaces are not allowed.</span>
 </div>
 
 <div class="panel panel-default" uib-collapse="helpAccessCodeCollapse">
