@@ -17,6 +17,7 @@
 
         ctrl.loadForLocale = loadForLocale;
         ctrl.displayValueWithFallback = displayValueWithFallback;
+        ctrl.edit = edit;
 
         ctrl.bundle = {};
         ctrl.bundleKeys = {};
@@ -72,9 +73,13 @@
 
         function displayValueWithFallback(locale, key) {
             if(ctrl.translationsData && ctrl.translationsData[locale] && ctrl.translationsData[locale][key]) {
-                return ctrl.translationsData[locale][key];
+                return ctrl.translationsData[locale][key].replace(/\{\{/g, '{').replace(/}}/g, '}');
             }
             return ctrl.bundle[locale][key];
+        }
+
+        function edit(locale, key) {
+            console.log('edit', locale + ' ' + key);
         }
 
     }
