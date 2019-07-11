@@ -56,10 +56,7 @@ public final class ValidationResult {
     }
 
     public static ValidationResult of(List<ErrorDescriptor> errors) {
-        if(errors.size() > 0) {
-            return failed(errors);
-        }
-        return success();
+        return errors.isEmpty() ? success() : failed(errors);
     }
 
     public ValidationResult ifSuccess(Operation operation) {

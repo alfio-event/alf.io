@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
 import static alfio.util.MonetaryUtil.HUNDRED;
@@ -31,8 +31,8 @@ import static java.math.RoundingMode.UNNECESSARY;
 
 public interface PriceContainer {
 
-    BiFunction<BigDecimal, BigDecimal, BigDecimal> includedVatExtractor = MonetaryUtil::extractVAT;
-    BiFunction<BigDecimal, BigDecimal, BigDecimal> notIncludedVatCalculator = MonetaryUtil::calcVat;
+    BinaryOperator<BigDecimal> includedVatExtractor = MonetaryUtil::extractVAT;
+    BinaryOperator<BigDecimal> notIncludedVatCalculator = MonetaryUtil::calcVat;
 
     enum VatStatus {
         NONE((price, vatPercentage) -> BigDecimal.ZERO, UnaryOperator.identity()),
@@ -42,9 +42,9 @@ public interface PriceContainer {
         NOT_INCLUDED_EXEMPT((price, vatPercentage) -> BigDecimal.ZERO, UnaryOperator.identity());
 
         private final UnaryOperator<BigDecimal> transformer;
-        private final BiFunction<BigDecimal, BigDecimal, BigDecimal> extractor;
+        private final BinaryOperator<BigDecimal> extractor;
 
-        VatStatus(BiFunction<BigDecimal, BigDecimal, BigDecimal> extractor,
+        VatStatus(BinaryOperator<BigDecimal> extractor,
                   UnaryOperator<BigDecimal> transformer) {
             this.extractor = extractor;
             this.transformer = transformer;
