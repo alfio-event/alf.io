@@ -16,12 +16,15 @@
         var ctrl = this;
 
         ctrl.loadForLocale = loadForLocale;
+        ctrl.displayValueWithFallback = displayValueWithFallback;
 
         ctrl.bundle = {};
+        ctrl.bundleKeys = {};
 
         ctrl.$onInit = function() {
             loadAllLanguages();
             loadOverride();
+            loadForLocale('en');
         }
 
         function loadAllLanguages() {
@@ -47,13 +50,31 @@
                 var translations = _.find(res.data['TRANSLATIONS'], function(v) {return v.key === 'TRANSLATION_OVERRIDE'});
                 ctrl.translationsKey = translations;
                 ctrl.translationsData = JSON.parse(translations.value || '{}');
-            })
+            });
         }
 
         function loadForLocale(locale) {
             $http.get('/api/v2/public/i18n/bundle/'+locale, {params: {withSystemOverride: false}}).then(function(res) {
+
+                var keys = Object.keys(res.data).sort();
+                ctrl.bundleKeys[locale] = keys;
+
+
+                for(var i = 0; i < keys.length; i++) {
+                    res.data[keys[i]] = res.data[keys[i]].replace(/\{\{/g, '{').replace(/}}/g, '}');
+                }
+
                 ctrl.bundle[locale] = res.data;
+
+
             });
+        }
+
+        function displayValueWithFallback(locale, key) {
+            if(ctrl.translationsData && ctrl.translationsData[locale] && ctrl.translationsData[locale][key]) {
+                return ctrl.translationsData[locale][key];
+            }
+            return ctrl.bundle[locale][key];
         }
 
     }

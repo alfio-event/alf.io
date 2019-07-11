@@ -3,7 +3,17 @@
 </div>
 
 <uib-tabset>
-    <uib-tab heading="{{lang.locale}}" ng-repeat="lang in $ctrl.allLanguages" select="$ctrl.loadForLocale(lang.locale)">
-        <pre>{{$ctrl.bundle[lang.locale]|json}}</pre>
+    <uib-tab heading="{{lang.displayLanguage}}" data-ng-repeat="lang in $ctrl.allLanguages" select="$ctrl.loadForLocale(lang.locale)">
+        <table class="table table-striped">
+            <tbody>
+                <tr data-ng-repeat="key in $ctrl.bundleKeys[lang.locale]">
+                    <td>
+                        <div>{{$ctrl.bundle['en'][key]}}</div>
+                        <div class="text-muted">{{key}}</div>
+                    </td>
+                    <td><mark>{{$ctrl.displayValueWithFallback(lang.locale, key)}}</mark></td>
+                </tr>
+            </tbody>
+        </table>
     </uib-tab>
 </uib-tabset>
