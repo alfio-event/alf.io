@@ -54,6 +54,7 @@ import org.apache.commons.lang3.Validate;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
@@ -108,15 +109,13 @@ public class ResourceController {
 
     @RequestMapping(value = "/overridable-template/{name}/{locale}", method = RequestMethod.GET)
     public void getTemplate(@PathVariable("name") TemplateResource name, @PathVariable("locale") String locale, HttpServletResponse response) throws IOException {
-        response.setContentType("text/plain");
         ByteArrayOutputStream os = new ByteArrayOutputStream();
         try (InputStream is = new ClassPathResource(name.classPath()).getInputStream()) {
             is.transferTo(os);
         }
         Locale loc = LocaleUtil.forLanguageTag(locale);
         String template = new String(os.toByteArray(), StandardCharsets.UTF_8);
-
-        response.setContentType("text/plain");
+        response.setContentType(MediaType.TEXT_PLAIN_VALUE);
         response.getWriter().print(TemplateManager.translate(template, loc, messageSource));
     }
 
@@ -148,16 +147,16 @@ public class ResourceController {
             Optional<TemplateResource.ImageData> image = TemplateProcessor.extractImageModel(event, fileUploadManager);
             Map<String, Object> model = name.prepareSampleModel(organization, event, image);
             String renderedTemplate = templateManager.renderString(event, template.getFileAsString(), model, loc, name.getTemplateOutput());
-            if("text/plain".equals(name.getRenderedContentType())) {
+            if(MediaType.TEXT_PLAIN_VALUE.equals(name.getRenderedContentType())) {
                 response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".txt");
-                response.setContentType("text/plain");
+                response.setContentType(MediaType.TEXT_PLAIN_VALUE);
                 response.setCharacterEncoding("UTF-8");
                 try(OutputStream os = response.getOutputStream()) {
                     StreamUtils.copy(renderedTemplate,StandardCharsets.UTF_8, os);
                 }
-            } else if ("application/pdf".equals(name.getRenderedContentType())) {
+            } else if (MediaType.APPLICATION_PDF_VALUE.equals(name.getRenderedContentType())) {
                 try (OutputStream os = response.getOutputStream()) {
-                    response.setContentType("application/pdf");
+                    response.setContentType(MediaType.APPLICATION_PDF_VALUE);
                     response.addHeader("Content-Disposition", "attachment; filename="+name.name()+".pdf");
                     TemplateProcessor.renderToPdf(renderedTemplate, os, extensionManager, event);
                 }

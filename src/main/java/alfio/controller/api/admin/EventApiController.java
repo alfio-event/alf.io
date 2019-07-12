@@ -78,7 +78,6 @@ import static alfio.util.Validator.*;
 import static alfio.util.Wrappers.optionally;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.defaultString;
-import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -121,7 +120,7 @@ public class EventApiController {
     }
 
 
-    @RequestMapping(value = "/paymentProxies/{organizationId}", method = GET)
+    @GetMapping("/paymentProxies/{organizationId}")
     @ResponseStatus(HttpStatus.OK)
     public List<PaymentManager.PaymentMethodDTO> getPaymentProxies( @PathVariable("organizationId") int organizationId, Principal principal) {
         return userManager.findUserOrganizations(principal.getName())
@@ -132,7 +131,7 @@ public class EventApiController {
             .orElse(Collections.emptyList());
     }
 
-    @RequestMapping(value = "/events", method = GET, headers = "Authorization")
+    @GetMapping(value = "/events", headers = "Authorization")
     public List<EventListItem> getAllEventsForExternal(Principal principal, HttpServletRequest request) {
         List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(toList());
         return eventManager.getActiveEvents().stream()
@@ -142,17 +141,17 @@ public class EventApiController {
             .collect(toList());
     }
 
-    @RequestMapping(value = "/events", method = GET)
+    @GetMapping("/events")
     public List<EventStatistic> getAllEvents(Principal principal) {
         return eventStatisticsManager.getAllEventsWithStatistics(principal.getName());
     }
 
-    @RequestMapping(value = "/active-events", method = GET)
+    @GetMapping("/active-events")
     public List<EventStatistic> getAllActiveEvents(Principal principal) {
         return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> !event.expiredSince(14));
     }
 
-    @RequestMapping(value = "/expired-events", method = GET)
+    @GetMapping("/expired-events")
     public List<EventStatistic> getAllExpiredEvents(Principal principal) {
         return eventStatisticsManager.getAllEventsWithStatisticsFilteredBy(principal.getName(), event -> event.expiredSince(14));
     }
@@ -166,7 +165,7 @@ public class EventApiController {
     }
 
 
-    @RequestMapping(value = "/events/{name}", method = GET)
+    @GetMapping("/events/{name}")
     public ResponseEntity<EventAndOrganization> getSingleEvent(@PathVariable("name") String eventName, Principal principal) {
         final String username = principal.getName();
         return optionally(() -> eventStatisticsManager.getEventWithAdditionalInfo(eventName, username))
@@ -176,17 +175,17 @@ public class EventApiController {
             }).orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
     
-    @RequestMapping(value ="/events/{eventId}", method = DELETE)
+    @DeleteMapping("/events/{eventId}")
     public void deleteEvent(@PathVariable("eventId") int eventId, Principal principal) {
     	eventManager.deleteEvent(eventId, principal.getName());
     }
 
-    @RequestMapping(value = "/events/id/{eventId}", method = GET)
+    @GetMapping("/events/id/{eventId}")
     public Event getSingleEventById(@PathVariable("eventId") int eventId, Principal principal) {
         return eventManager.getSingleEventById(eventId, principal.getName());
     }
 
-    @RequestMapping(value = "/events/check", method = POST)
+    @PostMapping("/events/check")
     public ValidationResult validateEventRequest(@RequestBody EventModification eventModification, Errors errors) {
         return validateEvent(eventModification,errors);
     }
@@ -221,47 +220,47 @@ public class EventApiController {
         }).reduce(ValidationResult::or).orElseGet(ValidationResult::success);
     }
 
-    @RequestMapping(value = "/events/new", method = POST)
+    @PostMapping("/events/new")
     public String insertEvent(@RequestBody EventModification eventModification) {
         eventManager.createEvent(eventModification);
         return OK;
     }
 
-    @RequestMapping(value = "/events/{id}/status", method = PUT)
+    @PutMapping("/events/{id}/status")
     public String activateEvent(@PathVariable("id") int id, @RequestParam("active") boolean active, Principal principal) {
         eventManager.toggleActiveFlag(id, principal.getName(), active);
         return OK;
     }
 
-    @RequestMapping(value = "/events/{id}/header/update", method = POST)
+    @PostMapping("/events/{id}/header/update")
     public ValidationResult updateHeader(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         Event event = eventManager.getSingleEventById(id, principal.getName());
         return validateEventHeader(Optional.of(event), eventModification, errors).ifSuccess(() -> eventManager.updateEventHeader(event, eventModification, principal.getName()));
     }
 
-    @RequestMapping(value = "/events/{id}/prices/update", method = POST)
+    @PostMapping("/events/{id}/prices/update")
     public ValidationResult updatePrices(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         Event event = eventManager.getSingleEventById(id, principal.getName());
         return validateEventPrices(Optional.of(event), eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(event, eventModification, principal.getName()));
     }
 
-    @RequestMapping(value = "/events/{eventId}/categories/{categoryId}/update", method = POST)
+    @PostMapping("/events/{eventId}/categories/{categoryId}/update")
     public ValidationResult updateExistingCategory(@PathVariable("eventId") int eventId, @PathVariable("categoryId") int categoryId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
         return validateCategory(category, errors).ifSuccess(() -> eventManager.updateCategory(categoryId, eventId, category, principal.getName()));
     }
 
-    @RequestMapping(value = "/events/{eventId}/categories/new", method = POST)
+    @PostMapping("/events/{eventId}/categories/new")
     public ValidationResult createCategory(@PathVariable("eventId") int eventId, @RequestBody TicketCategoryModification category, Errors errors, Principal principal) {
         return validateCategory(category, errors).ifSuccess(() -> eventManager.insertCategory(eventId, category, principal.getName()));
     }
     
-    @RequestMapping(value = "/events/reallocate", method = PUT)
+    @PutMapping("/events/reallocate")
     public String reallocateTickets(@RequestBody TicketAllocationModification form) {
         eventManager.reallocateTickets(form.getSrcCategoryId(), form.getTargetCategoryId(), form.getEventId());
         return OK;
     }
 
-    @RequestMapping(value = "/events/{eventName}/category/{categoryId}/unbind-tickets", method = PUT)
+    @PutMapping("/events/{eventName}/category/{categoryId}/unbind-tickets")
     public String unbindTickets(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
         eventManager.unbindTickets(eventName, categoryId, principal.getName());
         return OK;
@@ -457,24 +456,24 @@ public class EventApiController {
         return ticketFieldRepository.retrieveStats(id);
     }
 
-    @RequestMapping(value = "/event/additional-field/templates", method = GET)
+    @GetMapping("/event/additional-field/templates")
     public List<DynamicFieldTemplate> loadTemplates() {
         return dynamicFieldTemplateRepository.loadAll();
     }
 
-    @RequestMapping(value = "/events/{eventName}/additional-field/descriptions", method = POST)
+    @PostMapping("/events/{eventName}/additional-field/descriptions")
     public void saveAdditionalFieldDescriptions(@RequestBody Map<String, TicketFieldDescriptionModification> descriptions) {
         eventManager.updateTicketFieldDescriptions(descriptions);
     }
     
-    @RequestMapping(value = "/events/{eventName}/additional-field/new", method = POST)
+    @PostMapping("/events/{eventName}/additional-field/new")
     public ValidationResult addAdditionalField(@PathVariable("eventName") String eventName, @RequestBody EventModification.AdditionalField field, Principal principal, Errors errors) {
         EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
         return validateAdditionalFields(fields, field, errors).ifSuccess(() -> eventManager.addAdditionalField(event, field));
     }
     
-    @RequestMapping(value = "/events/{eventName}/additional-field/swap-position/{id1}/{id2}", method = POST)
+    @PostMapping("/events/{eventName}/additional-field/swap-position/{id1}/{id2}")
     public void swapAdditionalFieldPosition(@PathVariable("eventName") String eventName, @PathVariable("id1") int id1, @PathVariable("id2") int id2, Principal principal) {
         EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
     	eventManager.swapAdditionalFieldPosition(event.getId(), id1, id2);
@@ -489,13 +488,13 @@ public class EventApiController {
         eventManager.setAdditionalFieldPosition(event.getId(), id, newPosition);
     }
     
-    @RequestMapping(value = "/events/{eventName}/additional-field/{id}", method = DELETE)
+    @DeleteMapping("/events/{eventName}/additional-field/{id}")
     public void deleteAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, Principal principal) {
         eventManager.getEventAndOrganizationId(eventName, principal.getName());
     	eventManager.deleteAdditionalField(id);
     }
 
-    @RequestMapping(value = "/events/{eventName}/additional-field/{id}", method = POST)
+    @PostMapping("/events/{eventName}/additional-field/{id}")
     public void updateAdditionalField(@PathVariable("eventName") String eventName, @PathVariable("id") int id, @RequestBody EventModification.UpdateAdditionalField field, Principal principal) {
         eventManager.getEventAndOrganizationId(eventName, principal.getName());
         eventManager.updateAdditionalField(id, field);
@@ -503,19 +502,19 @@ public class EventApiController {
 
 
 
-    @GetMapping(value = "/events/{eventName}/pending-payments")
+    @GetMapping("/events/{eventName}/pending-payments")
     public List<TicketReservationWithTransaction> getPendingPayments(@PathVariable("eventName") String eventName) {
         return ticketReservationManager.getPendingPayments(eventName);
     }
 
-    @GetMapping(value = "/events/{eventName}/pending-payments-count")
+    @GetMapping("/events/{eventName}/pending-payments-count")
     public Integer getPendingPaymentsCount(@PathVariable("eventName") String eventName, Principal principal) {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.getPendingPaymentsCount(e.getId()))
             .orElse(0);
     }
 
-    @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}/confirm", method = POST)
+    @PostMapping("/events/{eventName}/pending-payments/{reservationId}/confirm")
     public String confirmPayment(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         var event = loadEvent(eventName, principal);
         ticketReservationManager.confirmOfflinePayment(event, reservationId, principal.getName());
@@ -528,7 +527,7 @@ public class EventApiController {
         return OK;
     }
 
-    @RequestMapping(value = "/events/{eventName}/pending-payments/{reservationId}", method = DELETE)
+    @DeleteMapping("/events/{eventName}/pending-payments/{reservationId}")
     public String deletePendingPayment(@PathVariable("eventName") String eventName,
                                        @PathVariable("reservationId") String reservationId,
                                        @RequestParam(required = false, value = "credit", defaultValue = "false") Boolean creditReservation,
@@ -537,7 +536,7 @@ public class EventApiController {
         return OK;
     }
 
-    @RequestMapping(value = "/events/{eventName}/pending-payments/bulk-confirmation", method = POST)
+    @PostMapping("/events/{eventName}/pending-payments/bulk-confirmation")
     public List<Triple<Boolean, String, String>> bulkConfirmation(@PathVariable("eventName") String eventName,
                                                                   Principal principal,
                                                                   @RequestBody UploadBase64FileModification file) throws IOException {
@@ -560,7 +559,7 @@ public class EventApiController {
         }
     }
 
-    @RequestMapping(value = "/events/{eventName}/categories/{categoryId}/tickets/{ticketId}/toggle-locking", method = PUT)
+    @PutMapping("/events/{eventName}/categories/{categoryId}/tickets/{ticketId}/toggle-locking")
     public boolean toggleTicketLocking(@PathVariable("eventName") String eventName,
                                        @PathVariable("categoryId") int categoryId,
                                        @PathVariable("ticketId") int ticketId,
@@ -568,19 +567,19 @@ public class EventApiController {
         return eventManager.toggleTicketLocking(eventName, categoryId, ticketId, principal.getName());
     }
 
-    @RequestMapping(value = "/events/{eventName}/languages", method = GET)
+    @GetMapping("/events/{eventName}/languages")
     public List<ContentLanguage> getAvailableLocales(@PathVariable("eventName") String eventName) {
         return i18nManager.getEventLanguages(eventName);
     }
 
-    @RequestMapping(value = "/events/{eventName}/invoices/count", method = GET)
+    @GetMapping("/events/{eventName}/invoices/count")
     public Integer countInvoicesForEvent(@PathVariable("eventName") String eventName, Principal principal) {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.countInvoices(e.getId()))
             .orElse(0);
     }
 
-    @RequestMapping(value = "/events/{eventName}/all-invoices", method = GET)
+    @GetMapping("/events/{eventName}/all-invoices")
     public void getAllInvoices(@PathVariable("eventName") String eventName, HttpServletResponse response, Principal principal) throws  IOException {
         Event event = loadEvent(eventName, principal);
 
@@ -602,17 +601,17 @@ public class EventApiController {
         }
     }
 
-    @RequestMapping(value = "/events-all-languages", method = GET)
+    @GetMapping("/events-all-languages")
     public List<ContentLanguage> getAllLanguages() {
         return i18nManager.getAvailableLanguages();
     }
 
-    @RequestMapping(value = "/events-supported-languages", method = GET)
+    @GetMapping("/events-supported-languages")
     public List<ContentLanguage> getSupportedLanguages() {
         return i18nManager.getSupportedLanguages();
     }
 
-    @RequestMapping(value = "/events/{eventName}/category/{categoryId}/ticket", method = GET)
+    @GetMapping("/events/{eventName}/category/{categoryId}/ticket")
     public PageAndContent<List<TicketWithStatistic>> getTicketsInCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId,
                                                                           @RequestParam(value = "page", required = false) Integer page,
                                                                           @RequestParam(value = "search", required = false) String search,
@@ -621,7 +620,7 @@ public class EventApiController {
         return new PageAndContent<>(eventStatisticsManager.loadModifiedTickets(event.getId(), categoryId, page == null ? 0 : page, search), eventStatisticsManager.countModifiedTicket(event.getId(), categoryId, search));
     }
 
-    @RequestMapping(value = "/events/{eventName}/ticket-sold-statistics", method = GET)
+    @GetMapping("/events/{eventName}/ticket-sold-statistics")
     public TicketsStatistics getTicketsStatistics(@PathVariable("eventName") String eventName, @RequestParam(value = "from", required = false) String f, @RequestParam(value = "to", required = false) String t, Principal principal) throws ParseException {
         EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
