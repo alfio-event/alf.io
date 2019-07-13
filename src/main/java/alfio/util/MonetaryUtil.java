@@ -28,7 +28,7 @@ import static java.math.RoundingMode.*;
 public final class MonetaryUtil {
 
     public static final BigDecimal HUNDRED = new BigDecimal("100.00");
-    public static final int ROUNDING_SCALE = 10;
+    private static final int ROUNDING_SCALE = 10;
 
     private MonetaryUtil() {
     }
@@ -37,7 +37,7 @@ public final class MonetaryUtil {
         return addVAT(new BigDecimal(priceInCents), vat).intValueExact();
     }
 
-    public static BigDecimal addVAT(BigDecimal price, BigDecimal vat) {
+    private static BigDecimal addVAT(BigDecimal price, BigDecimal vat) {
         return price.add(price.multiply(vat.divide(HUNDRED, ROUNDING_SCALE, UP))).setScale(0, HALF_UP);
     }
 

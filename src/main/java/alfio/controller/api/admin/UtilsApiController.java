@@ -40,9 +40,6 @@ import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
-
 @RestController
 @RequestMapping("/admin/api/utils")
 @Log4j2
@@ -66,12 +63,12 @@ public class UtilsApiController {
         return new ResponseEntity<>("missing parameters", HttpStatus.BAD_REQUEST);
     }
 
-    @RequestMapping(value = "/short-name/generate", method = GET)
+    @GetMapping("/short-name/generate")
     public String generateShortName(@RequestParam("displayName") String displayName) {
         return eventNameManager.generateShortName(displayName);
     }
 
-    @RequestMapping(value = "/short-name/validate", method = POST)
+    @PostMapping("/short-name/validate")
     public boolean validateShortName(@RequestParam("shortName") String shortName, HttpServletResponse response) {
         boolean unique = eventNameManager.isUnique(shortName);
         if(!unique) {
@@ -80,12 +77,12 @@ public class UtilsApiController {
         return unique;
     }
     
-    @GetMapping(value = "/render-commonmark")
+    @GetMapping("/render-commonmark")
     public String renderCommonmark(@RequestParam("text") String input) {
         return MustacheCustomTag.renderToCommonmark(StringEscapeUtils.escapeHtml4(input));
     }
 
-    @RequestMapping(value = "/alfio/info", method = GET)
+    @GetMapping("/alfio/info")
     public Map<String, Object> getApplicationInfo(Principal principal) {
         Map<String, Object> applicationInfo = new HashMap<>();
         applicationInfo.put("version", version);
@@ -94,7 +91,7 @@ public class UtilsApiController {
         return applicationInfo;
     }
 
-    @RequestMapping(value = "/currencies", method = GET)
+    @GetMapping("/currencies")
     public List<CurrencyDescriptor> getCurrencies(Locale locale) {
         return CurrencyUnit.registeredCurrencies().stream()
             //we don't support pseudo currencies, as it is very unlikely that payment providers would support them
@@ -103,7 +100,7 @@ public class UtilsApiController {
             .collect(Collectors.toList());
     }
 
-    @RequestMapping(value = "/countriesForVat", method = GET)
+    @GetMapping("/countriesForVat")
     public Map<String, String> getCountriesForVat() {
         return TicketHelper.getLocalizedCountriesForVat(Locale.ENGLISH)
             .stream()

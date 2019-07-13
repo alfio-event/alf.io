@@ -265,7 +265,7 @@ public class UserManager {
 
     public ValidationResult validateUser(Integer id, String username, int organizationId, String role, String firstName, String lastName, String emailAddress) {
 
-        Optional<User> existing = Optional.ofNullable(id).flatMap(uid -> userRepository.findOptionalById(uid));
+        Optional<User> existing = Optional.ofNullable(id).flatMap(userRepository::findOptionalById);
 
         if(existing.filter(e -> e.getUsername().equals(username)).isEmpty() && usernameExists(username)) {
             return ValidationResult.failed(new ValidationResult.ErrorDescriptor("username", "There is already another user with the same username."));

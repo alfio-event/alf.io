@@ -62,10 +62,6 @@ public class PaymentManager {
         return doLookupProvidersByMethodAndCapabilities(paymentMethod, context, capabilities).findFirst();
     }
 
-    Optional<PaymentProvider> lookupByTransaction(Transaction transaction) {
-        return paymentProviders.stream().filter(p -> p.accept(transaction)).findFirst();
-    }
-
     Optional<PaymentProvider> lookupByTransactionAndCapabilities(Transaction transaction, List<Class<? extends Capability>> capabilities) {
         return paymentProviders.stream().filter(p -> p.accept(transaction)).filter(p -> capabilities.stream().allMatch(c -> c.isInstance(p))).findFirst();
     }
@@ -107,13 +103,6 @@ public class PaymentManager {
 
     public List<PaymentMethodDTO> getPaymentMethods(int organizationId) {
         return getPaymentMethods(new PaymentContext(null, Configuration.from(organizationId)));
-    }
-
-    public List<PaymentMethodDTO> getActivePaymentMethods(Event event) {
-        return getPaymentMethods(event)
-            .stream()
-            .filter(PaymentMethodDTO::isActive)
-            .collect(Collectors.toList());
     }
 
     public boolean refund(TicketReservation reservation, Event event, Integer amount, String username) {

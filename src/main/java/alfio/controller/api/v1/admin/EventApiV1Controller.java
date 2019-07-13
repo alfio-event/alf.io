@@ -169,7 +169,7 @@ public class EventApiV1Controller {
         eventManager.updateEventPrices(event, em, user.getName());
 
 
-        if (em.getTicketCategories() != null && em.getTicketCategories().size() > 0) {
+        if (em.getTicketCategories() != null && !em.getTicketCategories().isEmpty()) {
             em.getTicketCategories().forEach(c ->
                 findCategoryByName(event, c.getName()).ifPresent(originalCategory ->
                     eventManager.updateCategory(originalCategory.getId(), event.getId(), c, user.getName())

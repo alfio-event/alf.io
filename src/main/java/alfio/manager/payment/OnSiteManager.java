@@ -39,7 +39,7 @@ public class OnSiteManager implements PaymentProvider {
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return paymentMethod == PaymentMethod.ON_SITE && configurationManager.getBooleanConfigValue(context.narrow(ON_SITE_ENABLED), false);
+        return paymentMethod == PaymentMethod.ON_SITE && configurationManager.getFor(context.getEvent(), ON_SITE_ENABLED).getValueAsBooleanOrDefault(false);
     }
 
     @Override

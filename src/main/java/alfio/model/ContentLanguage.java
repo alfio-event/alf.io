@@ -21,7 +21,6 @@ import lombok.EqualsAndHashCode;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @EqualsAndHashCode
@@ -74,13 +73,5 @@ public class ContentLanguage {
 
     public int getValue() {
         return value;
-    }
-
-    private ContentLanguage switchDisplayLocaleTo(Locale displayLocale) {
-        return new ContentLanguage(this.locale, this.value, displayLocale, this.flag);
-    }
-
-    public static Function<ContentLanguage, ContentLanguage> toLanguage(Locale targetLanguage) {
-        return (current) -> current.switchDisplayLocaleTo(targetLanguage);
     }
 }

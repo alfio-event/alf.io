@@ -203,7 +203,7 @@ public class Configuration implements Comparable<Configuration> {
     }
 
     public static Function<ConfigurationKeys, ConfigurationPathKey> from(EventAndOrganizationId e) {
-        return (p) -> from(e, p);
+        return p -> from(e, p);
     }
 
     public static Function<ConfigurationKeys, ConfigurationPathKey> from(int organizationId) {

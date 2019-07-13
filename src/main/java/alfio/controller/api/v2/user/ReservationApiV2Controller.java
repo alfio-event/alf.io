@@ -131,7 +131,7 @@ public class ReservationApiV2Controller {
                 .collect(Collectors.groupingBy(Ticket::getCategoryId))
                 .entrySet()
                 .stream()
-                .map((e) -> {
+                .map(e -> {
                     var tc = eventManager.getTicketCategoryById(e.getKey(), event.getId());
                     var ts = e.getValue().stream().map(t -> {//
 

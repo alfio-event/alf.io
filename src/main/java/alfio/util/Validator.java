@@ -316,7 +316,7 @@ public final class Validator {
         return StringUtils.isNotEmpty(email) && SIMPLE_E_MAIL_PATTERN.matcher(email).matches();
     }
 
-    public static void validateMaxLength(String value, String fieldName, String errorCode, int maxLength, Errors errors) {
+    private static void validateMaxLength(String value, String fieldName, String errorCode, int maxLength, Errors errors) {
         if(StringUtils.isNotBlank(value) && StringUtils.length(value) > maxLength) {
             errors.rejectValue(fieldName, errorCode);
         }

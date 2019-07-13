@@ -56,7 +56,7 @@ class MailgunMailer implements Mailer {
             if(StringUtils.isNotBlank(replyTo)) {
                 builder.add("h:Reply-To", replyTo);
             }
-            html.ifPresent((htmlContent) -> builder.add("html", htmlContent));
+            html.ifPresent(htmlContent -> builder.add("html", htmlContent));
             return builder.build();
 
         } else {
@@ -72,8 +72,7 @@ class MailgunMailer implements Mailer {
                 multipartBuilder.addFormDataPart("cc", StringUtils.join(cc, ','));
             }
 
-            html.ifPresent((htmlContent) -> multipartBuilder.addFormDataPart(
-                    "html", htmlContent));
+            html.ifPresent(htmlContent -> multipartBuilder.addFormDataPart("html", htmlContent));
 
             for (Attachment attachment : attachments) {
                 byte[] data = attachment.getSource();

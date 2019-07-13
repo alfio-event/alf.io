@@ -25,7 +25,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
-import org.springframework.mail.MailException;
 import org.springframework.mail.MailParseException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -57,8 +56,7 @@ class SmtpMailer implements Mailer {
             SMTP_HOST, SMTP_PORT, SMTP_PROTOCOL,
             SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROPERTIES));
 
-        MimeMessagePreparator preparator = (mimeMessage) -> {
-
+        MimeMessagePreparator preparator = mimeMessage -> {
 
             MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
                     : new MimeMessageHelper(mimeMessage, "UTF-8");
@@ -157,7 +155,7 @@ class SmtpMailer implements Mailer {
         }
         
         @Override
-        public MimeMessage createMimeMessage(InputStream contentStream) throws MailException {
+        public MimeMessage createMimeMessage(InputStream contentStream) {
             try {
                 return new CustomMimeMessage(getSession(), contentStream);
             }

@@ -63,17 +63,17 @@ public class FileDownloadManager {
 
     @Getter
     @AllArgsConstructor
-    public class DownloadedFile{
+    public class DownloadedFile {
         private byte[] file;
         private String name;
         private String type;
 
         public UploadBase64FileModification toUploadBase64FileModification() {
-            UploadBase64FileModification file = new UploadBase64FileModification();
-            file.setFile(this.file);
-            file.setName(name);
-            file.setType(type);
-            return file;
+            UploadBase64FileModification uf = new UploadBase64FileModification();
+            uf.setFile(file);
+            uf.setName(name);
+            uf.setType(type);
+            return uf;
         }
     }
 
