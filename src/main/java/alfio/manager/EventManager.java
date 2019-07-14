@@ -61,6 +61,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -140,7 +141,7 @@ public class EventManager {
         return event -> checkOwnership(organizationRepository, username, event.getOrganizationId());
     }
 
-    public static Predicate<Integer> checkOwnershipByOrgId(String username, OrganizationRepository organizationRepository) {
+    private static IntPredicate checkOwnershipByOrgId(String username, OrganizationRepository organizationRepository) {
         return id -> checkOwnership(organizationRepository, username, id);
     }
 
@@ -289,7 +290,7 @@ public class EventManager {
     }
 
     public void updateEventHeader(Event original, EventModification em, String username) {
-        Predicate<Integer> ownershipChecker = checkOwnershipByOrgId(username, organizationRepository);
+        IntPredicate ownershipChecker = checkOwnershipByOrgId(username, organizationRepository);
         boolean sameOrganization = original.getOrganizationId() == em.getOrganizationId();
         Validate.isTrue(ownershipChecker.test(original.getOrganizationId()) && (sameOrganization || ownershipChecker.test(em.getOrganizationId())), "Invalid organizationId");
         int eventId = original.getId();
@@ -645,7 +646,7 @@ public class EventManager {
             List<Integer> ids = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, addedTickets, singletonList(TicketStatus.FREE.name()));
             Validate.isTrue(addedTickets >= 0, "Cannot reduce capacity to "+newSize+". Minimum size allowed is "+confirmed);
             Validate.isTrue(ids.size() >= addedTickets, "not enough tickets");
-            Validate.isTrue(ids.size() == 0 || ticketRepository.moveToAnotherCategory(ids, original.getId(), MonetaryUtil.unitToCents(updated.getPrice(), original.getCurrencyCode())) == ids.size(), "not enough tickets");
+            Validate.isTrue(ids.isEmpty() || ticketRepository.moveToAnotherCategory(ids, original.getId(), MonetaryUtil.unitToCents(updated.getPrice(), original.getCurrencyCode())) == ids.size(), "not enough tickets");
         } else {
             reallocateTickets(ticketCategoryRepository.findStatisticWithId(original.getId(), event.getId()), Optional.empty(), event);
         }
@@ -825,12 +826,12 @@ public class EventManager {
     
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {
         ZoneId zoneId = eventRepository.findById(eventId).getZoneId();
-        return promoCodeRepository.findAllInEvent(eventId).stream().map((p) -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
+        return promoCodeRepository.findAllInEvent(eventId).stream().map(p -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
     }
 
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInOrganization(int organizationId) {
         ZoneId zoneId = ZoneId.systemDefault();
-        return promoCodeRepository.findAllInOrganization(organizationId).stream().map((p) -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
+        return promoCodeRepository.findAllInOrganization(organizationId).stream().map(p -> new PromoCodeDiscountWithFormattedTime(p, zoneId)).collect(toList());
     }
 
     public String getEventUrl(Event event) {

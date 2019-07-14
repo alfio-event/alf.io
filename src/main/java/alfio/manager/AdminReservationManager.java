@@ -63,7 +63,7 @@ import org.springframework.util.Assert;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -331,7 +331,7 @@ public class AdminReservationManager {
             .map(String::toLowerCase)
             .collect(toSet());
 
-        if(keys.size() == 0) {
+        if(keys.isEmpty()) {
             return Result.success(Pair.of(event, input));
         }
 
@@ -396,7 +396,7 @@ public class AdminReservationManager {
         int categoryId = category.getId();
         List<Attendee> attendees = ticketsInfo.getAttendees();
         List<Integer> reservedForUpdate = ticketReservationManager.reserveTickets(event.getId(), categoryId, attendees.size(), singletonList(Ticket.TicketStatus.FREE));
-        if (reservedForUpdate.size() == 0 || reservedForUpdate.size() != attendees.size()) {
+        if (reservedForUpdate.isEmpty()|| reservedForUpdate.size() != attendees.size()) {
             return Result.error(ErrorCode.CategoryError.NOT_ENOUGH_SEATS);
         }
         var currencyCode = category.getCurrencyCode();
@@ -420,7 +420,7 @@ public class AdminReservationManager {
         return data;
     }
 
-    private <T> Result<T> reduceResults(Result<T> r1, Result<T> r2, BiFunction<T, T, T> processData) {
+    private <T> Result<T> reduceResults(Result<T> r1, Result<T> r2, BinaryOperator<T> processData) {
         boolean successful = r1.isSuccess() && r2.isSuccess();
         ResultStatus global = r1.isSuccess() ? r2.getStatus() : r1.getStatus();
         List<ErrorCode> errors = new ArrayList<>();
@@ -563,7 +563,7 @@ public class AdminReservationManager {
 
     @Transactional
     public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, boolean forceInvoiceReceiptUpdate, String username) {
-        loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
+        loadReservation(eventName, reservationId, username).ifSuccess(res -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
@@ -599,12 +599,12 @@ public class AdminReservationManager {
 
     @Transactional(readOnly = true)
     public Result<List<Audit>> getAudit(String eventName, String reservationId, String username) {
-        return loadReservation(eventName, reservationId, username).map((res) -> auditingRepository.findAllForReservation(reservationId));
+        return loadReservation(eventName, reservationId, username).map(res -> auditingRepository.findAllForReservation(reservationId));
     }
 
     @Transactional(readOnly = true)
     public Result<List<BillingDocument>> getBillingDocuments(String eventName, String reservationId, String username) {
-        return loadReservation(eventName, reservationId, username).map((res) -> billingDocumentRepository.findAllByReservationId(reservationId));
+        return loadReservation(eventName, reservationId, username).map(res -> billingDocumentRepository.findAllByReservationId(reservationId));
     }
 
     @Transactional(readOnly = true)
@@ -640,7 +640,7 @@ public class AdminReservationManager {
     @Transactional
     public Result<TransactionAndPaymentInfo> getPaymentInfo(String eventName, String reservationId, String username) {
         return loadReservation(eventName, reservationId, username)
-            .map((res) -> paymentManager.getInfo(res.getLeft(), res.getRight()));
+            .map(res -> paymentManager.getInfo(res.getLeft(), res.getRight()));
     }
 
     @Transactional
@@ -656,7 +656,7 @@ public class AdminReservationManager {
     }
 
     private Result<Pair<Event, TicketReservation>> removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username, boolean removeReservation) {
-        return loadReservation(eventName, reservationId, username).map((res) -> {
+        return loadReservation(eventName, reservationId, username).map(res -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
@@ -677,7 +677,7 @@ public class AdminReservationManager {
 
     @Transactional
     public Result<Boolean> refund(String eventName, String reservationId, BigDecimal refundAmount, String username) {
-        return loadReservation(eventName, reservationId, username).map((res) -> {
+        return loadReservation(eventName, reservationId, username).map(res -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
             return reservation.getPaymentMethod() != null

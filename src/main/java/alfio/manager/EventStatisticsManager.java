@@ -84,7 +84,7 @@ public class EventStatisticsManager {
 
 
     public List<EventStatistic> getAllEventsWithStatistics(String username) {
-        return getAllEventsWithStatisticsFilteredBy(username, (e) -> true);
+        return getAllEventsWithStatisticsFilteredBy(username, e -> true);
     }
 
     public EventWithAdditionalInfo getEventWithAdditionalInfo(String eventName, String username) {
