@@ -216,7 +216,7 @@ public class WaitingQueueManager {
         List<TicketCategory> unboundedCategories = ticketCategoryRepository.findUnboundedOrderByExpirationDesc(eventId);
         Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, status.name(), availableSeats)
             .stream()
-            .filter(t -> t.getCategoryId() != null || unboundedCategories.size() > 0)
+            .filter(t -> t.getCategoryId() != null || !unboundedCategories.isEmpty())
             .iterator();
         int expirationTimeout = configurationManager.getFor(event, WAITING_QUEUE_RESERVATION_TIMEOUT).getValueAsIntOrDefault(4);
         ZonedDateTime expiration = ZonedDateTime.now(event.getZoneId()).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());

@@ -62,7 +62,7 @@ public class TemplateManager {
     private final UploadedResourceManager uploadedResourceManager;
     private final ConfigurationManager configurationManager;
 
-    private static final Formatter DATE_FORMATTER = (o) -> (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o) : String.valueOf(o);
+    private static final Formatter DATE_FORMATTER = o -> (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o) : String.valueOf(o);
 
     @Autowired
     public TemplateManager(MessageSource messageSource,

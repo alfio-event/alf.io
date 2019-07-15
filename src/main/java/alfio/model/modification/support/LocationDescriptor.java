@@ -96,10 +96,10 @@ public class LocationDescriptor {
 
     private static void fillParams(ConfigurationKeys.GeoInfoProvider provider, Map<ConfigurationKeys, Optional<String>> geoConf, Map<String, String> params) {
         if(ConfigurationKeys.GeoInfoProvider.GOOGLE == provider) {
-            geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).ifPresent((key) -> params.put("key", key));
+            geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).ifPresent(key -> params.put("key", key));
         } else if (ConfigurationKeys.GeoInfoProvider.HERE == provider) {
-            geoConf.get(ConfigurationKeys.MAPS_HERE_APP_ID).ifPresent((appId) -> params.put("appId", appId));
-            geoConf.get(ConfigurationKeys.MAPS_HERE_APP_CODE).ifPresent((appCode) -> params.put("appCode", appCode));
+            geoConf.get(ConfigurationKeys.MAPS_HERE_APP_ID).ifPresent(appId -> params.put("appId", appId));
+            geoConf.get(ConfigurationKeys.MAPS_HERE_APP_CODE).ifPresent(appCode -> params.put("appCode", appCode));
         }
     }
 

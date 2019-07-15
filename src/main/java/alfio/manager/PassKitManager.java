@@ -202,7 +202,7 @@ public class PassKitManager {
 
         fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(metadata -> {
             if(metadata.getContentType().equals("image/png") || metadata.getContentType().equals("image/jpeg")) {
-                Optional<byte[]> cachedLogo = passKitLogoCache.get(event.getFileBlobId(), (id) -> {
+                Optional<byte[]> cachedLogo = passKitLogoCache.get(event.getFileBlobId(), id -> {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     fileUploadManager.outputFile(event.getFileBlobId(), baos);
                     return readAndConvertImage(baos);

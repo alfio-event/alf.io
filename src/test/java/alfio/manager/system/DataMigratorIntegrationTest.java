@@ -355,6 +355,6 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
         String uuid = ticketsInReservation.get(0).getUuid();
         assertTrue(ticketsInReservation.stream().allMatch(t -> t.getStatus() == Ticket.TicketStatus.PENDING));
         dataMigrator.fixStuckTickets(event.getId());
-        assertSame(ticketRepository.findByUUID(uuid).getStatus(), Ticket.TicketStatus.RELEASED);
+        assertSame(Ticket.TicketStatus.RELEASED, ticketRepository.findByUUID(uuid).getStatus());
     }
 }

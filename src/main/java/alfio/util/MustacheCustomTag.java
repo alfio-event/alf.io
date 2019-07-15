@@ -88,7 +88,7 @@ public class MustacheCustomTag {
      * {{#additional-field-value}}[Prefix][name][suffix]{{/additional-field-value}}
      * prefix is optional, unless a suffix is needed.
      */
-    static final Function<Object, Mustache.Lambda> ADDITIONAL_FIELD_VALUE = (obj) -> (frag, out) -> {
+    static final Function<Object, Mustache.Lambda> ADDITIONAL_FIELD_VALUE = obj -> (frag, out) -> {
         if( !(obj instanceof Map) || ((Map<?,?>)obj).isEmpty()) {
             log.warn("map not found or empty. Skipping additionalFieldValue tag");
             return;
@@ -114,14 +114,14 @@ public class MustacheCustomTag {
 
     private static Pair<String, Optional<Locale>> parseParams(String r) {
 
-        int indexLocale = r.indexOf(LOCALE_LABEL), end = Math.min(r.length(),
-                indexLocale != -1 ? indexLocale : r.length());
+        int indexLocale = r.indexOf(LOCALE_LABEL);
+        int end = Math.min(r.length(), indexLocale != -1 ? indexLocale : r.length());
         String format = substring(r, r.indexOf(' '), end);
 
         //
         String[] res = r.split("\\s+");
-        Optional<Locale> locale = Arrays.stream(res).filter((s) -> s.startsWith(LOCALE_LABEL)).findFirst()
-                .map((l) -> LocaleUtil.forLanguageTag(substring(l, LOCALE_LABEL.length())));
+        Optional<Locale> locale = Arrays.stream(res).filter(s -> s.startsWith(LOCALE_LABEL)).findFirst()
+                .map(l -> LocaleUtil.forLanguageTag(substring(l, LOCALE_LABEL.length())));
         //
 
         return Pair.of(format, locale);

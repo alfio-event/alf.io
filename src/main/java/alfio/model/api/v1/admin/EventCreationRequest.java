@@ -34,7 +34,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -58,7 +58,7 @@ public class EventCreationRequest{
     private List<ExtensionSetting> extensionSettings;
     private List<AttendeeAdditionalInfoRequest> additionalInfo;
 
-    public EventModification toEventModification(Organization organization, Function<String,String> slugGenerator, String imageRef) {
+    public EventModification toEventModification(Organization organization, UnaryOperator<String> slugGenerator, String imageRef) {
         String slug = this.slug;
         if(StringUtils.isBlank(slug)) {
             slug = slugGenerator.apply(title);

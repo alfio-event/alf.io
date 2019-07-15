@@ -85,7 +85,7 @@ public interface UploadedResourceRepository {
     int delete(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("name") String name);
 
 
-    Function<OutputStream, RowCallbackHandler> OUTPUT_CONTENT = (out) -> rs -> {
+    Function<OutputStream, RowCallbackHandler> OUTPUT_CONTENT = out -> rs -> {
             try (InputStream is = rs.getBinaryStream("content")) {
                 is.transferTo(out);
             } catch (IOException e) {

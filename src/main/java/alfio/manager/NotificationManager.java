@@ -130,7 +130,7 @@ public class NotificationManager {
                                                                            TicketReservationRepository ticketReservationRepository,
                                                                            Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                                                            ExtensionManager extensionManager) {
-        return (model) -> {
+        return model -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
             try {
@@ -149,7 +149,7 @@ public class NotificationManager {
     }
 
     private static Function<Map<String, String>, byte[]> generateICS(EventRepository eventRepository, EventDescriptionRepository eventDescriptionRepository, TicketCategoryRepository ticketCategoryRepository) {
-        return (model) -> {
+        return model -> {
             Event event;
             Locale locale;
             Integer categoryId;
@@ -171,7 +171,7 @@ public class NotificationManager {
     }
 
     private static Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(EventRepository eventRepository, Function<Triple<Event, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {
-        return (model) -> {
+        return model -> {
             String reservationId = model.get("reservationId");
             Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
             Locale language = Json.fromJson(model.get("language"), Locale.class);
@@ -272,7 +272,7 @@ public class NotificationManager {
             .stream()
             .flatMap(id -> emailMessageRepository.loadIdsWaitingForProcessing(id, now).stream())
             .distinct()
-            .forEach((messageId) -> counter.addAndGet(processMessage(messageId)));
+            .forEach(messageId -> counter.addAndGet(processMessage(messageId)));
         return counter.get();
     }
 

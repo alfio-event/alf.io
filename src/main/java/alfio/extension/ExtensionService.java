@@ -55,7 +55,7 @@ public class ExtensionService {
 
     private final PlatformTransactionManager platformTransactionManager;
 
-    private final static String PRELOAD_SCRIPT = "\nvar HashMap = Java.type('java.util.HashMap');\n" +
+    private static final String PRELOAD_SCRIPT = "\nvar HashMap = Java.type('java.util.HashMap');\n" +
         "var ExtensionUtils = Java.type('alfio.extension.ExtensionUtils');\n";
 
 
@@ -70,22 +70,22 @@ public class ExtensionService {
 
         @Override
         public void logWarning(String msg) {
-            executeInNewTransaction((s) -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.WARNING));
+            executeInNewTransaction(s -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.WARNING));
         }
 
         @Override
         public void logSuccess(String msg) {
-            executeInNewTransaction((s) -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.SUCCESS));
+            executeInNewTransaction(s -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.SUCCESS));
         }
 
         @Override
         public void logError(String msg) {
-            executeInNewTransaction((s) -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.ERROR));
+            executeInNewTransaction(s -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.ERROR));
         }
 
         @Override
         public void logInfo(String msg) {
-            executeInNewTransaction((s) -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.INFO));
+            executeInNewTransaction(s -> extensionLogRepository.insert(effectivePath, path, name, msg, ExtensionLog.Type.INFO));
         }
 
         private void executeInNewTransaction(TransactionCallback<Integer> t) {

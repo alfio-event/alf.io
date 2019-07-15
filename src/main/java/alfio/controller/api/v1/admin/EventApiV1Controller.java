@@ -194,9 +194,9 @@ public class EventApiV1Controller {
         eventManager.createEvent(em);
         Optional<Event> event = eventManager.getOptionalByName(em.getShortName(),user.getName());
 
-        event.ifPresent((e) -> {
-            Optional.ofNullable(request.getTickets().getPromoCodes()).ifPresent((promoCodes) ->
-                promoCodes.forEach((pc) -> //TODO add ref to categories
+        event.ifPresent(e -> {
+            Optional.ofNullable(request.getTickets().getPromoCodes()).ifPresent(promoCodes ->
+                promoCodes.forEach(pc -> //TODO add ref to categories
                     eventManager.addPromoCode(
                         pc.getName(),
                         e.getId(),
