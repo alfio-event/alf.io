@@ -53,8 +53,8 @@ public class SpecialPriceApiController {
     @ResponseBody
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String handleExceptions(Exception e) {
+        log.error("Unexpected exception in SpecialPriceApiController", e);
         if(!(e instanceof IllegalArgumentException)) {
-            log.error("Unexpected exception in SpecialPriceApiController", e);
             return e.toString();
         }
         return e.getMessage();

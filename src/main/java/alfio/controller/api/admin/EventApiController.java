@@ -113,9 +113,7 @@ public class EventApiController {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String unhandledException(Exception e) {
-        if(!(e instanceof IllegalArgumentException)) {
-            log.warn("unhandled exception", e);
-        }
+        log.warn("unhandled exception", e);
         return e.getMessage();
     }
 

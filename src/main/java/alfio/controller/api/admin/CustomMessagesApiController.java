@@ -18,6 +18,7 @@ package alfio.controller.api.admin;
 
 import alfio.manager.support.CustomMessageManager;
 import alfio.model.modification.MessageModification;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +30,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/admin/api/events/{eventName}/messages")
+@Log4j2
 public class CustomMessagesApiController {
 
     private final CustomMessageManager customMessageManager;
@@ -42,6 +44,7 @@ public class CustomMessagesApiController {
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleException(IllegalStateException ex) {
+        log.warn("Exception in CustomMessagesApiController", ex);
         return Optional.ofNullable(ex.getCause()).map(Throwable::getMessage).orElseGet(ex::getMessage);
     }
 

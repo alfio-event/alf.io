@@ -51,6 +51,7 @@ public class ControllerExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
     public String badRequest(HttpMessageConversionException e) {
+        log.error("message conversion exception", e);
         return "bad request";
     }
 

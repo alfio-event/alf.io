@@ -50,6 +50,7 @@ import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import com.samskivert.mustache.MustacheException;
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
@@ -79,6 +80,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @RestController
 @RequestMapping("/admin/api")
+@Log4j2
 @AllArgsConstructor
 public class ResourceController {
 
@@ -96,6 +98,7 @@ public class ResourceController {
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleSyntaxError(Exception ex) {
+        log.warn("Exception in resource controller", ex);
         Optional<String> cause = Optional.ofNullable(ex.getCause())
             .filter(e -> e instanceof MustacheException || e instanceof TemplateProcessor.TemplateAccessException)
             .map(Throwable::getMessage);
