@@ -51,7 +51,7 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 public class TicketHelper {
 
-    private static Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
+    private static final Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
 
     private final TicketReservationManager ticketReservationManager;
     private final OrganizationRepository organizationRepository;
@@ -71,7 +71,7 @@ public class TicketHelper {
     }
 
     public Function<String, Integer> getTicketUUIDToCategoryId() {
-        return (uuid) -> ticketRepository.getTicketCategoryByUIID(uuid);
+        return ticketRepository::getTicketCategoryByUIID;
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,
@@ -82,9 +82,8 @@ public class TicketHelper {
                                                                            Optional<UserDetails> userDetails,
                                                                            boolean addPrefix) {
 
-        Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.fetchComplete(eventName, ticketIdentifier)
+        return ticketReservationManager.fetchComplete(eventName, ticketIdentifier)
                 .map(result -> assignTicket(updateTicketOwner, bindingResult, fallbackLocale, userDetails, result, addPrefix ? "tickets["+ticketIdentifier+"]" : ""));
-        return triple;
     }
 
     private Triple<ValidationResult, Event, Ticket> assignTicket(UpdateTicketOwnerForm updateTicketOwner,
@@ -112,7 +111,7 @@ public class TicketHelper {
 
         var additionalServiceIds = new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(t.getTicketsReservationId()));
 
-        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf, (ticketUUID) -> t.getCategoryId(), additionalServiceIds, ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()));
+        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf, ticketUUID -> t.getCategoryId(), additionalServiceIds, ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()));
 
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
         ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid()), bindingResult, event, formPrefix, sameCountryValidator)
@@ -132,10 +131,9 @@ public class TicketHelper {
                                                                           Locale fallbackLocale,
                                                                           Optional<UserDetails> userDetails) {
 
-        Optional<Triple<ValidationResult, Event, Ticket>> triple = ticketReservationManager.from(eventName, reservationId, ticketIdentifier)
+        return ticketReservationManager.from(eventName, reservationId, ticketIdentifier)
             .filter(temp -> PENDING_RESERVATION_STATUSES.contains(temp.getMiddle().getStatus()) && temp.getRight().getStatus() == Ticket.TicketStatus.PENDING)
             .map(result -> assignTicket(updateTicketOwner, bindingResult, fallbackLocale, userDetails, result, "tickets["+ticketIdentifier+"]"));
-        return triple;
     }
 
     public Optional<Triple<ValidationResult, Event, Ticket>> assignTicket(String eventName,

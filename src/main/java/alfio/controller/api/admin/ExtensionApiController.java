@@ -21,7 +21,7 @@ import alfio.controller.api.support.PageAndContent;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
@@ -42,7 +42,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -107,7 +106,7 @@ public class ExtensionApiController {
     }
 
     @GetMapping("{path}/{name}")
-    public ResponseEntity<ExtensionSupport> loadSingle(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) throws UnsupportedEncodingException {
+    public ResponseEntity<ExtensionSupport> loadSingle(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) {
         ensureAdmin(principal);
         return extensionService.getSingle(URLDecoder.decode(path, StandardCharsets.UTF_8), name).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -177,9 +176,9 @@ public class ExtensionApiController {
 
         Organization org = organizationRepository.getById(orgId);
         ensureOrganization(principal, org);
-        Event event = eventRepository.findByShortName(eventShortName);
+        var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName).orElseThrow(IllegalStateException::new);
         ensureEventInOrganization(org, event);
-        String pattern = String.format("-%d-%d", org.getId(), event.getId());
+        String pattern = generatePatternFrom(event);
         return extensionService.getConfigurationParametersFor(pattern, pattern,"EVENT")
             .stream().collect(Collectors.groupingBy(ExtensionParameterMetadataAndValue::getExtensionId));
     }
@@ -189,9 +188,9 @@ public class ExtensionApiController {
                                 @RequestBody List<ExtensionMetadataValue> toUpdate, Principal principal) {
         Organization org = organizationRepository.getById(orgId);
         ensureOrganization(principal, org);
-        Event event = eventRepository.findByShortName(eventShortName);
+        var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName).orElseThrow(IllegalStateException::new);
         ensureEventInOrganization(org, event);
-        String pattern = String.format("-%d-%d", org.getId(), event.getId());
+        String pattern = generatePatternFrom(event);
         ensureIdsArePresent(toUpdate, extensionService.getConfigurationParametersFor(pattern, pattern, "EVENT"));
         extensionService.bulkUpdateEventSettings(org, event, toUpdate);
     }
@@ -200,9 +199,13 @@ public class ExtensionApiController {
     public void deleteEventSettingValue(@PathVariable("orgId") int orgId, @PathVariable("shortName") String eventShortName, @PathVariable("id") int id, Principal principal) {
         Organization org = organizationRepository.getById(orgId);
         ensureOrganization(principal, org);
-        Event event = eventRepository.findByShortName(eventShortName);
+        var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName).orElseThrow(IllegalStateException::new);
         ensureEventInOrganization(org, event);
-        extensionService.deleteSettingValue(id, String.format("-%d-%d", org.getId(), event.getId()));
+        extensionService.deleteSettingValue(id, generatePatternFrom(event));
+    }
+
+    private static String generatePatternFrom(EventAndOrganizationId event) {
+        return String.format("-%d-%d", event.getOrganizationId(), event.getId());
     }
 
     //check that the ids are coherent
@@ -236,7 +239,7 @@ public class ExtensionApiController {
         Validate.isTrue(userManager.isOwnerOfOrganization(user, organization.getId()));
     }
 
-    private static void ensureEventInOrganization(Organization organization, Event event) {
+    private static void ensureEventInOrganization(Organization organization, EventAndOrganizationId event) {
         Validate.isTrue(organization.getId() == event.getOrganizationId());
     }
 }
