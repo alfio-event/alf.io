@@ -181,9 +181,9 @@ public class DataSourceConfiguration {
     }
 
     @Bean
-    public RowLevelSecurity.RoleAndOrganizationsAspect getRoleAndOrganizationsAspect(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                                                                     OrganizationRepository organizationRepository) {
-        return new RowLevelSecurity.RoleAndOrganizationsAspect(namedParameterJdbcTemplate, organizationRepository);
+    public RoleAndOrganizationsAspect getRoleAndOrganizationsAspect(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+                                                                    OrganizationRepository organizationRepository) {
+        return new RoleAndOrganizationsAspect(namedParameterJdbcTemplate, organizationRepository);
     }
 
     @Bean

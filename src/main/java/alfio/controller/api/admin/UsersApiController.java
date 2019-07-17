@@ -52,7 +52,6 @@ import java.util.zip.ZipOutputStream;
 
 import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
-import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 @RequestMapping("/admin/api")
@@ -72,7 +71,7 @@ public class UsersApiController {
         return e != null ? e.getMessage() : "Unexpected error";
     }
 
-    @RequestMapping(value = "/roles", method = GET)
+    @GetMapping("/roles")
     public Collection<RoleDescriptor> getAllRoles(Principal principal) {
         return userManager.getAvailableRoles(principal.getName()).stream().map(RoleDescriptor::new).collect(Collectors.toList());
     }
@@ -81,7 +80,7 @@ public class UsersApiController {
      * This endpoint is intended only for external use. If a user is registered as "sponsor", then the answer will be "SPONSOR", otherwise "OPERATOR".
      * @return "SPONSOR" or "OPERATOR", depending on current user's privileges.
      */
-    @RequestMapping(value = "/user-type", method = GET)
+    @GetMapping("/user-type")
     public String getLoggedUserType() {
         return SecurityContextHolder.getContext()
             .getAuthentication()
@@ -109,23 +108,23 @@ public class UsersApiController {
         return result;
     }
 
-    @RequestMapping(value = "/organizations", method = GET)
+    @GetMapping("/organizations")
     @ResponseStatus(HttpStatus.OK)
     public List<Organization> getAllOrganizations(Principal principal) {
         return userManager.findUserOrganizations(principal.getName());
     }
 
-    @RequestMapping(value = "/organizations/{id}", method = GET)
+    @GetMapping("/organizations/{id}")
     public Organization getOrganization(@PathVariable("id") int id, Principal principal) {
         return userManager.findOrganizationById(id, principal.getName());
     }
 
-    @RequestMapping(value = "/users", method = GET)
+    @GetMapping("/users")
     public List<UserWithOrganizations> getAllUsers(Principal principal) {
         return userManager.findAllUsers(principal.getName());
     }
 
-    @PostMapping(value = "/api-keys/bulk")
+    @PostMapping("/api-keys/bulk")
     public ResponseEntity<String> bulkCreate(@RequestBody BulkApiKeyCreation request, Principal principal) {
         Optional<User> userOptional = userManager.findOptionalEnabledUserByUsername(principal.getName())
             .filter(u -> userManager.isOwnerOfOrganization(u, request.organizationId));
@@ -136,24 +135,24 @@ public class UsersApiController {
         return ResponseEntity.badRequest().build();
     }
 
-    @RequestMapping(value = "/organizations/new", method = POST)
+    @PostMapping("/organizations/new")
     public String insertOrganization(@RequestBody OrganizationModification om) {
         userManager.createOrganization(om.getName(), om.getDescription(), om.getEmail());
         return OK;
     }
 
-    @RequestMapping(value = "/organizations/update", method = POST)
+    @PostMapping("/organizations/update")
     public String updateOrganization(@RequestBody OrganizationModification om) {
         userManager.updateOrganization(om.getId(), om.getName(), om.getEmail(), om.getDescription());
         return OK;
     }
 
-    @RequestMapping(value = "/organizations/check", method = POST)
+    @PostMapping("/organizations/check")
     public ValidationResult validateOrganization(@RequestBody OrganizationModification om) {
         return userManager.validateOrganization(om.getId(), om.getName(), om.getEmail(), om.getDescription());
     }
 
-    @RequestMapping(value = "/users/check", method = POST)
+    @PostMapping("/users/check")
     public ValidationResult validateUser(@RequestBody UserModification userModification) {
         if(userModification.getType() == User.Type.API_KEY) {
             return ValidationResult.success();
@@ -164,7 +163,7 @@ public class UsersApiController {
         }
     }
 
-    @RequestMapping(value = "/users/edit", method = POST)
+    @PostMapping("/users/edit")
     public String editUser(@RequestBody UserModification userModification, Principal principal) {
         userManager.editUser(userModification.getId(), userModification.getOrganizationId(),
             userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(),
@@ -173,13 +172,13 @@ public class UsersApiController {
         return OK;
     }
 
-    @RequestMapping(value = "/users/update-password", method = POST)
+    @PostMapping("/users/update-password")
     public ValidationResult updatePassword(@RequestBody PasswordModification passwordModification, Principal principal) {
         return userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
             .ifSuccess(() -> userManager.updatePassword(principal.getName(), passwordModification.newPassword));
     }
 
-    @RequestMapping(value = "/users/new", method = POST)
+    @PostMapping("/users/new")
     public UserWithPasswordAndQRCode insertUser(@RequestBody UserModification userModification, @RequestParam("baseUrl") String baseUrl, Principal principal) {
         Role requested = Role.valueOf(userModification.getRole());
         Validate.isTrue(userManager.getAvailableRoles(principal.getName()).stream().anyMatch(requested::equals), String.format("Requested role %s is not available for current user", userModification.getRole()));
@@ -229,19 +228,19 @@ public class UsersApiController {
         return ImageUtil.createQRCode(Json.GSON.toJson(info));
     }
 
-    @RequestMapping(value = "/users/{id}", method = DELETE)
+    @DeleteMapping("/users/{id}")
     public String deleteUser(@PathVariable("id") int userId, Principal principal) {
         userManager.deleteUser(userId, principal.getName());
         return OK;
     }
 
-    @RequestMapping(value = "/users/{id}/enable/{enable}", method = POST)
+    @PostMapping("/users/{id}/enable/{enable}")
     public String enableUser(@PathVariable("id") int userId, @PathVariable("enable")boolean enable, Principal principal) {
         userManager.enable(userId, principal.getName(), enable);
         return OK;
     }
 
-    @RequestMapping(value = "/users/{id}", method = GET)
+    @GetMapping("/users/{id}")
     public UserModification loadUser(@PathVariable("id") int userId) {
         User user = userManager.findUser(userId);
         List<Organization> userOrganizations = userManager.findUserOrganizations(user.getUsername());
@@ -250,7 +249,7 @@ public class UsersApiController {
             user.getType(), user.getValidToEpochSecond(), user.getDescription());
     }
 
-    @RequestMapping(value = "/users/current", method = GET)
+    @GetMapping("/users/current")
     public UserModification loadCurrentUser(Principal principal) {
         User user = userManager.findUserByUsername(principal.getName());
         Optional<Organization> userOrganization = userManager.findUserOrganizations(user.getUsername()).stream().findFirst();
@@ -259,7 +258,7 @@ public class UsersApiController {
             user.getEmailAddress(), user.getType(), user.getValidToEpochSecond(), user.getDescription());
     }
 
-    @RequestMapping(value = "/users/{id}/reset-password", method = PUT)
+    @PutMapping("/users/{id}/reset-password")
     public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam("baseUrl") String baseUrl) {
         UserWithPassword userWithPassword = userManager.resetPassword(userId);
         return new UserWithPasswordAndQRCode(userWithPassword, Base64.getEncoder().encodeToString(generateQRCode(userWithPassword, baseUrl)));
