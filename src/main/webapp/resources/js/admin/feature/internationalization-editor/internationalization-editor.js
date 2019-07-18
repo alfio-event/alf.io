@@ -18,9 +18,13 @@
         ctrl.loadForLocale = loadForLocale;
         ctrl.displayValueWithFallback = displayValueWithFallback;
         ctrl.edit = edit;
+        ctrl.update = update;
+        ctrl.isOverride = isOverride;
+        ctrl.deleteKey = deleteKey;
 
         ctrl.bundle = {};
         ctrl.bundleKeys = {};
+        ctrl.editing = {};
 
         ctrl.$onInit = function() {
             loadAllLanguages();
@@ -62,7 +66,8 @@
 
 
                 for(var i = 0; i < keys.length; i++) {
-                    res.data[keys[i]] = res.data[keys[i]].replace(/\{\{/g, '{').replace(/}}/g, '}');
+                    // from {{0}} to {0}
+                    res.data[keys[i]] = res.data[keys[i]].replace(/\{\{(\d+)\}\}/g,'{$1}');
                 }
 
                 ctrl.bundle[locale] = res.data;
@@ -73,13 +78,62 @@
 
         function displayValueWithFallback(locale, key) {
             if(ctrl.translationsData && ctrl.translationsData[locale] && ctrl.translationsData[locale][key]) {
-                return ctrl.translationsData[locale][key].replace(/\{\{/g, '{').replace(/}}/g, '}');
+                // from {{0}} to {0}
+                return ctrl.translationsData[locale][key].replace(/\{\{(\d+)\}\}/g,'{$1}');
             }
             return ctrl.bundle[locale][key];
         }
 
+        function isOverride(locale, key) {
+            return ctrl.translationsData && ctrl.translationsData[locale] && ctrl.translationsData[locale][key] !== undefined
+        }
+
         function edit(locale, key) {
-            console.log('edit', locale + ' ' + key);
+            if(!ctrl.editing[locale]) {
+                ctrl.editing[locale] = {};
+            }
+
+            ctrl.editing[locale][key] = {
+                value: displayValueWithFallback(locale, key)
+            };
+        }
+
+        function update(locale, key, value) {
+            var copyOfTranslationsData = JSON.parse(JSON.stringify(ctrl.translationsData));
+
+            if(!copyOfTranslationsData[locale]) {
+                copyOfTranslationsData[locale] = {};
+            }
+
+            //from {0} to {{0}}
+            var escapedValue = value.replace(/\{(\d+)\}/g,'{{$1}}');
+
+            copyOfTranslationsData[locale][key] = escapedValue;
+
+            saveTranslationData(copyOfTranslationsData).then(function() {
+                ctrl.editing[locale][key] = false;
+                loadOverride();
+            });
+        }
+
+        function deleteKey(locale, key) {
+            var copyOfTranslationsData = JSON.parse(JSON.stringify(ctrl.translationsData));
+            delete copyOfTranslationsData[locale][key];
+            saveTranslationData(copyOfTranslationsData).then(function() {
+                loadOverride();
+            });
+        }
+
+        function saveTranslationData(translationsData) {
+            var url = undefined;
+            if(ctrl.eventId !== undefined) {
+                url = '/admin/api/configuration/organizations/'+ctrl.organizationId+'/events/'+ctrl.eventId+'/update';
+            } else if (ctrl.organizationId !== undefined) {
+                url = '/admin/api/configuration/organizations/'+ctrl.organizationId+'/update';
+            } else {
+                url = '/admin/api/configuration/update-bulk';
+            }
+            return $http.post(url, {TRANSLATIONS: [{key: 'TRANSLATION_OVERRIDE', value: JSON.stringify(translationsData)}]});
         }
 
     }
