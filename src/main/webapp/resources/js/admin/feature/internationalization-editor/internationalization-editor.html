@@ -2,11 +2,19 @@
     <h2><i class="fa fa-language"></i> Internationalization</h2>
 </div>
 
+
+<div class="input-group" style="margin-bottom:16px">
+    <div class="input-group-addon">
+        <i class="fa fa-search"></i>
+    </div>
+    <input type="text" class="form-control" data-ng-model="$ctrl.toBeSearched">
+</div>
+
 <uib-tabset>
     <uib-tab heading="{{lang.displayLanguage}}" data-ng-repeat="lang in $ctrl.allLanguages" select="$ctrl.loadForLocale(lang.locale)">
         <table class="table table-striped width-100">
             <tbody>
-                <tr data-ng-repeat="key in $ctrl.bundleKeys[lang.locale]">
+                <tr data-ng-repeat="key in $ctrl.bundleKeys[lang.locale] | filterBundle: $ctrl.toBeSearched: $ctrl.displayValueWithFallback : lang.locale">
                     <td style="width:50%">
                         <div>{{$ctrl.bundle['en'][key]}}</div>
                         <div class="text-muted">{{key}}</div>

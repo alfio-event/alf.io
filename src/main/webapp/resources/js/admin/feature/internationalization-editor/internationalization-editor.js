@@ -138,4 +138,29 @@
 
     }
 
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+    }
+
+    angular.module('adminApplication').filter('filterBundle', function() {
+        return function(res, filterValue, displayValueWithFallback, locale) {
+            if(res && filterValue) {
+                var matcher = new RegExp(escapeRegExp(filterValue), 'i');
+                var result = [];
+                var resLength = res.length;
+                for(var i = 0; i < resLength; i++) {
+                    var key = res[i];
+                    if(key.match(matcher) !== null || displayValueWithFallback(locale, key).match(matcher) !== null) {
+                        result.push(res[i]);
+                    }
+                }
+                return result;
+            } else {
+                return res;
+            }
+
+        }
+    })
+
 })();
