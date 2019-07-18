@@ -313,8 +313,6 @@ public class ReservationApiV2Controller {
                 String errorMessageCode = status.getErrorCode().orElse(StripeCreditCardManager.STRIPE_UNEXPECTED);
                 MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
                 bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
-                //SessionUtil.addToFlash(bindingResult, redirectAttributes);
-                //SessionUtil.removePaymentToken(request);
                 return buildReservationPaymentStatus(bindingResult);
             }
 

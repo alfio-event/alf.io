@@ -53,6 +53,7 @@ public class RoleAndOrganizationsAspect {
         new AntPathRequestMatcher("/api/events/**"),
         new AntPathRequestMatcher("/api/webhook/**"),
         new AntPathRequestMatcher("/api/payment/**"),
+        new AntPathRequestMatcher("/api/pass/**"),
         new AntPathRequestMatcher("/api/v2/info"),
         new AntPathRequestMatcher("/api/v2/public/**"),
         new AntPathRequestMatcher("/session-expired"),
@@ -115,11 +116,7 @@ public class RoleAndOrganizationsAspect {
                     if (DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
                         jdbcTemplate.update("reset alfio.checkRowAccess", new EmptySqlParameterSource());
                         jdbcTemplate.update("reset alfio.currentUserOrgs", new EmptySqlParameterSource());
-                        //System.err.println(request.getRequestURL()+" - "+joinPoint+" LOCAL VALUES ARE: alfio.checkRowAccess: " + jdbcTemplate.queryForObject("select current_setting('alfio.checkRowAccess', true)", new EmptySqlParameterSource(), String.class));
-                        //System.err.println(request.getRequestURL()+" - "+joinPoint+" LOCAL VALUES ARE: alfio.currentUserOrgs: " + jdbcTemplate.queryForObject("select current_setting('alfio.currentUserOrgs', true)", new EmptySqlParameterSource(), String.class));
-                        //System.err.println(request.getRequestURL()+" - "+joinPoint+" result from function call is:" + jdbcTemplate.queryForObject("select alfio_check_row_access(null)", new EmptySqlParameterSource(), Boolean.class));
                         Set<Integer> orgIds = new TreeSet<>(organizationRepository.findAllOrganizationIdForUser(SecurityContextHolder.getContext().getAuthentication().getName()));
-                        //System.err.println(joinPoint+" org ids are " + orgIds);
                         if (orgIds.isEmpty()) {
                             log.warn("orgIds is empty, was not able to apply currentUserOrgs at join point: {}", joinPoint);
                         } else {
@@ -143,6 +140,9 @@ public class RoleAndOrganizationsAspect {
         return joinPoint.proceed();
     }
 
+
+    private static final String LINE_SEPARATOR = "-----------\n";
+
     private static void logEntry(Connection connection, DataSource dataSource,
                                        ProceedingJoinPoint joinPoint,
                                        HttpServletRequest request,
@@ -153,7 +153,7 @@ public class RoleAndOrganizationsAspect {
 
 
         if (connection != null && DataSourceUtils.isConnectionTransactional(connection, dataSource)) {
-            sb.append("-----------\n");
+            sb.append(LINE_SEPARATOR);
             sb.append("connection is transactional\n");
             sb.append("URL IS ").append(request.getRequestURI()).append("\n");
             sb.append(request.getRequestURL()).append("\n");
@@ -171,14 +171,14 @@ public class RoleAndOrganizationsAspect {
             if(mustCheck) {
                 sb.append("org ids are: ").append(formattedOrgIds).append("\n");
             }
-            sb.append("-----------\n");
+            sb.append(LINE_SEPARATOR);
 
         } else {
-            sb.append("-----------\n");
+            sb.append(LINE_SEPARATOR);
             sb.append("connection is NOT transactional so the check will not be done!\n");
             sb.append("URL IS ").append(request.getRequestURI()).append("\n");
             sb.append(joinPoint).append("\n");
-            sb.append("-----------\n");
+            sb.append(LINE_SEPARATOR);
         }
 
         log.trace(sb.toString());

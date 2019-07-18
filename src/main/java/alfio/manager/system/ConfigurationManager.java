@@ -466,7 +466,7 @@ public class ConfigurationManager {
         return r.get(INVOICE_ADDRESS).isPresent() && r.get(VAT_NR).isPresent();
     }
 
-    @Deprecated
+
     public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
         var conf = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS, RECAPTCHA_API_KEY));
         return conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault(false) &&
