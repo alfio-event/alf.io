@@ -6,13 +6,13 @@
             organizationId: '<',
             eventId: '<'
         },
-        controller: ['ConfigurationService', 'EventService', '$http', InternationalizationEditorCtrl],
+        controller: ['ConfigurationService', 'EventService', '$http', '$q', InternationalizationEditorCtrl],
         templateUrl: '../resources/js/admin/feature/internationalization-editor/internationalization-editor.html'
     });
 
 
 
-    function InternationalizationEditorCtrl(ConfigurationService, EventService, $http) {
+    function InternationalizationEditorCtrl(ConfigurationService, EventService, $http, $q) {
         var ctrl = this;
 
         ctrl.loadForLocale = loadForLocale;
@@ -39,11 +39,30 @@
         }
 
         function loadOverride() {
-            var $promiseConf;
+            loadOverrideFor(ctrl.organizationId, ctrl.eventId).then(function(res) {
+                ctrl.translationsKey = res[0];
+                ctrl.translationsData = res[1];
+            });
+        }
+
+        function loadOverrideForPreviousLevel() {
             if(ctrl.eventId !== undefined) {
+                return $q.all([loadOverrideFor(undefined, undefined), loadOverrideFor(ctrl.organizationId, undefined)]).then(function(toBeMerged) {
+                    return [null, _.merge(toBeMerged[0][1], toBeMerged[1][1])];
+                });
+            } else if(ctrl.organizationId !== undefined) {
+                return loadOverrideFor(undefined, undefined);
+            } else {
+                return $q(function(resolve, reject) {resolve([])});
+            }
+        }
+
+        function loadOverrideFor(organizationId, eventId) {
+            var $promiseConf;
+            if(eventId !== undefined) {
                 //event
                 $promiseConf = ConfigurationService.loadEventConfig(ctrl.eventId)
-            } else if (ctrl.organizationId !== undefined) {
+            } else if (organizationId !== undefined) {
                 //organization
                 $promiseConf = ConfigurationService.loadOrganizationConfig(ctrl.organizationId)
             } else {
@@ -51,23 +70,34 @@
                 //system
             }
 
-            $promiseConf.then(function(res) {
+            return $promiseConf.then(function(res) {
                 var translations = _.find(res.data['TRANSLATIONS'], function(v) {return v.key === 'TRANSLATION_OVERRIDE'});
-                ctrl.translationsKey = translations;
-                ctrl.translationsData = JSON.parse(translations.value || '{}');
+                return [translations, JSON.parse(translations.value || '{}')]
             });
         }
 
         function loadForLocale(locale) {
-            $http.get('/api/v2/public/i18n/bundle/'+locale, {params: {withSystemOverride: false}}).then(function(res) {
+            $q.all([$http.get('/api/v2/public/i18n/bundle/'+locale, {params: {withSystemOverride: false}}), loadOverrideForPreviousLevel()]).then(function(resAll) {
+                var overrideFromPreviousLevel = resAll[1][1];
+                var res = resAll[0];
 
                 var keys = Object.keys(res.data).sort();
                 ctrl.bundleKeys[locale] = keys;
 
 
                 for(var i = 0; i < keys.length; i++) {
+
+                    var key = keys[i];
+
+                    var value = res.data[key];
+
+                    //check if override is present
+                    if(overrideFromPreviousLevel && overrideFromPreviousLevel[locale] && overrideFromPreviousLevel[locale][key]) {
+                        value = overrideFromPreviousLevel[locale][key];
+                    }
+
                     // from {{0}} to {0}
-                    res.data[keys[i]] = res.data[keys[i]].replace(/\{\{(\d+)\}\}/g,'{$1}');
+                    res.data[keys[i]] = value.replace(/\{\{(\d+)\}\}/g,'{$1}');
                 }
 
                 ctrl.bundle[locale] = res.data;
