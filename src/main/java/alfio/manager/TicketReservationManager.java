@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.BankTransferManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.*;
@@ -60,7 +61,6 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -123,7 +123,7 @@ public class TicketReservationManager {
     private final SpecialPriceRepository specialPriceRepository;
     private final TransactionRepository transactionRepository;
     private final NotificationManager notificationManager;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final TemplateManager templateManager;
     private final TransactionTemplate requiresNewTransactionTemplate;
     private final TransactionTemplate serializedTransactionTemplate;
@@ -169,7 +169,7 @@ public class TicketReservationManager {
                                     SpecialPriceRepository specialPriceRepository,
                                     TransactionRepository transactionRepository,
                                     NotificationManager notificationManager,
-                                    MessageSource messageSource,
+                                    MessageSourceManager messageSourceManager,
                                     TemplateManager templateManager,
                                     PlatformTransactionManager transactionManager,
                                     WaitingQueueManager waitingQueueManager,
@@ -197,7 +197,7 @@ public class TicketReservationManager {
         this.specialPriceRepository = specialPriceRepository;
         this.transactionRepository = transactionRepository;
         this.notificationManager = notificationManager;
-        this.messageSource = messageSource;
+        this.messageSourceManager = messageSourceManager;
         this.templateManager = templateManager;
         this.waitingQueueManager = waitingQueueManager;
         this.requiresNewTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
@@ -653,7 +653,7 @@ public class TicketReservationManager {
             attachments = generateAttachmentForConfirmationEmail(event, ticketReservation, language, summary);
         }
 
-        notificationManager.sendSimpleEmail(event, ticketReservation.getId(), ticketReservation.getEmail(), messageSource.getMessage("reservation-email-subject",
+        notificationManager.sendSimpleEmail(event, ticketReservation.getId(), ticketReservation.getEmail(), messageSourceManager.getMessageSourceForEvent(event).getMessage("reservation-email-subject",
                 new Object[]{getShortReservationID(event, ticketReservation), event.getDisplayName()}, language),
             () -> templateManager.renderTemplate(event, TemplateResource.CONFIRMATION_EMAIL, reservationEmailModel, language),
             attachments);
@@ -739,7 +739,7 @@ public class TicketReservationManager {
     }
 
     private String getReservationEmailSubject(Event event, Locale reservationLanguage, String key, String id) {
-        return messageSource.getMessage(key, new Object[]{id, event.getDisplayName()}, reservationLanguage);
+        return messageSourceManager.getMessageSourceForEvent(event).getMessage(key, new Object[]{id, event.getDisplayName()}, reservationLanguage);
     }
 
     @Transactional
@@ -1385,7 +1385,7 @@ public class TicketReservationManager {
 
         if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
             Locale oldUserLocale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
-            String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
+            String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
             notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
             if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
@@ -1523,7 +1523,7 @@ public class TicketReservationManager {
                     Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
                     Locale locale = p.getRight();
                     ticketReservationRepository.flagAsOfflinePaymentReminderSent(reservation.getId());
-                    notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSource.getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(event, reservation)}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
+                    notificationManager.sendSimpleEmail(event, reservation.getId(), reservation.getEmail(), messageSourceManager.getMessageSourceForEvent(event).getMessage("reservation.reminder.mail.subject", new Object[]{getShortReservationID(event, reservation)}, locale), () -> templateManager.renderTemplate(event, TemplateResource.REMINDER_EMAIL, model, locale));
                 });
     }
 
@@ -1568,6 +1568,7 @@ public class TicketReservationManager {
     private void sendOptionalDataReminder(Pair<Event, List<Ticket>> eventAndTickets) {
         nestedTransactionTemplate.execute(ts -> {
             Event event = eventAndTickets.getLeft();
+            var messageSource = messageSourceManager.getMessageSourceForEvent(event);
             int daysBeforeStart = configurationManager.getFor(event, ConfigurationKeys.ASSIGNMENT_REMINDER_START).getValueAsIntOrDefault(10);
             List<Ticket> tickets = eventAndTickets.getRight().stream().filter(t -> !ticketFieldRepository.hasOptionalData(t.getId())).collect(toList());
             Set<String> notYetNotifiedReservations = tickets.stream().map(Ticket::getTicketsReservationId).distinct().filter(rid -> findByIdForNotification(rid, event.getZoneId(), daysBeforeStart).isPresent()).collect(toSet());
@@ -1598,6 +1599,7 @@ public class TicketReservationManager {
         try {
             nestedTransactionTemplate.execute(ts -> {
                 Event event = p.getLeft();
+                var messageSource = messageSourceManager.getMessageSourceForEvent(event);
                 ZoneId eventZoneId = event.getZoneId();
                 int quietPeriod = configurationManager.getFor(event, ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL).getValueAsIntOrDefault(3);
                 p.getRight().stream()
@@ -1642,6 +1644,7 @@ public class TicketReservationManager {
     }
 
     public void releaseTicket(Event event, TicketReservation ticketReservation, final Ticket ticket) {
+        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
         var category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         var isFree = ticket.getFinalPriceCts() == 0;
 
@@ -1911,6 +1914,7 @@ public class TicketReservationManager {
 
     private void sendTransactionFailedEmail(Event event, TicketReservation reservation, PaymentMethod paymentMethod, PaymentWebhookResult paymentWebhookResult, boolean cancelReservation) {
         var shortReservationID = getShortReservationID(event, reservation);
+        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
         Map<String, Object> model = Map.of(
         "organization", organizationRepository.getById(event.getOrganizationId()),
         "reservationCancelled", cancelReservation,
@@ -1941,6 +1945,7 @@ public class TicketReservationManager {
         if (optionalProvider.isEmpty()) {
             return Optional.empty();
         }
+        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
         var provider = (ServerInitiatedTransaction) optionalProvider.get();
         ticketReservationRepository.lockReservationForUpdate(reservationId);
         var reservation = ticketReservationRepository.findReservationById(reservationId);

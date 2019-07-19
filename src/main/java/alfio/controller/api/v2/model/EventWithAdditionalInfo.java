@@ -67,6 +67,8 @@ public class EventWithAdditionalInfo implements DateValidity {
 
     private final AnalyticsConfiguration analyticsConfiguration;
 
+    private final Map<String, Map<String, String>> i18nOverride;
+
     public String getShortName() {
         return event.getShortName();
     }
@@ -200,6 +202,10 @@ public class EventWithAdditionalInfo implements DateValidity {
 
     public AnalyticsConfiguration getAnalyticsConfiguration() {
         return analyticsConfiguration;
+    }
+
+    public Map<String, Map<String, String>> getI18nOverride() {
+        return i18nOverride;
     }
 
     @AllArgsConstructor

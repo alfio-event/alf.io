@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.DuplicateReferenceException;
 import alfio.manager.system.ReservationPriceCalculator;
@@ -49,7 +50,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Component;
@@ -99,7 +99,7 @@ public class AdminReservationManager {
     private final TicketFieldRepository ticketFieldRepository;
     private final PaymentManager paymentManager;
     private final NotificationManager notificationManager;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final TemplateManager templateManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AuditingRepository auditingRepository;
@@ -745,7 +745,8 @@ public class AdminReservationManager {
     private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {
         Map<String, Object> model = TemplateResource.buildModelForTicketHasBeenCancelled(organization, event, ticket);
         Locale locale = LocaleUtil.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
-        notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
+        notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(),
+            messageSourceManager.getMessageSourceForEvent(event).getMessage("email-ticket-released.subject",
             new Object[]{event.getDisplayName()}, locale),
             () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
     }

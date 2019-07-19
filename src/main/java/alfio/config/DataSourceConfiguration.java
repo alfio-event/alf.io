@@ -22,10 +22,12 @@ import alfio.config.support.PlatformProvider;
 import alfio.job.Jobs;
 import alfio.job.executor.ReservationJobExecutor;
 import alfio.manager.*;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.repository.system.AdminJobQueueRepository;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.Json;
@@ -37,9 +39,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
-import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.*;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -153,15 +153,17 @@ public class DataSourceConfiguration {
      }
 
     @Bean
-    public MessageSource messageSource() {
-        ResourceBundleMessageSource source = new CustomResourceBundleMessageSource();
+    public MessageSourceManager messageSourceManager(ConfigurationRepository configurationRepository) {
+
+        var source = new CustomResourceBundleMessageSource();
         source.setBasenames("alfio.i18n.public", "alfio.i18n.admin");
         source.setDefaultEncoding(StandardCharsets.UTF_8.displayName());
         //since we have all the english translations in the default file, we don't need
         //the fallback to the system locale.
         source.setFallbackToSystemLocale(false);
         source.setAlwaysUseMessageFormat(true);
-        return source;
+
+        return new MessageSourceManager(source, configurationRepository);
     }
 
     @Bean
@@ -170,8 +172,8 @@ public class DataSourceConfiguration {
     }
 
     @Bean
-    public TemplateManager getTemplateManager(UploadedResourceManager uploadedResourceManager, ConfigurationManager configurationManager) {
-        return new TemplateManager(messageSource(), uploadedResourceManager, configurationManager);
+    public TemplateManager getTemplateManager(MessageSourceManager messageSourceManager, UploadedResourceManager uploadedResourceManager) {
+        return new TemplateManager(messageSourceManager, uploadedResourceManager);
     }
 
     @Bean

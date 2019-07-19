@@ -17,15 +17,13 @@
 package alfio.util;
 
 import alfio.manager.UploadedResourceManager;
-import alfio.manager.system.ConfigurationManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.model.EventAndOrganizationId;
-import alfio.model.system.ConfigurationKeys;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Mustache.Compiler;
 import com.samskivert.mustache.Mustache.Formatter;
 import com.samskivert.mustache.Template;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
@@ -49,7 +47,7 @@ import static alfio.util.MustacheCustomTag.COUNTRY_NAME;
 public class TemplateManager {
 
 
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
 
     public static final String VAT_TRANSLATION_TEMPLATE_KEY = "vatTranslation";
 
@@ -60,17 +58,13 @@ public class TemplateManager {
     private final Map<TemplateOutput, Compiler> compilers;
 
     private final UploadedResourceManager uploadedResourceManager;
-    private final ConfigurationManager configurationManager;
 
     private static final Formatter DATE_FORMATTER = o -> (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o) : String.valueOf(o);
 
-    @Autowired
-    public TemplateManager(MessageSource messageSource,
-                           UploadedResourceManager uploadedResourceManager,
-                           ConfigurationManager configurationManager) {
-        this.messageSource = messageSource;
+    public TemplateManager(MessageSourceManager messageSourceManager,
+                           UploadedResourceManager uploadedResourceManager) {
+        this.messageSourceManager = messageSourceManager;
         this.uploadedResourceManager = uploadedResourceManager;
-        this.configurationManager = configurationManager;
 
         this.compilers = new EnumMap<>(TemplateOutput.class);
         this.compilers.put(TemplateOutput.TEXT, Mustache.compiler()
@@ -87,19 +81,19 @@ public class TemplateManager {
             .withFormatter(DATE_FORMATTER));
     }
 
-    public String renderTemplate(Optional<? extends EventAndOrganizationId> event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
-        return render(new ClassPathResource(templateResource.classPath()), modelEnricher(model, event, locale), locale, templateResource.getTemplateOutput());
+    private String renderTemplate(Optional<? extends EventAndOrganizationId> event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+        return render(new ClassPathResource(templateResource.classPath()), modelEnricher(model, event, locale), locale, event.orElse(null), templateResource.getTemplateOutput());
     }
 
     public String renderTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
         Map<String, Object> updatedModel = modelEnricher(model, Optional.of(event), locale);
         return uploadedResourceManager.findCascading(event.getOrganizationId(), event.getId(), templateResource.getSavedName(locale))
-            .map(resource -> render(new ByteArrayResource(resource), updatedModel, locale, templateResource.getTemplateOutput()))
+            .map(resource -> render(new ByteArrayResource(resource), updatedModel, locale, event, templateResource.getTemplateOutput()))
             .orElseGet(() -> renderTemplate(Optional.of(event), templateResource, updatedModel, locale));
     }
 
     public String renderString(EventAndOrganizationId event, String template, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
-        return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), modelEnricher(model, Optional.ofNullable(event), locale), locale, templateOutput);
+        return render(new ByteArrayResource(template.getBytes(StandardCharsets.UTF_8)), modelEnricher(model, Optional.ofNullable(event), locale), locale, event, templateOutput);
     }
 
     public void renderHtml(Resource resource, Map<String, Object> model, OutputStream os) {
@@ -112,25 +106,17 @@ public class TemplateManager {
 
     private Map<String, Object> modelEnricher(Map<String, Object> model, Optional<? extends EventAndOrganizationId> event, Locale locale) {
         Map<String, Object> toEnrich = new HashMap<>(model);
-        event.ifPresent(ev -> toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, getVATString(ev, messageSource, locale, configurationManager)));
+        event.ifPresent(ev -> toEnrich.put(VAT_TRANSLATION_TEMPLATE_KEY, messageSourceManager.getMessageSourceForEvent(ev).getMessage("common.vat", null, locale)));
         return toEnrich;
     }
 
-
-    public static String getVATString(EventAndOrganizationId event, MessageSource messageSource, Locale loc, ConfigurationManager configurationManager) {
-        String locale = messageSource.getMessage("locale", null, loc);
-        String translatedVat = messageSource.getMessage("common.vat", null, loc);
-        ConfigurationKeys vatKey = ConfigurationKeys.valueOf("TRANSLATION_OVERRIDE_VAT_"+locale.toUpperCase(Locale.ENGLISH));
-        return configurationManager.getFor(event, vatKey).getValueOrDefault(translatedVat);
-    }
-
-    private String render(Resource resource, Map<String, Object> model, Locale locale, TemplateOutput templateOutput) {
+    private String render(Resource resource, Map<String, Object> model, Locale locale, EventAndOrganizationId eventAndOrganizationId, TemplateOutput templateOutput) {
         try {
             ModelAndView mv = new ModelAndView((String) null, model);
             mv.addObject("format-date", MustacheCustomTag.FORMAT_DATE);
             mv.addObject("country-name", COUNTRY_NAME);
             mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get("additional-fields")));
-            mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSource).createTranslator());
+            mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSourceManager.getMessageSourceForEvent(eventAndOrganizationId)).createTranslator());
             return compile(resource, templateOutput).execute(mv.getModel());
         } catch (Exception e) {
             throw new IllegalStateException(e);

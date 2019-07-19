@@ -36,6 +36,7 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.UploadedResourceManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.user.UserManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
@@ -52,7 +53,6 @@ import com.samskivert.mustache.MustacheException;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
-import org.springframework.context.MessageSource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -86,7 +86,7 @@ public class ResourceController {
     private final UploadedResourceManager uploadedResourceManager;
     private final UserManager userManager;
     private final EventRepository eventRepository;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final TemplateManager templateManager;
     private final OrganizationRepository organizationRepository;
     private final FileUploadManager fileUploadManager;
@@ -116,8 +116,9 @@ public class ResourceController {
         }
         Locale loc = LocaleUtil.forLanguageTag(locale);
         String template = new String(os.toByteArray(), StandardCharsets.UTF_8);
+
         response.setContentType(MediaType.TEXT_PLAIN_VALUE);
-        response.getWriter().print(TemplateManager.translate(template, loc, messageSource));
+        response.getWriter().print(TemplateManager.translate(template, loc, messageSourceManager.getRootMessageSource()));
     }
 
     @PostMapping("/overridable-template/{name}/{locale}/preview")

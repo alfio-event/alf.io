@@ -281,17 +281,15 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     public void reservationFlowTest() throws Exception {
 
 
-        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getLanguages("NO_EVENT").getStatusCode());
-
         assertTrue(eventApiV2Controller.listEvents().getBody().isEmpty());
         ensureConfiguration();
 
 
         //
         assertEquals(3, translationsApiController.getSupportedLanguages().size());
-        assertEquals("or", translationsApiController.getPublicTranslations("en").get("common.or"));
-        assertEquals("o", translationsApiController.getPublicTranslations("it").get("common.or"));
-        assertEquals("oder", translationsApiController.getPublicTranslations("de").get("common.or"));
+        assertEquals("or", translationsApiController.getPublicTranslations("en", true).get("common.or"));
+        assertEquals("o", translationsApiController.getPublicTranslations("it", true).get("common.or"));
+        assertEquals("oder", translationsApiController.getPublicTranslations("de", true).get("common.or"));
 
         var alfioInfo = infoApiController.getInfo(new MockHttpSession());
         assertEquals(false, alfioInfo.isDemoModeEnabled());
@@ -359,13 +357,20 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getFileBlobId(), selectedEvent.getFileBlobId());
         assertEquals(1, selectedEvent.getActivePaymentMethods().size());
         assertTrue(selectedEvent.getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
+        assertTrue(selectedEvent.getI18nOverride().isEmpty());
+
+        configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(),"TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("common.vat", "EVENT.vat"))), "");
+        eventRes = eventApiV2Controller.getEvent(event.getShortName(), new MockHttpSession());
+        selectedEvent = eventRes.getBody();
+        assertFalse(selectedEvent.getI18nOverride().isEmpty());
+        assertEquals("EVENT.vat", selectedEvent.getI18nOverride().get("en").get("common.vat"));
 
         checkCalendar(event.getShortName());
 
         //it, en, de
         assertEquals(3, selectedEvent.getContentLanguages().size());
-        assertEquals(new HashSet<>(Arrays.asList("it", "en", "de")), new HashSet<>(eventApiV2Controller.getLanguages(event.getShortName()).getBody()));
-        assertEquals(selectedEvent.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toSet()), new HashSet<>(eventApiV2Controller.getLanguages(event.getShortName()).getBody()));
+
+        assertEquals(selectedEvent.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toSet()), Set.of("it", "en", "de"));
 
         //check if for each language we have the expected locale dependent entries
         for (String lang: Arrays.asList("it", "en", "de")) {

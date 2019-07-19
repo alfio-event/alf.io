@@ -17,6 +17,7 @@
 package alfio.manager.payment;
 
 import alfio.manager.PaymentManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
@@ -48,7 +49,6 @@ import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -69,7 +69,7 @@ import static alfio.util.MonetaryUtil.formatCents;
 public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInfo, ExtractPaymentTokenFromTransaction {
 
     private final ConfigurationManager configurationManager;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final Cache<String, String> cachedWebProfiles = Caffeine.newBuilder().expireAfterAccess(24, TimeUnit.HOURS).build();
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketRepository ticketRepository;
@@ -125,7 +125,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
 
         Transaction transaction = new Transaction();
-        String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, reservation), event.getDisplayName()}, locale);
+        String description = messageSourceManager.getMessageSourceForEvent(event).getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, reservation), event.getDisplayName()}, locale);
         transaction.setDescription(description).setAmount(amount);
 
 

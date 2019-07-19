@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.CustomMessageManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
@@ -39,7 +40,6 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -70,7 +70,7 @@ public class NotificationManager {
 
     public static final Clock UTC = Clock.systemUTC();
     private final Mailer mailer;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final EmailMessageRepository emailMessageRepository;
     private final TransactionTemplate tx;
     private final EventRepository eventRepository;
@@ -82,7 +82,7 @@ public class NotificationManager {
 
     @Autowired
     public NotificationManager(Mailer mailer,
-                               MessageSource messageSource,
+                               MessageSourceManager messageSourceManager,
                                PlatformTransactionManager transactionManager,
                                EmailMessageRepository emailMessageRepository,
                                EventRepository eventRepository,
@@ -98,7 +98,7 @@ public class NotificationManager {
                                TicketFieldRepository ticketFieldRepository,
                                AdditionalServiceItemRepository additionalServiceItemRepository,
                                ExtensionManager extensionManager) {
-        this.messageSource = messageSource;
+        this.messageSourceManager = messageSourceManager;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
         this.eventRepository = eventRepository;
@@ -199,7 +199,7 @@ public class NotificationManager {
         String displayName = eventRepository.getDisplayNameById(event.getId());
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
-        String subject = messageSource.getMessage("ticket-email-subject", new Object[]{displayName}, locale);
+        String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-email-subject", new Object[]{displayName}, locale);
         String text = textBuilder.generate(ticket);
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
         String recipient = ticket.getEmail();

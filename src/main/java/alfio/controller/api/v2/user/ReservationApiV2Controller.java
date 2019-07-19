@@ -26,6 +26,7 @@ import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
@@ -44,7 +45,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.context.MessageSource;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -82,7 +82,7 @@ public class ReservationApiV2Controller {
     private final TicketReservationManager ticketReservationManager;
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketFieldRepository ticketFieldRepository;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final ConfigurationManager configurationManager;
     private final PaymentManager paymentManager;
     private final FileUploadManager fileUploadManager;
@@ -312,7 +312,7 @@ public class ReservationApiV2Controller {
             if (!status.isSuccessful()) {
                 String errorMessageCode = status.getErrorCode().orElse(StripeCreditCardManager.STRIPE_UNEXPECTED);
                 MessageSourceResolvable message = new DefaultMessageSourceResolvable(new String[]{errorMessageCode, StripeCreditCardManager.STRIPE_UNEXPECTED});
-                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSource.getMessage(message, locale)}, null);
+                bindingResult.reject(ErrorsCode.STEP_2_PAYMENT_PROCESSING_ERROR, new Object[]{messageSourceManager.getMessageSourceForEvent(event).getMessage(message, locale)}, null);
                 return buildReservationPaymentStatus(bindingResult);
             }
 
@@ -655,6 +655,8 @@ public class ReservationApiV2Controller {
     }
 
     private Map<String, String> formatDateForLocales(Event event, ZonedDateTime date, String formattingCode) {
+
+        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
 
         Map<String, String> res = new HashMap<>();
         for (ContentLanguage cl : event.getContentLanguages()) {

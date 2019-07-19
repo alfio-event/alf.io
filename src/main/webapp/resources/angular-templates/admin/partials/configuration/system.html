@@ -11,7 +11,8 @@
         <h1>System configuration</h1>
     </div>
 
-
+    <uib-tabset>
+        <uib-tab index="0" heading="Settings">
     <form name="settingsForm" novalidate data-ng-submit="systemConf.saveSettings(settingsForm)">
         <div class="page-header" id="GENERAL">
             <h2>General</h2>
@@ -259,21 +260,6 @@
             </div>
         </div>
 
-
-        <div class="page-header">
-            <h2>Internationalization</h2>
-        </div>
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <div class="panel-title"><i class="fa fa-language"></i> Translations override</div>
-            </div>
-            <div class="panel-body">
-                <div data-ng-repeat="setting in systemConf.translations.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
-                </div>
-            </div>
-        </div>
-
         <div class="page-header" data-ng-if="systemConf.payment || systemConf.paymentPaypal || systemConf.paymentStripe || systemConf.paymentMollie || systemConf.paymentOffline">
             <h2>Alf.io PI settings</h2>
         </div>
@@ -309,4 +295,9 @@
 
         <control-buttons data-form-obj="systemConf" data-success-text="Save" data-cancel-handler="systemConf.cancel"></control-buttons>
     </form>
+        </uib-tab>
+        <uib-tab index="1" heading="Internationalization">
+            <internationalization-editor></internationalization-editor>
+        </uib-tab>
+    </uib-tabset>
 </div>
