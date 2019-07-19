@@ -1592,6 +1592,7 @@
             }
 
             var stopScanning = function () {
+                endBarcodeReaderListener();
                 endVideoStream();
                 $scope.resetScanning();
                 $scope.scanning.visible = false;
@@ -1603,6 +1604,53 @@
                 endVideoStream();
                 stopScanning();
             });
+
+            //based on https://github.com/alfio-event/alf.io-PI/blob/master/frontend/src/app/components/check-in/scan-listener.directive.ts
+
+            /* to simulate the events:
+(function() {
+
+var v = "203c5244-3654-4de2-ac6e-79216810e21c/d7OriJfbbuFJfejheFy2PtOkd+3E7h/jICIzysY3gaI="
+
+for(var i = 0; i < v.length; i++) {
+ var e = new Event('keydown');
+ e.key = v[i];
+ window.dispatchEvent(e);
+}
+
+var eEnter = new Event('keydown');
+eEnter.key = 'Enter';
+window.dispatchEvent(eEnter);
+})();
+            */
+
+            var buffer = [];
+
+            function onKeyboardInputBarcodeReader(event) {
+                if(event.key == "Enter") {
+                    var result = buffer.splice(0, buffer.length).join('');
+                    buffer = [];
+                    $scope.scanning.visible = false;
+                    $scope.scanning.ticket.code = result;
+                    $scope.scanning.loadingTicket = true;
+                    CheckInService.getTicket($scope.event.id, result).success(function(result) {
+                        $scope.scanning.scannedTicketInfo = result.ticket;
+                        $scope.scanning.scannedResult = result.result;
+                        $scope.scanning.loadingTicket = false;
+                    });
+                } else if(["Shift", "Control","Meta","Alt"].every(function(k) {return event.key != k})){
+                    buffer.push(event.key);
+                }
+            }
+
+            function endBarcodeReaderListener() {
+                buffer = [];
+                window.removeEventListener('keydown', onKeyboardInputBarcodeReader);
+            }
+
+            $scope.enableBarcodeReaderListener = function() {
+                window.addEventListener('keydown', onKeyboardInputBarcodeReader);
+            }
 
             $scope.stopScanning = stopScanning;
 
@@ -1663,7 +1711,8 @@
         };
 
         $scope.resetScanning = function() {
-            $scope.scanning = {visible: $scope.scanning, ticket: {}};
+            buffer = [];
+            $scope.scanning = {visible: $scope.scanning, ticket: {}, type: $scope.scanning.type};
         };
 
         $scope.resetForm = function(ticket) {
