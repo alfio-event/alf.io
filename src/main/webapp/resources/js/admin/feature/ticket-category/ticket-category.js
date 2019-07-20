@@ -8,7 +8,11 @@
             editHandler: '<',
             removeHandler: '<',
             boxClass: '<',
-            panelModeEnabled: '<'
+            panelModeEnabled: '<',
+            swapEnabled: '<',
+            swapHandler: '<',
+            isFirst: '<',
+            isLast: '<'
         },
         controller: [TicketCategoryDetailCtrl],
         templateUrl: '../resources/js/admin/feature/ticket-category/ticket-category-detail.html'

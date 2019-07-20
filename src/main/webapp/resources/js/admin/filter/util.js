@@ -142,6 +142,9 @@
 
     filters.filter('money', function() {
         return function(amount, currency, hideCurrency) {
+            if(!currency) {
+                return "";
+            }
             var formatted = new Intl.NumberFormat(navigator.language, { style: 'currency', currency: currency, currencyDisplay: 'code' }).format(amount);
             if(hideCurrency) {
                 return formatted.substring(4);

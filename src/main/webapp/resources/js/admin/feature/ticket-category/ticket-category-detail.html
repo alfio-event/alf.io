@@ -8,6 +8,8 @@
                 <div class="pull-right">
                     <a class="btn btn-sm btn-default" ng-click="$ctrl.ticketCategory.error = null; $ctrl.editHandler($ctrl.ticketCategory)"><i class="fa fa-edit"></i> edit</a>
                     <a class="btn btn-sm btn-danger" ng-click="$ctrl.removeHandler($ctrl.ticketCategory)"><i class="fa fa-trash"></i> delete</a>
+                    <a class="btn btn-default btn-sm" ng-if="$ctrl.swapEnabled && !$ctrl.isFirst" data-ng-click="$ctrl.swapHandler($ctrl.ticketCategory, true)"><i class="fa fa-arrow-up"></i> move up</a>
+                    <a class="btn btn-default btn-sm" ng-if="$ctrl.swapEnabled && !$ctrl.isLast" data-ng-click="$ctrl.swapHandler($ctrl.ticketCategory, false)"><i class="fa fa-arrow-down"></i> move down</a>
                 </div>
             </div>
         </div>

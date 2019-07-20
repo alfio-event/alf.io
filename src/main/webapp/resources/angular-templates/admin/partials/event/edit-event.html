@@ -32,13 +32,17 @@
                     </uib-progress>
                 </div>
             </div>
-            <div data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy:['inception.date','inception.time']" ng-class="'category-'+$index">
+            <div data-ng-form="category" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy:['ordinal', 'inception.date','inception.time']" ng-class="'category-'+$index">
                 <ticket-category-detail data-box-class="'category-' + evaluateBarType($index)"
                                         data-event="event"
                                         data-ticket-category="ticketCategory"
                                         data-edit-handler="editCategory"
                                         data-remove-handler="removeCategory"
-                                        data-panel-mode-enabled="true"></ticket-category-detail>
+                                        data-panel-mode-enabled="true"
+                                        data-swap-enabled="event.ticketCategories.length > 1"
+                                        data-swap-handler="swap"
+                                        data-is-first="$first"
+                                        data-is-last="$last"></ticket-category-detail>
             </div>
 
             <div class="alert alert-danger" ng-if="event.ticketCategories.length === 0">

@@ -664,8 +664,24 @@
         $scope.addCategory = function() {
             var category = createCategoryValidUntil(true, $scope.event.begin);
             editCategory(category).then(function(res) {
+                category.ordinal = $scope.event.ticketCategories.length + 1;
                 $scope.event.ticketCategories.push(category);
             });
+        };
+
+        $scope.swap = function(category, up) {
+            var list = $scope.event.ticketCategories.slice();
+            var index = category.ordinal - 1;
+            var target = up ? index - 1 : index + 1;
+            var toBeSwapped = list[target];
+            toBeSwapped.ordinal = index + 1;
+            category.ordinal = target + 1;
+            list[target] = category;
+            list[index] = toBeSwapped;
+            $scope.event.ticketCategories.length = 0;
+            for(var i=0; i<list.length; i++) {
+                $scope.event.ticketCategories.push(list[i]);
+            }
         };
 
         $scope.setAdditionalServices = function(event, additionalServices) {
