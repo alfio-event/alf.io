@@ -174,15 +174,19 @@
     }
 
     angular.module('adminApplication').filter('filterBundle', function() {
-        return function(res, filterValue, displayValueWithFallback, locale) {
-            if(res && filterValue) {
-                var matcher = new RegExp(escapeRegExp(filterValue), 'i');
+        return function(res, filterValue, displayValueWithFallback, locale, isOverride, displayOnlyOverride) {
+            if(res && (filterValue || displayOnlyOverride)) {
+                var matcher = filterValue ? new RegExp(escapeRegExp(filterValue), 'i') : /.*/g;
                 var result = [];
                 var resLength = res.length;
                 for(var i = 0; i < resLength; i++) {
                     var key = res[i];
                     if(key.match(matcher) !== null || displayValueWithFallback(locale, key).match(matcher) !== null) {
-                        result.push(res[i]);
+                        if(displayOnlyOverride && isOverride(locale, key)) {
+                            result.push(res[i]);
+                        } else if (!displayOnlyOverride) {
+                            result.push(res[i]);
+                        }
                     }
                 }
                 return result;

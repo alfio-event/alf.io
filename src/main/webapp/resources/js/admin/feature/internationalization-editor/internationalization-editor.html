@@ -9,15 +9,18 @@
     </div>
     <input type="text" class="form-control" data-ng-model="$ctrl.toBeSearched">
 </div>
+<div class="input-group">
+    <label><input type="checkbox" data-ng-model="displayOnlyOverride"> Display only customized values</label>
+</div>
 
 <uib-tabset>
     <uib-tab heading="{{lang.displayLanguage}}" data-ng-repeat="lang in $ctrl.allLanguages" select="$ctrl.loadForLocale(lang.locale)">
         <table class="table table-striped width-100">
             <tbody>
-                <tr data-ng-repeat="key in $ctrl.bundleKeys[lang.locale] | filterBundle: $ctrl.toBeSearched: $ctrl.displayValueWithFallback : lang.locale">
+                <tr data-ng-repeat="key in $ctrl.bundleKeys[lang.locale] | filterBundle: $ctrl.toBeSearched: $ctrl.displayValueWithFallback : lang.locale : $ctrl.isOverride : displayOnlyOverride">
                     <td style="width:50%">
-                        <div>{{$ctrl.bundle['en'][key]}}</div>
-                        <div class="text-muted">{{key}}</div>
+                        <div>{{::$ctrl.bundle['en'][key]}}</div>
+                        <div class="text-muted">{{::key}}</div>
                     </td>
                     <td>
                         <div data-ng-if="!$ctrl.editing[lang.locale][key]">
