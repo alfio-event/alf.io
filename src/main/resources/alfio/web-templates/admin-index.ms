@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-bootstrap/ui-bootstrap-csp.css"/>
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/nz-toggle/dist/nz-toggle.min.css"/>
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/angular-growl-v2/build/angular-growl.min.css"/>
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/dragula.js/dist/dragula.min.css"/>
     <script src="{{request.contextPath}}/resources/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/lodash/lodash.min.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/moment/min/moment-with-locales.min.js"></script>
@@ -35,6 +36,8 @@
     <script src="{{request.contextPath}}/resources/bower_components/qrcode-generator/js/qrcode.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/qrcode-generator/js/qrcode_UTF8.js"></script>
     <script src="{{request.contextPath}}/resources/bower_components/angular-qrcode/angular-qrcode.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/dragula.js/dist/dragula.js"></script>
+    <script src="{{request.contextPath}}/resources/bower_components/angularjs-dragula/dist/angularjs-dragula.js"></script>
     <script src="{{request.contextPath}}/resources/js/jsqrcode/jsqrcode.min.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/ng-app/admin-application.js"></script>
     <script src="{{request.contextPath}}/resources/js/admin/directive/admin-directive.js"></script>

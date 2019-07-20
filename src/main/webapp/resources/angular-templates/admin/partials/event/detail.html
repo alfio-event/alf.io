@@ -36,6 +36,7 @@
             <label class="btn btn-sm btn-default" data-ng-model="selection.active" data-uib-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.active, 'fa-square-o': !selection.active}"></i> Active <span class="badge">{{countActive(event.ticketCategories)}}</span></label>
             <label class="btn btn-sm btn-default" data-ng-model="selection.expired" data-uib-btn-checkbox><i class="fa" data-ng-class="{'fa-check-square-o': selection.expired, 'fa-square-o': !selection.expired}"></i> Expired <span class="badge">{{countExpired(event.ticketCategories)}}</span></label>
             <label><div class="input-group"><div class="input-group-addon"><i class="fa fa-search"></i></div><input type="text" class="form-control input-sm" data-ng-model="selection.freeText" data-ng-change="updateSelectionText(selection.freeText)"></div></label>
+            <label class="btn btn-sm btn-default pull-right" data-ng-click="toggleRearrange()"><i class="fa fa-random"></i> Rearrange categories</label>
         </div>
         <script type="text/ng-template" id="categoryStats.html">
             <ul class="list-unstyled">
@@ -51,7 +52,7 @@
                 No categories matching the selected criteria have been found.
             </div>
             <div data-ng-switch-default="">
-                <div class="panel panel-default" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['formattedInception', 'id'] | showSelectedCategories : selection"
+                <div class="panel panel-default" data-ng-repeat="ticketCategory in event.ticketCategories | orderBy: ['ordinal', 'formattedInception', 'id'] | showSelectedCategories : selection"
                      data-ng-class="{'panel-danger':ticketCategory.containingOrphans, 'panel-warning':ticketCategory.containingStuckTickets}"
                      data-ng-init="displayWarning = ticketCategory.containingStuckTickets || ticketCategory.containingOrphans"
                      id="ticket-category-{{ticketCategory.id}}">

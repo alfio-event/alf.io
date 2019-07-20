@@ -24,11 +24,8 @@ import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketFieldConfiguration.Context;
-import alfio.model.modification.EventModification;
+import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
-import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
-import alfio.model.modification.TicketCategoryModification;
-import alfio.model.modification.TicketFieldDescriptionModification;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.system.ConfigurationKeys;
@@ -50,6 +47,7 @@ import org.flywaydb.core.Flyway;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -64,6 +62,7 @@ import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static alfio.model.modification.DateTimeModification.toZonedDateTime;
@@ -101,6 +100,7 @@ public class EventManager {
     private final AuditingRepository auditingRepository;
     private final ExtensionManager extensionManager;
     private final GroupRepository groupRepository;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -544,7 +544,7 @@ public class EventManager {
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
                 toZonedDateTime(tc.getValidCheckInFrom(), zoneId), toZonedDateTime(tc.getValidCheckInTo(), zoneId),
-                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId));
+                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal());
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
@@ -564,7 +564,7 @@ public class EventManager {
             toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
             toZonedDateTime(tc.getValidCheckInTo(), zoneId),
             toZonedDateTime(tc.getTicketValidityStart(), zoneId),
-            toZonedDateTime(tc.getTicketValidityEnd(), zoneId));
+            toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal());
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
@@ -980,6 +980,19 @@ public class EventManager {
             Validate.isTrue(ticketIds.size() == ticketsCount, "Error while deleting category. Please ensure that there is no pending reservation.");
             ticketRepository.resetTickets(ticketIds);
             Validate.isTrue(ticketsCount == ticketRepository.unbindTicketsFromCategory(eventId, categoryId, ticketIds), "Cannot remove tickets from category.");
+        }
+    }
+
+    public void rearrangeCategories(String eventName, List<CategoryOrdinalModification> categories, String username) {
+        var optionalEvent = getOptionalEventAndOrganizationIdByName(eventName, username);
+        if(optionalEvent.isPresent()) {
+            var parameterSources = categories.stream()
+                .map(category -> new MapSqlParameterSource("ordinal", category.getOrdinal()).addValue("id", category.getId()))
+                .toArray(MapSqlParameterSource[]::new);
+            int[] results = jdbcTemplate.batchUpdate(ticketCategoryRepository.updateOrdinal(), parameterSources);
+            Validate.isTrue(IntStream.of(results).sum() == categories.size(), "Unexpected result from update.");
+        } else {
+            log.warn("unauthorized access to event {}", eventName);
         }
     }
 }

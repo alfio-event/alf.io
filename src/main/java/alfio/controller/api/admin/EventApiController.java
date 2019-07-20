@@ -42,6 +42,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -268,6 +269,15 @@ public class EventApiController {
     public String deleteCategory(@PathVariable("eventName") String eventName, @PathVariable("categoryId") int categoryId, Principal principal) {
         eventManager.deleteCategory(eventName, categoryId, principal.getName());
         return OK;
+    }
+
+    @PutMapping("/events/{eventName}/rearrange-categories")
+    public ResponseEntity<String> rearrangeCategories(@PathVariable("eventName") String eventName, @RequestBody List<CategoryOrdinalModification> categories, Principal principal) {
+        if(CollectionUtils.isEmpty(categories)) {
+            return ResponseEntity.badRequest().build();
+        }
+        eventManager.rearrangeCategories(eventName, categories, principal.getName());
+        return ResponseEntity.ok(OK);
     }
 
     private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Payment ID", "Payment Method");
