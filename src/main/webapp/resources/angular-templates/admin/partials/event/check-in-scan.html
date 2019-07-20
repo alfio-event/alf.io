@@ -9,10 +9,10 @@
     <div data-ng-hide="scanning.visible || scanning.ticket.code != null">
         <p><button class="btn btn-primary btn-block" type="button" data-ng-click="scanning.visible = true;scanning.type='BARCODE_READER';enableBarcodeReaderListener()">Scan with barcode reader</button></p>
     </div>
-    <div data-ng-if="canReadCamera">
+    <div>
         <form data-ng-submit="scanning.visible = false; checkIn(scanning.ticket)">
             <div data-ng-hide="scanning.visible || scanning.ticket.code != null" class="form-group">
-                <p><button class="btn btn-primary btn-block" type="button" data-ng-click="scanning.visible = true;scanning.type='WEBCAM';selectSource(selectedSource);">Scan with webcam</button></p>
+                <p><button class="btn btn-primary btn-block" type="button" ng-if="canReadCamera" data-ng-click="scanning.visible = true;scanning.type='WEBCAM';selectSource(selectedSource);">Scan with webcam</button></p>
             </div>
             <div class="form-group" data-ng-show="scanning.visible && scanning.type === 'WEBCAM'">
                 <label>Select video source</label>
