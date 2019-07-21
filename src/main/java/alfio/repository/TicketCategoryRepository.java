@@ -132,6 +132,6 @@ public interface TicketCategoryRepository {
     @Query("update ticket_category set tc_status = 'NOT_ACTIVE' from (select count(*) cnt from ticket where category_id = :categoryId and status in ('PENDING', 'ACQUIRED', 'CHECKED_IN')) tkts where id = :categoryId and tkts.cnt = 0")
     int deleteCategoryIfEmpty(@Bind("categoryId") int categoryId);
 
-    @Query(type = QueryType.TEMPLATE, value = "update ticket_category set ordinal = :ordinal where id = :id")
+    @Query(type = QueryType.TEMPLATE, value = "update ticket_category set ordinal = :ordinal where id = :id and event_id = :eventId")
     String updateOrdinal();
 }

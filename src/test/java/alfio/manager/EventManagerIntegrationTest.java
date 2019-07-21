@@ -772,6 +772,37 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertThrows(IllegalStateException.class, () -> eventManager.deleteCategory(event.getShortName(), categoryId, pair.getRight()));
     }
 
+    @Test
+    public void rearrangeTicketCategories() {
+        List<TicketCategoryModification> cat = List.of(
+            new TicketCategoryModification(null, "first", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 2),
+            new TicketCategoryModification(null, "second", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 1));
+
+        Pair<Event, String> pair = initEvent(cat, organizationRepository, userManager, eventManager, eventRepository);
+        var event = pair.getLeft();
+        var categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        assertEquals(2, categories.size());
+        assertEquals("second", categories.get(0).getName());
+
+        // swap categories
+        var first = categories.get(0);
+        var second = categories.get(1);
+
+        var categoryModifications = List.of(new CategoryOrdinalModification(first.getId(), first.getName(), second.getOrdinal()), new CategoryOrdinalModification(second.getId(), second.getName(), first.getOrdinal()));
+
+        eventManager.rearrangeCategories(event.getShortName(), categoryModifications, pair.getRight());
+
+        categories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+        assertEquals(2, categories.size());
+        assertEquals("first", categories.get(0).getName());
+
+    }
 
     private Pair<Event, String> generateAndEditEvent(int newEventSize) {
         List<TicketCategoryModification> categories = Collections.singletonList(
@@ -798,5 +829,4 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(10, tickets.stream().filter(t -> t.getCategoryId() != null).count());
         return Pair.of(eventRepository.findById(event.getId()), pair.getRight());
     }
-
 }

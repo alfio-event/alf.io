@@ -986,8 +986,11 @@ public class EventManager {
     public void rearrangeCategories(String eventName, List<CategoryOrdinalModification> categories, String username) {
         var optionalEvent = getOptionalEventAndOrganizationIdByName(eventName, username);
         if(optionalEvent.isPresent()) {
+            int eventId = optionalEvent.get().getId();
             var parameterSources = categories.stream()
-                .map(category -> new MapSqlParameterSource("ordinal", category.getOrdinal()).addValue("id", category.getId()))
+                .map(category -> new MapSqlParameterSource("ordinal", category.getOrdinal())
+                    .addValue("id", category.getId())
+                    .addValue("eventId", eventId))
                 .toArray(MapSqlParameterSource[]::new);
             int[] results = jdbcTemplate.batchUpdate(ticketCategoryRepository.updateOrdinal(), parameterSources);
             Validate.isTrue(IntStream.of(results).sum() == categories.size(), "Unexpected result from update.");
