@@ -18,6 +18,7 @@ package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.Configuration;
 import alfio.model.transaction.*;
 import alfio.repository.TransactionRepository;
 import lombok.AllArgsConstructor;
@@ -25,8 +26,12 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
 import static alfio.model.system.ConfigurationKeys.ON_SITE_ENABLED;
+import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
 
 @Component
 @Log4j2
@@ -53,4 +58,14 @@ public class OnSiteManager implements PaymentProvider {
         return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }
 
+    @Override
+    public Map<String, ?> getModelOptions(PaymentContext context) {
+        Map<String, Object> model = new HashMap<>();
+        boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(context.getEvent());
+        model.put("captchaRequestedForOffline", recaptchaEnabled);
+        if(recaptchaEnabled) {
+            model.put("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null));
+        }
+        return model;
+    }
 }

@@ -467,7 +467,7 @@ public class ConfigurationManager {
     }
 
 
-    public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
+    public boolean isRecaptchaForOfflinePaymentAndFreeEnabled(EventAndOrganizationId event) {
         var conf = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS, RECAPTCHA_API_KEY));
         return conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault(false) &&
             conf.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;

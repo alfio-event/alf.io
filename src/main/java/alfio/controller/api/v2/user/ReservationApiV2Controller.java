@@ -273,7 +273,7 @@ public class ReservationApiV2Controller {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-            if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentMethod(), request, event)) {
+            if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentMethod(), paymentForm.getCaptcha(), request, event)) {
                 log.debug("captcha validation failed.");
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
@@ -678,9 +678,9 @@ public class ReservationApiV2Controller {
     }
 
 
-    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, HttpServletRequest request, EventAndOrganizationId event) {
+    private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
-            && configurationManager.isRecaptchaForOfflinePaymentEnabled(event)
-            && !recaptchaService.checkRecaptcha(null, request);
+            && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(event)
+            && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 }

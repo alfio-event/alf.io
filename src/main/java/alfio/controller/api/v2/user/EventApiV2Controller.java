@@ -177,8 +177,8 @@ public class EventApiV2Controller {
                     recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null);
                 }
                 //
-                boolean captchaForOfflinePaymentEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
-                var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePaymentEnabled, recaptchaApiKey);
+                boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(event);
+                var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePaymentAndFreeEnabled, recaptchaApiKey);
 
 
                 //

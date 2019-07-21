@@ -232,7 +232,7 @@ public class EventWithAdditionalInfo implements DateValidity {
     @Getter
     public static class CaptchaConfiguration {
         private final boolean captchaForTicketSelection;
-        private final boolean captchaForOfflinePaymentEnabled;
+        private final boolean captchaForOfflinePaymentAndFree;
         private final String recaptchaApiKey;
     }
 
