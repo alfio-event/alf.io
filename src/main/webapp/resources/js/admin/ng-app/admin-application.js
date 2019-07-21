@@ -134,14 +134,6 @@
                     eventType: 'INTERNAL'
                 }
             })
-            .state('events.newLink', {
-                url: '/new-external',
-                templateUrl: BASE_STATIC_URL + "/event/edit-event.html",
-                controller: 'CreateEventController',
-                data: {
-                    eventType: 'EXTERNAL'
-                }
-            })
             .state('events.single', {
                 abstract: true,
                 url: '/:eventName',
