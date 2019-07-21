@@ -43,6 +43,7 @@ public class TicketCategoryModification {
 
     private final DateTimeModification ticketValidityStart;
     private final DateTimeModification ticketValidityEnd;
+    private final int ordinal;
 
     @JsonCreator
     public TicketCategoryModification(@JsonProperty("id") Integer id,
@@ -59,7 +60,8 @@ public class TicketCategoryModification {
                                       @JsonProperty("validCheckInFrom") DateTimeModification validCheckInFrom,
                                       @JsonProperty("validCheckInTo") DateTimeModification validCheckInTo,
                                       @JsonProperty("ticketValidityStart") DateTimeModification ticketValidityStart,
-                                      @JsonProperty("ticketValidityEnd") DateTimeModification ticketValidityEnd) {
+                                      @JsonProperty("ticketValidityEnd") DateTimeModification ticketValidityEnd,
+                                      @JsonProperty("ordinal") Integer ordinal) {
         this.id = id;
         this.name = name;
         this.maxTickets = maxTickets;
@@ -75,6 +77,7 @@ public class TicketCategoryModification {
         this.validCheckInTo = validCheckInTo;
         this.ticketValidityStart = ticketValidityStart;
         this.ticketValidityEnd = ticketValidityEnd;
+        this.ordinal = ordinal != null ? ordinal : 0;
     }
 
 }

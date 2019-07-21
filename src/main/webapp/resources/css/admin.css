@@ -750,6 +750,14 @@ span.path {
     width: 100%;
 }
 
+.draggable {
+    cursor: grab;
+}
+
+.gu-transit {
+    cursor: grabbing;
+}
+
 .editable-translation {
     cursor: pointer;
     padding:4px;
