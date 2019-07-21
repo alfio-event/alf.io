@@ -134,6 +134,12 @@ public class PriceContainerTest {
         assertEquals(new BigDecimal("0.00"), vs.getFinalPrice());
     }
 
+    @Test
+    void totalPriceZeroIfVatStatusIsNull() {
+        PriceContainerImpl vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("30.00"), null);
+        assertEquals(BigDecimal.ZERO, vs.getFinalPrice());
+    }
+
     private Stream<Pair<Integer, PriceContainer>> generateTestStream(PriceContainer.VatStatus vatStatus) {
         List<BigDecimal> vatPercentages = IntStream.range(100, 3000)
             .mapToObj(vatCts -> new BigDecimal(vatCts).divide(new BigDecimal("100.00"), 2, RoundingMode.UNNECESSARY))

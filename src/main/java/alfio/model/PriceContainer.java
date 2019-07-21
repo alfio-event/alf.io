@@ -109,13 +109,14 @@ public interface PriceContainer {
      * @return net + tax
      */
     default BigDecimal getFinalPrice() {
-        if(getSrcPriceCts() == 0) {
+        var vatStatus = getVatStatus();
+        if(getSrcPriceCts() == 0 || vatStatus == null) {
             return BigDecimal.ZERO;
         }
         final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
         BigDecimal discountedPrice = price.subtract(getAppliedDiscount());
-        if(getVatStatus() != VatStatus.INCLUDED) {
-            return discountedPrice.add(getVAT(discountedPrice, getVatStatus(), getVatPercentageOrZero()));
+        if(vatStatus != VatStatus.INCLUDED) {
+            return discountedPrice.add(getVAT(discountedPrice, vatStatus, getVatPercentageOrZero()));
         } else {
             return discountedPrice;
         }
