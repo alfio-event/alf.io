@@ -1627,9 +1627,15 @@ window.dispatchEvent(eEnter);
             var buffer = [];
 
             function onKeyboardInputBarcodeReader(event) {
+                console.log('event', event);
                 if(event.key == "Enter") {
                     var result = buffer.splice(0, buffer.length).join('');
                     buffer = [];
+
+                    if(result.length === 0) {
+                        return;
+                    }
+
                     $scope.scanning.visible = false;
                     $scope.scanning.ticket.code = result;
                     $scope.scanning.loadingTicket = true;
@@ -1649,6 +1655,7 @@ window.dispatchEvent(eEnter);
             }
 
             $scope.enableBarcodeReaderListener = function() {
+                document.getElementById('BARCODEREADERAREAFOCUS').focus();
                 window.addEventListener('keydown', onKeyboardInputBarcodeReader);
             }
 
@@ -1713,6 +1720,9 @@ window.dispatchEvent(eEnter);
         $scope.resetScanning = function() {
             buffer = [];
             $scope.scanning = {visible: $scope.scanning, ticket: {}, type: $scope.scanning.type};
+            if($scope.scanning.type === 'BARCODE_READER') {
+                document.getElementById('BARCODEREADERAREAFOCUS').focus();
+            }
         };
 
         $scope.resetForm = function(ticket) {

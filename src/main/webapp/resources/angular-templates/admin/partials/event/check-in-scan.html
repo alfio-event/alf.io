@@ -10,6 +10,7 @@
         <p><button class="btn btn-primary btn-block" type="button" data-ng-click="scanning.visible = true;scanning.type='BARCODE_READER';enableBarcodeReaderListener()">Scan with barcode reader</button></p>
     </div>
     <div>
+        <div id="BARCODEREADERAREAFOCUS" tabindex="0" style="outline:0;"></div>
         <form data-ng-submit="scanning.visible = false; checkIn(scanning.ticket)">
             <div data-ng-hide="scanning.visible || scanning.ticket.code != null" class="form-group">
                 <p><button class="btn btn-primary btn-block" type="button" ng-if="canReadCamera" data-ng-click="scanning.visible = true;scanning.type='WEBCAM';selectSource(selectedSource);">Scan with webcam</button></p>
@@ -27,7 +28,7 @@
                 <canvas id="checkInImageCanvas" class="ng-hide"></canvas>
             </div>
 
-            <div data-ng-if="scanning.visible && scanning.type === 'BARCODE_READER'">
+            <div data-ng-show="scanning.visible && scanning.type === 'BARCODE_READER'">
                 <p><button class="btn btn-primary btn-block" type="button" data-ng-click="stopScanning()">Stop scanning</button></p>
             </div>
 
