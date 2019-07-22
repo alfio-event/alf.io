@@ -1367,7 +1367,8 @@ public class TicketReservationManager {
                                   Optional<UserDetails> userDetails) {
 
         Ticket preUpdateTicket = ticketRepository.findByUUID(ticket.getUuid());
-        if(preUpdateTicket.getLockedAssignment() && isTicketBeingReassigned(ticket, updateTicketOwner, event)) {
+        boolean ticketBeingReassigned = isTicketBeingReassigned(ticket, updateTicketOwner, event);
+        if(preUpdateTicket.getLockedAssignment() && ticketBeingReassigned) {
             log.warn("trying to update assignee for a locked ticket ({})", preUpdateTicket.getId());
             return;
         }
@@ -1395,6 +1396,17 @@ public class TicketReservationManager {
             sendTicketByEmail(newTicket, userLocale, event, confirmationTextBuilder);
         }
 
+        Organization organization = organizationRepository.getById(event.getOrganizationId());
+        if(ticketBeingReassigned && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticket.getCategoryId(), NOTIFY_TICKET_ASSIGNMENT), false)) {
+            var reservation = findById(ticket.getTicketsReservationId()).orElseThrow();
+            var ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
+            var reservationUrl = reservationUrl(reservation, event);
+            var emailModel = TemplateResource.buildModelForTicketAssignedNotificationEmail(organization, event, reservation, ticketUrl(event, ticket.getUuid()), ticket, ticketCategory, reservationUrl);
+
+            notificationManager.sendSimpleEmail(event, reservation.getId(), organization.getEmail(), "Ticket assigned for category "+ticketCategory.getName(),
+                () -> templateManager.renderTemplate(event, TemplateResource.TICKET_ASSIGNED_NOTIFY_ORGANIZER, emailModel, Locale.ENGLISH));
+        }
+
         boolean admin = isAdmin(userDetails);
 
         if (!admin && StringUtils.isNotBlank(ticket.getEmail()) && !equalsIgnoreCase(newEmail, ticket.getEmail()) && ticket.getStatus() == TicketStatus.ACQUIRED) {
@@ -1402,7 +1414,6 @@ public class TicketReservationManager {
             String subject = messageSource.getMessage("ticket-has-changed-owner-subject", new Object[] {event.getDisplayName()}, oldUserLocale);
             notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), subject, () -> ownerChangeTextBuilder.generate(newTicket));
             if(event.getBegin().isBefore(ZonedDateTime.now(event.getZoneId()))) {
-                Organization organization = organizationRepository.getById(event.getOrganizationId());
                 notificationManager.sendSimpleEmail(event, null, organization.getEmail(), "WARNING: Ticket has been reassigned after event start", () -> ownerChangeTextBuilder.generate(newTicket));
             }
         }
