@@ -112,6 +112,11 @@ public class EventStatistic implements StatisticsContainer, Comparable<EventStat
         return eventStatisticView.getReleasedTickets();
     }
 
+    @Override
+    public int getAssignedTickets() {
+        return eventStatisticView.getAssignedTickets();
+    }
+
     public int getOrganizationId() {
         return event.getOrganizationId();
     }

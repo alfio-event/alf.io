@@ -40,7 +40,8 @@
         <script type="text/ng-template" id="categoryStats.html">
             <ul class="list-unstyled">
                 <li ng-if="ticketCategory.checkedInTickets > 0"><span class="text-left">Checked in</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.checkedInTickets}}</span></li>
-                <li ng-if="ticketCategory.soldTickets > 0"><span class="text-left">Sold</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.soldTickets}}</span></li>
+                <li ng-if="ticketCategory.assignedTickets > 0"><span class="text-left">Acquired and assigned</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.assignedTickets}}</span></li>
+                <li ng-if="(ticketCategory.soldTickets - ticketCategory.assignedTickets) > 0"><span class="text-left">To be assigned</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.soldTickets - ticketCategory.assignedTickets}}</span></li>
                 <li ng-if="ticketCategory.pendingTickets > 0"><span class="text-left">Pending</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.pendingTickets}}</span></li>
                 <li ng-if="ticketCategory.notSoldTickets > 0"><span class="text-left">Still Available</span><span class="text-right pull-right" style="margin-left: 10px">{{ticketCategory.notSoldTickets}}</span></li>
                 <li ng-if="!ticketCategory.bounded"><span class="text-left">Dynamically allocated</span><span class="text-right pull-right" style="margin-left: 10px">{{event.dynamicAllocation}}</span></li>
@@ -64,7 +65,8 @@
                                 <div class="hidden-xs hidden-sm col-md-4">
                                     <uib-progress max="getActualCapacity(ticketCategory, event)" uib-tooltip-template="'categoryStats.html'" tooltip-popup-close-delay="500">
                                         <uib-bar value="ticketCategory.checkedInTickets" type="success"><span>{{ticketCategory.checkedInTickets}}</span></uib-bar>
-                                        <uib-bar value="ticketCategory.soldTickets" type="warning"><span>{{ticketCategory.soldTickets}}</span></uib-bar>
+                                        <uib-bar value="ticketCategory.assignedTickets" type="warning"><span>{{ticketCategory.assignedTickets}}</span></uib-bar>
+                                        <uib-bar value="ticketCategory.soldTickets - ticketCategory.assignedTickets" type="info" class="slice-to-be-assigned"><span>{{ticketCategory.soldTickets - ticketCategory.assignedTickets}}</span></uib-bar>
                                         <uib-bar value="ticketCategory.pendingTickets" type="info" class="slice-pending">{{ticketCategory.pendingTickets}}</uib-bar>
                                         <uib-bar value="ticketCategory.notSoldTickets" type="info">{{ticketCategory.notSoldTickets}}</uib-bar>
                                         <uib-bar ng-if="!ticketCategory.bounded" value="event.dynamicAllocation" type="default">{{event.dynamicAllocation}}</uib-bar>

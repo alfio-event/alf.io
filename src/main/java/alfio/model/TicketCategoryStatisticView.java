@@ -31,6 +31,7 @@ public class TicketCategoryStatisticView {
     private final int pendingCount;
     private final int checkedInCount;
     private final int soldTicketsCount;
+    private final int assignedTicketsCount;
     private final int notSoldTicketsCount;
     private final int releasedTicketsCount;
     private final int stuckCount;
@@ -45,6 +46,7 @@ public class TicketCategoryStatisticView {
                                        @Column("pending_count") int pendingCount,
                                        @Column("checked_in_count") int checkedInCount,
                                        @Column("sold_tickets_count") int soldTicketsCount,
+                                       @Column("assigned_tickets_count") int assignedTicketsCount,
                                        @Column("not_sold_tickets") int notSoldTicketsCount,
                                        @Column("released_count") int releasedCount,
                                        @Column("stuck_count") int stuckCount,
@@ -58,6 +60,7 @@ public class TicketCategoryStatisticView {
         this.pendingCount = pendingCount;
         this.checkedInCount = checkedInCount;
         this.soldTicketsCount = soldTicketsCount;
+        this.assignedTicketsCount = assignedTicketsCount;
         this.notSoldTicketsCount = notSoldTicketsCount;
         this.stuckCount = stuckCount;
         this.containsOrphanTickets = containsOrphanTickets;
@@ -66,6 +69,6 @@ public class TicketCategoryStatisticView {
     }
 
     public static TicketCategoryStatisticView empty(int ticketCategoryId, int eventId) {
-        return new TicketCategoryStatisticView(ticketCategoryId, 0, false, false, eventId, 0, 0, 0, 0, 0, 0, false, false);
+        return new TicketCategoryStatisticView(ticketCategoryId, 0, false, false, eventId, 0, 0, 0, 0, 0, 0, 0, false, false);
     }
 }
