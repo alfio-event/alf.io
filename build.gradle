@@ -214,6 +214,9 @@ dependencies {
     }
 
     implementation "org.joda:joda-money:1.0.1"
+
+    testImplementation "de.codecentric.hikaku:hikaku-openapi:2.3.0"
+    testImplementation "de.codecentric.hikaku:hikaku-spring:2.3.0"
 }
 
 // -- license configuration
