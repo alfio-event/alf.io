@@ -190,6 +190,10 @@ class TicketReservationManagerTest {
         when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
 
+        ConfigurationManager.MaybeConfiguration configuration = mock(ConfigurationManager.MaybeConfiguration.class);
+        when(configurationManager.getFor(eq(event), eq(SEND_TICKETS_AUTOMATICALLY))).thenReturn(configuration);
+        when(configuration.getValueAsBooleanOrDefault(eq(true))).thenReturn(true);
+
         trm = new TicketReservationManager(eventRepository,
             organizationRepository,
             ticketRepository,
