@@ -263,7 +263,7 @@ public final class Validator {
                         form.setAdditional(new HashMap<>());
                     }
                     form.getAdditional().put(fieldConf.getName(), Collections.singletonList(""));
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"][0]", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"][0]", "error.emptyField");
                 }
                 continue;
             }
@@ -272,7 +272,7 @@ public final class Validator {
             for(int i = 0; i < values.size(); i++) {
                 String formValue = values.get(i);
                 if(fieldConf.isMaxLengthDefined()) {
-                    validateMaxLength(formValue, prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
+                    validateMaxLength(formValue, prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error.tooLong", fieldConf.getMaxLength(), errors);
                 }
 
                 if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined() && StringUtils.length(formValue) < fieldConf.getMinLength()) {
@@ -284,7 +284,7 @@ public final class Validator {
                 }
 
                 if(fieldConf.isRequired() && StringUtils.isBlank(formValue)){
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error.emptyField");
                 }
 
                 if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
