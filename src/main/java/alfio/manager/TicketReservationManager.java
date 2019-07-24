@@ -1397,11 +1397,11 @@ public class TicketReservationManager {
         }
 
         Organization organization = organizationRepository.getById(event.getOrganizationId());
-        if(ticketBeingReassigned && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticket.getCategoryId(), NOTIFY_TICKET_ASSIGNMENT), false)) {
+        if((isNotYetAssigned(ticket) || ticketBeingReassigned) && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticket.getCategoryId(), NOTIFY_TICKET_ASSIGNMENT), false)) {
             var reservation = findById(ticket.getTicketsReservationId()).orElseThrow();
             var ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
             var reservationUrl = reservationUrl(reservation, event);
-            var emailModel = TemplateResource.buildModelForTicketAssignedNotificationEmail(organization, event, reservation, ticketUrl(event, ticket.getUuid()), ticket, ticketCategory, reservationUrl);
+            var emailModel = TemplateResource.buildModelForTicketAssignedNotificationEmail(organization, event, reservation, ticketUrl(event, ticket.getUuid()), newTicket, ticketCategory, reservationUrl);
 
             notificationManager.sendSimpleEmail(event, reservation.getId(), organization.getEmail(), "Ticket assigned for category "+ticketCategory.getName(),
                 () -> templateManager.renderTemplate(event, TemplateResource.TICKET_ASSIGNED_NOTIFY_ORGANIZER, emailModel, Locale.ENGLISH));
@@ -1435,8 +1435,12 @@ public class TicketReservationManager {
         auditUpdateTicket(preUpdateTicket, preUpdateTicketFields, postUpdateTicket, postUpdateTicketFields, event.getId());
     }
 
+    boolean isNotYetAssigned(Ticket ticket) {
+        return StringUtils.isBlank(ticket.getEmail()) || StringUtils.isBlank(ticket.getFullName());
+    }
+
     boolean isTicketBeingReassigned(Ticket original, UpdateTicketOwnerForm updated, Event event) {
-        if(StringUtils.isBlank(original.getEmail()) || StringUtils.isBlank(original.getFullName())) {
+        if(isNotYetAssigned(original)) {
             return false;
         }
         CustomerName customerName = new CustomerName(updated.getFullName(), updated.getFirstName(), updated.getLastName(), event.mustUseFirstAndLastName());
