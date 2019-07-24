@@ -74,7 +74,7 @@ public class ContactAndTicketsForm implements Serializable {
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
             String value, int maxLength) {
         if (value != null && value.length() > maxLength) {
-            bindingResult.rejectValue(field, errorCode);
+            bindingResult.rejectValue(field, errorCode, new Object[] {maxLength}, null);
         }
     }
 

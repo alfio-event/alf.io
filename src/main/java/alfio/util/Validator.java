@@ -276,7 +276,7 @@ public final class Validator {
                 }
 
                 if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined() && StringUtils.length(formValue) < fieldConf.getMinLength()) {
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName(), new Object[] { fieldConf.getMinLength() }, null);
                 }
 
                 if(!fieldConf.getRestrictedValues().isEmpty()) {
@@ -318,7 +318,7 @@ public final class Validator {
 
     private static void validateMaxLength(String value, String fieldName, String errorCode, int maxLength, Errors errors) {
         if(StringUtils.isNotBlank(value) && StringUtils.length(value) > maxLength) {
-            errors.rejectValue(fieldName, errorCode);
+            errors.rejectValue(fieldName, errorCode, new Object[] { maxLength }, null);
         }
     }
 
