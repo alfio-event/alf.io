@@ -263,7 +263,7 @@ public final class Validator {
                         form.setAdditional(new HashMap<>());
                     }
                     form.getAdditional().put(fieldConf.getName(), Collections.singletonList(""));
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"][0]", "error.emptyField");
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"][0]", ErrorsCode.EMPTY_FIELD);
                 }
                 continue;
             }
@@ -284,7 +284,7 @@ public final class Validator {
                 }
 
                 if(fieldConf.isRequired() && StringUtils.isBlank(formValue)){
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error.emptyField");
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", ErrorsCode.EMPTY_FIELD);
                 }
 
                 if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
