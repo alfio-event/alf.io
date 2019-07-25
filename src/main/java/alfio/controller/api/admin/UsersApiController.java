@@ -158,8 +158,7 @@ public class UsersApiController {
             return ValidationResult.success();
         } else {
             return userManager.validateUser(userModification.getId(), userModification.getUsername(),
-                    userModification.getOrganizationId(), userModification.getRole(), userModification.getFirstName(),
-                    userModification.getLastName(), userModification.getEmailAddress());
+                    userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
         }
     }
 
