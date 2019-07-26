@@ -981,7 +981,7 @@ public class TicketReservationManager {
     }
 
     PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation reservation, Locale locale) {
-        return (t) -> {
+        return t -> {
             Map<String, Object> model = new HashMap<>();
             model.put("organization", organizationRepository.getById(event.getOrganizationId()));
             model.put("event", event);
@@ -1031,7 +1031,7 @@ public class TicketReservationManager {
 
     private void cleanupOfflinePayment(String reservationId) {
         try {
-            nestedTransactionTemplate.execute((tc) -> {
+            nestedTransactionTemplate.execute(tc -> {
                 Event event = eventRepository.findByReservationId(reservationId);
                 boolean enabled = configurationManager.getFor(event, AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT).getValueAsBooleanOrDefault(true);
                 if (enabled) {
@@ -1477,7 +1477,7 @@ public class TicketReservationManager {
     public Optional<Triple<Event, TicketReservation, Ticket>> fetchComplete(String eventName, String ticketIdentifier) {
         return ticketRepository.findOptionalByUUID(ticketIdentifier)
             .flatMap(ticket -> from(eventName, ticket.getTicketsReservationId(), ticketIdentifier)
-                .flatMap((triple) -> {
+                .flatMap(triple -> {
                     if(triple.getMiddle().getStatus() == TicketReservationStatus.COMPLETE) {
                         return Optional.of(triple);
                     } else {
@@ -1494,7 +1494,7 @@ public class TicketReservationManager {
      * @return
      */
     public Optional<Triple<Event, TicketReservation, Ticket>> fetchCompleteAndAssigned(String eventName, String ticketIdentifier) {
-        return fetchComplete(eventName, ticketIdentifier).flatMap((t) -> {
+        return fetchComplete(eventName, ticketIdentifier).flatMap(t -> {
             if (t.getRight().getAssigned()) {
                 return Optional.of(t);
             } else {
@@ -1624,7 +1624,7 @@ public class TicketReservationManager {
         Validate.notBlank(reservationId, "invalid reservationId");
         Validate.matchesPattern(reservationId, "^[^%]*$", "invalid character found");
         List<TicketReservation> results = ticketReservationRepository.findByPartialID(trimToEmpty(reservationId).toLowerCase() + "%");
-        Validate.isTrue(results.size() > 0, "reservation not found");
+        Validate.isTrue(!results.isEmpty(), "reservation not found");
         Validate.isTrue(results.size() == 1, "multiple results found. Try handling this reservation manually.");
         return results.get(0);
     }
@@ -1903,6 +1903,9 @@ public class TicketReservationManager {
                         sendTransactionFailedEmail(event, reservation, paymentMethod, paymentWebhookResult, false);
                         break;
                     }
+                    default:
+                        // do nothing for ERROR/REJECTED
+                        break;
                 }
                 return paymentWebhookResult;
             }).orElseGet(() -> PaymentWebhookResult.error("payment provider not found"));

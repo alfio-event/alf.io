@@ -622,7 +622,7 @@ public class EventManager {
             handleTicketAllocationStrategyChange(event, original, tc);
         } else {
             addedTickets = updated.getMaxTickets() - original.getMaxTickets();
-            handleTicketNumberModification(event, original, updated, addedTickets, resetTicketsToFree);
+            handleTicketNumberModification(event, updated, addedTickets, resetTicketsToFree);
         }
         handleTokenModification(original, updated, addedTickets);
         handlePriceChange(event, original, updated);
@@ -685,7 +685,7 @@ public class EventManager {
 
     }
 
-    void handleTicketNumberModification(Event event, TicketCategory original, TicketCategory updated, int addedTickets, boolean resetToFree) {
+    void handleTicketNumberModification(Event event, TicketCategory updated, int addedTickets, boolean resetToFree) {
         if(addedTickets == 0) {
             log.debug("ticket handling not required since the number of ticket wasn't modified");
             return;

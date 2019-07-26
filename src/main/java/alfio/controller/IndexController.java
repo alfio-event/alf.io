@@ -48,6 +48,7 @@ public class IndexController {
 
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
     private static final String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";
+    private static final String UTF_8 = "UTF-8";
 
     private final ConfigurationManager configurationManager;
     private final Environment environment;
@@ -97,7 +98,7 @@ public class IndexController {
     })
     public void replyToIndex(HttpServletResponse response) throws IOException {
         response.setContentType(TEXT_HTML_CHARSET_UTF_8);
-        response.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding(UTF_8);
         try (var is = new ClassPathResource("alfio-public-frontend-index.html").getInputStream(); var os = response.getOutputStream()) {
             is.transferTo(os);
         }
@@ -143,7 +144,7 @@ public class IndexController {
             });
         try (var os = response.getOutputStream()) {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
-            response.setCharacterEncoding("UTF-8");
+            response.setCharacterEncoding(UTF_8);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
         }
     }
@@ -173,7 +174,7 @@ public class IndexController {
 
         try (var os = response.getOutputStream()) {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
-            response.setCharacterEncoding("UTF-8");
+            response.setCharacterEncoding(UTF_8);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/admin-index.ms"), model.asMap(), os);
         }
     }
