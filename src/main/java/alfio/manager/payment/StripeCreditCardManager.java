@@ -18,6 +18,7 @@ package alfio.manager.payment;
 
 
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.PaymentInformation;
@@ -104,7 +105,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
         return baseStripeManager.accept(paymentMethod, context)
-            && !configurationManager.getBooleanConfigValue(context.narrow(STRIPE_ENABLE_SCA), false);
+            && !configurationManager.getFor(STRIPE_ENABLE_SCA, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
     }
 
     @Override
@@ -112,7 +113,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
         //note, only StripeWebhookPaymentManager set 'clientSecret' in the metadata, this is a fallback for old cases
         var hasMetadata = !transaction.getMetadata().isEmpty();
         var isCCManager = STRIPE_MANAGER.equals(transaction.getMetadata().get(STRIPE_MANAGER_TYPE_KEY)) || transaction.getMetadata().get("clientSecret") == null;
-        return transaction.getPaymentProxy() == PaymentProxy.STRIPE && (!hasMetadata || (hasMetadata && isCCManager));
+        return transaction.getPaymentProxy() == PaymentProxy.STRIPE && (!hasMetadata || isCCManager);
     }
 
     @Override

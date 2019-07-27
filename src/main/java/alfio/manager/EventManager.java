@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.config.Initializer;
 import alfio.manager.support.CategoryEvaluator;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -835,7 +836,7 @@ public class EventManager {
     }
 
     public String getEventUrl(Event event) {
-        var baseUrl = configurationManager.getFor(event, ConfigurationKeys.BASE_URL).getRequiredValue();
+        var baseUrl = configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
         return StringUtils.removeEnd(baseUrl, "/") + "/event/" + event.getShortName() + "/";
     }
 

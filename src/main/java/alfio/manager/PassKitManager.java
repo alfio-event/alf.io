@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
@@ -112,9 +113,9 @@ public class PassKitManager {
 
     private Map<ConfigurationKeys, String> getConfigurationKeys(EventAndOrganizationId event) {
 
-        var conf = configurationManager.getFor(event, Set.of(ENABLE_PASS,
+        var conf = configurationManager.getFor(Set.of(ENABLE_PASS,
             PASSBOOK_TYPE_IDENTIFIER, PASSBOOK_KEYSTORE, PASSBOOK_KEYSTORE_PASSWORD,
-            PASSBOOK_TEAM_IDENTIFIER, PASSBOOK_PRIVATE_KEY_ALIAS));
+            PASSBOOK_TEAM_IDENTIFIER, PASSBOOK_PRIVATE_KEY_ALIAS), ConfigurationLevel.event(event));
 
         if(!conf.get(ENABLE_PASS).getValueAsBooleanOrDefault(false)) {
             return Map.of();
@@ -248,7 +249,7 @@ public class PassKitManager {
         }
 
         var event = eventOptional.get();
-        var typeIdentifierOptional = configurationManager.getFor(event, PASSBOOK_TYPE_IDENTIFIER);
+        var typeIdentifierOptional = configurationManager.getFor(PASSBOOK_TYPE_IDENTIFIER, ConfigurationLevel.event(event));
         if(!typeIdentifierOptional.isPresent() || !typeIdentifier.equals(typeIdentifierOptional.getValueOrDefault(null))) {
             log.trace("typeIdentifier does not match. Expected {}, got {}", typeIdentifierOptional.getValueOrDefault("not-found"), typeIdentifier);
             return Optional.empty();

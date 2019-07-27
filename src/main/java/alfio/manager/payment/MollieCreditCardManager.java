@@ -18,6 +18,7 @@ package alfio.manager.payment;
 
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
@@ -82,13 +83,13 @@ public class MollieCreditCardManager implements PaymentProvider {
     }
 
     private Request.Builder requestFor(String url, EventAndOrganizationId event) {
-        String mollieAPIKey = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), ConfigurationKeys.MOLLIE_API_KEY));
+        String mollieAPIKey = configurationManager.getFor(ConfigurationKeys.MOLLIE_API_KEY, ConfigurationLevel.organization(event.getOrganizationId())).getRequiredValue();
         return new Request.Builder().url(url).header("Authorization", "Bearer " + mollieAPIKey);
     }
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return paymentMethod == PaymentMethod.CREDIT_CARD && configurationManager.getBooleanConfigValue(context.narrow(MOLLIE_CC_ENABLED), false);
+        return paymentMethod == PaymentMethod.CREDIT_CARD && configurationManager.getFor(MOLLIE_CC_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
     }
 
     @Override
@@ -102,7 +103,7 @@ public class MollieCreditCardManager implements PaymentProvider {
             var event = spec.getEvent();
             String eventName = event.getShortName();
 
-            String baseUrl = StringUtils.removeEnd(configurationManager.getFor(event, ConfigurationKeys.BASE_URL).getRequiredValue(), "/");
+            String baseUrl = StringUtils.removeEnd(configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.event(event)).getRequiredValue(), "/");
 
             String bookUrl = baseUrl + "/event/" + eventName + "/reservation/" + spec.getReservationId() + "/book";
 

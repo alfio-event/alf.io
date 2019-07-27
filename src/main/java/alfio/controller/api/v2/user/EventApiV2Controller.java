@@ -29,12 +29,12 @@ import alfio.controller.support.Formatters;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -134,7 +134,7 @@ public class EventApiV2Controller {
 
                 var organization = organizationRepository.getById(event.getOrganizationId());
 
-                var configurationsValues = configurationManager.getFor(event, Arrays.asList(
+                var configurationsValues = configurationManager.getFor(Arrays.asList(
                     MAPS_PROVIDER,
                     MAPS_CLIENT_API_KEY,
                     MAPS_HERE_APP_ID,
@@ -152,7 +152,7 @@ public class EventApiV2Controller {
                     USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL,
                     GOOGLE_ANALYTICS_KEY,
                     GOOGLE_ANALYTICS_ANONYMOUS_MODE
-                ));
+                ), ConfigurationLevel.event(event));
 
                 var geoInfoConfiguration = Map.of(
                     MAPS_PROVIDER, configurationsValues.get(MAPS_PROVIDER).getValue(),
@@ -177,7 +177,7 @@ public class EventApiV2Controller {
                     recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null);
                 }
                 //
-                boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(event);
+                boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(ConfigurationLevel.event(event));
                 var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePaymentAndFreeEnabled, recaptchaApiKey);
 
 
@@ -301,7 +301,7 @@ public class EventApiV2Controller {
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
                 .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
                 .map((m) -> {
-                    int maxTickets = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5);
+                    int maxTickets = configurationManager.getFor(ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(event, m.getId())).getValueAsIntOrDefault(5);
                     PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null);
                     if (specialCode.isPresent()) {
                         maxTickets = Math.min(1, maxTickets);

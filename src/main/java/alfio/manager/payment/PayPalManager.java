@@ -20,6 +20,7 @@ import alfio.manager.PaymentManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.*;
@@ -78,8 +79,8 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
     private APIContext getApiContext(EventAndOrganizationId event) {
 
-        var paypalConf = configurationManager.getFor(event,
-            Set.of(ConfigurationKeys.PAYPAL_LIVE_MODE, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET));
+        var paypalConf = configurationManager.getFor(Set.of(ConfigurationKeys.PAYPAL_LIVE_MODE, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET),
+            ConfigurationLevel.event(event));
 
         boolean isLive = paypalConf.get(ConfigurationKeys.PAYPAL_LIVE_MODE).getValueAsBooleanOrDefault(false);
         String clientId = paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_ID).getRequiredValue();
@@ -158,7 +159,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         payment.setTransactions(transactions);
         RedirectUrls redirectUrls = new RedirectUrls();
 
-        String baseUrl = StringUtils.removeEnd(configurationManager.getFor(spec.getEvent(), ConfigurationKeys.BASE_URL).getRequiredValue(), "/");
+        String baseUrl = StringUtils.removeEnd(configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.event(spec.getEvent())).getRequiredValue(), "/");
         String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/payment/paypal/" + URL_PLACEHOLDER;
 
         UriComponentsBuilder bookUrlBuilder = UriComponentsBuilder.fromUriString(bookUrl)
@@ -317,8 +318,8 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
 
-        var paypalConf = configurationManager.getFor(context.getEvent(),
-            Set.of(PAYPAL_ENABLED, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET));
+        var paypalConf = configurationManager.getFor(Set.of(PAYPAL_ENABLED, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET),
+            context.getConfigurationLevel());
 
         return paymentMethod == PaymentMethod.PAYPAL &&
             paypalConf.get(PAYPAL_ENABLED).getValueAsBooleanOrDefault(false)

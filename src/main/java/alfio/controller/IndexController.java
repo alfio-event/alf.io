@@ -18,6 +18,7 @@ package alfio.controller;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.system.ConfigurationKeys;
@@ -38,9 +39,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
+import java.util.EnumSet;
 import java.util.Map;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
+import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
 
 @Controller
 @AllArgsConstructor
@@ -136,8 +139,10 @@ public class IndexController {
         model.addAttribute(WebSecurityConfig.CSRF_PARAM_NAME, request.getAttribute(CsrfToken.class.getName()));
         //
 
-        configurationManager.getFor(ConfigurationKeys.RECAPTCHA_API_KEY).getValue()
-            .filter(key -> configurationManager.getFor(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true))
+        var configuration = configurationManager.getFor(EnumSet.of(RECAPTCHA_API_KEY, ENABLE_CAPTCHA_FOR_LOGIN), ConfigurationLevel.system());
+
+        configuration.get(RECAPTCHA_API_KEY).getValue()
+            .filter(key -> configuration.get(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true))
             .ifPresent(key -> {
                 model.addAttribute("hasRecaptchaApiKey", true);
                 model.addAttribute("recaptchaApiKey", key);

@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.system.Configuration;
@@ -85,7 +86,7 @@ public class PaymentManager {
     }
 
     private List<PaymentMethodDTO> getPaymentMethods(PaymentContext context) {
-        String blacklist = configurationManager.getStringConfigValue(context.narrow(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST), "");
+        String blacklist = configurationManager.getFor(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST, context.getConfigurationLevel()).getValueOrDefault("");
         return PaymentProxy.availableProxies()
             .stream()
             .filter(p -> !blacklist.contains(p.getKey()))
@@ -102,7 +103,7 @@ public class PaymentManager {
     }
 
     public List<PaymentMethodDTO> getPaymentMethods(int organizationId) {
-        return getPaymentMethods(new PaymentContext(null, Configuration.from(organizationId)));
+        return getPaymentMethods(new PaymentContext(null, ConfigurationLevel.organization(organizationId)));
     }
 
     public boolean refund(TicketReservation reservation, Event event, Integer amount, String username) {

@@ -82,7 +82,7 @@ public class TranslationsApiController {
     @GetMapping("/public/i18n/eu-countries-vat/{lang}")
     public List<LocalizedCountry> getEuCountriesForVat(@PathVariable("lang") String lang) {
         var countries = TicketHelper.getLocalizedEUCountriesForVat(LocaleUtil.forLanguageTag(lang),
-            configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue());
+            configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue());
         return fromPair(countries);
     }
 

@@ -38,7 +38,7 @@ public class RecaptchaService {
 
 
     public boolean checkRecaptcha(String recaptchaResponse, HttpServletRequest req) {
-        return configurationManager.getFor(ConfigurationKeys.RECAPTCHA_SECRET).getValue()
+        return configurationManager.getForSystem(ConfigurationKeys.RECAPTCHA_SECRET).getValue()
             .map(secret -> recaptchaRequest(client, secret, ObjectUtils.firstNonNull(recaptchaResponse, req.getParameter("g-recaptcha-response"))))
             .orElse(true);
     }

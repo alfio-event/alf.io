@@ -17,6 +17,7 @@
 package alfio.util;
 
 import alfio.controller.decorator.SaleableTicketCategory;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.AdditionalServiceItemRepository;
@@ -72,7 +73,7 @@ public class EventUtil {
         .toFormatter(Locale.ROOT);
 
     public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
-        return !configurationManager.getFor(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault(false)
+        return !configurationManager.getFor(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false)
             && checkWaitingQueuePreconditions(event, categories, configurationManager, noTicketsAvailable);
     }
 
@@ -80,8 +81,8 @@ public class EventUtil {
         return findLastCategory(categories).map(lastCategory -> {
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             if(isPreSales(event, categories)) {
-                return configurationManager.getFor(event, ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false);
-            } else if(configurationManager.getFor(event, ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false)) {
+                return configurationManager.getFor(ENABLE_PRE_REGISTRATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
+            } else if(configurationManager.getFor(ENABLE_WAITING_QUEUE, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false)) {
                 return now.isBefore(lastCategory.getZonedExpiration()) && noTicketsAvailable.test(event);
             }
             return false;

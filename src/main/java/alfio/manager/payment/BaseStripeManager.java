@@ -18,6 +18,7 @@ package alfio.manager.payment;
 
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
@@ -75,33 +76,33 @@ class BaseStripeManager {
     }
 
     String getSecretKey(EventAndOrganizationId event) {
-        return configurationManager.getFor(event, STRIPE_SECRET_KEY).getRequiredValue();
+        return configurationManager.getFor(STRIPE_SECRET_KEY, ConfigurationLevel.event(event)).getRequiredValue();
     }
 
     String getWebhookSignatureKey() {
-        return configurationManager.getFor(STRIPE_WEBHOOK_KEY).getRequiredValue();
+        return configurationManager.getForSystem(STRIPE_WEBHOOK_KEY).getRequiredValue();
     }
 
     String getPublicKey(PaymentContext context) {
         if(isConnectEnabled(context)) {
-            return configurationManager.getFor(STRIPE_PUBLIC_KEY).getRequiredValue();
+            return configurationManager.getForSystem(STRIPE_PUBLIC_KEY).getRequiredValue();
         }
-        return configurationManager.getFor(context.getEvent(), STRIPE_PUBLIC_KEY).getRequiredValue();
+        return configurationManager.getFor(STRIPE_PUBLIC_KEY, context.getConfigurationLevel()).getRequiredValue();
     }
 
     Map<String, ?> getModelOptions(PaymentContext context) {
         Map<String, Object> options = new HashMap<>();
-        options.put("enableSCA", configurationManager.getFor(context.getEvent(), STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false));
+        options.put("enableSCA", configurationManager.getFor(STRIPE_ENABLE_SCA, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false));
         options.put("stripe_p_key", getPublicKey(context));
         return options;
     }
 
     private boolean isConnectEnabled(PaymentContext context) {
-        return configurationManager.getFor(context.getEvent(), PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
+        return configurationManager.getFor(PLATFORM_MODE_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
     }
 
     String getSystemApiKey() {
-        return configurationManager.getFor(STRIPE_SECRET_KEY).getRequiredValue();
+        return configurationManager.getForSystem(STRIPE_SECRET_KEY).getRequiredValue();
     }
 
     Optional<Boolean> processWebhookEvent(String body, String signature) {
@@ -195,7 +196,7 @@ class BaseStripeManager {
     Optional<RequestOptions> options(Event event) {
         RequestOptions.RequestOptionsBuilder builder = RequestOptions.builder();
         if(isConnectEnabled(new PaymentContext(event))) {
-            return configurationManager.getFor(event, STRIPE_CONNECTED_ID).getValue()
+            return configurationManager.getFor(STRIPE_CONNECTED_ID, ConfigurationLevel.event(event)).getValue()
                 .map(connectedId -> {
                     //connected stripe account
                     builder.setStripeAccount(connectedId);
@@ -207,7 +208,7 @@ class BaseStripeManager {
 
     Optional<String> getConnectedAccount(PaymentContext paymentContext) {
         if(isConnectEnabled(paymentContext)) {
-            return configurationManager.getFor(paymentContext.getEvent(), STRIPE_CONNECTED_ID).getValue();
+            return configurationManager.getFor(STRIPE_CONNECTED_ID, paymentContext.getConfigurationLevel()).getValue();
         }
         return Optional.empty();
     }
@@ -273,7 +274,7 @@ class BaseStripeManager {
 
     boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
         return paymentMethod == PaymentMethod.CREDIT_CARD
-            && configurationManager.getBooleanConfigValue(context.narrow(STRIPE_CC_ENABLED), false);
+            && configurationManager.getFor(STRIPE_CC_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
     }
 
     String handleException(StripeException exc) {

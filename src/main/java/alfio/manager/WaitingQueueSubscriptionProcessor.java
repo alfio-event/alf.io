@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
@@ -106,7 +107,7 @@ public class WaitingQueueSubscriptionProcessor {
     }
 
     private boolean isWaitingListFormEnabled(EventAndOrganizationId event) {
-        var res = configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION));
+        var res = configurationManager.getFor(Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION), ConfigurationLevel.event(event));
         return res.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false) || res.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false);
     }
 

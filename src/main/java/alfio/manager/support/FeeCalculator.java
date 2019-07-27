@@ -16,6 +16,7 @@
  */
 package alfio.manager.support;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.util.MonetaryUtil;
@@ -52,7 +53,7 @@ public class FeeCalculator {
     public static BiFunction<Integer, Long, Optional<Long>> getCalculator(EventAndOrganizationId event, ConfigurationManager configurationManager, String currencyCode) {
         return (numTickets, amountInCent) -> {
             if(isPlatformModeEnabled(event, configurationManager)) {
-                var fees = configurationManager.getFor(event, Set.of(PLATFORM_FEE, PLATFORM_MINIMUM_FEE));
+                var fees = configurationManager.getFor(Set.of(PLATFORM_FEE, PLATFORM_MINIMUM_FEE), ConfigurationLevel.event(event));
                 String feeAsString = fees.get(PLATFORM_FEE).getValueOrDefault("0");
                 String minimumFee = fees.get(PLATFORM_MINIMUM_FEE).getValueOrDefault("0");
                 return Optional.of(new FeeCalculator(feeAsString, minimumFee, currencyCode, numTickets).calculate(amountInCent));
@@ -62,6 +63,6 @@ public class FeeCalculator {
     }
 
     private static boolean isPlatformModeEnabled(EventAndOrganizationId event, ConfigurationManager configurationManager) {
-        return configurationManager.getFor(event, PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
+        return configurationManager.getFor(PLATFORM_MODE_ENABLED, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
     }
 }

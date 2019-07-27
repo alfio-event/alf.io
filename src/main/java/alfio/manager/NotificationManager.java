@@ -21,6 +21,7 @@ import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.CustomMessageManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
@@ -212,7 +213,7 @@ public class NotificationManager {
     }
 
     public List<String> getCCForEventOrganizer(EventAndOrganizationId event) {
-        var systemNotificationCC = configurationManager.getFor(event, ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC).getValueOrDefault("");
+        var systemNotificationCC = configurationManager.getFor(ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC, ConfigurationLevel.event(event)).getValueOrDefault("");
         return Stream.of(StringUtils.split(systemNotificationCC, ','))
             .filter(Objects::nonNull)
             .map(String::trim)
@@ -279,7 +280,7 @@ public class NotificationManager {
     private int processMessage(int messageId) {
         EmailMessage message = emailMessageRepository.findById(messageId);
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(message.getEventId());
-        if(message.getAttempts() >= configurationManager.getFor(event, ConfigurationKeys.MAIL_ATTEMPTS_COUNT).getValueAsIntOrDefault(10)) {
+        if(message.getAttempts() >= configurationManager.getFor(ConfigurationKeys.MAIL_ATTEMPTS_COUNT, ConfigurationLevel.event(event)).getValueAsIntOrDefault(10)) {
             tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(messageId, ERROR.name(), message.getAttempts(), Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("Message with id " + messageId + " will be discarded");
             return 0;

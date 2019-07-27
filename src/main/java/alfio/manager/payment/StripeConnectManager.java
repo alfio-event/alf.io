@@ -19,6 +19,7 @@ package alfio.manager.payment;
 import alfio.manager.ExtensionManager;
 import alfio.manager.payment.stripe.StripeConnectResult;
 import alfio.manager.payment.stripe.StripeConnectURL;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
@@ -36,6 +37,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -61,10 +63,10 @@ public class StripeConnectManager {
     }
 
     public StripeConnectURL getConnectURL(int organizationId) {
-        var keyResolver = Configuration.from(organizationId);
-        String secret = configurationManager.getRequiredValue(keyResolver.apply(STRIPE_SECRET_KEY));
-        String clientId = configurationManager.getRequiredValue(keyResolver.apply(STRIPE_CONNECT_CLIENT_ID));
-        String callbackURL = configurationManager.getStringConfigValue(keyResolver.apply(STRIPE_CONNECT_CALLBACK), configurationManager.getRequiredValue(keyResolver.apply(BASE_URL)) + CONNECT_REDIRECT_PATH);
+        var options = configurationManager.getFor(Set.of(STRIPE_SECRET_KEY, STRIPE_CONNECT_CLIENT_ID, STRIPE_CONNECT_CALLBACK, BASE_URL), ConfigurationLevel.organization(organizationId));
+        String secret = options.get(STRIPE_SECRET_KEY).getRequiredValue();
+        String clientId = options.get(STRIPE_CONNECT_CLIENT_ID).getRequiredValue();
+        String callbackURL = options.get(STRIPE_CONNECT_CALLBACK).getValueOrDefault(options.get(BASE_URL).getRequiredValue()) + CONNECT_REDIRECT_PATH;
         String state = extensionManager.generateStripeConnectStateParam(organizationId).orElse(UUID.randomUUID().toString());
         String code = UUID.randomUUID().toString();
         OAuthConfig config = new OAuthConfig(clientId, secret, callbackURL, "read_write", null, state, "code", null, null, null);
