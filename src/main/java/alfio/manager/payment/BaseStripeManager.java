@@ -100,7 +100,7 @@ class BaseStripeManager {
         return configurationManager.getFor(context.getEvent(), PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
     }
 
-    private String getSystemApiKey() {
+    String getSystemApiKey() {
         return configurationManager.getFor(STRIPE_SECRET_KEY).getRequiredValue();
     }
 
