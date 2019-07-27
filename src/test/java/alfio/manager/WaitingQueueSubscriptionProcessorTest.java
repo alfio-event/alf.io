@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
@@ -97,7 +98,7 @@ public class WaitingQueueSubscriptionProcessorTest {
 
     @Test
     void filterWaitingQueueFlagIsNotActive() {
-        when(configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)))
+        when(configurationManager.getFor(eq(Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)), any()))
             .thenReturn(Map.of(
                 ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(ENABLE_WAITING_QUEUE, new ConfigurationKeyValuePathLevel( "", "false", null)),
                 ENABLE_PRE_REGISTRATION, new ConfigurationManager.MaybeConfiguration(ENABLE_PRE_REGISTRATION)
@@ -110,7 +111,7 @@ public class WaitingQueueSubscriptionProcessorTest {
     @Test
     void processPendingTickets() {
 
-        when(configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)))
+        when(configurationManager.getFor(eq(Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)), any()))
             .thenReturn(Map.of(
                 ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(ENABLE_WAITING_QUEUE, new ConfigurationKeyValuePathLevel( "", "true", null)),
                 ENABLE_PRE_REGISTRATION, new ConfigurationManager.MaybeConfiguration(ENABLE_PRE_REGISTRATION)

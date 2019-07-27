@@ -30,6 +30,7 @@ import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.payment.StripeCreditCardManager;
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
@@ -138,7 +139,7 @@ public class ReservationApiV2Controller {
 
                         // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
                         boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
-                            (!hasPaidSupplement && configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), t.getCategoryId(), ALLOW_FREE_TICKETS_CANCELLATION), false)) && // freeCancellationEnabled
+                            (!hasPaidSupplement && configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, t.getCategoryId())).getValueAsBooleanOrDefault(false)) && // freeCancellationEnabled
                             eventManager.checkTicketCancellationPrerequisites().apply(t); // cancellationPrerequisitesMet
                         //
                         return toBookingInfoTicket(t, cancellationEnabled, ticketFieldsFilterer.getFieldsForTicket(t.getUuid()), descriptionsByTicketFieldId, valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()));
@@ -340,7 +341,7 @@ public class ReservationApiV2Controller {
             var reservation = er.getRight();
             var locale = LocaleUtil.forLanguageTag(lang, event);
             final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus()));
-            boolean forceAssignment = configurationManager.getFor(event, FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBooleanOrDefault(false);
+            boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
 
             if(forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
                 contactAndTicketsForm.setPostponeAssignment(false);
@@ -369,7 +370,7 @@ public class ReservationApiV2Controller {
                 contactAndTicketsForm.getCustomerReference(), contactAndTicketsForm.getVatNr(), contactAndTicketsForm.isInvoiceRequested(),
                 contactAndTicketsForm.getAddCompanyBillingDetails(), contactAndTicketsForm.canSkipVatNrCheck(), false, locale);
 
-            boolean italyEInvoicing = configurationManager.getFor(event, ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
+            boolean italyEInvoicing = configurationManager.getFor(ENABLE_ITALY_E_INVOICING, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
 
             if(italyEInvoicing) {
                 ticketReservationManager.updateReservationInvoicingAdditionalInformation(reservationId,
@@ -667,7 +668,7 @@ public class ReservationApiV2Controller {
     }
 
     private boolean isEUCountry(String countryCode) {
-        return configurationManager.getFor(EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
+        return configurationManager.getForSystem(EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
     }
 
     private static PriceContainer.VatStatus determineVatStatus(PriceContainer.VatStatus current, boolean isVatExempt) {
@@ -680,7 +681,7 @@ public class ReservationApiV2Controller {
 
     private boolean isCaptchaInvalid(int cost, PaymentProxy paymentMethod, String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
         return (cost == 0 || paymentMethod == PaymentProxy.OFFLINE || paymentMethod == PaymentProxy.ON_SITE)
-            && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(event)
+            && configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(ConfigurationLevel.event(event))
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 }

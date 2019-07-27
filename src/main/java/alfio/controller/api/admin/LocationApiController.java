@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.ConfigurationKeys;
@@ -76,7 +77,7 @@ public class LocationApiController {
 
     private Map<ConfigurationKeys, Optional<String>> getGeoConf() {
         var keys = Set.of(MAPS_PROVIDER, MAPS_CLIENT_API_KEY, MAPS_HERE_APP_ID, MAPS_HERE_APP_CODE);
-        var conf = configurationManager.getFor(keys);
+        var conf = configurationManager.getFor(keys, ConfigurationLevel.system());
         var res = new EnumMap<ConfigurationKeys, Optional<String>>(ConfigurationKeys.class);
         conf.forEach((k,v) -> res.put(k, v.getValue()));
         return res;

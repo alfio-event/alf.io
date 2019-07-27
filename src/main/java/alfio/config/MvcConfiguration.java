@@ -36,13 +36,15 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
-import org.springframework.web.servlet.*;
+import org.springframework.web.servlet.HandlerInterceptor;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.*;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
@@ -91,11 +93,11 @@ public class MvcConfiguration implements WebMvcConfigurer {
                 //
                 String reportUri = "";
                 boolean enabledReport = Boolean.parseBoolean(configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED,
-                    k -> configurationManager.getFor(k).getValueOrDefault("false")
+                    k -> configurationManager.getForSystem(k).getValueOrDefault("false")
                 ));
                 if (enabledReport) {
                     reportUri = " report-uri " + configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI,
-                        k -> configurationManager.getFor(k).getValueOrDefault("/report-csp-violation")
+                        k -> configurationManager.getForSystem(k).getValueOrDefault("/report-csp-violation")
                     );
                 }
                 //

@@ -49,7 +49,7 @@ public class MockMailer implements Mailer {
 
         log.info("Email: from: {}, replyTo: {}, to: {}, cc: {}, subject: {}, text: {}, html: {}, attachments: {}",
             fromName,
-            configurationManager.getFor(event, MAIL_REPLY_TO).getValueOrDefault(""),
+            configurationManager.getFor(MAIL_REPLY_TO, ConfigurationLevel.event(event)).getValueOrDefault(""),
             to, cc, subject, text,
             html.orElse("no html"), printedAttachments);
     }

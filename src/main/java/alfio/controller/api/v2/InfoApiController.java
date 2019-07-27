@@ -19,6 +19,7 @@ package alfio.controller.api.v2;
 import alfio.config.Initializer;
 import alfio.controller.api.v2.model.AlfioInfo;
 import alfio.controller.api.v2.model.AnalyticsConfiguration;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
@@ -47,7 +48,7 @@ public class InfoApiController {
         var prodMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
 
 
-        var conf = configurationManager.getFor(Set.of(ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE, ConfigurationKeys.GOOGLE_ANALYTICS_KEY));
+        var conf = configurationManager.getFor(Set.of(ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE, ConfigurationKeys.GOOGLE_ANALYTICS_KEY), ConfigurationLevel.system());
 
         var analyticsConf = AnalyticsConfiguration.build(conf, session);
 

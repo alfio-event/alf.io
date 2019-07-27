@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
@@ -119,62 +120,63 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void testPresentStringConfigValue() {
-        assertEquals(Optional.of("5"), configurationManager.getStringConfigValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION)));
+        assertEquals(Optional.of("5"), configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getValue());
     }
 
     @Test
     public void testEmptyStringConfigValue() {
-        assertEquals(Optional.empty(), configurationManager.getStringConfigValue(Configuration.from(event, SMTP_PASSWORD)));
+        assertTrue(configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getValue().isEmpty());
     }
 
     @Test
     public void testStringValueWithDefault() {
-        assertEquals("5", configurationManager.getStringConfigValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), "-1"));
-        assertEquals("-1", configurationManager.getStringConfigValue(Configuration.from(event, SMTP_PASSWORD), "-1"));
+        assertEquals("5", configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getRequiredValue());
+        assertEquals("-1", configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getValueOrDefault("-1"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testMissingConfigValue() {
-        configurationManager.getRequiredValue(Configuration.from(event, SMTP_PASSWORD));
+        var config = configurationManager.getFor(SMTP_PASSWORD, ConfigurationLevel.event(event)).getRequiredValue();
+        fail("something wrong happened...");
     }
 
     @Test
     public void testRequiredValue() {
-        assertEquals("5", configurationManager.getRequiredValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION)));
+        assertEquals("5", configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getRequiredValue());
     }
 
     @Test
     public void testIntValue() {
-        assertEquals(5, configurationManager.getIntConfigValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), -1));
+        assertEquals(5, configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getValueAsIntOrDefault(-1));
 
         //missing value
-        assertEquals(-1, configurationManager.getIntConfigValue(Configuration.from(event, ASSIGNMENT_REMINDER_INTERVAL), -1));
+        assertEquals(-1, configurationManager.getFor(ASSIGNMENT_REMINDER_INTERVAL, ConfigurationLevel.event(event)).getValueAsIntOrDefault(-1));
 
 
         configurationManager.saveSystemConfiguration(ConfigurationKeys.BASE_URL, "blabla");
-        assertEquals("blabla", configurationManager.getRequiredValue(Configuration.from(event, ConfigurationKeys.BASE_URL)));
+        assertEquals("blabla", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.event(event)).getRequiredValue());
         //not a number
-        assertEquals(-1, configurationManager.getIntConfigValue(Configuration.from(event, ConfigurationKeys.BASE_URL), -1));
+        assertEquals(-1, configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.event(event)).getValueAsIntOrDefault(-1));
     }
 
     @Test
     public void testBooleanValue() {
         //missing value
-        assertFalse(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false));
+        assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault(false));
 
         //false value
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "false");
-        assertFalse(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ALLOW_FREE_TICKETS_CANCELLATION), true));
+        assertFalse(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault(true));
 
         //true value
         configurationManager.saveSystemConfiguration(ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION, "true");
-        assertTrue(configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticketCategory.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false));
+        assertTrue(configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, ticketCategory.getId())).getValueAsBooleanOrDefault(false));
     }
 
     @Test
     public void testOverrideMechanism() {
 
-        Organization organization = organizationRepository.findByName("org").get();
+        Organization organization = organizationRepository.findByName("org").orElseThrow();
 
 
         Event event = eventManager.getSingleEvent("eventShortName", "test");
@@ -184,24 +186,23 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
 
         //check override level up to event level
 
-        assertEquals(5, configurationManager.getFor(event, Collections.singleton(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION)).get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(Integer.MIN_VALUE));
+        assertEquals(5, configurationManager.getFor(Collections.singleton(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), ConfigurationLevel.event(event)).get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(Integer.MIN_VALUE));
 
-        assertEquals(5, configurationManager.getIntConfigValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), -1));
+        assertEquals(5, configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getValueAsIntOrDefault(-1));
 
         configurationRepository.insertOrganizationLevel(organization.getId(), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "6", "desc");
 
-        assertEquals(6, configurationManager.getIntConfigValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), -1));
+        assertEquals(6, configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getValueAsIntOrDefault(-1));
 
-        assertEquals(6, configurationManager.getFor(event, Collections.singleton(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION)).get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(Integer.MIN_VALUE));
+        assertEquals(6, configurationManager.getFor(Collections.singleton(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), ConfigurationLevel.event(event)).get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(Integer.MIN_VALUE));
 
         configurationRepository.insertEventLevel(organization.getId(), event.getId(), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "7", "desc");
-        assertEquals(7, configurationManager.getIntConfigValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), -1));
 
-        assertEquals(7, configurationManager.getFor(event, Collections.singleton(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION)).get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(Integer.MIN_VALUE));
+        assertEquals(7, configurationManager.getFor(Collections.singleton(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), ConfigurationLevel.event(event)).get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(Integer.MIN_VALUE));
 
         configurationRepository.insertTicketCategoryLevel(organization.getId(), event.getId(), tc.getId(), MAX_AMOUNT_OF_TICKETS_BY_RESERVATION.getValue(), "8", "desc");
 
-        assertEquals(7, configurationManager.getIntConfigValue(Configuration.from(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), -1));
+        assertEquals(7, configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.event(event)).getValueAsIntOrDefault(-1));
 
     }
 
@@ -318,7 +319,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
     public void testBulk() {
         Event event = eventManager.getSingleEvent("eventShortName", "test");
 
-        var res = configurationManager.getFor(event, Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION));
+        var res = configurationManager.getFor(Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION), ConfigurationLevel.event(event));
 
         assertEquals(3, res.size());
         assertNotNull(res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION));
@@ -334,7 +335,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         configurationRepository.insertOrganizationLevel(event.getOrganizationId(), ENABLE_WAITING_QUEUE_NOTIFICATION.getValue(), "false", "");
 
 
-        res = configurationManager.getFor(event, Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION));
+        res = configurationManager.getFor(Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION), ConfigurationLevel.event(event));
         assertEquals(3, res.size());
         assertTrue(res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).isPresent());
         assertTrue(res.get(ENABLE_WAITING_QUEUE).isPresent());
@@ -350,7 +351,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE.getValue(), "true", "");
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ENABLE_WAITING_QUEUE_NOTIFICATION.getValue(), "true", "");
 
-        res = configurationManager.getFor(event, Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION));
+        res = configurationManager.getFor(Set.of(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ENABLE_WAITING_QUEUE, ENABLE_WAITING_QUEUE_NOTIFICATION), ConfigurationLevel.event(event));
 
         assertEquals(ConfigurationPathLevel.EVENT, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getConfigurationPathLevelOrDefault(null));
         assertEquals(20, res.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(Integer.MIN_VALUE));

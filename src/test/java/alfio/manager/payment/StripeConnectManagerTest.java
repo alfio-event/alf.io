@@ -18,19 +18,23 @@ package alfio.manager.payment;
 
 import alfio.manager.ExtensionManager;
 import alfio.manager.payment.stripe.StripeConnectURL;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -50,7 +54,12 @@ class StripeConnectManagerTest {
     @Test
     void getConnectURLWithCustomState() {
         String state = "blablastate";
-        when(configurationManager.getRequiredValue(any())).thenReturn("");
+        @SuppressWarnings("unchecked")
+        Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> map = mock(Map.class);
+        ConfigurationManager.MaybeConfiguration maybeConfiguration = mock(ConfigurationManager.MaybeConfiguration.class);
+        when(map.get(any(ConfigurationKeys.class))).thenReturn(maybeConfiguration);
+        when(maybeConfiguration.getRequiredValue()).thenReturn("");
+        when(configurationManager.getFor(anyCollection(), any(ConfigurationLevel.class))).thenReturn(map);
         when(extensionManager.generateStripeConnectStateParam(anyInt())).thenReturn(Optional.of(state));
         StripeConnectURL connectURL = stripeConnectManager.getConnectURL(1);
         assertEquals(state, connectURL.getState());
@@ -59,7 +68,12 @@ class StripeConnectManagerTest {
     @Test
     void getConnectURLWithStandardState() {
         String state = "blablastate";
-        when(configurationManager.getRequiredValue(any())).thenReturn("");
+        @SuppressWarnings("unchecked")
+        Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> map = mock(Map.class);
+        ConfigurationManager.MaybeConfiguration maybeConfiguration = mock(ConfigurationManager.MaybeConfiguration.class);
+        when(map.get(any(ConfigurationKeys.class))).thenReturn(maybeConfiguration);
+        when(maybeConfiguration.getRequiredValue()).thenReturn("");
+        when(configurationManager.getFor(anyCollection(), any(ConfigurationLevel.class))).thenReturn(map);
         when(extensionManager.generateStripeConnectStateParam(anyInt())).thenReturn(Optional.empty());
         StripeConnectURL connectURL = stripeConnectManager.getConnectURL(1);
         assertNotEquals(state, connectURL.getState());

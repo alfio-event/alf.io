@@ -17,6 +17,7 @@
 package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.Configuration;
 import alfio.model.transaction.*;
@@ -44,7 +45,7 @@ public class OnSiteManager implements PaymentProvider {
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return paymentMethod == PaymentMethod.ON_SITE && configurationManager.getFor(context.getEvent(), ON_SITE_ENABLED).getValueAsBooleanOrDefault(false);
+        return paymentMethod == PaymentMethod.ON_SITE && configurationManager.getFor(ON_SITE_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
     }
 
     @Override
@@ -61,10 +62,10 @@ public class OnSiteManager implements PaymentProvider {
     @Override
     public Map<String, ?> getModelOptions(PaymentContext context) {
         Map<String, Object> model = new HashMap<>();
-        boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(context.getEvent());
+        boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(context.getConfigurationLevel());
         model.put("captchaRequestedForOffline", recaptchaEnabled);
         if(recaptchaEnabled) {
-            model.put("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null));
+            model.put("recaptchaApiKey", configurationManager.getForSystem(RECAPTCHA_API_KEY).getValue().orElse(null));
         }
         return model;
     }

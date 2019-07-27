@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.support.*;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
@@ -402,7 +403,7 @@ public class CheckInManager {
     }
 
     private boolean areStatsEnabled(EventAndOrganizationId event) {
-        return configurationManager.getFor(event, CHECK_IN_STATS).getValueAsBooleanOrDefault(true);
+        return configurationManager.getFor(CHECK_IN_STATS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true);
     }
 
     @Getter

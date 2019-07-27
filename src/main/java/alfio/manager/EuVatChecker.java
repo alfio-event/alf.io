@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Audit;
 import alfio.model.EventAndOrganizationId;
@@ -85,7 +86,7 @@ public class EuVatChecker {
             }
 
 
-            boolean euCountryCode = configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
+            boolean euCountryCode = configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
 
             boolean validationEnabled = validationEnabled(configurationManager, eventAndOrganizationId);
             if(euCountryCode && validationEnabled) {
@@ -99,7 +100,7 @@ public class EuVatChecker {
                 return Optional.empty();
             }
 
-            BooleanSupplier applyVatToForeignBusiness = () -> configurationManager.getFor(eventAndOrganizationId, APPLY_VAT_FOREIGN_BUSINESS).getValueAsBooleanOrDefault(true);
+            BooleanSupplier applyVatToForeignBusiness = () -> configurationManager.getFor(APPLY_VAT_FOREIGN_BUSINESS, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault(true);
             boolean vatExempt = !organizerCountry.equals(countryCode) && (euCountryCode || !applyVatToForeignBusiness.getAsBoolean());
             return Optional.of(new VatDetail(vatNr, countryCode, true, "", "", euCountryCode ? VatDetail.Type.SKIPPED : VatDetail.Type.EXTRA_EU, vatExempt));
 
@@ -142,15 +143,15 @@ public class EuVatChecker {
     }
 
     static String organizerCountry(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
-        return configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.COUNTRY_OF_BUSINESS).getValueOrDefault(null);
+        return configurationManager.getFor(ConfigurationKeys.COUNTRY_OF_BUSINESS, ConfigurationLevel.event(eventAndOrganizationId)).getValueOrDefault(null);
     }
 
     private static boolean reverseChargeEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
-        return configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault(false);
+        return configurationManager.getFor(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault(false);
     }
 
     static boolean validationEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
-        return configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.ENABLE_VIES_VALIDATION).getValueAsBooleanOrDefault(true);
+        return configurationManager.getFor(ConfigurationKeys.ENABLE_VIES_VALIDATION, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault(true);
     }
 
 

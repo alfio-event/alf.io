@@ -88,7 +88,7 @@ class MailgunMailer implements Mailer {
     public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text,
                      Optional<String> html, Attachment... attachment) {
 
-        var conf = configurationManager.getFor(event, Set.of(MAILGUN_KEY, MAILGUN_DOMAIN, MAILGUN_EU, MAILGUN_FROM, MAIL_REPLY_TO));
+        var conf = configurationManager.getFor(Set.of(MAILGUN_KEY, MAILGUN_DOMAIN, MAILGUN_EU, MAILGUN_FROM, MAIL_REPLY_TO), ConfigurationLevel.event(event));
 
         String apiKey = conf.get(MAILGUN_KEY).getRequiredValue();
         String domain = conf.get(MAILGUN_DOMAIN).getRequiredValue();

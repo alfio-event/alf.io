@@ -16,6 +16,7 @@
  */
 package alfio.manager.payment;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.system.Configuration;
@@ -33,6 +34,8 @@ import java.util.function.Function;
 import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
 import static alfio.model.system.ConfigurationKeys.STRIPE_CONNECTED_ID;
 import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -78,9 +81,9 @@ public class StripeCreditCardManagerTest {
 
     @Test
     void testMissingStripeConnectedId() {
-        when(configurationManager.getFor(event, PLATFORM_MODE_ENABLED))
+        when(configurationManager.getFor(eq(PLATFORM_MODE_ENABLED), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(PLATFORM_MODE_ENABLED, new ConfigurationKeyValuePathLevel(null, "true", null)));
-        when(configurationManager.getFor(event, STRIPE_CONNECTED_ID)).thenReturn(new ConfigurationManager.MaybeConfiguration(STRIPE_CONNECTED_ID));
+        when(configurationManager.getFor(eq(STRIPE_CONNECTED_ID), any())).thenReturn(new ConfigurationManager.MaybeConfiguration(STRIPE_CONNECTED_ID));
         Optional<RequestOptions> options = stripeCreditCardManager.options(event);
         assertNotNull(options);
         assertFalse(options.isPresent());

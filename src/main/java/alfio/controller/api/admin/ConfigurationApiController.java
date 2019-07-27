@@ -17,6 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.api.support.TicketHelper;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
@@ -31,7 +32,6 @@ import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.Configuration.from;
 import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
 import static alfio.model.system.ConfigurationKeys.STRIPE_CONNECTED_ID;
 
@@ -133,14 +133,14 @@ public class ConfigurationApiController {
 
     @GetMapping(value = "/eu-countries")
     public List<Pair<String, String>> loadEUCountries() {
-        return TicketHelper.getLocalizedEUCountriesForVat(Locale.ENGLISH, configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue());
+        return TicketHelper.getLocalizedEUCountriesForVat(Locale.ENGLISH, configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue());
     }
 
     @GetMapping(value = "/platform-mode/status/{organizationId}")
     public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId) {
         Map<String, Boolean> result = new HashMap<>();
-        boolean platformModeEnabled = configurationManager.getFor(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
-        boolean stripeConnected = platformModeEnabled && StringUtils.isNotBlank(configurationManager.getStringConfigValue(from(organizationId, STRIPE_CONNECTED_ID), null));
+        boolean platformModeEnabled = configurationManager.getForSystem(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
+        boolean stripeConnected = platformModeEnabled && StringUtils.isNotBlank(configurationManager.getFor(STRIPE_CONNECTED_ID, ConfigurationLevel.organization(organizationId)).getValueOrDefault(null));
         result.put("enabled", platformModeEnabled);
         result.put("stripeConnected", stripeConnected);
         return result;

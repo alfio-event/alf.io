@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
@@ -149,8 +150,8 @@ public class WaitingQueueManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(1);
         when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
-        when(configurationManager.getFor(event, ENABLE_PRE_REGISTRATION)).thenReturn(new ConfigurationManager.MaybeConfiguration(ENABLE_PRE_REGISTRATION, new ConfigurationKeyValuePathLevel(null, "true", null)));
-        when(configurationManager.getFor(event, WAITING_QUEUE_RESERVATION_TIMEOUT)).thenReturn(new ConfigurationManager.MaybeConfiguration(WAITING_QUEUE_RESERVATION_TIMEOUT));
+        when(configurationManager.getFor(eq(ENABLE_PRE_REGISTRATION), any())).thenReturn(new ConfigurationManager.MaybeConfiguration(ENABLE_PRE_REGISTRATION, new ConfigurationKeyValuePathLevel(null, "true", null)));
+        when(configurationManager.getFor(eq(WAITING_QUEUE_RESERVATION_TIMEOUT), any())).thenReturn(new ConfigurationManager.MaybeConfiguration(WAITING_QUEUE_RESERVATION_TIMEOUT));
         when(ticketRepository.selectWaitingTicketsForUpdate(eventId, Ticket.TicketStatus.PRE_RESERVED.name(), 1)).thenReturn(Collections.singletonList(ticket));
         when(waitingQueueRepository.loadAllWaitingForUpdate(eventId)).thenReturn(Collections.singletonList(subscription));
         when(waitingQueueRepository.loadWaiting(eventId, 1)).thenReturn(Collections.singletonList(subscription));

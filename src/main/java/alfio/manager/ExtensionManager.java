@@ -19,6 +19,7 @@ package alfio.manager;
 
 import alfio.extension.ExtensionService;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
@@ -243,7 +244,7 @@ public class ExtensionManager {
     public Optional<String> generateStripeConnectStateParam(int organizationId) {
         return Optional.ofNullable(extensionService.executeScriptsForEvent(ExtensionEvent.STRIPE_CONNECT_STATE_GENERATION.name(),
             "-" + organizationId,
-            Map.of("baseUrl", configurationManager.getRequiredValue(Configuration.from(organizationId, ConfigurationKeys.BASE_URL)), "organizationId", organizationId),
+            Map.of("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organizationId)).getRequiredValue(), "organizationId", organizationId),
             String.class));
     }
 

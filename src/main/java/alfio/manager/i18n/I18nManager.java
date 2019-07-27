@@ -46,7 +46,7 @@ public class I18nManager {
     }
 
     public List<ContentLanguage> getSupportedLanguages() {
-        return ContentLanguage.findAllFor(configurationManager.getFor(ConfigurationKeys.SUPPORTED_LANGUAGES).getValueAsIntOrDefault(ContentLanguage.ENGLISH_IDENTIFIER));//default to English
+        return ContentLanguage.findAllFor(configurationManager.getForSystem(ConfigurationKeys.SUPPORTED_LANGUAGES).getValueAsIntOrDefault(ContentLanguage.ENGLISH_IDENTIFIER));//default to English
     }
 
     public List<ContentLanguage> getEventLanguages(String eventName) {

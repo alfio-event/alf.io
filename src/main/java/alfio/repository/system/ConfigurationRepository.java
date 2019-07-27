@@ -33,29 +33,27 @@ public interface ConfigurationRepository {
 
     String INSERT_STATEMENT = "INSERT into configuration(c_key, c_value, description) values(:key, :value, :description)";
 
-    @Query("SELECT id, c_key, c_value, description, 'SYSTEM' as configuration_path_level  FROM configuration")
+    String SELECT_FROM_SYSTEM = "SELECT id, c_key, c_value, 'SYSTEM' as configuration_path_level FROM configuration ";
+    String SELECT_FROM_ORGANIZATION = "SELECT id, c_key, c_value, 'ORGANIZATION' as configuration_path_level FROM configuration_organization where organization_id_fk = :organizationId ";
+    String SELECT_FROM_EVENT = "SELECT id, c_key, c_value, 'EVENT' as configuration_path_level FROM configuration_event where organization_id_fk = :organizationId and event_id_fk = :eventId ";
+    String SELECT_FROM_TICKET_CATEGORY = "SELECT id, c_key, c_value, 'TICKET_CATEGORY' as configuration_path_level FROM configuration_ticket_category where organization_id_fk = :organizationId and event_id_fk = :eventId and ticket_category_id_fk = :ticketCategoryId";
+
+    @Query(SELECT_FROM_SYSTEM)
     List<Configuration> findSystemConfiguration();
 
-    @Query("SELECT id, c_key, c_value, description, 'ORGANIZATION' as configuration_path_level  FROM configuration_organization where organization_id_fk = :organizationId")
+    @Query(SELECT_FROM_ORGANIZATION)
     List<Configuration> findOrganizationConfiguration(@Bind("organizationId") int organizationId);
 
-    @Query("SELECT id, c_key, c_value, description, 'EVENT' as configuration_path_level FROM configuration_event where organization_id_fk = :organizationId and event_id_fk = :eventId")
+    @Query(SELECT_FROM_EVENT)
     List<Configuration> findEventConfiguration(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId);
 
-    @Query("SELECT id, c_key, c_value, description, 'TICKET_CATEGORY' as configuration_path_level FROM configuration_ticket_category where organization_id_fk = :organizationId and event_id_fk = :eventId and  ticket_category_id_fk = :ticketCategoryId")
+    @Query(SELECT_FROM_TICKET_CATEGORY)
     List<Configuration> findCategoryConfiguration(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("ticketCategoryId") int categoryId);
 
-    String SYSTEM_FIND_BY_KEY = "SELECT id, c_key, c_value, description, 'SYSTEM' as configuration_path_level FROM configuration " +
-            " where c_key = :key";
-
-    String ORGANIZATION_FIND_BY_KEY = "SELECT id, c_key, c_value, description, 'ORGANIZATION' as configuration_path_level FROM configuration_organization " +
-            " where c_key = :key and organization_id_fk = :organizationId";
-
-    String EVENT_FIND_BY_KEY = "SELECT id, c_key, c_value, description, 'EVENT' as configuration_path_level FROM configuration_event " +
-            " where c_key = :key and organization_id_fk = :organizationId and event_id_fk = :eventId";
-
-    String TICKET_CATEGORY_FIND_BY_KEY = "SELECT id, c_key, c_value, description, 'TICKET_CATEGORY' as configuration_path_level FROM configuration_ticket_category " +
-            " where c_key = :key and organization_id_fk = :organizationId and event_id_fk = :eventId and  ticket_category_id_fk = :ticketCategoryId";
+    String SYSTEM_FIND_BY_KEY = SELECT_FROM_SYSTEM + " where c_key = :key";
+    String ORGANIZATION_FIND_BY_KEY = SELECT_FROM_ORGANIZATION + " and c_key = :key ";
+    String EVENT_FIND_BY_KEY = SELECT_FROM_EVENT + " and c_key = :key ";
+    String TICKET_CATEGORY_FIND_BY_KEY = SELECT_FROM_TICKET_CATEGORY + " and c_key = :key";
 
     @Query(SYSTEM_FIND_BY_KEY)
     Configuration findByKey(@Bind("key") String key);
@@ -86,12 +84,22 @@ public interface ConfigurationRepository {
                                                    @Bind("key") String key);
 
 
-    @Query("(SELECT c_key, c_value, 'SYSTEM' as configuration_path_level FROM configuration where c_key in (:keys)) UNION ALL " +
-        "(SELECT c_key, c_value, 'ORGANIZATION' as configuration_path_level FROM configuration_organization where c_key in (:keys) and organization_id_fk = :organizationId) UNION ALL " +
-        "(SELECT c_key, c_value, 'EVENT' as configuration_path_level FROM configuration_event where c_key in (:keys) and organization_id_fk = :organizationId and event_id_fk = :eventId)")
+    @Query("("+SELECT_FROM_SYSTEM+" where c_key in (:keys)) UNION ALL " +
+        "("+SELECT_FROM_ORGANIZATION+" and c_key in (:keys))")
+    List<ConfigurationKeyValuePathLevel> findByOrganizationAndKeys(@Bind("organizationId") int organizationId, @Bind("keys") Collection<String> keys);
+
+    @Query("("+SELECT_FROM_SYSTEM+" where c_key in (:keys)) UNION ALL " +
+        "("+SELECT_FROM_ORGANIZATION+" and c_key in (:keys)) UNION ALL " +
+        "("+SELECT_FROM_EVENT+" and c_key in (:keys))")
     List<ConfigurationKeyValuePathLevel> findByEventAndKeys(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("keys") Collection<String> keys);
 
-    @Query("SELECT c_key, c_value, 'SYSTEM' as configuration_path_level FROM configuration where c_key in (:keys)")
+    @Query("("+SELECT_FROM_SYSTEM+" where c_key in (:keys)) UNION ALL " +
+        "("+SELECT_FROM_ORGANIZATION+" and c_key in (:keys)) UNION ALL " +
+        "("+SELECT_FROM_EVENT+" and c_key in (:keys)) UNION ALL" +
+        "("+SELECT_FROM_TICKET_CATEGORY+" and c_key in (:keys))")
+    List<ConfigurationKeyValuePathLevel> findByTicketCategoryAndKeys(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("keys") Collection<String> keys);
+
+    @Query(SELECT_FROM_SYSTEM+" where c_key in (:keys)")
     List<ConfigurationKeyValuePathLevel> findByKeysAtSystemLevel(@Bind("keys") Collection<String> keys);
     
     @Query("DELETE FROM configuration where c_key = :key")

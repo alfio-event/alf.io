@@ -21,6 +21,7 @@ import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.WaitingQueueManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
@@ -72,7 +73,7 @@ public class AdminWaitingQueueApiController {
             .map(tc -> new SaleableTicketCategory(tc, now, event, ticketReservationManager.countAvailableTickets(event, tc), tc.getMaxTickets(), null))
             .collect(Collectors.toList());
         boolean active = EventUtil.checkWaitingQueuePreconditions(event, stcList, configurationManager, eventStatisticsManager.noSeatsAvailable());
-        boolean paused = active && configurationManager.getFor(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault(false);
+        boolean paused = active && configurationManager.getFor(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
         Map<String, Boolean> result = new HashMap<>();
         result.put("active", active);
         result.put("paused", paused);

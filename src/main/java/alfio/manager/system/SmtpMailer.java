@@ -52,9 +52,9 @@ class SmtpMailer implements Mailer {
     public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text,
                      Optional<String> html, Attachment... attachments) {
 
-        var conf = configurationManager.getFor(event, Set.of(SMTP_FROM_EMAIL, MAIL_REPLY_TO,
+        var conf = configurationManager.getFor(Set.of(SMTP_FROM_EMAIL, MAIL_REPLY_TO,
             SMTP_HOST, SMTP_PORT, SMTP_PROTOCOL,
-            SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROPERTIES));
+            SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROPERTIES), ConfigurationLevel.event(event));
 
         MimeMessagePreparator preparator = mimeMessage -> {
 

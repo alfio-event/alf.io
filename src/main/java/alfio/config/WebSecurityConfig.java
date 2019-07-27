@@ -69,7 +69,6 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 
 @Configuration
@@ -365,7 +364,7 @@ public class WebSecurityConfig {
             public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
                 HttpServletRequest req = (HttpServletRequest) request;
                 HttpServletResponse res = (HttpServletResponse) response;
-                boolean captchaEnabled = configurationManager.getFor(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true);
+                boolean captchaEnabled = configurationManager.getForSystem(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true);
                 if(captchaEnabled && requestMatcher.matches(req) && !recaptchaService.checkRecaptcha(null, req)) {
                     res.sendRedirect(recaptchaFailureUrl);
                     return;

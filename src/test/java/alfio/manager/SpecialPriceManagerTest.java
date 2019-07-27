@@ -19,6 +19,7 @@ package alfio.manager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
@@ -130,7 +131,7 @@ public class SpecialPriceManagerTest {
 
     @Test
     public void sendAllCodes() throws Exception {
-        when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
+        when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         assertTrue(specialPriceManager.sendCodeToAssignee(CODES_REQUESTED, "", 0, ""));
         verify(notificationManager, times(CODES_REQUESTED.size())).sendSimpleEmail(eq(event), isNull(), anyString(), anyString(), any());
@@ -138,14 +139,14 @@ public class SpecialPriceManagerTest {
 
     @Test
     public void sendSuccessfulComplete() throws Exception {
-        when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
+        when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         sendMessage(null);
     }
 
     @Test
     public void trimLanguageTag() throws Exception {
-        when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
+        when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", " it")), "", 0, ""));
         ArgumentCaptor<TextTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TextTemplateGenerator.class);
@@ -165,7 +166,7 @@ public class SpecialPriceManagerTest {
     @Test
     void usePartnerCode() {
         when(messageSource.getMessage(eq("show-event.promo-code-type.partner"), isNull(), isNull(), any())).thenReturn("Partner");
-        when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
+        when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, new ConfigurationKeyValuePathLevel(null, "true", null)));
         sendMessage("Partner");
     }
