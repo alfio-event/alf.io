@@ -17,9 +17,7 @@
 package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.system.Configuration;
 import alfio.model.transaction.*;
 import alfio.repository.TransactionRepository;
 import lombok.AllArgsConstructor;

@@ -24,7 +24,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
 import alfio.model.extension.PdfGenerationResult;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;

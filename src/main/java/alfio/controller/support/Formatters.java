@@ -35,7 +35,7 @@ public class Formatters {
 
     public static Map<String, String> getFormattedDate(List<ContentLanguage> languages, ZonedDateTime date, String code, MessageSource messageSource) {
         Map<String, String> formatted = new HashMap<>();
-        languages.stream().forEach(cl -> {
+        languages.forEach(cl -> {
             var pattern = messageSource.getMessage(code, null, cl.getLocale());
             formatted.put(cl.getLanguage(), DateTimeFormatter.ofPattern(pattern, cl.getLocale()).format(date));
         });

@@ -21,7 +21,6 @@ import alfio.config.WebSecurityConfig;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.system.ConfigurationKeys;
 import alfio.util.TemplateManager;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

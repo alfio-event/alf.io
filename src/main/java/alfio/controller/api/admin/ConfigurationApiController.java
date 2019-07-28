@@ -152,7 +152,7 @@ public class ConfigurationApiController {
     }
 
     @Data
-    class OrganizationConfig {
+    static class OrganizationConfig {
         private final Organization organization;
         private final Map<ConfigurationKeys.SettingCategory, List<Configuration>> config;
     }

@@ -18,12 +18,8 @@ package alfio.model.transaction;
 
 import alfio.manager.system.ConfigurationLevel;
 import alfio.model.Event;
-import alfio.model.system.Configuration;
-import alfio.model.system.Configuration.ConfigurationPathKey;
-import alfio.model.system.ConfigurationKeys;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 public class PaymentContext {
 

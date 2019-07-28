@@ -63,7 +63,7 @@ public class FileDownloadManager {
 
     @Getter
     @AllArgsConstructor
-    public class DownloadedFile {
+    public static class DownloadedFile {
         private byte[] file;
         private String name;
         private String type;

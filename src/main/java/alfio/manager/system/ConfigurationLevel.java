@@ -18,10 +18,6 @@ package alfio.manager.system;
 
 import alfio.model.EventAndOrganizationId;
 import alfio.model.system.ConfigurationPathLevel;
-import lombok.AllArgsConstructor;
-
-import static alfio.model.system.ConfigurationPathLevel.*;
-import static alfio.model.system.ConfigurationPathLevel.TICKET_CATEGORY;
 
 public interface ConfigurationLevel {
 

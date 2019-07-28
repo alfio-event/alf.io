@@ -93,7 +93,7 @@ class SmtpMailer implements Mailer {
         r.setDefaultEncoding("UTF-8");
 
         r.setHost(conf.get(SMTP_HOST).getRequiredValue());
-        r.setPort(Integer.valueOf(conf.get(SMTP_PORT).getRequiredValue()));
+        r.setPort(Integer.parseInt(conf.get(SMTP_PORT).getRequiredValue()));
         r.setProtocol(conf.get(SMTP_PROTOCOL).getRequiredValue());
         r.setUsername(conf.get(SMTP_USERNAME).getValueOrDefault(null));
         r.setPassword(conf.get(SMTP_PASSWORD).getValueOrDefault(null));
