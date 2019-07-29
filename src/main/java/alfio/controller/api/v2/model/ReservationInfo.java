@@ -37,7 +37,7 @@ public class ReservationInfo {
     private final String email;
     private final long validity;
     private final List<TicketsByTicketCategory> ticketsByCategory;
-    private final ReservationInfoOrderSummary orderSummary; //<- TODO: rewrap it so the model is kept inside v2.user.model
+    private final ReservationInfoOrderSummary orderSummary;
 
 
     private final TicketReservationStatus status;

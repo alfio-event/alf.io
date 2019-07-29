@@ -47,23 +47,17 @@ public class PaymentApiController {
                                                                           @RequestParam MultiValueMap<String, String> allParams) {
 
         var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
-
-        if(paymentMethod == null) {
+        if (paymentMethod == null) {
             return ResponseEntity.badRequest().build();
         }
 
-        Optional<ResponseEntity<TransactionInitializationToken>> responseEntity = getEventReservationPair(eventName, reservationId)
-            .map(pair -> {
-                var event = pair.getLeft();
-                return ticketReservationManager.initTransaction(event, reservationId, paymentMethod, allParams)
-                    .map(ResponseEntity::ok)
-                    .orElseGet(() -> ResponseEntity.notFound().build());
-            });
-
-        return responseEntity.orElseGet(() -> ResponseEntity.badRequest().build());
+        return getEventReservationPair(eventName, reservationId)
+            .flatMap(pair -> ticketReservationManager.initTransaction(pair.getLeft(), reservationId, paymentMethod, allParams))
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private Optional<Pair<Event, TicketReservation>> getEventReservationPair(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
+    private Optional<Pair<Event, TicketReservation>> getEventReservationPair(String eventName, String reservationId) {
         return eventRepository.findOptionalByShortName(eventName)
             .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
             .filter(pair -> pair.getRight().isPresent())
@@ -75,8 +69,7 @@ public class PaymentApiController {
                                                               @PathVariable("reservationId") String reservationId,
                                                               @PathVariable("method") String paymentMethodStr) {
         var paymentMethod = PaymentMethod.safeParse(paymentMethodStr);
-
-        if(paymentMethod == null) {
+        if (paymentMethod == null) {
             return ResponseEntity.badRequest().build();
         }
 

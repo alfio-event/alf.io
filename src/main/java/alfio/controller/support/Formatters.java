@@ -18,6 +18,7 @@ package alfio.controller.support;
 
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
+import lombok.experimental.UtilityClass;
 import org.springframework.context.MessageSource;
 
 import java.time.ZonedDateTime;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@UtilityClass
 public class Formatters {
 
 
