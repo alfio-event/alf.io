@@ -276,7 +276,7 @@ public final class Validator {
                 }
 
                 if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined() && StringUtils.length(formValue) < fieldConf.getMinLength()) {
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName(), new Object[] { fieldConf.getMinLength() }, null);
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error.tooShort", new Object[] { fieldConf.getMinLength() }, null);
                 }
 
                 if(!fieldConf.getRestrictedValues().isEmpty()) {
