@@ -280,7 +280,8 @@ public final class Validator {
                 }
 
                 if(!fieldConf.getRestrictedValues().isEmpty()) {
-                    validateRestrictedValue(formValue, prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
+                    validateRestrictedValue(formValue, prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]",
+                        "error.restrictedValue", fieldConf.getRestrictedValues(), errors);
                 }
 
                 if(fieldConf.isRequired() && StringUtils.isBlank(formValue)){
@@ -288,7 +289,8 @@ public final class Validator {
                 }
 
                 if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]",
+                        "error.disabledValue", null, null);
                 }
 
                 try {
