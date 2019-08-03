@@ -27,7 +27,9 @@ import ch.digitalfondue.vatchecker.EUVatChecker;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -51,6 +53,9 @@ public class EuVatCheckerTest {
             .thenReturn(buildConfReturn(ConfigurationKeys.EU_COUNTRIES_LIST, "IE"));
         when(configurationManager.getFor(eq(ConfigurationKeys.COUNTRY_OF_BUSINESS), any(ConfigurationLevel.class)))
             .thenReturn(buildConfReturn(ConfigurationKeys.COUNTRY_OF_BUSINESS, "IT"));
+        when(configurationManager.getFor(eq(Set.of(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, ConfigurationKeys.COUNTRY_OF_BUSINESS)), any()))
+            .thenReturn(Map.of(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, buildConfReturn(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, "true"),
+                ConfigurationKeys.COUNTRY_OF_BUSINESS, buildConfReturn(ConfigurationKeys.COUNTRY_OF_BUSINESS, "IT")));
     }
 
     private static ConfigurationManager.MaybeConfiguration buildConfReturn(ConfigurationKeys k, String value) {

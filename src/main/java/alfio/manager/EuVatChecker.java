@@ -33,10 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
@@ -147,7 +144,9 @@ public class EuVatChecker {
     }
 
     private static boolean reverseChargeEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
-        return configurationManager.getFor(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault(false);
+        var res = configurationManager.getFor(Set.of(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, ConfigurationKeys.COUNTRY_OF_BUSINESS), ConfigurationLevel.event(eventAndOrganizationId));
+        return res.get(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault(false) &&
+            res.get(ConfigurationKeys.COUNTRY_OF_BUSINESS).isPresent();
     }
 
     static boolean validationEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
