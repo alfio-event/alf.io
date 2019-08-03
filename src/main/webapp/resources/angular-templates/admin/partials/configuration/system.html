@@ -192,7 +192,12 @@
                 <div class="panel-title"><i class="fa fa-cc-stripe"></i> Stripe configuration</div>
             </div>
             <div class="panel-body">
-                <div class="alert alert-info"><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></div>
+                <div class="alert alert-info">
+                    <ul class="list-unstyled">
+                        <li><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></li>
+                        <li><i class="fa fa-info-circle"></i> Additionally, please refer to the following <a href="https://github.com/alfio-event/alf.io/blob/master/docs/howto/configuration/stripe-sca/index.md" target="_blank">tutorial</a> if you want to enable Strong Customer Authentication (aka 3DSecure 2.0)</li>
+                    </ul>
+                </div>
                 <div data-ng-repeat="setting in systemConf.paymentStripe.settings">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
                 </div>
