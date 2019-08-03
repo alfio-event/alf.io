@@ -42,25 +42,34 @@
         </div>
     </div>
 </div>
-
-<div class="panel panel-default" uib-collapse="helpCategoryVisibilityCollapse">
-    <div class="panel-body">
-        <span class="close" ng-click="toggleCategoryVisibilityCollapse()">x</span>
-        <h4>Category visibility:</h4>
-        <p>Categories can be public (that is, accessible to everybody) or restricted (accessible after inserting an unique discount code)</p>
-    </div>
+<div class="alert alert-info" uib-collapse="helpCategoryVisibilityCollapse">
+    <span class="close" ng-click="toggleCategoryVisibilityCollapse()">x</span>
+    <h4><i class="fa fa-info-circle"></i> Category visibility</h4>
+    <p>Categories can be {{categoryTypes[0].name}} (that is, visible to everybody) or {{categoryTypes[1].name}} (visible after inserting an access code)</p>
     <ul class="list-group">
-        <li class="list-group-item">
-            <div class="list-group-item-heading"><strong>Public</strong></div>
+        <li class="list-group-item help">
+            <div class="list-group-item-heading"><strong>{{categoryTypes[0].name}}</strong></div>
             <div class="list-group-item-text">
-                Everyone can buy/get a ticket for this category. This is the default option.
+                <p>Everyone can buy/get a ticket for this category. This is the default option.</p>
+                <p>Some examples:</p>
+                <ul>
+                    <li>General Admission</li>
+                    <li>Early Bird</li>
+                    <li>Promotional price</li>
+                </ul>
             </div>
         </li>
-        <li class="list-group-item">
-            <div class="list-group-item-heading"><strong>Restricted</strong></div>
+        <li class="list-group-item help">
+            <div class="list-group-item-heading"><strong>{{categoryTypes[1].name}}</strong></div>
             <div class="list-group-item-text">
-                Only a restricted group of people can access and get tickets for this category. Once you create a restricted category, the system will generate a set of unique codes (one code per seat) that can be used to reserve a ticket for this category.
-                <br/><strong>Restricted categories are not compatible with "Grow dynamically" ticket allocation strategy</strong>
+                <p>Only a restricted group of people can access and get tickets for this category. Once you create a {{categoryTypes[1].name}} category, the system will generate a set of unique codes (one code per seat) that can be used to reserve a ticket for this category.</p>
+                <p><strong>{{categoryTypes[1].name}} categories need to allocate a fixed number of tickets to work, and therefore they are only compatible with "{{allocationStrategies[1].name}}" ticket allocation strategy</strong></p>
+                <p>Some examples:</p>
+                <ul>
+                    <li>VIP access</li>
+                    <li>Speakers</li>
+                    <li>Staff</li>
+                </ul>
             </div>
         </li>
     </ul>
@@ -82,23 +91,32 @@
     </div>
 </div>
 
-<div class="panel panel-default" uib-collapse="helpAllocationStrategyCollapse">
-    <div class="panel-body">
-        <span class="close" ng-click="toggleAllocationStrategyCollapse()">x</span>
-        <h4>Ticket allocation strategy:</h4>
-        <p>You should decide how to distribute available seats between categories. The default is to create one or more dynamic categories. <strong>If unsure, please select "Grow dynamically"</strong></p>
-    </div>
+<div class="alert alert-info" uib-collapse="helpAllocationStrategyCollapse">
+    <span class="close" ng-click="toggleAllocationStrategyCollapse()">x</span>
+    <h4><i class="fa fa-info-circle"></i> Ticket allocation strategy</h4>
+    <p>You must decide how to distribute available seats between categories. <br><strong>The recommended option for most use cases is: "{{allocationStrategies[0].name}}"</strong></p>
     <ul class="list-group">
-        <li class="list-group-item">
-            <div class="list-group-item-heading"><strong>Grow dynamically</strong></div>
+        <li class="list-group-item help">
+            <div class="list-group-item-heading"><h5><strong>{{allocationStrategies[0].name}}</strong></h5></div>
             <div class="list-group-item-text">
-                This category doesn't allocate seats exclusively, instead it shares them with other dynamic categories, if any. This is useful if you have only one category or if you have different ways to sell the same seat.
+                <p>This category doesn't allocate tickets exclusively, instead it shares them with other dynamic categories, if any. This is useful if you have only one category or if you have different ways to sell the same seat.</p>
+                <p>Some examples:</p>
+                <ul>
+                    <li>An association organizes a workshop. Members of said association pay 100 CHF, external people pay 200 CHF. There is no limit on how many tickets can be bought by external people.</li>
+                    <li>A group of people organize a conference. The event is free of charge and open to everybody.</li>
+                </ul>
             </div>
         </li>
-        <li class="list-group-item">
-            <div class="list-group-item-heading"><strong>Limited seats</strong></div>
+        <li class="list-group-item help">
+            <div class="list-group-item-heading"><h5><strong>{{allocationStrategies[1].name}}</strong></h5></div>
             <div class="list-group-item-text">
-                Select this option if you want to <strong>allocate exclusively</strong> a fixed number of seats to this category. This could be useful if you want to create a special price, like a "Super early bird".
+                <p>Select this option if you want to <strong>allocate exclusively</strong> a fixed number of tickets for this category.</p>
+                <p>Some examples:</p>
+                <ul>
+                    <li>A group of people organize a conference. During the first week, as "launch party", they decide to sell <strong>up to</strong> 50 tickets with a 50% discount.</li>
+                    <li>A group of people organize a conference. While the "Call for Papers" is open, they decide to sell <strong>up to</strong> 150 tickets at a "Blind Bird" price (-25%).</li>
+                    <li>A group of people organize a conference. They want to allocate <strong>50</strong> tickets for the Speakers.</li>
+                </ul>
             </div>
         </li>
     </ul>
