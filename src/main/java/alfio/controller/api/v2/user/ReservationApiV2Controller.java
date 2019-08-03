@@ -430,7 +430,7 @@ public class ReservationApiV2Controller {
         String country = contactAndTicketsForm.getVatCountryCode();
 
         // validate VAT presence if EU mode is enabled
-        if(vatChecker.isReverseChargeEnabledFor(event) && (country == null || (country != null && isEUCountry(country)))) {
+        if (vatChecker.isReverseChargeEnabledFor(event) && (country == null || isEUCountry(country))) {
             ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
         }
 
