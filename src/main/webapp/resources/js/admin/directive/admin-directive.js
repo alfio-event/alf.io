@@ -125,7 +125,8 @@
                 startDate: '=',
                 startModelObj: '=startModel',
                 watchObj: '=',
-                noInitDate: '='
+                noInitDate: '=',
+                displayOnTop: '='
             },
             require: '^ngModel',
             link: function(scope, element, attrs, ctrl) {
@@ -171,7 +172,8 @@
                     timePicker: true,
                     timePicker12Hour: false,
                     timePickerIncrement: 1,
-                    singleDatePicker: true
+                    singleDatePicker: true,
+                    drops: !!scope.displayOnTop ? 'up' : 'down'
                 });
 
                 if(!scope.noInitDate) {
@@ -550,7 +552,7 @@
         return {
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-category.html',
-            controller: function($scope) {
+            controller: function($scope, $window) {
                 $scope.buildPrefix = function(index, name) {
                     return angular.isDefined(index) ? index + "-" + name : name;
                 };
@@ -559,6 +561,36 @@
 
                 $scope.isLanguagePresent = function(locales, value) {
                     return (locales & value) === value;
+                };
+
+                $scope.categoryTypes = [
+                    {
+                        name: 'Public',
+                        tokenGenerationRequested: false
+                    },{
+                        name: 'Hidden',
+                        tokenGenerationRequested: true
+                    }
+                ];
+
+                var allocationStrategies = [
+                    {
+                        name: 'Grow dynamically',
+                        bounded: false
+                    }, {
+                        name: 'Fixed number of tickets',
+                        bounded: true
+                    }
+                ];
+
+                $scope.allocationStrategies = allocationStrategies;
+                $scope.onTokenGenerationRequestedChange = function() {
+                    if($scope.ticketCategory.tokenGenerationRequested) {
+                        $scope.ticketCategory.bounded = true;
+                        $scope.allocationStrategies = allocationStrategies.slice(1);
+                    } else {
+                        $scope.allocationStrategies = allocationStrategies;
+                    }
                 };
 
                 $scope.helpAllocationStrategyCollapse = true;
@@ -592,7 +624,54 @@
                         ticketCategory.ticketValidityEnd;
                 };
 
-                $scope.advancedOptionsCollapsed = !hasCustomCheckIn($scope.ticketCategory) && !hasCustomTicketValidity($scope.ticketCategory);
+                var eventDateToMoment = function(d) {
+                    if(d.date) {
+                        return moment(d.date + 'T' + d.time);
+                    }
+                    return moment(d);
+                };
+
+                $scope.eventStartDate = eventDateToMoment($scope.event.begin).format('YYYY-MM-DD HH:mm');
+                $scope.eventEndDate = eventDateToMoment($scope.event.end).format('YYYY-MM-DD HH:mm');
+
+                $scope.ticketValidity = [];
+                $scope.ticketValidityTypes = [{
+                    code: 'ALL',
+                    description: 'For the entire event'
+                }, {
+                    code: 'CUSTOM',
+                    description: 'Custom'
+                }];
+                $scope.ticketValidityType = hasCustomTicketValidity($scope.ticketCategory) ? 'CUSTOM' : 'ALL';
+
+                $scope.checkInAllowedOptions = [
+                    {
+                        code: 'ANYTIME',
+                        description: 'At any time'
+                    }, {
+                        code: 'CUSTOM',
+                        description: 'Custom'
+                    }
+                ];
+                $scope.checkInAllowed = hasCustomCheckIn($scope.ticketCategory) ? 'CUSTOM' : 'ANYTIME';
+                var supportedLanguages = _.filter($scope.allLanguagesMapping, function(l) {
+                    return $scope.isLanguagePresent($scope.event.locales, l.value);
+                });
+                var filterLanguages = function(included) {
+                    return _.filter(supportedLanguages, function(l) {
+                        return included === ($scope.ticketCategory.description != null && angular.isDefined($scope.ticketCategory.description[l.locale]));
+                    });
+                };
+                $scope.definedLanguages = filterLanguages(true);
+                $scope.availableLanguages = filterLanguages(false);
+                $scope.addDescription = function(language) {
+                    if($scope.ticketCategory.description == null) {
+                        $scope.ticketCategory.description = {};
+                    }
+                    $scope.ticketCategory.description[language.locale] = '';
+                    $scope.definedLanguages = filterLanguages(true);
+                    $scope.availableLanguages = filterLanguages(false);
+                }
             }
         };
     });

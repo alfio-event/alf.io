@@ -770,3 +770,8 @@ span.path {
     font-family: FontAwesome;
     font-size: 14px;
 }
+
+.list-group .help {
+    background-color: transparent;
+    border: 0;
+}
