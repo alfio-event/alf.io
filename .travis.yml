@@ -15,7 +15,21 @@ matrix:
       env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql10"
       addons:
         postgresql: "10"
+    - name: postgresql 11
+      jdk: openjdk11
+      env: PROFILE="-Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql11"
+      before_install:
+        - sudo apt-get update
+        - sudo apt-get --yes remove postgresql\*
+        - sudo apt-get install -y postgresql-11 postgresql-client-11
+        - sudo cp /etc/postgresql/{9.6,11}/main/pg_hba.conf
+        - sudo service postgresql restart 11
+      services:
+        - postgresql
+      addons:
+        postgresql: "11.2"
 before_script:
+  - psql --version
   - psql -c 'create database alfio;' -U postgres
 script:
   - TERM=dumb ./gradlew build jacocoTestReport $PROFILE
