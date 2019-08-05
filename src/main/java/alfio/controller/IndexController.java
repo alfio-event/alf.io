@@ -21,7 +21,10 @@ import alfio.config.WebSecurityConfig;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.repository.EventRepository;
+import alfio.util.RequestUtils;
 import alfio.util.TemplateManager;
+import ch.digitalfondue.jfiveparse.*;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -37,6 +40,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.EnumSet;
 import java.util.Map;
@@ -53,6 +59,7 @@ public class IndexController {
     private static final String UTF_8 = "UTF-8";
 
     private final ConfigurationManager configurationManager;
+    private final EventRepository eventRepository;
     private final Environment environment;
     private final UserManager userManager;
     private final TemplateManager templateManager;
@@ -98,12 +105,35 @@ public class IndexController {
         "/event/{eventShortName}/reservation/{reservationId}/success",
         "/event/{eventShortName}/ticket/{ticketId}/view"
     })
-    public void replyToIndex(HttpServletResponse response) throws IOException {
+    public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
+                             @RequestHeader(value = "User-Agent", required = false) String userAgent,
+                             HttpServletResponse response) throws IOException {
+
         response.setContentType(TEXT_HTML_CHARSET_UTF_8);
         response.setCharacterEncoding(UTF_8);
-        try (var is = new ClassPathResource("alfio-public-frontend-index.html").getInputStream(); var os = response.getOutputStream()) {
-            is.transferTo(os);
+
+        if (eventShortName != null && RequestUtils.isSocialMediaShareUA(userAgent) && eventRepository.existsByShortName(eventShortName)) {
+            try (var is = new ClassPathResource("alfio/web-templates/event-open-graph-page.html").getInputStream(); var os = response.getOutputStream()) {
+                var res = getOpenGraphPage(is, eventShortName);
+                os.write(res);
+            }
+        } else {
+            try (var is = new ClassPathResource("alfio-public-frontend-index.html").getInputStream(); var os = response.getOutputStream()) {
+                is.transferTo(os);
+            }
         }
+    }
+
+    private byte[] getOpenGraphPage(InputStream is, String eventShortName) {
+        var event = eventRepository.findByShortName(eventShortName);
+        var eventOpenGraph = new Parser().parse(new InputStreamReader(is, StandardCharsets.UTF_8));
+        eventOpenGraph.getElementsByTagName("title").get(0).appendChild(new Text(event.getDisplayName()));
+        getMetaElement(eventOpenGraph, "og:image").setAttribute("content", "file/" + event.getFileBlobId());
+        return eventOpenGraph.getOuterHTML().getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static Element getMetaElement(Document document, String propertyValue) {
+        return (Element) document.getAllNodesMatching(Selector.select().element("meta").attrValEq("property", "og:image").toMatcher(), true).get(0);
     }
 
     @GetMapping("/event/{eventShortName}/code/{code}")
@@ -113,7 +143,6 @@ public class IndexController {
             .build(Map.of("eventShortName", eventName, "code", code))
             .toString();
     }
-
 
     // login related
     @GetMapping("/authentication")

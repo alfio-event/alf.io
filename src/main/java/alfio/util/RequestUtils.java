@@ -23,6 +23,7 @@ import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Log4j2
 @UtilityClass
@@ -35,5 +36,11 @@ public class RequestUtils {
             log.error("exception during request conversion", e);
             return Optional.empty();
         }
+    }
+
+    private static final Pattern SOCIAL_MEDIA_UA = Pattern.compile("facebookexternalhit/|XING-contenttabreceiver/|LinkedInBot/|Twitterbot/");
+
+    public static boolean isSocialMediaShareUA(String ua) {
+        return ua != null && SOCIAL_MEDIA_UA.matcher(ua).find();
     }
 }
