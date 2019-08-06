@@ -176,7 +176,6 @@ public class IndexController {
 
         var org = organizationRepository.getById(event.getOrganizationId());
         var author = String.format("%s <%s>", org.getName(), org.getEmail());
-        getMetaElement(eventOpenGraph, "property", "og:article:author").setAttribute("content", author);
         getMetaElement(eventOpenGraph, "name", "author").setAttribute("content", author);
 
         fileUploadRepository.findById(event.getFileBlobId()).ifPresent(metadata -> {
