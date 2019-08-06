@@ -25,6 +25,7 @@ import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+import org.commonmark.renderer.text.TextContentRenderer;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -131,9 +132,15 @@ public class MustacheCustomTag {
     private static final List<Extension> COMMONMARK_EXTENSIONS = List.of(TablesExtension.create());
     private static final Parser COMMONMARK_PARSER = Parser.builder().extensions(COMMONMARK_EXTENSIONS).build();
     private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
+    private static final TextContentRenderer COMMONMARK_TEXT_RENDERER = TextContentRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
 
     public static String renderToCommonmark(String input) {
         Node document = COMMONMARK_PARSER.parse(input);
         return COMMONMARK_RENDERER.render(document);
+    }
+
+    public static String renderToTextCommonmark(String input) {
+        Node document = COMMONMARK_PARSER.parse(input);
+        return COMMONMARK_TEXT_RENDERER.render(document);
     }
 }

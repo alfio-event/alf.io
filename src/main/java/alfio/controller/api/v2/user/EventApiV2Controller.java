@@ -581,7 +581,7 @@ public class EventApiV2Controller {
                                                    ServletWebRequest request,
                                                    Optional<PromoCodeDiscount> promoCodeDiscount) {
 
-        Locale locale = getMatchingLocale(request, event);
+        Locale locale = RequestUtils.getMatchingLocale(request, event);
         ReservationForm form = new ReservationForm();
         form.setPromoCode(promoCode);
         TicketReservationModification reservation = new TicketReservationModification();
@@ -590,22 +590,6 @@ public class EventApiV2Controller {
         form.setReservation(Collections.singletonList(reservation));
         var bindingRes = new BeanPropertyBindingResult(form, "reservationForm");
         return Pair.of(createTicketReservation(form, bindingRes, request, event, locale, promoCodeDiscount.map(PromoCodeDiscount::getPromoCode)), bindingRes);
-    }
-
-    /**
-     * From a given request, return the best locale for the user
-     *
-     * @param request
-     * @param event
-     * @return
-     */
-    private static Locale getMatchingLocale(ServletWebRequest request, Event event) {
-        var allowedLanguages = event.getContentLanguages().stream().map(ContentLanguage::getLanguage).collect(Collectors.toSet());
-        var l = request.getNativeRequest(HttpServletRequest.class).getLocales();
-        List<Locale> locales = l != null ? IteratorUtils.toList(l.asIterator()) : Collections.emptyList();
-        var selectedLocale = locales.stream().map(Locale::getLanguage).filter(allowedLanguages::contains).findFirst()
-            .orElseGet(() -> event.getContentLanguages().stream().findFirst().get().getLanguage());
-        return LocaleUtil.forLanguageTag(selectedLocale);
     }
 
     private boolean shouldDisplayRestrictedCategory(Optional<SpecialPrice> specialCode, alfio.model.TicketCategory c, Optional<PromoCodeDiscount> optionalPromoCode) {
