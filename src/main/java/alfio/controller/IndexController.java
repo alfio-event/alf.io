@@ -18,10 +18,19 @@ package alfio.controller;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.ContentLanguage;
+import alfio.model.EventDescription;
+import alfio.model.FileBlobMetadata;
+import alfio.model.system.ConfigurationKeys;
+import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
+import alfio.repository.FileUploadRepository;
+import alfio.repository.user.OrganizationRepository;
+import alfio.util.MustacheCustomTag;
 import alfio.util.RequestUtils;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.jfiveparse.*;
@@ -35,6 +44,7 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
@@ -45,7 +55,9 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.EnumSet;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
@@ -63,6 +75,10 @@ public class IndexController {
     private final Environment environment;
     private final UserManager userManager;
     private final TemplateManager templateManager;
+    private final FileUploadRepository fileUploadRepository;
+    private final MessageSourceManager messageSourceManager;
+    private final EventDescriptionRepository eventDescriptionRepository;
+    private final OrganizationRepository organizationRepository;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -107,6 +123,8 @@ public class IndexController {
     })
     public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,
+                             @RequestParam(value = "lang", required = false) String lang,
+                             ServletWebRequest request,
                              HttpServletResponse response) throws IOException {
 
         response.setContentType(TEXT_HTML_CHARSET_UTF_8);
@@ -114,7 +132,7 @@ public class IndexController {
 
         if (eventShortName != null && RequestUtils.isSocialMediaShareUA(userAgent) && eventRepository.existsByShortName(eventShortName)) {
             try (var is = new ClassPathResource("alfio/web-templates/event-open-graph-page.html").getInputStream(); var os = response.getOutputStream()) {
-                var res = getOpenGraphPage(is, eventShortName);
+                var res = getOpenGraphPage(is, eventShortName, request, lang);
                 os.write(res);
             }
         } else {
@@ -124,16 +142,63 @@ public class IndexController {
         }
     }
 
-    private byte[] getOpenGraphPage(InputStream is, String eventShortName) {
+    // see https://github.com/alfio-event/alf.io/issues/708
+    // use ngrok to test the preview
+    private byte[] getOpenGraphPage(InputStream is, String eventShortName, ServletWebRequest request, String lang) {
         var event = eventRepository.findByShortName(eventShortName);
+        var locale = RequestUtils.getMatchingLocale(request, event);
+        if (lang != null && event.getContentLanguages().stream().map(ContentLanguage::getLanguage).anyMatch(lang::equalsIgnoreCase)) {
+            locale = Locale.forLanguageTag(lang);
+        }
+
+        var baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
+
+        var title = messageSourceManager.getMessageSourceForEvent(event).getMessage("show-event.header.title", new String[] {eventShortName}, locale);
+
         var eventOpenGraph = new Parser().parse(new InputStreamReader(is, StandardCharsets.UTF_8));
-        eventOpenGraph.getElementsByTagName("title").get(0).appendChild(new Text(event.getDisplayName()));
-        getMetaElement(eventOpenGraph, "og:image").setAttribute("content", "file/" + event.getFileBlobId());
+        var head = eventOpenGraph.getElementsByTagName("head").get(0);
+
+        eventOpenGraph.getElementsByTagName("html").get(0).setAttribute("lang", locale.getLanguage());
+
+        //
+
+        getMetaElement(eventOpenGraph, "name", "twitter:image").setAttribute("content", baseUrl + "/file/" + event.getFileBlobId());
+        //
+
+        eventOpenGraph.getElementsByTagName("title").get(0).appendChild(new Text(title));
+        getMetaElement(eventOpenGraph, "property", "og:title").setAttribute("content", title);
+        getMetaElement(eventOpenGraph, "property","og:image").setAttribute("content", baseUrl + "/file/" + event.getFileBlobId());
+
+        var eventDesc = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.toLanguageTag()).orElse("").trim();
+        var firstLine = Pattern.compile("\n").splitAsStream(MustacheCustomTag.renderToTextCommonmark(eventDesc)).findFirst().orElse("");
+        getMetaElement(eventOpenGraph, "property","og:description").setAttribute("content", firstLine);
+
+
+        var org = organizationRepository.getById(event.getOrganizationId());
+        var author = String.format("%s <%s>", org.getName(), org.getEmail());
+        getMetaElement(eventOpenGraph, "property", "og:article:author").setAttribute("content", author);
+        getMetaElement(eventOpenGraph, "name", "author").setAttribute("content", author);
+
+        fileUploadRepository.findById(event.getFileBlobId()).ifPresent(metadata -> {
+            var attributes = metadata.getAttributes();
+            if (attributes.containsKey(FileBlobMetadata.ATTR_IMG_HEIGHT) && attributes.containsKey(FileBlobMetadata.ATTR_IMG_WIDTH)) {
+                head.appendChild(buildMetaTag("og:image:width", attributes.get(FileBlobMetadata.ATTR_IMG_WIDTH)));
+                head.appendChild(buildMetaTag("og:image:height", attributes.get(FileBlobMetadata.ATTR_IMG_HEIGHT)));
+            }
+        });
+
         return eventOpenGraph.getOuterHTML().getBytes(StandardCharsets.UTF_8);
     }
 
-    private static Element getMetaElement(Document document, String propertyValue) {
-        return (Element) document.getAllNodesMatching(Selector.select().element("meta").attrValEq("property", "og:image").toMatcher(), true).get(0);
+    private static Element buildMetaTag(String propertyValue, String contentValue) {
+        var meta = new Element("meta");
+        meta.setAttribute("property", propertyValue);
+        meta.setAttribute("content", contentValue);
+        return meta;
+    }
+
+    private static Element getMetaElement(Document document, String attrName, String propertyValue) {
+        return (Element) document.getAllNodesMatching(Selector.select().element("meta").attrValEq(attrName, propertyValue).toMatcher(), true).get(0);
     }
 
     @GetMapping("/event/{eventShortName}/code/{code}")
