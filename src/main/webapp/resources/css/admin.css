@@ -224,6 +224,21 @@ td.cell-wrap {
 
 @media screen and (min-width: 991px) {
 
+    .map-container {
+        min-height: 300px;
+    }
+
+    .map-image {
+        max-height: 300px;
+    }
+
+    .map-loading {
+        position: absolute;
+        top: 107px;
+        left: 107px;
+        z-index: -1;
+    }
+
     .setting input[type="text"], .setting input:not([type]) {
         text-indent:85px;
     }
@@ -436,10 +451,6 @@ a.emulate-nav-pills-link {
 .hide-overflowing-text {
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.map-container {
-    min-height: 360px;
 }
 
 .wMarginTop30px {
