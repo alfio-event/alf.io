@@ -153,7 +153,7 @@ public class IndexController {
 
         var baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
 
-        var title = messageSourceManager.getMessageSourceForEvent(event).getMessage("event.get-your-ticket-for", new String[] {eventShortName}, locale);
+        var title = messageSourceManager.getMessageSourceForEvent(event).getMessage("event.get-your-ticket-for", new String[] {event.getDisplayName()}, locale);
 
         var eventOpenGraph = new Parser().parse(new InputStreamReader(is, StandardCharsets.UTF_8));
         var head = eventOpenGraph.getElementsByTagName("head").get(0);

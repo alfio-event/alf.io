@@ -49,6 +49,9 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.EventUtil;
 import alfio.util.Json;
+import ch.digitalfondue.jfiveparse.Element;
+import ch.digitalfondue.jfiveparse.Parser;
+import ch.digitalfondue.jfiveparse.Selector;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
@@ -82,6 +85,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -384,6 +388,26 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
         assertEquals("redirect:/api/v2/public/event/" + event.getShortName() + "/code/MY_CODE", indexController.redirectCode(event.getShortName(), "MY_CODE"));
+
+
+        // check open graph & co
+        {
+            var res = new MockHttpServletResponse();
+            indexController.replyToIndex(event.getShortName(), "not a social share", "en", new ServletWebRequest(new MockHttpServletRequest()), res);
+            var htmlParser = new Parser();
+            var docWithoutOpenGraph = htmlParser.parse(new String(res.getContentAsByteArray(), StandardCharsets.UTF_8));
+            assertTrue(docWithoutOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("name", "twitter:card").toMatcher()).isEmpty());
+
+            res = new MockHttpServletResponse();
+            indexController.replyToIndex(event.getShortName(), "Twitterbot/42", "en", new ServletWebRequest(new MockHttpServletRequest()), res);
+            var docWithOpenGraph = htmlParser.parse(new String(res.getContentAsByteArray(), StandardCharsets.UTF_8));
+            assertFalse(docWithOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("name", "twitter:card").toMatcher()).isEmpty());
+
+            var title = (Element) docWithOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("property", "og:title").toMatcher(), true).get(0);
+            assertEquals("Get your tickets for "+event.getDisplayName(), title.getAttribute("content"));
+        }
+
+        //
 
 
         // check ticket & all, we have 2 ticket categories, 1 hidden
