@@ -4,7 +4,7 @@
 <div class="container" data-ng-if="event">
     <div class="page-header">
         <h1>Create new Event</h1>
-        <span class="text-muted">Please fill in the required information and then save</span>
+        <small class="text-muted">Please fill in the required information and then save</small>
     </div>
     <form role="form" name="editEvent" data-ng-submit="save(editEvent, event)" data-error-sensitive="editEventHeader,editPrices" novalidate>
         <edit-event-header data-target-obj="event" data-organizations="organizations" data-full-edit-mode="true" data-show-existing-errors="showExistingErrors" data-all-languages="allLanguages" data-all-languages-mapping="allLanguagesMapping"></edit-event-header>
@@ -17,7 +17,7 @@
 
             <div class="page-header">
                 <h3>Categories</h3>
-                <span class="text-muted">Here you can define all the ticket categories for the event. Please note that at least one category is required in order to create the event.</span>
+                <small class="text-muted">Here you can define all the ticket categories for the event. Please note that at least one category is required in order to create the event.</small>
             </div>
 
             <div class="row wMarginBottom" ng-if="event.ticketCategories.length > 0">

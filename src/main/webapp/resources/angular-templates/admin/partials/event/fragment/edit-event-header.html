@@ -19,64 +19,54 @@
                 <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-ng-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}" placeholder="Please enter the address of the Location. This will be used for displaying the map on the event page."></textarea>
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
+            <div class="row">
+                <div class="col-xs-12 col-md-6">
+                    <div class="form-group" bs-form-error="editEventHeader.date">
+                        <label for="date">Event Date <i data-ng-if="showDatesWarning" class="fa fa-warning text-warning tooltip-handler" title="You should notify all the ticket owners about a date change"></i></label>
+                        <input type="text" data-date-range data-start-model="obj.begin" data-end-model="obj.end" data-ng-model="obj.dateString" name="date" id="date" class="form-control" required />
+                    </div>
+                </div>
+                <div class="col-xs-12 col-md-6">
+                    <div class="form-group" bs-form-error="editEventHeader.timeZone">
+                        <label for="timeZone">Event time zone</label>
+                        <select class="form-control" id="timeZone" name="timeZone" data-ng-model="obj.geolocation.timeZone" required ng-options="tz as tz for tz in timezones"></select>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="col-sm-4 col-md-4 map-container">
             <i class="fa fa-cog fa-spin fa-3x map-loading text-muted" data-ng-if="loadingMap"></i>
             <span class="text-danger" data-ng-if="mapError && !loadingMap">{{mapError}}</span>
-            <img data-ng-if="obj.geolocation && obj.geolocation.mapUrl && !loadingMap" data-ng-src="{{obj.geolocation.mapUrl}}" alt="{{obj.location}}" class="img-responsive map-image"/>
+            <img data-ng-if="obj.geolocation && obj.geolocation.mapUrl && !loadingMap" data-ng-src="{{obj.geolocation.mapUrl}}" alt="{{obj.location}}" class="img-responsive map-image img-center"/>
+        </div>
+    </div>
+
+    <div class="row wMarginTop30px">
+        <div class="col-xs-12 col-sm-6" data-ng-repeat="langValue in selectedLanguages.langs">
+            <div class="form-group" bs-form-error="editEventHeader['description-'+allLanguagesMapping[langValue].locale]">
+                <label for="description">Event Description: {{allLanguagesMapping[langValue].displayLanguage}} <display-commonmark-preview text="obj.description[allLanguagesMapping[langValue].locale]"></display-commonmark-preview></label><a class="pull-right text-muted" ng-if="selectedLanguages.langs.length > 1" title="remove {{allLanguagesMapping[langValue].displayLanguage}}" ng-click="removeDescription(allLanguagesMapping[langValue])"><i class="fa fa-trash"></i></a>
+                <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description-{{allLanguagesMapping[langValue].locale}}" id="description" required class="form-control" data-ng-minlength="10" data-ng-maxlength="2048"></textarea>
+                <common-mark-help></common-mark-help>
+                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader['description-'+allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
         </div>
     </div>
     <div class="row">
-        <div class="col-xs-6">
-            <div class="form-group" bs-form-error="editEventHeader.date">
-                <label for="date">Event Date <i data-ng-if="showDatesWarning" class="fa fa-warning text-warning tooltip-handler" title="You should notify all the ticket owners about a date change"></i></label>
-                <input type="text" data-date-range data-start-model="obj.begin" data-end-model="obj.end" data-ng-model="obj.dateString" name="date" id="date" class="form-control" required />
+        <div class="col-xs-2">
+            <div class="btn-group" uib-dropdown is-open="isDropDownOpen" data-ng-if="availableLanguages.length > 0 && allLanguages.length > 1">
+                <button id="single-button" type="button" class="btn btn-success" uib-dropdown-toggle>
+                    Add translation <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                    <li role="menuitem" data-ng-repeat="(lang, language) in availableLanguages"><a ng-click="addDescription(language)">{{language.displayLanguage}}</a></li>
+                </ul>
             </div>
-        </div>
-        <div class="col-xs-6">
-            <div class="form-group" bs-form-error="editEventHeader.timeZone">
-                <label for="timeZone">Event time zone</label>
-                <select class="form-control" id="timeZone" name="timeZone" data-ng-model="obj.geolocation.timeZone" required ng-options="tz as tz for tz in timezones"></select>
-            </div>
-        </div>
-    </div>
 
-    <div data-ng-if="obj.type === 'INTERNAL'">
-
-        <div class="page-header">
-            <h3>Descriptions</h3>
-            <small data-ng-if="availableLanguages.length > 0 && allLanguages.length > 1">Add the event description in different languages. Adding a description for a given language enables the support for that language.</small>
-        </div>
-
-        <div class="row wMarginBottom30px">
-            <div class="col-xs-2">
-                <div class="btn-group" uib-dropdown is-open="isDropDownOpen" data-ng-if="availableLanguages.length > 0 && allLanguages.length > 1">
-                    <button id="single-button" type="button" class="btn btn-success" uib-dropdown-toggle>
-                        Add description <span class="caret"></span>
-                    </button>
-                    <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
-                        <li role="menuitem" data-ng-repeat="(lang, language) in availableLanguages"><a ng-click="addDescription(language)">{{language.displayLanguage}}</a></li>
-                    </ul>
-                </div>
-
-            </div>
-        </div>
-
-
-        <div class="row">
-            <div class="col-xs-12 col-sm-6" data-ng-repeat="langValue in selectedLanguages.langs">
-                <div class="form-group" bs-form-error="editEventHeader['description-'+allLanguagesMapping[langValue].locale]">
-                    <label for="description">Event Description: {{allLanguagesMapping[langValue].displayLanguage}} <display-commonmark-preview text="obj.description[allLanguagesMapping[langValue].locale]"></display-commonmark-preview></p></label><a class="pull-right text-muted" ng-if="selectedLanguages.langs.length > 1" title="remove {{allLanguagesMapping[langValue].displayLanguage}}" ng-click="removeDescription(allLanguagesMapping[langValue])"><i class="fa fa-trash"></i></a>
-                    <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description-{{allLanguagesMapping[langValue].locale}}" id="description" required class="form-control" data-ng-minlength="10" data-ng-maxlength="2048"></textarea>
-                    <common-mark-help></common-mark-help>
-                    <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader['description-'+allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
-                </div>
-            </div>
         </div>
     </div>
     <div class="page-header">
         <h3>URLs Configuration</h3>
-        <small>Define how users can access your event and where the relevant links should point.</small>
+        <small class="text-muted">Define how users can access your event and where the relevant links should point.</small>
     </div>
     <div class="row">
         <div class="col-xs-12 col-md-6">
@@ -92,7 +82,7 @@
                         <span>/</span>
                     </span>
                 </div>
-                <div class="form-control-static" data-ng-if="isUpdate">/event/{{obj.shortName}}/</div>
+                <div class="form-control-static" data-ng-if="isUpdate">{{baseUrl}}/event/{{obj.shortName}}/</div>
                 <field-error data-form-obj="editEventHeader" data-required-pattern="'A-Za-z0-9_- (no spaces; the last character must be a letter or a number)'" data-field-obj="editEventHeader.shortName"  data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
@@ -106,13 +96,7 @@
     </div>
     <div class="row">
         <div class="col-xs-12 col-md-6">
-            <div data-ng-if="obj.type !== 'INTERNAL'" class="form-group" bs-form-error="editEventHeader.externalUrl">
-                <label for="externalUrl">External ticket reservation URL</label>
-                <input type="url" url-text-field="" data-ng-model="obj.externalUrl" name="externalUrl" id="externalUrl" required class="form-control" />
-                <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.externalUrl" data-show-existing-errors="showExistingErrors"></field-error>
-            </div>
-
-            <div data-ng-if="obj.type === 'INTERNAL'" class="form-group" bs-form-error="editEventHeader.termsAndConditionsUrl">
+            <div class="form-group" bs-form-error="editEventHeader.termsAndConditionsUrl">
                 <label for="termsAndConditionsUrl">Terms and Conditions URL</label>
                 <input type="url" url-text-field="" data-ng-model="obj.termsAndConditionsUrl" name="termsAndConditionsUrl" id="termsAndConditionsUrl" required class="form-control" />
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.termsAndConditionsUrl" data-show-existing-errors="showExistingErrors"></field-error>
@@ -122,14 +106,14 @@
             <div class="form-group" bs-form-error="editEventHeader.privacyPolicyUrl">
                 <label for="privacyPolicyUrl">Privacy policy URL</label>
                 <input type="url" url-text-field="" data-ng-model="obj.privacyPolicyUrl" name="privacyPolicyUrl" id="privacyPolicyUrl" class="form-control" aria-describedby="privacyHelp"/>
-                <span id="privacyHelp" ng-if="isObjectEmpty(editEventHeader.privacyPolicyUrl.$error)" class="help-block">Privacy policy link is optional. However, it is good practice to have one.</span>
+                <small id="privacyHelp" ng-if="isObjectEmpty(editEventHeader.privacyPolicyUrl.$error)" class="help-block">Privacy policy link is optional. However, it is good practice to have one.</small>
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.privacyPolicyUrl" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
     </div>
     <div class="page-header">
         <h3>Logo</h3>
-        <small>Upload the event logo in PNG or JPG format.</small>
+        <small class="text-muted">Upload the event logo in PNG or JPG format.</small>
     </div>
     <div class="row">
         <div class="col-xs-6">
