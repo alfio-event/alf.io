@@ -41,18 +41,22 @@
         </div>
     </div>
 
+    <div class="page-header">
+        <h3>Event Description</h3>
+        <small data-ng-if="availableLanguages.length > 0 && allLanguages.length > 1">Add the event description in different languages. Adding a description for a given language enables the support for that language.</small>
+    </div>
+
     <div class="row wMarginTop30px">
         <div class="col-xs-12 col-sm-6" data-ng-repeat="langValue in selectedLanguages.langs">
             <div class="form-group" bs-form-error="editEventHeader['description-'+allLanguagesMapping[langValue].locale]">
-                <label for="description">Event Description: {{allLanguagesMapping[langValue].displayLanguage}} <display-commonmark-preview text="obj.description[allLanguagesMapping[langValue].locale]"></display-commonmark-preview></label><a class="pull-right text-muted" ng-if="selectedLanguages.langs.length > 1" title="remove {{allLanguagesMapping[langValue].displayLanguage}}" ng-click="removeDescription(allLanguagesMapping[langValue])"><i class="fa fa-trash"></i></a>
+                <label for="description">{{allLanguagesMapping[langValue].displayLanguage}}</label><a class="pull-right text-muted" ng-if="selectedLanguages.langs.length > 1" title="remove {{allLanguagesMapping[langValue].displayLanguage}}" ng-click="removeDescription(allLanguagesMapping[langValue])"><i class="fa fa-trash"></i></a><display-commonmark-preview class="pull-right" style="margin-right: 20px" text="obj.description[allLanguagesMapping[langValue].locale]"></display-commonmark-preview>
                 <textarea data-ng-model="obj.description[allLanguagesMapping[langValue].locale]" name="description-{{allLanguagesMapping[langValue].locale}}" id="description" required class="form-control" data-ng-minlength="10" data-ng-maxlength="2048"></textarea>
-                <common-mark-help></common-mark-help>
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader['description-'+allLanguagesMapping[langValue].locale]" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
     </div>
     <div class="row">
-        <div class="col-xs-2">
+        <div class="col-xs-6">
             <div class="btn-group" uib-dropdown is-open="isDropDownOpen" data-ng-if="availableLanguages.length > 0 && allLanguages.length > 1">
                 <button id="single-button" type="button" class="btn btn-success" uib-dropdown-toggle>
                     Add translation <span class="caret"></span>
@@ -61,7 +65,9 @@
                     <li role="menuitem" data-ng-repeat="(lang, language) in availableLanguages"><a ng-click="addDescription(language)">{{language.displayLanguage}}</a></li>
                 </ul>
             </div>
-
+        </div>
+        <div class="col-xs-6">
+            <common-mark-help></common-mark-help>
         </div>
     </div>
     <div class="page-header">

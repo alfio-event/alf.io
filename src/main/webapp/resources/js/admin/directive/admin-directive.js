@@ -1209,7 +1209,7 @@
         return {
             restrict: 'E',
             scope: {},
-            template: '<div class="markdown-help text-right"><img class="markdown-logo" src="../resources/images/markdown-logo.svg" /> <a href="http://commonmark.org/help/" target="_blank">Markdown (CommonMark) supported</a></div> '
+            template: '<div class="markdown-help text-right"><img class="markdown-logo" src="../resources/images/markdown-logo.svg" /> <a href="http://commonmark.org/help/" target="_blank">How to format text</a></div> '
         };
     });
 
