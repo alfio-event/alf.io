@@ -46,7 +46,7 @@
         .service('ConfigurationService', ConfigurationService)
         .directive('basicConfigurationNeeded', basicConfigurationNeeded);
 
-    function ConfigurationService($http, HttpErrorHandler, $q, $timeout) {
+    function ConfigurationService($http, HttpErrorHandler, $q, $timeout, $window) {
         var configurationCache = null;
         return {
             loadSettingCategories: function() {
@@ -86,6 +86,9 @@
             },
             loadSingleConfigForEvent: function(eventId, key) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/single/'+key).error(HttpErrorHandler.handle)
+            },
+            getBaseUrl: function() {
+                return $window.location.origin;
             },
             loadCategory: function(eventId, categoryId) {
                 return $http.get('/admin/api/configuration/events/'+eventId+'/categories/'+categoryId+'/load').error(HttpErrorHandler.handle);
@@ -165,7 +168,7 @@
         };
     }
 
-    ConfigurationService.$inject = ['$http', 'HttpErrorHandler', '$q', '$timeout'];
+    ConfigurationService.$inject = ['$http', 'HttpErrorHandler', '$q', '$timeout', '$window'];
 
     function ConfigurationController(OrganizationService, EventService, $q, ConfigurationService) {
         var configCtrl = this;

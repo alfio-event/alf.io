@@ -15,16 +15,21 @@
 <div class="form-group" data-ng-repeat="(lang, language) in definedLanguages">
     <label for="{{buildPrefix($index, 'description.'+lang)}}">Description: {{language.displayLanguage}} <display-commonmark-preview text="ticketCategory.description[language.locale]"></display-commonmark-preview></label>
     <textarea data-ng-model="ticketCategory.description[language.locale]" name="{{buildPrefix($index, 'description.'+lang)}}" id="{{buildPrefix($index, 'description.'+lang)}}" class="form-control" placeholder="Description of {{ticketCategory.name}} category"></textarea>
-    <common-mark-help></common-mark-help>
 </div>
-
-<div class="btn-group" uib-dropdown is-open="isDropDownOpen" data-ng-if="availableLanguages.length > 0">
-    <button id="single-button" type="button" class="btn btn-success" uib-dropdown-toggle>
-        Add description <span class="caret"></span>
-    </button>
-    <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
-        <li role="menuitem" data-ng-repeat="(lang, language) in availableLanguages"><a ng-click="addDescription(language)">{{language.displayLanguage}}</a></li>
-    </ul>
+<div class="row">
+    <div class="col-xs-6">
+        <div class="btn-group" uib-dropdown is-open="isDropDownOpen" data-ng-if="availableLanguages.length > 0">
+            <button id="single-button" type="button" class="btn btn-success" uib-dropdown-toggle>
+                Add description <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" uib-dropdown-menu role="menu" aria-labelledby="single-button">
+                <li role="menuitem" data-ng-repeat="(lang, language) in availableLanguages"><a ng-click="addDescription(language)">{{language.displayLanguage}}</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-xs-6">
+        <common-mark-help></common-mark-help>
+    </div>
 </div>
 
 
@@ -203,8 +208,8 @@
 </div>
 
 <div class="page-header">
-    <h3>Check-in time</h3>
-    <small>When ticket holders are allowed to enter?</small>
+    <h3>Check-in</h3>
+    <small>Details about the check-in process</small>
 </div>
 
 <div class="row">

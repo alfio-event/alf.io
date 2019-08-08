@@ -485,10 +485,10 @@
                 $scope.allLanguagesMapping[r.value] = r;
                 locales |= r.value;
             });
-            if($scope.event && !angular.isDefined($scope.event.locales)) {
-                $scope.event.locales = locales;
-            }
         });
+        if($scope.event && !angular.isDefined($scope.event.locales)) {
+            $scope.event.locales = 0;
+        }
 
         EventService.getDynamicFieldTemplates().success(function(result) {
             $scope.dynamicFieldTemplates = result;

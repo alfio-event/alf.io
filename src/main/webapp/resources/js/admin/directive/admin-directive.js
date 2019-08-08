@@ -320,7 +320,10 @@
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
-            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService) {
+            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService, ConfigurationService) {
+
+                $scope.baseUrl = ConfigurationService.getBaseUrl();
+
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
                         'description', 'websiteUrl', 'externalUrl', 'termsAndConditionsUrl', 'privacyPolicyUrl', 'imageUrl', 'fileBlobId', 'formattedBegin','type',
@@ -346,17 +349,41 @@
                     $scope.timezones = res.data;
                 });
 
-                $scope.selectedLanguages = {};
+                $scope.selectedLanguages = {
+                    langs: []
+                };
 
-                EventService.getSupportedLanguages().success(function(result) {
-                    var locales = $scope.obj.locales;
-                    var selected = _.filter(result, function(r) {
-                        return (r.value & locales) === r.value;
+                var evaluateAvailableLanguages = function(allLanguages) {
+                    $scope.availableLanguages = _.filter(allLanguages, function(r) {
+                        return !isLangSelected(r);
                     });
+                };
+
+                var isLangSelected = function(r) {
+                    var locales = $scope.obj.locales;
+                    return (r.value & locales) === r.value;
+                };
+                EventService.getSupportedLanguages().success(function(allLanguages) {
+                    var selected = _.filter(allLanguages, isLangSelected);
+                    if(selected.length === 0 && allLanguages.length > 0) {
+                        $scope.addDescription(allLanguages[0]);
+                        selected.push(allLanguages[0]);
+                    }
                     $scope.selectedLanguages.langs = _.map(selected, function(r) {
                         return r.value;
                     });
+
+                    $scope.allLanguages = allLanguages;
+                    evaluateAvailableLanguages(allLanguages);
                 });
+                $scope.addDescription = function(language) {
+                    $scope.toggleLanguageSelection(language);
+                    evaluateAvailableLanguages($scope.allLanguages);
+                };
+                $scope.removeDescription = function(language) {
+                    $scope.toggleLanguageSelection(language);
+                    evaluateAvailableLanguages($scope.allLanguages);
+                };
 
                 $scope.isLanguageSelected = function(lang) {
                     return lang && $scope.selectedLanguages.langs && $scope.selectedLanguages.langs.indexOf(lang.value) > -1;
@@ -466,7 +493,7 @@
                     };
                     if (files.length <= 0) {
                 		alert('Your image not uploaded correctly.Please upload the image again');
-	                } else if (!((files[0].type == 'image/png') || (files[0].type == 'image/jpeg'))) {
+	                } else if (!((files[0].type === 'image/png') || (files[0].type === 'image/jpeg'))) {
 	                	alert('only png or jpeg files are accepted');
 	                } else if (files[0].size > (1024 * 200)) {
 	                	alert('Image size exceeds the allowable limit 200KB');
@@ -552,12 +579,12 @@
         return {
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-category.html',
-            controller: function($scope, $window) {
+            controller: function($scope, ConfigurationService) {
                 $scope.buildPrefix = function(index, name) {
                     return angular.isDefined(index) ? index + "-" + name : name;
                 };
 
-                $scope.baseUrl = window.location.origin;
+                $scope.baseUrl = ConfigurationService.getBaseUrl();
 
                 $scope.isLanguagePresent = function(locales, value) {
                     return (locales & value) === value;
@@ -1182,7 +1209,7 @@
         return {
             restrict: 'E',
             scope: {},
-            template: '<div class="markdown-help text-right"><img class="markdown-logo" src="../resources/images/markdown-logo.svg" /> <a href="http://commonmark.org/help/" target="_blank">Markdown (CommonMark) supported</a></div> '
+            template: '<div class="markdown-help text-right"><img class="markdown-logo" src="../resources/images/markdown-logo.svg" /> <a href="http://commonmark.org/help/" target="_blank">How to format text</a></div> '
         };
     });
 
@@ -1209,6 +1236,23 @@
             },
             template: '<img class="img-center" ng-src="../resources/images/flags/{{flag}}.gif">'
         };
+    });
+
+    directives.directive('urlTextField', function() {
+        return {
+            restrict: 'A',
+            scope: {},
+            link: function($scope, element, attrs) {
+                element.on('focus', function() {
+                    if(element.val() === '') {
+                        element.val('https://');
+                        setTimeout(function() {
+                            element.get(0).setSelectionRange(8, 8);
+                        });
+                    }
+                });
+            }
+        }
     })
     
 })();
