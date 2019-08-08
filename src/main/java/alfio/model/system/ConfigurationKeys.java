@@ -44,8 +44,8 @@ public enum ConfigurationKeys {
     MAPS_HERE_APP_CODE("HERE map App Code", false, SettingCategory.MAP, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
 
-    RECAPTCHA_API_KEY("Recaptcha api key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    RECAPTCHA_SECRET("Recaptcha secret", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    RECAPTCHA_API_KEY("reCAPTCHA v2 api key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    RECAPTCHA_SECRET("reCAPTCHA v2 secret", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     ENABLE_CAPTCHA_FOR_LOGIN("Enable captcha for login (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
 
     DISPLAY_STATS_IN_EVENT_DETAIL("Display stats (sold tickets, gross income, pending reservations) in event detail (default true)", false, SettingCategory.GENERAL, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
