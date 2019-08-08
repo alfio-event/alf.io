@@ -200,12 +200,19 @@ public class IndexController {
         return (Element) document.getAllNodesMatching(Selector.select().element("meta").attrValEq(attrName, propertyValue).toMatcher(), true).get(0);
     }
 
-    @GetMapping("/event/{eventShortName}/code/{code}")
+    @GetMapping(value = {
+        "/event/{eventShortName}/code/{code}",
+        "/e/{eventShortName}/c/{code}"})
     public String redirectCode(@PathVariable("eventShortName") String eventName,
                              @PathVariable("code") String code) {
         return "redirect:" + UriComponentsBuilder.fromPath("/api/v2/public/event/{eventShortName}/code/{code}")
             .build(Map.of("eventShortName", eventName, "code", code))
             .toString();
+    }
+
+    @GetMapping("/e/{eventShortName}")
+    public String redirectEvent(@PathVariable("eventShortName") String eventName) {
+        return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}").build(Map.of("eventShortName", eventName)).toString();
     }
 
     // login related
