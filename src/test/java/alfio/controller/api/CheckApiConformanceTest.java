@@ -25,6 +25,8 @@ import de.codecentric.hikaku.Hikaku;
 import de.codecentric.hikaku.HikakuConfig;
 import de.codecentric.hikaku.converters.openapi.OpenApiConverter;
 import de.codecentric.hikaku.converters.spring.SpringConverter;
+import de.codecentric.hikaku.endpoints.HttpMethod;
+import de.codecentric.hikaku.reporters.CommandLineReporter;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +38,8 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -55,17 +59,18 @@ public class CheckApiConformanceTest extends BaseIntegrationTest {
         SpringConverter implementation = new SpringConverter(springContext);
 
         HikakuConfig hikakuConfig = new HikakuConfig(
-            Set.of("/healthz", "/", "/admin", "/file/{digest}", "/report-csp-violation"),
-            //Set.of("/admin/api/", "/api/payment/*"),
-            true,
-            true
+            List.of(new CommandLineReporter()),
+            List.of(
+                e -> !e.getPath().startsWith("/api/v2"),
+                e -> Set.of(HttpMethod.HEAD, HttpMethod.OPTIONS).contains(e.getHttpMethod())
+            )
         );
 
-        /*new Hikaku(
+        new Hikaku(
             specification,
             implementation,
             hikakuConfig
-        ).match();*/
+        );//.match();
     }
 
 }
