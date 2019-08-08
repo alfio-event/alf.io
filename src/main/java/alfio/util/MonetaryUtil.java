@@ -63,7 +63,7 @@ public final class MonetaryUtil {
         if(cents == 0 || StringUtils.isEmpty(currencyCode)) {
             return BigDecimal.ZERO;
         }
-        var currencyUnit = CurrencyUnit.of(currencyCode);
+        var currencyUnit = CurrencyUnit.of(currencyCode.toUpperCase());
         int scale = currencyUnit.getDecimalPlaces();
         return new BigDecimal(cents).divide(BigDecimal.TEN.pow(scale), scale, HALF_UP);
     }
@@ -76,7 +76,7 @@ public final class MonetaryUtil {
     }
 
     public static <T extends Number> T unitToCents(BigDecimal unit, String currencyCode, Function<BigDecimal, T> converter) {
-        int scale = StringUtils.isEmpty(currencyCode) ? 2 : CurrencyUnit.of(currencyCode).getDecimalPlaces();
+        int scale = StringUtils.isEmpty(currencyCode) ? 2 : CurrencyUnit.of(currencyCode.toUpperCase()).getDecimalPlaces();
         BigDecimal result = unit.multiply(BigDecimal.TEN.pow(scale)).setScale(0, HALF_UP);
         return converter.apply(result);
     }
@@ -97,7 +97,7 @@ public final class MonetaryUtil {
             return "0";
         }
 
-        var currencyUnit = CurrencyUnit.of(Objects.requireNonNull(currencyCode));
+        var currencyUnit = CurrencyUnit.of(Objects.requireNonNull(currencyCode).toUpperCase());
         return Objects.requireNonNull(unit).setScale(currencyUnit.getDecimalPlaces(), HALF_UP).toPlainString();
     }
 }
