@@ -1251,6 +1251,13 @@
                         });
                     }
                 });
+                var urlProtocolMatcher = /^https?:\/\/.+$/;
+                element.on('paste', function(e) {
+                    var pastedText = e.originalEvent.clipboardData.getData('text'); //thanks to https://stackoverflow.com/a/11605419
+                    if(element.val() === 'https://' && urlProtocolMatcher.test(pastedText)) {
+                        element.select();
+                    }
+                })
             }
         }
     })
