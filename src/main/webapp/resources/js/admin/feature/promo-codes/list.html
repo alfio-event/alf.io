@@ -17,7 +17,7 @@
         <tbody>
         <tr data-ng-repeat="promocode in $ctrl.promocodes" data-ng-class="{'text-muted': promocode.expired}">
             <td ng-if="promocode.useCount > 0"><a data-ui-sref="events.single.reservationsList({eventName: $ctrl.event.shortName, search: promocode.promoCode})" title="Find all reservations">{{::promocode.promoCode}}</a> <span data-ng-if="promocode.expired">(Expired)</span></td>
-            <td ng-if="promocode.useCount === 0">{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span></td>
+            <td ng-if="!promocode.useCount || promocode.useCount === 0">{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span></td>
             <td class="text-right">{{promocode.useCount}}</td>
             <td class="text-right">{{promocode.maxUsage}}</td>
             <td>{{::promocode.formattedStart | formatDate}}</td>
