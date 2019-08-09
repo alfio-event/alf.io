@@ -24,7 +24,6 @@ import alfio.util.MustacheCustomTag;
 import alfio.util.Wrappers;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.text.StringEscapeUtils;
 import org.joda.money.CurrencyUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -79,7 +78,7 @@ public class UtilsApiController {
     
     @GetMapping("/render-commonmark")
     public String renderCommonmark(@RequestParam("text") String input) {
-        return MustacheCustomTag.renderToCommonmark(StringEscapeUtils.escapeHtml4(input));
+        return MustacheCustomTag.renderToHtmlCommonmarkEscaped(input);
     }
 
     @GetMapping("/alfio/info")
