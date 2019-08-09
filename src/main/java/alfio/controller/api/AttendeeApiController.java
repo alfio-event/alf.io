@@ -19,8 +19,8 @@ package alfio.controller.api;
 import alfio.manager.AttendeeManager;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
-import alfio.model.Ticket;
 import alfio.model.result.Result;
+import alfio.model.support.TicketWithAdditionalFields;
 import alfio.repository.SponsorScanRepository;
 import alfio.util.EventUtil;
 import alfio.util.Wrappers;
@@ -108,7 +108,7 @@ public class AttendeeApiController {
      * @return
      */
     @GetMapping("/{eventKey}/ticket/{UUID}")
-    public Result<Ticket> getTicketDetails(@PathVariable("eventKey") String eventShortName, @PathVariable("UUID") String uuid, Principal principal) {
+    public Result<TicketWithAdditionalFields> getTicketDetails(@PathVariable("eventKey") String eventShortName, @PathVariable("UUID") String uuid, Principal principal) {
         return attendeeManager.retrieveTicket(eventShortName, uuid, principal.getName());
     }
 

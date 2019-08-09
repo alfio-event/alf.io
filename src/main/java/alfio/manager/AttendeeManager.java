@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.model.support.TicketWithAdditionalFields;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.DefaultCheckInResult;
 import alfio.manager.support.SponsorAttendeeData;
@@ -27,9 +28,7 @@ import alfio.model.Ticket;
 import alfio.model.TicketWithCategory;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
-import alfio.repository.EventRepository;
-import alfio.repository.SponsorScanRepository;
-import alfio.repository.TicketRepository;
+import alfio.repository.*;
 import alfio.repository.user.UserRepository;
 import alfio.util.EventUtil;
 import lombok.AllArgsConstructor;
@@ -50,6 +49,8 @@ public class AttendeeManager {
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
     private final UserManager userManager;
+    private final TicketFieldRepository ticketFieldRepository;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
     public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String username) {
         int userId = userRepository.getByUsername(username).getId();
@@ -74,7 +75,7 @@ public class AttendeeManager {
         return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
     }
 
-    public Result<Ticket> retrieveTicket(String eventShortName, String ticketUid, String username) {
+    public Result<TicketWithAdditionalFields> retrieveTicket(String eventShortName, String ticketUid, String username) {
         Optional<Event> maybeEvent = eventRepository.findOptionalByShortName(eventShortName)
             .filter(e -> userManager.findUserOrganizations(username).stream().anyMatch(o -> o.getId() == e.getOrganizationId()));
 
@@ -85,9 +86,13 @@ public class AttendeeManager {
         Event event = maybeEvent.get();
         Optional<Ticket> maybeTicket = ticketRepository.findOptionalByUUID(ticketUid).filter(t -> t.getEventId() == event.getId());
 
-        return new Result.Builder<Ticket>()
+        return new Result.Builder<TicketWithAdditionalFields>()
             .checkPrecondition(maybeTicket::isPresent, ErrorCode.custom("ticket_not_found", "ticket not found"))
-            .build(maybeTicket::get);
+            .build(() -> {
+                var ticket = maybeTicket.orElseThrow();
+                var descriptionAndValues = EventUtil.retrieveFieldValues(ticketRepository, ticketFieldRepository, additionalServiceItemRepository).apply(ticket);
+                return new TicketWithAdditionalFields(ticket, descriptionAndValues);
+            });
     }
 
     public Optional<List<SponsorAttendeeData>> retrieveScannedAttendees(String eventShortName, String username, ZonedDateTime start) {
