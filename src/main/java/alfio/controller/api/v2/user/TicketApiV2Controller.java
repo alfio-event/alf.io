@@ -54,7 +54,6 @@ import java.util.Optional;
 
 @RestController
 @AllArgsConstructor
-@RequestMapping("/api/v2/public/")
 public class TicketApiV2Controller {
 
     private final TicketHelper ticketHelper;
@@ -68,28 +67,31 @@ public class TicketApiV2Controller {
     private final NotificationManager notificationManager;
 
 
-    @GetMapping("/event/{eventName}/ticket/{ticketIdentifier}/code.png")
+    @GetMapping(value = {
+        "/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/code.png",
+        "/event/{eventName}/ticket/{ticketIdentifier}/code.png"
+    })
     public void showQrCode(@PathVariable("eventName") String eventName,
                            @PathVariable("ticketIdentifier") String ticketIdentifier, HttpServletResponse response) throws IOException {
         var oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
-        if(oData.isEmpty()) {
+        if (oData.isEmpty()) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
         var event = oData.get().getLeft();
         var ticket = oData.get().getRight();
 
-        String qrCodeText =  ticket.ticketCode(event.getPrivateKey());
+        String qrCodeText = ticket.ticketCode(event.getPrivateKey());
 
         response.setContentType("image/png");
 
-        try(var os = response.getOutputStream()) {
+        try (var os = response.getOutputStream()) {
             os.write(ImageUtil.createQRCode(qrCodeText));
             response.flushBuffer();
         }
     }
 
-    @GetMapping("/event/{eventName}/ticket/{ticketIdentifier}/download-ticket")
+    @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/download-ticket")
     public void generateTicketPdf(@PathVariable("eventName") String eventName,
                                   @PathVariable("ticketIdentifier") String ticketIdentifier,
                                   HttpServletResponse response) {
@@ -122,7 +124,7 @@ public class TicketApiV2Controller {
         });
     }
 
-    @PostMapping("/event/{eventName}/ticket/{ticketIdentifier}/send-ticket-by-email")
+    @PostMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/send-ticket-by-email")
     public ResponseEntity<Boolean> sendTicketByEmail(@PathVariable("eventName") String eventName,
                                                      @PathVariable("ticketIdentifier") String ticketIdentifier) {
 
@@ -142,7 +144,7 @@ public class TicketApiV2Controller {
         }).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @DeleteMapping("/event/{eventName}/ticket/{ticketIdentifier}")
+    @DeleteMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")
     public ResponseEntity<Boolean> releaseTicket(@PathVariable("eventName") String eventName,
                                                  @PathVariable("ticketIdentifier") String ticketIdentifier) {
         var oData = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
@@ -155,7 +157,7 @@ public class TicketApiV2Controller {
     }
 
 
-    @GetMapping("/event/{eventName}/ticket/{ticketIdentifier}")
+    @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")
     public ResponseEntity<TicketInfo> getTicketInfo(@PathVariable("eventName") String eventName,
                                                     @PathVariable("ticketIdentifier") String ticketIdentifier) {
 
@@ -209,7 +211,7 @@ public class TicketApiV2Controller {
         );
     }
 
-    @PutMapping("/event/{eventName}/ticket/{ticketIdentifier}")
+    @PutMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")
     public ResponseEntity<ValidatedResponse<Boolean>> updateTicketInfo(@PathVariable("eventName") String eventName,
                                                                        @PathVariable("ticketIdentifier") String ticketIdentifier,
                                                                        @RequestBody UpdateTicketOwnerForm updateTicketOwner,
