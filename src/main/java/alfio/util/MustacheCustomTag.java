@@ -20,6 +20,7 @@ import alfio.controller.api.support.TicketHelper;
 import com.samskivert.mustache.Mustache;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.text.StringEscapeUtils;
 import org.commonmark.Extension;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.Node;
@@ -134,8 +135,8 @@ public class MustacheCustomTag {
     private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
     private static final TextContentRenderer COMMONMARK_TEXT_RENDERER = TextContentRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
 
-    public static String renderToCommonmark(String input) {
-        Node document = COMMONMARK_PARSER.parse(input);
+    public static String renderToHtmlCommonmarkEscaped(String input) {
+        Node document = COMMONMARK_PARSER.parse(StringEscapeUtils.escapeHtml4(input));
         return COMMONMARK_RENDERER.render(document);
     }
 
