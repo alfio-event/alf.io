@@ -739,6 +739,11 @@ span.path {
 
 
 /* note, this must be reported and used in the front-end too */
+
+.markdown-content img {
+    max-width:100%;
+}
+
 .markdown-content table {
     width:100%;
 }
