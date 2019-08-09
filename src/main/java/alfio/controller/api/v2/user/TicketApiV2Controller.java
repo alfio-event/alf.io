@@ -39,6 +39,7 @@ import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -219,7 +220,7 @@ public class TicketApiV2Controller {
                                                                        Authentication authentication) {
 
         var a = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
-        if(a.isEmpty()) {
+        if (a.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
 
@@ -237,7 +238,10 @@ public class TicketApiV2Controller {
             locale,
             userDetails, false);
 
-        return assignmentResult.map(r -> ResponseEntity.ok(new ValidatedResponse<>(r.getLeft(), r.getLeft().isSuccess()))).orElseThrow(IllegalStateException::new);
+        return assignmentResult.map(r ->
+            ResponseEntity.status(r.getLeft().isSuccess() ? HttpStatus.OK : HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(new ValidatedResponse<>(r.getLeft(), r.getLeft().isSuccess()))
+        ).orElseThrow(IllegalStateException::new);
     }
 
 }
