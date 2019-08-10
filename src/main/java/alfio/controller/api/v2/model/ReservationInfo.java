@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing.ReferenceType;
@@ -41,7 +42,7 @@ public class ReservationInfo {
 
 
     private final TicketReservationStatus status;
-    private final boolean validatedBookingInformations;
+    private final boolean validatedBookingInformation;
     private final Map<String, String> formattedExpirationDate; // map of language -> formatted date
 
     private final String invoiceNumber;
@@ -57,20 +58,12 @@ public class ReservationInfo {
     //billing info from additional info
     private final Boolean addCompanyBillingDetails;
     //
-    private final String billingAddressCompany;
-    private final String billingAddressLine1;
-    private final String billingAddressLine2;
-    private final String billingAddressZip;
-    private final String billingAddressCity;
-    private final String vatCountryCode;
     private final String customerReference;
-    private final String vatNr;
     private final Boolean skipVatNr;
-    private final String italyEInvoicingFiscalCode;
-    private final ReferenceType italyEInvoicingReferenceType;
-    private final String italyEInvoicingReferenceAddresseeCode;
-    private final String italyEInvoicingReferencePEC;
-    // https://github.com/alfio-event/alf.io/issues/573
+
+    private final String billingAddress;
+
+    private final BillingDetails billingDetails;
 
     //reservation info group related info
     private final boolean containsCategoriesLinkedToGroups;

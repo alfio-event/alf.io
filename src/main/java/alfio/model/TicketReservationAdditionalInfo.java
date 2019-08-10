@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.support.JSONData;
 import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
@@ -30,6 +31,8 @@ public class TicketReservationAdditionalInfo {
     private final String billingAddressLine2;
     private final String billingAddressZip;
     private final String billingAddressCity;
+    private final String billingAddressCountry;
+    private final String vatNr;
     private final Boolean validated;
     private final Boolean skipVatNr;
     private final Boolean addCompanyBillingDetails;
@@ -43,7 +46,9 @@ public class TicketReservationAdditionalInfo {
                                            @Column("validated_for_overview") Boolean validated,
                                            @Column("skip_vat_nr") Boolean skipVatNr,
                                            @Column("add_company_billing_details") Boolean addCompanyBillingDetails,
-                                           @Column("invoicing_additional_information") String invoicingAdditionalInformation) {
+                                           @Column("invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInformation,
+                                           @Column("vat_country") String vatCountry,
+                                           @Column("vat_nr") String vatNr) {
         this.billingAddressCompany = billingAddressCompany;
         this.billingAddressLine1 = billingAddressLine1;
         this.billingAddressLine2 = billingAddressLine2;
@@ -52,8 +57,9 @@ public class TicketReservationAdditionalInfo {
         this.addCompanyBillingDetails = addCompanyBillingDetails;
         this.validated = validated;
         this.skipVatNr = skipVatNr;
-        this.invoicingAdditionalInfo = invoicingAdditionalInformation == null ? new TicketReservationInvoicingAdditionalInfo(null) :
-            Json.fromJson(invoicingAdditionalInformation, TicketReservationInvoicingAdditionalInfo.class);
+        this.invoicingAdditionalInfo = Optional.ofNullable(invoicingAdditionalInformation).orElseGet(() -> new TicketReservationInvoicingAdditionalInfo(null));
+        this.billingAddressCountry = vatCountry;
+        this.vatNr = vatNr;
     }
 
 
@@ -63,5 +69,16 @@ public class TicketReservationAdditionalInfo {
 
     public boolean hasSkipVatNr() {
         return Optional.ofNullable(skipVatNr).orElse(false);
+    }
+
+    public BillingDetails getBillingDetails() {
+        return new BillingDetails(billingAddressCompany,
+            billingAddressLine1,
+            billingAddressLine2,
+            billingAddressZip,
+            billingAddressCity,
+            billingAddressCountry,
+            vatNr,
+            invoicingAdditionalInfo);
     }
 }

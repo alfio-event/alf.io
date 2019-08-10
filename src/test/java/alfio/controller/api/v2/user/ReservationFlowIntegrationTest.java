@@ -1022,7 +1022,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(expectedHttpStatus, statusRes.getStatusCode());
         var status = statusRes.getBody();
         if (validated != null) {
-            assertEquals(validated, status.isValidatedBookingInformations());
+            assertEquals(validated, status.isValidatedBookingInformation());
         }
 
         if (reservationStatus != null) {

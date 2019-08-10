@@ -25,5 +25,5 @@ import lombok.Getter;
 public class ReservationStatusInfo {
 
     private final TicketReservation.TicketReservationStatus status;
-    private final boolean validatedBookingInformations;
+    private final boolean validatedBookingInformation;
 }
