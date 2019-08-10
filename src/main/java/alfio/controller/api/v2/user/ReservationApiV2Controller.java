@@ -183,20 +183,10 @@ public class ReservationApiV2Controller {
                 selectedPaymentProxy != null ? selectedPaymentProxy : reservation.getPaymentMethod(),
                 //
                 additionalInfo.getAddCompanyBillingDetails(),
-                additionalInfo.getBillingAddressCompany(),
-                additionalInfo.getBillingAddressLine1(),
-                additionalInfo.getBillingAddressLine2(),
-                additionalInfo.getBillingAddressZip(),
-                additionalInfo.getBillingAddressCity(),
-                reservation.getVatCountryCode(),
                 reservation.getCustomerReference(),
-                reservation.getVatNr(),
                 additionalInfo.getSkipVatNr(),
-                //
-                italianInvoicing.getFiscalCode(),
-                italianInvoicing.getReferenceType(),
-                italianInvoicing.getAddresseeCode(),
-                italianInvoicing.getPec(),
+                reservation.getBillingAddress(),
+                additionalInfo.getBillingDetails(),
                 //
                 containsCategoriesLinkedToGroups
                 ));
