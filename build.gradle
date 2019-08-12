@@ -432,6 +432,12 @@ void pgCtl(File binDir, File dataDir, String action) {
 task stopEmbeddedPgSQL {
     doLast {
         def descriptor = Paths.get(".", "alfio-itest", "pgsql-descriptor")
+
+        if (!Files.exists(descriptor)) {
+            System.out.println("No pid file, you may need to remove manually the alfio-itest folder")
+            return
+        }
+
         def r = Files.readAllLines(descriptor)
         def dataDir = new File(r.get(0))
         def binariesDir = new File(r.get(1))

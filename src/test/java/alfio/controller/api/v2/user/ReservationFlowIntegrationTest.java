@@ -20,7 +20,7 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.IndexController;
-import alfio.controller.api.AttendeeApiController;
+import alfio.controller.api.v1.AttendeeApiController;
 import alfio.controller.api.admin.AdditionalServiceApiController;
 import alfio.controller.api.admin.CheckInApiController;
 import alfio.controller.api.admin.EventApiController;
