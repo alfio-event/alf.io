@@ -103,7 +103,8 @@ public class IndexController {
         { path: 'waitingPayment', redirectTo: 'waiting-payment'},
         { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: [ReservationGuard] },
         { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: [ReservationGuard] },
-        { path: 'success', component: SuccessComponent, canActivate: [ReservationGuard]}
+        { path: 'success', component: SuccessComponent, canActivate: [ReservationGuard]},
+        { path: 'not-found', component: NotFoundComponent, canActivate: [ReservationGuard]}
     ]},
     { path: 'event/:eventShortName/ticket/:ticketId/view', component: ViewTicketComponent, canActivate: [LanguageGuard] }
     </pre>
@@ -119,6 +120,7 @@ public class IndexController {
         "/event/{eventShortName}/reservation/{reservationId}/waiting-payment",
         "/event/{eventShortName}/reservation/{reservationId}/processing-payment",
         "/event/{eventShortName}/reservation/{reservationId}/success",
+        "/event/{eventShortName}/reservation/{reservationId}/not-found",
         "/event/{eventShortName}/ticket/{ticketId}/view"
     })
     public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
