@@ -6,6 +6,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="_csrf" content="{{_csrf.token}}"/>
     <meta name="_csrf_header" content="{{_csrf.headerName}}"/>
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/css/source-sans-pro.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/bootstrap-admin.min.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/chartist/dist/chartist.min.css">
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/chartist-plugin-tooltip/dist/chartist-plugin-tooltip.css">
@@ -118,7 +119,7 @@
                             <span class="icon-bar"></span>
                             <span class="icon-bar"></span>
                         </button>
-                        <a class="navbar-brand logo title" data-ui-sref="index">Alf.io</a>
+                        <a data-ui-sref="index" style="margin-right: 10px;"><img alt="Alf.io" src="{{request.contextPath}}/resources/images/alfio-logo.svg" width="100" height="50"></a>
                     </div>
                     <div class="navbar-left">
                         <div class="collapse navbar-collapse" data-uib-collapse="ctrl.menuCollapsed">
