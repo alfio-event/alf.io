@@ -66,7 +66,7 @@ public class StripeConnectManager {
         var options = configurationManager.getFor(Set.of(STRIPE_SECRET_KEY, STRIPE_CONNECT_CLIENT_ID, STRIPE_CONNECT_CALLBACK, BASE_URL), ConfigurationLevel.organization(organizationId));
         String secret = options.get(STRIPE_SECRET_KEY).getRequiredValue();
         String clientId = options.get(STRIPE_CONNECT_CLIENT_ID).getRequiredValue();
-        String callbackURL = options.get(STRIPE_CONNECT_CALLBACK).getValueOrDefault(options.get(BASE_URL).getRequiredValue()) + CONNECT_REDIRECT_PATH;
+        String callbackURL = options.get(STRIPE_CONNECT_CALLBACK).getValueOrDefault(options.get(BASE_URL).getRequiredValue() + CONNECT_REDIRECT_PATH);
         String state = extensionManager.generateStripeConnectStateParam(organizationId).orElse(UUID.randomUUID().toString());
         String code = UUID.randomUUID().toString();
         OAuthConfig config = new OAuthConfig(clientId, secret, callbackURL, "read_write", null, state, "code", null, null, null);
