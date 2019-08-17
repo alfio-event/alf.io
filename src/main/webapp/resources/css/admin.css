@@ -248,6 +248,7 @@ td.cell-wrap {
         left: 20px;
         top: 9px;
         width: 75px;
+        font-size: 70% !important;
     }
 
     .category-conf .setting input[type="text"],
