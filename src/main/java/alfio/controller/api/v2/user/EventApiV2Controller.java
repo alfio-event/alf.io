@@ -139,6 +139,7 @@ public class EventApiV2Controller {
                     MAPS_CLIENT_API_KEY,
                     MAPS_HERE_APP_ID,
                     MAPS_HERE_APP_CODE,
+                    MAPS_GEOAPIFY_API_KEY,
                     RECAPTCHA_API_KEY,
                     BANK_ACCOUNT_NR,
                     BANK_ACCOUNT_OWNER,
@@ -158,7 +159,8 @@ public class EventApiV2Controller {
                     MAPS_PROVIDER, configurationsValues.get(MAPS_PROVIDER).getValue(),
                     MAPS_CLIENT_API_KEY, configurationsValues.get(MAPS_CLIENT_API_KEY).getValue(),
                     MAPS_HERE_APP_ID, configurationsValues.get(MAPS_HERE_APP_ID).getValue(),
-                    MAPS_HERE_APP_CODE, configurationsValues.get(MAPS_HERE_APP_CODE).getValue());
+                    MAPS_HERE_APP_CODE, configurationsValues.get(MAPS_HERE_APP_CODE).getValue(),
+                    MAPS_GEOAPIFY_API_KEY, configurationsValues.get(MAPS_GEOAPIFY_API_KEY).getValue());
 
                 var ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
 

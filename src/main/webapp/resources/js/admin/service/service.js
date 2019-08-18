@@ -527,6 +527,31 @@
             })
         }
 
+        function handleGeoApifyGeolocate(location, locService, apiKeyAndProvider, resolve, reject) {
+            var key = apiKeyAndProvider.keys['MAPS_GEOAPIFY_API_KEY'];
+            $http.get('https://api.geoapify.com/v1/geocode/search', {params: {apiKey: key, limit: 1, text: location}}).then(function(res) {
+                var features = res.data.features;
+                if(features && features.length > 0) {
+                    var geo = features[0].geometry;
+                    var ret = {latitude: geo.coordinates[1], longitude: geo.coordinates[0]};
+                    $q.all([getMapUrl(ret.latitude, ret.longitude), locService.getTimezone(ret.latitude, ret.longitude)]).then(function(success) {
+                        ret.mapUrl = success[0];
+                        var tz = success[1];
+                        if(tz.data) {
+                            ret.timeZone = tz.data;
+                        }
+                        resolve(ret);
+                    }, function () {
+                        reject();
+                    });
+                } else {
+                    reject();
+                }
+            }, function () {
+                reject();
+            });
+        }
+
         return {
             mapApiKey: function() {
                 return $http.get('/admin/api/location/map-provider-client-api-key').then(function(res) {
@@ -543,6 +568,8 @@
                             handleGoogleGeolocate(location, locService, apiKeyAndProvider, resolve, reject);
                         } else if (apiKeyAndProvider.provider === 'HERE') {
                             handleHEREGeolocate(location, locService, apiKeyAndProvider, resolve, reject);
+                        } else if (apiKeyAndProvider.provider === 'GEOAPIFY') {
+                            handleGeoApifyGeolocate(location, locService, apiKeyAndProvider, resolve, reject);
                         } else {
                             resolve({latitude: null, longitude: null});
                         }

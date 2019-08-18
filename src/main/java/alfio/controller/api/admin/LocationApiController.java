@@ -76,7 +76,7 @@ public class LocationApiController {
     }
 
     private Map<ConfigurationKeys, Optional<String>> getGeoConf() {
-        var keys = Set.of(MAPS_PROVIDER, MAPS_CLIENT_API_KEY, MAPS_HERE_APP_ID, MAPS_HERE_APP_CODE);
+        var keys = EnumSet.of(MAPS_PROVIDER, MAPS_CLIENT_API_KEY, MAPS_HERE_APP_ID, MAPS_HERE_APP_CODE, MAPS_GEOAPIFY_API_KEY);
         var conf = configurationManager.getFor(keys, ConfigurationLevel.system());
         var res = new EnumMap<ConfigurationKeys, Optional<String>>(ConfigurationKeys.class);
         conf.forEach((k,v) -> res.put(k, v.getValue()));

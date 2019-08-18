@@ -118,7 +118,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
                         + " frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://m.stripe.network https://m.stripe.com https://www.google.com;"
                         + " font-src 'self';"//
                         + " media-src blob: 'self';"//for loading camera api
-                        + " connect-src 'self' https://checkout.stripe.com https://m.stripe.network https://m.stripe.com https://maps.googleapis.com/ https://geocoder.cit.api.here.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
+                        + " connect-src 'self' https://checkout.stripe.com https://m.stripe.network https://m.stripe.com https://maps.googleapis.com/ https://geocoder.cit.api.here.com https://api.geoapify.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
                         + reportUri);
             }
         };

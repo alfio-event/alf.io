@@ -149,7 +149,8 @@
                         MAPS_PROVIDER: _.find(original['MAP'], function(e) {return e.key === 'MAPS_PROVIDER';}),
                         MAPS_CLIENT_API_KEY: _.find(original['MAP'], function(e) {return e.key === 'MAPS_CLIENT_API_KEY';}),
                         MAPS_HERE_APP_ID: _.find(original['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_ID';}),
-                        MAPS_HERE_APP_CODE: _.find(original['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_CODE';})
+                        MAPS_HERE_APP_CODE: _.find(original['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_CODE';}),
+                        MAPS_GEOAPIFY_API_KEY: _.find(original['MAP'], function(e) {return e.key === 'MAPS_GEOAPIFY_API_KEY';}),
                     }
                 }
 
@@ -613,7 +614,8 @@
                                 MAPS_PROVIDER: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_PROVIDER';}),
                                 MAPS_CLIENT_API_KEY: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_CLIENT_API_KEY';}),
                                 MAPS_HERE_APP_ID: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_ID';}),
-                                MAPS_HERE_APP_CODE: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_CODE';})
+                                MAPS_HERE_APP_CODE: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_HERE_APP_CODE';}),
+                                MAPS_GEOAPIFY_API_KEY: _.find(settings['MAP'], function(e) {return e.key === 'MAPS_GEOAPIFY_API_KEY';})
                             };
                         });
                         ctrl.saveSettings = function(frm, settings) {
