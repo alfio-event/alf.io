@@ -127,9 +127,7 @@ public class EventApiV2Controller {
 
                 var messageSource = messageSourceManager.getMessageSourceForEvent(event);
 
-                var descriptions = applyCommonMark(eventDescriptionRepository.findByEventIdAndType(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION)
-                    .stream()
-                    .collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription)));
+                var descriptions = applyCommonMark(eventDescriptionRepository.findDescriptionByEventIdAsMap(event.getId()));
 
                 var organization = organizationRepository.getContactById(event.getOrganizationId());
 
