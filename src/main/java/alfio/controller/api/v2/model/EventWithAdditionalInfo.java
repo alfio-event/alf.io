@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public class EventWithAdditionalInfo implements DateValidity {
     private final Event event;
     private final String mapUrl;
-    private final Organization organization;
+    private final Organization.OrganizationContact organization;
     private final Map<String, String> description;
     private final Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods;
 

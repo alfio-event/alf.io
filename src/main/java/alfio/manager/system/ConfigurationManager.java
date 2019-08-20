@@ -439,12 +439,6 @@ public class ConfigurationManager {
             conf.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
     }
 
-    public boolean isRecaptchaForTicketSelectionEnabled(EventAndOrganizationId event) {
-        var res = getFor(Set.of(ENABLE_CAPTCHA_FOR_TICKET_SELECTION, RECAPTCHA_API_KEY), ConfigurationLevel.event(event));
-        return res.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault(false) &&
-            res.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
-    }
-
     // https://github.com/alfio-event/alf.io/issues/573
     public boolean canGenerateReceiptOrInvoiceToCustomer(EventAndOrganizationId event) {
         return !isItalianEInvoicingEnabled(event);
