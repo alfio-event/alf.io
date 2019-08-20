@@ -124,8 +124,10 @@ public class EventApiV2Controller {
     public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable("eventName") String eventName, HttpSession session) {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
             .map(event -> {
-
-                var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+                //
+                var messageSourceAndOverride = messageSourceManager.getMessageSourceForEventAndOverride(event);
+                var messageSource = messageSourceAndOverride.getLeft();
+                var i18nOverride = messageSourceAndOverride.getRight();
 
                 var descriptions = applyCommonMark(eventDescriptionRepository.findDescriptionByEventIdAsMap(event.getId()));
 
@@ -232,10 +234,6 @@ public class EventApiV2Controller {
 
                 //analytics configuration
                 var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
-                //
-
-                //
-                var i18nOverride = messageSourceManager.getEventMessageSourceOverride(event);
                 //
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,

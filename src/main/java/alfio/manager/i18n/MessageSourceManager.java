@@ -19,6 +19,7 @@ package alfio.manager.i18n;
 import alfio.model.EventAndOrganizationId;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
+import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.AbstractMessageSource;
 
@@ -26,7 +27,6 @@ import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-
 
 public class MessageSourceManager {
 
@@ -43,9 +43,13 @@ public class MessageSourceManager {
         return messageSource.getKeys(basename, locale);
     }
 
+    public Pair<MessageSource, Map<String, Map<String, String>>> getMessageSourceForEventAndOverride(EventAndOrganizationId eventAndOrganizationId) {
+        var override = configurationRepository.getEventOverrideMessages(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId());
+        return Pair.of(new MessageSourceWithOverride(messageSource, override), override);
+    }
+
     public MessageSource getMessageSourceForEvent(EventAndOrganizationId eventAndOrganizationId) {
-        var res = getEventMessageSourceOverride(eventAndOrganizationId);
-        return new MessageSourceWithOverride(messageSource, res);
+        return getMessageSourceForEventAndOverride(eventAndOrganizationId).getLeft();
     }
 
     public MessageSource getRootMessageSource() {
@@ -60,11 +64,7 @@ public class MessageSourceManager {
         }
     }
 
-    public Map<String, Map<String, String>> getEventMessageSourceOverride(EventAndOrganizationId eventAndOrganizationId) {
-        return configurationRepository.getEventOverrideMessages(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId());
-    }
-
-    private static final class MessageSourceWithOverride extends AbstractMessageSource {
+    private static class MessageSourceWithOverride extends AbstractMessageSource {
 
         private final CustomResourceBundleMessageSource messageSource;
         private final Map<String, Map<String, String>> override;
