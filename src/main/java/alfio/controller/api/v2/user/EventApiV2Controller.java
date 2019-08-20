@@ -154,8 +154,10 @@ public class EventApiV2Controller {
                     GOOGLE_ANALYTICS_ANONYMOUS_MODE,
                     // captcha
                     ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
-                    RECAPTCHA_API_KEY
+                    RECAPTCHA_API_KEY,
+                    ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS
                     //
+
                 ), ConfigurationLevel.event(event));
 
                 var geoInfoConfiguration = Map.of(
@@ -181,7 +183,7 @@ public class EventApiV2Controller {
                     recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null);
                 }
                 //
-                boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(ConfigurationLevel.event(event));
+                boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurationsValues);
                 var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePaymentAndFreeEnabled, recaptchaApiKey);
 
 
