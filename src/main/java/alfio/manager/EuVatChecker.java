@@ -30,6 +30,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
@@ -40,7 +41,7 @@ import java.util.function.BooleanSupplier;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EventType.*;
-import static alfio.model.system.ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @Log4j2
@@ -144,8 +145,17 @@ public class EuVatChecker {
     }
 
     private static boolean reverseChargeEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
-        var res = configurationManager.getFor(Set.of(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, ConfigurationKeys.COUNTRY_OF_BUSINESS), ConfigurationLevel.event(eventAndOrganizationId));
-        return res.get(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault(false) &&
+        var res = configurationManager.getFor(Set.of(ENABLE_EU_VAT_DIRECTIVE, ConfigurationKeys.COUNTRY_OF_BUSINESS), ConfigurationLevel.event(eventAndOrganizationId));
+        return reverseChargeEnabled(res);
+    }
+
+    /**
+     * @param res require the keys ENABLE_EU_VAT_DIRECTIVE, COUNTRY_OF_BUSINESS
+     * @return
+     */
+    public static boolean reverseChargeEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> res) {
+        Validate.isTrue(res.containsKey(ENABLE_EU_VAT_DIRECTIVE) && res.containsKey(COUNTRY_OF_BUSINESS));
+        return res.get(ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault(false) &&
             res.get(ConfigurationKeys.COUNTRY_OF_BUSINESS).isPresent();
     }
 

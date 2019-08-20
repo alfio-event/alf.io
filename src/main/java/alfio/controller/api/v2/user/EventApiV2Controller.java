@@ -84,7 +84,6 @@ public class EventApiV2Controller {
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final PaymentManager paymentManager;
     private final MessageSourceManager messageSourceManager;
-    private final EuVatChecker vatChecker;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final WaitingQueueManager waitingQueueManager;
@@ -160,7 +159,10 @@ public class EventApiV2Controller {
                     GENERATE_ONLY_INVOICE,
                     //
                     INVOICE_ADDRESS,
-                    VAT_NR
+                    VAT_NR,
+                    // required by EuVatChecker.reverseChargeEnabled
+                    ENABLE_EU_VAT_DIRECTIVE,
+                    COUNTRY_OF_BUSINESS
                 ), ConfigurationLevel.event(event));
 
                 var geoInfoConfiguration = Map.of(
@@ -202,7 +204,7 @@ public class EventApiV2Controller {
 
                 //invoicing information
                 boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
-                boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event);
+                boolean euVatCheckingEnabled = EuVatChecker.reverseChargeEnabled(configurationsValues);
                 boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(configurationsValues) || euVatCheckingEnabled;
                 boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(configurationsValues);
                 boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).getValueAsBooleanOrDefault(false);
