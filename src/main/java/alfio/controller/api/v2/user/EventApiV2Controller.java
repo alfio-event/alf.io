@@ -201,7 +201,7 @@ public class EventApiV2Controller {
                 var formattedEndTime = Formatters.getFormattedDate(event, event.getEnd(), "common.event.time-format", messageSource);
 
                 //invoicing information
-                boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
+                boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(configurationsValues);
                 boolean euVatCheckingEnabled = EuVatChecker.reverseChargeEnabled(configurationsValues);
                 boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(configurationsValues) || euVatCheckingEnabled;
                 boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(configurationsValues);

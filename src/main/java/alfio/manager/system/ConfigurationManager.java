@@ -457,6 +457,10 @@ public class ConfigurationManager {
         return !isItalianEInvoicingEnabled(event);
     }
 
+    public boolean canGenerateReceiptOrInvoiceToCustomer(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
+        return !isItalianEInvoicingEnabled(configurationValues);
+    }
+
     public boolean isInvoiceOnly(EventAndOrganizationId event) {
         var res = getFor(Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING), ConfigurationLevel.event(event));
         return isInvoiceOnly(res);
@@ -472,7 +476,13 @@ public class ConfigurationManager {
     }
 
     public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
-        return getFor(ENABLE_ITALY_E_INVOICING, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
+        var res = getFor(List.of(ENABLE_ITALY_E_INVOICING), ConfigurationLevel.event(event));
+        return isItalianEInvoicingEnabled(res);
+    }
+
+    public boolean isItalianEInvoicingEnabled(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
+        Validate.isTrue(configurationValues.containsKey(ENABLE_ITALY_E_INVOICING));
+        return configurationValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
     }
 
     //
