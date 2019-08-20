@@ -429,7 +429,16 @@ public class ConfigurationManager {
 
     public boolean hasAllConfigurationsForInvoice(EventAndOrganizationId event) {
         var r = getFor(Set.of(INVOICE_ADDRESS, VAT_NR), ConfigurationLevel.event(event));
-        return r.get(INVOICE_ADDRESS).isPresent() && r.get(VAT_NR).isPresent();
+        return hasAllConfigurationsForInvoice(r);
+    }
+
+    /**
+     * @param configurationValues note: require keys INVOICE_ADDRESS, VAT_NR
+     * @return
+     */
+    public boolean hasAllConfigurationsForInvoice(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
+        Validate.isTrue(configurationValues.containsKey(INVOICE_ADDRESS) && configurationValues.containsKey(VAT_NR));
+        return configurationValues.get(INVOICE_ADDRESS).isPresent() && configurationValues.get(VAT_NR).isPresent();
     }
 
     public boolean isRecaptchaForOfflinePaymentAndFreeEnabled(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
@@ -450,7 +459,16 @@ public class ConfigurationManager {
 
     public boolean isInvoiceOnly(EventAndOrganizationId event) {
         var res = getFor(Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING), ConfigurationLevel.event(event));
-        return res.get(GENERATE_ONLY_INVOICE).getValueAsBooleanOrDefault(false) || res.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
+        return isInvoiceOnly(res);
+    }
+
+    /**
+     * @param configurationValues note: require the key GENERATE_ONLY_INVOICE and ENABLE_ITALY_E_INVOICING to be present
+     * @return
+     */
+    public boolean isInvoiceOnly(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
+        Validate.isTrue(configurationValues.containsKey(GENERATE_ONLY_INVOICE) && configurationValues.containsKey(ENABLE_ITALY_E_INVOICING));
+        return configurationValues.get(GENERATE_ONLY_INVOICE).getValueAsBooleanOrDefault(false) || configurationValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
     }
 
     public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {

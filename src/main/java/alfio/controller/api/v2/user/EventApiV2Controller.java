@@ -155,9 +155,12 @@ public class EventApiV2Controller {
                     // captcha
                     ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
                     RECAPTCHA_API_KEY,
-                    ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS
+                    ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS,
                     //
-
+                    GENERATE_ONLY_INVOICE,
+                    //
+                    INVOICE_ADDRESS,
+                    VAT_NR
                 ), ConfigurationLevel.event(event));
 
                 var geoInfoConfiguration = Map.of(
@@ -200,8 +203,8 @@ public class EventApiV2Controller {
                 //invoicing information
                 boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
                 boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event);
-                boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || euVatCheckingEnabled;
-                boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
+                boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(configurationsValues) || euVatCheckingEnabled;
+                boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(configurationsValues);
                 boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).getValueAsBooleanOrDefault(false);
                 boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
                 boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).getValueAsBooleanOrDefault(false);
