@@ -71,24 +71,20 @@ public class LocationApiController {
     public String getMapImage(
         @RequestParam(name = "lat", required = false) String lat,
         @RequestParam(name = "lng", required = false) String lng) {
-        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf();
-        return LocationDescriptor.getMapUrl(lat, lng, geoInfoConfiguration);
+        return LocationDescriptor.getMapUrl(lat, lng, getGeoConf());
     }
 
-    private Map<ConfigurationKeys, Optional<String>> getGeoConf() {
+    private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> getGeoConf() {
         var keys = Set.of(MAPS_PROVIDER, MAPS_CLIENT_API_KEY, MAPS_HERE_APP_ID, MAPS_HERE_APP_CODE);
-        var conf = configurationManager.getFor(keys, ConfigurationLevel.system());
-        var res = new EnumMap<ConfigurationKeys, Optional<String>>(ConfigurationKeys.class);
-        conf.forEach((k,v) -> res.put(k, v.getValue()));
-        return res;
+        return configurationManager.getFor(keys, ConfigurationLevel.system());
     }
 
     @GetMapping("/location/map-provider-client-api-key")
     public ProviderAndKeys getGeoInfoProviderAndKeys() {
-        Map<ConfigurationKeys, Optional<String>> geoInfoConfiguration = getGeoConf();
+        var geoInfoConfiguration = getGeoConf();
         ConfigurationKeys.GeoInfoProvider provider = LocationDescriptor.getProvider(geoInfoConfiguration);
         Map<ConfigurationKeys, String> apiKeys = new EnumMap<>(ConfigurationKeys.class);
-        geoInfoConfiguration.forEach((k,v) -> v.ifPresent(value -> apiKeys.put(k, value)));
+        geoInfoConfiguration.forEach((k,v) -> v.getValue().ifPresent(value -> apiKeys.put(k, value)));
         return new ProviderAndKeys(provider, apiKeys);
     }
 

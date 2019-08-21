@@ -16,6 +16,7 @@
  */
 package alfio.model.modification.support;
 
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -55,13 +56,13 @@ public class LocationDescriptor {
         return StringUtils.isNotBlank(mapUrl);
     }
 
-    public static LocationDescriptor fromGeoData(Pair<String, String> coordinates, TimeZone timeZone, Map<ConfigurationKeys, Optional<String>> geoConf) {
+    public static LocationDescriptor fromGeoData(Pair<String, String> coordinates, TimeZone timeZone, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> geoConf) {
         String lat = coordinates.getLeft();
         String lng = coordinates.getRight();
         return new LocationDescriptor(timeZone.getID(), coordinates.getLeft(), coordinates.getRight(), getMapUrl(lat, lng, geoConf));
     }
 
-    public static String getMapUrl(String lat, String lng, Map<ConfigurationKeys, Optional<String>> geoConf) {
+    public static String getMapUrl(String lat, String lng, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> geoConf) {
         Map<String, String> params = new HashMap<>();
         params.put("latitude", lat);
         params.put("longitude", lng);
@@ -75,12 +76,12 @@ public class LocationDescriptor {
     }
 
     // for backward compatibility reason, the logic is not straightforward
-    public static ConfigurationKeys.GeoInfoProvider getProvider(Map<ConfigurationKeys, Optional<String>> geoConf) {
+    public static ConfigurationKeys.GeoInfoProvider getProvider(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> geoConf) {
         if((!geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) || geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isEmpty()) &&
             (geoConf.containsKey(ConfigurationKeys.MAPS_CLIENT_API_KEY) && geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).isPresent())) {
             return ConfigurationKeys.GeoInfoProvider.GOOGLE;
         } else if (geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) && geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isPresent()) {
-            return geoConf.get(ConfigurationKeys.MAPS_PROVIDER).map(ConfigurationKeys.GeoInfoProvider::valueOf).orElseThrow(IllegalStateException::new);
+            return geoConf.get(ConfigurationKeys.MAPS_PROVIDER).getValue().map(ConfigurationKeys.GeoInfoProvider::valueOf).orElseThrow(IllegalStateException::new);
         } else {
             return ConfigurationKeys.GeoInfoProvider.NONE;
         }
@@ -94,12 +95,12 @@ public class LocationDescriptor {
         }
     }
 
-    private static void fillParams(ConfigurationKeys.GeoInfoProvider provider, Map<ConfigurationKeys, Optional<String>> geoConf, Map<String, String> params) {
+    private static void fillParams(ConfigurationKeys.GeoInfoProvider provider, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> geoConf, Map<String, String> params) {
         if(ConfigurationKeys.GeoInfoProvider.GOOGLE == provider) {
-            geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).ifPresent(key -> params.put("key", key));
+            geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).getValue().ifPresent(key -> params.put("key", key));
         } else if (ConfigurationKeys.GeoInfoProvider.HERE == provider) {
-            geoConf.get(ConfigurationKeys.MAPS_HERE_APP_ID).ifPresent(appId -> params.put("appId", appId));
-            geoConf.get(ConfigurationKeys.MAPS_HERE_APP_CODE).ifPresent(appCode -> params.put("appCode", appCode));
+            geoConf.get(ConfigurationKeys.MAPS_HERE_APP_ID).getValue().ifPresent(appId -> params.put("appId", appId));
+            geoConf.get(ConfigurationKeys.MAPS_HERE_APP_CODE).getValue().ifPresent(appCode -> params.put("appCode", appCode));
         }
     }
 
