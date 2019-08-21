@@ -30,6 +30,9 @@ public interface OrganizationRepository {
     @Query("SELECT * FROM organization where id = :id")
     Organization getById(@Bind("id") int id);
 
+    @Query("select name, email from organization where id = :id")
+    Organization.OrganizationContact getContactById(@Bind("id") int id);
+
     @Query("SELECT * FROM organization where name = :name")
     Optional<Organization> findByName(@Bind("name") String name);
 

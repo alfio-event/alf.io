@@ -364,8 +364,9 @@ public class WebSecurityConfig {
             public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
                 HttpServletRequest req = (HttpServletRequest) request;
                 HttpServletResponse res = (HttpServletResponse) response;
-                boolean captchaEnabled = configurationManager.getForSystem(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true);
-                if(captchaEnabled && requestMatcher.matches(req) && !recaptchaService.checkRecaptcha(null, req)) {
+                if(requestMatcher.matches(req) &&
+                    configurationManager.getForSystem(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true) &&
+                    !recaptchaService.checkRecaptcha(null, req)) {
                     res.sendRedirect(recaptchaFailureUrl);
                     return;
                 }

@@ -57,4 +57,15 @@ public class Organization {
             .append(id)
             .toHashCode();
     }
+
+    @Getter
+    public static class OrganizationContact {
+        private final String name;
+        private final String email;
+
+        public OrganizationContact(@Column("name") String name, @Column("email") String email) {
+            this.name = name;
+            this.email = email;
+        }
+    }
 }

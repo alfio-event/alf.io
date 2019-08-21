@@ -42,8 +42,8 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
-import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpHeaders;
@@ -84,7 +84,6 @@ public class EventApiV2Controller {
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final PaymentManager paymentManager;
     private final MessageSourceManager messageSourceManager;
-    private final EuVatChecker vatChecker;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final WaitingQueueManager waitingQueueManager;
@@ -125,16 +124,16 @@ public class EventApiV2Controller {
     public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable("eventName") String eventName, HttpSession session) {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
             .map(event -> {
+                //
+                var messageSourceAndOverride = messageSourceManager.getMessageSourceForEventAndOverride(event);
+                var messageSource = messageSourceAndOverride.getLeft();
+                var i18nOverride = messageSourceAndOverride.getRight();
 
-                var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+                var descriptions = applyCommonMark(eventDescriptionRepository.findDescriptionByEventIdAsMap(event.getId()));
 
-                var descriptions = applyCommonMark(eventDescriptionRepository.findByEventIdAndType(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION)
-                    .stream()
-                    .collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription)));
+                var organization = organizationRepository.getContactById(event.getOrganizationId());
 
-                var organization = organizationRepository.getById(event.getOrganizationId());
-
-                var configurationsValues = configurationManager.getFor(Arrays.asList(
+                var configurationsValues = configurationManager.getFor(List.of(
                     MAPS_PROVIDER,
                     MAPS_CLIENT_API_KEY,
                     MAPS_HERE_APP_ID,
@@ -151,7 +150,19 @@ public class EventApiV2Controller {
                     DISPLAY_DISCOUNT_CODE_BOX,
                     USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL,
                     GOOGLE_ANALYTICS_KEY,
-                    GOOGLE_ANALYTICS_ANONYMOUS_MODE
+                    GOOGLE_ANALYTICS_ANONYMOUS_MODE,
+                    // captcha
+                    ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
+                    RECAPTCHA_API_KEY,
+                    ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS,
+                    //
+                    GENERATE_ONLY_INVOICE,
+                    //
+                    INVOICE_ADDRESS,
+                    VAT_NR,
+                    // required by EuVatChecker.reverseChargeEnabled
+                    ENABLE_EU_VAT_DIRECTIVE,
+                    COUNTRY_OF_BUSINESS
                 ), ConfigurationLevel.event(event));
 
                 var geoInfoConfiguration = Map.of(
@@ -171,13 +182,13 @@ public class EventApiV2Controller {
                 });
 
                 //
-                boolean captchaForTicketSelection = configurationManager.isRecaptchaForTicketSelectionEnabled(event);
+                boolean captchaForTicketSelection = isRecaptchaForTicketSelectionEnabled(configurationsValues);
                 String recaptchaApiKey = null;
                 if (captchaForTicketSelection) {
                     recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null);
                 }
                 //
-                boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(ConfigurationLevel.event(event));
+                boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurationsValues);
                 var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePaymentAndFreeEnabled, recaptchaApiKey);
 
 
@@ -192,10 +203,10 @@ public class EventApiV2Controller {
                 var formattedEndTime = Formatters.getFormattedDate(event, event.getEnd(), "common.event.time-format", messageSource);
 
                 //invoicing information
-                boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
-                boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event);
-                boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || euVatCheckingEnabled;
-                boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
+                boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(configurationsValues);
+                boolean euVatCheckingEnabled = EuVatChecker.reverseChargeEnabled(configurationsValues);
+                boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(configurationsValues) || euVatCheckingEnabled;
+                boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(configurationsValues);
                 boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).getValueAsBooleanOrDefault(false);
                 boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
                 boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).getValueAsBooleanOrDefault(false);
@@ -223,10 +234,6 @@ public class EventApiV2Controller {
 
                 //analytics configuration
                 var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
-                //
-
-                //
-                var i18nOverride = messageSourceManager.getEventMessageSourceOverride(event);
                 //
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
@@ -443,9 +450,11 @@ public class EventApiV2Controller {
             }
 
             Optional<String> promoCodeDiscount = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getRight).map(PromoCodeDiscount::getPromoCode);
+            var configurationValues = configurationManager.getFor(List.of(
+                ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
+                RECAPTCHA_API_KEY), ConfigurationLevel.event(event));
 
-
-            if (isCaptchaInvalid(reservation.getCaptcha(), request.getRequest(), event)) {
+            if (isCaptchaInvalid(reservation.getCaptcha(), request.getRequest(), configurationValues)) {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
 
@@ -654,8 +663,14 @@ public class EventApiV2Controller {
         return headers;
     }
 
-    private boolean isCaptchaInvalid(String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
-        return configurationManager.isRecaptchaForTicketSelectionEnabled(event)
+    private boolean isRecaptchaForTicketSelectionEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationValues) {
+        Validate.isTrue(configurationValues.containsKey(ENABLE_CAPTCHA_FOR_TICKET_SELECTION) && configurationValues.containsKey(RECAPTCHA_API_KEY));
+        return configurationValues.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault(false) &&
+            configurationValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
+    }
+
+    private boolean isCaptchaInvalid(String recaptchaResponse, HttpServletRequest request, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationValues) {
+        return isRecaptchaForTicketSelectionEnabled(configurationValues)
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 
