@@ -165,13 +165,7 @@ public class EventApiV2Controller {
                     COUNTRY_OF_BUSINESS
                 ), ConfigurationLevel.event(event));
 
-                var geoInfoConfiguration = Map.of(
-                    MAPS_PROVIDER, configurationsValues.get(MAPS_PROVIDER).getValue(),
-                    MAPS_CLIENT_API_KEY, configurationsValues.get(MAPS_CLIENT_API_KEY).getValue(),
-                    MAPS_HERE_APP_ID, configurationsValues.get(MAPS_HERE_APP_ID).getValue(),
-                    MAPS_HERE_APP_CODE, configurationsValues.get(MAPS_HERE_APP_CODE).getValue());
-
-                var ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
+                var locationDescriptor = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
 
                 Map<PaymentMethod, PaymentProxyWithParameters> availablePaymentMethods = new EnumMap<>(PaymentMethod.class);
 
@@ -236,7 +230,7 @@ public class EventApiV2Controller {
                 var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
                 //
 
-                return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
+                return new ResponseEntity<>(new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
                     formattedEndDate, formattedEndTime,

@@ -562,6 +562,10 @@ public class ConfigurationManager {
             return configuration.isPresent();
         }
 
+        public boolean isEmpty() {
+            return configuration.isEmpty();
+        }
+
         public Optional<String> getValue() {
             return configuration.map(ConfigurationKeyValuePathLevel::getValue);
         }
