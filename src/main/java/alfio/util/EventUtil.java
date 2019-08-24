@@ -20,6 +20,7 @@ import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.system.ConfigurationKeys;
 import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
@@ -73,22 +74,27 @@ public class EventUtil {
         .toFormatter(Locale.ROOT);
 
     public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
-        return !configurationManager.getFor(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false)
-            && checkWaitingQueuePreconditions(event, categories, configurationManager, noTicketsAvailable);
+        var confVal = configurationManager.getFor(List.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE), ConfigurationLevel.event(event));
+        return !confVal.get(STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault(false)
+            && checkWaitingQueuePreconditions(event, categories, noTicketsAvailable, confVal);
     }
 
-    public static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
+    private static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, Predicate<EventAndOrganizationId> noTicketsAvailable, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> confVal) {
         return findLastCategory(categories).map(lastCategory -> {
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             if(isPreSales(event, categories)) {
-                return configurationManager.getFor(ENABLE_PRE_REGISTRATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
-            } else if(configurationManager.getFor(ENABLE_WAITING_QUEUE, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false)) {
+                return confVal.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false);
+            } else if(confVal.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false)) {
                 return now.isBefore(lastCategory.getZonedExpiration()) && noTicketsAvailable.test(event);
             }
             return false;
         }).orElse(false);
     }
 
+    public static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
+        var confVal = configurationManager.getFor(List.of(ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE), ConfigurationLevel.event(event));
+        return checkWaitingQueuePreconditions(event, categories, noTicketsAvailable, confVal);
+    }
 
     private static Optional<SaleableTicketCategory> findLastCategory(List<SaleableTicketCategory> categories) {
         return sortCategories(categories, (c1, c2) -> c2.getUtcExpiration().compareTo(c1.getUtcExpiration())).findFirst();
@@ -101,8 +107,6 @@ public class EventUtil {
     private static Stream<SaleableTicketCategory> sortCategories(List<SaleableTicketCategory> categories, Comparator<SaleableTicketCategory> comparator) {
         return Optional.ofNullable(categories).orElse(Collections.emptyList()).stream().sorted(comparator);
     }
-
-
 
     public static boolean isPreSales(Event event, List<SaleableTicketCategory> categories) {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
@@ -209,7 +213,4 @@ public class EventUtil {
                 .collect(Collectors.toList());
         };
     }
-
-
-
 }

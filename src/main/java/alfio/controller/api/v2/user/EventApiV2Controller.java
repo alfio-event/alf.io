@@ -308,7 +308,7 @@ public class EventApiV2Controller {
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
                 .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
                 .map((m) -> {
-                    int maxTickets = configurationManager.getFor(ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(event, m.getId())).getValueAsIntOrDefault(5);
+                    int maxTickets = configurationManager.getFor(ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(event, m.getId())).getValueAsIntOrDefault(5); //<- TODO: N+1, find a better way
                     PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null);
                     if (specialCode.isPresent()) {
                         maxTickets = Math.min(1, maxTickets);
@@ -618,8 +618,8 @@ public class EventApiV2Controller {
         return ticketCategory.isAccessRestricted() && ticketCategory.getId() == promoCodeDiscount.getHiddenCategoryId();
     }
 
-    private ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>> checkCode(EventAndOrganizationId event, String promoCode) {
-        ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
+    private ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>> checkCode(Event event, String promoCode) {
+        ZoneId eventZoneId = event.getZoneId();
         ZonedDateTime now = ZonedDateTime.now(eventZoneId);
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
