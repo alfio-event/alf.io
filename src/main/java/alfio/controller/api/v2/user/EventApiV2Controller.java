@@ -295,6 +295,8 @@ public class EventApiV2Controller {
         //
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
 
+            var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), ConfigurationLevel.event(event));
+            var ticketCategoryLevelConfiguration = configurationManager.getAllCategoriesAndValueWith(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
             var messageSource = messageSourceManager.getMessageSourceForEvent(event);
             var appliedPromoCode = checkCode(event, code);
 
@@ -309,7 +311,7 @@ public class EventApiV2Controller {
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
                 .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
                 .map((m) -> {
-                    int maxTickets = configurationManager.getFor(ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(event, m.getId())).getValueAsIntOrDefault(5); //<- TODO: N+1, find a better way
+                    int maxTickets = getMaxAmountOfTicketsPerReservation(configurations, ticketCategoryLevelConfiguration, m.getId());
                     PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null);
                     if (specialCode.isPresent()) {
                         maxTickets = Math.min(1, maxTickets);
@@ -330,7 +332,7 @@ public class EventApiV2Controller {
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
 
-            boolean displayTicketsLeft = configurationManager.getFor(DISPLAY_TICKETS_LEFT_INDICATOR, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
+            boolean displayTicketsLeft = configurations.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault(false);
             var converted = valid.stream()
                 .map(stc -> {
                     var description = applyCommonMark(ticketCategoryDescriptions.getOrDefault(stc.getId(), Collections.emptyMap()));
@@ -383,6 +385,16 @@ public class EventApiV2Controller {
         }).orElseGet(() -> {
             return ResponseEntity.notFound().headers(getCorsHeaders()).build();
         });
+    }
+
+    private static int getMaxAmountOfTicketsPerReservation(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> eventLevelConf,
+                                                           Map<Integer, String> ticketCategoryLevelConf,
+                                                           int ticketCategory) {
+
+        if (ticketCategoryLevelConf.containsKey(ticketCategory)) {
+            return Integer.parseInt(ticketCategoryLevelConf.get(ticketCategory));
+        }
+        return eventLevelConf.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(5);
     }
 
     @GetMapping("event/{eventName}/calendar/{locale}")
