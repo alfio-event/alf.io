@@ -597,4 +597,15 @@ public class ConfigurationManager {
         }
     }
 
+    /**
+     * Fetch all ticket_category_id, value that are present at the ticket category level with a given configuration key
+     *
+     * @param event
+     * @param key
+     * @return
+     */
+    public Map<Integer, String> getAllCategoriesAndValueWith(EventAndOrganizationId event, ConfigurationKeys key) {
+        return configurationRepository.getAllCategoriesAndValueWith(event.getOrganizationId(), event.getId(), key);
+    }
+
 }

@@ -19,14 +19,18 @@ package alfio.repository.system;
 import alfio.model.support.JSONData;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
+import alfio.model.system.ConfigurationKeys;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @QueryRepository
 public interface ConfigurationRepository {
@@ -49,6 +53,24 @@ public interface ConfigurationRepository {
 
     @Query(SELECT_FROM_TICKET_CATEGORY)
     List<Configuration> findCategoryConfiguration(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("ticketCategoryId") int categoryId);
+
+    @Query("SELECT ticket_category_id_fk, c_value FROM configuration_ticket_category where organization_id_fk = :organizationId and event_id_fk = :eventId and c_key = :key")
+    List<CategoryAndValue> findAllCategoriesAndValueWith(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("key") String key);
+
+    @Getter
+    class CategoryAndValue {
+        final int ticketCategoryId;
+        final String value;
+
+        public CategoryAndValue(@Column("ticket_category_id_fk") int ticketCategoryId, @Column("c_value") String value) {
+            this.ticketCategoryId = ticketCategoryId;
+            this.value = value;
+        }
+    }
+
+    default Map<Integer, String> getAllCategoriesAndValueWith(int organizationId, int eventId, ConfigurationKeys key) {
+        return findAllCategoriesAndValueWith(organizationId, eventId, key.name()).stream().collect(Collectors.toMap(CategoryAndValue::getTicketCategoryId, CategoryAndValue::getValue));
+    }
 
     String SYSTEM_FIND_BY_KEY = SELECT_FROM_SYSTEM + " where c_key = :key";
     String ORGANIZATION_FIND_BY_KEY = SELECT_FROM_ORGANIZATION + " and c_key = :key ";
