@@ -162,7 +162,9 @@ public class EventApiV2Controller {
                     VAT_NR,
                     // required by EuVatChecker.reverseChargeEnabled
                     ENABLE_EU_VAT_DIRECTIVE,
-                    COUNTRY_OF_BUSINESS
+                    COUNTRY_OF_BUSINESS,
+
+                    DISPLAY_TICKETS_LEFT_INDICATOR
                 ), ConfigurationLevel.event(event));
 
                 var locationDescriptor = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
@@ -230,12 +232,17 @@ public class EventApiV2Controller {
                 var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
                 //
 
+                Integer availableTicketsCount = null;
+                if(configurationsValues.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault(false)) {
+                    availableTicketsCount = ticketRepository.countFreeTicketsForUnbounded(event.getId());
+                }
+
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
                     formattedEndDate, formattedEndTime,
                     invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
-                    i18nOverride), getCorsHeaders(), HttpStatus.OK);
+                    i18nOverride, availableTicketsCount), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
@@ -323,21 +330,21 @@ public class EventApiV2Controller {
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
 
-
+            boolean displayTicketsLeft = configurationManager.getFor(DISPLAY_TICKETS_LEFT_INDICATOR, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
             var converted = valid.stream()
                 .map(stc -> {
                     var description = applyCommonMark(ticketCategoryDescriptions.getOrDefault(stc.getId(), Collections.emptyMap()));
                     var expiration = Formatters.getFormattedDate(event, stc.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
                     var inception = Formatters.getFormattedDate(event, stc.getZonedInception(), "common.ticket-category.date-format", messageSource);
-                    return new TicketCategory(stc, description, inception, expiration);
+                    return new TicketCategory(stc, description, inception, expiration, displayTicketsLeft && !stc.isAccessRestricted());
                 })
+                .sorted(Comparator.comparingInt(TicketCategory::getOrdinal))
                 .collect(Collectors.toList());
 
 
             var promoCode = Optional.of(appliedPromoCode).filter(ValidatedResponse::isSuccess)
                 .map(ValidatedResponse::getValue)
-                .map(Pair::getRight)
-                .orElse(Optional.empty());
+                .flatMap(Pair::getRight);
 
             //
             var saleableAdditionalServices = additionalServiceRepository.loadAllForEvent(event.getId())
@@ -347,7 +354,7 @@ public class EventApiV2Controller {
                 .collect(Collectors.toList());
 
             // will be used for fetching descriptions and titles for all the languages
-            var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(as -> as.getId()).collect(Collectors.toList());
+            var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(SaleableAdditionalService::getId).collect(Collectors.toList());
 
             var additionalServiceTexts = additionalServiceTextRepository.getDescriptionsByAdditionalServiceIds(saleableAdditionalServicesIds);
 
