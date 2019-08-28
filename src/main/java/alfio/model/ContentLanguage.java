@@ -37,7 +37,7 @@ public class ContentLanguage {
     public static final ContentLanguage TURKISH = new ContentLanguage(LocaleUtil.forLanguageTag("tr"),0b10000000, LocaleUtil.forLanguageTag("tr"), "tr");
     public static final ContentLanguage SPANISH = new ContentLanguage(LocaleUtil.forLanguageTag("es"),0b100000000, LocaleUtil.forLanguageTag("es"), "es");
 
-    public static final List<ContentLanguage> ALL_LANGUAGES = List.of(ENGLISH, SPANISH, GERMAN, DUTCH, FRENCH, ROMANIAN, PORTUGUESE, TURKISH, SPANISH);
+    public static final List<ContentLanguage> ALL_LANGUAGES = List.of(ENGLISH, SPANISH, ITALIAN, GERMAN, DUTCH, FRENCH, ROMANIAN, PORTUGUESE, TURKISH);
     public static final int ALL_LANGUAGES_IDENTIFIER = ALL_LANGUAGES.stream().mapToInt(ContentLanguage::getValue).reduce(0, (a,b) -> a|b);
 
     public static List<ContentLanguage> findAllFor(int bitMask) {
