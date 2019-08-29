@@ -91,11 +91,11 @@ public class UtilsApiController {
     }
 
     @GetMapping("/currencies")
-    public List<CurrencyDescriptor> getCurrencies(Locale locale) {
+    public List<CurrencyDescriptor> getCurrencies() {
         return CurrencyUnit.registeredCurrencies().stream()
             //we don't support pseudo currencies, as it is very unlikely that payment providers would support them
             .filter(c -> !c.isPseudoCurrency() && !CURRENCIES_BLACKLIST.contains(c.getCode()) && Wrappers.optionally(() -> Currency.getInstance(c.getCode())).isPresent())
-            .map(c -> new CurrencyDescriptor(c.getCode(), c.toCurrency().getDisplayName(locale), c.getSymbol(locale), c.getDecimalPlaces()))
+            .map(c -> new CurrencyDescriptor(c.getCode(), c.toCurrency().getDisplayName(Locale.ENGLISH), c.getSymbol(Locale.ENGLISH), c.getDecimalPlaces()))
             .collect(Collectors.toList());
     }
 

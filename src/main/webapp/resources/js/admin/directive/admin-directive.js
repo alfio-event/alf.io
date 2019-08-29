@@ -31,27 +31,27 @@
                     }
                 };
 
-                var getNowAtStartOfHour = function(hourToAdd) {
-                    return moment().startOf('hour').add(hourToAdd, 'h');
+                var getNowAtStartOfHour = function(dayToAdd, hourToAdd) {
+                    return moment().startOf('hour').add(dayToAdd, 'd').add(hourToAdd, 'h');
                 };
 
-                var initDateUsingNow = function(modelObj, hoursToAddIfDefault) {
+                var initDateUsingNow = function(modelObj, dayToAdd, hoursToAddIfDefault) {
                     if(!angular.isDefined(modelObj) || !angular.isDefined(modelObj.date) || !angular.isDefined(modelObj.time)) {
-                        return getNowAtStartOfHour(hoursToAddIfDefault);
+                        return getNowAtStartOfHour(dayToAdd, hoursToAddIfDefault);
                     }
                     var date = moment(modelObj.date + 'T' + modelObj.time);
-                    return date.isValid() ? date : getNowAtStartOfHour(hoursToAddIfDefault);
+                    return date.isValid() ? date : getNowAtStartOfHour(dayToAdd, hoursToAddIfDefault);
                 };
 
 
-                var startDate = initDateUsingNow(scope.startModelObj, 0);
-                var endDate = initDateUsingNow(scope.endModelObj, 1);
+                var startDate = initDateUsingNow(scope.startModelObj, 1, 0);
+                var endDate = initDateUsingNow(scope.endModelObj, 1, 1);
 
                 var result = startDate.format(dateFormat) + ' / ' + endDate.format(dateFormat);
                 ctrl.$setViewValue(result);
                 element.val(result);
 
-                var minDate = scope.minDate || getNowAtStartOfHour();
+                var minDate = scope.minDate || getNowAtStartOfHour(0, 0);
 
                 var pickerElement = element.daterangepicker({
                     format: dateFormat,
