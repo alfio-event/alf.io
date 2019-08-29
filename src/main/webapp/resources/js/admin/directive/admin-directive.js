@@ -31,21 +31,21 @@
                     }
                 };
 
-                var getNowAtStartOfHour = function() {
-                    return moment().startOf('hour');
+                var getNowAtStartOfHour = function(hourToAdd) {
+                    return moment().startOf('hour').add(hourToAdd, 'h');
                 };
 
-                var initDateUsingNow = function(modelObj) {
+                var initDateUsingNow = function(modelObj, hoursToAddIfDefault) {
                     if(!angular.isDefined(modelObj) || !angular.isDefined(modelObj.date) || !angular.isDefined(modelObj.time)) {
-                        return getNowAtStartOfHour();
+                        return getNowAtStartOfHour(hoursToAddIfDefault);
                     }
                     var date = moment(modelObj.date + 'T' + modelObj.time);
-                    return date.isValid() ? date : getNowAtStartOfHour();
+                    return date.isValid() ? date : getNowAtStartOfHour(hoursToAddIfDefault);
                 };
 
 
-                var startDate = initDateUsingNow(scope.startModelObj);
-                var endDate = initDateUsingNow(scope.endModelObj);
+                var startDate = initDateUsingNow(scope.startModelObj, 0);
+                var endDate = initDateUsingNow(scope.endModelObj, 1);
 
                 var result = startDate.format(dateFormat) + ' / ' + endDate.format(dateFormat);
                 ctrl.$setViewValue(result);
