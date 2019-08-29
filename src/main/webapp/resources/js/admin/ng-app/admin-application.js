@@ -655,6 +655,9 @@
         };
         $scope.addCategory = function() {
             var category = createCategoryValidUntil(true, $scope.event.begin);
+            if (!$scope.event.freeOfCharge) {
+                category.price = $scope.event.regularPrice
+            }
             editCategory(category).then(function(res) {
                 category.ordinal = $scope.event.ticketCategories.length + 1;
                 $scope.event.ticketCategories.push(category);
