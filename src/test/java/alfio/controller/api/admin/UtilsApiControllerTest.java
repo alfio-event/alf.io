@@ -20,7 +20,6 @@ import alfio.util.MonetaryUtil;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,7 +29,7 @@ class UtilsApiControllerTest {
     @Test
     void getCurrencies() {
         new UtilsApiController(null, null, null)
-            .getCurrencies(Locale.ENGLISH)
+            .getCurrencies()
             .forEach(currency -> {
                 assertFalse(currency.getFractionDigits() < 0);
                 assertEquals(MonetaryUtil.unitToCents(BigDecimal.TEN, currency.getCode()), 10 * Math.pow(10, currency.getFractionDigits()));
