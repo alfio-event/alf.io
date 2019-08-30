@@ -5,7 +5,9 @@
         'input:text': 'Generic Text Input',
         'input:tel': 'Phone Number',
         'textarea': 'Multi-line Text',
-        'select': 'List Box',
+        'select': 'Drop-down list',
+        'checkbox': 'Multiple choice (checkbox)',
+        'radio': 'One choice list (radio button)',
         'country': 'Country',
         'vat:eu': 'EU VAT'
     };
