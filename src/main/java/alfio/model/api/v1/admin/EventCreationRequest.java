@@ -370,6 +370,8 @@ public class EventCreationRequest{
 
     }
 
+    public static Set<String> WITH_RESTRICTED_VALUES = Set.of(AdditionalInfoType.LIST_BOX.code, AdditionalInfoType.CHECKBOX.code, AdditionalInfoType.RADIO.code);
+
     @Getter
     @AllArgsConstructor
     public static class ContentLengthRequest {
