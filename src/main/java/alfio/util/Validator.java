@@ -271,7 +271,7 @@ public final class Validator {
             List<String> values = Optional.ofNullable(form.getAdditional().get(fieldConf.getName())).orElse(Collections.emptyList());
 
             //handle required for multiple choice (checkbox) where required is interpreted as at least one!
-            if (fieldConf.isRequired() && fieldConf.getCount() > 0  && values.stream().allMatch(StringUtils::isBlank)) {
+            if (fieldConf.isRequired() && fieldConf.getCount() > 1  && values.stream().allMatch(StringUtils::isBlank)) {
                 errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]", ErrorsCode.EMPTY_FIELD);
             }
 
