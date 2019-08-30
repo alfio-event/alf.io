@@ -75,7 +75,7 @@
 
     <div class="row">
         <div class="col-xs-12" ng-if="field.type !== 'country'">
-            <div data-ng-if="field.type === 'select'" class="form-horizontal">
+            <div data-ng-if="field.type === 'select' || field.type === 'radio' || field.type === 'checkbox'" class="form-horizontal">
                 <div data-ng-repeat="restrictedValue in field.restrictedValues">
                     <div class="form-group">
                         <div class="col-xs-12">
