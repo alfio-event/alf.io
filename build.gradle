@@ -52,7 +52,7 @@ plugins {
     id 'com.github.kt3k.coveralls' version '2.8.4'
     id 'com.github.ben-manes.versions' version '0.23.0'
     id 'com.github.hierynomus.license' version '0.15.0'
-    id 'net.researchgate.release' version '2.8.0'
+    id 'net.researchgate.release' version '2.8.1'
     id 'org.springframework.boot' version '2.1.7.RELEASE'
     id 'org.sonarqube' version '2.7'
 }
@@ -175,7 +175,6 @@ dependencies {
     testCompile "org.springframework.boot:spring-boot-starter-test", {
         exclude module : 'spring-boot-starter-logging'
     }
-    testCompile "net.sourceforge.htmlunit:htmlunit:2.35.0"
     runtime "commons-fileupload:commons-fileupload:1.4"
     providedCompile "org.springframework.boot:spring-boot-starter-web", {
         exclude module : 'spring-boot-starter-logging'
