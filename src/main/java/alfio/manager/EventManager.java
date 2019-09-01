@@ -25,6 +25,7 @@ import alfio.model.*;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketFieldConfiguration.Context;
+import alfio.model.api.v1.admin.EventCreationRequest;
 import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
 import alfio.model.result.ErrorCode;
@@ -239,11 +240,11 @@ public class EventManager {
     }
 
     private static String toSerializedRestrictedValues(EventModification.WithRestrictedValues f) {
-        return "select".equals(f.getType()) ? generateJsonForList(f.getRestrictedValuesAsString()) : null;
+        return EventCreationRequest.WITH_RESTRICTED_VALUES.contains(f.getType()) ? generateJsonForList(f.getRestrictedValuesAsString()) : null;
     }
 
     private static String toSerializedDisabledValues(EventModification.WithRestrictedValues f) {
-        return "select".equals(f.getType()) ? generateJsonForList(f.getDisabledValuesAsString()) : null;
+        return EventCreationRequest.WITH_RESTRICTED_VALUES.contains(f.getType()) ? generateJsonForList(f.getDisabledValuesAsString()) : null;
     }
 
     private static String generateJsonForList(Collection<?> values) {

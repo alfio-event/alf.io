@@ -91,6 +91,14 @@ public class TicketFieldConfiguration {
         return "select".equals(type);
     }
 
+    public int getCount() {
+        if ("checkbox".equals(type) && this.restrictedValues != null) {
+            return Math.max(this.restrictedValues.size(), 1);
+        } else {
+            return 1;
+        }
+    }
+
     public boolean isEuVat() {
         return "vat:eu".equals(type);
     }

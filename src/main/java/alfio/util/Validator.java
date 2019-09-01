@@ -269,6 +269,12 @@ public final class Validator {
             }
             
             List<String> values = Optional.ofNullable(form.getAdditional().get(fieldConf.getName())).orElse(Collections.emptyList());
+
+            //handle required for multiple choice (checkbox) where required is interpreted as at least one!
+            if (fieldConf.isRequired() && fieldConf.getCount() > 1  && values.stream().allMatch(StringUtils::isBlank)) {
+                errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]", ErrorsCode.EMPTY_FIELD);
+            }
+
             for(int i = 0; i < values.size(); i++) {
                 String formValue = values.get(i);
                 if(fieldConf.isMaxLengthDefined()) {
@@ -284,7 +290,7 @@ public final class Validator {
                         "error.restrictedValue", fieldConf.getRestrictedValues(), errors);
                 }
 
-                if(fieldConf.isRequired() && StringUtils.isBlank(formValue)){
+                if(fieldConf.isRequired() && fieldConf.getCount() == 1 && StringUtils.isBlank(formValue)){
                     errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", ErrorsCode.EMPTY_FIELD);
                 }
 

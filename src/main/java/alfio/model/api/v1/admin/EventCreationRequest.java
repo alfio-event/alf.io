@@ -358,7 +358,9 @@ public class EventCreationRequest{
         MULTI_LINE_TEXT("textarea"),
         LIST_BOX("select"),
         COUNTRY("country"),
-        EU_VAT_NR("vat:eu");
+        EU_VAT_NR("vat:eu"),
+        CHECKBOX("checkbox"),
+        RADIO("radio");
 
         private final String code;
 
@@ -367,6 +369,8 @@ public class EventCreationRequest{
         }
 
     }
+
+    public static Set<String> WITH_RESTRICTED_VALUES = Set.of(AdditionalInfoType.LIST_BOX.code, AdditionalInfoType.CHECKBOX.code, AdditionalInfoType.RADIO.code);
 
     @Getter
     @AllArgsConstructor
