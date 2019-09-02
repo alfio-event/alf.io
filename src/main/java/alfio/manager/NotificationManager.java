@@ -205,7 +205,13 @@ public class NotificationManager {
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
         String recipient = ticket.getEmail();
         //TODO handle HTML
-        tx.execute(status -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
+        tx.execute(status -> {
+            emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum).ifPresentOrElse(
+                id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
+                () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC))
+            );
+            return null;
+        });
     }
 
     public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
@@ -237,12 +243,10 @@ public class NotificationManager {
         String text = textBuilder.generate();
         String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
         //in order to minimize the database size, it is worth checking if there is already another message in the table
-        Optional<EmailMessage> existing = emailMessageRepository.findByEventIdAndChecksum(event.getId(), checksum);
-        if(existing.isEmpty()) {
-            emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
-        } else {
-            emailMessageRepository.updateStatus(event.getId(), WAITING.name(), existing.get().getId());
-        }
+        Optional<Integer> existing = emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum);
+
+        existing.ifPresentOrElse(id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
+            () -> emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
     }
 
     public Pair<Integer, List<LightweightMailMessage>> loadAllMessagesForEvent(int eventId, Integer page, String search) {
