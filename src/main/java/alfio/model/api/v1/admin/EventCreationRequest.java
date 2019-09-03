@@ -307,6 +307,7 @@ public class EventCreationRequest{
                 name,
                 code,
                 Boolean.TRUE.equals(required),
+                false,
                 minLength,
                 maxLength,
                 restrictedValues,

@@ -62,6 +62,10 @@
                         <div class="col-sm-4"><strong>Required</strong></div>
                         <div class="col-sm-8">{{field.required}}</div>
                     </div>
+                    <div class="row" data-ng-if="field.readOnly">
+                        <div class="col-sm-4"><strong>Read Only</strong></div>
+                        <div class="col-sm-8">{{field.readOnly}}</div>
+                    </div>
                 </div>
             </div>
             <hr data-ng-if="field.type == 'select'" />
