@@ -168,6 +168,7 @@ public class EventModification {
         private final String name;
         private final String type;
         private final boolean required;
+        private final boolean readOnly;
 
         private final Integer minLength;
         private final Integer maxLength;
@@ -184,6 +185,7 @@ public class EventModification {
                                @JsonProperty("name") String name,
                                @JsonProperty("type") String type,
                                @JsonProperty("required") boolean required,
+                               @JsonProperty("readOnly") boolean readOnly,
                                @JsonProperty("minLength") Integer minLength,
                                @JsonProperty("maxLength") Integer maxLength,
                                @JsonProperty("restrictedValues") List<RestrictedValue> restrictedValues,
@@ -194,6 +196,7 @@ public class EventModification {
             this.name = name;
             this.type = type;
             this.required = required;
+            this.readOnly = readOnly;
             this.minLength = minLength;
             this.maxLength = maxLength;
             this.restrictedValues = restrictedValues;
@@ -222,6 +225,7 @@ public class EventModification {
     public static class UpdateAdditionalField implements WithRestrictedValues, WithLinkedCategories {
         private final String type;
         private final boolean required;
+        private final boolean readOnly;
         private final List<String> restrictedValues;
         private final Map<String, TicketFieldDescriptionModification> description;
         private final List<String> disabledValues;
@@ -230,12 +234,14 @@ public class EventModification {
         @JsonCreator
         public UpdateAdditionalField(@JsonProperty("type") String type,
                                      @JsonProperty("required") boolean required,
+                                     @JsonProperty("readOnly") boolean readOnly,
                                      @JsonProperty("restrictedValues") List<String> restrictedValues,
                                      @JsonProperty("disabledValues") List<String> disabledValues,
                                      @JsonProperty("description") Map<String, TicketFieldDescriptionModification> description,
                                      @JsonProperty("categoryIds") List<Integer> linkedCategoriesIds) {
             this.type = type;
             this.required = required;
+            this.readOnly = readOnly;
             this.restrictedValues = restrictedValues;
             this.disabledValues = disabledValues;
             this.description = description;
