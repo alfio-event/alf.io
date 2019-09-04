@@ -88,6 +88,7 @@ public class ReservationInfo {
         private final String userLanguage;
         private final boolean assigned;
         private final boolean locked;
+        private final boolean acquired;
         private final boolean cancellationEnabled;
         private final List<AdditionalField> ticketFieldConfiguration;
 
@@ -113,6 +114,10 @@ public class ReservationInfo {
 
         public boolean isAssigned() {
             return assigned;
+        }
+
+        public boolean isAcquired() {
+            return acquired;
         }
 
         public String getUserLanguage() {
@@ -141,6 +146,7 @@ public class ReservationInfo {
         private final String value;
         private final String type;
         private final boolean required;
+        private final boolean editable;
         private final Integer minLength;
         private final Integer maxLength;
         private final List<String> restrictedValues;

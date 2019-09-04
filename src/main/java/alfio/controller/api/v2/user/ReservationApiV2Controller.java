@@ -607,7 +607,7 @@ public class ReservationApiV2Controller {
 
     private static ReservationInfo.AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, ReservationInfo.Description> description) {
         var fields = t.getFields().stream().map(f -> new ReservationInfo.Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
-        return new ReservationInfo.AdditionalField(t.getName(), t.getValue(), t.getType(), t.isRequired(),
+        return new ReservationInfo.AdditionalField(t.getName(), t.getValue(), t.getType(), t.isRequired(), t.isEditable(),
             t.getMinLength(), t.getMaxLength(), t.getRestrictedValues(),
             fields, t.isBeforeStandardFields(), description);
     }
@@ -641,7 +641,7 @@ public class ReservationApiV2Controller {
             ticket.getFirstName(), ticket.getLastName(),
             ticket.getEmail(), ticket.getFullName(),
             ticket.getUserLanguage(),
-            ticket.getAssigned(), ticket.getLockedAssignment(), cancellationEnabled, tfcdav);
+            ticket.getAssigned(), ticket.getLockedAssignment(), ticket.getStatus() == Ticket.TicketStatus.ACQUIRED, cancellationEnabled, tfcdav);
     }
 
     private Map<String, String> formatDateForLocales(Event event, ZonedDateTime date, String formattingCode) {
