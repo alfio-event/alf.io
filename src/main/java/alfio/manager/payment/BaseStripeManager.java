@@ -249,7 +249,7 @@ class BaseStripeManager {
             Map<String, Object> params = new HashMap<>();
             params.put("charge", chargeId);
             amount.ifPresent(a -> params.put("amount", a));
-            if(isConnectEnabled(new PaymentContext(event))) {
+            if(transaction.getPlatformFee() > 0 && isConnectEnabled(new PaymentContext(event))) {
                 params.put("refund_application_fee", true);
             }
 
