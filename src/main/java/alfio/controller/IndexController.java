@@ -79,7 +79,7 @@ public class IndexController {
 
     static {
         try (var idxIs = new ClassPathResource("alfio-public-frontend-index.html").getInputStream();
-             var idxOpenGraph = new ClassPathResource("alfio-public-frontend-index.html").getInputStream()) {
+             var idxOpenGraph = new ClassPathResource("alfio/web-templates/event-open-graph-page.html").getInputStream()) {
             var parser = new Parser();
             INDEX_PAGE = parser.parse(new InputStreamReader(idxIs, StandardCharsets.UTF_8));
             OPEN_GRAPH_PAGE = parser.parse(new InputStreamReader(idxOpenGraph, StandardCharsets.UTF_8));
