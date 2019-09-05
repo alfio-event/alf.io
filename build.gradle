@@ -28,7 +28,7 @@ buildscript {
 
         //this is for processing the index.html at compile time
         classpath "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
-        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.5.3"
+        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.5.4"
         //
     }
 
@@ -139,7 +139,7 @@ dependencies {
     /**/
     compile "com.openhtmltopdf:openhtmltopdf-core:1.0.0"
     compile "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.0"
-    compile "ch.digitalfondue.jfiveparse:jfiveparse:0.5.3"
+    compile "ch.digitalfondue.jfiveparse:jfiveparse:0.5.4"
     /**/
     compile "com.google.zxing:core:3.4.0"
     compile "com.google.zxing:javase:3.4.0"
