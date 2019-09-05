@@ -159,6 +159,7 @@ public class IndexController {
         } else {
             try (var os = response.getOutputStream()) {
                 var idx = INDEX_PAGE.cloneNode(true);
+                idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
                 os.write(idx.getOuterHTML().getBytes(StandardCharsets.UTF_8));
             }
         }
@@ -331,16 +332,9 @@ public class IndexController {
         // https://csp.withgoogle.com/docs/strict-csp.html
         // with base-uri set to 'self'
 
-        response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
-            + " script-src 'self' https://js.stripe.com https://checkout.stripe.com/ https://m.stripe.network https://api.stripe.com/ https://ssl.google-analytics.com/ https://www.google.com/recaptcha/api.js https://www.gstatic.com/recaptcha/api2/ https://maps.googleapis.com/;"//
-            + " style-src 'self' 'unsafe-inline';" // unsafe-inline for style is acceptable...
-            + " img-src 'self' https: data:;"//
-            + " child-src 'self';"
-            + " worker-src 'self';"//webworker
-            + " frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://m.stripe.network https://m.stripe.com https://www.google.com;"
-            + " font-src 'self';"//
-            + " media-src blob: 'self';"//for loading camera api
-            + " connect-src 'self' https://checkout.stripe.com https://m.stripe.network https://m.stripe.com https://maps.googleapis.com/ https://geocoder.cit.api.here.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
+        response.addHeader("Content-Security-Policy", "object-src 'none'; "+
+            "script-src 'nonce-" + nonce + "' 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:; " +
+            "base-uri 'self'; "
             + reportUri);
 
         return nonce;
