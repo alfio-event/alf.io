@@ -55,6 +55,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -131,6 +132,7 @@ public class IndexController {
 
         response.setContentType(TEXT_HTML_CHARSET_UTF_8);
         response.setCharacterEncoding(UTF_8);
+        addCspHeader(response);
 
         if (eventShortName != null && RequestUtils.isSocialMediaShareUA(userAgent) && eventRepository.existsByShortName(eventShortName)) {
             try (var is = new ClassPathResource("alfio/web-templates/event-open-graph-page.html").getInputStream(); var os = response.getOutputStream()) {
@@ -251,6 +253,7 @@ public class IndexController {
         try (var os = response.getOutputStream()) {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding(UTF_8);
+            addCspHeader(response);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
         }
     }
@@ -281,7 +284,36 @@ public class IndexController {
         try (var os = response.getOutputStream()) {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding(UTF_8);
+            addCspHeader(response);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/admin-index.ms"), model.asMap(), os);
         }
+    }
+
+
+
+    public void addCspHeader(HttpServletResponse response) {
+        String reportUri = "";
+
+        var conf = configurationManager.getFor(List.of(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED, ConfigurationKeys.SECURITY_CSP_REPORT_URI), ConfigurationLevel.system());
+
+        boolean enabledReport = conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault(false);
+        if (enabledReport) {
+            reportUri = " report-uri " + conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
+        }
+        //
+        // http://www.html5rocks.com/en/tutorials/security/content-security-policy/
+        // lockdown policy
+
+        response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
+            + " script-src 'self' https://js.stripe.com https://checkout.stripe.com/ https://m.stripe.network https://api.stripe.com/ https://ssl.google-analytics.com/ https://www.google.com/recaptcha/api.js https://www.gstatic.com/recaptcha/api2/ https://maps.googleapis.com/;"//
+            + " style-src 'self' 'unsafe-inline';" // unsafe-inline for style is acceptable...
+            + " img-src 'self' https: data:;"//
+            + " child-src 'self';"
+            + " worker-src 'self';"//webworker
+            + " frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://m.stripe.network https://m.stripe.com https://www.google.com;"
+            + " font-src 'self';"//
+            + " media-src blob: 'self';"//for loading camera api
+            + " connect-src 'self' https://checkout.stripe.com https://m.stripe.network https://m.stripe.com https://maps.googleapis.com/ https://geocoder.cit.api.here.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
+            + reportUri);
     }
 }

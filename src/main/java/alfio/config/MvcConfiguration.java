@@ -16,14 +16,10 @@
  */
 package alfio.config;
 
-import alfio.manager.system.ConfigurationManager;
-import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -36,19 +32,13 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
-import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.ViewResolver;
 import org.springframework.web.servlet.config.annotation.*;
-import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 import org.springframework.web.servlet.view.AbstractUrlBasedView;
 import org.springframework.web.servlet.view.UrlBasedViewResolver;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Configuration
 @ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
@@ -56,17 +46,10 @@ import java.util.concurrent.TimeUnit;
 @EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 4 * 60 * 60) //4h
 public class MvcConfiguration implements WebMvcConfigurer {
 
-    private final ConfigurationManager configurationManager;
     private final Environment environment;
-    private static final Cache<ConfigurationKeys, String> configurationCache = Caffeine.newBuilder()
-        .expireAfterWrite(15, TimeUnit.MINUTES)
-        .build();
 
     @Autowired
-    public MvcConfiguration(
-                            ConfigurationManager configurationManager,
-                            Environment environment) {
-        this.configurationManager = configurationManager;
+    public MvcConfiguration(Environment environment) {
         this.environment = environment;
     }
 
@@ -80,48 +63,6 @@ public class MvcConfiguration implements WebMvcConfigurer {
         registry
             .addResourceHandler("/webjars/**")
             .addResourceLocations("/webjars/");
-    }
-
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(getCSPInterceptor());
-    }
-
-    private HandlerInterceptor getCSPInterceptor() {
-        return new HandlerInterceptorAdapter() {
-            @Override
-            public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler,
-                    ModelAndView modelAndView) {
-
-                //
-                String reportUri = "";
-                boolean enabledReport = Boolean.parseBoolean(configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED,
-                    k -> configurationManager.getForSystem(k).getValueOrDefault("false")
-                ));
-                if (enabledReport) {
-                    reportUri = " report-uri " + configurationCache.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI,
-                        k -> configurationManager.getForSystem(k).getValueOrDefault("/report-csp-violation")
-                    );
-                }
-                //
-
-
-                // http://www.html5rocks.com/en/tutorials/security/content-security-policy/
-                // lockdown policy
-
-                response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
-                        + " script-src 'self' https://js.stripe.com https://checkout.stripe.com/ https://m.stripe.network https://api.stripe.com/ https://ssl.google-analytics.com/ https://www.google.com/recaptcha/api.js https://www.gstatic.com/recaptcha/api2/ https://maps.googleapis.com/;"//
-                        + " style-src 'self' 'unsafe-inline';" // unsafe-inline for style is acceptable...
-                        + " img-src 'self' https: data:;"//
-                        + " child-src 'self';"
-                        + " worker-src 'self';"//webworker
-                        + " frame-src 'self' https://js.stripe.com https://checkout.stripe.com https://m.stripe.network https://m.stripe.com https://www.google.com;"
-                        + " font-src 'self';"//
-                        + " media-src blob: 'self';"//for loading camera api
-                        + " connect-src 'self' https://checkout.stripe.com https://m.stripe.network https://m.stripe.com https://maps.googleapis.com/ https://geocoder.cit.api.here.com;" //<- currently stripe.js use jsonp but if they switch to xmlhttprequest+cors we will be ready
-                        + reportUri);
-            }
-        };
     }
 
     @Override
