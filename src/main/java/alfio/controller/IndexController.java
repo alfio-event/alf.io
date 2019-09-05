@@ -35,6 +35,7 @@ import alfio.util.RequestUtils;
 import alfio.util.TemplateManager;
 import ch.digitalfondue.jfiveparse.*;
 import lombok.AllArgsConstructor;
+import org.apache.commons.codec.binary.Hex;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -54,9 +55,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
-import java.util.EnumSet;
-import java.util.Locale;
-import java.util.Map;
+import java.security.SecureRandom;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
@@ -69,6 +70,23 @@ public class IndexController {
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
     private static final String TEXT_HTML_CHARSET_UTF_8 = "text/html;charset=UTF-8";
     private static final String UTF_8 = "UTF-8";
+
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
+    private static final Document INDEX_PAGE;
+    private static final Document OPEN_GRAPH_PAGE;
+
+    static {
+        try (var idxIs = new ClassPathResource("alfio-public-frontend-index.html").getInputStream();
+             var idxOpenGraph = new ClassPathResource("alfio/web-templates/event-open-graph-page.html").getInputStream()) {
+            var parser = new Parser();
+            INDEX_PAGE = parser.parse(new InputStreamReader(idxIs, StandardCharsets.UTF_8));
+            OPEN_GRAPH_PAGE = parser.parse(new InputStreamReader(idxOpenGraph, StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     private final ConfigurationManager configurationManager;
     private final EventRepository eventRepository;
@@ -131,22 +149,25 @@ public class IndexController {
 
         response.setContentType(TEXT_HTML_CHARSET_UTF_8);
         response.setCharacterEncoding(UTF_8);
+        var nonce = addCspHeader(response);
 
         if (eventShortName != null && RequestUtils.isSocialMediaShareUA(userAgent) && eventRepository.existsByShortName(eventShortName)) {
-            try (var is = new ClassPathResource("alfio/web-templates/event-open-graph-page.html").getInputStream(); var os = response.getOutputStream()) {
-                var res = getOpenGraphPage(is, eventShortName, request, lang);
+            try (var os = response.getOutputStream()) {
+                var res = getOpenGraphPage((Document) OPEN_GRAPH_PAGE.cloneNode(true), eventShortName, request, lang);
                 os.write(res);
             }
         } else {
-            try (var is = new ClassPathResource("alfio-public-frontend-index.html").getInputStream(); var os = response.getOutputStream()) {
-                is.transferTo(os);
+            try (var os = response.getOutputStream()) {
+                var idx = INDEX_PAGE.cloneNode(true);
+                idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
+                os.write(idx.getOuterHTML().getBytes(StandardCharsets.UTF_8));
             }
         }
     }
 
     // see https://github.com/alfio-event/alf.io/issues/708
     // use ngrok to test the preview
-    private byte[] getOpenGraphPage(InputStream is, String eventShortName, ServletWebRequest request, String lang) {
+    private byte[] getOpenGraphPage(Document eventOpenGraph, String eventShortName, ServletWebRequest request, String lang) {
         var event = eventRepository.findByShortName(eventShortName);
         var locale = RequestUtils.getMatchingLocale(request, event);
         if (lang != null && event.getContentLanguages().stream().map(ContentLanguage::getLanguage).anyMatch(lang::equalsIgnoreCase)) {
@@ -157,7 +178,6 @@ public class IndexController {
 
         var title = messageSourceManager.getMessageSourceForEvent(event).getMessage("event.get-your-ticket-for", new String[] {event.getDisplayName()}, locale);
 
-        var eventOpenGraph = new Parser().parse(new InputStreamReader(is, StandardCharsets.UTF_8));
         var head = eventOpenGraph.getElementsByTagName("head").get(0);
 
         eventOpenGraph.getElementsByTagName("html").get(0).setAttribute("lang", locale.getLanguage());
@@ -251,6 +271,8 @@ public class IndexController {
         try (var os = response.getOutputStream()) {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding(UTF_8);
+            var nonce = addCspHeader(response);
+            model.addAttribute("nonce", nonce);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
         }
     }
@@ -281,7 +303,40 @@ public class IndexController {
         try (var os = response.getOutputStream()) {
             response.setContentType(TEXT_HTML_CHARSET_UTF_8);
             response.setCharacterEncoding(UTF_8);
+            var nonce = addCspHeader(response);
+            model.addAttribute("nonce", nonce);
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/admin-index.ms"), model.asMap(), os);
         }
+    }
+
+
+    private static String getNonce() {
+        var nonce = new byte[16]; //128 bit = 16 bytes
+        SECURE_RANDOM.nextBytes(nonce);
+        return Hex.encodeHexString(nonce);
+    }
+
+    public String addCspHeader(HttpServletResponse response) {
+
+        String nonce = getNonce();
+
+        String reportUri = "";
+
+        var conf = configurationManager.getFor(List.of(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED, ConfigurationKeys.SECURITY_CSP_REPORT_URI), ConfigurationLevel.system());
+
+        boolean enabledReport = conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault(false);
+        if (enabledReport) {
+            reportUri = " report-uri " + conf.get(ConfigurationKeys.SECURITY_CSP_REPORT_URI).getValueOrDefault("/report-csp-violation");
+        }
+        //
+        // https://csp.withgoogle.com/docs/strict-csp.html
+        // with base-uri set to 'self'
+
+        response.addHeader("Content-Security-Policy", "object-src 'none'; "+
+            "script-src 'nonce-" + nonce + "' 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:; " +
+            "base-uri 'self'; "
+            + reportUri);
+
+        return nonce;
     }
 }

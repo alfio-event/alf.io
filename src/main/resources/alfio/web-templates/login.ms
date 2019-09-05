@@ -16,7 +16,7 @@
         <title>Authentication</title>
     {{/demoModeEnabled}}
     {{#hasRecaptchaApiKey}}
-        <script src='https://www.google.com/recaptcha/api.js'></script>
+        <script src='https://www.google.com/recaptcha/api.js' nonce="{{nonce}}"></script>
     {{/hasRecaptchaApiKey}}
 </head>
 <body>
@@ -65,6 +65,6 @@
             </div>
         </div>
     </div>
-    <script src="{{request.contextPath}}/resources/js/common/warning-msg.js" async="true"></script>
+    <script src="{{request.contextPath}}/resources/js/common/warning-msg.js" async="true" nonce="{{nonce}}"></script>
 </body>
 </html>
