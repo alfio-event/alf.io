@@ -118,6 +118,16 @@
         </div>
     </div>
 
+    <div class="row" data-ng-if="checkInStrategiesVisible()">
+        <div class="col-xs-12">
+            <div class="form-group" bs-form-error="ticketCategory.ticketCheckInStrategy">
+                <label for="{{buildPrefix($index, 'ticketCheckInStrategy')}}">Check-in is allowed</label>
+                <select class="form-control" id="{{buildPrefix($index, 'ticketCheckInStrategy')}}" name="ticketCheckInStrategy" ng-model="ticketCategory.ticketCheckInStrategy" ng-options="strategy.id as strategy.name for strategy in checkInStrategies">
+                </select>
+            </div>
+        </div>
+    </div>
+
     <h5><strong>Custom ticket validity</strong> <small>(will be displayed in ticket PDF, email and calendar invitation)</small></h5>
 
     <div class="row">
