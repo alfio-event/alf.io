@@ -205,7 +205,7 @@ public interface TicketRepository {
         " tr.billing_address_company tr_billing_address_company, tr.billing_address_line1 tr_billing_address_line1, tr.billing_address_line2 tr_billing_address_line2, tr.billing_address_city tr_billing_address_city, tr.billing_address_zip tr_billing_address_zip, tr.invoicing_additional_information tr_invoicing_additional_information, " +
         " tr.src_price_cts tr_src_price_cts, tr.final_price_cts tr_final_price_cts, tr.vat_cts tr_vat_cts, tr.discount_cts tr_discount_cts, tr.currency_code tr_currency_code, " +
         " tc.id tc_id, tc.inception tc_inception, tc.expiration tc_expiration, tc.max_tickets tc_max_tickets, tc.name tc_name, tc.src_price_cts tc_src_price_cts, tc.access_restricted tc_access_restricted, tc.tc_status tc_tc_status, tc.event_id tc_event_id, tc.bounded tc_bounded, tc.category_code tc_category_code, " +
-        " tc.valid_checkin_from tc_valid_checkin_from, tc.valid_checkin_to tc_valid_checkin_to, tc.ticket_validity_start tc_ticket_validity_start, tc.ticket_validity_end tc_ticket_validity_end, tc.currency_code tc_currency_code, tc.ordinal tc_ordinal" +
+        " tc.valid_checkin_from tc_valid_checkin_from, tc.valid_checkin_to tc_valid_checkin_to, tc.ticket_validity_start tc_ticket_validity_start, tc.ticket_validity_end tc_ticket_validity_end, tc.currency_code tc_currency_code, tc.ordinal tc_ordinal, tc.ticket_checkin_strategy tc_ticket_checkin_strategy" +
         " from ticket t " +
         " inner join tickets_reservation tr on t.tickets_reservation_id = tr.id " +
         " inner join ticket_category_with_currency tc on t.category_id = tc.id ";

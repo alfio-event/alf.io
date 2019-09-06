@@ -67,6 +67,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static alfio.model.TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT;
 import static alfio.model.modification.DateTimeModification.toZonedDateTime;
 import static alfio.util.EventUtil.*;
 import static alfio.util.Wrappers.optionally;
@@ -546,7 +547,7 @@ public class EventManager {
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
                 toZonedDateTime(tc.getValidCheckInFrom(), zoneId), toZonedDateTime(tc.getValidCheckInTo(), zoneId),
-                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal());
+                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
@@ -566,7 +567,8 @@ public class EventManager {
             toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
             toZonedDateTime(tc.getValidCheckInTo(), zoneId),
             toZonedDateTime(tc.getTicketValidityStart(), zoneId),
-            toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal());
+            toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(),
+            Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
@@ -617,7 +619,8 @@ public class EventManager {
                 toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
                 toZonedDateTime(tc.getValidCheckInTo(), (zoneId)),
                 toZonedDateTime(tc.getTicketValidityStart(), zoneId),
-                toZonedDateTime(tc.getTicketValidityEnd(), zoneId));
+                toZonedDateTime(tc.getTicketValidityEnd(), zoneId),
+                Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
         TicketCategory updated = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         int addedTickets = 0;
         if(original.isBounded() ^ tc.isBounded()) {
