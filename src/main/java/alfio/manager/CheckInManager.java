@@ -146,7 +146,7 @@ public class CheckInManager {
         } else if(checkInStatus == BADGE_SCAN_ALREADY_DONE || checkInStatus == OK_READY_FOR_BADGE_SCAN) {
             var auditingStatus = checkInStatus == OK_READY_FOR_BADGE_SCAN ? BADGE_SCAN_SUCCESS : checkInStatus;
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, auditingStatus, ScanAudit.Operation.SCAN);
-            auditingRepository.insert(descriptor.getTicket().getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
+            auditingRepository.insert(descriptor.getTicket().getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, BADGE_SCAN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(auditingStatus, checkInStatus == OK_READY_FOR_BADGE_SCAN ? "scan successful" : "already scanned"));
         }
         return descriptor;
@@ -213,7 +213,7 @@ public class CheckInManager {
         if(ticketCode.filter(StringUtils::isNotBlank).isEmpty()) {
             if(ticket.isCheckedIn() && ticketCategoryRepository.getCheckInStrategy(ticket.getCategoryId()) == TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY) {
                 var ticketsReservationId = ticket.getTicketsReservationId();
-                int previousScan = auditingRepository.countAuditsOfTypesInTheSameDay(ticketsReservationId, EnumSet.of(CHECK_IN, MANUAL_CHECK_IN, BADGE_SCAN), ZonedDateTime.now(event.getZoneId()));
+                int previousScan = auditingRepository.countAuditsOfTypesInTheSameDay(ticketsReservationId, Set.of(CHECK_IN.name(), MANUAL_CHECK_IN.name(), BADGE_SCAN.name()), ZonedDateTime.now(event.getZoneId()));
                 if(previousScan > 0) {
                     return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(BADGE_SCAN_ALREADY_DONE, "Badge scan already done"));
                 }
