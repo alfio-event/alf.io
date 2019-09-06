@@ -50,6 +50,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -209,9 +210,19 @@ public class CheckInManager {
         }
 
         Ticket ticket = maybeTicket.get();
+        if(ticket.getCategoryId() == null) {
+            return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(INVALID_TICKET_STATE, "Invalid ticket state"));
+        }
+
+        TicketCategory tc = ticketCategoryRepository.getById(ticket.getCategoryId());
+
         Event event = maybeEvent.get();
         if(ticketCode.filter(StringUtils::isNotBlank).isEmpty()) {
-            if(ticket.isCheckedIn() && ticketCategoryRepository.getCheckInStrategy(ticket.getCategoryId()) == TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY) {
+            if(ticket.isCheckedIn() && tc.getTicketCheckInStrategy() == TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY) {
+                if(!isBadgeValidNow(tc, event)) {
+                    // if the badge is not currently valid, we give an error
+                    return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(INVALID_TICKET_CATEGORY_CHECK_IN_DATE, "Not allowed to check in at this time."));
+                }
                 var ticketsReservationId = ticket.getTicketsReservationId();
                 int previousScan = auditingRepository.countAuditsOfTypesInTheSameDay(ticketsReservationId, Set.of(CHECK_IN.name(), MANUAL_CHECK_IN.name(), BADGE_SCAN.name()), ZonedDateTime.now(event.getZoneId()));
                 if(previousScan > 0) {
@@ -223,12 +234,6 @@ public class CheckInManager {
         }
 
         String code = ticketCode.get();
-
-        if(ticket.getCategoryId() == null) {
-            return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(INVALID_TICKET_STATE, "Invalid ticket state"));
-        }
-
-        TicketCategory tc = ticketCategoryRepository.getById(ticket.getCategoryId());
 
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         if(!tc.hasValidCheckIn(now, event.getZoneId())) {
@@ -260,6 +265,18 @@ public class CheckInManager {
         }
 
         return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new DefaultCheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
+    }
+
+    private static boolean isBadgeValidNow(TicketCategory tc, Event event) {
+        var zoneId = event.getZoneId();
+        var now = ZonedDateTime.now(zoneId);
+        return now.isAfter(toZoneIdIfNotNull(tc.getValidCheckInFrom(), zoneId).orElse(event.getBegin()))
+            && now.isAfter(toZoneIdIfNotNull(tc.getTicketValidityStart(), zoneId).orElse(event.getBegin()))
+            && now.isBefore(toZoneIdIfNotNull(tc.getTicketValidityEnd(), zoneId).orElse(event.getEnd()));
+    }
+
+    private static Optional<ZonedDateTime> toZoneIdIfNotNull(ZonedDateTime in, ZoneId zoneId) {
+        return Optional.ofNullable(in).map(d -> d.withZoneSameInstant(zoneId));
     }
 
     private static Pair<Cipher, SecretKeySpec>  getCypher(String key) {
