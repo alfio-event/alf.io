@@ -17,6 +17,7 @@
 package alfio.model.modification;
 
 import alfio.model.TicketCategory;
+import alfio.model.TicketCategory.TicketCheckInStrategy;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -48,6 +49,8 @@ public class TicketCategoryModification {
     private final DateTimeModification ticketValidityStart;
     private final DateTimeModification ticketValidityEnd;
 
+    private final TicketCheckInStrategy ticketCheckInStrategy;
+
     @JsonCreator
     public TicketCategoryModification(@JsonProperty("id") Integer id,
                                       @JsonProperty("name") String name,
@@ -63,7 +66,8 @@ public class TicketCategoryModification {
                                       @JsonProperty("validCheckInFrom") DateTimeModification validCheckInFrom,
                                       @JsonProperty("validCheckInTo") DateTimeModification validCheckInTo,
                                       @JsonProperty("ticketValidityStart") DateTimeModification ticketValidityStart,
-                                      @JsonProperty("ticketValidityEnd") DateTimeModification ticketValidityEnd) {
+                                      @JsonProperty("ticketValidityEnd") DateTimeModification ticketValidityEnd,
+                                      @JsonProperty("ticketCheckInStrategy") TicketCheckInStrategy ticketCheckInStrategy) {
         this.id = id;
         this.name = name;
         this.maxTickets = maxTickets;
@@ -79,6 +83,7 @@ public class TicketCategoryModification {
         this.validCheckInTo = validCheckInTo;
         this.ticketValidityStart = ticketValidityStart;
         this.ticketValidityEnd = ticketValidityEnd;
+        this.ticketCheckInStrategy = ticketCheckInStrategy;
     }
 
     public int getPriceInCents() {
@@ -97,6 +102,7 @@ public class TicketCategoryModification {
                 DateTimeModification.fromZonedDateTime(tc.getValidCheckInFrom(zoneId)),
                 DateTimeModification.fromZonedDateTime(tc.getValidCheckInTo(zoneId)),
                 DateTimeModification.fromZonedDateTime(tc.getTicketValidityStart()),
-                DateTimeModification.fromZonedDateTime(tc.getTicketValidityEnd()));
+                DateTimeModification.fromZonedDateTime(tc.getTicketValidityEnd()),
+                tc.getTicketCheckInStrategy());
     }
 }
