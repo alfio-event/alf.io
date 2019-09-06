@@ -47,6 +47,7 @@ import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.User;
+import alfio.repository.AuditingRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketReservationRepository;
@@ -54,10 +55,7 @@ import alfio.repository.audit.ScanAuditRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.test.util.IntegrationTestUtil;
-import alfio.util.BaseIntegrationTest;
-import alfio.util.EventUtil;
-import alfio.util.Json;
-import alfio.util.TemplateManager;
+import alfio.util.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.opencsv.CSVReader;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -71,6 +69,8 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
@@ -165,6 +165,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private ScanAuditRepository scanAuditRepository;
     @Autowired
+    private AuditingRepository auditingRepository;
+    @Autowired
     private TicketReservationManager ticketReservationManager;
     @Autowired
     private ExtensionManager extensionManager;
@@ -192,6 +194,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private ConfigurationManager configurationManager;
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
 
     private ReservationApiController reservationApiController;
     private InvoiceReceiptController invoiceReceiptController;
@@ -209,7 +213,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, null));
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 
         event = eventAndUser.getKey();
@@ -508,6 +512,45 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         Assert.assertEquals("Test OTest", csvSponsorScan.get(1)[3]);
         Assert.assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
         //
+
+        // #742 - test multiple check-ins
+
+        // since on the badge we don't have the full ticket info, we will pass in "null" as scanned code
+        CheckInApiController.TicketCode badgeScan = new CheckInApiController.TicketCode();
+        badgeScan.setCode(null);
+        ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+        // ONCE_PER_DAY is disabled by default, therefore we get an error
+        assertEquals(CheckInStatus.EMPTY_TICKET_CODE, ticketAndcheckInResult.getResult().getStatus());
+        // enable ONCE_PER_DAY
+        TicketCategory category = ticketCategoryRepository.getById(ticketDecorator.getCategoryId());
+        ticketCategoryRepository.update(category.getId(), category.getName(), category.getInception(event.getZoneId()), category.getExpiration(event.getZoneId()), category.getMaxTickets(), category.isAccessRestricted(),
+            MonetaryUtil.unitToCents(category.getPrice()), category.getCode(), category.getValidCheckInFrom(), category.getValidCheckInTo(), category.getTicketValidityStart(), category.getTicketValidityEnd(),
+            TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY
+        );
+        ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+        // the event start date is in one week, so we expect an error here
+        assertEquals(CheckInStatus.INVALID_TICKET_CATEGORY_CHECK_IN_DATE, ticketAndcheckInResult.getResult().getStatus());
+
+        eventRepository.updateHeader(event.getId(), event.getDisplayName(), event.getWebsiteUrl(), event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(),
+            event.getFileBlobId(), event.getLocation(), event.getLatitude(), event.getLongitude(), ZonedDateTime.now(event.getZoneId()).minusSeconds(1), event.getEnd(), event.getTimeZone(),
+            event.getOrganizationId(), event.getLocales());
+
+        ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+        // we have already scanned the ticket today, so we expect to receive a warning
+        assertEquals(CheckInStatus.BADGE_SCAN_ALREADY_DONE, ticketAndcheckInResult.getResult().getStatus());
+        assertEquals(1, (int) auditingRepository.countAuditsOfTypeForReservation(reservationIdentifier, Audit.EventType.BADGE_SCAN));
+
+        // move the scans to yesterday
+        // we expect 3 rows because:
+        // 1 check-in
+        // 1 revert
+        // 1 badge scan
+        assertEquals(3, jdbcTemplate.update("update auditing set event_time = event_time - interval '1 day' where reservation_id = :reservationId and event_type in ('BADGE_SCAN', 'CHECK_IN')", Map.of("reservationId", reservationIdentifier)));
+
+        ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+        // we now expect to receive a successful message
+        assertEquals(CheckInStatus.BADGE_SCAN_SUCCESS, ticketAndcheckInResult.getResult().getStatus());
+        assertEquals(2, (int) auditingRepository.countAuditsOfTypeForReservation(reservationIdentifier, Audit.EventType.BADGE_SCAN));
         
         eventManager.deleteEvent(event.getId(), principal.getName());
 

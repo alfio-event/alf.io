@@ -1081,6 +1081,7 @@
                 ticketValidityStart: ticketValidityStart,
                 ticketValidityEnd: ticketValidityEnd,
                 tokenGenerationRequested: category.accessRestricted,
+                ticketCheckInStrategy: category.ticketCheckInStrategy,
                 sticky: false
             };
 
