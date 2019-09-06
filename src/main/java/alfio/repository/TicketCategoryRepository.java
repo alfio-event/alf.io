@@ -133,6 +133,4 @@ public interface TicketCategoryRepository {
     @Query("select access_restricted from ticket_category where id = :id")
     Boolean isAccessRestricted(@Bind("id") Integer hiddenCategoryId);
 
-    @Query("select ticket_checkin_strategy from ticket_category where id = :id")
-    TicketCategory.TicketCheckInStrategy getCheckInStrategy(@Bind("id") int categoryId);
 }

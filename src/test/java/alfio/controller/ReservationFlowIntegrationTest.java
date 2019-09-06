@@ -528,6 +528,14 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY
         );
         ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+        // the event start date is in one week, so we expect an error here
+        assertEquals(CheckInStatus.INVALID_TICKET_CATEGORY_CHECK_IN_DATE, ticketAndcheckInResult.getResult().getStatus());
+
+        eventRepository.updateHeader(event.getId(), event.getDisplayName(), event.getWebsiteUrl(), event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(),
+            event.getFileBlobId(), event.getLocation(), event.getLatitude(), event.getLongitude(), ZonedDateTime.now(event.getZoneId()).minusSeconds(1), event.getEnd(), event.getTimeZone(),
+            event.getOrganizationId(), event.getLocales());
+
+        ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
         // we have already scanned the ticket today, so we expect to receive a warning
         assertEquals(CheckInStatus.BADGE_SCAN_ALREADY_DONE, ticketAndcheckInResult.getResult().getStatus());
         assertEquals(1, (int) auditingRepository.countAuditsOfTypeForReservation(reservationIdentifier, Audit.EventType.BADGE_SCAN));
