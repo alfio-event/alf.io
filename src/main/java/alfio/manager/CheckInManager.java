@@ -402,6 +402,7 @@ public class CheckInManager {
                 if (tc.getValidCheckInTo() != null) {
                     info.put("validCheckInTo", Long.toString(tc.getValidCheckInTo(event.getZoneId()).toEpochSecond()));
                 }
+                info.put("categoryCheckInStrategy", tc.getTicketCheckInStrategy().name());
                 //
 
                 List<BookedAdditionalService> additionalServices = additionalServiceItemRepository.getAdditionalServicesBookedForReservation(ticket.getTicketsReservationId(), ticket.getUserLanguage(), ticket.getEventId());
