@@ -28,7 +28,7 @@ buildscript {
 
         //this is for processing the index.html at compile time
         classpath "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
-        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.5.4"
+        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.6.0"
         //
     }
 
@@ -50,10 +50,10 @@ plugins {
     id 'idea'
     id 'jacoco'
     id 'com.github.kt3k.coveralls' version '2.8.4'
-    id 'com.github.ben-manes.versions' version '0.23.0'
+    id 'com.github.ben-manes.versions' version '0.24.0'
     id 'com.github.hierynomus.license' version '0.15.0'
     id 'net.researchgate.release' version '2.8.1'
-    id 'org.springframework.boot' version '2.1.7.RELEASE'
+    id 'org.springframework.boot' version '2.1.8.RELEASE'
     id 'org.sonarqube' version '2.7'
 }
 
@@ -139,7 +139,7 @@ dependencies {
     /**/
     compile "com.openhtmltopdf:openhtmltopdf-core:1.0.0"
     compile "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.0"
-    compile "ch.digitalfondue.jfiveparse:jfiveparse:0.5.4"
+    compile "ch.digitalfondue.jfiveparse:jfiveparse:0.6.0"
     /**/
     compile "com.google.zxing:core:3.4.0"
     compile "com.google.zxing:javase:3.4.0"
@@ -147,7 +147,7 @@ dependencies {
     compile "org.postgresql:postgresql:42.2.6"
     compile "com.zaxxer:HikariCP:3.3.1"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
-    compile "com.stripe:stripe-java:11.5.1"
+    compile "com.stripe:stripe-java:11.7.0"
     compile 'com.paypal.sdk:rest-api-sdk:1.14.0'
     compile 'com.squareup.okhttp3:okhttp:3.13.1'
     compile "org.apache.commons:commons-lang3:3.9"
