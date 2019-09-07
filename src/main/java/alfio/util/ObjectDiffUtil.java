@@ -19,8 +19,12 @@ package alfio.util;
 import alfio.model.Ticket;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.springframework.beans.BeanUtils;
+import org.springframework.util.ReflectionUtils;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Replace https://github.com/SQiShER/java-object-diff . As our use case is way more restricted and limited.
@@ -28,7 +32,10 @@ import java.util.*;
 public class ObjectDiffUtil {
 
     public static List<Change> diff(Map<String, String> before, Map<String, String> after) {
+        return diffUntyped(before, after);
+    }
 
+    private static List<Change> diffUntyped(Map<String, ?> before, Map<String, ?> after) {
         var removed = new HashSet<>(before.keySet());
         removed.removeAll(after.keySet());
 
@@ -43,32 +50,53 @@ public class ObjectDiffUtil {
 
         removed.stream().map(k -> new Change(k, State.REMOVED, before.get(k), null)).forEach(changes::add);
         added.stream().map(k -> new Change(k, State.ADDED, null, after.get(k))).forEach(changes::add);
-        changedOrUntouched.stream().map(k -> {
+        changedOrUntouched.stream().forEach(k -> {
             var beforeValue = before.get(k);
             var afterValue = after.get(k);
-            return new Change(k, Objects.equals(beforeValue, afterValue) ? State.UNTOUCHED : State.CHANGED, beforeValue, afterValue);
-        }).forEach(changes::add);
-
+            if(!Objects.equals(beforeValue, afterValue)) {
+                changes.add(new Change(k, State.CHANGED, beforeValue, afterValue));
+            }
+        });
+        changes.sort(Change::compareTo);
         return changes;
     }
 
     public static List<Change> diff(Ticket before, Ticket after) {
-        return List.of();
+
+        var beforeAsMap = new HashMap<String, Object>();
+        var afterAsMap = new HashMap<String, Object>();
+        Stream.of(BeanUtils.getPropertyDescriptors(Ticket.class)).forEach(propertyDescriptor -> {
+            var method = propertyDescriptor.getReadMethod();
+            var name = propertyDescriptor.getName();
+            if (method != null) {
+                beforeAsMap.put(name, ReflectionUtils.invokeMethod(method, before));
+                afterAsMap.put(name, ReflectionUtils.invokeMethod(method, after));
+            }
+        });
+        return diffUntyped(beforeAsMap, afterAsMap);
     }
 
     @AllArgsConstructor
     @Getter
-    public static class Change {
+    public static class Change implements Comparable<Change> {
         private final String propertyName;
         private final State state;
         private final Object oldValue;
         private final Object newValue;
+
+        @Override
+        public int compareTo(Change change) {
+            return new CompareToBuilder()
+                .append(propertyName, change.propertyName)
+                .append(state.ordinal(), change.state.ordinal())
+                .append(oldValue, change.oldValue)
+                .append(newValue, change.newValue).toComparison();
+        }
     }
 
     public enum State {
         ADDED,
         CHANGED,
-        REMOVED,
-        UNTOUCHED
+        REMOVED
     }
 }

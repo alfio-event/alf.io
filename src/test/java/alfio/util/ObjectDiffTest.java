@@ -31,19 +31,23 @@ import java.util.Map;
 
 public class ObjectDiffTest {
 
+    ZonedDateTime now = ZonedDateTime.now();
+
+    Ticket preUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.ACQUIRED.name(), 42,
+        "42", "full name", "full", "name", "email@email.com",
+        false, "en",
+        0,  0, 0, 0, null, null);
+
+    Ticket postUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.CANCELLED.name(), 42,
+        "42", "full name", "full", "name", "email@email.com",
+        false, "en",
+        0,  0, 0, 0, null, null);
+
+
     @Test
     public void diffTest() {
 
-        var now = ZonedDateTime.now();
-        var preUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.ACQUIRED.name(), 42,
-            "42", "full name", "full", "name", "email@email.com",
-            false, "en",
-            0,  0, 0, 0, null, null);
 
-        var postUpdateTicket = new Ticket(42, "42", now, 1, Ticket.TicketStatus.CANCELLED.name(), 42,
-            "42", "full name", "full", "name", "email@email.com",
-            false, "en",
-            0,  0, 0, 0, null, null);
 
         var postUpdateTicketFields =  new HashMap<String, String>();
         postUpdateTicketFields.put("hello", "world");
@@ -60,6 +64,7 @@ public class ObjectDiffTest {
         changes.addAll(diffTicketFieldsVisitor.changes);
 
         Assert.assertEquals(2, changes.size());
+
     }
 
     @Test
@@ -92,11 +97,18 @@ public class ObjectDiffTest {
 
 
         var untouchedElem = ObjectDiffUtil.diff(newElement, new HashMap<>(newElement));
-        Assert.assertEquals(1, untouchedElem.size());
-        Assert.assertEquals("new", untouchedElem.get(0).getPropertyName());
-        Assert.assertEquals("element", untouchedElem.get(0).getNewValue());
-        Assert.assertEquals("element", untouchedElem.get(0).getOldValue());
-        Assert.assertEquals(ObjectDiffUtil.State.UNTOUCHED, untouchedElem.get(0).getState());
+        Assert.assertEquals(0, untouchedElem.size());
+    }
+
+    @Test
+    public void testTicketDiff() {
+        var res = ObjectDiffUtil.diff(preUpdateTicket, postUpdateTicket);
+
+        Assert.assertEquals(1, res.size());
+        Assert.assertEquals("status", res.get(0).getPropertyName());
+        Assert.assertEquals(Ticket.TicketStatus.CANCELLED, res.get(0).getNewValue());
+        Assert.assertEquals(Ticket.TicketStatus.ACQUIRED, res.get(0).getOldValue());
+        Assert.assertEquals(ObjectDiffUtil.State.CHANGED, res.get(0).getState());
     }
 
     private static class FieldChangesSaver implements DiffNode.Visitor {
