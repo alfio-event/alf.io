@@ -482,16 +482,17 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         String encJson = payload.get(hashedTicketKey);
         assertNotNull(encJson);
         String ticketPayload = CheckInManager.decrypt(ticket.getUuid() + "/" + ticketKey, encJson);
-        Map<String, String> jsonPayload = Json.fromJson(ticketPayload, new TypeReference<Map<String, String>>() {
+        Map<String, String> jsonPayload = Json.fromJson(ticketPayload, new TypeReference<>() {
         });
         assertNotNull(jsonPayload);
-        assertEquals(8, jsonPayload.size());
+        assertEquals(9, jsonPayload.size());
         assertEquals("Test", jsonPayload.get("firstName"));
         assertEquals("OTest", jsonPayload.get("lastName"));
         assertEquals("Test OTest", jsonPayload.get("fullName"));
         assertEquals(ticket.getUuid(), jsonPayload.get("uuid"));
         assertEquals("testmctest@test.com", jsonPayload.get("email"));
         assertEquals("CHECKED_IN", jsonPayload.get("status"));
+        assertEquals(TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT.name(), jsonPayload.get("categoryCheckInStrategy"));
         String categoryName = ticketCategoryRepository.findByEventId(event.getId()).stream().findFirst().orElseThrow(IllegalStateException::new).getName();
         assertEquals(categoryName, jsonPayload.get("category"));
         //
