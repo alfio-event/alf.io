@@ -402,6 +402,12 @@ public class CheckInManager {
                 if (tc.getValidCheckInTo() != null) {
                     info.put("validCheckInTo", Long.toString(tc.getValidCheckInTo(event.getZoneId()).toEpochSecond()));
                 }
+                if (tc.getTicketValidityStart() != null) {
+                    info.put("ticketValidityStart", Long.toString(tc.getTicketValidityStart(event.getZoneId()).toEpochSecond()));
+                }
+                if (tc.getTicketValidityEnd() != null) {
+                    info.put("ticketValidityEnd", Long.toString(tc.getTicketValidityEnd(event.getZoneId()).toEpochSecond()));
+                }
                 info.put("categoryCheckInStrategy", tc.getTicketCheckInStrategy().name());
                 //
 
