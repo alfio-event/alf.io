@@ -52,9 +52,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import de.danielbechler.diff.ObjectDifferBuilder;
-import de.danielbechler.diff.node.DiffNode;
-import de.danielbechler.diff.node.Visit;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -1421,47 +1418,20 @@ public class TicketReservationManager {
     }
 
     private void auditUpdateTicket(Ticket preUpdateTicket, Map<String, String> preUpdateTicketFields, Ticket postUpdateTicket, Map<String, String> postUpdateTicketFields, int eventId) {
-        DiffNode diffTicket = ObjectDifferBuilder.buildDefault().compare(postUpdateTicket, preUpdateTicket);
-        DiffNode diffTicketFields = ObjectDifferBuilder.buildDefault().compare(postUpdateTicketFields, preUpdateTicketFields);
-        FieldChangesSaver diffTicketVisitor = new FieldChangesSaver(preUpdateTicket, postUpdateTicket);
-        FieldChangesSaver diffTicketFieldsVisitor = new FieldChangesSaver(preUpdateTicketFields, postUpdateTicketFields);
-        diffTicket.visit(diffTicketVisitor);
-        diffTicketFields.visit(diffTicketFieldsVisitor);
+        List<ObjectDiffUtil.Change> diffTicket = ObjectDiffUtil.diff(preUpdateTicket, postUpdateTicket);
+        List<ObjectDiffUtil.Change> diffTicketFields = ObjectDiffUtil.diff(preUpdateTicketFields, postUpdateTicketFields);
 
-        List<Map<String, Object>> changes = new ArrayList<>(diffTicketVisitor.changes);
-        changes.addAll(diffTicketFieldsVisitor.changes);
+        List<Map<String, Object>> changes = Stream.concat(diffTicket.stream(), diffTicketFields.stream()).map(change -> {
+                var v = new HashMap<String, Object>();
+                v.put("propertyName", change.getPropertyName());
+                v.put("state", change.getState());
+                v.put("oldValue", change.getOldValue());
+                v.put("newValue", change.getNewValue());
+                return v;
+            }).collect(Collectors.toList());
 
         auditingRepository.insert(preUpdateTicket.getTicketsReservationId(), null, eventId,
             Audit.EventType.UPDATE_TICKET, new Date(), Audit.EntityType.TICKET, Integer.toString(preUpdateTicket.getId()), changes);
-    }
-
-
-    private static class FieldChangesSaver implements DiffNode.Visitor {
-
-        private final Object preBase;
-        private final Object postBase;
-
-        private final List<Map<String, Object>> changes = new ArrayList<>();
-
-
-        FieldChangesSaver(Object preBase, Object postBase) {
-            this.preBase = preBase;
-            this.postBase = postBase;
-        }
-
-        @Override
-        public void node(DiffNode node, Visit visit) {
-            if(node.hasChanges() && node.getState() != DiffNode.State.UNTOUCHED && !node.isRootNode()) {
-                Object baseValue = node.canonicalGet(preBase);
-                Object workingValue = node.canonicalGet(postBase);
-                HashMap<String, Object> change = new HashMap<>();
-                change.put("propertyName", node.getPath().toString());
-                change.put("state", node.getState());
-                change.put("oldValue", baseValue);
-                change.put("newValue", workingValue);
-                changes.add(change);
-            }
-        }
     }
 
     private boolean isAdmin(Optional<UserDetails> userDetails) {
