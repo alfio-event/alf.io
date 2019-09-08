@@ -32,10 +32,14 @@ import java.util.stream.Stream;
 public class ObjectDiffUtil {
 
     public static List<Change> diff(Map<String, String> before, Map<String, String> after) {
-        return diffUntyped(before, after);
+        return diffUntyped(before, after, "/{", "}");
     }
 
-    private static List<Change> diffUntyped(Map<String, ?> before, Map<String, ?> after) {
+    private static String formatPropertyName(String k, String propertyNameBefore, String propertyNameAfter) {
+        return new StringBuilder(propertyNameBefore).append(k).append(propertyNameAfter).toString();
+    }
+
+    private static List<Change> diffUntyped(Map<String, ?> before, Map<String, ?> after, String propertyNameBefore, String propertyNameAfter) {
         var removed = new HashSet<>(before.keySet());
         removed.removeAll(after.keySet());
 
@@ -48,13 +52,13 @@ public class ObjectDiffUtil {
 
         var changes = new ArrayList<Change>();
 
-        removed.stream().map(k -> new Change(k, State.REMOVED, before.get(k), null)).forEach(changes::add);
-        added.stream().map(k -> new Change(k, State.ADDED, null, after.get(k))).forEach(changes::add);
+        removed.stream().map(k -> new Change(formatPropertyName(k, propertyNameBefore, propertyNameAfter), State.REMOVED, before.get(k), null)).forEach(changes::add);
+        added.stream().map(k -> new Change(formatPropertyName(k, propertyNameBefore, propertyNameAfter), State.ADDED, null, after.get(k))).forEach(changes::add);
         changedOrUntouched.stream().forEach(k -> {
             var beforeValue = before.get(k);
             var afterValue = after.get(k);
             if(!Objects.equals(beforeValue, afterValue)) {
-                changes.add(new Change(k, State.CHANGED, beforeValue, afterValue));
+                changes.add(new Change(formatPropertyName(k, propertyNameBefore, propertyNameAfter), State.CHANGED, beforeValue, afterValue));
             }
         });
         changes.sort(Change::compareTo);
@@ -73,7 +77,7 @@ public class ObjectDiffUtil {
                 afterAsMap.put(name, ReflectionUtils.invokeMethod(method, after));
             }
         });
-        return diffUntyped(beforeAsMap, afterAsMap);
+        return diffUntyped(beforeAsMap, afterAsMap, "/", "");
     }
 
     @AllArgsConstructor

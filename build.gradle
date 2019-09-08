@@ -159,7 +159,6 @@ dependencies {
     compile 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.13.0'
     compile 'com.ryantenney.passkit4j:passkit4j:2.0.1'
     compile 'com.github.ben-manes.caffeine:caffeine:2.7.0'
-    compile 'de.danielbechler:java-object-diff:0.95'
     compile 'com.github.scribejava:scribejava-core:5.0.0'
     compile 'ch.digitalfondue.vatchecker:vatchecker:1.2'
     compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
