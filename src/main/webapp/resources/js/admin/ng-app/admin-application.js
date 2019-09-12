@@ -592,7 +592,7 @@
 
     };
 
-    admin.controller('CreateEventController', function($scope, $state, $rootScope,
+    admin.controller('CreateEventController', function($scope, $state, $rootScope, $uibModal,
                                                        $q, OrganizationService, PaymentProxyService,
                                                        EventService, LocationService, PAYMENT_PROXY_DESCRIPTIONS, TicketCategoryEditorService,
                                                        NotificationHandler) {
@@ -734,6 +734,26 @@
             }
             return _.map(dynamic, 'name').join(', ');
         };
+
+
+        $scope.openCopyEvent = function() {
+            var modal = $uibModal.open({
+                size: 'lg',
+                template: '<copy-event></copy-event>',
+                backdrop: 'static',
+                controller: function($scope) {
+                    var ctrl = this;
+                    ctrl.onEditComplete = function(item) {
+                        modal.close(item);
+                    };
+                    ctrl.onDismiss = function() {
+                        modal.dismiss();
+                    };
+                },
+                bindToController: true,
+                controllerAs: 'ctrl'
+            });
+        }
 
 
     });

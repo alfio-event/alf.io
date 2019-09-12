@@ -1,0 +1,28 @@
+<div class="modal-header">
+    <h3>Copy event</h3>
+</div>
+
+<div class="modal-body">
+
+    <div class="form-group">
+        <label>Search event:</label>
+        <input class="form-control" type="text" ng-model="selected"
+               uib-typeahead="event for event in $ctrl.events | filter: $ctrl.match($viewValue)"
+               typeahead-template-url="copy-event-typeahead-event.html"
+               typeahead-input-formatter="$model.displayName"
+               typeahead-on-select="$ctrl.onSelect($item, $model, $label)">
+    </div>
+
+    <div class="form-group" ng-if="$ctrl.selectedEvent.displayName !== undefined">
+        <label>Currently selected event to copy:</label>
+        <div>{{$ctrl.selectedEvent.displayName}} - {{$ctrl.selectedEvent.formattedBegin | formatDate}} / {{$ctrl.selectedEvent.formattedEnd | formatDate}}</div>
+    </div>
+
+    <div>
+        <label>New event date:</label>
+        <input type="text" data-date-range data-start-model="$ctrl.newEvent.begin" data-end-model="$ctrl.newEvent.end" data-ng-model="$ctrl.newEvent.dateString" name="date" id="date" class="form-control" required />
+    </div>
+</div>
+<div class="modal-footer">
+    <control-buttons></control-buttons>
+</div>
