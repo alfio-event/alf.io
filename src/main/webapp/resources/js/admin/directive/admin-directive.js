@@ -67,6 +67,8 @@
 
                 scope.startModelObj['date'] = startDate.format('YYYY-MM-DD');
                 scope.startModelObj['time'] = startDate.format('HH:mm');
+                scope.endModelObj['date'] = endDate.format('YYYY-MM-DD');
+                scope.endModelObj['time'] = endDate.format('HH:mm');
 
 
                 function updateDates(picker, override) {
@@ -111,7 +113,6 @@
                 element.on('hide.daterangepicker', function(ev, picker) {
                 	updateDates(picker, true);
                 });
-
             }
         };
     });
