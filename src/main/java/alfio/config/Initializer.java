@@ -82,7 +82,7 @@ public class Initializer extends AbstractAnnotationConfigDispatcherServletInitia
         // set secure cookie only if current environment doesn't strictly need HTTP
         config.setSecure(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)));
 
-        // FIXME and CHECKME what a mess, ouch: https://issues.jboss.org/browse/WFLY-3448 ?
+        // https://issues.jboss.org/browse/WFLY-3448 ?
         config.setPath(servletContext.getContextPath() + "/");
     }
 

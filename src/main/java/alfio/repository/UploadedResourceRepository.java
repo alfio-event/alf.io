@@ -28,7 +28,6 @@ import org.springframework.jdbc.core.support.AbstractLobCreatingPreparedStatemen
 import org.springframework.jdbc.support.lob.DefaultLobHandler;
 import org.springframework.jdbc.support.lob.LobCreator;
 import org.springframework.jdbc.support.lob.LobHandler;
-import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -86,7 +85,7 @@ public interface UploadedResourceRepository {
     int delete(@Bind("organizationId") int organizationId, @Bind("eventId") int eventId, @Bind("name") String name);
 
 
-    Function<OutputStream, RowCallbackHandler> OUTPUT_CONTENT = (out) -> rs -> {
+    Function<OutputStream, RowCallbackHandler> OUTPUT_CONTENT = out -> rs -> {
             try (InputStream is = rs.getBinaryStream("content")) {
                 is.transferTo(out);
             } catch (IOException e) {

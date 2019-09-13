@@ -16,39 +16,36 @@
  */
 package alfio.model.transaction;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.model.Event;
-import alfio.model.system.Configuration;
-import alfio.model.system.Configuration.ConfigurationPathKey;
-import alfio.model.system.ConfigurationKeys;
 
 import java.util.Optional;
-import java.util.function.Function;
 
 public class PaymentContext {
 
     private final Event event;
     private final String reservationId;
-    private final Function<ConfigurationKeys, ConfigurationPathKey> configurationProvider;
+    private final ConfigurationLevel configurationLevel;
 
     public PaymentContext() {
-        this(null, Configuration::getSystemConfiguration);
+        this(null, ConfigurationLevel.system());
     }
 
     public PaymentContext(Event event) {
-        this(event, Configuration.from(event));
+        this(event, ConfigurationLevel.event(event));
     }
 
     public PaymentContext(Event event, String reservationId) {
-        this(event, Configuration.from(event), reservationId);
+        this(event, ConfigurationLevel.event(event), reservationId);
     }
 
-    public PaymentContext(Event event, Function<ConfigurationKeys, ConfigurationPathKey> configurationProvider) {
-        this(event, configurationProvider, null);
+    public PaymentContext(Event event, ConfigurationLevel configurationLevel) {
+        this(event, configurationLevel, null);
     }
 
-    public PaymentContext(Event event, Function<ConfigurationKeys, ConfigurationPathKey> configurationProvider, String reservationId) {
+    public PaymentContext(Event event, ConfigurationLevel configurationLevel, String reservationId) {
         this.event = event;
-        this.configurationProvider = configurationProvider;
+        this.configurationLevel = configurationLevel;
         this.reservationId = reservationId;
     }
 
@@ -64,7 +61,7 @@ public class PaymentContext {
         return Optional.ofNullable(reservationId);
     }
 
-    public ConfigurationPathKey narrow(ConfigurationKeys key) {
-        return configurationProvider.apply(key);
+    public ConfigurationLevel getConfigurationLevel() {
+        return configurationLevel;
     }
 }

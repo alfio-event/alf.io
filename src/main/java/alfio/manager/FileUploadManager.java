@@ -52,7 +52,8 @@ public class FileUploadManager {
         .expireAfterWrite(20, TimeUnit.MINUTES)
         .removalListener((String key, File value, RemovalCause cause) -> {
             if(value != null) {
-                value.delete();
+                boolean result = value.delete();
+                log.trace("deleted {}: {}", key, result);
             }
         })
         .build();
@@ -70,6 +71,9 @@ public class FileUploadManager {
 
         try (var fis = new FileInputStream(file)){
             fis.transferTo(out);
+        } catch(EOFException ex){
+            // this happens when the browser closes the stream on its end.
+            log.trace("got EOFException", ex);
         } catch (IOException e) {
             throw new IllegalStateException("Error while copying data", e);
         }

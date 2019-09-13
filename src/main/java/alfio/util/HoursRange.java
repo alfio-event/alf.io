@@ -32,10 +32,6 @@ public class HoursRange {
         return Duration.between(localTime, start).isNegative() && Duration.between(end, localTime).isNegative();
     }
 
-    public boolean includes(int hours, int minutes) {
-        return includes(LocalTime.of(hours, minutes));
-    }
-
     public int getDistanceInHours(LocalTime localTime) {
         if(includes(localTime)) {
             return 0;

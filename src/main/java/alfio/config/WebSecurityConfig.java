@@ -69,7 +69,6 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.Configuration.getSystemConfiguration;
 import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 
 @Configuration
@@ -188,7 +187,7 @@ public class WebSecurityConfig {
                 .antMatchers(HttpMethod.GET, ADMIN_API + "/user-type", ADMIN_API + "/user/details").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
                 .antMatchers(ADMIN_API + "/**").denyAll()
                 .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
-                .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR)
+                .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR, API_CLIENT)
                 .antMatchers("/**").authenticated()
                 .and().addFilter(filter);
         }
@@ -365,8 +364,9 @@ public class WebSecurityConfig {
             public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
                 HttpServletRequest req = (HttpServletRequest) request;
                 HttpServletResponse res = (HttpServletResponse) response;
-                boolean captchaEnabled = configurationManager.getFor(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true);
-                if(captchaEnabled && requestMatcher.matches(req) && !recaptchaService.checkRecaptcha(null, req)) {
+                if(requestMatcher.matches(req) &&
+                    configurationManager.getForSystem(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true) &&
+                    !recaptchaService.checkRecaptcha(null, req)) {
                     res.sendRedirect(recaptchaFailureUrl);
                     return;
                 }

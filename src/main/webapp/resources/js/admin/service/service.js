@@ -34,7 +34,7 @@
         };
     });
 
-    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope, $q, LocationService) {
+    baseServices.service("EventService", function($http, HttpErrorHandler, $uibModal, $window, $rootScope, $q, LocationService, $timeout) {
 
         function copyGeoLocation(event) {
             event.latitude = event.geolocation.latitude;
@@ -108,6 +108,29 @@
                     targetCategoryId: targetCategoryId,
                     eventId: eventId
                 }).error(HttpErrorHandler.handle);
+            },
+            deleteCategory: function(category, event) {
+
+                var modal = $uibModal.open({
+                    size:'md',
+                    templateUrl: '/resources/angular-templates/admin/partials/event/fragment/delete-category-modal.html',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        $scope.cancel = function() {
+                            modal.dismiss('canceled');
+                        };
+
+                        $scope.deleteCategory = function() {
+                            $http['delete']('/admin/api/events/'+event.shortName+'/category/'+category.id)
+                                .error(HttpErrorHandler.handle)
+                                .then(function() {
+                                    modal.close('OK');
+                                });
+                        };
+                        $scope.category = category;
+                    }
+                });
+                return modal.result;
             },
             unbindTickets: function(event, category) {
                 return $http['put']('/admin/api/events/'+event.shortName+'/category/'+category.id+'/unbind-tickets').error(HttpErrorHandler.handle);
@@ -356,6 +379,61 @@
 
             getTicketsStatistics: function(eventName, from, to) {
                 return $http.get('/admin/api/events/'+eventName+'/ticket-sold-statistics', {params: {from: from, to: to}});
+            },
+
+            rearrangeCategories: function(event) {
+                var modal = $uibModal.open({
+                    size:'lg',
+                    templateUrl:'/resources/angular-templates/admin/partials/event/rearrange-categories.html',
+                    backdrop: 'static',
+                    controller: function($scope) {
+                        var ctrl = this;
+                        ctrl.event = event;
+                        var setOrdinal = function(categories) {
+                            for(var i=0, o=1; i < categories.length; i++, o++) {
+                                var category = categories[i];
+                                category.ordinal = o;
+                            }
+                            return categories;
+                        };
+                        ctrl.categories = event.ticketCategories.map(function(category) {
+                            return {
+                                id: category.id,
+                                name: category.name,
+                                ordinal: category.ordinal
+                            };
+                        });
+                        ctrl.sortedCategories = setOrdinal(_.sortByAll(ctrl.categories, ['ordinal', 'formattedInception', 'id']));
+                        $scope.$on('categories-bag.drop', function (e, el) {
+                            $timeout(function() {
+                                ctrl.sortedCategories = setOrdinal(ctrl.sortedCategories);
+                            }, 10);
+                        });
+                        ctrl.swap = function(index, category, up) {
+                            var list = ctrl.sortedCategories.slice();
+                            var target = up ? index - 1 : index + 1;
+                            var toBeSwapped = list[target];
+                            list[target] = category;
+                            list[index] = toBeSwapped;
+                            ctrl.sortedCategories.length = 0;
+                            for(var i=0; i<list.length; i++) {
+                                ctrl.sortedCategories.push(list[i]);
+                            }
+                            setOrdinal(ctrl.sortedCategories);
+                        };
+                        ctrl.save = function() {
+                            $scope.$close(ctrl.sortedCategories);
+                        };
+                        ctrl.dismiss = function() {
+                            $scope.$dismiss(false);
+                        }
+
+                    },
+                    controllerAs:'$ctrl'
+                });
+                return modal.result.then(function(categories) {
+                    return $http.put('/admin/api/events/'+event.shortName+'/rearrange-categories', categories).error(HttpErrorHandler.handle);
+                });
             }
         };
         return service;

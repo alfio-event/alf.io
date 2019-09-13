@@ -31,27 +31,27 @@
                     }
                 };
 
-                var getNowAtStartOfHour = function() {
-                    return moment().startOf('hour');
+                var getNowAtStartOfHour = function(dayToAdd, hourToAdd) {
+                    return moment().startOf('hour').add(dayToAdd, 'd').add(hourToAdd, 'h');
                 };
 
-                var initDateUsingNow = function(modelObj) {
+                var initDateUsingNow = function(modelObj, dayToAdd, hoursToAddIfDefault) {
                     if(!angular.isDefined(modelObj) || !angular.isDefined(modelObj.date) || !angular.isDefined(modelObj.time)) {
-                        return getNowAtStartOfHour();
+                        return getNowAtStartOfHour(dayToAdd, hoursToAddIfDefault);
                     }
                     var date = moment(modelObj.date + 'T' + modelObj.time);
-                    return date.isValid() ? date : getNowAtStartOfHour();
+                    return date.isValid() ? date : getNowAtStartOfHour(dayToAdd, hoursToAddIfDefault);
                 };
 
 
-                var startDate = initDateUsingNow(scope.startModelObj);
-                var endDate = initDateUsingNow(scope.endModelObj);
+                var startDate = initDateUsingNow(scope.startModelObj, 1, 0);
+                var endDate = initDateUsingNow(scope.endModelObj, 1, 1);
 
                 var result = startDate.format(dateFormat) + ' / ' + endDate.format(dateFormat);
                 ctrl.$setViewValue(result);
                 element.val(result);
 
-                var minDate = scope.minDate || getNowAtStartOfHour();
+                var minDate = scope.minDate || getNowAtStartOfHour(0, 0);
 
                 var pickerElement = element.daterangepicker({
                     format: dateFormat,
@@ -67,6 +67,8 @@
 
                 scope.startModelObj['date'] = startDate.format('YYYY-MM-DD');
                 scope.startModelObj['time'] = startDate.format('HH:mm');
+                scope.endModelObj['date'] = endDate.format('YYYY-MM-DD');
+                scope.endModelObj['time'] = endDate.format('HH:mm');
 
 
                 function updateDates(picker, override) {
@@ -111,7 +113,6 @@
                 element.on('hide.daterangepicker', function(ev, picker) {
                 	updateDates(picker, true);
                 });
-
             }
         };
     });
@@ -125,7 +126,8 @@
                 startDate: '=',
                 startModelObj: '=startModel',
                 watchObj: '=',
-                noInitDate: '='
+                noInitDate: '=',
+                displayOnTop: '='
             },
             require: '^ngModel',
             link: function(scope, element, attrs, ctrl) {
@@ -171,7 +173,8 @@
                     timePicker: true,
                     timePicker12Hour: false,
                     timePickerIncrement: 1,
-                    singleDatePicker: true
+                    singleDatePicker: true,
+                    drops: !!scope.displayOnTop ? 'up' : 'down'
                 });
 
                 if(!scope.noInitDate) {
@@ -318,7 +321,10 @@
             },
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
-            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService) {
+            controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService, ConfigurationService) {
+
+                $scope.baseUrl = ConfigurationService.getBaseUrl();
+
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
                         'description', 'websiteUrl', 'externalUrl', 'termsAndConditionsUrl', 'privacyPolicyUrl', 'imageUrl', 'fileBlobId', 'formattedBegin','type',
@@ -344,17 +350,41 @@
                     $scope.timezones = res.data;
                 });
 
-                $scope.selectedLanguages = {};
+                $scope.selectedLanguages = {
+                    langs: []
+                };
 
-                EventService.getSupportedLanguages().success(function(result) {
-                    var locales = $scope.obj.locales;
-                    var selected = _.filter(result, function(r) {
-                        return (r.value & locales) === r.value;
+                var evaluateAvailableLanguages = function(allLanguages) {
+                    $scope.availableLanguages = _.filter(allLanguages, function(r) {
+                        return !isLangSelected(r);
                     });
+                };
+
+                var isLangSelected = function(r) {
+                    var locales = $scope.obj.locales;
+                    return (r.value & locales) === r.value;
+                };
+                EventService.getSupportedLanguages().success(function(allLanguages) {
+                    var selected = _.filter(allLanguages, isLangSelected);
+                    if(selected.length === 0 && allLanguages.length > 0) {
+                        $scope.addDescription(allLanguages[0]);
+                        selected.push(allLanguages[0]);
+                    }
                     $scope.selectedLanguages.langs = _.map(selected, function(r) {
                         return r.value;
                     });
+
+                    $scope.allLanguages = allLanguages;
+                    evaluateAvailableLanguages(allLanguages);
                 });
+                $scope.addDescription = function(language) {
+                    $scope.toggleLanguageSelection(language);
+                    evaluateAvailableLanguages($scope.allLanguages);
+                };
+                $scope.removeDescription = function(language) {
+                    $scope.toggleLanguageSelection(language);
+                    evaluateAvailableLanguages($scope.allLanguages);
+                };
 
                 $scope.isLanguageSelected = function(lang) {
                     return lang && $scope.selectedLanguages.langs && $scope.selectedLanguages.langs.indexOf(lang.value) > -1;
@@ -464,7 +494,7 @@
                     };
                     if (files.length <= 0) {
                 		alert('Your image not uploaded correctly.Please upload the image again');
-	                } else if (!((files[0].type == 'image/png') || (files[0].type == 'image/jpeg'))) {
+	                } else if (!((files[0].type === 'image/png') || (files[0].type === 'image/jpeg'))) {
 	                	alert('only png or jpeg files are accepted');
 	                } else if (files[0].size > (1024 * 200)) {
 	                	alert('Image size exceeds the allowable limit 200KB');
@@ -550,15 +580,45 @@
         return {
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-category.html',
-            controller: function($scope) {
+            controller: function($scope, ConfigurationService) {
                 $scope.buildPrefix = function(index, name) {
                     return angular.isDefined(index) ? index + "-" + name : name;
                 };
 
-                $scope.baseUrl = window.location.origin;
+                $scope.baseUrl = ConfigurationService.getBaseUrl();
 
                 $scope.isLanguagePresent = function(locales, value) {
                     return (locales & value) === value;
+                };
+
+                $scope.categoryTypes = [
+                    {
+                        name: 'Public',
+                        tokenGenerationRequested: false
+                    },{
+                        name: 'Hidden',
+                        tokenGenerationRequested: true
+                    }
+                ];
+
+                var allocationStrategies = [
+                    {
+                        name: 'Grow dynamically',
+                        bounded: false
+                    }, {
+                        name: 'Fixed number of tickets',
+                        bounded: true
+                    }
+                ];
+
+                $scope.allocationStrategies = allocationStrategies;
+                $scope.onTokenGenerationRequestedChange = function() {
+                    if($scope.ticketCategory.tokenGenerationRequested) {
+                        $scope.ticketCategory.bounded = true;
+                        $scope.allocationStrategies = allocationStrategies.slice(1);
+                    } else {
+                        $scope.allocationStrategies = allocationStrategies;
+                    }
                 };
 
                 $scope.helpAllocationStrategyCollapse = true;
@@ -592,7 +652,54 @@
                         ticketCategory.ticketValidityEnd;
                 };
 
-                $scope.advancedOptionsCollapsed = !hasCustomCheckIn($scope.ticketCategory) && !hasCustomTicketValidity($scope.ticketCategory);
+                var eventDateToMoment = function(d) {
+                    if(d.date) {
+                        return moment(d.date + 'T' + d.time);
+                    }
+                    return moment(d);
+                };
+
+                $scope.eventStartDate = eventDateToMoment($scope.event.begin).format('YYYY-MM-DD HH:mm');
+                $scope.eventEndDate = eventDateToMoment($scope.event.end).format('YYYY-MM-DD HH:mm');
+
+                $scope.ticketValidity = [];
+                $scope.ticketValidityTypes = [{
+                    code: 'ALL',
+                    description: 'For the entire event'
+                }, {
+                    code: 'CUSTOM',
+                    description: 'Custom'
+                }];
+                $scope.ticketValidityType = hasCustomTicketValidity($scope.ticketCategory) ? 'CUSTOM' : 'ALL';
+
+                $scope.checkInAllowedOptions = [
+                    {
+                        code: 'ANYTIME',
+                        description: 'At any time'
+                    }, {
+                        code: 'CUSTOM',
+                        description: 'Custom'
+                    }
+                ];
+                $scope.checkInAllowed = hasCustomCheckIn($scope.ticketCategory) ? 'CUSTOM' : 'ANYTIME';
+                var supportedLanguages = _.filter($scope.allLanguagesMapping, function(l) {
+                    return $scope.isLanguagePresent($scope.event.locales, l.value);
+                });
+                var filterLanguages = function(included) {
+                    return _.filter(supportedLanguages, function(l) {
+                        return included === ($scope.ticketCategory.description != null && angular.isDefined($scope.ticketCategory.description[l.locale]));
+                    });
+                };
+                $scope.definedLanguages = filterLanguages(true);
+                $scope.availableLanguages = filterLanguages(false);
+                $scope.addDescription = function(language) {
+                    if($scope.ticketCategory.description == null) {
+                        $scope.ticketCategory.description = {};
+                    }
+                    $scope.ticketCategory.description[language.locale] = '';
+                    $scope.definedLanguages = filterLanguages(true);
+                    $scope.availableLanguages = filterLanguages(false);
+                }
             }
         };
     });
@@ -835,20 +942,24 @@
             restrict: 'E',
             bindToController: true,
             scope: {
-                text: '='
+                text: '=',
+                buttonText: '@'
             },
             controllerAs: 'ctrl',
-            template:'<span><a class="btn btn-xs btn-default" ng-click="ctrl.openModal()"><i class="fa fa-eye"></i> preview</a></span>',
+            template:'<span><a class="btn btn-xs btn-default" ng-click="ctrl.openModal()"><i class="fa fa-eye"></i> {{ctrl.buttonText}}</a></span>',
             controller: function() {
                 var ctrl = this;
+                if(!ctrl.buttonText) {
+                    ctrl.buttonText = 'preview';
+                }
 
                 ctrl.openModal = function() {
                     if (ctrl.text) {
                         UtilsService.renderCommonMark(ctrl.text)
                             .then(function (res) {
                                     return $uibModal.open({
-                                        size: 'sm',
-                                        template: '<div class="modal-header"><h1>Preview</h1></div><div class="modal-body" ng-bind-html="text"></div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
+                                        size: 'lg',
+                                        template: '<div class="modal-header"><h1>Preview</h1></div><div class="modal-body markdown-content" ng-bind-html="text"></div><div class="modal-footer"><button class="btn btn-default" data-ng-click="ok()">close</button></div>',
                                         backdrop: 'static',
                                         controller: function ($scope) {
                                             $scope.ok = function () {
@@ -1099,7 +1210,7 @@
         return {
             restrict: 'E',
             scope: {},
-            template: '<div class="markdown-help text-right"><img class="markdown-logo" src="../resources/images/markdown-logo.svg" /> <a href="http://commonmark.org/help/" target="_blank">Markdown (CommonMark) supported</a></div> '
+            template: '<div class="markdown-help text-right"><img class="markdown-logo" src="../resources/images/markdown-logo.svg" /> <a href="http://commonmark.org/help/" target="_blank">How to format text</a></div> '
         };
     });
 
@@ -1126,6 +1237,30 @@
             },
             template: '<img class="img-center" ng-src="../resources/images/flags/{{flag}}.gif">'
         };
+    });
+
+    directives.directive('urlTextField', function() {
+        return {
+            restrict: 'A',
+            scope: {},
+            link: function($scope, element, attrs) {
+                element.on('focus', function() {
+                    if(element.val() === '') {
+                        element.val('https://');
+                        setTimeout(function() {
+                            element.get(0).setSelectionRange(8, 8);
+                        });
+                    }
+                });
+                var urlProtocolMatcher = /^https?:\/\/.+$/;
+                element.on('paste', function(e) {
+                    var pastedText = e.originalEvent.clipboardData.getData('text'); //thanks to https://stackoverflow.com/a/11605419
+                    if(element.val() === 'https://' && urlProtocolMatcher.test(pastedText)) {
+                        element.select();
+                    }
+                })
+            }
+        }
     })
     
 })();

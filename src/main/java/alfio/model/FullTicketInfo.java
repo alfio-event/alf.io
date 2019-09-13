@@ -57,6 +57,7 @@ public class FullTicketInfo {
                           @Column("t_locked_assignment") boolean lockedAssignment,
                           @Column("t_user_language") String userLanguage,
                           @Column("t_ext_reference") String extReference,
+                          @Column("t_currency_code") String currencyCode,
                           //
                           @Column("tr_id") String trId,
                           @Column("tr_validity") Date trValidity,
@@ -113,18 +114,19 @@ public class FullTicketInfo {
                           @Column("tc_valid_checkin_from") ZonedDateTime validCheckInFrom,
                           @Column("tc_valid_checkin_to") ZonedDateTime validCheckInTo,
                           @Column("tc_ticket_validity_start") ZonedDateTime ticketValidityStart,
-                          @Column("tc_ticket_validity_end") ZonedDateTime ticketValidityEnd
+                          @Column("tc_ticket_validity_end") ZonedDateTime ticketValidityEnd,
+                          @Column("tc_ordinal") int ordinal
                           ) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
-            lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference);
+            lockedAssignment, userLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference, currencyCode);
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage,
             directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent, vatIncluded, reservationCreationTimestamp, customerReference,
             reservationRegistrationTimestamp, reservationSrcPriceCts, reservationFinalPriceCts, reservationVatCts, reservationDiscountCts, reservationCurrencyCode);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
                 tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts, code, validCheckInFrom, validCheckInTo,
-                ticketValidityStart, ticketValidityEnd);
+                ticketValidityStart, ticketValidityEnd, currencyCode, ordinal);
 
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountry, vatNr, invoicingAdditionalInfo);
 

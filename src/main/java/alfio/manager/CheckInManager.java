@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.support.*;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
@@ -146,7 +147,7 @@ public class CheckInManager {
 
     public boolean manualCheckIn(int eventId, String ticketIdentifier, String user) {
         Optional<Ticket> ticket = findAndLockTicket(ticketIdentifier);
-        return ticket.map((t) -> {
+        return ticket.map(t -> {
 
             if(t.getStatus() == TicketStatus.TO_BE_PAID) {
                 acquire(ticketIdentifier);
@@ -160,7 +161,7 @@ public class CheckInManager {
     }
 
     public boolean revertCheckIn(int eventId, String ticketIdentifier, String user) {
-        return findAndLockTicket(ticketIdentifier).map((t) -> {
+        return findAndLockTicket(ticketIdentifier).map(t -> {
             if(t.getStatus() == TicketStatus.CHECKED_IN) {
                 TicketReservation reservation = ticketReservationRepository.findReservationById(t.getTicketsReservationId());
                 TicketStatus revertedStatus = reservation.getPaymentMethod() == PaymentProxy.ON_SITE ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
@@ -176,10 +177,6 @@ public class CheckInManager {
 
     private Optional<Ticket> findAndLockTicket(String uuid) {
         return ticketRepository.findByUUIDForUpdate(uuid);
-    }
-
-    public List<FullTicketInfo> findAllFullTicketInfo(int eventId) {
-        return ticketRepository.findAllFullTicketInfoAssignedByEventId(eventId);
     }
 
     public TicketAndCheckInResult evaluateTicketStatus(int eventId, String ticketIdentifier, Optional<String> ticketCode) {
@@ -236,7 +233,7 @@ public class CheckInManager {
         final TicketStatus ticketStatus = ticket.getStatus();
 
         if (ticketStatus == TicketStatus.TO_BE_PAID) {
-            return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new OnSitePaymentResult(MUST_PAY, "Must pay for ticket", MonetaryUtil.centsToUnit(ticket.getFinalPriceCts()), event.getCurrency()));
+            return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new OnSitePaymentResult(MUST_PAY, "Must pay for ticket", MonetaryUtil.centsToUnit(ticket.getFinalPriceCts(), ticket.getCurrencyCode()), ticket.getCurrencyCode()));
         }
 
         if (ticketStatus == TicketStatus.CHECKED_IN) {
@@ -406,7 +403,7 @@ public class CheckInManager {
     }
 
     private boolean areStatsEnabled(EventAndOrganizationId event) {
-        return configurationManager.getFor(event, CHECK_IN_STATS).getValueAsBooleanOrDefault(true);
+        return configurationManager.getFor(CHECK_IN_STATS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true);
     }
 
     @Getter

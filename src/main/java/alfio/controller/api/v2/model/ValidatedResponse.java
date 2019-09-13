@@ -18,10 +18,13 @@ package alfio.controller.api.v2.model;
 
 import alfio.model.result.ValidationResult;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @AllArgsConstructor
@@ -35,9 +38,9 @@ public class ValidatedResponse<T> {
         var transformed = bindingResult.getAllErrors().stream().map(objectError -> {
             if (objectError instanceof FieldError) {
                 var fe = (FieldError) objectError;
-                return new ValidationResult.ErrorDescriptor(fe.getField(), "", fe.getCode());
+                return new ValidationResult.ErrorDescriptor(fe.getField(), "", fe.getCode(), fe.getArguments());
             } else {
-                return new ValidationResult.ErrorDescriptor(objectError.getObjectName(), "", objectError.getCode());
+                return new ValidationResult.ErrorDescriptor(objectError.getObjectName(), "", objectError.getCode(), objectError.getArguments());
             }
         }).collect(Collectors.toList());
 
@@ -52,8 +55,10 @@ public class ValidatedResponse<T> {
         return validationResult.isSuccess();
     }
 
-    public List<ValidationResult.ErrorDescriptor> getValidationErrors() {
-        return validationResult.getValidationErrors();
+    public List<ErrorDescriptor> getValidationErrors() {
+        return validationResult.getValidationErrors().stream()
+            .map(ed -> new ErrorDescriptor(ed.getFieldName(), ed.getCode(), fromArray(ed.getArguments())))
+            .collect(Collectors.toList());
     }
 
     public int getErrorCount() {
@@ -62,5 +67,26 @@ public class ValidatedResponse<T> {
 
     public T getValue() {
         return value;
+    }
+
+    private static Map<String, Object> fromArray(Object[] arguments) {
+
+        if(arguments == null || arguments.length == 0) {
+            return null;
+        } else {
+            var res = new HashMap<String, Object>();
+            for (int i = 0; i < arguments.length; i++) {
+                res.put(Integer.toString(i), arguments[i]);
+            }
+            return res;
+        }
+    }
+
+    @AllArgsConstructor
+    @Getter
+    public static class ErrorDescriptor {
+        private final String fieldName;
+        private final String code;
+        private final Map<String, Object> arguments;
     }
 }

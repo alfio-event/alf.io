@@ -40,4 +40,15 @@ public class EventDescription {
         this.eventDescriptionType = eventDescriptionType;
         this.description = description;
     }
+
+    @Getter
+    public static class LocaleDescription {
+        private final String locale;
+        private final String description;
+
+        public LocaleDescription(@Column("locale") String locale, @Column("description") String description) {
+            this.locale = locale;
+            this.description = description;
+        }
+    }
 }

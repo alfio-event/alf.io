@@ -27,7 +27,6 @@ import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
-import alfio.repository.AdditionalServiceRepository;
 import alfio.util.ErrorsCode;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
@@ -59,8 +58,8 @@ public class ReservationForm implements Serializable {
         return ofNullable(reservation)
                 .orElse(emptyList())
                 .stream()
-                .filter((e) -> e != null && e.getAmount() != null && e.getTicketCategoryId() != null
-                        && e.getAmount() > 0).collect(toList());
+                .filter(e -> e != null && e.getAmount() != null && e.getTicketCategoryId() != null && e.getAmount() > 0)
+                .collect(toList());
     }
 
     private List<AdditionalServiceReservationModification> selectedAdditionalServices() {
@@ -77,7 +76,6 @@ public class ReservationForm implements Serializable {
 
     public Optional<Pair<List<TicketReservationWithOptionalCodeModification>, List<ASReservationWithOptionalCodeModification>>> validate(Errors bindingResult,
                                                                                                                                          TicketReservationManager tickReservationManager,
-                                                                                                                                         AdditionalServiceRepository additionalServiceRepository,
                                                                                                                                          EventManager eventManager,
                                                                                                                                          Event event) {
         int selectionCount = ticketSelectionCount();
@@ -88,7 +86,7 @@ public class ReservationForm implements Serializable {
         }
 
         List<Pair<TicketReservationModification, Integer>> maxTicketsByTicketReservation = selected().stream()
-            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event.getOrganizationId(), event.getId(), r.getTicketCategoryId())))
+            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event, r.getTicketCategoryId())))
             .collect(toList());
         Optional<Pair<TicketReservationModification, Integer>> error = maxTicketsByTicketReservation.stream()
             .filter(p -> p.getKey().getAmount() > p.getValue())
@@ -129,7 +127,7 @@ public class ReservationForm implements Serializable {
             .flatMap(tickReservationManager::getSpecialPriceByCode);
         //
         final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        maxTicketsByTicketReservation.forEach((pair) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));
+        maxTicketsByTicketReservation.forEach(pair -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));
         return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).collect(Collectors.toList())));
     }
 

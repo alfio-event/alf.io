@@ -70,8 +70,7 @@ public final class PasswordGenerator {
         if(DEV_MODE) {
             return "abcd";
         }
-        Random r = new Random();
-        int length = MIN_LENGTH + r.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
+        int length = MIN_LENGTH + RANDOM.nextInt(MAX_LENGTH - MIN_LENGTH + 1);
         return RandomStringUtils.random(length, 0, PASSWORD_CHARACTERS.length, false, false, PASSWORD_CHARACTERS, RANDOM);
     }
 

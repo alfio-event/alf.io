@@ -21,6 +21,7 @@ import alfio.manager.EventManager;
 import alfio.manager.EventStatisticsManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.WaitingQueueManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
@@ -57,7 +58,7 @@ public class AdminWaitingQueueApiController {
     private final ConfigurationManager configurationManager;
     private final EventStatisticsManager eventStatisticsManager;
 
-    @RequestMapping(value = "/status", method = RequestMethod.GET)
+    @GetMapping("/status")
     public Map<String, Boolean> getStatusForEvent(@PathVariable("eventName") String eventName, Principal principal) {
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(this::loadStatus)
@@ -72,14 +73,14 @@ public class AdminWaitingQueueApiController {
             .map(tc -> new SaleableTicketCategory(tc, now, event, ticketReservationManager.countAvailableTickets(event, tc), tc.getMaxTickets(), null))
             .collect(Collectors.toList());
         boolean active = EventUtil.checkWaitingQueuePreconditions(event, stcList, configurationManager, eventStatisticsManager.noSeatsAvailable());
-        boolean paused = active && configurationManager.getFor(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault(false);
+        boolean paused = active && configurationManager.getFor(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
         Map<String, Boolean> result = new HashMap<>();
         result.put("active", active);
         result.put("paused", paused);
         return result;
     }
 
-    @RequestMapping(value = "/status", method = RequestMethod.PUT)
+    @PutMapping("/status")
     public Map<String, Boolean> setStatusForEvent(@PathVariable("eventName") String eventName, @RequestBody SetStatusForm form, Principal principal) {
         return eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> {
@@ -90,7 +91,7 @@ public class AdminWaitingQueueApiController {
             }).orElse(Collections.emptyMap());
     }
 
-    @RequestMapping(value = "/count", method = RequestMethod.GET)
+    @GetMapping("/count")
     public Integer countWaitingPeople(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
         Optional<Integer> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.countSubscribers(e.getId()));
@@ -101,7 +102,7 @@ public class AdminWaitingQueueApiController {
         return 0;
     }
 
-    @RequestMapping(value = "/load", method = RequestMethod.GET)
+    @GetMapping("/load")
     public List<WaitingQueueSubscription> loadAllSubscriptions(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
         Optional<List<WaitingQueueSubscription>> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.loadAllSubscriptionsForEvent(e.getId()));
@@ -122,11 +123,11 @@ public class AdminWaitingQueueApiController {
         var header = new String[] {"Type", "Firstname", "Lastname", "Email", "Language", "Status", "Date"};
         var lines = convertSubscriptions(found, event);
         if ("excel".equals(format)) {
-            ExportUtils.exportExcel(eventName + "-waiting-queue.xlsx", "waiting-queue",
+            ExportUtils.exportExcel(event.getShortName() + "-waiting-queue.xlsx", "waiting-queue",
                 header,
                 lines, response);
         } else {
-            ExportUtils.exportCsv(eventName + "-waiting-queue.csv", header, lines, response);
+            ExportUtils.exportCsv(event.getShortName() + "-waiting-queue.csv", header, lines, response);
         }
     }
 
@@ -137,14 +138,14 @@ public class AdminWaitingQueueApiController {
             s.getCreation().withZoneSameInstant(event.getZoneId()).toString()});
     }
 
-    @RequestMapping(value = "/subscriber/{subscriberId}", method = RequestMethod.DELETE)
+    @DeleteMapping("/subscriber/{subscriberId}")
     public ResponseEntity<Map<String, Object>> removeSubscriber(@PathVariable("eventName") String eventName,
                                                                 @PathVariable("subscriberId") int subscriberId,
                                                                 Principal principal) {
         return performStatusModification(eventName, subscriberId, principal, WaitingQueueSubscription.Status.CANCELLED, WaitingQueueSubscription.Status.WAITING);
     }
 
-    @RequestMapping(value = "/subscriber/{subscriberId}/restore", method = RequestMethod.PUT)
+    @PutMapping("/subscriber/{subscriberId}/restore")
     public ResponseEntity<Map<String, Object>> restoreSubscriber(@PathVariable("eventName") String eventName,
                                                                      @PathVariable("subscriberId") int subscriberId,
                                                                      Principal principal) {

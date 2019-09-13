@@ -57,7 +57,7 @@
                     <div class="panel-body text-info">
                         <div class="row">
                             <div class="col-xs-3 col-md-4"><span class="fa fa-money icon-overview"></span></div>
-                            <div class="col-xs-9 col-md-8 text-right"><span class="event-statistic-highlighted">{{ctrl.event.grossIncome|currency:''}}</span> <span class="text-muted">{{ctrl.event.currency}}</span></div>
+                            <div class="col-xs-9 col-md-8 text-right"><span class="event-statistic-highlighted">{{ctrl.event.grossIncome|money:ctrl.event.currency:true}}</span> <span class="text-muted">{{ctrl.event.currency}}</span></div>
                         </div>
                     </div>
                 </div>

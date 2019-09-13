@@ -1,8 +1,5 @@
-<div ng-if="$ctrl.forEvent && !($ctrl.isInternal($ctrl.event) && !$ctrl.event.freeOfCharge)">
-    Your event cannot have promo codes!
-</div>
-<div ng-if="$ctrl.forOrganization || ($ctrl.isInternal($ctrl.event) && !$ctrl.event.freeOfCharge)">
-    <div class="wMarginBottom30px">
+<div ng-if="$ctrl.forOrganization || $ctrl.isInternal($ctrl.event)">
+    <div class="wMarginBottom30px" ng-if="$ctrl.forOrganization || !$ctrl.event.freeOfCharge">
         <div class="page-header">
             <h3><i class="fa fa-percent"></i> {{$ctrl.promoCodeDescription}} codes</h3>
             <h5 class="text-muted">Manage/Handle the {{$ctrl.promoCodeDescription}} codes.</h5>
@@ -37,5 +34,9 @@
         <div>
             <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode('ACCESS')"><i class="fa fa-plus"></i> add Access Code</button>
         </div>
+    </div>
+
+    <div class="alert alert-warning wMarginTop30px" ng-if="$ctrl.forEvent && $ctrl.restrictedCategories.length === 0 && $ctrl.event.freeOfCharge">
+        <h4><i class="fa fa-warning"></i> Your event cannot have {{$ctrl.promoCodeDescription}} or Access Codes</h4>
     </div>
 </div>

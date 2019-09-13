@@ -17,6 +17,7 @@
 package alfio.model.transaction;
 
 import alfio.model.support.JSONData;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 
@@ -88,5 +89,9 @@ public class Transaction {
     public boolean isPotentialMatch() {
         return status == Status.OFFLINE_MATCHING_PAYMENT_FOUND
             || status == Status.OFFLINE_PENDING_REVIEW;
+    }
+
+    public String getFormattedAmount() {
+        return MonetaryUtil.formatCents(priceInCents, currency);
     }
 }

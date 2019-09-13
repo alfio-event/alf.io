@@ -17,14 +17,10 @@
 package alfio.manager.payment;
 
 
-import alfio.manager.payment.stripe.StripeConnectResult;
-import alfio.manager.payment.stripe.StripeConnectURL;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.PaymentInformation;
-import alfio.model.system.Configuration.ConfigurationPathKey;
-import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.ClientServerTokenRequest;
 import alfio.model.transaction.capabilities.PaymentInfo;
@@ -46,8 +42,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
+import static alfio.manager.payment.BaseStripeManager.STRIPE_MANAGER_TYPE_KEY;
 import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
 
 @Component
@@ -55,6 +51,7 @@ import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
 public class StripeCreditCardManager implements PaymentProvider, ClientServerTokenRequest, RefundRequest, PaymentInfo {
 
     public static final String STRIPE_UNEXPECTED = "error.STEP2_STRIPE_unexpected";
+    private static final String STRIPE_MANAGER = StripeCreditCardManager.class.getName();
 
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
@@ -66,7 +63,8 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
                                    TransactionRepository transactionRepository,
                                    ConfigurationRepository configurationRepository,
                                    Environment environment) {
-        this(configurationManager, transactionRepository,
+        this(configurationManager,
+            transactionRepository,
             new BaseStripeManager(configurationManager, configurationRepository, ticketRepository, environment));
     }
 
@@ -76,14 +74,6 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
         this.configurationManager = configurationManager;
         this.transactionRepository = transactionRepository;
         this.baseStripeManager = baseStripeManager;
-    }
-
-    public StripeConnectURL getConnectURL(Function<ConfigurationKeys, ConfigurationPathKey> keyResolver) {
-        return baseStripeManager.getConnectURL(keyResolver);
-    }
-
-    public StripeConnectResult storeConnectedAccountId(String code, Function<ConfigurationKeys, ConfigurationPathKey> keyResolver) {
-        return baseStripeManager.storeConnectedAccountId(code, keyResolver);
     }
 
     public Optional<Boolean> processWebhookEvent(String body, String signature) {
@@ -114,7 +104,15 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
         return baseStripeManager.accept(paymentMethod, context)
-            && !configurationManager.getBooleanConfigValue(context.narrow(STRIPE_ENABLE_SCA), false);
+            && !configurationManager.getFor(STRIPE_ENABLE_SCA, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
+    }
+
+    @Override
+    public boolean accept(Transaction transaction) {
+        //note, only StripeWebhookPaymentManager set 'clientSecret' in the metadata, this is a fallback for old cases
+        var hasMetadata = !transaction.getMetadata().isEmpty();
+        var isCCManager = STRIPE_MANAGER.equals(transaction.getMetadata().get(STRIPE_MANAGER_TYPE_KEY)) || transaction.getMetadata().get("clientSecret") == null;
+        return transaction.getPaymentProxy() == PaymentProxy.STRIPE && (!hasMetadata || isCCManager);
     }
 
     @Override
@@ -129,9 +127,10 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
                         Optional.ofNullable( BaseStripeManager.getFeeAmount(feeDetails, "stripe_fee")).map(Long::parseLong).orElse(0L));
                 }).orElse(null);
 
+                PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
                 transactionRepository.insert(charge.getId(), null, spec.getReservationId(),
                     ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
-                    fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE, Map.of());
+                    fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE, Map.of(STRIPE_MANAGER_TYPE_KEY, STRIPE_MANAGER));
                 return PaymentResult.successful(charge.getId());
             }).orElseGet(() -> PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION"));
         } catch (Exception e) {

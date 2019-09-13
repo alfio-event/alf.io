@@ -17,12 +17,13 @@
 package alfio.manager;
 
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.ClientServerTokenRequest;
+import alfio.model.transaction.capabilities.ExtractPaymentTokenFromTransaction;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.repository.AuditingRepository;
@@ -61,6 +62,10 @@ public class PaymentManager {
         return doLookupProvidersByMethodAndCapabilities(paymentMethod, context, capabilities).findFirst();
     }
 
+    Optional<PaymentProvider> lookupByTransactionAndCapabilities(Transaction transaction, List<Class<? extends Capability>> capabilities) {
+        return paymentProviders.stream().filter(p -> p.accept(transaction)).filter(p -> capabilities.stream().allMatch(c -> c.isInstance(p))).findFirst();
+    }
+
     List<PaymentProvider> lookupProvidersByMethodAndCapabilities(PaymentMethod paymentMethod,
                                                                  PaymentContext context,
                                                                  List<Class<? extends Capability>> capabilities) {
@@ -80,7 +85,7 @@ public class PaymentManager {
     }
 
     private List<PaymentMethodDTO> getPaymentMethods(PaymentContext context) {
-        String blacklist = configurationManager.getStringConfigValue(context.narrow(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST), "");
+        String blacklist = configurationManager.getFor(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST, context.getConfigurationLevel()).getValueOrDefault("");
         return PaymentProxy.availableProxies()
             .stream()
             .filter(p -> !blacklist.contains(p.getKey()))
@@ -97,14 +102,7 @@ public class PaymentManager {
     }
 
     public List<PaymentMethodDTO> getPaymentMethods(int organizationId) {
-        return getPaymentMethods(new PaymentContext(null, Configuration.from(organizationId)));
-    }
-
-    public List<PaymentMethodDTO> getActivePaymentMethods(Event event) {
-        return getPaymentMethods(event)
-            .stream()
-            .filter(PaymentMethodDTO::isActive)
-            .collect(Collectors.toList());
+        return getPaymentMethods(new PaymentContext(null, ConfigurationLevel.organization(organizationId)));
     }
 
     public boolean refund(TicketReservation reservation, Event event, Integer amount, String username) {
@@ -199,6 +197,30 @@ public class PaymentManager {
                         return PaymentResult.initialized(transaction.getPaymentId());
                 }
             });
+    }
+
+    public Optional<PaymentToken> getPaymentToken(String reservationId) {
+        return transactionRepository.loadOptionalByReservationId(reservationId)
+            .filter(t->t.getStatus() == Transaction.Status.PENDING)
+            .flatMap(t -> {
+            if(t.getMetadata().containsKey(PAYMENT_TOKEN)) {
+                return lookupByTransactionAndCapabilities(t, List.of(ExtractPaymentTokenFromTransaction.class))
+                    .map(ExtractPaymentTokenFromTransaction.class::cast)
+                    .flatMap(paymentProvider -> paymentProvider.extractToken(t));
+            }
+            return Optional.empty();
+        });
+    }
+
+    public boolean removePaymentTokenReservation(String reservationId) {
+        return transactionRepository.loadOptionalByReservationId(reservationId).filter(t->t.getStatus() == Transaction.Status.PENDING)
+            .map(t -> {
+                if (t.getMetadata().containsKey(PAYMENT_TOKEN)) {
+                    return transactionRepository.invalidateById(t.getId()) == 1;
+                } else {
+                    return false;
+                }
+            }).orElse(false);
     }
 
     @Data

@@ -20,12 +20,13 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.model.ContentLanguage;
+import alfio.util.BaseIntegrationTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -39,13 +40,13 @@ import java.time.format.DateTimeFormatter;
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
 @ActiveProfiles({Initializer.PROFILE_DEV, Initializer.PROFILE_DISABLE_JOBS, Initializer.PROFILE_INTEGRATION_TEST})
 @Transactional
-public class I18nManagerIntegrationTest {
+public class I18nManagerIntegrationTest extends BaseIntegrationTest {
 
     private static final ZonedDateTime DATE = ZonedDateTime.of(1999, 2, 3, 4, 5, 6, 7, ZoneId.of("Europe/Zurich"));
 
 
     @Autowired
-    private MessageSource messageSource;
+    private MessageSourceManager messageSourceManager;
 
     @Autowired
     private I18nManager i18nManager;
@@ -59,6 +60,7 @@ public class I18nManagerIntegrationTest {
 
         for (ContentLanguage cl : i18nManager.getAvailableLanguages()) {
             formatDateWith(cl); //<- will launch an exception if the format is not valid
+            Assert.assertTrue(true);
         }
     }
 
@@ -76,9 +78,11 @@ public class I18nManagerIntegrationTest {
         Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.ROMANIAN));
         Assert.assertEquals("03.02.1999 04:05", formatDateWith(ContentLanguage.PORTUGUESE));
         Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.TURKISH));
+        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.SPANISH));
     }
 
     private String formatDateWith(ContentLanguage cl) {
+        var messageSource = messageSourceManager.getRootMessageSource();
         String pattern = messageSource.getMessage("datetime.pattern", null, cl.getLocale());
         return DateTimeFormatter.ofPattern(pattern, cl.getLocale()).format(DATE);
     }

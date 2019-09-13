@@ -16,7 +16,12 @@
  */
 package alfio.util;
 
+import org.apache.commons.lang3.StringUtils;
+import org.joda.money.CurrencyUnit;
+
 import java.math.BigDecimal;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.function.Function;
 
 import static java.math.RoundingMode.*;
@@ -24,7 +29,7 @@ import static java.math.RoundingMode.*;
 public final class MonetaryUtil {
 
     public static final BigDecimal HUNDRED = new BigDecimal("100.00");
-    public static final int ROUNDING_SCALE = 10;
+    private static final int ROUNDING_SCALE = 10;
 
     private MonetaryUtil() {
     }
@@ -33,7 +38,7 @@ public final class MonetaryUtil {
         return addVAT(new BigDecimal(priceInCents), vat).intValueExact();
     }
 
-    public static BigDecimal addVAT(BigDecimal price, BigDecimal vat) {
+    private static BigDecimal addVAT(BigDecimal price, BigDecimal vat) {
         return price.add(price.multiply(vat.divide(HUNDRED, ROUNDING_SCALE, UP))).setScale(0, HALF_UP);
     }
 
@@ -51,28 +56,49 @@ public final class MonetaryUtil {
         return price.multiply(percentage.divide(HUNDRED, ROUNDING_SCALE, HALF_UP));
     }
 
-    public static BigDecimal centsToUnit(int cents) {
-        return new BigDecimal(cents).divide(HUNDRED, 2, HALF_UP);
+    public static BigDecimal centsToUnit(int cents, String currencyCode) {
+        return centsToUnit((long) cents, currencyCode);
     }
 
-    public static BigDecimal centsToUnit(long cents) {
-        return new BigDecimal(cents).divide(HUNDRED, 2, HALF_UP);
+    public static BigDecimal centsToUnit(long cents, String currencyCode) {
+        if(cents == 0 || StringUtils.isEmpty(currencyCode)) {
+            return BigDecimal.ZERO;
+        }
+        var currencyUnit = CurrencyUnit.of(currencyCode.toUpperCase(Locale.ENGLISH));
+        int scale = currencyUnit.getDecimalPlaces();
+        return new BigDecimal(cents).divide(BigDecimal.TEN.pow(scale), scale, HALF_UP);
     }
 
-    public static int unitToCents(BigDecimal unit) {
-        return unitToCents(unit, BigDecimal::intValueExact);
+    public static int unitToCents(BigDecimal unit, String currencyCode) {
+        if (StringUtils.isEmpty(currencyCode)) {
+            return 0;
+        }
+        return unitToCents(unit, currencyCode, BigDecimal::intValueExact);
     }
 
-    public static <T extends Number> T unitToCents(BigDecimal unit, Function<BigDecimal, T> converter) {
-        BigDecimal result = unit.multiply(HUNDRED).setScale(0, HALF_UP);
+    public static <T extends Number> T unitToCents(BigDecimal unit, String currencyCode, Function<BigDecimal, T> converter) {
+        int scale = StringUtils.isEmpty(currencyCode) ? 2 : CurrencyUnit.of(currencyCode.toUpperCase(Locale.ENGLISH)).getDecimalPlaces();
+        BigDecimal result = unit.multiply(BigDecimal.TEN.pow(scale)).setScale(0, HALF_UP);
         return converter.apply(result);
     }
 
-    public static String formatCents(long cents) {
-        return centsToUnit(cents).toPlainString();
+    public static String formatCents(int cents, String currencyCode) {
+        return formatCents((long) cents, currencyCode);
     }
 
-    public static String formatCents(int cents) {
-        return centsToUnit(cents).toPlainString();
+    public static String formatCents(long cents, String currencyCode) {
+        if (StringUtils.isEmpty(currencyCode)) {
+            return "0";
+        }
+        return centsToUnit(cents, currencyCode).toPlainString();
+    }
+
+    public static String formatUnit(BigDecimal unit, String currencyCode) {
+        if (StringUtils.isEmpty(currencyCode)) {
+            return "0";
+        }
+
+        var currencyUnit = CurrencyUnit.of(Objects.requireNonNull(currencyCode).toUpperCase(Locale.ENGLISH));
+        return Objects.requireNonNull(unit).setScale(currencyUnit.getDecimalPlaces(), HALF_UP).toPlainString();
     }
 }

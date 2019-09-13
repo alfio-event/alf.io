@@ -49,7 +49,7 @@ public class ScriptingExecutionService {
     private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
     private static final SimpleHttpClient SIMPLE_HTTP_CLIENT = new SimpleHttpClient(HTTP_CLIENT);
 
-    private final static Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
+    private static final Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
     private final Cache<String, CompiledScript> compiledScriptCache = Caffeine.newBuilder()
         .expireAfterAccess(12, TimeUnit.HOURS)
         .build();
@@ -63,7 +63,7 @@ public class ScriptingExecutionService {
         .build();
 
     public <T> T executeScript(String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params, Class<T> clazz, ExtensionLogger extensionLogger) {
-        CompiledScript compiledScript = compiledScriptCache.get(hash, (key) -> {
+        CompiledScript compiledScript = compiledScriptCache.get(hash, key -> {
             try {
                 return engine.compile(scriptFetcher.get());
             } catch (Throwable se) {
@@ -76,10 +76,8 @@ public class ScriptingExecutionService {
     }
 
     public void executeScriptAsync(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params,  ExtensionLogger extensionLogger) {
-        Optional.ofNullable(asyncExecutors.get(path, (key) -> Executors.newSingleThreadExecutor()))
-            .ifPresent(it -> it.submit(() -> {
-               executeScript(name, hash, scriptFetcher, params, Object.class, extensionLogger);
-            }));
+        Optional.ofNullable(asyncExecutors.get(path, key -> Executors.newSingleThreadExecutor()))
+            .ifPresent(it -> it.submit(() -> executeScript(name, hash, scriptFetcher, params, Object.class, extensionLogger)));
     }
 
 

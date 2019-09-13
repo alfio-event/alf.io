@@ -30,7 +30,7 @@ import java.util.Comparator;
 @Getter
 public class TicketCategory {
 
-    public static Comparator<TicketCategory> COMPARATOR = (tc1, tc2) -> new CompareToBuilder().append(tc1.utcInception, tc2.utcInception).append(tc1.utcExpiration, tc2.utcExpiration).toComparison();
+    public static final Comparator<TicketCategory> COMPARATOR = (tc1, tc2) -> new CompareToBuilder().append(tc1.utcInception, tc2.utcInception).append(tc1.utcExpiration, tc2.utcExpiration).toComparison();
 
     public enum Status {
         ACTIVE, NOT_ACTIVE
@@ -51,6 +51,8 @@ public class TicketCategory {
     private final ZonedDateTime validCheckInTo;
     private final ZonedDateTime ticketValidityStart;
     private final ZonedDateTime ticketValidityEnd;
+    private final String currencyCode;
+    private final int ordinal;
 
 
     public TicketCategory(@JsonProperty("id") @Column("id") int id,
@@ -67,7 +69,9 @@ public class TicketCategory {
                           @JsonProperty("validCheckInFrom") @Column("valid_checkin_from") ZonedDateTime validCheckInFrom,
                           @JsonProperty("validCheckInTo") @Column("valid_checkin_to") ZonedDateTime validCheckInTo,
                           @JsonProperty("ticketValidityStart") @Column("ticket_validity_start") ZonedDateTime ticketValidityStart,
-                          @JsonProperty("ticketValidityEnd") @Column("ticket_validity_end") ZonedDateTime ticketValidityEnd) {
+                          @JsonProperty("ticketValidityEnd") @Column("ticket_validity_end") ZonedDateTime ticketValidityEnd,
+                          @JsonProperty("currencyCode") @Column("currency_code") String currencyCode,
+                          @JsonProperty("ordinal") @Column("ordinal") Integer ordinal) {
         this.id = id;
         this.utcInception = utcInception;
         this.utcExpiration = utcExpiration;
@@ -83,11 +87,12 @@ public class TicketCategory {
         this.validCheckInTo = validCheckInTo;
         this.ticketValidityStart = ticketValidityStart;
         this.ticketValidityEnd = ticketValidityEnd;
+        this.currencyCode = currencyCode;
+        this.ordinal = ordinal != null ? ordinal : 0;
     }
 
     public BigDecimal getPrice() {
-        //TODO: apply this conversion only for some currency. Not all are cent based.
-        return MonetaryUtil.centsToUnit(srcPriceCts);
+        return MonetaryUtil.centsToUnit(srcPriceCts, currencyCode);
     }
     
     public boolean getFree() {

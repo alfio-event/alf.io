@@ -37,6 +37,7 @@ public class PaymentForm implements Serializable {
     private Boolean termAndConditionsAccepted;
     private Boolean privacyPolicyAccepted;
     private String hmac;
+    private String captcha;
 
 
     public void validate(BindingResult bindingResult, Event event, TotalPrice reservationCost) {

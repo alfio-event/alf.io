@@ -21,7 +21,7 @@ import alfio.controller.api.support.PageAndContent;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
 import alfio.model.ExtensionSupport.ExtensionMetadataValue;
@@ -42,7 +42,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -74,23 +73,23 @@ public class ExtensionApiController {
     private final EventRepository eventRepository;
 
 
-    @RequestMapping(value = "", method = RequestMethod.GET)
+    @GetMapping("")
     public List<ExtensionSupport> listAll(Principal principal) {
         ensureAdmin(principal);
         return extensionService.listAll();
     }
 
-    @RequestMapping(value = "/sample", method = RequestMethod.GET)
+    @GetMapping("/sample")
     public ExtensionSupport getSample() {
         return new ExtensionSupport(null, "-", "", null, true, true, SAMPLE_JS);
     }
 
-    @RequestMapping(value = "", method = RequestMethod.POST)
+    @PostMapping(value = "")
     public ResponseEntity<SerializablePair<Boolean, String>> create(@RequestBody Extension script, Principal principal) {
         return createOrUpdate(null, null, script, principal);
     }
 
-    @RequestMapping(value = "{path}/{name}", method = RequestMethod.POST)
+    @PostMapping(value = "{path}/{name}")
     public ResponseEntity<SerializablePair<Boolean, String>> update(@PathVariable("path") String path, @PathVariable("name") String name, @RequestBody Extension script, Principal principal) {
         return createOrUpdate(path, name, script, principal);
     }
@@ -106,20 +105,20 @@ public class ExtensionApiController {
         }
     }
 
-    @RequestMapping(value = "{path}/{name}", method = RequestMethod.GET)
-    public ResponseEntity<ExtensionSupport> loadSingle(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) throws UnsupportedEncodingException {
+    @GetMapping("{path}/{name}")
+    public ResponseEntity<ExtensionSupport> loadSingle(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) {
         ensureAdmin(principal);
         return extensionService.getSingle(URLDecoder.decode(path, StandardCharsets.UTF_8), name).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
 
-    @RequestMapping(value = "{path}/{name}", method = RequestMethod.DELETE)
+    @DeleteMapping(value = "{path}/{name}")
     public void delete(@PathVariable("path") String path, @PathVariable("name") String name, Principal principal) {
         ensureAdmin(principal);
         extensionService.delete(path, name);
     }
 
-    @RequestMapping(value = "/{path}/{name}/toggle/{enable}", method = RequestMethod.POST)
+    @PostMapping(value = "/{path}/{name}/toggle/{enable}")
     public void toggle(@PathVariable("path") String path, @PathVariable("name") String name, @PathVariable("enable") boolean enable, Principal principal) {
         ensureAdmin(principal);
         extensionService.toggle(path, name, enable);
@@ -127,7 +126,7 @@ public class ExtensionApiController {
 
 
     //
-    @RequestMapping(value = "/setting/system", method = RequestMethod.GET)
+    @GetMapping("/setting/system")
     public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(Principal principal) {
         ensureAdmin(principal);
         return extensionService.getConfigurationParametersFor("-", "-%", "SYSTEM")
@@ -147,7 +146,7 @@ public class ExtensionApiController {
         extensionService.deleteSettingValue(id, "-");
     }
 
-    @RequestMapping(value = "/setting/organization/{orgId}", method = RequestMethod.GET)
+    @GetMapping("/setting/organization/{orgId}")
     public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(@PathVariable("orgId") int orgId, Principal principal) {
         Organization org = organizationRepository.getById(orgId);
         ensureOrganization(principal, org);
@@ -170,16 +169,16 @@ public class ExtensionApiController {
         extensionService.deleteSettingValue(id, "-" + org.getId());
     }
 
-    @RequestMapping(value = "/setting/organization/{orgId}/event/{shortName}", method = RequestMethod.GET)
+    @GetMapping("/setting/organization/{orgId}/event/{shortName}")
     public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(@PathVariable("orgId") int orgId,
                                                                      @PathVariable("shortName") String eventShortName,
                                                                      Principal principal) {
 
         Organization org = organizationRepository.getById(orgId);
         ensureOrganization(principal, org);
-        Event event = eventRepository.findByShortName(eventShortName);
+        var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName).orElseThrow(IllegalStateException::new);
         ensureEventInOrganization(org, event);
-        String pattern = String.format("-%d-%d", org.getId(), event.getId());
+        String pattern = generatePatternFrom(event);
         return extensionService.getConfigurationParametersFor(pattern, pattern,"EVENT")
             .stream().collect(Collectors.groupingBy(ExtensionParameterMetadataAndValue::getExtensionId));
     }
@@ -189,9 +188,9 @@ public class ExtensionApiController {
                                 @RequestBody List<ExtensionMetadataValue> toUpdate, Principal principal) {
         Organization org = organizationRepository.getById(orgId);
         ensureOrganization(principal, org);
-        Event event = eventRepository.findByShortName(eventShortName);
+        var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName).orElseThrow(IllegalStateException::new);
         ensureEventInOrganization(org, event);
-        String pattern = String.format("-%d-%d", org.getId(), event.getId());
+        String pattern = generatePatternFrom(event);
         ensureIdsArePresent(toUpdate, extensionService.getConfigurationParametersFor(pattern, pattern, "EVENT"));
         extensionService.bulkUpdateEventSettings(org, event, toUpdate);
     }
@@ -200,9 +199,13 @@ public class ExtensionApiController {
     public void deleteEventSettingValue(@PathVariable("orgId") int orgId, @PathVariable("shortName") String eventShortName, @PathVariable("id") int id, Principal principal) {
         Organization org = organizationRepository.getById(orgId);
         ensureOrganization(principal, org);
-        Event event = eventRepository.findByShortName(eventShortName);
+        var event = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName).orElseThrow(IllegalStateException::new);
         ensureEventInOrganization(org, event);
-        extensionService.deleteSettingValue(id, String.format("-%d-%d", org.getId(), event.getId()));
+        extensionService.deleteSettingValue(id, generatePatternFrom(event));
+    }
+
+    private static String generatePatternFrom(EventAndOrganizationId event) {
+        return String.format("-%d-%d", event.getOrganizationId(), event.getId());
     }
 
     //check that the ids are coherent
@@ -216,7 +219,7 @@ public class ExtensionApiController {
 
     //
 
-    @RequestMapping(value = "/log")
+    @GetMapping("/log")
     public PageAndContent<List<ExtensionLog>> getLog(@RequestParam(required = false, name = "path") String path,
                                                      @RequestParam(required = false, name = "name") String name,
                                                      @RequestParam(required = false, name = "type") ExtensionLog.Type type,
@@ -236,7 +239,7 @@ public class ExtensionApiController {
         Validate.isTrue(userManager.isOwnerOfOrganization(user, organization.getId()));
     }
 
-    private static void ensureEventInOrganization(Organization organization, Event event) {
+    private static void ensureEventInOrganization(Organization organization, EventAndOrganizationId event) {
         Validate.isTrue(organization.getId() == event.getOrganizationId());
     }
 }

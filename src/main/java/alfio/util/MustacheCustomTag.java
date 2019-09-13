@@ -20,9 +20,13 @@ import alfio.controller.api.support.TicketHelper;
 import com.samskivert.mustache.Mustache;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.text.StringEscapeUtils;
+import org.commonmark.Extension;
+import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
 import org.commonmark.renderer.html.HtmlRenderer;
+import org.commonmark.renderer.text.TextContentRenderer;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -57,7 +61,7 @@ public class MustacheCustomTag {
 
     static final Mustache.Lambda FORMAT_DATE = (frag, out) -> {
         String execution = frag.execute().trim();
-        ZonedDateTime d = ZonedDateTime.parse(substring(execution, 0, execution.indexOf(" ")));
+        ZonedDateTime d = ZonedDateTime.parse(substring(execution, 0, execution.indexOf(' ')));
         Pair<String, Optional<Locale>> p = parseParams(execution);
         if (p.getRight().isPresent()) {
             out.write(DateTimeFormatter.ofPattern(p.getLeft(), p.getRight().get()).format(d));
@@ -86,7 +90,7 @@ public class MustacheCustomTag {
      * {{#additional-field-value}}[Prefix][name][suffix]{{/additional-field-value}}
      * prefix is optional, unless a suffix is needed.
      */
-    static final Function<Object, Mustache.Lambda> ADDITIONAL_FIELD_VALUE = (obj) -> (frag, out) -> {
+    static final Function<Object, Mustache.Lambda> ADDITIONAL_FIELD_VALUE = obj -> (frag, out) -> {
         if( !(obj instanceof Map) || ((Map<?,?>)obj).isEmpty()) {
             log.warn("map not found or empty. Skipping additionalFieldValue tag");
             return;
@@ -112,25 +116,32 @@ public class MustacheCustomTag {
 
     private static Pair<String, Optional<Locale>> parseParams(String r) {
 
-        int indexLocale = r.indexOf(LOCALE_LABEL), end = Math.min(r.length(),
-                indexLocale != -1 ? indexLocale : r.length());
-        String format = substring(r, r.indexOf(" "), end);
+        int indexLocale = r.indexOf(LOCALE_LABEL);
+        int end = Math.min(r.length(), indexLocale != -1 ? indexLocale : r.length());
+        String format = substring(r, r.indexOf(' '), end);
 
         //
         String[] res = r.split("\\s+");
-        Optional<Locale> locale = Arrays.stream(res).filter((s) -> s.startsWith(LOCALE_LABEL)).findFirst()
-                .map((l) -> Locale.forLanguageTag(substring(l, LOCALE_LABEL.length())));
+        Optional<Locale> locale = Arrays.stream(res).filter(s -> s.startsWith(LOCALE_LABEL)).findFirst()
+                .map(l -> LocaleUtil.forLanguageTag(substring(l, LOCALE_LABEL.length())));
         //
 
         return Pair.of(format, locale);
     }
 
 
-    private static final Parser COMMONMARK_PARSER = Parser.builder().build();
-    private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().build();
+    private static final List<Extension> COMMONMARK_EXTENSIONS = List.of(TablesExtension.create());
+    private static final Parser COMMONMARK_PARSER = Parser.builder().extensions(COMMONMARK_EXTENSIONS).build();
+    private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
+    private static final TextContentRenderer COMMONMARK_TEXT_RENDERER = TextContentRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
 
-    public static String renderToCommonmark(String input) {
-        Node document = COMMONMARK_PARSER.parse(input);
+    public static String renderToHtmlCommonmarkEscaped(String input) {
+        Node document = COMMONMARK_PARSER.parse(StringEscapeUtils.escapeHtml4(input));
         return COMMONMARK_RENDERER.render(document);
+    }
+
+    public static String renderToTextCommonmark(String input) {
+        Node document = COMMONMARK_PARSER.parse(input);
+        return COMMONMARK_TEXT_RENDERER.render(document);
     }
 }

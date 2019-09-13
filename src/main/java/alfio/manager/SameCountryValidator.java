@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.EventAndOrganizationId;
 import alfio.model.VatDetail;
 import ch.digitalfondue.vatchecker.EUVatCheckResponse;
 import ch.digitalfondue.vatchecker.EUVatChecker;
@@ -32,8 +33,7 @@ public class SameCountryValidator implements Predicate<String> {
 
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
-    private final int organizationId;
-    private final int eventId;
+    private final EventAndOrganizationId eventAndOrganizationId;
     private final String ticketReservationId;
     private final EuVatChecker checker;
     private final EUVatChecker client = new EUVatChecker();
@@ -42,13 +42,13 @@ public class SameCountryValidator implements Predicate<String> {
     public boolean test(String vatNr) {
 
         if(StringUtils.isEmpty(vatNr)) {
-            log.warn("empty VAT number received for organizationId {}", organizationId);
+            log.warn("empty VAT number received for organizationId {}", eventAndOrganizationId.getOrganizationId());
         }
 
-        String organizerCountry = EuVatChecker.organizerCountry(configurationManager, organizationId);
+        String organizerCountry = EuVatChecker.organizerCountry(configurationManager, eventAndOrganizationId);
 
-        if(!EuVatChecker.validationEnabled(configurationManager, organizationId)) {
-            log.warn("VAT checking is not enabled for organizationId {} or country not defined ({})", organizationId, organizerCountry);
+        if(!EuVatChecker.validationEnabled(configurationManager, eventAndOrganizationId)) {
+            log.warn("VAT checking is not enabled for organizationId {} or country not defined ({})", eventAndOrganizationId.getOrganizationId(), organizerCountry);
             return false;
         }
 
@@ -57,11 +57,11 @@ public class SameCountryValidator implements Predicate<String> {
         boolean valid = validStrict;
 
         if(!valid && StringUtils.isNotBlank(vatNr)) {
-            valid = extensionManager.handleTaxIdValidation(eventId, vatNr, organizerCountry);
+            valid = extensionManager.handleTaxIdValidation(eventAndOrganizationId.getId(), vatNr, organizerCountry);
         }
         if(valid && StringUtils.isNotEmpty(ticketReservationId)) {
             VatDetail detail = new VatDetail(vatNr, organizerCountry, true, "", "", validStrict ? VatDetail.Type.VIES : VatDetail.Type.FORMAL, false);
-            checker.logSuccessfulValidation(detail, ticketReservationId, eventId);
+            checker.logSuccessfulValidation(detail, ticketReservationId, eventAndOrganizationId.getId());
         }
         return valid;
     }

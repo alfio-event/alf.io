@@ -45,8 +45,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static alfio.util.OptionalWrapper.optionally;
-
 @RestController
 @RequestMapping("/admin/api")
 @Log4j2
@@ -77,7 +75,7 @@ public class AdditionalServiceApiController {
         return new ResponseEntity<>("internal server error", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
-    @RequestMapping(value = "/event/{eventId}/additional-services", method = RequestMethod.GET)
+    @GetMapping("/event/{eventId}/additional-services")
     public List<EventModification.AdditionalService> loadAll(@PathVariable("eventId") int eventId) {
         return eventRepository.findOptionalById(eventId)
             .map(event -> additionalServiceRepository.loadAllForEvent(eventId)
@@ -95,7 +93,7 @@ public class AdditionalServiceApiController {
         return additionalServiceRepository.getCount(eventId);
     }
 
-    @RequestMapping(value = "/event/{eventId}/additional-services/{additionalServiceId}", method = RequestMethod.PUT)
+    @PutMapping("/event/{eventId}/additional-services/{additionalServiceId}")
     @Transactional
     public ResponseEntity<EventModification.AdditionalService> update(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
@@ -105,7 +103,7 @@ public class AdditionalServiceApiController {
             .map(event -> {
                 int result = additionalServiceRepository.update(additionalServiceId, additionalService.isFixPrice(),
                     additionalService.getOrdinal(), additionalService.getAvailableQuantity(), additionalService.getMaxQtyPerOrder(), additionalService.getInception().toZonedDateTime(event.getZoneId()),
-                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType(), Optional.ofNullable(additionalService.getPrice()).map(MonetaryUtil::unitToCents).orElse(0));
+                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType(), Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0));
                 Validate.isTrue(result <= 1, "too many records updated");
                 Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
                     forEach(t -> {
@@ -119,7 +117,7 @@ public class AdditionalServiceApiController {
             }).orElseThrow(IllegalArgumentException::new);
     }
 
-    @RequestMapping(value = "/event/{eventId}/additional-services", method = RequestMethod.POST)
+    @PostMapping(value = "/event/{eventId}/additional-services")
     @Transactional
     public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable("eventId") int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
@@ -127,7 +125,7 @@ public class AdditionalServiceApiController {
         return eventRepository.findOptionalById(eventId)
             .map(event -> {
                 AffectedRowCountAndKey<Integer> result = additionalServiceRepository.insert(eventId,
-                    Optional.ofNullable(additionalService.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
+                    Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0),
                     additionalService.isFixPrice(),
                     additionalService.getOrdinal(),
                     additionalService.getAvailableQuantity(),
@@ -150,7 +148,7 @@ public class AdditionalServiceApiController {
             }).orElseThrow(IllegalArgumentException::new);
     }
 
-    @RequestMapping(value = "/event/{eventId}/additional-services/{additionalServiceId}", method = RequestMethod.DELETE)
+    @DeleteMapping("/event/{eventId}/additional-services/{additionalServiceId}")
     @Transactional
     public ResponseEntity<String> remove(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, Principal principal) {
         return eventRepository.findOptionalById(eventId)
@@ -168,7 +166,7 @@ public class AdditionalServiceApiController {
             .orElseGet(() -> new ResponseEntity<>("event not found", HttpStatus.NOT_FOUND));
     }
 
-    @RequestMapping(value = "/additional-services/validate", method = RequestMethod.POST)
+    @PostMapping("/additional-services/validate")
     public ValidationResult checkAdditionalService(@RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
         return Validator.validateAdditionalService(additionalService, bindingResult);
     }

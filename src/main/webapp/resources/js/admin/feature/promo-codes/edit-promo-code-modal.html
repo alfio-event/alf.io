@@ -7,8 +7,9 @@
         <div class="col-sm-12 col-md-8 col-md-offset-2">
             <div class="form-group" bs-form-error="promocode.promoCode">
                 <label for="promoCode">name (min length is 7 characters)</label>
-                <input type="text" id="promoCode" data-ng-model="promocode.promoCode" class="form-control to-uppercase" required minlength="7"/>
-                <field-error data-form-obj="promocode" data-field-obj="promocode.promoCode" data-show-existing-errors="showExistingErrors"></field-error>
+                <input type="text" id="promoCode" data-ng-model="promocode.promoCode" class="form-control to-uppercase" required minlength="7" pattern="^[A-Za-z0-9_\-:@!$*,;]*$" data-required-pattern="'Letters and Numbers, underscore and hyphens'"/>
+                <field-error data-form-obj="promoCodeForm" data-field-obj="promocode.promoCode" data-show-existing-errors="showExistingErrors"></field-error>
+                <span id="helpBlock" class="help-block">Allowed characters: Letters, numbers, and <code>-:_@!$*,;</code></span>
             </div>
 
 

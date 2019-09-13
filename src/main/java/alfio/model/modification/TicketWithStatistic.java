@@ -16,7 +16,6 @@
  */
 package alfio.model.modification;
 
-import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.Ticket;
 import alfio.model.TicketReservation;
@@ -39,26 +38,26 @@ public class TicketWithStatistic implements Comparable<TicketWithStatistic>, Pri
     @Delegate
     @JsonIgnore
     private final Ticket ticket;
-    @JsonIgnore
-    private final Event event;
     private final TicketReservation ticketReservation;
     @JsonIgnore
     private final ZoneId zoneId;
     @JsonIgnore
     private final Optional<Transaction> tx;
+    private final String promoCodeOrToken;
+    @JsonIgnore
     private final Function<ZonedDateTime, LocalDateTime> dateMapper;
 
     public TicketWithStatistic(Ticket ticket,
-                               Event event,
                                TicketReservation ticketReservation,
                                ZoneId zoneId,
-                               Optional<Transaction> tx) {
+                               Optional<Transaction> tx,
+                               String promoCodeOrToken) {
         this.ticket = ticket;
-        this.event = event;
         this.ticketReservation = ticketReservation;
         this.zoneId = zoneId;
         this.tx = tx;
         this.dateMapper = d -> d.withZoneSameInstant(this.zoneId).toLocalDateTime();
+        this.promoCodeOrToken = promoCodeOrToken;
     }
 
     public boolean isStuck() {
@@ -91,33 +90,28 @@ public class TicketWithStatistic implements Comparable<TicketWithStatistic>, Pri
     }
 
     @Override
-    public String getCurrencyCode() {
-        return event.getCurrency();
-    }
-
-    @Override
     @JsonIgnore
     public Optional<BigDecimal> getOptionalVatPercentage() {
-        return Optional.ofNullable(event.getVat());
+        return Optional.ofNullable(ticketReservation.getUsedVatPercent());
     }
 
     @Override
     public BigDecimal getAppliedDiscount() {
-        return MonetaryUtil.centsToUnit(ticket.getDiscountCts());
+        return MonetaryUtil.centsToUnit(ticket.getDiscountCts(), ticket.getCurrencyCode());
     }
 
     @Override
     public BigDecimal getFinalPrice() {
-        return MonetaryUtil.centsToUnit(ticket.getFinalPriceCts());
+        return MonetaryUtil.centsToUnit(ticket.getFinalPriceCts(), ticket.getCurrencyCode());
     }
 
     @Override
     public BigDecimal getVAT() {
-        return MonetaryUtil.centsToUnit(ticket.getVatCts());
+        return MonetaryUtil.centsToUnit(ticket.getVatCts(), ticket.getCurrencyCode());
     }
 
     @Override
     public VatStatus getVatStatus() {
-        return event.getVatStatus();
+        return ticketReservation.getVatStatus();
     }
 }

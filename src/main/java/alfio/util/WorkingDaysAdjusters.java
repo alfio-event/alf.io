@@ -28,15 +28,11 @@ import java.util.*;
 @UtilityClass
 public class WorkingDaysAdjusters {
 
-    public static final Set<DayOfWeek> MON_FRI = EnumSet.complementOf(EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
-    public static final List<HoursRange> ALL_DAY = Collections.singletonList(new HoursRange(LocalTime.of(8, 0, 0), LocalTime.of(20, 0, 0)));
+    private static final Set<DayOfWeek> MON_FRI = EnumSet.complementOf(EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
+    private static final List<HoursRange> ALL_DAY = Collections.singletonList(new HoursRange(LocalTime.of(8, 0, 0), LocalTime.of(20, 0, 0)));
 
     public static TemporalAdjuster defaultWorkingDays() {
         return temporal -> adjust(temporal, MON_FRI, ALL_DAY);
-    }
-
-    public static TemporalAdjuster workingDaysAtNoon() {
-        return temporal -> adjust(temporal, MON_FRI, Collections.singletonList(new HoursRange(LocalTime.of(12, 0, 0), LocalTime.of(12, 0, 0))));
     }
 
     private static Temporal adjust(Temporal in, Set<DayOfWeek> dayOfWeeks, List<HoursRange> hoursRanges) {

@@ -8,7 +8,11 @@
             editHandler: '<',
             removeHandler: '<',
             boxClass: '<',
-            panelModeEnabled: '<'
+            panelModeEnabled: '<',
+            swapEnabled: '<',
+            swapHandler: '<',
+            isFirst: '<',
+            isLast: '<'
         },
         controller: [TicketCategoryDetailCtrl],
         templateUrl: '../resources/js/admin/feature/ticket-category/ticket-category-detail.html'
@@ -104,6 +108,14 @@
                             return;
                         }
                         if(angular.isDefined(event.id)) {
+                            //remove all empty descriptions
+                            if(category.description) {
+                                _.forIn(category.description, function(v, p) {
+                                    if(v === '') {
+                                        delete category.description[p];
+                                    }
+                                })
+                            }
                             EventService.saveTicketCategory(event, category).then(function(result) {
                                 validationErrorHandler(result, form, form).then(function() {
                                     reloadIfSeatsModification(!original || (original.bounded ^ category.bounded || original.maxTickets !== category.maxTickets))

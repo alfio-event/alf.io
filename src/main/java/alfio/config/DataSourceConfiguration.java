@@ -22,10 +22,12 @@ import alfio.config.support.PlatformProvider;
 import alfio.job.Jobs;
 import alfio.job.executor.ReservationJobExecutor;
 import alfio.manager.*;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.repository.system.AdminJobQueueRepository;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.Json;
@@ -37,13 +39,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
-import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.*;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.AbstractDataSource;
@@ -54,7 +51,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
-import org.springframework.web.servlet.view.mustache.jmustache.JMustacheTemplateLoader;
 
 import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
@@ -71,12 +67,9 @@ import java.util.Set;
 @ComponentScan(basePackages = {"alfio.manager", "alfio.extension"})
 @Log4j2
 @EnableNpjt(basePackages = "alfio.repository")
-public class DataSourceConfiguration implements ResourceLoaderAware {
+public class DataSourceConfiguration {
 
     private static final Set<PlatformProvider> PLATFORM_PROVIDERS = EnumSet.complementOf(EnumSet.of(PlatformProvider.DEFAULT));
-
-    @Autowired
-    private ResourceLoader resourceLoader;
 
     @Bean
     @Profile({"!"+Initializer.PROFILE_INTEGRATION_TEST, "travis"})
@@ -97,7 +90,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
             dataSource.setJdbcUrl(platform.getUrl(env));
             dataSource.setUsername(platform.getUsername(env));
             dataSource.setPassword(platform.getPassword(env));
-            dataSource.setDriverClassName(platform.getDriverClassName(env));
+            dataSource.setDriverClassName("org.postgresql.Driver");
             dataSource.setMaximumPoolSize(platform.getMaxActive(env));
             dataSource.setMinimumIdle(platform.getMinIdle(env));
             dataSource.setConnectionTimeout(1000L);
@@ -142,7 +135,6 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
 
     @Bean
     public Flyway migrator(Environment env, PlatformProvider platform, DataSource dataSource) {
-        String sqlDialect = platform.getDialect(env);
         Flyway migration = new Flyway();
         migration.setDataSource(dataSource);
 
@@ -150,7 +142,7 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
         migration.setTarget(MigrationVersion.LATEST);
         migration.setOutOfOrder(true);
 
-        migration.setLocations("alfio/db/" + sqlDialect + "/");
+        migration.setLocations("alfio/db/PGSQL/");
         migration.migrate();
         return migration;
     }
@@ -161,15 +153,17 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
      }
 
     @Bean
-    public MessageSource messageSource() {
-        ResourceBundleMessageSource source = new CustomResourceBundleMessageSource();
+    public MessageSourceManager messageSourceManager(ConfigurationRepository configurationRepository) {
+
+        var source = new CustomResourceBundleMessageSource();
         source.setBasenames("alfio.i18n.public", "alfio.i18n.admin");
         source.setDefaultEncoding(StandardCharsets.UTF_8.displayName());
         //since we have all the english translations in the default file, we don't need
         //the fallback to the system locale.
         source.setFallbackToSystemLocale(false);
         source.setAlwaysUseMessageFormat(true);
-        return source;
+
+        return new MessageSourceManager(source, configurationRepository);
     }
 
     @Bean
@@ -178,17 +172,8 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     }
 
     @Bean
-    public TemplateManager getTemplateManager(UploadedResourceManager uploadedResourceManager, ConfigurationManager configurationManager) {
-        return new TemplateManager(getTemplateLoader(), messageSource(), uploadedResourceManager, configurationManager);
-    }
-
-    @Bean
-    public JMustacheTemplateLoader getTemplateLoader() {
-        JMustacheTemplateLoader loader = new JMustacheTemplateLoader();
-        loader.setPrefix("/WEB-INF/templates");
-        loader.setSuffix(".ms");
-        loader.setResourceLoader(resourceLoader);
-        return loader;
+    public TemplateManager getTemplateManager(MessageSourceManager messageSourceManager, UploadedResourceManager uploadedResourceManager) {
+        return new TemplateManager(messageSourceManager, uploadedResourceManager);
     }
 
     @Bean
@@ -198,9 +183,9 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     }
 
     @Bean
-    public RowLevelSecurity.RoleAndOrganizationsAspect getRoleAndOrganizationsAspect(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
-                                                                                     OrganizationRepository organizationRepository) {
-        return new RowLevelSecurity.RoleAndOrganizationsAspect(namedParameterJdbcTemplate, organizationRepository);
+    public RoleAndOrganizationsAspect getRoleAndOrganizationsAspect(NamedParameterJdbcTemplate namedParameterJdbcTemplate,
+                                                                    OrganizationRepository organizationRepository) {
+        return new RoleAndOrganizationsAspect(namedParameterJdbcTemplate, organizationRepository);
     }
 
     @Bean
@@ -235,11 +220,6 @@ public class DataSourceConfiguration implements ResourceLoaderAware {
     @Bean
     ReservationJobExecutor reservationJobExecutor(TicketReservationManager ticketReservationManager) {
         return new ReservationJobExecutor(ticketReservationManager);
-    }
-
-    @Override
-    public void setResourceLoader(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
     }
 
     /**

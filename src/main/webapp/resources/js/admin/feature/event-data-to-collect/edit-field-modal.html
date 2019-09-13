@@ -37,6 +37,14 @@
                 </div>
             </div>
         </div>
+        <div class="form-group" ng-if="!addNewField">
+            <label class="col-xs-2 control-label">Read Only</label>
+            <div class="col-xs-2">
+                <div class="checkbox">
+                    <label><input type="checkbox" data-ng-model="field.readOnly" name="fieldReadOnly" id="fieldReadOnly"></label>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="page-header" ng-if="field.type && field.type !== 'country'">
         <h3>Configuration</h3>
@@ -75,7 +83,7 @@
 
     <div class="row">
         <div class="col-xs-12" ng-if="field.type !== 'country'">
-            <div data-ng-if="field.type === 'select'" class="form-horizontal">
+            <div data-ng-if="field.type === 'select' || field.type === 'radio' || field.type === 'checkbox'" class="form-horizontal">
                 <div data-ng-repeat="restrictedValue in field.restrictedValues">
                     <div class="form-group">
                         <div class="col-xs-12">

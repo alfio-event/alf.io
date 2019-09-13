@@ -17,17 +17,19 @@
 package alfio.manager;
 
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.user.Organization;
 import alfio.repository.SpecialPriceRepository;
+import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -35,7 +37,6 @@ import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static alfio.model.system.Configuration.from;
 import static alfio.model.system.ConfigurationKeys.USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL;
 import static java.util.stream.Collectors.toList;
 
@@ -48,7 +49,7 @@ public class SpecialPriceManager {
     private final NotificationManager notificationManager;
     private final SpecialPriceRepository specialPriceRepository;
     private final TemplateManager templateManager;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final I18nManager i18nManager;
     private final ConfigurationManager configurationManager;
 
@@ -108,8 +109,9 @@ public class SpecialPriceManager {
         Validate.isTrue(!eventLanguages.isEmpty(), "No locales have been defined for the event. Please check the configuration");
         ContentLanguage defaultLocale = eventLanguages.contains(ContentLanguage.ENGLISH) ? ContentLanguage.ENGLISH : eventLanguages.get(0);
         set.forEach(m -> {
-            Locale locale = Locale.forLanguageTag(StringUtils.defaultString(StringUtils.trimToNull(m.getLanguage()), defaultLocale.getLanguage()));
-            var usePartnerCode = configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).getValueAsBooleanOrDefault(false);
+            var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+            Locale locale = LocaleUtil.forLanguageTag(StringUtils.defaultString(StringUtils.trimToNull(m.getLanguage()), defaultLocale.getLanguage()));
+            var usePartnerCode = configurationManager.getFor(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
             var promoCodeDescription = messageSource.getMessage("show-event.promo-code-type."+(usePartnerCode ? "partner" : "promotional"), null, null, locale);
             Map<String, Object> model = TemplateResource.prepareModelForSendReservedCode(organization, event, m, eventManager.getEventUrl(event), promoCodeDescription);
             notificationManager.sendSimpleEmail(event,

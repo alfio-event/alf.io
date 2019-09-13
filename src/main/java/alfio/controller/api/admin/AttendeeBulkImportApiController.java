@@ -32,7 +32,7 @@ public class AttendeeBulkImportApiController {
 
     private final AdminReservationRequestManager requestManager;
 
-    @RequestMapping(value = "", method = RequestMethod.POST)
+    @PostMapping("")
     public Result<String> createReservations(@PathVariable("eventName") String eventName,
                                              @RequestBody AdminReservationModification body,
                                              @RequestParam(name="oneReservationPerAttendee", defaultValue = "false", required = false) boolean oneReservationPerAttendee,
@@ -40,7 +40,7 @@ public class AttendeeBulkImportApiController {
         return requestManager.scheduleReservations(eventName, body, !oneReservationPerAttendee, principal.getName());
     }
 
-    @RequestMapping(value = "/{requestId}/status", method = RequestMethod.GET)
+    @GetMapping("/{requestId}/status")
     public Result<AdminReservationRequestStats> getRequestsStatus(@PathVariable("eventName") String eventName,
                                                                   @PathVariable("requestId") String requestId,
                                                                   Principal principal) {

@@ -19,9 +19,12 @@ package alfio.manager;
 
 import alfio.extension.ExtensionService;
 import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.system.ConfigurationLevel;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.extension.InvoiceGeneration;
 import alfio.model.extension.PdfGenerationResult;
+import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import lombok.AllArgsConstructor;
@@ -44,6 +47,7 @@ public class ExtensionManager {
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final ConfigurationManager configurationManager;
 
     public enum ExtensionEvent {
         RESERVATION_CONFIRMED,
@@ -64,7 +68,8 @@ public class ExtensionManager {
         WEB_API_HOOK,
         TICKET_CHECKED_IN,
         TICKET_REVERT_CHECKED_IN,
-        PDF_GENERATION
+        PDF_GENERATION,
+        STRIPE_CONNECT_STATE_GENERATION
     }
 
     void handleEventCreation(Event event) {
@@ -233,6 +238,13 @@ public class ExtensionManager {
         } catch(Exception e) {
             return false;
         }
+    }
+
+    public Optional<String> generateStripeConnectStateParam(int organizationId) {
+        return Optional.ofNullable(extensionService.executeScriptsForEvent(ExtensionEvent.STRIPE_CONNECT_STATE_GENERATION.name(),
+            "-" + organizationId,
+            Map.of("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organizationId)).getRequiredValue(), "organizationId", organizationId),
+            String.class));
     }
 
 

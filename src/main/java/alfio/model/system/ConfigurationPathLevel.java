@@ -31,6 +31,6 @@ public enum ConfigurationPathLevel implements Comparable<ConfigurationPathLevel>
         return priority;
     }
 
-    public static Comparator<ConfigurationPathLevel> COMPARATOR = Comparator.comparingInt(l -> l.priority);
+    public static final Comparator<ConfigurationPathLevel> COMPARATOR = Comparator.comparingInt(l -> l.priority);
 
 }

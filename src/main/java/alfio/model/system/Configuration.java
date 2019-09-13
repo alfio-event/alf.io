@@ -24,9 +24,6 @@ import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Optional;
 import java.util.function.Function;
 
 @Getter
@@ -181,10 +178,6 @@ public class Configuration implements Comparable<Configuration> {
     }
     //
 
-    public static ConfigurationPathKey getSystemConfiguration(ConfigurationKeys configurationKey) {
-        return new ConfigurationPathKey(system(), configurationKey);
-    }
-
     private static ConfigurationPathKey getOrganizationConfiguration(int organizationId, ConfigurationKeys configurationKey) {
         return new ConfigurationPathKey(organization(organizationId), configurationKey);
     }
@@ -198,15 +191,15 @@ public class Configuration implements Comparable<Configuration> {
     }
 
     public static ConfigurationPathKey from(int organizationId, ConfigurationKeys key) {
-        return from(Optional.of(organizationId), Optional.empty(), Optional.empty(), key);
+        return getOrganizationConfiguration(organizationId, key);
     }
 
     public static ConfigurationPathKey from(EventAndOrganizationId eventAndOrganizationId, ConfigurationKeys key) {
-        return from(Optional.of(eventAndOrganizationId.getOrganizationId()), Optional.of(eventAndOrganizationId.getId()), Optional.empty(), key);
+        return getEventConfiguration(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), key);
     }
 
     public static Function<ConfigurationKeys, ConfigurationPathKey> from(EventAndOrganizationId e) {
-        return (p) -> from(e, p);
+        return p -> from(e, p);
     }
 
     public static Function<ConfigurationKeys, ConfigurationPathKey> from(int organizationId) {
@@ -214,28 +207,6 @@ public class Configuration implements Comparable<Configuration> {
     }
 
     public static ConfigurationPathKey from(int organizationId, int eventId, int ticketCategoryId, ConfigurationKeys key) {
-        return from(Optional.of(organizationId), Optional.of(eventId), Optional.of(ticketCategoryId), key);
+        return getTicketCategoryConfiguration(organizationId, eventId, ticketCategoryId, key);
     }
-
-    private static ConfigurationPathKey from(Optional<Integer> organizationId, Optional<Integer> eventId, Optional<Integer> ticketCategoryId, ConfigurationKeys key) {
-        boolean organizationAvailable = organizationId.isPresent();
-        boolean eventAvailable = eventId.isPresent();
-        boolean categoryAvailable = ticketCategoryId.isPresent();
-        ConfigurationPathLevel mostSensible = Arrays.stream(ConfigurationPathLevel.values())
-            .sorted(Comparator.<ConfigurationPathLevel>naturalOrder().reversed())
-            .filter(path -> path == ConfigurationPathLevel.ORGANIZATION && organizationAvailable
-                || path == ConfigurationPathLevel.EVENT && organizationAvailable && eventAvailable
-                || path == ConfigurationPathLevel.TICKET_CATEGORY && organizationAvailable && eventAvailable && categoryAvailable)
-            .findFirst().orElse(ConfigurationPathLevel.SYSTEM);
-        switch(mostSensible) {
-            case ORGANIZATION:
-                return getOrganizationConfiguration(organizationId.get(), key);
-            case EVENT:
-                return getEventConfiguration(organizationId.get(), eventId.orElseThrow(), key);
-            case TICKET_CATEGORY:
-                return getTicketCategoryConfiguration(organizationId.get(), eventId.orElseThrow(), ticketCategoryId.orElseThrow(), key);
-        }
-        return getSystemConfiguration(key);
-    }
-
 }

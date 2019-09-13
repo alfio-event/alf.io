@@ -27,7 +27,7 @@ import java.util.*;
 @QueryRepository
 public interface AdditionalServiceRepository {
 
-    @Query("select * from additional_service where event_id_fk = :eventId order by ordinal")
+    @Query("select * from additional_service_with_currency where event_id_fk = :eventId order by ordinal")
     List<AdditionalService> loadAllForEvent(@Bind("eventId") int eventId);
 
     NamedParameterJdbcTemplate getJdbcTemplate();
@@ -43,10 +43,10 @@ public interface AdditionalServiceRepository {
         return res;
     }
 
-    @Query("select * from additional_service where id = :id and event_id_fk = :eventId")
+    @Query("select * from additional_service_with_currency where id = :id and event_id_fk = :eventId")
     AdditionalService getById(@Bind("id") int id, @Bind("eventId") int eventId);
 
-    @Query("select * from additional_service where id = :id and event_id_fk = :eventId")
+    @Query("select * from additional_service_with_currency where id = :id and event_id_fk = :eventId")
     Optional<AdditionalService> getOptionalById(@Bind("id") int id, @Bind("eventId") int eventId);
 
     @Query("delete from additional_service where id = :id and event_id_fk = :eventId")
@@ -69,6 +69,6 @@ public interface AdditionalServiceRepository {
                @Bind("inceptionTs") ZonedDateTime inception, @Bind("expirationTs") ZonedDateTime expiration, @Bind("vat") BigDecimal vat,
                @Bind("vatType") AdditionalService.VatType vatType, @Bind("srcPriceCts") int srcPriceCts);
 
-    @Query("select * from additional_service where event_id_fk = :eventId and supplement_policy = :supplementPolicy order by ordinal")
+    @Query("select * from additional_service_with_currency where event_id_fk = :eventId and supplement_policy = :supplementPolicy order by ordinal")
     List<AdditionalService> findAllInEventWithPolicy(@Bind("eventId") int eventId, @Bind("supplementPolicy") AdditionalService.SupplementPolicy policy);
 }

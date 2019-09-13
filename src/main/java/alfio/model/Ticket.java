@@ -58,6 +58,7 @@ public class Ticket {
     private final int vatCts;
     private final int discountCts;
     private final String extReference;
+    private final String currencyCode;
 
     public Ticket(@JsonProperty("id") @Column("id") int id,
                   @JsonProperty("uuid") @Column("uuid") String uuid,
@@ -76,7 +77,8 @@ public class Ticket {
                   @JsonProperty("finalPriceCts") @Column("final_price_cts") int finalPriceCts,
                   @JsonProperty("vatCts") @Column("vat_cts") int vatCts,
                   @JsonProperty("discountCts") @Column("discount_cts") int discountCts,
-                  @JsonProperty("extReference") @Column("ext_reference") String extReference) {
+                  @JsonProperty("extReference") @Column("ext_reference") String extReference,
+                  @JsonProperty("currencyCode") @Column("currency_code") String currencyCode) {
         this.id = id;
         this.uuid = uuid;
         this.creation = creation;
@@ -96,6 +98,7 @@ public class Ticket {
         this.vatCts = vatCts;
         this.discountCts = discountCts;
         this.extReference = extReference;
+        this.currencyCode = currencyCode;
     }
     
     public boolean getAssigned() {
@@ -139,10 +142,10 @@ public class Ticket {
     }
 
     public String getFormattedFinalPrice() {
-        return MonetaryUtil.formatCents(finalPriceCts);
+        return MonetaryUtil.formatCents(finalPriceCts, currencyCode);
     }
 
     public String getFormattedNetPrice() {
-        return MonetaryUtil.formatCents(finalPriceCts - vatCts);
+        return MonetaryUtil.formatCents(finalPriceCts - vatCts, currencyCode);
     }
 }

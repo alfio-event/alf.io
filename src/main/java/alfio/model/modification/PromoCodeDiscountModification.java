@@ -82,21 +82,21 @@ public class PromoCodeDiscountModification {
         this.hiddenCategoryId = hiddenCategoryId;
     }
     
-    public int getDiscountAsPercent() {
+    private int getDiscountAsPercent() {
         return Optional.ofNullable(discountAmount).map(BigDecimal::intValue).orElse(0);
     }
     
-    public int getDiscountInCents() {
-        return MonetaryUtil.unitToCents(discountAmount);
+    private int getDiscountInCents(String currencyCode) {
+        return MonetaryUtil.unitToCents(discountAmount, currencyCode);
     }
 
-    public int getDiscountValue() {
+    public int getDiscountValue(String currencyCode) {
         if(codeType != PromoCodeDiscount.CodeType.DISCOUNT) {
             return 0;
         }
         if(discountType == DiscountType.PERCENTAGE) {
             return getDiscountAsPercent();
         }
-        return getDiscountInCents();
+        return getDiscountInCents(currencyCode);
     }
 }

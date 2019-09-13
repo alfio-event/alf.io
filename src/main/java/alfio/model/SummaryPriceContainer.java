@@ -28,14 +28,15 @@ public interface SummaryPriceContainer extends PriceContainer {
     Integer getFinalPriceCts();
 
     static int getSummaryPriceBeforeVatCts(List<? extends SummaryPriceContainer> elements) {
+        var currencyCode = !elements.isEmpty() ? elements.get(0).getCurrencyCode() : null;
         return elements.stream().map(item -> {
             PriceContainer.VatStatus vatStatus = item.getVatStatus();
             if(vatStatus == PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT) {
-                return MonetaryUtil.centsToUnit(item.getSrcPriceCts());
+                return MonetaryUtil.centsToUnit(item.getSrcPriceCts(), currencyCode);
             } else if(vatStatus == PriceContainer.VatStatus.INCLUDED_EXEMPT) {
-                return MonetaryUtil.centsToUnit(item.getSrcPriceCts()).add(vatStatus.extractRawVAT(centsToUnit(item.getSrcPriceCts()), item.getVatPercentageOrZero()));
+                return MonetaryUtil.centsToUnit(item.getSrcPriceCts(), currencyCode).add(vatStatus.extractRawVAT(centsToUnit(item.getSrcPriceCts(), item.getCurrencyCode()), item.getVatPercentageOrZero()));
             }
-            return MonetaryUtil.centsToUnit(item.getFinalPriceCts()).subtract(item.getRawVAT());
-        }).reduce(BigDecimal::add).map(MonetaryUtil::unitToCents).orElse(0);
+            return MonetaryUtil.centsToUnit(item.getFinalPriceCts(), currencyCode).subtract(item.getRawVAT());
+        }).reduce(BigDecimal::add).map(p -> MonetaryUtil.unitToCents(p, currencyCode)).orElse(0);
     }
 }

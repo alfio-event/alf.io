@@ -21,7 +21,6 @@ import alfio.manager.FileUploadManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.model.*;
 import alfio.model.user.Organization;
-import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
 import ch.digitalfondue.jfiveparse.Parser;
@@ -38,7 +37,6 @@ import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.core.io.ClassPathResource;
 
-import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -54,7 +52,8 @@ public final class TemplateProcessor {
     private static final Cache<String, File> FONT_CACHE = Caffeine.newBuilder()
         .removalListener((String key, File value, RemovalCause cause) -> {
             if(value != null) {
-                value.delete();
+                boolean result = value.delete();
+                log.trace("value {} deleted: {}", key, result);
             }
         })
         .build();
@@ -69,7 +68,7 @@ public final class TemplateProcessor {
                                                                TemplateManager templateManager,
                                                                String ticketURL,
                                                                Locale language) {
-        return (ticket) -> {
+        return ticket -> {
             Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, ticket, category);
             return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, language);
         };
@@ -81,7 +80,7 @@ public final class TemplateProcessor {
                                                                       String ticketUrl,
                                                                       TemplateManager templateManager,
                                                                       Locale language) {
-        return (newTicket) -> {
+        return newTicket -> {
             Map<String, Object> emailModel = TemplateResource.buildModelForTicketHasChangedOwner(organization, e, oldTicket, newTicket, ticketUrl);
             return templateManager.renderTemplate(e, TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language);
         };
@@ -193,7 +192,7 @@ public final class TemplateProcessor {
 
     public static Optional<TemplateResource.ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
         if(event.getFileBlobIdIsPresent()) {
-            return fileUploadManager.findMetadata(event.getFileBlobId()).map((metadata) -> {
+            return fileUploadManager.findMetadata(event.getFileBlobId()).map(metadata -> {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 fileUploadManager.outputFile(metadata.getId(), baos);
                 return TemplateResource.fillWithImageData(metadata, baos.toByteArray());

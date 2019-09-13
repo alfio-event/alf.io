@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.*;
@@ -35,8 +36,7 @@ import java.util.List;
 import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -62,10 +62,10 @@ public class TicketReservationManagerUnitTest {
     private TransactionRepository transactionRepository;
     private NotificationManager notificationManager;
     private MessageSource messageSource;
+    private MessageSourceManager messageSourceManager;
     private TemplateManager templateManager;
     private PlatformTransactionManager transactionManager;
     private WaitingQueueManager waitingQueueManager;
-    private FileUploadManager fileUploadManager;
     private TicketFieldRepository ticketFieldRepository;
     private AdditionalServiceRepository additionalServiceRepository;
     private AdditionalServiceItemRepository additionalServiceItemRepository;
@@ -85,7 +85,9 @@ public class TicketReservationManagerUnitTest {
         eventRepository = mock(EventRepository.class);
         reservation = mock(TicketReservation.class);
         event = mock(Event.class);
+        when(event.getCurrency()).thenReturn("CHF");
         ticket = mock(Ticket.class);
+        when(ticket.getCurrencyCode()).thenReturn("CHF");
         ticketCategory = mock(TicketCategory.class);
         organizationRepository = mock(OrganizationRepository.class);
         ticketCategoryRepository = mock(TicketCategoryRepository.class);
@@ -96,10 +98,10 @@ public class TicketReservationManagerUnitTest {
         transactionRepository = mock(TransactionRepository.class);
         notificationManager = mock(NotificationManager.class);
         messageSource = mock(MessageSource.class);
+        messageSourceManager = mock(MessageSourceManager.class);
         templateManager = mock(TemplateManager.class);
         transactionManager = mock(PlatformTransactionManager.class);
         waitingQueueManager = mock(WaitingQueueManager.class);
-        fileUploadManager = mock(FileUploadManager.class);
         ticketFieldRepository = mock(TicketFieldRepository.class);
         additionalServiceRepository = mock(AdditionalServiceRepository.class);
         additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
@@ -111,6 +113,9 @@ public class TicketReservationManagerUnitTest {
         groupManager = mock(GroupManager.class);
         BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
         json = mock(Json.class);
+
+        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
 
         manager = new TicketReservationManager(eventRepository,
             organizationRepository,
@@ -124,7 +129,7 @@ public class TicketReservationManagerUnitTest {
             specialPriceRepository,
             transactionRepository,
             notificationManager,
-            messageSource,
+            messageSourceManager,
             templateManager,
             transactionManager,
             waitingQueueManager,
@@ -205,7 +210,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatNotIncluded() {
         initReservationWithTicket(1000, false);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1100, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1100, 100, 0, 0, "CHF"));
         assertEquals(1, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
     }
@@ -213,7 +218,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncluded() {
         initReservationWithTicket(1000, true);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         assertEquals(1, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
     }
@@ -221,7 +226,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncludedExempt() {
         initReservationWithTicket(1000, true);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         assertEquals(1, summaryRows.size());
         assertEquals("9.09", summaryRows.get(0).getPrice());
     }
@@ -229,7 +234,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatNotIncludedExempt() {
         initReservationWithTicket(1000, true);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT,  event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         assertEquals(1, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
     }
@@ -237,7 +242,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatNotIncludedASInherited() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(2200, 200, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null,  event, Locale.ENGLISH, null, new TotalPrice(2200, 200, 0, 0, "CHF"));
         assertEquals(2, summaryRows.size());
         summaryRows.forEach(r -> assertEquals(String.format("%s failed", r.getType()), "10.00", r.getPrice()));
     }
@@ -245,7 +250,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncludedASInherited() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 182, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 182, 0, 0, "CHF"));
         assertEquals(2, summaryRows.size());
         summaryRows.forEach(r -> assertEquals(String.format("%s failed", r.getType()), "10.00", r.getPrice()));
     }
@@ -253,7 +258,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatNotIncludedASNone() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(1000, 100, 0, 0, "CHF"));
         assertEquals(2, summaryRows.size());
         summaryRows.forEach(r -> assertEquals(String.format("%s failed", r.getType()), "10.00", r.getPrice()));
     }
@@ -261,7 +266,7 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void testExtractSummaryVatIncludedASNone() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 1000, 1000);
-        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 100, 0, 0));
+        List<SummaryRow> summaryRows = manager.extractSummary(TICKET_RESERVATION_ID, null, event, Locale.ENGLISH, null, new TotalPrice(2000, 100, 0, 0, "CHF"));
         assertEquals(2, summaryRows.size());
         assertEquals("10.00", summaryRows.get(0).getPrice());
         assertEquals("10.00", summaryRows.get(1).getPrice());
@@ -286,7 +291,9 @@ public class TicketReservationManagerUnitTest {
         initReservationWithTicket(ticketSrcPrice, eventVatIncluded);
 
         AdditionalServiceItem additionalServiceItem = mock(AdditionalServiceItem.class);
+        when(additionalServiceItem.getCurrencyCode()).thenReturn("CHF");
         AdditionalService additionalService = mock(AdditionalService.class);
+        when(additionalService.getCurrencyCode()).thenReturn("CHF");
 
         when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(additionalServiceItem));
         when(additionalServiceItem.getAdditionalServiceId()).thenReturn(1);

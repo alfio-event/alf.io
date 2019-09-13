@@ -19,7 +19,8 @@ package alfio.controller.api.v2.user;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.controller.api.AttendeeApiController;
+import alfio.controller.IndexController;
+import alfio.controller.api.v1.AttendeeApiController;
 import alfio.controller.api.admin.AdditionalServiceApiController;
 import alfio.controller.api.admin.CheckInApiController;
 import alfio.controller.api.admin.EventApiController;
@@ -29,9 +30,7 @@ import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.EventCode;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.form.*;
-import alfio.manager.CheckInManager;
-import alfio.manager.EventManager;
-import alfio.manager.EventStatisticsManager;
+import alfio.manager.*;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
@@ -50,6 +49,9 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.EventUtil;
 import alfio.util.Json;
+import ch.digitalfondue.jfiveparse.Element;
+import ch.digitalfondue.jfiveparse.Parser;
+import ch.digitalfondue.jfiveparse.Selector;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
@@ -76,7 +78,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.support.BindingAwareModelMap;
 import org.springframework.web.context.request.ServletWebRequest;
 
 import javax.imageio.ImageIO;
@@ -84,6 +85,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -145,6 +147,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private AdditionalServiceApiController additionalServiceApiController;
 
+    @Autowired
+    private SpecialPriceTokenGenerator specialPriceTokenGenerator;
+
+    @Autowired
+    private SpecialPriceRepository specialPriceRepository;
+
     //
     @Autowired
     private CheckInApiController checkInApiController;
@@ -157,6 +165,15 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private ScanAuditRepository scanAuditRepository;
+
+    @Autowired
+    private AdminReservationManager adminReservationManager;
+
+    @Autowired
+    private TicketReservationManager ticketReservationManager;
+
+    @Autowired
+    private WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     //
 
     //
@@ -174,6 +191,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private TicketApiV2Controller ticketApiV2Controller;
+
+    @Autowired
+    private IndexController indexController;
     //
 
     private Event event;
@@ -187,6 +207,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     private static final String HIDDEN_CODE = "HIDDENNN";
 
+    private static final String URL_CODE_HIDDEN = "CODE_CODE_CODE";
+
     private int hiddenCategoryId = Integer.MIN_VALUE;
 
     public void ensureConfiguration() {
@@ -196,11 +218,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0),
             new TicketCategoryModification(null, "hidden", 2,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ONE, true, "", true, null, null, null, null, null)
+                DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0)
             );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 
@@ -209,13 +231,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         //promo code at event level
         eventManager.addPromoCode(PROMO_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DISCOUNT, null);
 
-        hiddenCategoryId = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(t -> t.isAccessRestricted()).collect(Collectors.toList()).get(0).getId();
+        hiddenCategoryId = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isAccessRestricted).collect(Collectors.toList()).get(0).getId();
 
         eventManager.addPromoCode(HIDDEN_CODE, event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 0, PromoCodeDiscount.DiscountType.NONE, null, null, "hidden", "test@test.ch", PromoCodeDiscount.CodeType.ACCESS, hiddenCategoryId);
 
 
         // add additional fields before and after, with one mandatory
-        var af = new EventModification.AdditionalField(-1, "field1", "text", true, null, null, null,
+        var af = new EventModification.AdditionalField(-1, "field1", "text", true, false,null, null, null,
             Map.of("en", new EventModification.Description("field en", "", null)), null, null);
         eventManager.addAdditionalField(event, af);
 
@@ -223,7 +245,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         ticketFieldRepository.updateFieldOrder(afId, -1);
 
-        var af2 = new EventModification.AdditionalField(1, "field2", "text", false, null, null, null,
+        var af2 = new EventModification.AdditionalField(1, "field2", "text", false, false,null, null, null,
             Map.of("en", new EventModification.Description("field2 en", "", null)), null, null);
         eventManager.addAdditionalField(event, af2);
         //
@@ -246,7 +268,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         additionalServiceId = addServRes.getBody().getId();
         //
 
-        var af3 = new EventModification.AdditionalField(2, "field3", "text", true, null, null, null,
+        var af3 = new EventModification.AdditionalField(2, "field3", "text", true, false, null, null, null,
             Map.of("en", new EventModification.Description("field3 en", "", null)), addServRes.getBody(), null);
         eventManager.addAdditionalField(event, af3);
 
@@ -255,13 +277,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_WAITING_QUEUE.getValue(), "true", "");
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), ConfigurationKeys.ENABLE_PRE_REGISTRATION.getValue(), "true", "");
         //
+
+        specialPriceTokenGenerator.generatePendingCodes();
     }
 
     @Test
     public void reservationFlowTest() throws Exception {
 
-
-        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getLanguages("NO_EVENT").getStatusCode());
 
         assertTrue(eventApiV2Controller.listEvents().getBody().isEmpty());
         ensureConfiguration();
@@ -269,14 +291,17 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         //
         assertEquals(3, translationsApiController.getSupportedLanguages().size());
-        assertEquals("or", translationsApiController.getPublicTranslations("en").get("common.or"));
-        assertEquals("o", translationsApiController.getPublicTranslations("it").get("common.or"));
-        assertEquals("oder", translationsApiController.getPublicTranslations("de").get("common.or"));
+        assertEquals("or", translationsApiController.getPublicTranslations("en", true).get("common.or"));
+        assertEquals("o", translationsApiController.getPublicTranslations("it", true).get("common.or"));
+        assertEquals("oder", translationsApiController.getPublicTranslations("de", true).get("common.or"));
 
-        var alfioInfo = infoApiController.getInfo();
+        var alfioInfo = infoApiController.getInfo(new MockHttpSession());
         assertEquals(false, alfioInfo.isDemoModeEnabled());
         assertEquals(true, alfioInfo.isDevModeEnabled());
         assertEquals(false, alfioInfo.isProdModeEnabled());
+        assertEquals(true, alfioInfo.getAnalyticsConfiguration().isGoogleAnalyticsScrambledInfo());
+        assertEquals(null, alfioInfo.getAnalyticsConfiguration().getGoogleAnalyticsKey());
+        assertEquals(null, alfioInfo.getAnalyticsConfiguration().getClientId());
 
         //
 
@@ -321,10 +346,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getShortName(), events.get(0).getShortName());
 
         //
-        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getEvent("NOT_EXISTS").getStatusCode());
+        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getEvent("NOT_EXISTS", new MockHttpSession()).getStatusCode());
         //
 
-        var eventRes = eventApiV2Controller.getEvent(event.getShortName());
+        var eventRes = eventApiV2Controller.getEvent(event.getShortName(), new MockHttpSession());
         assertEquals(HttpStatus.OK, eventRes.getStatusCode());
         var selectedEvent = eventRes.getBody();
         assertEquals("CHF", selectedEvent.getCurrency());
@@ -336,13 +361,20 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getFileBlobId(), selectedEvent.getFileBlobId());
         assertEquals(1, selectedEvent.getActivePaymentMethods().size());
         assertTrue(selectedEvent.getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
+        assertTrue(selectedEvent.getI18nOverride().isEmpty());
+
+        configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(),"TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("common.vat", "EVENT.vat"))), "");
+        eventRes = eventApiV2Controller.getEvent(event.getShortName(), new MockHttpSession());
+        selectedEvent = eventRes.getBody();
+        assertFalse(selectedEvent.getI18nOverride().isEmpty());
+        assertEquals("EVENT.vat", selectedEvent.getI18nOverride().get("en").get("common.vat"));
 
         checkCalendar(event.getShortName());
 
         //it, en, de
         assertEquals(3, selectedEvent.getContentLanguages().size());
-        assertEquals(new HashSet<>(Arrays.asList("it", "en", "de")), new HashSet<>(eventApiV2Controller.getLanguages(event.getShortName()).getBody()));
-        assertEquals(selectedEvent.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toSet()), new HashSet<>(eventApiV2Controller.getLanguages(event.getShortName()).getBody()));
+
+        assertEquals(selectedEvent.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toSet()), Set.of("it", "en", "de"));
 
         //check if for each language we have the expected locale dependent entries
         for (String lang: Arrays.asList("it", "en", "de")) {
@@ -353,6 +385,29 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertNotNull(selectedEvent.getFormattedEndDate().get(lang));
             assertNotNull(selectedEvent.getFormattedEndTime().get(lang));
         }
+
+
+        assertEquals("redirect:/api/v2/public/event/" + event.getShortName() + "/code/MY_CODE", indexController.redirectCode(event.getShortName(), "MY_CODE"));
+
+
+        // check open graph & co
+        {
+            var res = new MockHttpServletResponse();
+            indexController.replyToIndex(event.getShortName(), "not a social share", "en", new ServletWebRequest(new MockHttpServletRequest()), res);
+            var htmlParser = new Parser();
+            var docWithoutOpenGraph = htmlParser.parse(new String(res.getContentAsByteArray(), StandardCharsets.UTF_8));
+            assertTrue(docWithoutOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("name", "twitter:card").toMatcher()).isEmpty());
+
+            res = new MockHttpServletResponse();
+            indexController.replyToIndex(event.getShortName(), "Twitterbot/42", "en", new ServletWebRequest(new MockHttpServletRequest()), res);
+            var docWithOpenGraph = htmlParser.parse(new String(res.getContentAsByteArray(), StandardCharsets.UTF_8));
+            assertFalse(docWithOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("name", "twitter:card").toMatcher()).isEmpty());
+
+            var title = (Element) docWithOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("property", "og:title").toMatcher(), true).get(0);
+            assertEquals("Get your tickets for "+event.getDisplayName(), title.getAttribute("content"));
+        }
+
+        //
 
 
         // check ticket & all, we have 2 ticket categories, 1 hidden
@@ -373,7 +428,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(1, items.getAdditionalServices().size());
             var additionalItem = items.getAdditionalServices().get(0);
             assertEquals("40.00", additionalItem.getFormattedFinalPrice());
-            assertEquals(new BigDecimal("1.00"), additionalItem.getVatPercentage());
+            assertEquals("1.00", additionalItem.getVatPercentage());
             assertEquals(1, additionalItem.getTitle().size()); //TODO: check: if there are missing lang, we should at least copy them (?)
             assertEquals(1, additionalItem.getDescription().size());
             assertEquals("additional title", additionalItem.getTitle().get("en"));
@@ -438,8 +493,80 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("1.00", hiddenCat.getFormattedFinalPrice());
             assertFalse(hiddenCat.isHasDiscount());
             assertTrue(hiddenCat.isAccessRestricted());
+
+            // do a reservation for a hidden category+cancel
+            var form = new ReservationForm();
+            var ticketReservation = new TicketReservationModification();
+            form.setPromoCode(HIDDEN_CODE);
+            ticketReservation.setAmount(1);
+            ticketReservation.setTicketCategoryId(hiddenCat.getId());
+            form.setReservation(Collections.singletonList(ticketReservation));
+            var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals(HttpStatus.OK, res.getStatusCode());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), res.getBody().getValue());
+            assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
+            assertEquals("1.00", reservationInfo.getBody().getOrderSummary().getTotalPrice());
+            assertEquals("hidden", reservationInfo.getBody().getOrderSummary().getSummary().get(0).getName());
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
+
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
+            assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
         }
         //
+
+        // check reservation auto creation with code: TODO: will need to check all the flows
+        {
+
+            // code not found
+            var notFoundRes = eventApiV2Controller.handleCode(event.getShortName(), "NOT_EXIST", new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals("/event/" + event.getShortName(), notFoundRes.getHeaders().getLocation().getPath());
+            assertEquals("errors=error.STEP_1_CODE_NOT_FOUND", notFoundRes.getHeaders().getLocation().getQuery());
+            //
+
+            // promo code, we expect a redirect to event with the code in the query string
+            var redirectPromoCodeRes = eventApiV2Controller.handleCode(event.getShortName(), PROMO_CODE, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals("/event/" + event.getShortName(), redirectPromoCodeRes.getHeaders().getLocation().getPath());
+            assertEquals("code=MYPROMOCODE", redirectPromoCodeRes.getHeaders().getLocation().getQuery());
+
+
+            // code existing
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
+            assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
+            assertEquals(reservationId, reservationInfo.getBody().getId());
+
+            assertEquals(1, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
+
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
+            assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
+        }
+
+        // check reservation auto creation with deletion from the admin side
+        {
+
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
+            var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
+            assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
+            assertEquals(reservationId, reservationInfo.getBody().getId());
+
+            assertEquals(1, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            adminReservationManager.removeReservation(event.getShortName(), reservationId, false, false, user);
+
+            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
+            assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
+
+        }
 
 
         // discount check
@@ -464,7 +591,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         //validation error: select at least one
         {
             var form = new ReservationForm();
-            var res = eventApiV2Controller.reserveTicket(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, res.getStatusCode());
             var resBody = res.getBody();
             assertFalse(resBody.isSuccess());
@@ -478,7 +605,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             ticketReservation.setAmount(1);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));
-            var res = eventApiV2Controller.reserveTicket(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             assertEquals(HttpStatus.OK, res.getStatusCode());
             var resBody = res.getBody();
             assertTrue(resBody.isSuccess());
@@ -487,7 +614,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
-            var cancelRes = reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
+            var cancelRes = reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, cancelRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.NOT_FOUND, null, null);
@@ -505,7 +632,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             additionalService.setAdditionalServiceId(additionalServiceId);
             additionalService.setQuantity(1);
             form.setAdditionalService(Collections.singletonList(additionalService));
-            var res = eventApiV2Controller.reserveTicket(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             assertEquals(HttpStatus.OK, res.getStatusCode());
             var resBody = res.getBody();
             assertTrue(resBody.isSuccess());
@@ -513,7 +640,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             var reservationId = resBody.getValue();
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
-            var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
             var ticketsByCat = resInfoRes.getBody().getTicketsByCategory();
             assertEquals(1, ticketsByCat.size());
@@ -551,7 +678,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             contactForm.setTickets(Map.of(ticket1.getUuid(), ticketForm1, ticket2.getUuid(), ticketForm2));
 
-            var failure = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest());
+            var failure = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, failure.getStatusCode());
             assertEquals(1, failure.getBody().getValidationErrors().stream().filter(f -> f.getFieldName().equals("tickets["+ticket1.getUuid()+"].additional[field3][0]")).count()); //<- missing mandatory
 
@@ -569,10 +696,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             contactForm.setBillingAddressZip("ZIP");
 
             ticketForm1.getAdditional().put("field3", Collections.singletonList("missing value"));
-            var success = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest());
+            var success = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.OK, success.getStatusCode());
 
-            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId, new MockHttpServletRequest());
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
         }
 
 
@@ -583,7 +710,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             ticketReservation.setAmount(1);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));
-            var res = eventApiV2Controller.reserveTicket(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             assertEquals(HttpStatus.OK, res.getStatusCode());
             var resBody = res.getBody();
             assertTrue(resBody.isSuccess());
@@ -593,7 +720,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
 
-            var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession());
+            var resInfoRes = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, resInfoRes.getStatusCode());
             var reservation = resInfoRes.getBody();
             assertEquals(reservationId, reservation.getId());
@@ -607,7 +734,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertFalse(selectedTicket.getTicketFieldConfigurationAfterStandard().get(0).isRequired());
 
             var contactForm = new ContactAndTicketsForm();
-            var validationErrorsRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest());
+            var validationErrorsRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, validationErrorsRes.getStatusCode());
             assertFalse(validationErrorsRes.getBody().isSuccess());
             assertEquals(4, validationErrorsRes.getBody().getErrorCount()); // first name, last name, email + MISSING_ATTENDEE DATA
@@ -626,29 +753,29 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             ticketForm.setEmail("tickettest@test.com");
             contactForm.setTickets(Collections.singletonMap(reservation.getTicketsByCategory().get(0).getTickets().get(0).getUuid(), ticketForm));
 
-            var overviewResFailed = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest());
+            var overviewResFailed = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, overviewResFailed.getStatusCode());
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
             //add mandatory additional field
             ticketForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
-            var overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest());
+            var overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertEquals(HttpStatus.OK, overviewRes.getStatusCode());
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING);
             //
 
-            reservationApiV2Controller.backToBook(event.getShortName(), reservationId);
+            reservationApiV2Controller.backToBooking(event.getShortName(), reservationId);
 
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
 
-            overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"), new MockHttpServletRequest());
+            overviewRes = reservationApiV2Controller.validateToOverview(event.getShortName(), reservationId, "en", contactForm, new BeanPropertyBindingResult(contactForm, "paymentForm"));
             assertTrue(overviewRes.getBody().getValue());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.PENDING);
 
             var paymentForm = new PaymentForm();
-            var handleResError = reservationApiV2Controller.handleReservation(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
-                new MockHttpServletRequest(), new MockHttpSession());
+            var handleResError = reservationApiV2Controller.confirmOverview(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+                new MockHttpServletRequest());
             assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, handleResError.getStatusCode());
 
 
@@ -656,13 +783,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             paymentForm.setTermAndConditionsAccepted(true);
             paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
 
-            // bank transfer does not have a transaction, it's created on handleReservation call
+            // bank transfer does not have a transaction, it's created on confirmOverview call
             var tStatus = reservationApiV2Controller.getTransactionStatus(event.getShortName(), reservationId, "BANK_TRANSFER");
             assertEquals(HttpStatus.NOT_FOUND, tStatus.getStatusCode());
             //
 
-            var handleRes = reservationApiV2Controller.handleReservation(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
-                new MockHttpServletRequest(), new MockHttpSession());
+            var handleRes = reservationApiV2Controller.confirmOverview(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
+                new MockHttpServletRequest());
             assertEquals(HttpStatus.OK, handleRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
@@ -671,10 +798,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, tStatus.getStatusCode());
             assertFalse(tStatus.getBody().isSuccess());
 
-            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
+            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId).getBody();
 
             var orderSummary = reservation.getOrderSummary();
-            assertTrue(orderSummary.getNotYetPaid());
+            assertTrue(orderSummary.isNotYetPaid());
             assertEquals("10.00", orderSummary.getTotalPrice());
             assertEquals("0.10", orderSummary.getTotalVAT());
             assertEquals("1.00", orderSummary.getVatPercentage());
@@ -687,9 +814,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, tStatus.getStatusCode());
             assertTrue(tStatus.getBody().isSuccess());
 
-            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
+            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId).getBody();
             orderSummary = reservation.getOrderSummary();
-            assertFalse(orderSummary.getNotYetPaid());
+            assertFalse(orderSummary.isNotYetPaid());
 
 
             var confRes = reservationApiV2Controller.reSendReservationConfirmationEmail(event.getShortName(), reservationId, "en");
@@ -712,7 +839,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("full name", ticketFoundBody.getReservationFullName());
             assertTrue(reservationId.startsWith(ticketFoundBody.getReservationId().toLowerCase(Locale.ENGLISH)));
 
-            var sendTicketByEmailRes = ticketApiV2Controller.sendTicketByEmail(event.getShortName(), ticket.getUuid(), new MockHttpServletRequest());
+            var sendTicketByEmailRes = ticketApiV2Controller.sendTicketByEmail(event.getShortName(), ticket.getUuid());
             assertEquals(HttpStatus.OK, sendTicketByEmailRes.getStatusCode());
             assertTrue(sendTicketByEmailRes.getBody());
 
@@ -722,8 +849,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             updateTicketOwnerForm.setLastName("Testson");
             updateTicketOwnerForm.setEmail("testmctest@test.com");
             updateTicketOwnerForm.setAdditional(Collections.singletonMap("field1", Collections.singletonList("value")));
-            var updateTicketRes = ticketApiV2Controller.updateTicketInfo(event.getShortName(), ticket.getUuid(), updateTicketOwnerForm, new BeanPropertyBindingResult(updateTicketOwnerForm, "ticket"), new MockHttpServletRequest(), null);
-            assertTrue(updateTicketRes.isSuccess());
+            var updateTicketRes = ticketApiV2Controller.updateTicketInfo(event.getShortName(), ticket.getUuid(), updateTicketOwnerForm, new BeanPropertyBindingResult(updateTicketOwnerForm, "ticket"), null);
+            assertTrue(updateTicketRes.getBody().isSuccess());
+
+            //not found
+            assertEquals(HttpStatus.NOT_FOUND, ticketApiV2Controller.updateTicketInfo(event.getShortName(), ticket.getUuid()+"42", updateTicketOwnerForm, new BeanPropertyBindingResult(updateTicketOwnerForm, "ticket"), null).getStatusCode());
 
 
             ticketFoundRes = ticketApiV2Controller.getTicketInfo(event.getShortName(), ticket.getUuid());
@@ -731,7 +861,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("testmctest@test.com", ticketFoundBody.getEmail());
             assertEquals("Test Testson", ticketFoundBody.getFullName());
             assertEquals("full name", ticketFoundBody.getReservationFullName());
-            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId, new MockHttpSession()).getBody();
+            reservation = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId).getBody();
             ticket = reservation.getTicketsByCategory().stream().findFirst().get().getTickets().get(0);
             assertEquals("testmctest@test.com", ticket.getEmail());
             assertEquals("Test", ticket.getFirstName());
@@ -739,7 +869,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
             var ticketPdfMockResp = new MockHttpServletResponse();
-            ticketApiV2Controller.generateTicketPdf(event.getShortName(), ticket.getUuid(), new MockHttpServletRequest(), ticketPdfMockResp);
+            ticketApiV2Controller.generateTicketPdf(event.getShortName(), ticket.getUuid(), ticketPdfMockResp);
             assertEquals("application/pdf", ticketPdfMockResp.getContentType());
 
             var ticketQRCodeResp = new MockHttpServletResponse();
@@ -892,7 +1022,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(expectedHttpStatus, statusRes.getStatusCode());
         var status = statusRes.getBody();
         if (validated != null) {
-            assertEquals(validated, status.isValidatedBookingInformations());
+            assertEquals(validated, status.isValidatedBookingInformation());
         }
 
         if (reservationStatus != null) {
@@ -909,7 +1039,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(10, reservation.getVatCts());
         assertEquals(0, reservation.getDiscountCts());
         assertEquals(1, eventApiController.getPendingPayments(eventName).size());
-        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal, new BindingAwareModelMap(), new MockHttpServletRequest()));
+        assertEquals("OK", eventApiController.confirmPayment(eventName, reservationIdentifier, principal));
         assertEquals(0, eventApiController.getPendingPayments(eventName).size());
         assertEquals(1000, eventRepository.getGrossIncome(event.getId()));
     }

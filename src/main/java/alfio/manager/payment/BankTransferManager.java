@@ -17,9 +17,10 @@
 package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
-import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
@@ -48,14 +49,21 @@ public class BankTransferManager implements PaymentProvider {
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext paymentContext) {
-        return bankTransferEnabled(paymentMethod, paymentContext)
-            && !configurationManager.getBooleanConfigValue(paymentContext.narrow(REVOLUT_ENABLED), false);
+        var options = options(paymentContext);
+        return bankTransferEnabled(paymentMethod, paymentContext, options)
+            && !options.get(REVOLUT_ENABLED).getValueAsBooleanOrDefault(false);
     }
 
-    boolean bankTransferEnabled(PaymentMethod paymentMethod, PaymentContext paymentContext) {
-        return paymentMethod == PaymentMethod.BANK_TRANSFER &&
-            configurationManager.getBooleanConfigValue(paymentContext.narrow(BANK_TRANSFER_ENABLED), false)
-            && (paymentContext.getEvent() == null || getOfflinePaymentWaitingPeriod(paymentContext, configurationManager).orElse(0) > 0);
+    boolean bankTransferEnabled(PaymentMethod paymentMethod, PaymentContext paymentContext, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options) {
+        if(paymentMethod != PaymentMethod.BANK_TRANSFER) {
+            return false;
+        }
+        return options.get(BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault(false)
+            && (paymentContext.getEvent() == null || getOfflinePaymentWaitingPeriod(paymentContext.getEvent(), options.get(OFFLINE_PAYMENT_DAYS).getValueAsIntOrDefault(5)).orElse(0) > 0);
+    }
+
+    Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options(PaymentContext paymentContext) {
+        return configurationManager.getFor(EnumSet.of(BANK_TRANSFER_ENABLED, OFFLINE_PAYMENT_DAYS, REVOLUT_ENABLED, REVOLUT_API_KEY, REVOLUT_LIVE_MODE, REVOLUT_MANUAL_REVIEW), paymentContext.getConfigurationLevel());
     }
 
     @Override
@@ -77,10 +85,10 @@ public class BankTransferManager implements PaymentProvider {
         }
         Map<String, Object> model = new HashMap<>();
         model.put("delayForOfflinePayment", Math.max(1, delay.orElse( 0 )));
-        boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentEnabled(event);
+        boolean recaptchaEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(ConfigurationLevel.event(event));
         model.put("captchaRequestedForOffline", recaptchaEnabled);
         if(recaptchaEnabled) {
-            model.put("recaptchaApiKey", configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(RECAPTCHA_API_KEY), null));
+            model.put("recaptchaApiKey", configurationManager.getForSystem(RECAPTCHA_API_KEY).getValue().orElse(null));
         }
         return model;
     }
@@ -107,13 +115,21 @@ public class BankTransferManager implements PaymentProvider {
 
     public static OptionalInt getOfflinePaymentWaitingPeriod(PaymentContext paymentContext, ConfigurationManager configurationManager) {
         Event event = paymentContext.getEvent();
+        return getOfflinePaymentWaitingPeriod(event, configurationManager.getFor(OFFLINE_PAYMENT_DAYS, ConfigurationLevel.event(event)).getValueAsIntOrDefault(5));
+    }
+
+    private static OptionalInt getOfflinePaymentWaitingPeriod(Event event, int configuredValue) {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         ZonedDateTime eventBegin = event.getBegin();
         int daysToBegin = (int) ChronoUnit.DAYS.between(now.toLocalDate(), eventBegin.toLocalDate());
         if (daysToBegin < 0) {
             return OptionalInt.empty();
         }
-        int waitingPeriod = configurationManager.getFor(paymentContext.getEvent(), OFFLINE_PAYMENT_DAYS).getValueAsIntOrDefault(5);
-        return OptionalInt.of( Math.min(daysToBegin, waitingPeriod) );
+        return OptionalInt.of( Math.min(daysToBegin, configuredValue) );
+    }
+
+    @Override
+    public boolean accept(Transaction transaction) {
+        return PaymentProxy.OFFLINE == transaction.getPaymentProxy();
     }
 }

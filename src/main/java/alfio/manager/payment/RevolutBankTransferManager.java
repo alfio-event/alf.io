@@ -75,9 +75,10 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return bankTransferManager.bankTransferEnabled(paymentMethod, context)
-            && configurationManager.getBooleanConfigValue(context.narrow(REVOLUT_ENABLED), false)
-            && configurationManager.getStringConfigValue(context.narrow(REVOLUT_API_KEY)).isPresent();
+        var options = bankTransferManager.options(context);
+        return bankTransferManager.bankTransferEnabled(paymentMethod, context, options)
+            && options.get(REVOLUT_ENABLED).getValueAsBooleanOrDefault(false)
+            && options.get(REVOLUT_API_KEY).isPresent();
     }
 
     @Override
@@ -98,8 +99,9 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         if(reservations.isEmpty()) {
             return Result.success(List.of());
         }
-        var host = configurationManager.getBooleanConfigValue(context.narrow(REVOLUT_LIVE_MODE), false) ? "https://b2b.revolut.com" : "https://sandbox-b2b.revolut.com";
-        var revolutKeyOptional = configurationManager.getStringConfigValue(context.narrow(REVOLUT_API_KEY));
+        var options = bankTransferManager.options(context);
+        var host = options.get(REVOLUT_LIVE_MODE).getValueAsBooleanOrDefault(false) ? "https://b2b.revolut.com" : "https://sandbox-b2b.revolut.com";
+        var revolutKeyOptional = options.get(REVOLUT_API_KEY).getValue();
         if(revolutKeyOptional.isEmpty()) {
             return Result.error(ErrorCode.custom("unavailable", "cannot retrieve Revolut API KEY. Please fix configuration"));
         }
@@ -107,19 +109,19 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
 
         return loadAccounts(revolutKey, host)
             .flatMap(accounts -> loadTransactions(lastCheck, revolutKey, host, accounts))
-            .flatMap(revolutTransactions -> matchTransactions(reservations, revolutTransactions, context));
+            .flatMap(revolutTransactions -> matchTransactions(reservations, revolutTransactions, context, options.get(REVOLUT_MANUAL_REVIEW).getValueAsBooleanOrDefault(true)));
     }
 
     Result<List<String>> matchTransactions(Collection<TicketReservationWithTransaction> pendingReservations,
-                                                              List<RevolutTransactionDescriptor> transactions,
-                                                              PaymentContext context) {
+                                           List<RevolutTransactionDescriptor> transactions,
+                                           PaymentContext context,
+                                           boolean manualReviewRequired) {
         List<Pair<TicketReservationWithTransaction, RevolutTransactionDescriptor>> matched = pendingReservations.stream()
             .map(reservation -> Pair.of(reservation, transactions.stream().filter(transactionMatches(reservation, context)).findFirst()))
             .filter(pair -> pair.getRight().isPresent())
             .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()))
             .collect(Collectors.toList());
 
-        boolean manualReviewRequired = configurationManager.getBooleanConfigValue(context.narrow(REVOLUT_MANUAL_REVIEW), true);
         return Result.success(matched.stream().map(pair -> {
                 var reservationId = pair.getLeft().getTicketReservation().getId();
                 var transaction = pair.getLeft().getTransaction();
@@ -159,7 +161,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         return revolutTransaction -> revolutTransaction.getTransactionBalance().compareTo(BigDecimal.ZERO) > 0
             && Arrays.stream(terms).anyMatch(s -> revolutTransaction.getReference().toLowerCase().contains(s))
             && transaction.getCurrency().equals(revolutTransaction.getLegs().get(0).getCurrency())
-            && transaction.getPriceInCents() == MonetaryUtil.unitToCents(revolutTransaction.getTransactionBalance());
+            && transaction.getPriceInCents() == MonetaryUtil.unitToCents(revolutTransaction.getTransactionBalance(), transaction.getCurrency());
     }
 
     private Result<List<RevolutTransactionDescriptor>> loadTransactions(ZonedDateTime lastCheck, String revolutKey, String revolutUrl, List<String> accounts) {
@@ -219,8 +221,13 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     public Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
         var metadata = transaction.getMetadata();
         if(metadata != null && metadata.containsKey("counterpartyAccountId")) {
-            return Optional.of(new PaymentInformation(MonetaryUtil.formatCents(transaction.getPriceInCents()), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));
+            return Optional.of(new PaymentInformation(MonetaryUtil.formatCents(transaction.getPriceInCents(), transaction.getCurrency()), null, String.valueOf(transaction.getGatewayFee()), String.valueOf(transaction.getPlatformFee())));
         }
         return Optional.empty();
+    }
+
+    @Override
+    public boolean accept(Transaction transaction) {
+        return false;
     }
 }

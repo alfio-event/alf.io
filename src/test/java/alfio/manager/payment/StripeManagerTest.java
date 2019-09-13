@@ -17,6 +17,7 @@
 package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
@@ -65,7 +66,7 @@ public class StripeManagerTest {
         customerName = mock(CustomerName.class);
         configurationRepository = mock(ConfigurationRepository.class);
         when(customerName.getFullName()).thenReturn("ciccio");
-        when(configurationManager.getFor(event, PLATFORM_MODE_ENABLED)).thenReturn(new ConfigurationManager.MaybeConfiguration(PLATFORM_MODE_ENABLED));
+        when(configurationManager.getFor(eq(PLATFORM_MODE_ENABLED), any())).thenReturn(new ConfigurationManager.MaybeConfiguration(PLATFORM_MODE_ENABLED));
     }
 
     @Test
@@ -112,7 +113,7 @@ public class StripeManagerTest {
         };
         StripeCreditCardManager stripeCreditCardManager = new StripeCreditCardManager(configurationManager, transactionRepository, baseStripeManager);
         when(event.getCurrency()).thenReturn("CHF");
-        when(transactionRepository.insert(anyString(), isNull(), anyString(), any(ZonedDateTime.class), anyInt(), eq("CHF"), anyString(), anyString(), anyLong(), anyLong(), eq(Transaction.Status.COMPLETE), eq(Map.of())))
+        when(transactionRepository.insert(anyString(), isNull(), anyString(), any(ZonedDateTime.class), anyInt(), eq("CHF"), anyString(), anyString(), anyLong(), anyLong(), eq(Transaction.Status.COMPLETE), anyMap()))
             .thenThrow(new NullPointerException());
 
         PaymentSpecification spec = new PaymentSpecification( "", new StripeCreditCardToken(""), 100, event, "", customerName );

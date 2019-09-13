@@ -17,9 +17,10 @@
 package alfio.util;
 
 import alfio.controller.decorator.SaleableTicketCategory;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketRepository;
@@ -36,6 +37,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -72,22 +74,27 @@ public class EventUtil {
         .toFormatter(Locale.ROOT);
 
     public static boolean displayWaitingQueueForm(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
-        return !configurationManager.getFor(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault(false)
-            && checkWaitingQueuePreconditions(event, categories, configurationManager, noTicketsAvailable);
+        var confVal = configurationManager.getFor(List.of(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE), ConfigurationLevel.event(event));
+        return !confVal.get(STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault(false)
+            && checkWaitingQueuePreconditions(event, categories, noTicketsAvailable, confVal);
     }
 
-    public static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
+    private static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, Predicate<EventAndOrganizationId> noTicketsAvailable, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> confVal) {
         return findLastCategory(categories).map(lastCategory -> {
             ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             if(isPreSales(event, categories)) {
-                return configurationManager.getFor(event, ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false);
-            } else if(configurationManager.getFor(event, ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false)) {
+                return confVal.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false);
+            } else if(confVal.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false)) {
                 return now.isBefore(lastCategory.getZonedExpiration()) && noTicketsAvailable.test(event);
             }
             return false;
         }).orElse(false);
     }
 
+    public static boolean checkWaitingQueuePreconditions(Event event, List<SaleableTicketCategory> categories, ConfigurationManager configurationManager, Predicate<EventAndOrganizationId> noTicketsAvailable) {
+        var confVal = configurationManager.getFor(List.of(ENABLE_PRE_REGISTRATION, ENABLE_WAITING_QUEUE), ConfigurationLevel.event(event));
+        return checkWaitingQueuePreconditions(event, categories, noTicketsAvailable, confVal);
+    }
 
     private static Optional<SaleableTicketCategory> findLastCategory(List<SaleableTicketCategory> categories) {
         return sortCategories(categories, (c1, c2) -> c2.getUtcExpiration().compareTo(c1.getUtcExpiration())).findFirst();
@@ -100,8 +107,6 @@ public class EventUtil {
     private static Stream<SaleableTicketCategory> sortCategories(List<SaleableTicketCategory> categories, Comparator<SaleableTicketCategory> comparator) {
         return Optional.ofNullable(categories).orElse(Collections.emptyList()).stream().sorted(comparator);
     }
-
-
 
     public static boolean isPreSales(Event event, List<SaleableTicketCategory> categories) {
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
@@ -140,8 +145,8 @@ public class EventUtil {
             .addValue("srcPriceCts", srcPriceCts);
     }
 
-    public static int evaluatePrice(int price, boolean freeOfCharge) {
-        return freeOfCharge ? 0 : price;
+    public static int evaluatePrice(BigDecimal price, boolean freeOfCharge, String currencyCode) {
+        return freeOfCharge ? 0 : MonetaryUtil.unitToCents(Objects.requireNonNull(price), Objects.requireNonNull(currencyCode));
     }
 
     public static int determineAvailableSeats(TicketCategoryStatisticView tc, EventStatisticView e) {
@@ -192,9 +197,9 @@ public class EventUtil {
             //WORKAROUND: we only add the additionalServiceItems related fields only if it's the _first_ ticket of the reservation
             boolean isFirstTicket = ticketsInReservation.get(0).getId() == ticket.getId();
 
-            Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(Locale.forLanguageTag(ticket.getUserLanguage()), ticket.getEventId());
+            Map<Integer, TicketFieldDescription> descriptions = ticketFieldRepository.findTranslationsFor(LocaleUtil.forLanguageTag(ticket.getUserLanguage()), ticket.getEventId());
             Map<String, TicketFieldValue> values = ticketFieldRepository.findAllByTicketIdGroupedByName(ticket.getId());
-            Function<TicketFieldConfiguration, String> extractor = (f) -> Optional.ofNullable(values.get(f.getName())).map(TicketFieldValue::getValue).orElse("");
+            Function<TicketFieldConfiguration, String> extractor = f -> Optional.ofNullable(values.get(f.getName())).map(TicketFieldValue::getValue).orElse("");
             List<AdditionalServiceItem> additionalServiceItems = isFirstTicket ? additionalServiceItemRepository.findByReservationUuid(ticket.getTicketsReservationId()) : Collections.emptyList();
             Set<Integer> additionalServiceIds = additionalServiceItems.stream().map(AdditionalServiceItem::getAdditionalServiceId).collect(Collectors.toSet());
             return ticketFieldRepository.findAdditionalFieldsForEvent(ticket.getEventId())
@@ -202,13 +207,10 @@ public class EventUtil {
                 .filter(f -> f.getContext() == ATTENDEE || Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
                 .filter(f -> CollectionUtils.isEmpty(f.getCategoryIds()) || f.getCategoryIds().contains(ticket.getCategoryId()))
                 .map(f-> {
-                    int count = Math.max(1, Optional.ofNullable(f.getAdditionalServiceId()).map(id -> (int) additionalServiceItems.stream().filter(i -> i.getAdditionalServiceId() == id).count()).orElse(1));
+                    int count = Math.max(1, Optional.ofNullable(f.getAdditionalServiceId()).map(id -> (int) additionalServiceItems.stream().filter(i -> i.getAdditionalServiceId() == id).count()).orElse(f.getCount()));
                     return new TicketFieldConfigurationDescriptionAndValue(f, descriptions.getOrDefault(f.getId(), TicketFieldDescription.MISSING_FIELD), count, extractor.apply(f));
                 })
                 .collect(Collectors.toList());
         };
     }
-
-
-
 }

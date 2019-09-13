@@ -16,17 +16,18 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.EventDescription;
 import alfio.model.Ticket;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
+import alfio.util.LocaleUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.ryantenney.passkit4j.Pass;
@@ -112,9 +113,9 @@ public class PassKitManager {
 
     private Map<ConfigurationKeys, String> getConfigurationKeys(EventAndOrganizationId event) {
 
-        var conf = configurationManager.getFor(event, Set.of(ENABLE_PASS,
+        var conf = configurationManager.getFor(Set.of(ENABLE_PASS,
             PASSBOOK_TYPE_IDENTIFIER, PASSBOOK_KEYSTORE, PASSBOOK_KEYSTORE_PASSWORD,
-            PASSBOOK_TEAM_IDENTIFIER, PASSBOOK_PRIVATE_KEY_ALIAS));
+            PASSBOOK_TEAM_IDENTIFIER, PASSBOOK_PRIVATE_KEY_ALIAS), ConfigurationLevel.event(event));
 
         if(!conf.get(ENABLE_PASS).getValueAsBooleanOrDefault(false)) {
             return Map.of();
@@ -145,7 +146,7 @@ public class PassKitManager {
         // from example: https://github.com/ryantenney/passkit4j/blob/master/src/test/java/com/ryantenney/passkit4j/EventTicketExample.java
         // specification: https://developer.apple.com/library/archive/documentation/UserExperience/Conceptual/PassKit_PG/Creating.html#//apple_ref/doc/uid/TP40012195-CH4-SW6
 
-        var ticketLocale = Locale.forLanguageTag(ticket.getUserLanguage());
+        var ticketLocale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
         String teamIdentifier = config.get(PASSBOOK_TEAM_IDENTIFIER);
         String typeIdentifier = config.get(PASSBOOK_TYPE_IDENTIFIER);
         byte[] keystoreRaw = Base64.getDecoder().decode(config.get(PASSBOOK_KEYSTORE));
@@ -202,7 +203,7 @@ public class PassKitManager {
 
         fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(metadata -> {
             if(metadata.getContentType().equals("image/png") || metadata.getContentType().equals("image/jpeg")) {
-                Optional<byte[]> cachedLogo = passKitLogoCache.get(event.getFileBlobId(), (id) -> {
+                Optional<byte[]> cachedLogo = passKitLogoCache.get(event.getFileBlobId(), id -> {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     fileUploadManager.outputFile(event.getFileBlobId(), baos);
                     return readAndConvertImage(baos);
@@ -248,9 +249,9 @@ public class PassKitManager {
         }
 
         var event = eventOptional.get();
-        var typeIdentifierOptional = configurationManager.getStringConfigValue(Configuration.from(event, PASSBOOK_TYPE_IDENTIFIER));
-        if(typeIdentifierOptional.isEmpty() || !typeIdentifierOptional.get().equals(typeIdentifier)) {
-            log.trace("typeIdentifier does not match. Expected {}, got {}", typeIdentifierOptional.orElse("not-found"), typeIdentifier);
+        var typeIdentifierOptional = configurationManager.getFor(PASSBOOK_TYPE_IDENTIFIER, ConfigurationLevel.event(event));
+        if(!typeIdentifierOptional.isPresent() || !typeIdentifier.equals(typeIdentifierOptional.getValueOrDefault(null))) {
+            log.trace("typeIdentifier does not match. Expected {}, got {}", typeIdentifierOptional.getValueOrDefault("not-found"), typeIdentifier);
             return Optional.empty();
         }
         return ticketRepository.findOptionalByUUID(ticketUuid)

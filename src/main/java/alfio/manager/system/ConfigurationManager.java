@@ -16,6 +16,9 @@
  */
 package alfio.manager.system;
 
+import alfio.manager.system.ConfigurationLevels.CategoryLevel;
+import alfio.manager.system.ConfigurationLevels.EventLevel;
+import alfio.manager.system.ConfigurationLevels.OrganizationLevel;
 import alfio.manager.user.UserManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.TicketReservation;
@@ -35,7 +38,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,7 +62,6 @@ public class ConfigurationManager {
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
 
     private static final Predicate<ConfigurationModification> TO_BE_SAVED = c -> Optional.ofNullable(c.getId()).orElse(-1) > -1 || !StringUtils.isBlank(c.getValue());
-
 
     private final ConfigurationRepository configurationRepository;
     private final UserManager userManager;
@@ -102,41 +103,6 @@ public class ConfigurationManager {
     @SuppressWarnings("unchecked")
     private static <T> T from(ConfigurationPath c) {
         return (T) c;
-    }
-
-    @Deprecated
-    public int getIntConfigValue(ConfigurationPathKey pathKey, int defaultValue) {
-        try {
-            return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey())
-                .map(Configuration::getValue)
-                .map(Integer::parseInt).orElse(defaultValue);
-        } catch (NumberFormatException | EmptyResultDataAccessException e) {
-            return defaultValue;
-        }
-    }
-
-    @Deprecated
-    public boolean getBooleanConfigValue(ConfigurationPathKey pathKey, boolean defaultValue) {
-        return getStringConfigValue(pathKey)
-            .map(Boolean::parseBoolean)
-            .orElse(defaultValue);
-    }
-
-
-    @Deprecated
-    public String getStringConfigValue(ConfigurationPathKey pathKey, String defaultValue) {
-        return getStringConfigValue(pathKey).orElse(defaultValue);
-    }
-
-    @Deprecated
-    public Optional<String> getStringConfigValue(ConfigurationPathKey pathKey) {
-        return findByConfigurationPathAndKey(pathKey.getPath(), pathKey.getKey()).map(Configuration::getValue);
-    }
-
-    @Deprecated
-    public String getRequiredValue(ConfigurationPathKey pathKey) {
-        return getStringConfigValue(pathKey)
-            .orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + pathKey.getKey() + " not present"));
     }
 
     // begin SYSTEM related configuration methods
@@ -291,7 +257,7 @@ public class ConfigurationManager {
         }
         boolean isAdmin = userManager.isAdmin(user);
         Map<ConfigurationKeys.SettingCategory, List<Configuration>> existing = configurationRepository.findOrganizationConfiguration(organizationId).stream().filter(checkActualConfigurationLevel(isAdmin, ORGANIZATION)).sorted().collect(groupByCategory());
-        String paymentMethodsBlacklist = getStringConfigValue(Configuration.from(organizationId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST), "");
+        String paymentMethodsBlacklist = getFor(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST, new OrganizationLevel(organizationId)).getValueOrDefault("");
         Map<SettingCategory, List<Configuration>> result = groupByCategory(isAdmin ? union(SYSTEM, ORGANIZATION) : ORGANIZATION_CONFIGURATION, existing);
         List<SettingCategory> toBeRemoved = PaymentProxy.availableProxies()
             .stream()
@@ -337,7 +303,7 @@ public class ConfigurationManager {
     }
 
     public Predicate<EventAndOrganizationId> areBooleanSettingsEnabledForEvent(boolean defaultValue, ConfigurationKeys... keys) {
-        return (event) -> getFor(event, Set.of(keys)).entrySet().stream().allMatch(kv -> kv.getValue().getValueAsBooleanOrDefault(defaultValue));
+        return event -> getFor(Set.of(keys), ConfigurationLevel.event(event)).entrySet().stream().allMatch(kv -> kv.getValue().getValueAsBooleanOrDefault(defaultValue));
     }
 
     private static Map<ConfigurationKeys.SettingCategory, List<Configuration>> removeAlfioPISettingsIfNeeded(boolean offlineCheckInEnabled, Map<ConfigurationKeys.SettingCategory, List<Configuration>> settings) {
@@ -447,7 +413,7 @@ public class ConfigurationManager {
     }
 
     public String getShortReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        var conf = getFor(event, Set.of(USE_INVOICE_NUMBER_AS_ID, PARTIAL_RESERVATION_ID_LENGTH));
+        var conf = getFor(Set.of(USE_INVOICE_NUMBER_AS_ID, PARTIAL_RESERVATION_ID_LENGTH), ConfigurationLevel.event(event));
         if(conf.get(USE_INVOICE_NUMBER_AS_ID).getValueAsBooleanOrDefault(false) && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
@@ -455,28 +421,35 @@ public class ConfigurationManager {
     }
 
     public String getPublicReservationID(EventAndOrganizationId event, TicketReservation reservation) {
-        if(getFor(event, USE_INVOICE_NUMBER_AS_ID).getValueAsBooleanOrDefault(false) && reservation.getHasInvoiceNumber()) {
+        if(getFor(USE_INVOICE_NUMBER_AS_ID, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false) && reservation.getHasInvoiceNumber()) {
             return reservation.getInvoiceNumber();
         }
         return reservation.getId();
     }
 
     public boolean hasAllConfigurationsForInvoice(EventAndOrganizationId event) {
-        var r = getFor(event, Set.of(INVOICE_ADDRESS, VAT_NR));
-        return r.get(INVOICE_ADDRESS).isPresent() && r.get(VAT_NR).isPresent();
+        var r = getFor(Set.of(INVOICE_ADDRESS, VAT_NR), ConfigurationLevel.event(event));
+        return hasAllConfigurationsForInvoice(r);
     }
 
-    @Deprecated
-    public boolean isRecaptchaForOfflinePaymentEnabled(EventAndOrganizationId event) {
-        var conf = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS, RECAPTCHA_API_KEY));
-        return conf.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault(false) &&
-            conf.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
+    /**
+     * @param configurationValues note: require keys INVOICE_ADDRESS, VAT_NR
+     * @return
+     */
+    public boolean hasAllConfigurationsForInvoice(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
+        Validate.isTrue(configurationValues.containsKey(INVOICE_ADDRESS) && configurationValues.containsKey(VAT_NR));
+        return configurationValues.get(INVOICE_ADDRESS).isPresent() && configurationValues.get(VAT_NR).isPresent();
     }
 
-    public boolean isRecaptchaForTicketSelectionEnabled(EventAndOrganizationId event) {
-        var res = getFor(event, Set.of(ENABLE_CAPTCHA_FOR_TICKET_SELECTION, RECAPTCHA_API_KEY));
-        return res.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault(false) &&
-            res.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
+    public boolean isRecaptchaForOfflinePaymentAndFreeEnabled(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
+        Validate.isTrue(configurationValues.containsKey(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS) && configurationValues.containsKey(RECAPTCHA_API_KEY));
+        return configurationValues.get(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS).getValueAsBooleanOrDefault(false) &&
+            configurationValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
+    }
+
+    public boolean isRecaptchaForOfflinePaymentAndFreeEnabled(ConfigurationLevel configurationLevel) {
+        var conf = getFor(Set.of(ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS, RECAPTCHA_API_KEY), configurationLevel);
+        return isRecaptchaForOfflinePaymentAndFreeEnabled(conf);
     }
 
     // https://github.com/alfio-event/alf.io/issues/573
@@ -484,38 +457,67 @@ public class ConfigurationManager {
         return !isItalianEInvoicingEnabled(event);
     }
 
+    public boolean canGenerateReceiptOrInvoiceToCustomer(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
+        return !isItalianEInvoicingEnabled(configurationValues);
+    }
+
     public boolean isInvoiceOnly(EventAndOrganizationId event) {
-        var res = getFor(event, Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING));
-        return res.get(GENERATE_ONLY_INVOICE).getValueAsBooleanOrDefault(false) || res.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
+        var res = getFor(Set.of(GENERATE_ONLY_INVOICE, ENABLE_ITALY_E_INVOICING), ConfigurationLevel.event(event));
+        return isInvoiceOnly(res);
+    }
+
+    /**
+     * @param configurationValues note: require the key GENERATE_ONLY_INVOICE and ENABLE_ITALY_E_INVOICING to be present
+     * @return
+     */
+    public boolean isInvoiceOnly(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
+        Validate.isTrue(configurationValues.containsKey(GENERATE_ONLY_INVOICE) && configurationValues.containsKey(ENABLE_ITALY_E_INVOICING));
+        return configurationValues.get(GENERATE_ONLY_INVOICE).getValueAsBooleanOrDefault(false) || configurationValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
     }
 
     public boolean isItalianEInvoicingEnabled(EventAndOrganizationId event) {
-        return getFor(event, ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
+        var res = getFor(List.of(ENABLE_ITALY_E_INVOICING), ConfigurationLevel.event(event));
+        return isItalianEInvoicingEnabled(res);
+    }
+
+    public boolean isItalianEInvoicingEnabled(Map<ConfigurationKeys, MaybeConfiguration> configurationValues) {
+        Validate.isTrue(configurationValues.containsKey(ENABLE_ITALY_E_INVOICING));
+        return configurationValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
     }
 
     //
 
-    public MaybeConfiguration getFor(ConfigurationKeys key) {
-        return getFor(Set.of(key)).get(key);
+    public MaybeConfiguration getForSystem(ConfigurationKeys key) {
+        return getFor(Set.of(key), ConfigurationLevel.system()).get(key);
     }
 
-    public Map<ConfigurationKeys, MaybeConfiguration> getFor(Collection<ConfigurationKeys> keys) {
-        var found = configurationRepository.findByKeysAtSystemLevel(keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
-        return buildKeyConfigurationMapResult(keys, found);
+    public MaybeConfiguration getFor(ConfigurationKeys key, ConfigurationLevel configurationLevel) {
+        return getFor(Set.of(key), configurationLevel).get(key);
     }
 
-
-    public Map<ConfigurationKeys, MaybeConfiguration> getFor(EventAndOrganizationId eventAndOrganizationId, Collection<ConfigurationKeys> keys) {
-        if (eventAndOrganizationId == null) {
-            return getFor(keys);
-        } else {
-            var found = configurationRepository.findByEventAndKeys(eventAndOrganizationId.getOrganizationId(), eventAndOrganizationId.getId(), keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toList()));
-            return buildKeyConfigurationMapResult(keys, found);
+    public Map<ConfigurationKeys, MaybeConfiguration> getFor(Collection<ConfigurationKeys> keys, ConfigurationLevel configurationLevel) {
+        var keysAsString = keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toSet());
+        List<ConfigurationKeyValuePathLevel> found; // waiting for switch expressions...
+        switch(configurationLevel.getPathLevel()) {
+            case SYSTEM:
+                found = configurationRepository.findByKeysAtSystemLevel(keysAsString);
+                break;
+            case ORGANIZATION:
+                found = configurationRepository.findByOrganizationAndKeys(((OrganizationLevel)configurationLevel).organizationId, keysAsString);
+                break;
+            case EVENT:
+                var eventLevel = (EventLevel) configurationLevel;
+                found = configurationRepository.findByEventAndKeys(eventLevel.organizationId, eventLevel.eventId, keysAsString);
+                break;
+            case TICKET_CATEGORY:
+                var categoryLevel = (CategoryLevel) configurationLevel;
+                found = configurationRepository.findByTicketCategoryAndKeys(categoryLevel.organizationId, categoryLevel.eventId, categoryLevel.categoryId, keysAsString);
+                break;
+            default:
+                found = List.of();
         }
-    }
 
-    public MaybeConfiguration getFor(EventAndOrganizationId eventAndOrganizationId, ConfigurationKeys key) {
-        return getFor(eventAndOrganizationId, Set.of(key)).get(key);
+        return buildKeyConfigurationMapResult(keys, found);
     }
 
     private Map<ConfigurationKeys, MaybeConfiguration> buildKeyConfigurationMapResult(Collection<ConfigurationKeys> keys, List<ConfigurationKeyValuePathLevel> found) {
@@ -537,8 +539,8 @@ public class ConfigurationManager {
         return res;
     }
 
-
     public static class MaybeConfiguration {
+        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         private final Optional<ConfigurationKeyValuePathLevel> configuration;
         private final ConfigurationKeys key;
 
@@ -560,6 +562,10 @@ public class ConfigurationManager {
             return configuration.isPresent();
         }
 
+        public boolean isEmpty() {
+            return configuration.isEmpty();
+        }
+
         public Optional<String> getValue() {
             return configuration.map(ConfigurationKeyValuePathLevel::getValue);
         }
@@ -573,7 +579,13 @@ public class ConfigurationManager {
         }
 
         public int getValueAsIntOrDefault(int defaultValue) {
-            return getValue().map(Integer::parseInt).orElse(defaultValue);
+            return getValue().flatMap(v -> {
+                try {
+                    return Optional.of(Integer.parseInt(v));
+                } catch(NumberFormatException ex) {
+                    return Optional.empty();
+                }
+            }).orElse(defaultValue);
         }
 
         public ConfigurationPathLevel getConfigurationPathLevelOrDefault(ConfigurationPathLevel defaultValue) {
@@ -583,6 +595,17 @@ public class ConfigurationManager {
         public String getRequiredValue() {
             return getValue().orElseThrow(() -> new IllegalArgumentException("Mandatory configuration key " + key + " not present"));
         }
+    }
+
+    /**
+     * Fetch all ticket_category_id, value that are present at the ticket category level with a given configuration key
+     *
+     * @param event
+     * @param key
+     * @return
+     */
+    public Map<Integer, String> getAllCategoriesAndValueWith(EventAndOrganizationId event, ConfigurationKeys key) {
+        return configurationRepository.getAllCategoriesAndValueWith(event.getOrganizationId(), event.getId(), key);
     }
 
 }

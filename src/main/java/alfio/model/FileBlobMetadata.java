@@ -20,10 +20,10 @@ import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 
 @Getter
 public class FileBlobMetadata {
@@ -47,7 +47,7 @@ public class FileBlobMetadata {
         this.contentSize = contentSize;
         this.contentType = contentType;
         Map<String, String> parsed = Json.GSON.fromJson(attributes, new TypeToken<Map<String, String>>() {}.getType());
-        this.attributes = Optional.ofNullable(parsed).orElse(Collections.emptyMap());
+        this.attributes = ObjectUtils.firstNonNull(parsed, Collections.emptyMap());
     }
 
 }

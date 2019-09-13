@@ -8,6 +8,8 @@
                 <div class="pull-right">
                     <a class="btn btn-sm btn-default" ng-click="$ctrl.ticketCategory.error = null; $ctrl.editHandler($ctrl.ticketCategory)"><i class="fa fa-edit"></i> edit</a>
                     <a class="btn btn-sm btn-danger" ng-click="$ctrl.removeHandler($ctrl.ticketCategory)"><i class="fa fa-trash"></i> delete</a>
+                    <a class="btn btn-default btn-sm" ng-if="$ctrl.swapEnabled && !$ctrl.isFirst" data-ng-click="$ctrl.swapHandler($ctrl.ticketCategory, true)"><i class="fa fa-arrow-up"></i> move up</a>
+                    <a class="btn btn-default btn-sm" ng-if="$ctrl.swapEnabled && !$ctrl.isLast" data-ng-click="$ctrl.swapHandler($ctrl.ticketCategory, false)"><i class="fa fa-arrow-down"></i> move down</a>
                 </div>
             </div>
         </div>
@@ -35,7 +37,7 @@
                     </span>
                     <i class="ml-1 fa fa fa-money fa-1_5x" ng-if="!$ctrl.event.freeOfCharge"></i><span class="sr-only">Ticket Price</span>
                     <span class="text-muted" ng-if="!$ctrl.event.freeOfCharge">
-                        {{$ctrl.ticketCategory.price | currency : ($ctrl.event.currency || "")}} <span ng-if="!$ctrl.event.vatIncluded"><i class="text-muted">+ VAT</i></span>
+                        {{$ctrl.ticketCategory.price | money : ($ctrl.event.currency || "")}} <span ng-if="!$ctrl.event.vatIncluded"><i class="text-muted">+ VAT</i></span>
                     </span>
                 </h5>
                 <h5 ng-if="$ctrl.hasCustomCheckIn()">
@@ -54,8 +56,7 @@
             <div class="col-xs-7 category-detail">
                 <div ng-if="$ctrl.categoryHasDescriptions($ctrl.ticketCategory)">
                     <div class="row category-description" data-ng-repeat="(lang, desc) in $ctrl.ticketCategory.description">
-                        <div class="col-xs-10"><language-flag lang="{{lang}}"></language-flag> <small class="ml-1 text-muted">{{desc | limitTo:80}}{{desc.length > 80 ? '...':''}}</small></div>
-                        <div class="col-xs-2"><display-commonmark-preview text="desc"></display-commonmark-preview></div>
+                        <div class="col-xs-12">{{lang}} <display-commonmark-preview text="desc" button-text="View description"></display-commonmark-preview></div>
                     </div>
                 </div>
             </div>

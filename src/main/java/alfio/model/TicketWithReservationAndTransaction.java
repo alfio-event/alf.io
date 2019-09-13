@@ -37,6 +37,8 @@ public class TicketWithReservationAndTransaction {
     private final BillingDetails billingDetails;
     private final Optional<Transaction> transaction;
     private final Integer ticketsCountInReservation;
+    private final String promoCode;
+    private final String specialPriceToken;
 
 
     public TicketWithReservationAndTransaction(@Column("t_id") Integer id,
@@ -56,6 +58,7 @@ public class TicketWithReservationAndTransaction {
                                                @Column("t_vat_cts") Integer vatCts,
                                                @Column("t_discount_cts") Integer discountCts,
                                                @Column("t_ext_reference") String extReference,
+                                               @Column("t_currency_code") String currencyCode,
                                                //
                                                @Column("tr_id") String trId,
                                                @Column("tr_event_id") int eventId,
@@ -112,12 +115,15 @@ public class TicketWithReservationAndTransaction {
                                                @Column("bt_gtw_fee") Long gatewayFee,
                                                @Column("bt_status") Transaction.Status transactionStatus,
                                                @Column("bt_metadata") @JSONData Map<String, String> metadata,
-                                               @Column("tickets_count") Integer ticketsCount
+                                               @Column("tickets_count") Integer ticketsCount,
+
+                                               @Column("promo_code") String promoCode,
+                                               @Column("special_price_token") String specialPriceToken
                                                ) {
 
         this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
             fullName, firstName, lastName, email, lockedAssignment, userLanguage,
-            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference) : null;
+            srcPriceCts, finalPriceCts, vatCts, discountCts, extReference, currencyCode) : null;
 
 
         this.ticketReservation = new TicketReservation(trId, validity, trStatus,
@@ -138,6 +144,9 @@ public class TicketWithReservationAndTransaction {
         }
 
         this.ticketsCountInReservation = ticketsCount;
+
+        this.promoCode = promoCode;
+        this.specialPriceToken = specialPriceToken;
 
     }
 }

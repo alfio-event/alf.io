@@ -52,7 +52,7 @@ import java.util.stream.IntStream;
 
 import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.repository.TicketRepository.RESET_TICKET;
-import static alfio.util.OptionalWrapper.optionally;
+import static alfio.util.Wrappers.optionally;
 import static java.util.stream.Collectors.*;
 
 @Component
@@ -112,6 +112,15 @@ public class DataMigrator {
         fillReservationsLanguage();
         fillDefaultOptions();
         fixReservationPrice(events);
+        fixVatStatus();
+    }
+
+    private void fixVatStatus() {
+        transactionTemplate.execute(ts -> {
+            int rows = jdbc.update("update tickets_reservation set vat_status = (select vat_status from event where id = event_id_fk) where vat_status is null", Map.of());
+            log.debug("update VAT/GST on {} reservations", rows);
+            return null;
+        });
     }
 
     private void fixReservationPrice(List<Event> events) {
@@ -141,12 +150,13 @@ public class DataMigrator {
                     var ticketReservation = ticketsReservationAndTransactions.get(0).getTicketReservation();
                     var totalPrice = ticketReservationManager.totalReservationCostWithVAT(event, ticketReservation, tickets);
                     var calculator = new ReservationPriceCalculator(ticketReservation, totalPrice, tickets, event);
+                    var currencyCode = calculator.getCurrencyCode();
                     return new MapSqlParameterSource("reservationId", calculator.reservation.getId())
                         .addValue("srcPrice", calculator.getSrcPriceCts())
-                        .addValue("finalPrice", MonetaryUtil.unitToCents(calculator.getFinalPrice()))
-                        .addValue("discount", MonetaryUtil.unitToCents(calculator.getAppliedDiscount()))
-                        .addValue("vat", MonetaryUtil.unitToCents(calculator.getVAT()))
-                        .addValue("currencyCode", calculator.getCurrencyCode());
+                        .addValue("finalPrice", MonetaryUtil.unitToCents(calculator.getFinalPrice(), currencyCode))
+                        .addValue("discount", MonetaryUtil.unitToCents(calculator.getAppliedDiscount(), currencyCode))
+                        .addValue("vat", MonetaryUtil.unitToCents(calculator.getVAT(), currencyCode))
+                        .addValue("currencyCode", currencyCode);
                 }).toArray(MapSqlParameterSource[]::new);
             log.trace("updating {} reservations", reservationsToUpdate.length);
             int[] results = jdbc.batchUpdate("update tickets_reservation set src_price_cts = :srcPrice, final_price_cts = :finalPrice, discount_cts = :discount, vat_cts = :vat, currency_code = :currencyCode where id = :reservationId", reservationsToUpdate);
@@ -224,7 +234,7 @@ public class DataMigrator {
     }
 
     void fixCategoriesSize(EventAndOrganizationId event) {
-        ticketCategoryRepository.findByEventId(event.getId()).stream()
+        ticketCategoryRepository.findAllTicketCategories(event.getId()).stream()
             .filter(TicketCategory::isBounded)
             .forEach(tc -> {
                 Integer result = jdbc.queryForObject("select count(*) from ticket where event_id = :eventId and category_id = :categoryId and status <> 'INVALIDATED'", new MapSqlParameterSource("eventId", tc.getEventId()).addValue("categoryId", tc.getId()), Integer.class);
@@ -365,8 +375,8 @@ public class DataMigrator {
             .map(p -> {
                 PriceContainer priceContainer = p.getValue();
                 return Pair.of("additional_service_item", new MapSqlParameterSource(srcPriceCtsParam, priceContainer.getSrcPriceCts())
-                    .addValue("finalPriceCts", MonetaryUtil.unitToCents(priceContainer.getFinalPrice()))
-                    .addValue("vatCts", MonetaryUtil.unitToCents(priceContainer.getVAT()))
+                    .addValue("finalPriceCts", MonetaryUtil.unitToCents(priceContainer.getFinalPrice(), currencyCode))
+                    .addValue("vatCts", MonetaryUtil.unitToCents(priceContainer.getVAT(), currencyCode))
                     .addValue("additionalServiceItemId", p.getKey()));
             }).collect(toList());
     }
@@ -418,9 +428,9 @@ public class DataMigrator {
             .map(p -> {
                     PriceContainer priceContainer = p.getValue();
                     return Pair.of("ticket", new MapSqlParameterSource(srcPriceCtsParam, priceContainer.getSrcPriceCts())
-                        .addValue("finalPriceCts", MonetaryUtil.unitToCents(priceContainer.getFinalPrice()))
-                        .addValue("vatCts", MonetaryUtil.unitToCents(priceContainer.getVAT()))
-                        .addValue("discountCts", MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()))
+                        .addValue("finalPriceCts", MonetaryUtil.unitToCents(priceContainer.getFinalPrice(), currencyCode))
+                        .addValue("vatCts", MonetaryUtil.unitToCents(priceContainer.getVAT(), currencyCode))
+                        .addValue("discountCts", MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount(), currencyCode))
                         .addValue("ticketId", p.getKey()));
                 }
             ).collect(toList());

@@ -74,8 +74,9 @@ public interface TransactionRepository {
     @Query("delete from b_transaction where reservation_id in (:reservationIds)")
     int deleteForReservations(@Bind("reservationIds") List<String> reservationIds);
 
-    @Query("update b_transaction set status = 'INVALID' where reservation_id = :reservationId and status <> 'COMPLETE'")
-    int invalidateForReservation(@Bind("reservationId") String reservationId);
+    @Query("update b_transaction set status = 'INVALID' where reservation_id = :reservationId and status <> 'COMPLETE' and " +
+        " (:paymentProxy is null or (:paymentProxy is not null and payment_proxy = :paymentProxy)) ")
+    int invalidateForReservation(@Bind("reservationId") String reservationId, @Bind("paymentProxy") String paymentProxy);
 
     @Query("delete from b_transaction where reservation_id in (:reservationIds) and status = :status")
     int deleteForReservationsWithStatus(@Bind("reservationIds") List<String> reservationIds, @Bind("status") Transaction.Status status);
@@ -91,4 +92,7 @@ public interface TransactionRepository {
                    @Bind("reservationId") String reservationId,
                    @Bind("platformFee") long platformFee,
                    @Bind("gatewayFee") long gatewayFee);
+
+    @Query("update b_transaction set status = 'INVALID' where id = :id")
+    int invalidateById(@Bind("id") int id);
 }

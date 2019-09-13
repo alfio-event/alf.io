@@ -25,7 +25,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.support.EncodedResource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
-import org.springframework.mail.MailException;
 import org.springframework.mail.MailParseException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
@@ -53,12 +52,11 @@ class SmtpMailer implements Mailer {
     public void send(EventAndOrganizationId event, String fromName, String to, List<String> cc, String subject, String text,
                      Optional<String> html, Attachment... attachments) {
 
-        var conf = configurationManager.getFor(event, Set.of(SMTP_FROM_EMAIL, MAIL_REPLY_TO,
+        var conf = configurationManager.getFor(Set.of(SMTP_FROM_EMAIL, MAIL_REPLY_TO,
             SMTP_HOST, SMTP_PORT, SMTP_PROTOCOL,
-            SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROPERTIES));
+            SMTP_USERNAME, SMTP_PASSWORD, SMTP_PROPERTIES), ConfigurationLevel.event(event));
 
-        MimeMessagePreparator preparator = (mimeMessage) -> {
-
+        MimeMessagePreparator preparator = mimeMessage -> {
 
             MimeMessageHelper message = html.isPresent() || !ArrayUtils.isEmpty(attachments) ? new MimeMessageHelper(mimeMessage, true, "UTF-8")
                     : new MimeMessageHelper(mimeMessage, "UTF-8");
@@ -95,7 +93,7 @@ class SmtpMailer implements Mailer {
         r.setDefaultEncoding("UTF-8");
 
         r.setHost(conf.get(SMTP_HOST).getRequiredValue());
-        r.setPort(Integer.valueOf(conf.get(SMTP_PORT).getRequiredValue()));
+        r.setPort(Integer.parseInt(conf.get(SMTP_PORT).getRequiredValue()));
         r.setProtocol(conf.get(SMTP_PROTOCOL).getRequiredValue());
         r.setUsername(conf.get(SMTP_USERNAME).getValueOrDefault(null));
         r.setPassword(conf.get(SMTP_PASSWORD).getValueOrDefault(null));
@@ -157,7 +155,7 @@ class SmtpMailer implements Mailer {
         }
         
         @Override
-        public MimeMessage createMimeMessage(InputStream contentStream) throws MailException {
+        public MimeMessage createMimeMessage(InputStream contentStream) {
             try {
                 return new CustomMimeMessage(getSession(), contentStream);
             }

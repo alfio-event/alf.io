@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.util.LocaleUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
 import lombok.ToString;
@@ -76,7 +77,7 @@ public class WaitingQueueSubscription {
     }
 
     public Locale getLocale() {
-        return Locale.forLanguageTag(userLanguage);
+        return LocaleUtil.forLanguageTag(userLanguage);
     }
 
     public boolean isPreSales() {

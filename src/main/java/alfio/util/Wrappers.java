@@ -18,6 +18,7 @@ package alfio.util;
 
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -39,6 +40,14 @@ public class Wrappers {
         try {
             return Optional.ofNullable(supplier.get());
         } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    public static <T> Optional<T> optionally(Supplier<T> s) {
+        try {
+            return Optional.ofNullable(s.get());
+        } catch (EmptyResultDataAccessException | IllegalArgumentException | IllegalStateException e) {
             return Optional.empty();
         }
     }

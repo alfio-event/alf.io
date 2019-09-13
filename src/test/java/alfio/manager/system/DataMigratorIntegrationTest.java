@@ -136,7 +136,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0));
         Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
 
@@ -165,7 +165,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
 
@@ -194,7 +194,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
         
@@ -224,7 +224,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0));
         Pair<Event, String> eventUsername = initEvent(categories, null); 
         Event event = eventUsername.getKey();
 
@@ -250,7 +250,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
         try {
@@ -259,7 +259,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
 	        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
 	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
 	        Date expiration = DateUtils.addDays(new Date(), 1);
-	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Locale.ENGLISH, false);
 	        dataMigrator.fillReservationsLanguage();
 	        TicketReservation ticketReservation = ticketReservationManager.findById(reservationId).get();
 	        assertEquals("en", ticketReservation.getUserLanguage());
@@ -274,7 +274,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0));
         Pair<Event, String> eventUsername = initEvent(categories); 
         Event event = eventUsername.getKey();
         try {
@@ -283,7 +283,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
 	        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
 	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
 	        Date expiration = DateUtils.addDays(new Date(), 1);
-	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Locale.ENGLISH, false);
 //	        ticketReservationManager.performPayment("TOKEN", null, event, reservationId, "email@email.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, null, null, new TotalPrice(1000, 10, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE), false, null, null, null, false, false);
 	        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
 	        UpdateTicketOwnerForm first = new UpdateTicketOwnerForm();
@@ -316,14 +316,14 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS -1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null),
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0),
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0));
         Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
-        TicketCategory firstCategory = ticketCategoryRepository.findByEventId(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
+        TicketCategory firstCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isBounded).findFirst().orElseThrow(IllegalStateException::new);
         int firstCategoryID = firstCategory.getId();
         ticketCategoryRepository.updateSeatsAvailability(firstCategoryID, AVAILABLE_SEATS + 1);
         dataMigrator.fixCategoriesSize(event);
@@ -339,7 +339,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0));
         Pair<Event, String> eventUsername = initEvent(categories);
         Event event = eventUsername.getKey();
         TicketReservationModification trm = new TicketReservationModification();
@@ -347,7 +347,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
         trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
         TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
         Date expiration = DateUtils.addDays(new Date(), 1);
-        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Locale.ENGLISH, false);
         //simulate the effect of a reservation cancellation after #392, as described in #391
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservation.TicketReservationStatus.CANCELLED.name());
         List<Ticket> ticketsInReservation = ticketRepository.findTicketsInReservation(reservationId);
@@ -355,6 +355,6 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
         String uuid = ticketsInReservation.get(0).getUuid();
         assertTrue(ticketsInReservation.stream().allMatch(t -> t.getStatus() == Ticket.TicketStatus.PENDING));
         dataMigrator.fixStuckTickets(event.getId());
-        assertTrue(ticketRepository.findByUUID(uuid).getStatus() == Ticket.TicketStatus.RELEASED);
+        assertSame(Ticket.TicketStatus.RELEASED, ticketRepository.findByUUID(uuid).getStatus());
     }
 }

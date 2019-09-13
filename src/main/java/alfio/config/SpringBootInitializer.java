@@ -18,15 +18,12 @@ package alfio.config;
 
 import com.openhtmltopdf.util.XRLog;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.web.server.ErrorPage;
-import org.springframework.boot.web.server.ErrorPageRegistrar;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Profiles;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.filter.CharacterEncodingFilter;
 
@@ -39,7 +36,6 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
 @EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
         org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
         org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration.class,
         org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration.class,
         org.springframework.boot.autoconfigure.session.SessionAutoConfiguration.class,
         org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration.class})
@@ -68,13 +64,5 @@ public class SpringBootInitializer {
         cef.setEncoding("UTF-8");
         cef.setForceEncoding(true);
         return cef;
-    }
-
-    @Bean
-    @Profile("!"+Initializer.PROFILE_DEV)
-    public ErrorPageRegistrar errorPages() {
-        return registry -> registry.addErrorPages(new ErrorPage(HttpStatus.NOT_FOUND, "/404-not-found"),
-            new ErrorPage(HttpStatus.INTERNAL_SERVER_ERROR, "/500-internal-server-error"),
-            new ErrorPage("/session-expired"));
     }
 }

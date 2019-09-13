@@ -24,6 +24,7 @@ import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import org.apache.commons.lang3.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
@@ -130,7 +131,7 @@ public class EventModification {
     }
 
     public int getPriceInCents() {
-        return freeOfCharge ? 0 : MonetaryUtil.unitToCents(regularPrice);
+        return freeOfCharge ? 0 : MonetaryUtil.unitToCents(regularPrice, currency);
     }
 
     public PriceContainer.VatStatus getVatStatus() {
@@ -168,6 +169,7 @@ public class EventModification {
         private final String name;
         private final String type;
         private final boolean required;
+        private final boolean readOnly;
 
         private final Integer minLength;
         private final Integer maxLength;
@@ -184,6 +186,7 @@ public class EventModification {
                                @JsonProperty("name") String name,
                                @JsonProperty("type") String type,
                                @JsonProperty("required") boolean required,
+                               @JsonProperty("readOnly") boolean readOnly,
                                @JsonProperty("minLength") Integer minLength,
                                @JsonProperty("maxLength") Integer maxLength,
                                @JsonProperty("restrictedValues") List<RestrictedValue> restrictedValues,
@@ -194,6 +197,7 @@ public class EventModification {
             this.name = name;
             this.type = type;
             this.required = required;
+            this.readOnly = readOnly;
             this.minLength = minLength;
             this.maxLength = maxLength;
             this.restrictedValues = restrictedValues;
@@ -222,6 +226,7 @@ public class EventModification {
     public static class UpdateAdditionalField implements WithRestrictedValues, WithLinkedCategories {
         private final String type;
         private final boolean required;
+        private final boolean readOnly;
         private final List<String> restrictedValues;
         private final Map<String, TicketFieldDescriptionModification> description;
         private final List<String> disabledValues;
@@ -230,12 +235,14 @@ public class EventModification {
         @JsonCreator
         public UpdateAdditionalField(@JsonProperty("type") String type,
                                      @JsonProperty("required") boolean required,
+                                     @JsonProperty("readOnly") boolean readOnly,
                                      @JsonProperty("restrictedValues") List<String> restrictedValues,
                                      @JsonProperty("disabledValues") List<String> disabledValues,
                                      @JsonProperty("description") Map<String, TicketFieldDescriptionModification> description,
                                      @JsonProperty("categoryIds") List<Integer> linkedCategoriesIds) {
             this.type = type;
             this.required = required;
+            this.readOnly = readOnly;
             this.restrictedValues = restrictedValues;
             this.disabledValues = disabledValues;
             this.description = description;
@@ -284,7 +291,7 @@ public class EventModification {
         @JsonCreator
         public RestrictedValue(@JsonProperty("value") String value, @JsonProperty("enabled") Boolean enabled) {
             this.value = value;
-            this.enabled = enabled != null ? enabled : true;
+            this.enabled = ObjectUtils.firstNonNull(enabled, Boolean.TRUE);
         }
     }
 
@@ -304,7 +311,6 @@ public class EventModification {
         private final List<AdditionalServiceText> title;
         private final List<AdditionalServiceText> description;
         private final BigDecimal finalPrice;
-        private final String currencyCode;
         private final alfio.model.AdditionalService.AdditionalServiceType type;
         private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy;
 
@@ -358,7 +364,6 @@ public class EventModification {
             this.title = title;
             this.description = description;
             this.finalPrice = finalPrice;
-            this.currencyCode = currencyCode;
             this.type = type;
             this.supplementPolicy = supplementPolicy;
         }
@@ -403,7 +408,7 @@ public class EventModification {
                 Optional<PriceContainer> priceContainer = Optional.ofNullable(this.priceContainer);
                 BigDecimal finalPrice = priceContainer.map(PriceContainer::getFinalPrice).orElse(BigDecimal.ZERO);
                 String currencyCode = priceContainer.map(PriceContainer::getCurrencyCode).orElse("");
-                return new AdditionalService(src.getId(), Optional.ofNullable(src.getSrcPriceCts()).map(MonetaryUtil::centsToUnit).orElse(BigDecimal.ZERO),
+                return new AdditionalService(src.getId(), Optional.ofNullable(src.getSrcPriceCts()).map(p -> MonetaryUtil.centsToUnit(p, src.getCurrencyCode())).orElse(BigDecimal.ZERO),
                     src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
                     DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode, src.getType(), src.getSupplementPolicy());
             }

@@ -18,11 +18,12 @@ package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.support.PaymentWebhookResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Audit;
 import alfio.model.Event;
 import alfio.model.PaymentInformation;
-import alfio.model.system.Configuration;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.*;
 import alfio.model.transaction.token.StripeSCACreditCardToken;
@@ -45,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.ZonedDateTime;
 import java.util.*;
 
+import static alfio.manager.payment.BaseStripeManager.STRIPE_MANAGER_TYPE_KEY;
 import static alfio.model.TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.WAITING_EXTERNAL_CONFIRMATION;
 import static alfio.model.system.ConfigurationKeys.*;
@@ -54,8 +56,8 @@ import static alfio.model.system.ConfigurationKeys.*;
 @Transactional
 public class StripeWebhookPaymentManager implements PaymentProvider, RefundRequest, PaymentInfo, SignedWebhookHandler, ClientServerTokenRequest, ServerInitiatedTransaction {
 
-
-    private static final String CLIENT_SECRET_METADATA = "clientSecret";
+    private static final String STRIPE_MANAGER = StripeWebhookPaymentManager.class.getName();
+    static final String CLIENT_SECRET_METADATA = "clientSecret";
     private static final String PAYMENT_INTENT_SUCCEEDED = "payment_intent.succeeded";
     private static final String PAYMENT_INTENT_PAYMENT_FAILED = "payment_intent.payment_failed";
     private static final String PAYMENT_INTENT_CREATED = "payment_intent.created";
@@ -128,7 +130,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     private StripeSCACreditCardToken createNewToken(PaymentSpecification paymentSpecification) {
-        Map<String, String> baseMetadata = configurationManager.getStringConfigValue(Configuration.from(paymentSpecification.getEvent(), BASE_URL))
+        Map<String, String> baseMetadata = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(paymentSpecification.getEvent())).getValue()
             .map(baseUrl -> Map.of("alfioBaseUrl", baseUrl))
             .orElse(Map.of());
         var paymentIntentParams = baseStripeManager.createParams(paymentSpecification, baseMetadata);
@@ -137,10 +139,11 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
             var intent = PaymentIntent.create(paymentIntentParams, baseStripeManager.options(paymentSpecification.getEvent()).orElseThrow());
             var clientSecret = intent.getClientSecret();
             long platformFee = paymentIntentParams.containsKey("application_fee") ? (long) paymentIntentParams.get("application_fee") : 0L;
+            PaymentManagerUtils.invalidateExistingTransactions(paymentSpecification.getReservationId(), transactionRepository);
             transactionRepository.insert(intent.getId(), intent.getId(),
                 paymentSpecification.getReservationId(), ZonedDateTime.now(paymentSpecification.getEvent().getZoneId()),
                 paymentSpecification.getPriceWithVAT(), paymentSpecification.getEvent().getCurrency(), "Payment Intent",
-                PaymentProxy.STRIPE.name(), platformFee,0L, Transaction.Status.PENDING, Map.of(CLIENT_SECRET_METADATA, clientSecret));
+                PaymentProxy.STRIPE.name(), platformFee,0L, Transaction.Status.PENDING, Map.of(CLIENT_SECRET_METADATA, clientSecret, STRIPE_MANAGER_TYPE_KEY, STRIPE_MANAGER));
             return new StripeSCACreditCardToken(intent.getId(), null, clientSecret);
 
         } catch (StripeException e) {
@@ -150,7 +153,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
 
     @Override
     public String getWebhookSignatureKey() {
-        return configurationManager.getStringConfigValue(Configuration.getSystemConfiguration(STRIPE_WEBHOOK_PAYMENT_KEY)).orElseThrow();
+        return configurationManager.getForSystem(STRIPE_WEBHOOK_PAYMENT_KEY).getRequiredValue();
     }
 
     @Override
@@ -247,17 +250,20 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return baseStripeManager.accept(paymentMethod, context)
-            && configurationManager.getBooleanConfigValue(context.narrow(STRIPE_ENABLE_SCA), false)
-            && configurationManager.getStringConfigValue(context.narrow(BASE_URL)).isPresent()
-            && isWebhookKeyDefined(context);
+        return baseStripeManager.accept(paymentMethod, context) && isConfigurationValid(context);
     }
 
-    private boolean isWebhookKeyDefined(PaymentContext context) {
-        return !configurationManager.getStringConfigValue(context.narrow(STRIPE_WEBHOOK_PAYMENT_KEY))
-            .map(String::strip)
-            .orElse("")
-            .isEmpty();
+    private boolean isConfigurationValid(PaymentContext paymentContext) {
+        Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration = configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY), paymentContext.getConfigurationLevel());
+        return configuration.get(BASE_URL).isPresent()
+            && configuration.get(STRIPE_WEBHOOK_PAYMENT_KEY).isPresent()
+            && configuration.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false);
+    }
+
+    @Override
+    public boolean accept(Transaction transaction) {
+        var isWebHookManager = STRIPE_MANAGER.equals(transaction.getMetadata().get(STRIPE_MANAGER_TYPE_KEY)) || transaction.getMetadata().get("clientSecret") != null;
+        return transaction.getPaymentProxy() == PaymentProxy.STRIPE && isWebHookManager;
     }
 
     @Override

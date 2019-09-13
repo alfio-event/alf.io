@@ -18,6 +18,7 @@ package alfio.controller.api.admin;
 
 import alfio.manager.support.CustomMessageManager;
 import alfio.model.modification.MessageModification;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +30,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/admin/api/events/{eventName}/messages")
+@Log4j2
 public class CustomMessagesApiController {
 
     private final CustomMessageManager customMessageManager;
@@ -42,17 +44,18 @@ public class CustomMessagesApiController {
     @ResponseBody
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleException(IllegalStateException ex) {
+        log.warn("Exception in CustomMessagesApiController", ex);
         return Optional.ofNullable(ex.getCause()).map(Throwable::getMessage).orElseGet(ex::getMessage);
     }
 
-    @RequestMapping(value= "/preview", method = RequestMethod.POST)
+    @PostMapping("/preview")
     public Map<String, Object> preview(@PathVariable("eventName") String eventName,
                                        @RequestParam(required = false, value = "categoryId") Integer categoryId,
                                        @RequestBody List<MessageModification> messageModifications, Principal principal) {
         return customMessageManager.generatePreview(eventName, Optional.ofNullable(categoryId), messageModifications, principal.getName());
     }
 
-    @RequestMapping(value= "/send", method = RequestMethod.POST)
+    @PostMapping("/send")
     public void send(@PathVariable("eventName") String eventName,
                     @RequestParam(required = false, value = "categoryId") Integer categoryId,
                     @RequestBody List<MessageModification> messageModifications,

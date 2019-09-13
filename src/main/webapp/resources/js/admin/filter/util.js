@@ -138,6 +138,20 @@
         return function(o) {
             return Object.keys(o);
         }
+    });
+
+    filters.filter('money', function() {
+        return function(amount, currency, hideCurrency) {
+            if(!currency) {
+                return "";
+            }
+            var formatted = new Intl.NumberFormat(navigator.language, { style: 'currency', currency: currency, currencyDisplay: 'code' }).format(amount);
+            if(hideCurrency) {
+                var currencyIndex = formatted.indexOf(currency);
+                return (formatted.substring(0, currencyIndex) + formatted.substring(currencyIndex + currency.length)).trim();
+            }
+            return formatted;
+        }
     })
 
 })();

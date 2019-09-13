@@ -90,7 +90,7 @@ public class Jobs {
         if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
             log.trace("running job cleanupForDemoMode");
             try {
-                int expirationDate = configurationManager.getFor(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS).getValueAsIntOrDefault(20);
+                int expirationDate = configurationManager.getForSystem(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS).getValueAsIntOrDefault(20);
                 List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
                 if (!userIds.isEmpty()) {
                     eventManager.disableEventsFromUsers(userIds);

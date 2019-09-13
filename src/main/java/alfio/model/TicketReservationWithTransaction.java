@@ -35,6 +35,8 @@ public class TicketReservationWithTransaction {
     private final BillingDetails billingDetails;
     private final Transaction transaction;
     private final Integer ticketsCount;
+    private final String promoCode;
+    private final String specialPriceToken;
 
     public TicketReservationWithTransaction(@Column("tr_id") String trId,
                                             @Column("tr_validity") Date validity,
@@ -90,7 +92,10 @@ public class TicketReservationWithTransaction {
                                             @Column("bt_gtw_fee") Long gatewayFee,
                                             @Column("bt_status") Transaction.Status transactionStatus,
                                             @Column("bt_metadata") @JSONData Map<String, String> transactionMetadata,
-                                            @Column("tickets_count") Integer ticketsCount) {
+                                            @Column("tickets_count") Integer ticketsCount,
+
+                                            @Column("promo_code") String promoCode,
+                                            @Column("special_price_token") String specialPriceToken) {
 
         this.ticketReservation = new TicketReservation(trId, validity, trStatus,
             trFullName, trFirstName, trLastName, trEmail,
@@ -110,6 +115,8 @@ public class TicketReservationWithTransaction {
         }
 
         this.ticketsCount = ticketsCount;
+        this.promoCode = promoCode;
+        this.specialPriceToken = specialPriceToken;
 
     }
 
