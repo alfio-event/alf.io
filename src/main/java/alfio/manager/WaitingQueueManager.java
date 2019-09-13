@@ -16,6 +16,8 @@
  */
 package alfio.manager;
 
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.TicketReservationModification;
@@ -36,13 +38,12 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.context.MessageSource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.function.Supplier;
+import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,14 +62,14 @@ public class WaitingQueueManager {
     private final EventStatisticsManager eventStatisticsManager;
     private final NotificationManager notificationManager;
     private final TemplateManager templateManager;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final OrganizationRepository organizationRepository;
     private final EventRepository eventRepository;
     private final ExtensionManager extensionManager;
 
     public boolean subscribe(Event event, CustomerName customerName, String email, Integer selectedCategoryId, Locale userLanguage) {
         try {
-            if(configurationManager.getFor(event, STOP_WAITING_QUEUE_SUBSCRIPTIONS).getValueAsBooleanOrDefault(false)) {
+            if(configurationManager.getFor(STOP_WAITING_QUEUE_SUBSCRIPTIONS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false)) {
                 log.info("waiting list subscription denied for event {} ({})", event.getShortName(), event.getId());
                 return false;
             }
@@ -92,11 +93,12 @@ public class WaitingQueueManager {
     }
 
     private void notifySubscription(Event event, CustomerName name, String email, Locale userLanguage, WaitingQueueSubscription.Type subscriptionType) {
+        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         Map<String, Object> model = TemplateResource.buildModelForWaitingQueueJoined(organization, event, name);
         notificationManager.sendSimpleEmail(event, null, email, messageSource.getMessage("email-waiting-queue.subscribed.subject", new Object[]{event.getDisplayName()}, userLanguage),
                 () -> templateManager.renderTemplate(event, TemplateResource.WAITING_QUEUE_JOINED, model, userLanguage));
-        if(configurationManager.getFor(event, ENABLE_WAITING_QUEUE_NOTIFICATION).getValueAsBooleanOrDefault(false)) {
+        if(configurationManager.getFor(ENABLE_WAITING_QUEUE_NOTIFICATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false)) {
             String adminTemplate = messageSource.getMessage("email-waiting-queue.subscribed.admin.text",
                     new Object[] {subscriptionType, event.getDisplayName()}, Locale.ENGLISH);
             notificationManager.sendSimpleEmail(event, null, organization.getEmail(), messageSource.getMessage("email-waiting-queue.subscribed.admin.subject",
@@ -118,7 +120,7 @@ public class WaitingQueueManager {
 
     private void validateSubscriptionType(EventAndOrganizationId event, WaitingQueueSubscription.Type type) {
         if(type == WaitingQueueSubscription.Type.PRE_SALES) {
-            Validate.isTrue(configurationManager.getFor(event, ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false), "PRE_SALES Waiting list is not active");
+            Validate.isTrue(configurationManager.getFor(ENABLE_PRE_REGISTRATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false), "PRE_SALES Waiting list is not active");
         } else {
             Validate.isTrue(eventStatisticsManager.noSeatsAvailable().test(event), "SOLD_OUT Waiting list is not active");
         }
@@ -148,7 +150,7 @@ public class WaitingQueueManager {
             ticketRepository.revertToFree(eventId);
         } else if (waitingPeople > 0 && waitingTickets > 0) {
             return distributeAvailableSeats(event, waitingPeople, waitingTickets);
-        } else if(subscriptions.stream().anyMatch(WaitingQueueSubscription::isPreSales) && configurationManager.getFor(event, ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false)) {
+        } else if(subscriptions.stream().anyMatch(WaitingQueueSubscription::isPreSales) && configurationManager.getFor(ENABLE_PRE_REGISTRATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false)) {
             return handlePreReservation(event, waitingPeople);
         }
         return Stream.empty();
@@ -209,16 +211,16 @@ public class WaitingQueueManager {
         return distributeAvailableSeats(event, Ticket.TicketStatus.RELEASED, () -> Math.min(waitingPeople, waitingTickets));
     }
 
-    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeats(Event event, Ticket.TicketStatus status, Supplier<Integer> availableSeatSupplier) {
-        int availableSeats = availableSeatSupplier.get();
+    private Stream<Triple<WaitingQueueSubscription, TicketReservationWithOptionalCodeModification, ZonedDateTime>> distributeAvailableSeats(Event event, Ticket.TicketStatus status, IntSupplier availableSeatSupplier) {
+        int availableSeats = availableSeatSupplier.getAsInt();
         int eventId = event.getId();
         log.debug("processing {} subscribers from waiting list", availableSeats);
         List<TicketCategory> unboundedCategories = ticketCategoryRepository.findUnboundedOrderByExpirationDesc(eventId);
         Iterator<Ticket> tickets = ticketRepository.selectWaitingTicketsForUpdate(eventId, status.name(), availableSeats)
             .stream()
-            .filter(t -> t.getCategoryId() != null || unboundedCategories.size() > 0)
+            .filter(t -> t.getCategoryId() != null || !unboundedCategories.isEmpty())
             .iterator();
-        int expirationTimeout = configurationManager.getFor(event, WAITING_QUEUE_RESERVATION_TIMEOUT).getValueAsIntOrDefault(4);
+        int expirationTimeout = configurationManager.getFor(WAITING_QUEUE_RESERVATION_TIMEOUT, ConfigurationLevel.event(event)).getValueAsIntOrDefault(4);
         ZonedDateTime expiration = ZonedDateTime.now(event.getZoneId()).plusHours(expirationTimeout).with(WorkingDaysAdjusters.defaultWorkingDays());
 
         if(!tickets.hasNext()) {

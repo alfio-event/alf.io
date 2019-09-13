@@ -18,6 +18,7 @@ package alfio.controller.support;
 
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
+import lombok.experimental.UtilityClass;
 import org.springframework.context.MessageSource;
 
 import java.time.ZonedDateTime;
@@ -26,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@UtilityClass
 public class Formatters {
 
 
@@ -35,7 +37,7 @@ public class Formatters {
 
     public static Map<String, String> getFormattedDate(List<ContentLanguage> languages, ZonedDateTime date, String code, MessageSource messageSource) {
         Map<String, String> formatted = new HashMap<>();
-        languages.stream().forEach(cl -> {
+        languages.forEach(cl -> {
             var pattern = messageSource.getMessage(code, null, cl.getLocale());
             formatted.put(cl.getLanguage(), DateTimeFormatter.ofPattern(pattern, cl.getLocale()).format(date));
         });

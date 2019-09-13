@@ -24,7 +24,6 @@ import alfio.util.MustacheCustomTag;
 import alfio.util.Wrappers;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.text.StringEscapeUtils;
 import org.joda.money.CurrencyUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,9 +38,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @RestController
 @RequestMapping("/admin/api/utils")
@@ -66,12 +62,12 @@ public class UtilsApiController {
         return new ResponseEntity<>("missing parameters", HttpStatus.BAD_REQUEST);
     }
 
-    @RequestMapping(value = "/short-name/generate", method = GET)
+    @GetMapping("/short-name/generate")
     public String generateShortName(@RequestParam("displayName") String displayName) {
         return eventNameManager.generateShortName(displayName);
     }
 
-    @RequestMapping(value = "/short-name/validate", method = POST)
+    @PostMapping("/short-name/validate")
     public boolean validateShortName(@RequestParam("shortName") String shortName, HttpServletResponse response) {
         boolean unique = eventNameManager.isUnique(shortName);
         if(!unique) {
@@ -80,12 +76,12 @@ public class UtilsApiController {
         return unique;
     }
     
-    @GetMapping(value = "/render-commonmark")
+    @GetMapping("/render-commonmark")
     public String renderCommonmark(@RequestParam("text") String input) {
-        return MustacheCustomTag.renderToCommonmark(StringEscapeUtils.escapeHtml4(input));
+        return MustacheCustomTag.renderToHtmlCommonmarkEscaped(input);
     }
 
-    @RequestMapping(value = "/alfio/info", method = GET)
+    @GetMapping("/alfio/info")
     public Map<String, Object> getApplicationInfo(Principal principal) {
         Map<String, Object> applicationInfo = new HashMap<>();
         applicationInfo.put("version", version);
@@ -94,16 +90,16 @@ public class UtilsApiController {
         return applicationInfo;
     }
 
-    @RequestMapping(value = "/currencies", method = GET)
-    public List<CurrencyDescriptor> getCurrencies(Locale locale) {
+    @GetMapping("/currencies")
+    public List<CurrencyDescriptor> getCurrencies() {
         return CurrencyUnit.registeredCurrencies().stream()
             //we don't support pseudo currencies, as it is very unlikely that payment providers would support them
             .filter(c -> !c.isPseudoCurrency() && !CURRENCIES_BLACKLIST.contains(c.getCode()) && Wrappers.optionally(() -> Currency.getInstance(c.getCode())).isPresent())
-            .map(c -> new CurrencyDescriptor(c.getCode(), c.toCurrency().getDisplayName(locale), c.getSymbol(locale), c.getDecimalPlaces()))
+            .map(c -> new CurrencyDescriptor(c.getCode(), c.toCurrency().getDisplayName(Locale.ENGLISH), c.getSymbol(Locale.ENGLISH), c.getDecimalPlaces()))
             .collect(Collectors.toList());
     }
 
-    @RequestMapping(value = "/countriesForVat", method = GET)
+    @GetMapping("/countriesForVat")
     public Map<String, String> getCountriesForVat() {
         return TicketHelper.getLocalizedCountriesForVat(Locale.ENGLISH)
             .stream()

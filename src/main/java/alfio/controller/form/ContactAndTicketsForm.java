@@ -74,7 +74,7 @@ public class ContactAndTicketsForm implements Serializable {
     private static void rejectIfOverLength(BindingResult bindingResult, String field, String errorCode,
             String value, int maxLength) {
         if (value != null && value.length() > maxLength) {
-            bindingResult.rejectValue(field, errorCode);
+            bindingResult.rejectValue(field, errorCode, new Object[] {maxLength}, null);
         }
     }
 
@@ -112,25 +112,25 @@ public class ContactAndTicketsForm implements Serializable {
 
         if(invoiceRequested) {
             /*if(companyVatChecked) {
-                ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressCompany", "error.emptyField");
+                ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressCompany", ErrorsCode.EMPTY_FIELD);
                 rejectIfOverLength(bindingResult, "billingAddressCompany", "error.tooLong", billingAddressCompany, 256);
             }*/
 
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressLine1", "error.emptyField");
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressLine1", ErrorsCode.EMPTY_FIELD);
             rejectIfOverLength(bindingResult, "billingAddressLine1", "error.tooLong", billingAddressLine1, 256);
 
             rejectIfOverLength(bindingResult, "billingAddressLine2", "error.tooLong", billingAddressLine2, 256);
 
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressZip", "error.emptyField");
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressZip", ErrorsCode.EMPTY_FIELD);
             rejectIfOverLength(bindingResult, "billingAddressZip", "error.tooLong", billingAddressZip, 51);
 
-            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressCity", "error.emptyField");
+            ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "billingAddressCity", ErrorsCode.EMPTY_FIELD);
             rejectIfOverLength(bindingResult, "billingAddressCity", "error.tooLong", billingAddressCity, 256);
 
-            ValidationUtils.rejectIfEmpty(bindingResult, "vatCountryCode", "error.emptyField");
+            ValidationUtils.rejectIfEmpty(bindingResult, "vatCountryCode", ErrorsCode.EMPTY_FIELD);
 
             if(StringUtils.trimToNull(billingAddressCompany) != null && !canSkipVatNrCheck()) {
-                ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", "error.emptyField");
+                ValidationUtils.rejectIfEmptyOrWhitespace(bindingResult, "vatNr", ErrorsCode.EMPTY_FIELD);
             }
 
         }
@@ -140,7 +140,7 @@ public class ContactAndTicketsForm implements Serializable {
         if (formValidationParameters.getOrDefault(ConfigurationKeys.ENABLE_ITALY_E_INVOICING, false) && "IT".equals(vatCountryCode)) {
 
             // mandatory
-            ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingFiscalCode", "error.emptyField");
+            ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingFiscalCode", ErrorsCode.EMPTY_FIELD);
             rejectIfOverLength(bindingResult, "italyEInvoicingFiscalCode", "error.tooLong", italyEInvoicingFiscalCode, 256);
             //
 
@@ -148,7 +148,7 @@ public class ContactAndTicketsForm implements Serializable {
             ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferenceType", "error.italyEInvoicingReferenceTypeSelectValue");
             //
             if (ItalianEInvoicing.ReferenceType.ADDRESSEE_CODE == italyEInvoicingReferenceType) {
-                ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferenceAddresseeCode", "error.emptyField");
+                ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferenceAddresseeCode", ErrorsCode.EMPTY_FIELD);
                 italyEInvoicingReferenceAddresseeCode = StringUtils.trim(italyEInvoicingReferenceAddresseeCode);
                 if (italyEInvoicingReferenceAddresseeCode != null) {
                     if (italyEInvoicingReferenceAddresseeCode.length() != 7) {
@@ -161,7 +161,7 @@ public class ContactAndTicketsForm implements Serializable {
                 }
             }
             if (ItalianEInvoicing.ReferenceType.PEC == italyEInvoicingReferenceType) {
-                ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferencePEC", "error.emptyField");
+                ValidationUtils.rejectIfEmpty(bindingResult, "italyEInvoicingReferencePEC", ErrorsCode.EMPTY_FIELD);
             }
 
         }

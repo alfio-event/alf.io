@@ -29,7 +29,7 @@ import java.util.List;
 @QueryRepository
 public interface TicketSearchRepository {
     String APPLY_FILTER = " (:search is null or (lower(t_uuid) like lower(:search) or lower(t_full_name) like lower(:search) or lower(t_first_name) like lower(:search) or lower(t_last_name) like lower(:search) or lower(t_email_address) like lower(:search) or " +
-        "  lower(tr_full_name) like lower(:search) or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search) or lower(tr_customer_reference) like lower(:search))) ";
+        "  lower(tr_full_name) like lower(:search) or lower(tr_first_name) like lower(:search) or lower(tr_last_name) like lower(:search) or lower(tr_email_address) like lower(:search) or lower(tr_customer_reference) like lower(:search) or lower(promo_code) like lower(:search) or lower(special_price_token) like lower(:search))) ";
 
     String FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION = "select * from reservation_and_ticket_and_tx where t_id is not null and t_status in ('PENDING', 'ACQUIRED', 'TO_BE_PAID', 'CANCELLED', 'CHECKED_IN') and t_category_id = :categoryId and t_event_id = :eventId and " + APPLY_FILTER;
 
@@ -49,6 +49,8 @@ public interface TicketSearchRepository {
         " tr_src_price_cts, tr_final_price_cts, tr_vat_cts, tr_discount_cts, tr_currency_code ";
 
     String TRANSACTION_FIELDS = "bt_id, bt_gtw_tx_id, bt_gtw_payment_id, bt_reservation_id, bt_t_timestamp, bt_price_cts, bt_currency, bt_description, bt_payment_proxy, bt_gtw_fee, bt_plat_fee, bt_status, bt_metadata";
+
+    String PROMO_CODE_FIELDS = "promo_code, special_price_token";
 
 
     @Query("select * from (" + FIND_ALL_MODIFIED_TICKETS_WITH_RESERVATION_AND_TRANSACTION + " limit :pageSize offset :page) as d_tbl order by tr_confirmation_ts asc, tr_id, t_uuid")
@@ -70,13 +72,13 @@ public interface TicketSearchRepository {
                                                      @Bind("search") String search,
                                                      @Bind("status") List<String> toFilter);
 
-    @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status = 'OFFLINE_PAYMENT' and bt_reservation_id is not null and bt_status = 'PENDING'")
+    @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status = 'OFFLINE_PAYMENT' and bt_reservation_id is not null and bt_status = 'PENDING'")
     List<TicketReservationWithTransaction> findOfflineReservationsWithPendingTransaction(@Bind("eventId") int eventId);
 
-    @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+" from reservation_and_ticket_and_tx where tr_id in (:reservationIds) and tr_status = 'OFFLINE_PAYMENT' and bt_reservation_id is not null")
+    @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_id in (:reservationIds) and tr_status = 'OFFLINE_PAYMENT' and bt_reservation_id is not null")
     List<TicketReservationWithTransaction> findOfflineReservationsWithTransaction(@Bind("reservationIds") List<String> reservationIds);
 
-    @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status = 'OFFLINE_PAYMENT'")
+    @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status = 'OFFLINE_PAYMENT'")
     List<TicketReservationWithTransaction> findOfflineReservationsWithOptionalTransaction(@Bind("eventId") int eventId);
 
     @Query("select count(distinct tr_id) from (" + FIND_ALL_TICKETS_INCLUDING_NEW +" ) as d_tbl")

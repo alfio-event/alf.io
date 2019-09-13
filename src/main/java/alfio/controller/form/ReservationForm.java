@@ -58,8 +58,8 @@ public class ReservationForm implements Serializable {
         return ofNullable(reservation)
                 .orElse(emptyList())
                 .stream()
-                .filter((e) -> e != null && e.getAmount() != null && e.getTicketCategoryId() != null
-                        && e.getAmount() > 0).collect(toList());
+                .filter(e -> e != null && e.getAmount() != null && e.getTicketCategoryId() != null && e.getAmount() > 0)
+                .collect(toList());
     }
 
     private List<AdditionalServiceReservationModification> selectedAdditionalServices() {
@@ -86,7 +86,7 @@ public class ReservationForm implements Serializable {
         }
 
         List<Pair<TicketReservationModification, Integer>> maxTicketsByTicketReservation = selected().stream()
-            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event.getOrganizationId(), event.getId(), r.getTicketCategoryId())))
+            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event, r.getTicketCategoryId())))
             .collect(toList());
         Optional<Pair<TicketReservationModification, Integer>> error = maxTicketsByTicketReservation.stream()
             .filter(p -> p.getKey().getAmount() > p.getValue())
@@ -127,7 +127,7 @@ public class ReservationForm implements Serializable {
             .flatMap(tickReservationManager::getSpecialPriceByCode);
         //
         final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
-        maxTicketsByTicketReservation.forEach((pair) -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));
+        maxTicketsByTicketReservation.forEach(pair -> validateCategory(bindingResult, tickReservationManager, eventManager, event, pair.getRight(), res, specialCode, now, pair.getLeft()));
         return bindingResult.hasErrors() ? Optional.empty() : Optional.of(Pair.of(res, additionalServices.stream().map(as -> new ASReservationWithOptionalCodeModification(as, specialCode)).collect(Collectors.toList())));
     }
 

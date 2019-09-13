@@ -16,12 +16,13 @@
  */
 package alfio.manager;
 
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
@@ -41,7 +42,6 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_PRE_REGISTRATION;
@@ -61,6 +61,7 @@ public class WaitingQueueManagerTest {
     private NotificationManager notificationManager;
     private TemplateManager templateManager;
     private MessageSource messageSource;
+    private MessageSourceManager messageSourceManager;
     private OrganizationRepository organizationRepository;
     private EventRepository eventRepository;
     private ExtensionManager extensionManager;
@@ -80,12 +81,15 @@ public class WaitingQueueManagerTest {
         notificationManager = mock(NotificationManager.class);
         templateManager = mock(TemplateManager.class);
         messageSource = mock(MessageSource.class);
+        messageSourceManager = mock(MessageSourceManager.class);
         organizationRepository = mock(OrganizationRepository.class);
         eventRepository = mock(EventRepository.class);
         extensionManager = mock(ExtensionManager.class);
         event = mock(Event.class);
         when(event.getId()).thenReturn(eventId);
-        manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, notificationManager, templateManager, messageSource, organizationRepository, eventRepository, extensionManager);
+        manager = new WaitingQueueManager(waitingQueueRepository, ticketRepository, ticketCategoryRepository, configurationManager, eventStatisticsManager, notificationManager, templateManager, messageSourceManager, organizationRepository, eventRepository, extensionManager);
+        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
     }
 
     @AfterEach
@@ -146,8 +150,8 @@ public class WaitingQueueManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(waitingQueueRepository.countWaitingPeople(eq(eventId))).thenReturn(1);
         when(ticketRepository.countWaiting(eq(eventId))).thenReturn(0);
-        when(configurationManager.getFor(event, ENABLE_PRE_REGISTRATION)).thenReturn(new ConfigurationManager.MaybeConfiguration(ENABLE_PRE_REGISTRATION, new ConfigurationKeyValuePathLevel(null, "true", null)));
-        when(configurationManager.getFor(event, WAITING_QUEUE_RESERVATION_TIMEOUT)).thenReturn(new ConfigurationManager.MaybeConfiguration(WAITING_QUEUE_RESERVATION_TIMEOUT));
+        when(configurationManager.getFor(eq(ENABLE_PRE_REGISTRATION), any())).thenReturn(new ConfigurationManager.MaybeConfiguration(ENABLE_PRE_REGISTRATION, new ConfigurationKeyValuePathLevel(null, "true", null)));
+        when(configurationManager.getFor(eq(WAITING_QUEUE_RESERVATION_TIMEOUT), any())).thenReturn(new ConfigurationManager.MaybeConfiguration(WAITING_QUEUE_RESERVATION_TIMEOUT));
         when(ticketRepository.selectWaitingTicketsForUpdate(eventId, Ticket.TicketStatus.PRE_RESERVED.name(), 1)).thenReturn(Collections.singletonList(ticket));
         when(waitingQueueRepository.loadAllWaitingForUpdate(eventId)).thenReturn(Collections.singletonList(subscription));
         when(waitingQueueRepository.loadWaiting(eventId, 1)).thenReturn(Collections.singletonList(subscription));

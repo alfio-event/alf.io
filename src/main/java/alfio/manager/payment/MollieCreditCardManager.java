@@ -16,12 +16,13 @@
  */
 package alfio.manager.payment;
 
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.TicketReservation;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.EventRepository;
@@ -33,7 +34,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -48,7 +48,7 @@ public class MollieCreditCardManager implements PaymentProvider {
 
     private final OkHttpClient client = new OkHttpClient();
     private final ConfigurationManager configurationManager;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final TicketReservationRepository ticketReservationRepository;
     private final EventRepository eventRepository;
 
@@ -82,13 +82,13 @@ public class MollieCreditCardManager implements PaymentProvider {
     }
 
     private Request.Builder requestFor(String url, EventAndOrganizationId event) {
-        String mollieAPIKey = configurationManager.getRequiredValue(Configuration.from(event.getOrganizationId(), ConfigurationKeys.MOLLIE_API_KEY));
+        String mollieAPIKey = configurationManager.getFor(ConfigurationKeys.MOLLIE_API_KEY, ConfigurationLevel.organization(event.getOrganizationId())).getRequiredValue();
         return new Request.Builder().url(url).header("Authorization", "Bearer " + mollieAPIKey);
     }
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return paymentMethod == PaymentMethod.CREDIT_CARD && configurationManager.getBooleanConfigValue(context.narrow(MOLLIE_CC_ENABLED), false);
+        return paymentMethod == PaymentMethod.CREDIT_CARD && configurationManager.getFor(MOLLIE_CC_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
     }
 
     @Override
@@ -99,9 +99,10 @@ public class MollieCreditCardManager implements PaymentProvider {
     @Override
     public PaymentResult doPayment( PaymentSpecification spec ) {
         try {
-            String eventName = spec.getEvent().getShortName();
+            var event = spec.getEvent();
+            String eventName = event.getShortName();
 
-            String baseUrl = StringUtils.removeEnd(configurationManager.getFor(spec.getEvent(), ConfigurationKeys.BASE_URL).getRequiredValue(), "/");
+            String baseUrl = StringUtils.removeEnd(configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.event(event)).getRequiredValue(), "/");
 
             String bookUrl = baseUrl + "/event/" + eventName + "/reservation/" + spec.getReservationId() + "/book";
 
@@ -110,7 +111,7 @@ public class MollieCreditCardManager implements PaymentProvider {
             payload.put("amount", spec.getOrderSummary().getTotalPrice()); // quite ugly, but the mollie api require json floating point...
 
             //
-            String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(spec.getEvent(), ticketReservationRepository.findReservationById(spec.getReservationId())), spec.getEvent().getDisplayName()}, spec.getLocale());
+            String description = messageSourceManager.getMessageSourceForEvent(event).getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, ticketReservationRepository.findReservationById(spec.getReservationId())), event.getDisplayName()}, spec.getLocale());
             payload.put("description", description);
             payload.put("redirectUrl", bookUrl);
             payload.put("webhookUrl", baseUrl + "/webhook/mollie/api/event/" + eventName + "/reservation/" + spec.getReservationId());
@@ -119,7 +120,7 @@ public class MollieCreditCardManager implements PaymentProvider {
             payload.put("metadata", MetadataBuilder.buildMetadata(spec, Map.of()));
 
             RequestBody body = RequestBody.create(MediaType.parse("application/json"), Json.GSON.toJson(payload));
-            Request request = requestFor("https://api.mollie.nl/v1/payments", spec.getEvent())
+            Request request = requestFor("https://api.mollie.nl/v1/payments", event)
                 .post(body)
                 .build();
 

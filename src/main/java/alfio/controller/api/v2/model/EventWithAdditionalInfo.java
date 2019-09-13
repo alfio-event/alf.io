@@ -33,16 +33,16 @@ import java.util.stream.Collectors;
 public class EventWithAdditionalInfo implements DateValidity {
     private final Event event;
     private final String mapUrl;
-    private final Organization organization;
+    private final Organization.OrganizationContact organization;
     private final Map<String, String> description;
     private final Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods;
 
-    //payment related informations
+    //payment related information
     private final String bankAccount;
     private final List<String> bankAccountOwner;
     //
 
-    //date related informations
+    //date related information
     private final Map<String, String> formattedBeginDate; // day, month, year
     private final Map<String, String> formattedBeginTime; //the hour/minute component
     private final Map<String, String> formattedEndDate;
@@ -67,6 +67,10 @@ public class EventWithAdditionalInfo implements DateValidity {
 
     private final AnalyticsConfiguration analyticsConfiguration;
 
+    private final Map<String, Map<String, String>> i18nOverride;
+
+    private final Integer availableTicketsCount;
+
     public String getShortName() {
         return event.getShortName();
     }
@@ -81,6 +85,10 @@ public class EventWithAdditionalInfo implements DateValidity {
 
     public String getWebsiteUrl() {
         return event.getWebsiteUrl();
+    }
+
+    public Integer getAvailableTicketsCount() {
+        return availableTicketsCount;
     }
 
     public CurrencyDescriptor getCurrencyDescriptor() {
@@ -202,6 +210,10 @@ public class EventWithAdditionalInfo implements DateValidity {
         return analyticsConfiguration;
     }
 
+    public Map<String, Map<String, String>> getI18nOverride() {
+        return i18nOverride;
+    }
+
     @AllArgsConstructor
     @Getter
     public static class PaymentProxyWithParameters {
@@ -226,6 +238,7 @@ public class EventWithAdditionalInfo implements DateValidity {
     @Getter
     public static class CaptchaConfiguration {
         private final boolean captchaForTicketSelection;
+        private final boolean captchaForOfflinePaymentAndFree;
         private final String recaptchaApiKey;
     }
 

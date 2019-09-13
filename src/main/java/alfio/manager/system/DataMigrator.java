@@ -112,6 +112,15 @@ public class DataMigrator {
         fillReservationsLanguage();
         fillDefaultOptions();
         fixReservationPrice(events);
+        fixVatStatus();
+    }
+
+    private void fixVatStatus() {
+        transactionTemplate.execute(ts -> {
+            int rows = jdbc.update("update tickets_reservation set vat_status = (select vat_status from event where id = event_id_fk) where vat_status is null", Map.of());
+            log.debug("update VAT/GST on {} reservations", rows);
+            return null;
+        });
     }
 
     private void fixReservationPrice(List<Event> events) {

@@ -18,6 +18,7 @@ package alfio.util;
 
 import org.springframework.context.support.ResourceBundleMessageSource;
 
+import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -30,5 +31,9 @@ public class CustomResourceBundleMessageSource extends ResourceBundleMessageSour
     public Set<String> getKeys(String basename, Locale locale) {
         ResourceBundle bundle = getResourceBundle(basename, locale);
         return bundle.keySet();
+    }
+
+    public MessageFormat getMessageFormatFor(String code, Locale locale) {
+        return resolveCode(code, locale);
     }
 }

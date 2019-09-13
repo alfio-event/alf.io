@@ -35,10 +35,6 @@ public class WorkingDaysAdjusters {
         return temporal -> adjust(temporal, MON_FRI, ALL_DAY);
     }
 
-    public static TemporalAdjuster workingDaysAtNoon() {
-        return temporal -> adjust(temporal, MON_FRI, Collections.singletonList(new HoursRange(LocalTime.of(12, 0, 0), LocalTime.of(12, 0, 0))));
-    }
-
     private static Temporal adjust(Temporal in, Set<DayOfWeek> dayOfWeeks, List<HoursRange> hoursRanges) {
         DayOfWeek dayOfWeek = DayOfWeek.from(in);
         LocalTime localTime = LocalTime.from(in);

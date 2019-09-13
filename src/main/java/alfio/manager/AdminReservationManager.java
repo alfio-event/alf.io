@@ -17,6 +17,7 @@
 package alfio.manager;
 
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.DuplicateReferenceException;
 import alfio.manager.system.ReservationPriceCalculator;
@@ -49,7 +50,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.context.MessageSource;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.stereotype.Component;
@@ -63,7 +63,7 @@ import org.springframework.util.Assert;
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -99,7 +99,7 @@ public class AdminReservationManager {
     private final TicketFieldRepository ticketFieldRepository;
     private final PaymentManager paymentManager;
     private final NotificationManager notificationManager;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final TemplateManager templateManager;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AuditingRepository auditingRepository;
@@ -331,7 +331,7 @@ public class AdminReservationManager {
             .map(String::toLowerCase)
             .collect(toSet());
 
-        if(keys.size() == 0) {
+        if(keys.isEmpty()) {
             return Result.success(Pair.of(event, input));
         }
 
@@ -396,7 +396,7 @@ public class AdminReservationManager {
         int categoryId = category.getId();
         List<Attendee> attendees = ticketsInfo.getAttendees();
         List<Integer> reservedForUpdate = ticketReservationManager.reserveTickets(event.getId(), categoryId, attendees.size(), singletonList(Ticket.TicketStatus.FREE));
-        if (reservedForUpdate.size() == 0 || reservedForUpdate.size() != attendees.size()) {
+        if (reservedForUpdate.isEmpty()|| reservedForUpdate.size() != attendees.size()) {
             return Result.error(ErrorCode.CategoryError.NOT_ENOUGH_SEATS);
         }
         var currencyCode = category.getCurrencyCode();
@@ -420,7 +420,7 @@ public class AdminReservationManager {
         return data;
     }
 
-    private <T> Result<T> reduceResults(Result<T> r1, Result<T> r2, BiFunction<T, T, T> processData) {
+    private <T> Result<T> reduceResults(Result<T> r1, Result<T> r2, BinaryOperator<T> processData) {
         boolean successful = r1.isSuccess() && r2.isSuccess();
         ResultStatus global = r1.isSuccess() ? r2.getStatus() : r1.getStatus();
         List<ErrorCode> errors = new ArrayList<>();
@@ -472,8 +472,8 @@ public class AdminReservationManager {
         Optional<Iterator<SpecialPrice>> specialPriceIterator = Optional.of(codes).filter(c -> !c.isEmpty()).map(Collection::iterator);
         for(int i=0; i<reservedForUpdate.size(); i++) {
             Attendee attendee = attendees.get(i);
+            Integer ticketId = reservedForUpdate.get(i);
             if(!attendee.isEmpty()) {
-                Integer ticketId = reservedForUpdate.get(i);
                 ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmailAddress(), attendee.getFullName(), attendee.getFirstName(), attendee.getLastName());
                 if(StringUtils.isNotBlank(attendee.getReference()) || attendee.isReassignmentForbidden()) {
                     updateExtRefAndLocking(categoryId, attendee, ticketId);
@@ -481,8 +481,8 @@ public class AdminReservationManager {
                 if(!attendee.getAdditionalInfo().isEmpty()) {
                     ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());
                 }
-                specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts, event.getCurrency()));
             }
+            specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts, event.getCurrency()));
         }
     }
 
@@ -509,7 +509,7 @@ public class AdminReservationManager {
         int tickets = attendees.size();
         TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), tickets,
             inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), true, "",
-            true, null, null, null, null, null);
+            true, null, null, null, null, null, 0);
         int notAllocated = getNotAllocatedTickets(event);
         int missingTickets = Math.max(tickets - notAllocated, 0);
         Event modified = increaseSeatsIfNeeded(ti, event, missingTickets, event);
@@ -550,7 +550,7 @@ public class AdminReservationManager {
                 fromZonedDateTime(existing.getValidCheckInFrom(modified.getZoneId())),
                 fromZonedDateTime(existing.getValidCheckInTo(modified.getZoneId())),
                 fromZonedDateTime(existing.getTicketValidityStart(modified.getZoneId())),
-                fromZonedDateTime(existing.getTicketValidityEnd(modified.getZoneId())));
+                fromZonedDateTime(existing.getTicketValidityEnd(modified.getZoneId())), 0);
             return eventManager.updateCategory(existingCategoryId, modified, tcm, username, true);
         }
         return Result.success(existing);
@@ -563,7 +563,7 @@ public class AdminReservationManager {
 
     @Transactional
     public void removeTickets(String eventName, String reservationId, List<Integer> ticketIds, List<Integer> toRefund, boolean notify, boolean forceInvoiceReceiptUpdate, String username) {
-        loadReservation(eventName, reservationId, username).ifSuccess((res) -> {
+        loadReservation(eventName, reservationId, username).ifSuccess(res -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
@@ -599,12 +599,12 @@ public class AdminReservationManager {
 
     @Transactional(readOnly = true)
     public Result<List<Audit>> getAudit(String eventName, String reservationId, String username) {
-        return loadReservation(eventName, reservationId, username).map((res) -> auditingRepository.findAllForReservation(reservationId));
+        return loadReservation(eventName, reservationId, username).map(res -> auditingRepository.findAllForReservation(reservationId));
     }
 
     @Transactional(readOnly = true)
     public Result<List<BillingDocument>> getBillingDocuments(String eventName, String reservationId, String username) {
-        return loadReservation(eventName, reservationId, username).map((res) -> billingDocumentRepository.findAllByReservationId(reservationId));
+        return loadReservation(eventName, reservationId, username).map(res -> billingDocumentRepository.findAllByReservationId(reservationId));
     }
 
     @Transactional(readOnly = true)
@@ -640,7 +640,7 @@ public class AdminReservationManager {
     @Transactional
     public Result<TransactionAndPaymentInfo> getPaymentInfo(String eventName, String reservationId, String username) {
         return loadReservation(eventName, reservationId, username)
-            .map((res) -> paymentManager.getInfo(res.getLeft(), res.getRight()));
+            .map(res -> paymentManager.getInfo(res.getLeft(), res.getRight()));
     }
 
     @Transactional
@@ -656,7 +656,7 @@ public class AdminReservationManager {
     }
 
     private Result<Pair<Event, TicketReservation>> removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username, boolean removeReservation) {
-        return loadReservation(eventName, reservationId, username).map((res) -> {
+        return loadReservation(eventName, reservationId, username).map(res -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
@@ -677,7 +677,7 @@ public class AdminReservationManager {
 
     @Transactional
     public Result<Boolean> refund(String eventName, String reservationId, BigDecimal refundAmount, String username) {
-        return loadReservation(eventName, reservationId, username).map((res) -> {
+        return loadReservation(eventName, reservationId, username).map(res -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
             return reservation.getPaymentMethod() != null
@@ -745,7 +745,8 @@ public class AdminReservationManager {
     private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {
         Map<String, Object> model = TemplateResource.buildModelForTicketHasBeenCancelled(organization, event, ticket);
         Locale locale = LocaleUtil.forLanguageTag(Optional.ofNullable(ticket.getUserLanguage()).orElse("en"));
-        notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(), messageSource.getMessage("email-ticket-released.subject",
+        notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), ticket.getEmail(),
+            messageSourceManager.getMessageSourceForEvent(event).getMessage("email-ticket-released.subject",
             new Object[]{event.getDisplayName()}, locale),
             () -> templateManager.renderTemplate(event, TemplateResource.TICKET_HAS_BEEN_CANCELLED, model, locale));
     }

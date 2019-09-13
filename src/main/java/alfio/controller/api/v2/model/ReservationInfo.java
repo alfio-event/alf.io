@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing.ReferenceType;
@@ -37,11 +38,11 @@ public class ReservationInfo {
     private final String email;
     private final long validity;
     private final List<TicketsByTicketCategory> ticketsByCategory;
-    private final ReservationInfoOrderSummary orderSummary; //<- TODO: rewrap it so the model is kept inside v2.user.model
+    private final ReservationInfoOrderSummary orderSummary;
 
 
     private final TicketReservationStatus status;
-    private final boolean validatedBookingInformations;
+    private final boolean validatedBookingInformation;
     private final Map<String, String> formattedExpirationDate; // map of language -> formatted date
 
     private final String invoiceNumber;
@@ -57,20 +58,12 @@ public class ReservationInfo {
     //billing info from additional info
     private final Boolean addCompanyBillingDetails;
     //
-    private final String billingAddressCompany;
-    private final String billingAddressLine1;
-    private final String billingAddressLine2;
-    private final String billingAddressZip;
-    private final String billingAddressCity;
-    private final String vatCountryCode;
     private final String customerReference;
-    private final String vatNr;
     private final Boolean skipVatNr;
-    private final String italyEInvoicingFiscalCode;
-    private final ReferenceType italyEInvoicingReferenceType;
-    private final String italyEInvoicingReferenceAddresseeCode;
-    private final String italyEInvoicingReferencePEC;
-    // https://github.com/alfio-event/alf.io/issues/573
+
+    private final String billingAddress;
+
+    private final BillingDetails billingDetails;
 
     //reservation info group related info
     private final boolean containsCategoriesLinkedToGroups;
@@ -95,6 +88,7 @@ public class ReservationInfo {
         private final String userLanguage;
         private final boolean assigned;
         private final boolean locked;
+        private final boolean acquired;
         private final boolean cancellationEnabled;
         private final List<AdditionalField> ticketFieldConfiguration;
 
@@ -120,6 +114,10 @@ public class ReservationInfo {
 
         public boolean isAssigned() {
             return assigned;
+        }
+
+        public boolean isAcquired() {
+            return acquired;
         }
 
         public String getUserLanguage() {
@@ -148,6 +146,7 @@ public class ReservationInfo {
         private final String value;
         private final String type;
         private final boolean required;
+        private final boolean editable;
         private final Integer minLength;
         private final Integer maxLength;
         private final List<String> restrictedValues;

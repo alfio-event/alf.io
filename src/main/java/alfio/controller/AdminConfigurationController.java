@@ -16,7 +16,7 @@
  */
 package alfio.controller;
 
-import alfio.manager.payment.StripeCreditCardManager;
+import alfio.manager.payment.StripeConnectManager;
 import alfio.manager.payment.stripe.StripeConnectResult;
 import alfio.manager.payment.stripe.StripeConnectURL;
 import alfio.manager.user.UserManager;
@@ -44,7 +44,8 @@ public class AdminConfigurationController {
 
     private static final String STRIPE_CONNECT_ORG = "stripe.connect.org";
     private static final String STRIPE_CONNECT_STATE_PREFIX = "stripe.connect.state.";
-    private final StripeCreditCardManager stripeCreditCardManager;
+    private final StripeConnectManager stripeConnectManager;
+    private static final String REDIRECT_ADMIN = "redirect:/admin/";
     private final UserManager userManager;
 
     @GetMapping("/admin/configuration/payment/stripe/connect/{orgId}")
@@ -52,12 +53,12 @@ public class AdminConfigurationController {
                                           @PathVariable("orgId") Integer orgId,
                                           HttpSession session) {
         if(userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), orgId)) {
-            StripeConnectURL connectURL = stripeCreditCardManager.getConnectURL(Configuration.from(orgId));
+            StripeConnectURL connectURL = stripeConnectManager.getConnectURL(orgId);
             session.setAttribute(STRIPE_CONNECT_STATE_PREFIX +orgId, connectURL.getState());
             session.setAttribute(STRIPE_CONNECT_ORG, orgId);
             return "redirect:" + connectURL.getAuthorizationURL();
         }
-        return "redirect:/admin/";
+        return REDIRECT_ADMIN;
     }
 
 
@@ -79,18 +80,18 @@ public class AdminConfigurationController {
                 session.removeAttribute(STRIPE_CONNECT_STATE_PREFIX + orgId);
                 boolean stateVerified = Objects.equals(persistedState, state);
                 if(stateVerified && code != null) {
-                    StripeConnectResult connectResult = stripeCreditCardManager.storeConnectedAccountId(code, Configuration.from(orgId));
+                    StripeConnectResult connectResult = stripeConnectManager.storeConnectedAccountId(code, Configuration.from(orgId));
                     if(connectResult.isSuccess()) {
                         return "redirect:/admin/#/configuration/organization/"+orgId;
                     }
                 } else if(stateVerified && StringUtils.isNotEmpty(errorCode)) {
                     log.warn("error from stripe. {}={}", errorCode, errorDescription);
                     redirectAttributes.addFlashAttribute("errorMessage", StringUtils.defaultString(errorDescription, errorCode));
-                    return "redirect:/admin/";
+                    return REDIRECT_ADMIN;
                 }
                 redirectAttributes.addFlashAttribute("errorMessage", "Couldn't connect your account. Please retry.");
-                return "redirect:/admin/";
-            }).orElse("redirect:/admin/");
+                return REDIRECT_ADMIN;
+            }).orElse(REDIRECT_ADMIN);
     }
 
 }

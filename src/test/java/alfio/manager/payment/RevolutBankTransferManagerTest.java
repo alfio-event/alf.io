@@ -16,10 +16,12 @@
  */
 package alfio.manager.payment;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.TicketReservation;
 import alfio.model.TicketReservationWithTransaction;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.provider.RevolutTransactionDescriptor;
@@ -86,7 +88,9 @@ class RevolutBankTransferManagerTest {
         when(configurationManager.getShortReservationID(eq(event), eq(firstReservation))).thenReturn(FIRST_UUID.substring(0,8));
         when(configurationManager.getShortReservationID(eq(event), eq(secondReservation))).thenReturn(SECOND_UUID.substring(0,8));
         when(configurationManager.getShortReservationID(eq(event), eq(thirdReservation))).thenReturn(THIRD_UUID.substring(0,8));
-        when(configurationManager.getIntConfigValue(any(), eq(8))).thenReturn(8);
+        var maybeConfiguration = mock(ConfigurationManager.MaybeConfiguration.class);
+        when(maybeConfiguration.getValueAsIntOrDefault(anyInt())).thenReturn(8);
+        when(configurationManager.getFor(any(ConfigurationKeys.class), any(ConfigurationLevel.class))).thenReturn(maybeConfiguration);
     }
 
     @Test
@@ -101,7 +105,9 @@ class RevolutBankTransferManagerTest {
 
     private void internalMatchSingleTransaction(boolean automaticConfirmation) {
         var paymentContext = new PaymentContext(event);
-        when(configurationManager.getBooleanConfigValue(eq(paymentContext.narrow(REVOLUT_MANUAL_REVIEW)), eq(true))).thenReturn(!automaticConfirmation);
+        var automaticConfirmationMock = mock(ConfigurationManager.MaybeConfiguration.class);
+        when(automaticConfirmationMock.getValueAsBooleanOrDefault(anyBoolean())).thenReturn(!automaticConfirmation);
+        when(configurationManager.getFor(eq(REVOLUT_MANUAL_REVIEW), any())).thenReturn(automaticConfirmationMock);
         when(transactionRepository.lockLatestForUpdate(eq(FIRST_UUID))).thenReturn(Optional.of(transaction));
         var pendingReservations = List.of(first, second, third);
         var single = mock(RevolutTransactionDescriptor.class);
@@ -113,7 +119,7 @@ class RevolutBankTransferManagerTest {
         when(leg.getAmount()).thenReturn(BigDecimal.ONE);
         when(leg.getCurrency()).thenReturn("CHF");
         when(single.getLegs()).thenReturn(List.of(leg));
-        var result = revolutBankTransferManager.matchTransactions(pendingReservations, List.of(single), paymentContext);
+        var result = revolutBankTransferManager.matchTransactions(pendingReservations, List.of(single), paymentContext, !automaticConfirmation);
         assertTrue(result.isSuccess());
         assertEquals(1, result.getData().size());
         assertEquals(FIRST_UUID, result.getData().get(0));
@@ -139,7 +145,7 @@ class RevolutBankTransferManagerTest {
         var leg = mock(RevolutTransactionDescriptor.TransactionLeg.class);
         when(leg.getAmount()).thenReturn(BigDecimal.ONE);
         when(single.getLegs()).thenReturn(List.of(leg));
-        var result = revolutBankTransferManager.matchTransactions(pendingReservations, List.of(single), new PaymentContext(event));
+        var result = revolutBankTransferManager.matchTransactions(pendingReservations, List.of(single), new PaymentContext(event), true);
         assertTrue(result.isSuccess());
         assertEquals(0, result.getData().size());
     }

@@ -17,8 +17,10 @@
 package alfio.manager.payment;
 
 import alfio.manager.PaymentManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.*;
@@ -48,7 +50,6 @@ import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -69,7 +70,7 @@ import static alfio.util.MonetaryUtil.formatCents;
 public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInfo, ExtractPaymentTokenFromTransaction {
 
     private final ConfigurationManager configurationManager;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final Cache<String, String> cachedWebProfiles = Caffeine.newBuilder().expireAfterAccess(24, TimeUnit.HOURS).build();
     private final TicketReservationRepository ticketReservationRepository;
     private final TicketRepository ticketRepository;
@@ -78,8 +79,8 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
     private APIContext getApiContext(EventAndOrganizationId event) {
 
-        var paypalConf = configurationManager.getFor(event,
-            Set.of(ConfigurationKeys.PAYPAL_LIVE_MODE, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET));
+        var paypalConf = configurationManager.getFor(Set.of(ConfigurationKeys.PAYPAL_LIVE_MODE, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET),
+            ConfigurationLevel.event(event));
 
         boolean isLive = paypalConf.get(ConfigurationKeys.PAYPAL_LIVE_MODE).getValueAsBooleanOrDefault(false);
         String clientId = paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_ID).getRequiredValue();
@@ -125,7 +126,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
 
         Transaction transaction = new Transaction();
-        String description = messageSource.getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, reservation), event.getDisplayName()}, locale);
+        String description = messageSourceManager.getMessageSourceForEvent(event).getMessage("reservation-email-subject", new Object[] {configurationManager.getShortReservationID(event, reservation), event.getDisplayName()}, locale);
         transaction.setDescription(description).setAmount(amount);
 
 
@@ -158,7 +159,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         payment.setTransactions(transactions);
         RedirectUrls redirectUrls = new RedirectUrls();
 
-        String baseUrl = StringUtils.removeEnd(configurationManager.getFor(spec.getEvent(), ConfigurationKeys.BASE_URL).getRequiredValue(), "/");
+        String baseUrl = StringUtils.removeEnd(configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.event(spec.getEvent())).getRequiredValue(), "/");
         String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/payment/paypal/" + URL_PLACEHOLDER;
 
         UriComponentsBuilder bookUrlBuilder = UriComponentsBuilder.fromUriString(bookUrl)
@@ -305,7 +306,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
             Capture capture = Capture.get(apiContext, captureId);
             com.paypal.api.payments.RefundRequest refundRequest = new com.paypal.api.payments.RefundRequest();
             amount.ifPresent(a -> refundRequest.setAmount(new Amount(capture.getAmount().getCurrency(), formatCents(a, transactionCurrency))));
-            DetailedRefund res = capture.refund(apiContext, refundRequest);
+            capture.refund(apiContext, refundRequest);
             log.info("Paypal: refund for payment {} executed with success for amount: {}", captureId, amountOrFull);
             return true;
         } catch(PayPalRESTException ex) {
@@ -317,8 +318,8 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
 
-        var paypalConf = configurationManager.getFor(context.getEvent(),
-            Set.of(PAYPAL_ENABLED, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET));
+        var paypalConf = configurationManager.getFor(Set.of(PAYPAL_ENABLED, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET),
+            context.getConfigurationLevel());
 
         return paymentMethod == PaymentMethod.PAYPAL &&
             paypalConf.get(PAYPAL_ENABLED).getValueAsBooleanOrDefault(false)

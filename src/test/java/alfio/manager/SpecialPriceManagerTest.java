@@ -17,7 +17,9 @@
 package alfio.manager;
 
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
@@ -55,6 +57,7 @@ public class SpecialPriceManagerTest {
     private SpecialPriceRepository specialPriceRepository;
     private TemplateManager templateManager;
     private MessageSource messageSource;
+    private MessageSourceManager messageSourceManager;
     private I18nManager i18nManager;
     private SpecialPriceManager specialPriceManager;
     private ConfigurationManager configurationManager;
@@ -68,12 +71,15 @@ public class SpecialPriceManagerTest {
         notificationManager = mock(NotificationManager.class);
         specialPriceRepository = mock(SpecialPriceRepository.class);
         templateManager = mock(TemplateManager.class);
+        messageSourceManager = mock(MessageSourceManager.class);
         messageSource = mock(MessageSource.class);
         i18nManager = mock(I18nManager.class);
         configurationManager = mock(ConfigurationManager.class);
 
         List<SpecialPrice> specialPrices = asList(new SpecialPrice(0, "123", 0, 0, "FREE", null, null, null, null), new SpecialPrice(0, "456", 0, 0, "FREE", null, null, null,  null));
         when(i18nManager.getEventLanguages(anyInt())).thenReturn(Collections.singletonList(ContentLanguage.ITALIAN));
+        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
         when(messageSource.getMessage(anyString(), any(), any())).thenReturn("text");
         when(eventManager.getSingleEvent(anyString(), anyString())).thenReturn(event);
         when(eventManager.getEventAndOrganizationId(anyString(), anyString())).thenReturn(event);
@@ -88,7 +94,7 @@ public class SpecialPriceManagerTest {
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(specialPriceRepository.markAsSent(any(), anyString(), anyString(), anyString())).thenReturn(1);
         setRestricted(ticketCategory, true);
-        specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSource, i18nManager, configurationManager);
+        specialPriceManager = new SpecialPriceManager(eventManager, notificationManager, specialPriceRepository, templateManager, messageSourceManager, i18nManager, configurationManager);
     }
 
     @Test
@@ -125,7 +131,7 @@ public class SpecialPriceManagerTest {
 
     @Test
     public void sendAllCodes() throws Exception {
-        when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
+        when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         assertTrue(specialPriceManager.sendCodeToAssignee(CODES_REQUESTED, "", 0, ""));
         verify(notificationManager, times(CODES_REQUESTED.size())).sendSimpleEmail(eq(event), isNull(), anyString(), anyString(), any());
@@ -133,14 +139,14 @@ public class SpecialPriceManagerTest {
 
     @Test
     public void sendSuccessfulComplete() throws Exception {
-        when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
+        when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         sendMessage(null);
     }
 
     @Test
     public void trimLanguageTag() throws Exception {
-        when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
+        when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
         assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", " it")), "", 0, ""));
         ArgumentCaptor<TextTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TextTemplateGenerator.class);
@@ -160,7 +166,7 @@ public class SpecialPriceManagerTest {
     @Test
     void usePartnerCode() {
         when(messageSource.getMessage(eq("show-event.promo-code-type.partner"), isNull(), isNull(), any())).thenReturn("Partner");
-        when(configurationManager.getFor(event, USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL))
+        when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, new ConfigurationKeyValuePathLevel(null, "true", null)));
         sendMessage("Partner");
     }

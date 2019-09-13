@@ -18,6 +18,7 @@ package alfio.controller.api.v2.model;
 
 import alfio.controller.decorator.SaleableTicketCategory;
 import lombok.Getter;
+import org.apache.commons.lang3.builder.CompareToBuilder;
 
 import java.util.Map;
 
@@ -30,11 +31,13 @@ public class TicketCategory {
     private final Map<String, String> description;
     private final int id;
     private final String name;
+    private final boolean bounded;
     private final int maximumSaleableTickets;
     private final boolean free;
     private final String formattedFinalPrice;
     private final boolean hasDiscount;
     private final String formattedDiscountedPrice;
+    private final int ordinal;
 
     //
     private final boolean expired;
@@ -44,16 +47,19 @@ public class TicketCategory {
     private final boolean saleableAndLimitNotReached;
     private final boolean accessRestricted;
     private final boolean soldOutOrLimitReached;
+    private final Integer availableTickets;
     //
 
     public TicketCategory(SaleableTicketCategory saleableTicketCategory,
                           Map<String, String> description,
                           Map<String, String> formattedInception,
-                          Map<String, String> formattedExpiration
-                          ) {
+                          Map<String, String> formattedExpiration,
+                          boolean displayTicketsLeft) {
+
         this.description = description;
         this.id = saleableTicketCategory.getId();
         this.name = saleableTicketCategory.getName();
+        this.bounded = saleableTicketCategory.isBounded();
         this.maximumSaleableTickets = max(0, min(saleableTicketCategory.getMaxTicketsAfterConfiguration(), saleableTicketCategory.getAvailableTickets()));
         this.free = saleableTicketCategory.getFree();
         this.formattedFinalPrice = saleableTicketCategory.getFormattedFinalPrice();
@@ -72,5 +78,7 @@ public class TicketCategory {
         this.accessRestricted = saleableTicketCategory.getAccessRestricted();
         this.soldOutOrLimitReached = saleableTicketCategory.getSouldOutOrLimitReached();
         //
+        this.availableTickets = displayTicketsLeft && saleableTicketCategory.isBounded() ? saleableTicketCategory.getAvailableTickets() : null;
+        this.ordinal = saleableTicketCategory.isAccessRestricted() ? -1 : saleableTicketCategory.getOrdinal();
     }
 }

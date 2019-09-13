@@ -92,8 +92,16 @@ create view reservation_and_ticket_and_tx as (select
     b_transaction.status bt_status,
     b_transaction.metadata bt_metadata,
 
-    (select count(id) from ticket where reservation_id = tickets_reservation_id) as tickets_count
+    (select count(id) from ticket where reservation_id = tickets_reservation_id) as tickets_count,
+    -- case (coalesce(tickets_reservation.promo_code_id_fk, -1)) when -1 then null else (select promo_code from promo_code where id = tickets_reservation.promo_code_id_fk) end,
+    -- case (coalesce(ticket.special_price_id_fk, -1)) when -1 then null else (select code from special_price where id = ticket.special_price_id_fk) end
+    promo_code.promo_code as promo_code,
+    special_price.code as special_price_token
+
 
 from tickets_reservation
 left outer join ticket on tickets_reservation.id = ticket.tickets_reservation_id
-left outer join b_transaction on ticket.tickets_reservation_id = b_transaction.reservation_id);
+left outer join b_transaction on ticket.tickets_reservation_id = b_transaction.reservation_id
+left outer join promo_code on tickets_reservation.promo_code_id_fk = promo_code.id
+left outer join special_price on ticket.special_price_id_fk = special_price.id
+);

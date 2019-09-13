@@ -16,16 +16,14 @@
  */
 package alfio.manager.payment;
 
-import alfio.manager.payment.stripe.StripeConnectResult;
-import alfio.manager.payment.stripe.StripeConnectURL;
 import alfio.manager.support.FeeCalculator;
 import alfio.manager.support.PaymentResult;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.PaymentInformation;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
@@ -34,13 +32,7 @@ import alfio.model.transaction.Transaction;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.ErrorsCode;
-import alfio.util.Json;
 import alfio.util.MonetaryUtil;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.github.scribejava.core.builder.ServiceBuilder;
-import com.github.scribejava.core.builder.api.DefaultApi20;
-import com.github.scribejava.core.model.OAuthConfig;
-import com.github.scribejava.core.oauth.OAuth20Service;
 import com.stripe.Stripe;
 import com.stripe.exception.*;
 import com.stripe.model.BalanceTransaction;
@@ -53,10 +45,11 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 
-import java.util.*;
-import java.util.function.Function;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-import static alfio.manager.payment.stripe.StripeConnectURL.CONNECT_REDIRECT_PATH;
 import static alfio.model.system.ConfigurationKeys.*;
 
 @Log4j2
@@ -69,6 +62,7 @@ class BaseStripeManager {
     private final ConfigurationRepository configurationRepository;
     private final TicketRepository ticketRepository;
     private final Environment environment;
+
     private final Map<Class<? extends StripeException>, StripeExceptionHandler> handlers = Map.of(
         CardException.class, this::handleCardException,
         InvalidRequestException.class, this::handleInvalidRequestException,
@@ -82,60 +76,33 @@ class BaseStripeManager {
     }
 
     String getSecretKey(EventAndOrganizationId event) {
-        return configurationManager.getFor(event, STRIPE_SECRET_KEY).getRequiredValue();
+        return configurationManager.getFor(STRIPE_SECRET_KEY, ConfigurationLevel.event(event)).getRequiredValue();
     }
 
     String getWebhookSignatureKey() {
-        return configurationManager.getFor(STRIPE_WEBHOOK_KEY).getRequiredValue();
+        return configurationManager.getForSystem(STRIPE_WEBHOOK_KEY).getRequiredValue();
     }
 
     String getPublicKey(PaymentContext context) {
         if(isConnectEnabled(context)) {
-            return configurationManager.getFor(STRIPE_PUBLIC_KEY).getRequiredValue();
+            return configurationManager.getForSystem(STRIPE_PUBLIC_KEY).getRequiredValue();
         }
-        return configurationManager.getFor(context.getEvent(), STRIPE_PUBLIC_KEY).getRequiredValue();
+        return configurationManager.getFor(STRIPE_PUBLIC_KEY, context.getConfigurationLevel()).getRequiredValue();
     }
 
     Map<String, ?> getModelOptions(PaymentContext context) {
         Map<String, Object> options = new HashMap<>();
-        options.put("enableSCA", configurationManager.getFor(context.getEvent(), STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false));
+        options.put("enableSCA", configurationManager.getFor(STRIPE_ENABLE_SCA, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false));
         options.put("stripe_p_key", getPublicKey(context));
         return options;
     }
 
-    StripeConnectURL getConnectURL(Function<ConfigurationKeys, Configuration.ConfigurationPathKey> keyResolver) {
-        String secret = configurationManager.getRequiredValue(keyResolver.apply(STRIPE_SECRET_KEY));
-        String clientId = configurationManager.getRequiredValue(keyResolver.apply(STRIPE_CONNECT_CLIENT_ID));
-        String callbackURL = configurationManager.getStringConfigValue(keyResolver.apply(STRIPE_CONNECT_CALLBACK), configurationManager.getRequiredValue(keyResolver.apply(BASE_URL)) + CONNECT_REDIRECT_PATH);
-        String state = UUID.randomUUID().toString();
-        String code = UUID.randomUUID().toString();
-        OAuthConfig config = new OAuthConfig(clientId, secret, callbackURL, "read_write", null, state, "code", null, null, null);
-        return new StripeConnectURL(new StripeConnectApi().getAuthorizationUrl(config, Collections.emptyMap()), state, code);
-    }
-
     private boolean isConnectEnabled(PaymentContext context) {
-        return configurationManager.getFor(context.getEvent(), PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
+        return configurationManager.getFor(PLATFORM_MODE_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
     }
 
-    StripeConnectResult storeConnectedAccountId(String code, Function<ConfigurationKeys, Configuration.ConfigurationPathKey> keyResolver) {
-        try {
-            String clientSecret = getSystemApiKey();
-            OAuth20Service service = new ServiceBuilder(clientSecret).apiSecret(clientSecret).build(new StripeConnectApi());
-            Map<String, String> token = Json.fromJson(service.getAccessToken(code).getRawResponse(), new TypeReference<>() {
-            });
-            String accountId = token.get("stripe_user_id");
-            if(accountId != null) {
-                configurationManager.saveConfig(keyResolver.apply(ConfigurationKeys.STRIPE_CONNECTED_ID), accountId);
-            }
-            return new StripeConnectResult(accountId, accountId != null, token.get("error_message"));
-        } catch (Exception e) {
-            log.error("cannot retrieve account ID", e);
-            return new StripeConnectResult(null, false, e.getMessage());
-        }
-    }
-
-    private String getSystemApiKey() {
-        return configurationManager.getFor(STRIPE_SECRET_KEY).getRequiredValue();
+    String getSystemApiKey() {
+        return configurationManager.getForSystem(STRIPE_SECRET_KEY).getRequiredValue();
     }
 
     Optional<Boolean> processWebhookEvent(String body, String signature) {
@@ -229,7 +196,7 @@ class BaseStripeManager {
     Optional<RequestOptions> options(Event event) {
         RequestOptions.RequestOptionsBuilder builder = RequestOptions.builder();
         if(isConnectEnabled(new PaymentContext(event))) {
-            return configurationManager.getFor(event, STRIPE_CONNECTED_ID).getValue()
+            return configurationManager.getFor(STRIPE_CONNECTED_ID, ConfigurationLevel.event(event)).getValue()
                 .map(connectedId -> {
                     //connected stripe account
                     builder.setStripeAccount(connectedId);
@@ -241,7 +208,7 @@ class BaseStripeManager {
 
     Optional<String> getConnectedAccount(PaymentContext paymentContext) {
         if(isConnectEnabled(paymentContext)) {
-            return configurationManager.getFor(paymentContext.getEvent(), STRIPE_CONNECTED_ID).getValue();
+            return configurationManager.getFor(STRIPE_CONNECTED_ID, paymentContext.getConfigurationLevel()).getValue();
         }
         return Optional.empty();
     }
@@ -282,7 +249,7 @@ class BaseStripeManager {
             Map<String, Object> params = new HashMap<>();
             params.put("charge", chargeId);
             amount.ifPresent(a -> params.put("amount", a));
-            if(isConnectEnabled(new PaymentContext(event))) {
+            if(transaction.getPlatformFee() > 0 && isConnectEnabled(new PaymentContext(event))) {
                 params.put("refund_application_fee", true);
             }
 
@@ -307,7 +274,7 @@ class BaseStripeManager {
 
     boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
         return paymentMethod == PaymentMethod.CREDIT_CARD
-            && configurationManager.getBooleanConfigValue(context.narrow(STRIPE_CC_ENABLED), false);
+            && configurationManager.getFor(STRIPE_CC_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
     }
 
     String handleException(StripeException exc) {
@@ -378,19 +345,6 @@ class BaseStripeManager {
     @FunctionalInterface
     private interface StripeExceptionHandler {
         String handle(StripeException exc);
-    }
-
-    private static class StripeConnectApi extends DefaultApi20 {
-
-        @Override
-        public String getAccessTokenEndpoint() {
-            return "https://connect.stripe.com/oauth/token";
-        }
-
-        @Override
-        protected String getAuthorizationBaseUrl() {
-            return "https://connect.stripe.com/oauth/authorize";
-        }
     }
 
 }

@@ -51,7 +51,7 @@ public class DefaultMailer implements Mailer {
 
         subject = decorateSubjectIfDemo(subject, environment);
 
-        String mailerType = configurationManager.getFor(event, MAILER_TYPE)
+        String mailerType = configurationManager.getFor(MAILER_TYPE, ConfigurationLevel.event(event))
             .getValueOrDefault("disabled").toLowerCase(Locale.ENGLISH);
 
         mailers.getOrDefault(mailerType, defaultMailer)

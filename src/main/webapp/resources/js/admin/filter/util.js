@@ -142,9 +142,13 @@
 
     filters.filter('money', function() {
         return function(amount, currency, hideCurrency) {
+            if(!currency) {
+                return "";
+            }
             var formatted = new Intl.NumberFormat(navigator.language, { style: 'currency', currency: currency, currencyDisplay: 'code' }).format(amount);
             if(hideCurrency) {
-                return formatted.substring(4);
+                var currencyIndex = formatted.indexOf(currency);
+                return (formatted.substring(0, currencyIndex) + formatted.substring(currencyIndex + currency.length)).trim();
             }
             return formatted;
         }

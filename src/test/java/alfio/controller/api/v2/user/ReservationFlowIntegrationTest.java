@@ -20,7 +20,7 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.IndexController;
-import alfio.controller.api.AttendeeApiController;
+import alfio.controller.api.v1.AttendeeApiController;
 import alfio.controller.api.admin.AdditionalServiceApiController;
 import alfio.controller.api.admin.CheckInApiController;
 import alfio.controller.api.admin.EventApiController;
@@ -49,6 +49,9 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.EventUtil;
 import alfio.util.Json;
+import ch.digitalfondue.jfiveparse.Element;
+import ch.digitalfondue.jfiveparse.Parser;
+import ch.digitalfondue.jfiveparse.Selector;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
@@ -82,6 +85,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -214,11 +218,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0),
             new TicketCategoryModification(null, "hidden", 2,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null)
+                DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0)
             );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 
@@ -233,7 +237,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
         // add additional fields before and after, with one mandatory
-        var af = new EventModification.AdditionalField(-1, "field1", "text", true, null, null, null,
+        var af = new EventModification.AdditionalField(-1, "field1", "text", true, false,null, null, null,
             Map.of("en", new EventModification.Description("field en", "", null)), null, null);
         eventManager.addAdditionalField(event, af);
 
@@ -241,7 +245,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         ticketFieldRepository.updateFieldOrder(afId, -1);
 
-        var af2 = new EventModification.AdditionalField(1, "field2", "text", false, null, null, null,
+        var af2 = new EventModification.AdditionalField(1, "field2", "text", false, false,null, null, null,
             Map.of("en", new EventModification.Description("field2 en", "", null)), null, null);
         eventManager.addAdditionalField(event, af2);
         //
@@ -264,7 +268,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         additionalServiceId = addServRes.getBody().getId();
         //
 
-        var af3 = new EventModification.AdditionalField(2, "field3", "text", true, null, null, null,
+        var af3 = new EventModification.AdditionalField(2, "field3", "text", true, false, null, null, null,
             Map.of("en", new EventModification.Description("field3 en", "", null)), addServRes.getBody(), null);
         eventManager.addAdditionalField(event, af3);
 
@@ -281,17 +285,15 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     public void reservationFlowTest() throws Exception {
 
 
-        assertEquals(HttpStatus.NOT_FOUND, eventApiV2Controller.getLanguages("NO_EVENT").getStatusCode());
-
         assertTrue(eventApiV2Controller.listEvents().getBody().isEmpty());
         ensureConfiguration();
 
 
         //
         assertEquals(3, translationsApiController.getSupportedLanguages().size());
-        assertEquals("or", translationsApiController.getPublicTranslations("en").get("common.or"));
-        assertEquals("o", translationsApiController.getPublicTranslations("it").get("common.or"));
-        assertEquals("oder", translationsApiController.getPublicTranslations("de").get("common.or"));
+        assertEquals("or", translationsApiController.getPublicTranslations("en", true).get("common.or"));
+        assertEquals("o", translationsApiController.getPublicTranslations("it", true).get("common.or"));
+        assertEquals("oder", translationsApiController.getPublicTranslations("de", true).get("common.or"));
 
         var alfioInfo = infoApiController.getInfo(new MockHttpSession());
         assertEquals(false, alfioInfo.isDemoModeEnabled());
@@ -359,13 +361,20 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getFileBlobId(), selectedEvent.getFileBlobId());
         assertEquals(1, selectedEvent.getActivePaymentMethods().size());
         assertTrue(selectedEvent.getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
+        assertTrue(selectedEvent.getI18nOverride().isEmpty());
+
+        configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(),"TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("common.vat", "EVENT.vat"))), "");
+        eventRes = eventApiV2Controller.getEvent(event.getShortName(), new MockHttpSession());
+        selectedEvent = eventRes.getBody();
+        assertFalse(selectedEvent.getI18nOverride().isEmpty());
+        assertEquals("EVENT.vat", selectedEvent.getI18nOverride().get("en").get("common.vat"));
 
         checkCalendar(event.getShortName());
 
         //it, en, de
         assertEquals(3, selectedEvent.getContentLanguages().size());
-        assertEquals(new HashSet<>(Arrays.asList("it", "en", "de")), new HashSet<>(eventApiV2Controller.getLanguages(event.getShortName()).getBody()));
-        assertEquals(selectedEvent.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toSet()), new HashSet<>(eventApiV2Controller.getLanguages(event.getShortName()).getBody()));
+
+        assertEquals(selectedEvent.getContentLanguages().stream().map(Language::getLocale).collect(Collectors.toSet()), Set.of("it", "en", "de"));
 
         //check if for each language we have the expected locale dependent entries
         for (String lang: Arrays.asList("it", "en", "de")) {
@@ -379,6 +388,26 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
         assertEquals("redirect:/api/v2/public/event/" + event.getShortName() + "/code/MY_CODE", indexController.redirectCode(event.getShortName(), "MY_CODE"));
+
+
+        // check open graph & co
+        {
+            var res = new MockHttpServletResponse();
+            indexController.replyToIndex(event.getShortName(), "not a social share", "en", new ServletWebRequest(new MockHttpServletRequest()), res);
+            var htmlParser = new Parser();
+            var docWithoutOpenGraph = htmlParser.parse(new String(res.getContentAsByteArray(), StandardCharsets.UTF_8));
+            assertTrue(docWithoutOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("name", "twitter:card").toMatcher()).isEmpty());
+
+            res = new MockHttpServletResponse();
+            indexController.replyToIndex(event.getShortName(), "Twitterbot/42", "en", new ServletWebRequest(new MockHttpServletRequest()), res);
+            var docWithOpenGraph = htmlParser.parse(new String(res.getContentAsByteArray(), StandardCharsets.UTF_8));
+            assertFalse(docWithOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("name", "twitter:card").toMatcher()).isEmpty());
+
+            var title = (Element) docWithOpenGraph.getAllNodesMatching(Selector.select().element("meta").attrValEq("property", "og:title").toMatcher(), true).get(0);
+            assertEquals("Get your tickets for "+event.getDisplayName(), title.getAttribute("content"));
+        }
+
+        //
 
 
         // check ticket & all, we have 2 ticket categories, 1 hidden
@@ -993,7 +1022,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(expectedHttpStatus, statusRes.getStatusCode());
         var status = statusRes.getBody();
         if (validated != null) {
-            assertEquals(validated, status.isValidatedBookingInformations());
+            assertEquals(validated, status.isValidatedBookingInformation());
         }
 
         if (reservationStatus != null) {

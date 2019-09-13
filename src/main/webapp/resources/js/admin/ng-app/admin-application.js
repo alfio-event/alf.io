@@ -10,7 +10,7 @@
     
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives',
         'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-additional-services', 'alfio-event-statistic',
-        'ui.ace', 'monospaced.qrcode', 'checklist-model', 'group']);
+        'ui.ace', 'monospaced.qrcode', 'checklist-model', 'group', angularDragula(angular)]);
 
     var loadEvent = {
         'loadEvent': function($stateParams, EventService) {
@@ -134,14 +134,6 @@
                     eventType: 'INTERNAL'
                 }
             })
-            .state('events.newLink', {
-                url: '/new-external',
-                templateUrl: BASE_STATIC_URL + "/event/edit-event.html",
-                controller: 'CreateEventController',
-                data: {
-                    eventType: 'EXTERNAL'
-                }
-            })
             .state('events.single', {
                 abstract: true,
                 url: '/:eventName',
@@ -222,7 +214,7 @@
                 }
             })
             .state('events.single.reservationsList', {
-                url: '/reservations/',
+                url: '/reservations/?search',
                 template: '<reservations-list event="ctrl.event"></reservations-list>',
                 controller: function(getEvent) {
                     this.event = getEvent.data.event;
@@ -493,10 +485,10 @@
                 $scope.allLanguagesMapping[r.value] = r;
                 locales |= r.value;
             });
-            if($scope.event && !angular.isDefined($scope.event.locales)) {
-                $scope.event.locales = locales;
-            }
         });
+        if($scope.event && !angular.isDefined($scope.event.locales)) {
+            $scope.event.locales = 0;
+        }
 
         EventService.getDynamicFieldTemplates().success(function(result) {
             $scope.dynamicFieldTemplates = result;
@@ -663,9 +655,28 @@
         };
         $scope.addCategory = function() {
             var category = createCategoryValidUntil(true, $scope.event.begin);
+            if (!$scope.event.freeOfCharge) {
+                category.price = $scope.event.regularPrice
+            }
             editCategory(category).then(function(res) {
+                category.ordinal = $scope.event.ticketCategories.length + 1;
                 $scope.event.ticketCategories.push(category);
             });
+        };
+
+        $scope.swap = function(category, up) {
+            var list = $scope.event.ticketCategories.slice();
+            var index = category.ordinal - 1;
+            var target = up ? index - 1 : index + 1;
+            var toBeSwapped = list[target];
+            toBeSwapped.ordinal = index + 1;
+            category.ordinal = target + 1;
+            list[target] = category;
+            list[index] = toBeSwapped;
+            $scope.event.ticketCategories.length = 0;
+            for(var i=0; i<list.length; i++) {
+                $scope.event.ticketCategories.push(list[i]);
+            }
         };
 
         $scope.setAdditionalServices = function(event, additionalServices) {
@@ -785,6 +796,12 @@
                     EventService.unbindTickets(event, category).success(function() {
                         loadData();
                     });
+                };
+                $scope.toggleRearrange = function() {
+                    var event = $scope.event;
+                    EventService.rearrangeCategories(event).then(function() {
+                        loadData();
+                    })
                 };
             });
         };

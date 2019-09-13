@@ -1,14 +1,14 @@
 <div data-ng-form="editPrices">
     <div class="form-group">
-        <label>Ticket price model</label>
+        <label class="control-label">Ticket price model</label>
         <div class="form-group">
-            <div class="radio-inline">
+            <div class="radio">
                 <label>
                     <input type="radio" name="freeOfCharge" data-ng-model="obj.freeOfCharge" data-ng-value="false"> Entry fee requested
                 </label>
             </div>
-            <div class="radio-inline">
-                <label >
+            <div class="radio">
+                <label>
                     <input type="radio" name="freeOfCharge" data-ng-model="obj.freeOfCharge" data-ng-value="true"> Free of charge
                 </label>
             </div>
@@ -38,19 +38,19 @@
         </div>
         <div class="col-sm-2" data-ng-if="!obj.freeOfCharge">
             <div class="form-group" bs-form-error="editEvent.vatPercentage">
-                <label for="vatPercentage">VAT (%)</label>
+                <label for="vatPercentage">Taxes (%)</label>
                 <input type="number" min="0" data-ng-model="obj.vatPercentage" name="vatPercentage" id="vatPercentage" class="form-control" required />
                 <field-error data-form-obj="editEvent" data-field-obj="editEvent.vatPercentage"></field-error>
             </div>
         </div>
         <div class="col-sm-4" data-ng-if="!obj.freeOfCharge">
             <div class="form-group">
-                <label for="vatIncluded">VAT included</label>
+                <label for="vatIncluded">Price includes taxes</label>
                 <div class="input-group">
                             <span class="input-group-addon">
                                 <input type="checkbox" data-ng-model="obj.vatIncluded" name="vatIncluded" id="vatIncluded">
                             </span>
-                    <span class="form-control text-muted">Price VAT included: {{calculateTotalPrice(obj) | money : (obj.currency || "")}}</span>
+                    <span class="form-control text-muted">Price after taxes: {{calculateTotalPrice(obj) | money : (obj.currency || "")}}</span>
                 </div>
             </div>
         </div>

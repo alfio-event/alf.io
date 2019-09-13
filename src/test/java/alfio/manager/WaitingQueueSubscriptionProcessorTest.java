@@ -16,12 +16,13 @@
  */
 package alfio.manager;
 
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.repository.TicketRepository;
 import alfio.repository.WaitingQueueRepository;
@@ -58,6 +59,7 @@ public class WaitingQueueSubscriptionProcessorTest {
     private TicketReservationWithOptionalCodeModification reservation;
     private WaitingQueueSubscriptionProcessor processor;
     private TicketRepository ticketRepository;
+    private MessageSourceManager messageSourceManager;
 
 
     @BeforeEach
@@ -68,6 +70,7 @@ public class WaitingQueueSubscriptionProcessorTest {
         waitingQueueManager = mock(WaitingQueueManager.class);
         notificationManager = mock(NotificationManager.class);
         messageSource = mock(MessageSource.class);
+        messageSourceManager = mock(MessageSourceManager.class);
         templateManager = mock(TemplateManager.class);
         waitingQueueRepository = mock(WaitingQueueRepository.class);
         transactionManager = mock(PlatformTransactionManager.class);
@@ -79,13 +82,15 @@ public class WaitingQueueSubscriptionProcessorTest {
         when(event.getId()).thenReturn(eventId);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         when(eventManager.getActiveEvents()).thenReturn(Collections.singletonList(event));
+        when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
+        when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
         processor = new WaitingQueueSubscriptionProcessor(eventManager,
             ticketReservationManager,
             configurationManager,
             waitingQueueManager,
             notificationManager,
             waitingQueueRepository,
-            messageSource,
+            messageSourceManager,
             templateManager,
             ticketRepository,
             transactionManager);
@@ -93,7 +98,7 @@ public class WaitingQueueSubscriptionProcessorTest {
 
     @Test
     void filterWaitingQueueFlagIsNotActive() {
-        when(configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)))
+        when(configurationManager.getFor(eq(Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)), any()))
             .thenReturn(Map.of(
                 ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(ENABLE_WAITING_QUEUE, new ConfigurationKeyValuePathLevel( "", "false", null)),
                 ENABLE_PRE_REGISTRATION, new ConfigurationManager.MaybeConfiguration(ENABLE_PRE_REGISTRATION)
@@ -106,7 +111,7 @@ public class WaitingQueueSubscriptionProcessorTest {
     @Test
     void processPendingTickets() {
 
-        when(configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)))
+        when(configurationManager.getFor(eq(Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION)), any()))
             .thenReturn(Map.of(
                 ENABLE_WAITING_QUEUE, new ConfigurationManager.MaybeConfiguration(ENABLE_WAITING_QUEUE, new ConfigurationKeyValuePathLevel( "", "true", null)),
                 ENABLE_PRE_REGISTRATION, new ConfigurationManager.MaybeConfiguration(ENABLE_PRE_REGISTRATION)

@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
@@ -39,6 +40,7 @@ import java.util.stream.Stream;
 import static alfio.model.system.ConfigurationKeys.DISPLAY_STATS_IN_EVENT_DETAIL;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
 
 @Component
 @AllArgsConstructor
@@ -78,12 +80,12 @@ public class EventStatisticsManager {
     }
 
     private boolean displayStatisticsForEvent(EventAndOrganizationId event) {
-        return configurationManager.getFor(event, DISPLAY_STATS_IN_EVENT_DETAIL).getValueAsBooleanOrDefault(true);
+        return configurationManager.getFor(DISPLAY_STATS_IN_EVENT_DETAIL, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true);
     }
 
 
     public List<EventStatistic> getAllEventsWithStatistics(String username) {
-        return getAllEventsWithStatisticsFilteredBy(username, (e) -> true);
+        return getAllEventsWithStatisticsFilteredBy(username, e -> true);
     }
 
     public EventWithAdditionalInfo getEventWithAdditionalInfo(String eventName, String username) {
@@ -128,7 +130,7 @@ public class EventStatisticsManager {
         String toSearch = prepareSearchTerm(search);
         final int pageSize = 30;
         return ticketSearchRepository.findAllModifiedTicketsWithReservationAndTransaction(eventId, categoryId, page * pageSize, pageSize, toSearch).stream()
-            .map(t -> new TicketWithStatistic(t.getTicket(), t.getTicketReservation(), event.getZoneId(), t.getTransaction()))
+            .map(t -> new TicketWithStatistic(t.getTicket(), t.getTicketReservation(), event.getZoneId(), t.getTransaction(), firstNonNull(t.getPromoCode(), t.getSpecialPriceToken())))
             .sorted()
             .collect(Collectors.toList());
     }

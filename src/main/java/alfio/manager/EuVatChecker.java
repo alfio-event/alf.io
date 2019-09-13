@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Audit;
 import alfio.model.EventAndOrganizationId;
@@ -29,20 +30,18 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 
 import static alfio.model.Audit.EntityType.RESERVATION;
 import static alfio.model.Audit.EventType.*;
-import static alfio.model.system.ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @Log4j2
@@ -85,7 +84,7 @@ public class EuVatChecker {
             }
 
 
-            boolean euCountryCode = configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
+            boolean euCountryCode = configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(countryCode);
 
             boolean validationEnabled = validationEnabled(configurationManager, eventAndOrganizationId);
             if(euCountryCode && validationEnabled) {
@@ -99,7 +98,7 @@ public class EuVatChecker {
                 return Optional.empty();
             }
 
-            BooleanSupplier applyVatToForeignBusiness = () -> configurationManager.getFor(eventAndOrganizationId, APPLY_VAT_FOREIGN_BUSINESS).getValueAsBooleanOrDefault(true);
+            BooleanSupplier applyVatToForeignBusiness = () -> configurationManager.getFor(APPLY_VAT_FOREIGN_BUSINESS, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault(true);
             boolean vatExempt = !organizerCountry.equals(countryCode) && (euCountryCode || !applyVatToForeignBusiness.getAsBoolean());
             return Optional.of(new VatDetail(vatNr, countryCode, true, "", "", euCountryCode ? VatDetail.Type.SKIPPED : VatDetail.Type.EXTRA_EU, vatExempt));
 
@@ -142,15 +141,26 @@ public class EuVatChecker {
     }
 
     static String organizerCountry(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
-        return configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.COUNTRY_OF_BUSINESS).getValueOrDefault(null);
+        return configurationManager.getFor(ConfigurationKeys.COUNTRY_OF_BUSINESS, ConfigurationLevel.event(eventAndOrganizationId)).getValueOrDefault(null);
     }
 
     private static boolean reverseChargeEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
-        return configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault(false);
+        var res = configurationManager.getFor(Set.of(ENABLE_EU_VAT_DIRECTIVE, ConfigurationKeys.COUNTRY_OF_BUSINESS), ConfigurationLevel.event(eventAndOrganizationId));
+        return reverseChargeEnabled(res);
+    }
+
+    /**
+     * @param res require the keys ENABLE_EU_VAT_DIRECTIVE, COUNTRY_OF_BUSINESS
+     * @return
+     */
+    public static boolean reverseChargeEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> res) {
+        Validate.isTrue(res.containsKey(ENABLE_EU_VAT_DIRECTIVE) && res.containsKey(COUNTRY_OF_BUSINESS));
+        return res.get(ENABLE_EU_VAT_DIRECTIVE).getValueAsBooleanOrDefault(false) &&
+            res.get(ConfigurationKeys.COUNTRY_OF_BUSINESS).isPresent();
     }
 
     static boolean validationEnabled(ConfigurationManager configurationManager, EventAndOrganizationId eventAndOrganizationId) {
-        return configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.ENABLE_VIES_VALIDATION).getValueAsBooleanOrDefault(true);
+        return configurationManager.getFor(ConfigurationKeys.ENABLE_VIES_VALIDATION, ConfigurationLevel.event(eventAndOrganizationId)).getValueAsBooleanOrDefault(true);
     }
 
 

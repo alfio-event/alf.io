@@ -263,32 +263,40 @@ public final class Validator {
                         form.setAdditional(new HashMap<>());
                     }
                     form.getAdditional().put(fieldConf.getName(), Collections.singletonList(""));
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"][0]", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"][0]", ErrorsCode.EMPTY_FIELD);
                 }
                 continue;
             }
             
             List<String> values = Optional.ofNullable(form.getAdditional().get(fieldConf.getName())).orElse(Collections.emptyList());
+
+            //handle required for multiple choice (checkbox) where required is interpreted as at least one!
+            if (fieldConf.isRequired() && fieldConf.getCount() > 1  && values.stream().allMatch(StringUtils::isBlank)) {
+                errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]", ErrorsCode.EMPTY_FIELD);
+            }
+
             for(int i = 0; i < values.size(); i++) {
                 String formValue = values.get(i);
                 if(fieldConf.isMaxLengthDefined()) {
-                    validateMaxLength(formValue, prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName(), fieldConf.getMaxLength(), errors);
+                    validateMaxLength(formValue, prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error.tooLong", fieldConf.getMaxLength(), errors);
                 }
 
                 if(StringUtils.isNotBlank(formValue) && fieldConf.isMinLengthDefined() && StringUtils.length(formValue) < fieldConf.getMinLength()) {
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error.tooShort", new Object[] { fieldConf.getMinLength() }, null);
                 }
 
                 if(!fieldConf.getRestrictedValues().isEmpty()) {
-                    validateRestrictedValue(formValue, prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName(), fieldConf.getRestrictedValues(), errors);
+                    validateRestrictedValue(formValue, prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]",
+                        "error.restrictedValue", fieldConf.getRestrictedValues(), errors);
                 }
 
-                if(fieldConf.isRequired() && StringUtils.isBlank(formValue)){
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName());
+                if(fieldConf.isRequired() && fieldConf.getCount() == 1 && StringUtils.isBlank(formValue)){
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", ErrorsCode.EMPTY_FIELD);
                 }
 
                 if(fieldConf.hasDisabledValues() && fieldConf.getDisabledValues().contains(formValue)) {
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]", "error."+fieldConf.getName());
+                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"]["+i+"]",
+                        "error.disabledValue", null, null);
                 }
 
                 try {
@@ -316,9 +324,9 @@ public final class Validator {
         return StringUtils.isNotEmpty(email) && SIMPLE_E_MAIL_PATTERN.matcher(email).matches();
     }
 
-    public static void validateMaxLength(String value, String fieldName, String errorCode, int maxLength, Errors errors) {
+    private static void validateMaxLength(String value, String fieldName, String errorCode, int maxLength, Errors errors) {
         if(StringUtils.isNotBlank(value) && StringUtils.length(value) > maxLength) {
-            errors.rejectValue(fieldName, errorCode);
+            errors.rejectValue(fieldName, errorCode, new Object[] { maxLength }, null);
         }
     }
 

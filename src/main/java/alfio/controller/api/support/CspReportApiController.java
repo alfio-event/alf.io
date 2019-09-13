@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.support;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -42,7 +43,7 @@ public class CspReportApiController {
     @PostMapping("/report-csp-violation")
     public boolean logCspViolation(HttpServletRequest request) throws IOException {
 
-        var conf = configurationManager.getFor(Set.of(SECURITY_CSP_REPORT_ENABLED, SECURITY_CSP_REPORT_URI));
+        var conf = configurationManager.getFor(Set.of(SECURITY_CSP_REPORT_ENABLED, SECURITY_CSP_REPORT_URI), ConfigurationLevel.system());
 
         boolean enabledReport = conf.get(SECURITY_CSP_REPORT_ENABLED).getValueAsBooleanOrDefault(false);
 

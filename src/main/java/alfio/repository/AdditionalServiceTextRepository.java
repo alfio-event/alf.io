@@ -77,7 +77,7 @@ public interface AdditionalServiceTextRepository {
         return findByLocaleAndType(additionalServiceId, locale, type)
             .orElseGet(() -> {
                 List<AdditionalServiceText> texts = findAllByAdditionalServiceIdAndType(additionalServiceId, type);
-                return texts.size() > 0 ? texts.get(0) : new AdditionalServiceText(-1, additionalServiceId, locale, type, "N/A");
+                return !texts.isEmpty() ? texts.get(0) : new AdditionalServiceText(-1, additionalServiceId, locale, type, "N/A");
             });
     }
 

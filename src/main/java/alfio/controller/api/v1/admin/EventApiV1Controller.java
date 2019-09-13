@@ -169,7 +169,7 @@ public class EventApiV1Controller {
         eventManager.updateEventPrices(event, em, user.getName());
 
 
-        if (em.getTicketCategories() != null && em.getTicketCategories().size() > 0) {
+        if (em.getTicketCategories() != null && !em.getTicketCategories().isEmpty()) {
             em.getTicketCategories().forEach(c ->
                 findCategoryByName(event, c.getName()).ifPresent(originalCategory ->
                     eventManager.updateCategory(originalCategory.getId(), event.getId(), c, user.getName())
@@ -194,9 +194,9 @@ public class EventApiV1Controller {
         eventManager.createEvent(em);
         Optional<Event> event = eventManager.getOptionalByName(em.getShortName(),user.getName());
 
-        event.ifPresent((e) -> {
-            Optional.ofNullable(request.getTickets().getPromoCodes()).ifPresent((promoCodes) ->
-                promoCodes.forEach((pc) -> //TODO add ref to categories
+        event.ifPresent(e -> {
+            Optional.ofNullable(request.getTickets().getPromoCodes()).ifPresent(promoCodes ->
+                promoCodes.forEach(pc -> //TODO add ref to categories
                     eventManager.addPromoCode(
                         pc.getName(),
                         e.getId(),

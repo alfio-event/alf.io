@@ -33,6 +33,7 @@ public interface ErrorCode {
 
     String getCode();
     String getDescription();
+    Object[] getArguments();
 
     @RequiredArgsConstructor
     @Getter
@@ -51,6 +52,11 @@ public interface ErrorCode {
         public String toString() {
             return description;
         }
+
+        @Override
+        public Object[] getArguments() {
+            return null;
+        }
     }
 
     @RequiredArgsConstructor
@@ -66,6 +72,11 @@ public interface ErrorCode {
         @Override
         public String toString() {
             return description;
+        }
+
+        @Override
+        public Object[] getArguments() {
+            return null;
         }
     }
 
@@ -83,6 +94,11 @@ public interface ErrorCode {
         @Override
         public String toString() {
             return description;
+        }
+
+        @Override
+        public Object[] getArguments() {
+            return null;
         }
     }
 
@@ -102,6 +118,11 @@ public interface ErrorCode {
             public String toString() {
                 return description;
             }
+
+            @Override
+            public Object[] getArguments() {
+                return null;
+            }
         };
     }
 
@@ -118,6 +139,11 @@ public interface ErrorCode {
             @Override
             public String getDescription() {
                 return get().getDescription();
+            }
+
+            @Override
+            public Object[] getArguments() {
+                return null;
             }
 
             private synchronized ErrorCode get() {

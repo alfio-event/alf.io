@@ -64,4 +64,6 @@ public interface ErrorsCode {
     String VIES_IS_DOWN = "error.vatVIESDown";
 
     String STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED = "error.STEP2_DISCOUNT_CODE_USAGE_EXCEEDED";
+
+    String EMPTY_FIELD = "error.emptyField";
 }

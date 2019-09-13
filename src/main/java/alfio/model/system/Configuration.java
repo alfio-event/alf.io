@@ -178,10 +178,6 @@ public class Configuration implements Comparable<Configuration> {
     }
     //
 
-    public static ConfigurationPathKey getSystemConfiguration(ConfigurationKeys configurationKey) {
-        return new ConfigurationPathKey(system(), configurationKey);
-    }
-
     private static ConfigurationPathKey getOrganizationConfiguration(int organizationId, ConfigurationKeys configurationKey) {
         return new ConfigurationPathKey(organization(organizationId), configurationKey);
     }
@@ -203,7 +199,7 @@ public class Configuration implements Comparable<Configuration> {
     }
 
     public static Function<ConfigurationKeys, ConfigurationPathKey> from(EventAndOrganizationId e) {
-        return (p) -> from(e, p);
+        return p -> from(e, p);
     }
 
     public static Function<ConfigurationKeys, ConfigurationPathKey> from(int organizationId) {

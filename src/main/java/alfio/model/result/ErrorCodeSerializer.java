@@ -29,6 +29,13 @@ class ErrorCodeSerializer extends JsonSerializer<ErrorCode> {
         gen.writeStringField("fieldName", value.getLocation());
         gen.writeStringField("code", value.getCode());
         gen.writeStringField("description", value.getDescription());
+        if(value.getArguments() != null) {
+            gen.writeArrayFieldStart("arguments");
+            for (Object arg : value.getArguments()) {
+                gen.writeObject(arg);
+            }
+            gen.writeEndArray();
+        }
         gen.writeEndObject();
     }
 }

@@ -420,7 +420,7 @@
                         </tr>
 
                         <tr ng-repeat="doc in $ctrl.billingDocuments.valid">
-                            <td><i class="fa" uib-tooltip="{{doc.type}}" ng-class="{'fa-sticky-note-o': doc.type === 'RECEIPT', 'fa-file-text-o': doc.type === 'INVOICE', 'fa-undo': doc.type === 'CREDIT_NOTE'}"></i></td>
+                            <td data-ng-bind="$ctrl.documentTypeDescription[doc.type]"></td>
                             <td ng-bind="doc.number"></td>
                             <td ng-bind="doc.generationTimestamp | formatDate"></td>
                             <td class="text-right">

@@ -56,6 +56,12 @@
                 && ['PENDING', 'OFFLINE_PAYMENT'].indexOf(ctrl.reservation.status) === -1;
         };
 
+        ctrl.documentTypeDescription = {
+            'RECEIPT': 'Receipt',
+            'INVOICE': 'Invoice',
+            'CREDIT_NOTE': 'Credit note'
+        };
+
         ctrl.$onInit = function() {
             EventService.getAllLanguages().then(function(allLangs) {
                ctrl.allLanguages = allLangs.data;

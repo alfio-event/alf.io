@@ -68,7 +68,7 @@ public final class TemplateProcessor {
                                                                TemplateManager templateManager,
                                                                String ticketURL,
                                                                Locale language) {
-        return (ticket) -> {
+        return ticket -> {
             Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, ticket, category);
             return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, language);
         };
@@ -80,7 +80,7 @@ public final class TemplateProcessor {
                                                                       String ticketUrl,
                                                                       TemplateManager templateManager,
                                                                       Locale language) {
-        return (newTicket) -> {
+        return newTicket -> {
             Map<String, Object> emailModel = TemplateResource.buildModelForTicketHasChangedOwner(organization, e, oldTicket, newTicket, ticketUrl);
             return templateManager.renderTemplate(e, TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language);
         };
@@ -192,7 +192,7 @@ public final class TemplateProcessor {
 
     public static Optional<TemplateResource.ImageData> extractImageModel(Event event, FileUploadManager fileUploadManager) {
         if(event.getFileBlobIdIsPresent()) {
-            return fileUploadManager.findMetadata(event.getFileBlobId()).map((metadata) -> {
+            return fileUploadManager.findMetadata(event.getFileBlobId()).map(metadata -> {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 fileUploadManager.outputFile(metadata.getId(), baos);
                 return TemplateResource.fillWithImageData(metadata, baos.toByteArray());

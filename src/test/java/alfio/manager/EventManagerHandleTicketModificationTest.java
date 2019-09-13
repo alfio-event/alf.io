@@ -54,7 +54,7 @@ public class EventManagerHandleTicketModificationTest {
         ticketRepository = mock(TicketRepository.class);
 
         when(event.getId()).thenReturn(eventId);
-        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null);
+        eventManager = new EventManager(null, null, null, null, null, ticketRepository, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         when(original.getId()).thenReturn(originalCategoryId);
         when(updated.getId()).thenReturn(updatedCategoryId);
         when(original.getSrcPriceCts()).thenReturn(1000);
@@ -69,7 +69,7 @@ public class EventManagerHandleTicketModificationTest {
     @Test
     void throwExceptionIfAlreadySold() {
         when(ticketRepository.lockTicketsToInvalidate(eventId, 30, 2)).thenReturn(singletonList(1));
-        assertThrows(IllegalStateException.class, () -> eventManager.handleTicketNumberModification(event, original, updated, -2, false));
+        assertThrows(IllegalStateException.class, () -> eventManager.handleTicketNumberModification(event, updated, -2, false));
         verify(ticketRepository, never()).invalidateTickets(anyList());
     }
 
@@ -78,14 +78,14 @@ public class EventManagerHandleTicketModificationTest {
     void invalidateExceedingTickets() {
         final List<Integer> ids = Arrays.asList(1, 2);
         when(ticketRepository.lockTicketsToInvalidate(eventId, updatedCategoryId, 2)).thenReturn(ids);
-        eventManager.handleTicketNumberModification(event, original, updated, -2, false);
+        eventManager.handleTicketNumberModification(event, updated, -2, false);
         verify(ticketRepository, times(1)).invalidateTickets(ids);
     }
 
     @Test
     @DisplayName("do nothing if the difference is zero")
     void doNothingIfZero() {
-        eventManager.handleTicketNumberModification(event, original, updated, 0, false);
+        eventManager.handleTicketNumberModification(event, updated, 0, false);
         verify(ticketRepository, never()).invalidateTickets(anyList());
         verify(ticketRepository, never()).bulkTicketUpdate(any(), any());
     }
@@ -94,7 +94,7 @@ public class EventManagerHandleTicketModificationTest {
     @DisplayName("insert a new Ticket if the difference is 1")
     void insertTicketIfDifference1() {
         when(ticketRepository.selectNotAllocatedTicketsForUpdate(eq(eventId), eq(1), eq(Arrays.asList(Ticket.TicketStatus.FREE.name(), Ticket.TicketStatus.RELEASED.name())))).thenReturn(singletonList(1));
-        eventManager.handleTicketNumberModification(event, original, updated, 1, false);
+        eventManager.handleTicketNumberModification(event, updated, 1, false);
         verify(ticketRepository, never()).invalidateTickets(anyList());
         verify(ticketRepository, times(1)).bulkTicketUpdate(any(), any());
     }

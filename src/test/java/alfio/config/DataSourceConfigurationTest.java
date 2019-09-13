@@ -73,7 +73,8 @@ public class DataSourceConfigurationTest {
     @Test
     public void selectCleverCloud() {
         when(environment.getProperty("CC_DEPLOYMENT_ID")).thenReturn("deployment-id");
-
+        PlatformProvider cloudProvider = configuration.getCloudProvider(environment);
+        assertEquals(PlatformProvider.CLEVER_CLOUD, cloudProvider);
     }
 
     @Test

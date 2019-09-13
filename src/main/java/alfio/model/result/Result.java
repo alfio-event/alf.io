@@ -91,9 +91,6 @@ public class Result<T> {
     public static final class Builder<T> {
         private final List<Pair<ConditionValidator, ErrorCode>> validators = new ArrayList<>();
 
-        public Builder() {
-        }
-
         public Builder<T> checkPrecondition(ConditionValidator validator, ErrorCode error) {
             this.validators.add(Pair.of(validator, error));
             return this;

@@ -56,3 +56,13 @@
 /dexie/dist/dexie.js*
 /dexie/dist/dexie.es6.js*
 /checklist-model/*.nuspec
+/dragula.js/.github/**
+/dragula.js/*.*
+/dragula.js/example/**
+/dragula.js/resources/**
+/dragula.js/test/**
+/angularjs-dragula/test/**
+/angularjs-dragula/example/**
+/angularjs-dragula/resources/**
+/angularjs-dragula/dist/angular.js
+/angularjs-dragula/*.*

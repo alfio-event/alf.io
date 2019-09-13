@@ -28,12 +28,13 @@ import alfio.controller.form.WaitingQueueSubscriptionForm;
 import alfio.controller.support.Formatters;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -41,8 +42,8 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
-import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpHeaders;
@@ -82,8 +83,7 @@ public class EventApiV2Controller {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final PaymentManager paymentManager;
-    private final CustomResourceBundleMessageSource messageSource;
-    private final EuVatChecker vatChecker;
+    private final MessageSourceManager messageSourceManager;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final WaitingQueueManager waitingQueueManager;
@@ -106,6 +106,9 @@ public class EventApiV2Controller {
         var events = eventManager.getPublishedEvents()
             .stream()
             .map(e -> {
+
+                var messageSource = messageSourceManager.getMessageSourceForEvent(e);
+
                 var formattedBeginDate = Formatters.getFormattedDate(langs, e.getBegin(), "common.event.date-format", messageSource);
                 var formattedBeginTime = Formatters.getFormattedDate(langs, e.getBegin(), "common.event.time-format", messageSource);
                 var formattedEndDate = Formatters.getFormattedDate(langs, e.getEnd(), "common.event.date-format", messageSource);
@@ -121,14 +124,16 @@ public class EventApiV2Controller {
     public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable("eventName") String eventName, HttpSession session) {
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
             .map(event -> {
+                //
+                var messageSourceAndOverride = messageSourceManager.getMessageSourceForEventAndOverride(event);
+                var messageSource = messageSourceAndOverride.getLeft();
+                var i18nOverride = messageSourceAndOverride.getRight();
 
-                var descriptions = applyCommonMark(eventDescriptionRepository.findByEventIdAndType(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION)
-                    .stream()
-                    .collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription)));
+                var descriptions = applyCommonMark(eventDescriptionRepository.findDescriptionByEventIdAsMap(event.getId()));
 
-                var organization = organizationRepository.getById(event.getOrganizationId());
+                var organization = organizationRepository.getContactById(event.getOrganizationId());
 
-                var configurationsValues = configurationManager.getFor(event, Arrays.asList(
+                var configurationsValues = configurationManager.getFor(List.of(
                     MAPS_PROVIDER,
                     MAPS_CLIENT_API_KEY,
                     MAPS_HERE_APP_ID,
@@ -145,16 +150,24 @@ public class EventApiV2Controller {
                     DISPLAY_DISCOUNT_CODE_BOX,
                     USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL,
                     GOOGLE_ANALYTICS_KEY,
-                    GOOGLE_ANALYTICS_ANONYMOUS_MODE
-                ));
+                    GOOGLE_ANALYTICS_ANONYMOUS_MODE,
+                    // captcha
+                    ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
+                    RECAPTCHA_API_KEY,
+                    ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS,
+                    //
+                    GENERATE_ONLY_INVOICE,
+                    //
+                    INVOICE_ADDRESS,
+                    VAT_NR,
+                    // required by EuVatChecker.reverseChargeEnabled
+                    ENABLE_EU_VAT_DIRECTIVE,
+                    COUNTRY_OF_BUSINESS,
 
-                var geoInfoConfiguration = Map.of(
-                    MAPS_PROVIDER, configurationsValues.get(MAPS_PROVIDER).getValue(),
-                    MAPS_CLIENT_API_KEY, configurationsValues.get(MAPS_CLIENT_API_KEY).getValue(),
-                    MAPS_HERE_APP_ID, configurationsValues.get(MAPS_HERE_APP_ID).getValue(),
-                    MAPS_HERE_APP_CODE, configurationsValues.get(MAPS_HERE_APP_CODE).getValue());
+                    DISPLAY_TICKETS_LEFT_INDICATOR
+                ), ConfigurationLevel.event(event));
 
-                var ld = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), geoInfoConfiguration);
+                var locationDescriptor = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
 
                 Map<PaymentMethod, PaymentProxyWithParameters> availablePaymentMethods = new EnumMap<>(PaymentMethod.class);
 
@@ -165,13 +178,14 @@ public class EventApiV2Controller {
                 });
 
                 //
-                boolean captchaForTicketSelection = configurationManager.isRecaptchaForTicketSelectionEnabled(event);
+                boolean captchaForTicketSelection = isRecaptchaForTicketSelectionEnabled(configurationsValues);
                 String recaptchaApiKey = null;
                 if (captchaForTicketSelection) {
                     recaptchaApiKey = configurationsValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null);
                 }
                 //
-                var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, recaptchaApiKey);
+                boolean captchaForOfflinePaymentAndFreeEnabled = configurationManager.isRecaptchaForOfflinePaymentAndFreeEnabled(configurationsValues);
+                var captchaConf = new EventWithAdditionalInfo.CaptchaConfiguration(captchaForTicketSelection, captchaForOfflinePaymentAndFreeEnabled, recaptchaApiKey);
 
 
                 //
@@ -185,10 +199,10 @@ public class EventApiV2Controller {
                 var formattedEndTime = Formatters.getFormattedDate(event, event.getEnd(), "common.event.time-format", messageSource);
 
                 //invoicing information
-                boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(event);
-                boolean euVatCheckingEnabled = vatChecker.isReverseChargeEnabledFor(event);
-                boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(event) || euVatCheckingEnabled;
-                boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(event);
+                boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(configurationsValues);
+                boolean euVatCheckingEnabled = EuVatChecker.reverseChargeEnabled(configurationsValues);
+                boolean invoiceAllowed = configurationManager.hasAllConfigurationsForInvoice(configurationsValues);
+                boolean onlyInvoice = invoiceAllowed && configurationManager.isInvoiceOnly(configurationsValues);
                 boolean customerReferenceEnabled = configurationsValues.get(ENABLE_CUSTOMER_REFERENCE).getValueAsBooleanOrDefault(false);
                 boolean enabledItalyEInvoicing = configurationsValues.get(ENABLE_ITALY_E_INVOICING).getValueAsBooleanOrDefault(false);
                 boolean vatNumberStrictlyRequired = configurationsValues.get(VAT_NUMBER_IS_REQUIRED).getValueAsBooleanOrDefault(false);
@@ -218,11 +232,17 @@ public class EventApiV2Controller {
                 var analyticsConf = AnalyticsConfiguration.build(configurationsValues, session);
                 //
 
-                return new ResponseEntity<>(new EventWithAdditionalInfo(event, ld.getMapUrl(), organization, descriptions, availablePaymentMethods,
+                Integer availableTicketsCount = null;
+                if(configurationsValues.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault(false)) {
+                    availableTicketsCount = ticketRepository.countFreeTicketsForUnbounded(event.getId());
+                }
+
+                return new ResponseEntity<>(new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     bankAccount, bankAccountOwner,
                     formattedBeginDate, formattedBeginTime,
                     formattedEndDate, formattedEndTime,
-                    invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf), getCorsHeaders(), HttpStatus.OK);
+                    invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
+                    i18nOverride, availableTicketsCount), getCorsHeaders(), HttpStatus.OK);
             })
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
@@ -246,7 +266,7 @@ public class EventApiV2Controller {
 
         var res = new HashMap<String, String>();
         in.forEach((k, v) -> {
-            res.put(k, MustacheCustomTag.renderToCommonmark(v));
+            res.put(k, MustacheCustomTag.renderToHtmlCommonmarkEscaped(v));
         });
         return res;
     }
@@ -275,7 +295,9 @@ public class EventApiV2Controller {
         //
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
 
-
+            var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), ConfigurationLevel.event(event));
+            var ticketCategoryLevelConfiguration = configurationManager.getAllCategoriesAndValueWith(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
+            var messageSource = messageSourceManager.getMessageSourceForEvent(event);
             var appliedPromoCode = checkCode(event, code);
 
 
@@ -289,7 +311,7 @@ public class EventApiV2Controller {
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
                 .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
                 .map((m) -> {
-                    int maxTickets = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5);
+                    int maxTickets = getMaxAmountOfTicketsPerReservation(configurations, ticketCategoryLevelConfiguration, m.getId());
                     PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null);
                     if (specialCode.isPresent()) {
                         maxTickets = Math.min(1, maxTickets);
@@ -310,21 +332,21 @@ public class EventApiV2Controller {
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
 
-
+            boolean displayTicketsLeft = configurations.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault(false);
             var converted = valid.stream()
                 .map(stc -> {
                     var description = applyCommonMark(ticketCategoryDescriptions.getOrDefault(stc.getId(), Collections.emptyMap()));
                     var expiration = Formatters.getFormattedDate(event, stc.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
                     var inception = Formatters.getFormattedDate(event, stc.getZonedInception(), "common.ticket-category.date-format", messageSource);
-                    return new TicketCategory(stc, description, inception, expiration);
+                    return new TicketCategory(stc, description, inception, expiration, displayTicketsLeft && !stc.isAccessRestricted());
                 })
+                .sorted(Comparator.comparingInt(TicketCategory::getOrdinal))
                 .collect(Collectors.toList());
 
 
             var promoCode = Optional.of(appliedPromoCode).filter(ValidatedResponse::isSuccess)
                 .map(ValidatedResponse::getValue)
-                .map(Pair::getRight)
-                .orElse(Optional.empty());
+                .flatMap(Pair::getRight);
 
             //
             var saleableAdditionalServices = additionalServiceRepository.loadAllForEvent(event.getId())
@@ -334,7 +356,7 @@ public class EventApiV2Controller {
                 .collect(Collectors.toList());
 
             // will be used for fetching descriptions and titles for all the languages
-            var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(as -> as.getId()).collect(Collectors.toList());
+            var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(SaleableAdditionalService::getId).collect(Collectors.toList());
 
             var additionalServiceTexts = additionalServiceTextRepository.getDescriptionsByAdditionalServiceIds(saleableAdditionalServicesIds);
 
@@ -365,19 +387,14 @@ public class EventApiV2Controller {
         });
     }
 
-    @GetMapping("event/{eventName}/languages")
-    public ResponseEntity<List<String>> getLanguages(@PathVariable("eventName") String eventName) {
+    private static int getMaxAmountOfTicketsPerReservation(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> eventLevelConf,
+                                                           Map<Integer, String> ticketCategoryLevelConf,
+                                                           int ticketCategory) {
 
-        var languages = i18nManager.getEventLanguages(eventName)
-            .stream()
-            .map(cl -> cl.getLocale().getLanguage())
-            .collect(Collectors.toList());
-
-        if (languages.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        } else {
-            return ResponseEntity.ok(languages);
+        if (ticketCategoryLevelConf.containsKey(ticketCategory)) {
+            return Integer.parseInt(ticketCategoryLevelConf.get(ticketCategory));
         }
+        return eventLevelConf.get(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION).getValueAsIntOrDefault(5);
     }
 
     @GetMapping("event/{eventName}/calendar/{locale}")
@@ -446,9 +463,11 @@ public class EventApiV2Controller {
             }
 
             Optional<String> promoCodeDiscount = codeCheck.map(ValidatedResponse::getValue).flatMap(Pair::getRight).map(PromoCodeDiscount::getPromoCode);
+            var configurationValues = configurationManager.getFor(List.of(
+                ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
+                RECAPTCHA_API_KEY), ConfigurationLevel.event(event));
 
-
-            if (isCaptchaInvalid(reservation.getCaptcha(), request.getRequest(), event)) {
+            if (isCaptchaInvalid(reservation.getCaptcha(), request.getRequest(), configurationValues)) {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
 
@@ -584,7 +603,7 @@ public class EventApiV2Controller {
                                                    ServletWebRequest request,
                                                    Optional<PromoCodeDiscount> promoCodeDiscount) {
 
-        Locale locale = getMatchingLocale(request, event);
+        Locale locale = RequestUtils.getMatchingLocale(request, event);
         ReservationForm form = new ReservationForm();
         form.setPromoCode(promoCode);
         TicketReservationModification reservation = new TicketReservationModification();
@@ -593,22 +612,6 @@ public class EventApiV2Controller {
         form.setReservation(Collections.singletonList(reservation));
         var bindingRes = new BeanPropertyBindingResult(form, "reservationForm");
         return Pair.of(createTicketReservation(form, bindingRes, request, event, locale, promoCodeDiscount.map(PromoCodeDiscount::getPromoCode)), bindingRes);
-    }
-
-    /**
-     * From a given request, return the best locale for the user
-     *
-     * @param request
-     * @param event
-     * @return
-     */
-    private static Locale getMatchingLocale(ServletWebRequest request, Event event) {
-        var allowedLanguages = event.getContentLanguages().stream().map(ContentLanguage::getLanguage).collect(Collectors.toSet());
-        var l = request.getNativeRequest(HttpServletRequest.class).getLocales();
-        List<Locale> locales = l != null ? IteratorUtils.toList(l.asIterator()) : Collections.emptyList();
-        var selectedLocale = locales.stream().map(Locale::getLanguage).filter(allowedLanguages::contains).findFirst()
-            .orElseGet(() -> event.getContentLanguages().stream().findFirst().get().getLanguage());
-        return LocaleUtil.forLanguageTag(selectedLocale);
     }
 
     private boolean shouldDisplayRestrictedCategory(Optional<SpecialPrice> specialCode, alfio.model.TicketCategory c, Optional<PromoCodeDiscount> optionalPromoCode) {
@@ -628,8 +631,8 @@ public class EventApiV2Controller {
         return ticketCategory.isAccessRestricted() && ticketCategory.getId() == promoCodeDiscount.getHiddenCategoryId();
     }
 
-    private ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>> checkCode(EventAndOrganizationId event, String promoCode) {
-        ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
+    private ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>> checkCode(Event event, String promoCode) {
+        ZoneId eventZoneId = event.getZoneId();
         ZonedDateTime now = ZonedDateTime.now(eventZoneId);
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
@@ -673,8 +676,14 @@ public class EventApiV2Controller {
         return headers;
     }
 
-    private boolean isCaptchaInvalid(String recaptchaResponse, HttpServletRequest request, EventAndOrganizationId event) {
-        return configurationManager.isRecaptchaForTicketSelectionEnabled(event)
+    private boolean isRecaptchaForTicketSelectionEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationValues) {
+        Validate.isTrue(configurationValues.containsKey(ENABLE_CAPTCHA_FOR_TICKET_SELECTION) && configurationValues.containsKey(RECAPTCHA_API_KEY));
+        return configurationValues.get(ENABLE_CAPTCHA_FOR_TICKET_SELECTION).getValueAsBooleanOrDefault(false) &&
+            configurationValues.get(RECAPTCHA_API_KEY).getValueOrDefault(null) != null;
+    }
+
+    private boolean isCaptchaInvalid(String recaptchaResponse, HttpServletRequest request, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationValues) {
+        return isRecaptchaForTicketSelectionEnabled(configurationValues)
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 

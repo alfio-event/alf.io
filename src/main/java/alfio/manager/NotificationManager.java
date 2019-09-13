@@ -17,9 +17,11 @@
 package alfio.manager;
 
 import alfio.controller.support.TemplateProcessor;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.CustomMessageManager;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
@@ -39,7 +41,6 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -70,7 +71,7 @@ public class NotificationManager {
 
     public static final Clock UTC = Clock.systemUTC();
     private final Mailer mailer;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final EmailMessageRepository emailMessageRepository;
     private final TransactionTemplate tx;
     private final EventRepository eventRepository;
@@ -82,7 +83,7 @@ public class NotificationManager {
 
     @Autowired
     public NotificationManager(Mailer mailer,
-                               MessageSource messageSource,
+                               MessageSourceManager messageSourceManager,
                                PlatformTransactionManager transactionManager,
                                EmailMessageRepository emailMessageRepository,
                                EventRepository eventRepository,
@@ -98,7 +99,7 @@ public class NotificationManager {
                                TicketFieldRepository ticketFieldRepository,
                                AdditionalServiceItemRepository additionalServiceItemRepository,
                                ExtensionManager extensionManager) {
-        this.messageSource = messageSource;
+        this.messageSourceManager = messageSourceManager;
         this.mailer = mailer;
         this.emailMessageRepository = emailMessageRepository;
         this.eventRepository = eventRepository;
@@ -130,7 +131,7 @@ public class NotificationManager {
                                                                            TicketReservationRepository ticketReservationRepository,
                                                                            Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> retrieveFieldValues,
                                                                            ExtensionManager extensionManager) {
-        return (model) -> {
+        return model -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Ticket ticket = Json.fromJson(model.get("ticket"), Ticket.class);
             try {
@@ -149,7 +150,7 @@ public class NotificationManager {
     }
 
     private static Function<Map<String, String>, byte[]> generateICS(EventRepository eventRepository, EventDescriptionRepository eventDescriptionRepository, TicketCategoryRepository ticketCategoryRepository) {
-        return (model) -> {
+        return model -> {
             Event event;
             Locale locale;
             Integer categoryId;
@@ -171,7 +172,7 @@ public class NotificationManager {
     }
 
     private static Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(EventRepository eventRepository, Function<Triple<Event, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {
-        return (model) -> {
+        return model -> {
             String reservationId = model.get("reservationId");
             Event event = eventRepository.findById(Integer.valueOf(model.get("eventId"), 10));
             Locale language = Json.fromJson(model.get("language"), Locale.class);
@@ -199,12 +200,18 @@ public class NotificationManager {
         String displayName = eventRepository.getDisplayNameById(event.getId());
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
-        String subject = messageSource.getMessage("ticket-email-subject", new Object[]{displayName}, locale);
+        String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-email-subject", new Object[]{displayName}, locale);
         String text = textBuilder.generate(ticket);
         String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
         String recipient = ticket.getEmail();
         //TODO handle HTML
-        tx.execute(status -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
+        tx.execute(status -> {
+            emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum).ifPresentOrElse(
+                id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
+                () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC))
+            );
+            return null;
+        });
     }
 
     public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
@@ -212,7 +219,7 @@ public class NotificationManager {
     }
 
     public List<String> getCCForEventOrganizer(EventAndOrganizationId event) {
-        var systemNotificationCC = configurationManager.getFor(event, ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC).getValueOrDefault("");
+        var systemNotificationCC = configurationManager.getFor(ConfigurationKeys.MAIL_SYSTEM_NOTIFICATION_CC, ConfigurationLevel.event(event)).getValueOrDefault("");
         return Stream.of(StringUtils.split(systemNotificationCC, ','))
             .filter(Objects::nonNull)
             .map(String::trim)
@@ -236,12 +243,10 @@ public class NotificationManager {
         String text = textBuilder.generate();
         String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
         //in order to minimize the database size, it is worth checking if there is already another message in the table
-        Optional<EmailMessage> existing = emailMessageRepository.findByEventIdAndChecksum(event.getId(), checksum);
-        if(existing.isEmpty()) {
-            emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC));
-        } else {
-            emailMessageRepository.updateStatus(event.getId(), WAITING.name(), existing.get().getId());
-        }
+        Optional<Integer> existing = emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum);
+
+        existing.ifPresentOrElse(id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
+            () -> emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
     }
 
     public Pair<Integer, List<LightweightMailMessage>> loadAllMessagesForEvent(int eventId, Integer page, String search) {
@@ -272,14 +277,14 @@ public class NotificationManager {
             .stream()
             .flatMap(id -> emailMessageRepository.loadIdsWaitingForProcessing(id, now).stream())
             .distinct()
-            .forEach((messageId) -> counter.addAndGet(processMessage(messageId)));
+            .forEach(messageId -> counter.addAndGet(processMessage(messageId)));
         return counter.get();
     }
 
     private int processMessage(int messageId) {
         EmailMessage message = emailMessageRepository.findById(messageId);
         EventAndOrganizationId event = eventRepository.findEventAndOrganizationIdById(message.getEventId());
-        if(message.getAttempts() >= configurationManager.getFor(event, ConfigurationKeys.MAIL_ATTEMPTS_COUNT).getValueAsIntOrDefault(10)) {
+        if(message.getAttempts() >= configurationManager.getFor(ConfigurationKeys.MAIL_ATTEMPTS_COUNT, ConfigurationLevel.event(event)).getValueAsIntOrDefault(10)) {
             tx.execute(status -> emailMessageRepository.updateStatusAndAttempts(messageId, ERROR.name(), message.getAttempts(), Arrays.asList(IN_PROCESS.name(), WAITING.name(), RETRY.name())));
             log.warn("Message with id " + messageId + " will be discarded");
             return 0;
@@ -378,7 +383,7 @@ public class NotificationManager {
         }
 
         @Override
-        public Mailer.Attachment deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+        public Mailer.Attachment deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) {
             JsonObject jsonObject = json.getAsJsonObject();
             String filename = jsonObject.getAsJsonPrimitive("filename").getAsString();
             byte[] source =  jsonObject.has("source") ? Base64.getDecoder().decode(jsonObject.getAsJsonPrimitive("source").getAsString()) : null;

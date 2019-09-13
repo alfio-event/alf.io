@@ -32,11 +32,15 @@ public interface EventDescriptionRepository {
     @Query("select * from event_description_text where event_id_fk = :eventId")
     List<EventDescription> findByEventId(@Bind("eventId") int eventId);
 
-    @Query("select * from event_description_text where event_id_fk = :eventId and type = :type")
-    List<EventDescription> findByEventIdAndType(@Bind("eventId") int eventId, @Bind("type")EventDescription.EventDescriptionType type);
+    @Query("select locale, description from event_description_text where event_id_fk = :eventId and type = 'DESCRIPTION'")
+    List<EventDescription.LocaleDescription> findDescriptionByEventId(@Bind("eventId") int eventId);
 
     default Map<String, String> findByEventIdAsMap(int eventId) {
         return findByEventId(eventId).stream().collect(Collectors.toMap(EventDescription::getLocale, EventDescription::getDescription));
+    }
+
+    default Map<String, String> findDescriptionByEventIdAsMap(int eventId) {
+        return findDescriptionByEventId(eventId).stream().collect(Collectors.toMap(EventDescription.LocaleDescription::getLocale, EventDescription.LocaleDescription::getDescription));
     }
 
     @Query("select description from event_description_text where event_id_fk = :eventId and type = :type and locale = :locale")

@@ -53,14 +53,14 @@ public class SpecialPriceApiController {
     @ResponseBody
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String handleExceptions(Exception e) {
+        log.error("Unexpected exception in SpecialPriceApiController", e);
         if(!(e instanceof IllegalArgumentException)) {
-            log.error("Unexpected exception in SpecialPriceApiController", e);
             return e.toString();
         }
         return e.getMessage();
     }
 
-    @PostMapping(value = "/events/{eventName}/categories/{categoryId}/link-codes")
+    @PostMapping("/events/{eventName}/categories/{categoryId}/link-codes")
     public List<SendCodeModification> linkAssigneeToCodes(@PathVariable("eventName") String eventName,
                                                           @PathVariable("categoryId") int categoryId,
                                                           @RequestBody UploadBase64FileModification file,
@@ -78,7 +78,7 @@ public class SpecialPriceApiController {
         }
     }
 
-    @RequestMapping(value = "/events/{eventName}/categories/{categoryId}/send-codes", method = RequestMethod.POST)
+    @PostMapping("/events/{eventName}/categories/{categoryId}/send-codes")
     public boolean sendCodes(@PathVariable("eventName") String eventName,
                              @PathVariable("categoryId") int categoryId,
                              @RequestBody List<SendCodeModification> codes,
@@ -91,14 +91,14 @@ public class SpecialPriceApiController {
         return true;
     }
 
-    @RequestMapping(value = "/events/{eventName}/categories/{categoryId}/sent-codes", method = RequestMethod.GET)
+    @GetMapping("/events/{eventName}/categories/{categoryId}/sent-codes")
     public List<SpecialPrice> loadSentCodes(@PathVariable("eventName") String eventName,
                                             @PathVariable("categoryId") int categoryId,
                                             Principal principal) {
         return specialPriceManager.loadSentCodes(eventName, categoryId, principal.getName());
     }
 
-    @RequestMapping(value = "/events/{eventName}/categories/{categoryId}/codes/{codeId}/recipient", method = RequestMethod.DELETE)
+    @DeleteMapping("/events/{eventName}/categories/{categoryId}/codes/{codeId}/recipient")
     public boolean clearRecipientData(@PathVariable("eventName") String eventName,
                                       @PathVariable("categoryId") int categoryId,
                                       @PathVariable("codeId") int codeId,

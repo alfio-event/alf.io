@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/css/source-sans-pro.css" />
+    <link rel="stylesheet" href="{{request.contextPath}}/resources/css/bootstrap-admin.min.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/css/admin.css" />
     <link rel="stylesheet" href="{{request.contextPath}}/resources/bower_components/components-font-awesome/css/font-awesome.min.css" />
     {{#demoModeEnabled}}
@@ -15,7 +16,7 @@
         <title>Authentication</title>
     {{/demoModeEnabled}}
     {{#hasRecaptchaApiKey}}
-        <script src='https://www.google.com/recaptcha/api.js'></script>
+        <script src='https://www.google.com/recaptcha/api.js' nonce="{{nonce}}"></script>
     {{/hasRecaptchaApiKey}}
 </head>
 <body>
@@ -64,6 +65,6 @@
             </div>
         </div>
     </div>
-    <script src="{{request.contextPath}}/resources/js/common/warning-msg.js" async="true"></script>
+    <script src="{{request.contextPath}}/resources/js/common/warning-msg.js" async="true" nonce="{{nonce}}"></script>
 </body>
 </html>

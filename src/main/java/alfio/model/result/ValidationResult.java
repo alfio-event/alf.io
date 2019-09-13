@@ -56,10 +56,7 @@ public final class ValidationResult {
     }
 
     public static ValidationResult of(List<ErrorDescriptor> errors) {
-        if(errors.size() > 0) {
-            return failed(errors);
-        }
-        return success();
+        return errors.isEmpty() ? success() : failed(errors);
     }
 
     public ValidationResult ifSuccess(Operation operation) {
@@ -83,21 +80,27 @@ public final class ValidationResult {
         return errorCount == 0;
     }
 
-    @Getter
     @ToString
+    @Getter
     public static final class ErrorDescriptor implements ErrorCode {
         private final String fieldName;
         private final String message;
         private final String code;
+        private final Object[] arguments;
 
         public ErrorDescriptor(String fieldName, String message) {
-            this(fieldName, message, null);
+            this(fieldName, message, null, null);
         }
 
         public ErrorDescriptor(String fieldName, String message, String code) {
+            this(fieldName, message, code, null);
+        }
+
+        public ErrorDescriptor(String fieldName, String message, String code, Object[] arguments) {
             this.fieldName = fieldName;
             this.message = message;
             this.code = code;
+            this.arguments = arguments;
         }
 
         @Override
@@ -115,12 +118,17 @@ public final class ValidationResult {
             return message;
         }
 
+        @Override
+        public Object[] getArguments() {
+            return arguments;
+        }
+
         public static ErrorDescriptor fromFieldError(FieldError fieldError) {
-            return new ErrorDescriptor(fieldError.getField(), "", fieldError.getCode());
+            return new ErrorDescriptor(fieldError.getField(), "", fieldError.getCode(), fieldError.getArguments());
         }
 
         public static ErrorDescriptor fromObjectError(ObjectError objectError) {
-            return new ErrorDescriptor("", objectError.getObjectName());
+            return new ErrorDescriptor("", objectError.getObjectName(), objectError.getCode(), objectError.getArguments());
         }
     }
 

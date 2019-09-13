@@ -9,14 +9,6 @@ ng\:form {
   display: block;
 }
 
-@font-face {
-  font-family: 'Architects Daughter';
-  font-style: normal;
-  font-weight: 400;
-  src: local('Architects Daughter'), local('ArchitectsDaughter'), url("../font/ArchitectsDaughter.woff2") format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2212, U+2215, U+E0FF, U+EFFD, U+F000;
-}
-
 div.menu-spacer {
     padding-top:50px;
 }
@@ -224,6 +216,21 @@ td.cell-wrap {
 
 @media screen and (min-width: 991px) {
 
+    .map-container {
+        min-height: 300px;
+    }
+
+    .map-image {
+        max-height: 300px;
+    }
+
+    .map-loading {
+        position: absolute;
+        top: 107px;
+        left: 107px;
+        z-index: -1;
+    }
+
     .setting input[type="text"], .setting input:not([type]) {
         text-indent:85px;
     }
@@ -241,6 +248,7 @@ td.cell-wrap {
         left: 20px;
         top: 9px;
         width: 75px;
+        font-size: 70% !important;
     }
 
     .category-conf .setting input[type="text"],
@@ -322,12 +330,6 @@ a.emulate-nav-pills-link {
 
 .subitem-active {
     font-weight: bolder;
-}
-
-.title {
-    font-family: 'Architects Daughter', cursive;
-    font-size: 3em;
-    font-weight: 500;
 }
 
 .event-logo {
@@ -436,10 +438,6 @@ a.emulate-nav-pills-link {
 .hide-overflowing-text {
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.map-container {
-    min-height: 360px;
 }
 
 .wMarginTop30px {
@@ -728,6 +726,11 @@ span.path {
 
 
 /* note, this must be reported and used in the front-end too */
+
+.markdown-content img {
+    max-width:100%;
+}
+
 .markdown-content table {
     width:100%;
 }
@@ -744,4 +747,34 @@ span.path {
 
 .markdown-content table td {
     border-top: 1px solid #e3e3e3;
+}
+
+.width-100 {
+    width: 100%;
+}
+
+.draggable {
+    cursor: grab;
+}
+
+.gu-transit {
+    cursor: grabbing;
+}
+
+.editable-translation {
+    cursor: pointer;
+    padding:4px;
+}
+
+.editable-translation:hover:after {
+    content:' \f044';
+    padding-left:6px;
+    display: inline-block;
+    font-family: FontAwesome;
+    font-size: 14px;
+}
+
+.list-group .help {
+    background-color: transparent;
+    border: 0;
 }

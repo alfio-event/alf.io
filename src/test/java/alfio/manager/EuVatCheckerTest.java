@@ -16,6 +16,7 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.VatDetail;
@@ -26,7 +27,9 @@ import ch.digitalfondue.vatchecker.EUVatChecker;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -42,14 +45,17 @@ public class EuVatCheckerTest {
         client = mock(EUVatChecker.class);
         configurationManager = mock(ConfigurationManager.class);
         eventAndOrganizationId = mock(EventAndOrganizationId.class);
-        when(configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE))
+        when(configurationManager.getFor(eq(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE), any(ConfigurationLevel.class)))
             .thenReturn(buildConfReturn(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, "true"));
-        when(configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.ENABLE_VIES_VALIDATION))
+        when(configurationManager.getFor(eq(ConfigurationKeys.ENABLE_VIES_VALIDATION), any(ConfigurationLevel.class)))
             .thenReturn(buildConfReturn(ConfigurationKeys.ENABLE_VIES_VALIDATION, "true"));
-        when(configurationManager.getFor(ConfigurationKeys.EU_COUNTRIES_LIST))
+        when(configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST))
             .thenReturn(buildConfReturn(ConfigurationKeys.EU_COUNTRIES_LIST, "IE"));
-        when(configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.COUNTRY_OF_BUSINESS))
+        when(configurationManager.getFor(eq(ConfigurationKeys.COUNTRY_OF_BUSINESS), any(ConfigurationLevel.class)))
             .thenReturn(buildConfReturn(ConfigurationKeys.COUNTRY_OF_BUSINESS, "IT"));
+        when(configurationManager.getFor(eq(Set.of(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, ConfigurationKeys.COUNTRY_OF_BUSINESS)), any()))
+            .thenReturn(Map.of(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, buildConfReturn(ConfigurationKeys.ENABLE_EU_VAT_DIRECTIVE, "true"),
+                ConfigurationKeys.COUNTRY_OF_BUSINESS, buildConfReturn(ConfigurationKeys.COUNTRY_OF_BUSINESS, "IT")));
     }
 
     private static ConfigurationManager.MaybeConfiguration buildConfReturn(ConfigurationKeys k, String value) {
@@ -95,7 +101,7 @@ public class EuVatCheckerTest {
 
     @Test
     public void testForeignBusinessVATApplied() {
-        when(configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS)).thenReturn(buildConfReturn(ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS, "true"));
+        when(configurationManager.getFor(eq(ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS), any(ConfigurationLevel.class))).thenReturn(buildConfReturn(ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS, "true"));
         Optional<VatDetail> result = EuVatChecker.performCheck("1234", "UK", eventAndOrganizationId).apply(configurationManager, client);
         assertTrue(result.isPresent());
         VatDetail vatDetail = result.get();
@@ -108,7 +114,7 @@ public class EuVatCheckerTest {
 
     @Test
     public void testForeignBusinessVATNotApplied() {
-        when(configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS)).thenReturn(buildConfReturn(ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS, "false"));
+        when(configurationManager.getFor(eq(ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS), any(ConfigurationLevel.class))).thenReturn(buildConfReturn(ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS, "false"));
         Optional<VatDetail> result = EuVatChecker.performCheck("1234", "UK", eventAndOrganizationId).apply(configurationManager, client);
         assertTrue(result.isPresent());
         VatDetail vatDetail = result.get();
@@ -121,8 +127,8 @@ public class EuVatCheckerTest {
 
     @Test
     public void testForeignBusinessVATNotAppliedValidationDisabled() {
-        when(configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.ENABLE_VIES_VALIDATION)).thenReturn(buildConfReturn(ConfigurationKeys.ENABLE_VIES_VALIDATION, "true"));
-        when(configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS)).thenReturn(buildConfReturn(ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS, "false"));
+        when(configurationManager.getFor(eq(ConfigurationKeys.ENABLE_VIES_VALIDATION), any(ConfigurationLevel.class))).thenReturn(buildConfReturn(ConfigurationKeys.ENABLE_VIES_VALIDATION, "true"));
+        when(configurationManager.getFor(eq(ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS), any(ConfigurationLevel.class))).thenReturn(buildConfReturn(ConfigurationKeys.APPLY_VAT_FOREIGN_BUSINESS, "false"));
         Optional<VatDetail> result = EuVatChecker.performCheck("1234", "UK", eventAndOrganizationId).apply(configurationManager, client);
         assertTrue(result.isPresent());
         VatDetail vatDetail = result.get();
@@ -135,7 +141,7 @@ public class EuVatCheckerTest {
 
     @Test
     public void testEUBusinessVATNotAppliedValidationDisabled() {
-        when(configurationManager.getFor(eventAndOrganizationId, ConfigurationKeys.ENABLE_VIES_VALIDATION)).thenReturn(buildConfReturn(ConfigurationKeys.ENABLE_VIES_VALIDATION, "false"));
+        when(configurationManager.getFor(eq(ConfigurationKeys.ENABLE_VIES_VALIDATION), any(ConfigurationLevel.class))).thenReturn(buildConfReturn(ConfigurationKeys.ENABLE_VIES_VALIDATION, "false"));
         Optional<VatDetail> result = EuVatChecker.performCheck("1234", "IE", eventAndOrganizationId).apply(configurationManager, client);
         assertTrue(result.isPresent());
         VatDetail vatDetail = result.get();

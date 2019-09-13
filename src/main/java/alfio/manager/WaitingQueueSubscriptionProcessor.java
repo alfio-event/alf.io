@@ -16,6 +16,8 @@
  */
 package alfio.manager;
 
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
@@ -30,7 +32,6 @@ import alfio.util.TemplateResource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -60,7 +61,7 @@ public class WaitingQueueSubscriptionProcessor {
     private final WaitingQueueManager waitingQueueManager;
     private final NotificationManager notificationManager;
     private final WaitingQueueRepository waitingQueueRepository;
-    private final MessageSource messageSource;
+    private final MessageSourceManager messageSourceManager;
     private final TemplateManager templateManager;
     private final TicketRepository ticketRepository;
     private final PlatformTransactionManager transactionManager;
@@ -106,11 +107,12 @@ public class WaitingQueueSubscriptionProcessor {
     }
 
     private boolean isWaitingListFormEnabled(EventAndOrganizationId event) {
-        var res = configurationManager.getFor(event, Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION));
+        var res = configurationManager.getFor(Set.of(ENABLE_WAITING_QUEUE, ENABLE_PRE_REGISTRATION), ConfigurationLevel.event(event));
         return res.get(ENABLE_WAITING_QUEUE).getValueAsBooleanOrDefault(false) || res.get(ENABLE_PRE_REGISTRATION).getValueAsBooleanOrDefault(false);
     }
 
     public void distributeAvailableSeats(Event event) {
+        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
         waitingQueueManager.distributeSeats(event).forEach(triple -> {
             WaitingQueueSubscription subscription = triple.getLeft();
             Locale locale = subscription.getLocale();
