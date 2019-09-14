@@ -27,7 +27,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 
 @Getter
-public class FullTicketInfo {
+public class FullTicketInfo implements TicketInfoContainer {
 
     @Delegate
     private final Ticket ticket;

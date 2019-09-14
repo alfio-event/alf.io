@@ -16,26 +16,24 @@
  */
 package alfio.model;
 
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Delegate;
+public interface TicketInfoContainer {
+    boolean getAssigned();
 
-@RequiredArgsConstructor
-public class TicketWithCategory implements TicketInfoContainer {
+    boolean isCheckedIn();
 
-    @Delegate
-    private final Ticket ticket;
-    private final TicketCategory category;
+    int getId();
 
-    public String getCategoryName() {
-        return category != null ? category.getName() : null;
-    }
+    String getUuid();
 
-    public TicketCategory getCategory() {
-        return category;
-    }
+    int getEventId();
 
-    protected Ticket getTicket() {
-        return ticket;
-    }
+    String getTicketsReservationId();
 
+    String getFirstName();
+
+    String getLastName();
+
+    String getEmail();
+
+    String getUserLanguage();
 }

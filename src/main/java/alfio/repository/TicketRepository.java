@@ -139,6 +139,9 @@ public interface TicketRepository {
     @Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc LIMIT 1 OFFSET 0")
     Optional<Ticket> findFirstTicketInReservation(@Bind("reservationId") String reservationId);
 
+    @Query("select id from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc LIMIT 1 OFFSET 0")
+    Optional<Integer> findFirstTicketIdInReservation(@Bind("reservationId") String reservationId);
+
     @Query("select count(*) from ticket where tickets_reservation_id = :reservationId ")
     Integer countTicketsInReservation(@Bind("reservationId") String reservationId);
     
