@@ -659,8 +659,10 @@
                     return moment(d);
                 };
 
-                $scope.eventStartDate = eventDateToMoment($scope.event.begin).format('YYYY-MM-DD HH:mm');
-                $scope.eventEndDate = eventDateToMoment($scope.event.end).format('YYYY-MM-DD HH:mm');
+                var eventStartDate = eventDateToMoment($scope.event.begin);
+                var eventEndDate = eventDateToMoment($scope.event.end);
+                $scope.eventStartDate = eventStartDate.format('YYYY-MM-DD HH:mm');
+                $scope.eventEndDate = eventEndDate.format('YYYY-MM-DD HH:mm');
 
                 $scope.ticketValidity = [];
                 $scope.ticketValidityTypes = [{
@@ -681,6 +683,18 @@
                         description: 'Custom'
                     }
                 ];
+                $scope.ticketCheckInStrategies = [
+                    {
+                        code: 'ONCE_PER_EVENT',
+                        description: 'Attendees check in only once, using their ticket'
+                    },
+                    {
+                        code: 'ONCE_PER_DAY',
+                        description: 'Attendees check in the first day using their ticket, then the following day(s) using their badge'
+                    }
+                ];
+                $scope.checkInStrategiesVisible = eventEndDate.endOf('day').diff(eventStartDate.startOf('day'), 'days') > 0;
+                $scope.ticketCheckInStrategy = $scope.ticketCategory.ticketCheckInStrategy || 'ONCE_PER_EVENT';
                 $scope.checkInAllowed = hasCustomCheckIn($scope.ticketCategory) ? 'CUSTOM' : 'ANYTIME';
                 var supportedLanguages = _.filter($scope.allLanguagesMapping, function(l) {
                     return $scope.isLanguagePresent($scope.event.locales, l.value);

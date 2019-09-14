@@ -13,7 +13,6 @@
     
     function ReservationsListCtrl(EventService, $filter, $location, $stateParams) {
         var ctrl = this;
-        console.log("stateParams", $stateParams);
 
         var currentSearch = $location.search();
 
