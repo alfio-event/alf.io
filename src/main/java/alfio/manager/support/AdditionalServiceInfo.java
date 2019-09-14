@@ -14,28 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model;
+package alfio.manager.support;
 
+import alfio.model.TicketFieldValueForAdditionalService;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.Delegate;
 
+import java.util.List;
+
+@Getter
 @RequiredArgsConstructor
-public class TicketWithCategory implements TicketInfoContainer {
-
-    @Delegate
-    private final Ticket ticket;
-    private final TicketCategory category;
-
-    public String getCategoryName() {
-        return category != null ? category.getName() : null;
-    }
-
-    public TicketCategory getCategory() {
-        return category;
-    }
-
-    protected Ticket getTicket() {
-        return ticket;
-    }
-
+public class AdditionalServiceInfo {
+    private final String name;
+    private final int count;
+    private final List<TicketFieldValueForAdditionalService> fields;
 }
