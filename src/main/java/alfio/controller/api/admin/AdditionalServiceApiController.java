@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.EventManager;
 import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
@@ -27,6 +28,7 @@ import alfio.repository.EventRepository;
 import alfio.util.MonetaryUtil;
 import alfio.util.Validator;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,21 +49,15 @@ import java.util.stream.Stream;
 
 @RestController
 @RequestMapping("/admin/api")
+@RequiredArgsConstructor
 @Log4j2
 public class AdditionalServiceApiController {
 
     private final EventRepository eventRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
+    private final EventManager eventManager;
 
-    @Autowired
-    public AdditionalServiceApiController(EventRepository eventRepository,
-                                          AdditionalServiceRepository additionalServiceRepository,
-                                          AdditionalServiceTextRepository additionalServiceTextRepository) {
-        this.eventRepository = eventRepository;
-        this.additionalServiceRepository = additionalServiceRepository;
-        this.additionalServiceTextRepository = additionalServiceTextRepository;
-    }
 
     @ExceptionHandler({IllegalArgumentException.class})
     public ResponseEntity<String> handleBadRequest(Exception e) {
@@ -123,29 +119,8 @@ public class AdditionalServiceApiController {
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
         return eventRepository.findOptionalById(eventId)
-            .map(event -> {
-                AffectedRowCountAndKey<Integer> result = additionalServiceRepository.insert(eventId,
-                    Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0),
-                    additionalService.isFixPrice(),
-                    additionalService.getOrdinal(),
-                    additionalService.getAvailableQuantity(),
-                    additionalService.getMaxQtyPerOrder(),
-                    additionalService.getInception().toZonedDateTime(event.getZoneId()),
-                    additionalService.getExpiration().toZonedDateTime(event.getZoneId()),
-                    additionalService.getVat(),
-                    additionalService.getVatType(),
-                    additionalService.getType(),
-                    additionalService.getSupplementPolicy());
-                Validate.isTrue(result.getAffectedRowCount() == 1, "too many records updated");
-                int id = result.getKey();
-                Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
-                    forEach(t -> additionalServiceTextRepository.insert(id, t.getLocale(), t.getType(), t.getValue()));
-
-                return ResponseEntity.ok(EventModification.AdditionalService.from(additionalServiceRepository.getById(result.getKey(), eventId))
-                    .withText(additionalServiceTextRepository.findAllByAdditionalServiceId(result.getKey()))
-                    .withZoneId(event.getZoneId())
-                    .build());
-            }).orElseThrow(IllegalArgumentException::new);
+            .map(event -> ResponseEntity.ok(eventManager.insertAdditionalService(event, additionalService)))
+            .orElseThrow(IllegalArgumentException::new);
     }
 
     @DeleteMapping("/event/{eventId}/additional-services/{additionalServiceId}")

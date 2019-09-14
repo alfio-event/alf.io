@@ -31,8 +31,6 @@ import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -143,7 +141,8 @@ public class CheckInManager {
             checkIn(ticketIdentifier);
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, SUCCESS, ScanAudit.Operation.SCAN);
             auditingRepository.insert(descriptor.getTicket().getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
-            return new TicketAndCheckInResult(descriptor.getTicket(), new DefaultCheckInResult(SUCCESS, "success"));
+            // return also additional items, if any
+            return new SuccessfulCheckIn(descriptor.getTicket(), getAdditionalServicesForTicket(descriptor.getTicket()));
         } else if(checkInStatus == BADGE_SCAN_ALREADY_DONE || checkInStatus == OK_READY_FOR_BADGE_SCAN) {
             var auditingStatus = checkInStatus == OK_READY_FOR_BADGE_SCAN ? BADGE_SCAN_SUCCESS : checkInStatus;
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, auditingStatus, ScanAudit.Operation.SCAN);
@@ -411,16 +410,8 @@ public class CheckInManager {
                 info.put("categoryCheckInStrategy", tc.getTicketCheckInStrategy().name());
                 //
 
-                List<BookedAdditionalService> additionalServices = additionalServiceItemRepository.getAdditionalServicesBookedForReservation(ticket.getTicketsReservationId(), ticket.getUserLanguage(), ticket.getEventId());
-                boolean additionalServicesEmpty = additionalServices.isEmpty();
-                if(!additionalServicesEmpty) {
-                    List<Integer> additionalServiceIds = additionalServices.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toList());
-                    Map<Integer, List<TicketFieldValueForAdditionalService>> fields = ticketFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
-                        .stream().collect(Collectors.groupingBy(TicketFieldValueForAdditionalService::getAdditionalServiceId));
-
-                    List<AdditionalServiceInfo> additionalServicesInfo = additionalServices.stream()
-                        .map(as -> new AdditionalServiceInfo(as.getAdditionalServiceName(), as.getCount(), fields.get(as.getAdditionalServiceId())))
-                        .collect(Collectors.toList());
+                var additionalServicesInfo = getAdditionalServicesForTicket(ticket);
+                if(!additionalServicesInfo.isEmpty()) {
                     info.put("additionalServicesInfoJson", Json.toJson(additionalServicesInfo));
                 }
                 String key = ticket.ticketCode(eventKey);
@@ -431,6 +422,29 @@ public class CheckInManager {
                 .collect(toMap(hashedHMAC, encryptedBody));
 
         }).orElseGet(Collections::emptyMap);
+    }
+
+    List<AdditionalServiceInfo> getAdditionalServicesForTicket(TicketInfoContainer ticket) {
+
+        // temporary: return a result only for the first ticket
+        String ticketsReservationId = ticket.getTicketsReservationId();
+        int firstId = ticketRepository.findFirstTicketIdInReservation(ticketsReservationId).orElseThrow();
+        if(ticket.getId() != firstId) {
+            return List.of();
+        }
+
+        List<BookedAdditionalService> additionalServices = additionalServiceItemRepository.getAdditionalServicesBookedForReservation(ticketsReservationId, ticket.getUserLanguage(), ticket.getEventId());
+        boolean additionalServicesEmpty = additionalServices.isEmpty();
+        if(!additionalServicesEmpty) {
+            List<Integer> additionalServiceIds = additionalServices.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toList());
+            Map<Integer, List<TicketFieldValueForAdditionalService>> fields = ticketFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
+                .stream().collect(Collectors.groupingBy(TicketFieldValueForAdditionalService::getAdditionalServiceId));
+
+            return additionalServices.stream()
+                .map(as -> new AdditionalServiceInfo(as.getAdditionalServiceName(), as.getCount(), fields.get(as.getAdditionalServiceId())))
+                .collect(Collectors.toList());
+        }
+        return List.of();
     }
 
     public CheckInStatistics getStatistics(String eventName, String username) {
@@ -445,11 +459,4 @@ public class CheckInManager {
         return configurationManager.getFor(CHECK_IN_STATS, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true);
     }
 
-    @Getter
-    @RequiredArgsConstructor
-    private static class AdditionalServiceInfo {
-        private final String name;
-        private final int count;
-        private final List<TicketFieldValueForAdditionalService> fields;
-    }
 }

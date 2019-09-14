@@ -350,6 +350,31 @@ public class EventManager {
         }
     }
 
+    public EventModification.AdditionalService insertAdditionalService(Event event, EventModification.AdditionalService additionalService) {
+        int eventId = event.getId();
+        AffectedRowCountAndKey<Integer> result = additionalServiceRepository.insert(eventId,
+            Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0),
+            additionalService.isFixPrice(),
+            additionalService.getOrdinal(),
+            additionalService.getAvailableQuantity(),
+            additionalService.getMaxQtyPerOrder(),
+            additionalService.getInception().toZonedDateTime(event.getZoneId()),
+            additionalService.getExpiration().toZonedDateTime(event.getZoneId()),
+            additionalService.getVat(),
+            additionalService.getVatType(),
+            additionalService.getType(),
+            additionalService.getSupplementPolicy());
+        Validate.isTrue(result.getAffectedRowCount() == 1, "too many records updated");
+        int id = result.getKey();
+        Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
+            forEach(t -> additionalServiceTextRepository.insert(id, t.getLocale(), t.getType(), t.getValue()));
+
+        return EventModification.AdditionalService.from(additionalServiceRepository.getById(result.getKey(), eventId))
+            .withText(additionalServiceTextRepository.findAllByAdditionalServiceId(result.getKey()))
+            .withZoneId(event.getZoneId())
+            .build();
+    }
+
     /**
      * This method has been modified to use the new Result<T> mechanism.
      * It will be replaced by {@link #insertCategory(Event, TicketCategoryModification, String)} in the next releases
