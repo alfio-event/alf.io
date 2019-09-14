@@ -49,6 +49,7 @@ import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import alfio.util.EventUtil;
 import alfio.util.Json;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.jfiveparse.Element;
 import ch.digitalfondue.jfiveparse.Parser;
 import ch.digitalfondue.jfiveparse.Selector;
@@ -69,6 +70,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
@@ -167,6 +169,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     private ScanAuditRepository scanAuditRepository;
 
     @Autowired
+    private AuditingRepository auditingRepository;
+
+    @Autowired
     private AdminReservationManager adminReservationManager;
 
     @Autowired
@@ -195,6 +200,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private IndexController indexController;
     //
+    @Autowired
+    private NamedParameterJdbcTemplate jdbcTemplate;
 
     private Event event;
     private String user;
@@ -218,11 +225,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null),
             new TicketCategoryModification(null, "hidden", 2,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0)
+                DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null)
             );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 
@@ -896,10 +903,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             //
 
             {
-
                 Principal principal = mock(Principal.class);
                 Mockito.when(principal.getName()).thenReturn(user);
-
                 String ticketIdentifier = fullTicketInfo.getUuid();
                 String eventName = event.getShortName();
 
@@ -981,10 +986,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 String encJson = payload.get(hashedTicketKey);
                 assertNotNull(encJson);
                 String ticketPayload = CheckInManager.decrypt(ticketwc.getUuid() + "/" + ticketKey, encJson);
-                Map<String, String> jsonPayload = Json.fromJson(ticketPayload, new TypeReference<Map<String, String>>() {
+                Map<String, String> jsonPayload = Json.fromJson(ticketPayload, new TypeReference<>() {
                 });
                 assertNotNull(jsonPayload);
-                assertEquals(8, jsonPayload.size());
+                assertEquals(9, jsonPayload.size());
                 assertEquals("Test", jsonPayload.get("firstName"));
                 assertEquals("Testson", jsonPayload.get("lastName"));
                 assertEquals("Test Testson", jsonPayload.get("fullName"));
@@ -992,6 +997,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 assertEquals("testmctest@test.com", jsonPayload.get("email"));
                 assertEquals("CHECKED_IN", jsonPayload.get("status"));
                 assertEquals("default", jsonPayload.get("category"));
+                assertEquals(TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT.name(), jsonPayload.get("categoryCheckInStrategy"));
                 //
 
                 // check register sponsor scan success flow
@@ -1011,8 +1017,46 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 Assert.assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
                 //
 
-                eventManager.deleteEvent(event.getId(), principal.getName());
+                // #742 - test multiple check-ins
+
+                // since on the badge we don't have the full ticket info, we will pass in "null" as scanned code
+                CheckInApiController.TicketCode badgeScan = new CheckInApiController.TicketCode();
+                badgeScan.setCode(null);
+                ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                // ONCE_PER_DAY is disabled by default, therefore we get an error
+                assertEquals(CheckInStatus.EMPTY_TICKET_CODE, ticketAndcheckInResult.getResult().getStatus());
+                // enable ONCE_PER_DAY
+                TicketCategory category = ticketCategoryRepository.getById(ticketwc.getCategoryId());
+                ticketCategoryRepository.update(category.getId(), category.getName(), category.getInception(event.getZoneId()), category.getExpiration(event.getZoneId()), category.getMaxTickets(), category.isAccessRestricted(),
+                    MonetaryUtil.unitToCents(category.getPrice(), category.getCurrencyCode()), category.getCode(), category.getValidCheckInFrom(), category.getValidCheckInTo(), category.getTicketValidityStart(), category.getTicketValidityEnd(),
+                    TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY
+                );
+                ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                // the event start date is in one week, so we expect an error here
+                assertEquals(CheckInStatus.INVALID_TICKET_CATEGORY_CHECK_IN_DATE, ticketAndcheckInResult.getResult().getStatus());
+
+                eventRepository.updateHeader(event.getId(), event.getDisplayName(), event.getWebsiteUrl(), event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(),
+                    event.getFileBlobId(), event.getLocation(), event.getLatitude(), event.getLongitude(), ZonedDateTime.now(event.getZoneId()).minusSeconds(1), event.getEnd(), event.getTimeZone(),
+                    event.getOrganizationId(), event.getLocales());
+
+                ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                // we have already scanned the ticket today, so we expect to receive a warning
+                assertEquals(CheckInStatus.BADGE_SCAN_ALREADY_DONE, ticketAndcheckInResult.getResult().getStatus());
+                assertEquals(1, (int) auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.BADGE_SCAN));
+
+                // move the scans to yesterday
+                // we expect 3 rows because:
+                // 1 check-in
+                // 1 revert
+                // 1 badge scan
+                assertEquals(3, jdbcTemplate.update("update auditing set event_time = event_time - interval '1 day' where reservation_id = :reservationId and event_type in ('BADGE_SCAN', 'CHECK_IN')", Map.of("reservationId", reservationId)));
+
+                ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
+                // we now expect to receive a successful message
+                assertEquals(CheckInStatus.BADGE_SCAN_SUCCESS, ticketAndcheckInResult.getResult().getStatus());
+                assertEquals(2, (int) auditingRepository.countAuditsOfTypeForReservation(reservationId, Audit.EventType.BADGE_SCAN));
             }
+            eventManager.deleteEvent(event.getId(), user);
         }
 
     }
