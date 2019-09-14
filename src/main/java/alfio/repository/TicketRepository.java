@@ -34,6 +34,7 @@ public interface TicketRepository {
     String FREE = "FREE";
     String RELEASED = "RELEASED";
     String REVERT_TO_FREE = "update ticket set status = 'FREE' where status = 'RELEASED' and event_id = :eventId";
+    String SORT_TICKETS = "order by category_id asc, uuid asc";
 
 
     //TODO: refactor, try to move the MapSqlParameterSource inside the default method!
@@ -130,16 +131,16 @@ public interface TicketRepository {
     @Query("update ticket set category_id = null where event_id = :eventId and category_id = :categoryId and id in (:ticketIds)")
     int unbindTicketsFromCategory(@Bind("eventId") int eventId, @Bind("categoryId") int categoryId, @Bind("ticketIds") List<Integer> ids);
 
-    @Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc")
+    @Query("select * from ticket where tickets_reservation_id = :reservationId " + SORT_TICKETS)
     List<Ticket> findTicketsInReservation(@Bind("reservationId") String reservationId);
 
-    @Query("select id from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc")
+    @Query("select id from ticket where tickets_reservation_id = :reservationId " + SORT_TICKETS)
     List<Integer> findTicketIdsInReservation(@Bind("reservationId") String reservationId);
 
-    @Query("select * from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc LIMIT 1 OFFSET 0")
+    @Query("select * from ticket where tickets_reservation_id = :reservationId " + SORT_TICKETS + " LIMIT 1 OFFSET 0")
     Optional<Ticket> findFirstTicketInReservation(@Bind("reservationId") String reservationId);
 
-    @Query("select id from ticket where tickets_reservation_id = :reservationId order by category_id asc, uuid asc LIMIT 1 OFFSET 0")
+    @Query("select id from ticket where tickets_reservation_id = :reservationId " + SORT_TICKETS + " LIMIT 1 OFFSET 0")
     Optional<Integer> findFirstTicketIdInReservation(@Bind("reservationId") String reservationId);
 
     @Query("select count(*) from ticket where tickets_reservation_id = :reservationId ")
