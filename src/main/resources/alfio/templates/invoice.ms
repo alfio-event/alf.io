@@ -161,8 +161,8 @@
                 <tr>
                     <td class="text-center">{{amount}}</td>
                     <td>{{name}}</td>
-                    <td class="text-right">{{price}}</td>
-                    <td class="text-right">{{subTotal}}</td>
+                    <td class="text-right">{{priceBeforeVat}}</td>
+                    <td class="text-right">{{subTotalBeforeVat}}</td>
                 </tr>
         {{/orderSummary.summary}}
             </tbody>
@@ -170,7 +170,7 @@
                 {{^orderSummary.free}}
                     {{#orderSummary.displayVat}}
                         <tr><th colspan="3" class="no-padding">{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</th><th class="text-right">{{orderSummary.totalVAT}}</th></tr>
-                    {{/orderSummary.displayVat}}
+                   	{{/orderSummary.displayVat}}
                     {{^orderSummary.displayVat}}
                         <tr><th colspan="4" class="no-padding">{{#i18n}}invoice.vat-voided [{{vatTranslation}}]{{/i18n}}</th></tr>
                     {{/orderSummary.displayVat}}
