@@ -36,4 +36,6 @@ public interface TicketInfoContainer {
     String getEmail();
 
     String getUserLanguage();
+
+    Integer getCategoryId();
 }

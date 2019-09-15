@@ -778,3 +778,41 @@ span.path {
     background-color: transparent;
     border: 0;
 }
+
+div.preformatted {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.pi-primary {
+    background-color: #007bff;
+    color: #007bff;
+}
+.pi-secondary {
+    background-color: #6c757d;
+    color: #6c757d;
+}
+.pi-success {
+    background-color: #28a745;
+    color: #28a745;
+}
+.pi-danger {
+    background-color: #dc3545;
+    color: #dc3545;
+}
+.pi-warning {
+    background-color: #ffc107;
+    color: #ffc107;
+}
+.pi-info {
+    background-color: #17a2b8;
+    color: #17a2b8;
+}
+.pi-light {
+    background-color: #f8f9fa;
+    color: #f8f9fa;
+}
+.pi-dark {
+    background-color: #343a40;
+    color: #343a40;
+}
