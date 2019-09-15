@@ -729,3 +729,8 @@ span.path {
 .width-100 {
     width: 100%;
 }
+
+div.preformatted {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}

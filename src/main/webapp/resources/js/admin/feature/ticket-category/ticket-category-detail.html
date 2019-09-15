@@ -50,6 +50,7 @@
                     <i class="fa fa-link fa-1_5x"></i><span class="sr-only">Access Code</span>
                     <span class="text-muted"><span ng-if="$ctrl.event.id">{{$ctrl.baseUrl}}/event/{{$ctrl.event.shortName}}/code/{{ticketCategory.code}}</span>{{$ctrl.ticketCategory.code}}</span>
                 </h5>
+                <h5 data-ng-if="$ctrl.ticketCategory.id" class="text-muted">ID: {{$ctrl.ticketCategory.id}}</h5>
             </div>
             <div class="col-xs-7 category-detail">
                 <div ng-if="$ctrl.categoryHasDescriptions($ctrl.ticketCategory)">

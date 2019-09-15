@@ -24,13 +24,21 @@ import static alfio.manager.support.CheckInStatus.SUCCESS;
 
 public class SuccessfulCheckIn extends TicketAndCheckInResult {
     private final List<AdditionalServiceInfo> additionalServices;
+    private final String boxColor;
 
-    public SuccessfulCheckIn(TicketWithCategory ticket, List<AdditionalServiceInfo> additionalServices) {
+    public SuccessfulCheckIn(TicketWithCategory ticket,
+                             List<AdditionalServiceInfo> additionalServices,
+                             String boxColor) {
         super(ticket, new DefaultCheckInResult(SUCCESS, "success"));
         this.additionalServices = additionalServices;
+        this.boxColor = boxColor;
     }
 
     public List<AdditionalServiceInfo> getAdditionalServices() {
         return additionalServices;
+    }
+
+    public String getBoxColor() {
+        return boxColor;
     }
 }
