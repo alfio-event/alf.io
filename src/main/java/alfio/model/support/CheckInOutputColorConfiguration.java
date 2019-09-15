@@ -40,7 +40,7 @@ public class CheckInOutputColorConfiguration {
         private final String colorName;
         private final List<Integer> categories;
 
-        private ColorConfiguration(@JsonProperty("colorName") String colorName,
+        public ColorConfiguration(@JsonProperty("colorName") String colorName,
                                    @JsonProperty("categories") List<Integer> categories) {
             this.colorName = colorName;
             this.categories = Optional.ofNullable(categories).orElse(List.of());

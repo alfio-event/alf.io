@@ -362,7 +362,7 @@ public class CheckInManager {
             String eventKey = event.getPrivateKey();
 
             Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
-            var outputColorConfiguration = getOutputColorConfiguration(event);
+            var outputColorConfiguration = getOutputColorConfiguration(event, configurationManager);
 
             Function<FullTicketInfo, String> encryptedBody = ticket -> {
                 Map<String, String> info = new HashMap<>();
@@ -374,7 +374,7 @@ public class CheckInManager {
                 info.put("uuid", ticket.getUuid());
                 info.put("category", ticket.getTicketCategory().getName());
                 if(outputColorConfiguration != null) {
-                    info.put("boxColor", detectBoxColor(outputColorConfiguration, ticket));
+                    info.put("boxColor", detectBoxColor(outputColorConfiguration, ticket.getCategoryId()));
                 }
 
                 if (!additionalFields.isEmpty()) {
@@ -432,7 +432,7 @@ public class CheckInManager {
         }).orElseGet(Collections::emptyMap);
     }
 
-    private CheckInOutputColorConfiguration getOutputColorConfiguration(EventAndOrganizationId event) {
+    static CheckInOutputColorConfiguration getOutputColorConfiguration(EventAndOrganizationId event, ConfigurationManager configurationManager) {
         return configurationManager.getFor(CHECK_IN_COLOR_CONFIGURATION, ConfigurationLevel.event(event)).getValue()
             .flatMap(str -> optionally(() -> Json.fromJson(str, CheckInOutputColorConfiguration.class)))
             .orElse(null);
@@ -440,15 +440,15 @@ public class CheckInManager {
 
     private String loadBoxColor(TicketInfoContainer ticket) {
         var eventAndOrganizationId = eventRepository.findEventAndOrganizationIdById(ticket.getEventId());
-        return detectBoxColor(getOutputColorConfiguration(eventAndOrganizationId), ticket);
+        return detectBoxColor(getOutputColorConfiguration(eventAndOrganizationId, configurationManager), ticket.getCategoryId());
     }
 
-    private String detectBoxColor(CheckInOutputColorConfiguration outputColorConfiguration, TicketInfoContainer ticket) {
+    private static String detectBoxColor(CheckInOutputColorConfiguration outputColorConfiguration, Integer categoryId) {
         if(outputColorConfiguration == null) {
             return null;
         }
         return outputColorConfiguration.getConfigurations().stream()
-            .filter(cc -> cc.getCategories().contains(ticket.getCategoryId()))
+            .filter(cc -> cc.getCategories().contains(categoryId))
             .map(CheckInOutputColorConfiguration.ColorConfiguration::getColorName)
             .findFirst()
             .orElse(outputColorConfiguration.getDefaultColorName());

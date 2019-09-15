@@ -111,7 +111,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null,
-                    null, null, null, null, 0, null));
+                    null, null, null, null, 0, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketReservationModification tr = new TicketReservationModification();
@@ -134,11 +134,11 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null),
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null),
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 
@@ -231,7 +231,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
@@ -304,7 +304,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         var firstAsKey = additionalServiceRepository.insert(event.getId(), 1000, true, 1, 100, 1, ZonedDateTime.now().minusHours(1), ZonedDateTime.now().plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
@@ -350,7 +350,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null, 0, null));
+                DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null, 0, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isAccessRestricted).findFirst().orElseThrow();
@@ -420,7 +420,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
 
         List<EventModification.AdditionalService> additionalServices = Collections.singletonList(new EventModification.AdditionalService(null, BigDecimal.TEN, true, 1, 100, 5,
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now().minusDays(1L)), DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1L)),
@@ -466,7 +466,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
@@ -485,7 +485,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
@@ -522,7 +522,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 
@@ -560,7 +560,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 
