@@ -30,10 +30,13 @@ import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
+import alfio.model.support.CheckInOutputColorConfiguration;
+import alfio.model.support.CheckInOutputColorConfiguration.ColorConfiguration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.*;
+import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
@@ -69,13 +72,13 @@ import java.util.stream.Stream;
 
 import static alfio.model.TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT;
 import static alfio.model.modification.DateTimeModification.toZonedDateTime;
+import static alfio.model.system.ConfigurationKeys.CHECK_IN_COLOR_CONFIGURATION;
 import static alfio.util.EventUtil.*;
 import static alfio.util.Wrappers.optionally;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 @Component
 @Transactional
@@ -104,6 +107,7 @@ public class EventManager {
     private final ExtensionManager extensionManager;
     private final GroupRepository groupRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private final ConfigurationRepository configurationRepository;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -607,7 +611,45 @@ public class EventManager {
         }
 
         insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
+        saveBadgeColorConfiguration(tc.getBadgeColor(), event, category.getKey());
         return category.getKey();
+    }
+
+    void saveBadgeColorConfiguration(String badgeColor, Event event, Integer categoryId) {
+        if(StringUtils.isNotBlank(badgeColor)) {
+            var chosenColor = badgeColor.toLowerCase();
+            var colorConfiguration = CheckInManager.getOutputColorConfiguration(event, configurationManager);
+            boolean existingConfiguration = colorConfiguration != null;
+            if(!existingConfiguration) {
+                colorConfiguration = new CheckInOutputColorConfiguration("success", List.of(new ColorConfiguration(chosenColor, List.of(categoryId))));
+            } else {
+                var configurationWithoutCategory = colorConfiguration.getConfigurations().stream()
+                    .map(cc -> new ColorConfiguration(cc.getColorName(), cc.getCategories().stream().filter(c -> !c.equals(categoryId)).collect(toUnmodifiableList())))
+                    .filter(cc -> !cc.getCategories().isEmpty())
+                    .collect(toList());
+                boolean colorExists = configurationWithoutCategory.stream().anyMatch(cc -> cc.getColorName().equals(chosenColor));
+                if(colorExists) {
+                    colorConfiguration = new CheckInOutputColorConfiguration(colorConfiguration.getDefaultColorName(), configurationWithoutCategory.stream().map(cc -> {
+                        if(cc.getColorName().equals(chosenColor)) {
+                            var newList = new ArrayList<>(cc.getCategories());
+                            newList.add(categoryId);
+                            return new ColorConfiguration(chosenColor, newList);
+                        }
+                        return cc;
+                    }).collect(toUnmodifiableList()));
+                } else {
+                    var newList = new ArrayList<>(configurationWithoutCategory);
+                    newList.add(new ColorConfiguration(chosenColor, List.of(categoryId)));
+                    colorConfiguration = new CheckInOutputColorConfiguration(colorConfiguration.getDefaultColorName(), newList);
+                }
+            }
+            if(existingConfiguration) {
+                configurationRepository.updateEventLevel(event.getId(), event.getOrganizationId(), CHECK_IN_COLOR_CONFIGURATION.name(), Json.toJson(colorConfiguration));
+            } else {
+                configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(), CHECK_IN_COLOR_CONFIGURATION.name(), Json.toJson(colorConfiguration), null);
+            }
+
+        }
     }
 
     private void insertTokens(TicketCategory ticketCategory) {
@@ -660,6 +702,7 @@ public class EventManager {
         insertOrUpdateTicketCategoryDescription(tc.getId(), tc, event);
 
         //
+        saveBadgeColorConfiguration(tc.getBadgeColor(), event, tc.getId());
 
         auditingRepository.insertUpdateTicketInCategoryId(tc.getId());
 

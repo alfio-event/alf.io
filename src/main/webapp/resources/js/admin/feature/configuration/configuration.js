@@ -231,7 +231,7 @@
                 }
                 handleEuCountries(systemConf, results[2].data);
                 if(systemConf.alfioPi) {
-                    systemConf.alfioPiOptions = _.filter(systemConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
+                    systemConf.alfioPiOptions = _.filter(systemConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT' && pi.key !== 'CHECK_IN_COLOR_CONFIGURATION'});
                 }
 
                 systemConf.extensionSettings = results[3].data;
@@ -412,8 +412,9 @@
 
 
                     if(eventConf.alfioPi) {
-                        eventConf.alfioPiOptions = _.filter(eventConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT'});
+                        eventConf.alfioPiOptions = _.filter(eventConf.alfioPi.settings, function(pi) { return pi.key !== 'LABEL_LAYOUT' && pi.key !== 'CHECK_IN_COLOR_CONFIGURATION'});
                         eventConf.labelLayout = _.find(eventConf.alfioPi.settings, function(pi) { return pi.key === 'LABEL_LAYOUT'});
+                        eventConf.colorConfiguration = _.find(eventConf.alfioPi.settings, function(pi) { return pi.key === 'CHECK_IN_COLOR_CONFIGURATION'});
                     }
                     eventConf.extensionSettings = result[2].data;
                     eventConf.cancel = function() {

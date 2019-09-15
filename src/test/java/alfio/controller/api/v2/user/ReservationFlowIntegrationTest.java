@@ -20,11 +20,11 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.controller.IndexController;
-import alfio.controller.api.v1.AttendeeApiController;
 import alfio.controller.api.admin.AdditionalServiceApiController;
 import alfio.controller.api.admin.CheckInApiController;
 import alfio.controller.api.admin.EventApiController;
 import alfio.controller.api.admin.UsersApiController;
+import alfio.controller.api.v1.AttendeeApiController;
 import alfio.controller.api.v2.InfoApiController;
 import alfio.controller.api.v2.TranslationsApiController;
 import alfio.controller.api.v2.model.EventCode;
@@ -225,11 +225,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null),
             new TicketCategoryModification(null, "hidden", 2,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null)
+                DESCRIPTION, BigDecimal.ONE, true, "", true, URL_CODE_HIDDEN, null, null, null, null, 0, null, null)
             );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 

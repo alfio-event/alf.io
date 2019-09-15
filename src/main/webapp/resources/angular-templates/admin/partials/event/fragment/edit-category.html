@@ -240,8 +240,17 @@
     <div class="col-xs-12">
         <div class="form-group">
             <label for="ticketCheckInStrategy" class="control-label">Multi-day check-in</label>
-            <select name="ticketCheckInStrategy" data-ng-model="ticketCheckInStrategy" class="form-control" id="ticketCheckInStrategy" ng-options="type.code as type.description for type in ticketCheckInStrategies"></select>
+            <select name="ticketCheckInStrategy" data-ng-model="ticketCategory.ticketCheckInStrategy" class="form-control" id="ticketCheckInStrategy" ng-options="type.code as type.description for type in ticketCheckInStrategies"></select>
             <p class="help-block">Attendees must do the first check-in by using their ticket. Then, if you print their badge using Alf.io, you can request them to repeat the check-in every morning, by using their badge</p>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-xs-12">
+        <div class="form-group">
+            <label for="badgeColor" class="control-label">Badge color</label>
+            <select name="badgeColor" data-ng-model="ticketCategory.badgeColor" class="form-control" id="badgeColor" ng-options="type.code as type.description for type in badgeColors"></select>
+            <p class="help-block">Make this category stand out at check-in. If set, the color will be used from our mobile app and check-in stations to match the color of the badge upon successful scan. This will help your crew to handle this category properly.</p>
         </div>
     </div>
 </div>

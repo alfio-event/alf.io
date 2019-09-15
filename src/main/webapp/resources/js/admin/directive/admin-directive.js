@@ -581,6 +581,24 @@
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-category.html',
             controller: function($scope, ConfigurationService) {
+
+                ConfigurationService.loadSingleConfigForEvent($scope.event.id, 'CHECK_IN_COLOR_CONFIGURATION').then(function(result) {
+                    var data = {};
+                    if(result.data && result.data.length > 0) {
+                        try {
+                            data = JSON.parse(result.data);
+                        } catch(e) {
+                            console.error("cannot deserialize JSON", e);
+                        }
+                    }
+                    if(data && data.configurations) {
+                        var configurations = data.configurations.filter(function(c) { return c.categories.filter(function(tc) { return tc.id === $scope.ticketCategory}); });
+                        if(configurations.length > 0) {
+                            $scope.ticketCategory['badgeColor'] = configurations[0].colorName;
+                        }
+                    }
+                });
+
                 $scope.buildPrefix = function(index, name) {
                     return angular.isDefined(index) ? index + "-" + name : name;
                 };
@@ -692,6 +710,16 @@
                         code: 'ONCE_PER_DAY',
                         description: 'Attendees check in the first day using their ticket, then the following day(s) using their badge'
                     }
+                ];
+                $scope.badgeColors = [
+                    { code: 'primary', description: 'blue' },
+                    { code: 'secondary', description: 'gray' },
+                    { code: 'success', description: 'green' },
+                    { code: 'danger', description: 'red' },
+                    { code: 'warning', description: 'yellow' },
+                    { code: 'info', description: 'cyan'},
+                    { code: 'light', description: 'white' },
+                    { code: 'dark', description: 'black' }
                 ];
                 $scope.checkInStrategiesVisible = eventEndDate.endOf('day').diff(eventStartDate.startOf('day'), 'days') > 0;
                 $scope.ticketCheckInStrategy = $scope.ticketCategory.ticketCheckInStrategy || 'ONCE_PER_EVENT';

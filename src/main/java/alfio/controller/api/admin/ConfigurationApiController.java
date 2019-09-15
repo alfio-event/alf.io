@@ -26,6 +26,7 @@ import alfio.model.user.Organization;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -82,10 +83,15 @@ public class ConfigurationApiController {
     }
 
     @GetMapping("/events/{eventId}/single/{key}")
-    public String getSingleConfigForEvent(@PathVariable("eventId") int eventId,
-                                   @PathVariable("key") String key,
-                                   Principal principal) {
-        return configurationManager.getSingleConfigForEvent(eventId, key, principal.getName());
+    public ResponseEntity<String> getSingleConfigForEvent(@PathVariable("eventId") int eventId,
+                                                         @PathVariable("key") String key,
+                                                         Principal principal) {
+
+        String singleConfigForEvent = configurationManager.getSingleConfigForEvent(eventId, key, principal.getName());
+        if(singleConfigForEvent == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(singleConfigForEvent);
     }
 
     @PostMapping(value = "/organizations/{organizationId}/events/{eventId}/update")

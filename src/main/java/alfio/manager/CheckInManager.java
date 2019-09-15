@@ -22,6 +22,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.audit.ScanAudit;
+import alfio.model.support.CheckInOutputColorConfiguration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.audit.ScanAuditRepository;
@@ -60,6 +61,7 @@ import java.util.stream.Collectors;
 import static alfio.manager.support.CheckInStatus.*;
 import static alfio.model.Audit.EventType.*;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.Wrappers.optionally;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
@@ -139,10 +141,11 @@ public class CheckInManager {
         var checkInStatus = descriptor.getResult().getStatus();
         if(checkInStatus == OK_READY_TO_BE_CHECKED_IN) {
             checkIn(ticketIdentifier);
+            TicketWithCategory ticket = descriptor.getTicket();
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, SUCCESS, ScanAudit.Operation.SCAN);
-            auditingRepository.insert(descriptor.getTicket().getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
+            auditingRepository.insert(ticket.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
             // return also additional items, if any
-            return new SuccessfulCheckIn(descriptor.getTicket(), getAdditionalServicesForTicket(descriptor.getTicket()));
+            return new SuccessfulCheckIn(ticket, getAdditionalServicesForTicket(ticket), loadBoxColor(ticket));
         } else if(checkInStatus == BADGE_SCAN_ALREADY_DONE || checkInStatus == OK_READY_FOR_BADGE_SCAN) {
             var auditingStatus = checkInStatus == OK_READY_FOR_BADGE_SCAN ? BADGE_SCAN_SUCCESS : checkInStatus;
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, auditingStatus, ScanAudit.Operation.SCAN);
@@ -359,6 +362,7 @@ public class CheckInManager {
             String eventKey = event.getPrivateKey();
 
             Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
+            var outputColorConfiguration = getOutputColorConfiguration(event, configurationManager);
 
             Function<FullTicketInfo, String> encryptedBody = ticket -> {
                 Map<String, String> info = new HashMap<>();
@@ -369,6 +373,10 @@ public class CheckInManager {
                 info.put("status", ticket.getStatus().toString());
                 info.put("uuid", ticket.getUuid());
                 info.put("category", ticket.getTicketCategory().getName());
+                if(outputColorConfiguration != null) {
+                    info.put("boxColor", detectBoxColor(outputColorConfiguration, ticket.getCategoryId()));
+                }
+
                 if (!additionalFields.isEmpty()) {
                     Map<String, String> fields = new HashMap<>();
                     fields.put("company", trimToEmpty(ticket.getBillingDetails().getCompanyName()));
@@ -422,6 +430,28 @@ public class CheckInManager {
                 .collect(toMap(hashedHMAC, encryptedBody));
 
         }).orElseGet(Collections::emptyMap);
+    }
+
+    static CheckInOutputColorConfiguration getOutputColorConfiguration(EventAndOrganizationId event, ConfigurationManager configurationManager) {
+        return configurationManager.getFor(CHECK_IN_COLOR_CONFIGURATION, ConfigurationLevel.event(event)).getValue()
+            .flatMap(str -> optionally(() -> Json.fromJson(str, CheckInOutputColorConfiguration.class)))
+            .orElse(null);
+    }
+
+    private String loadBoxColor(TicketInfoContainer ticket) {
+        var eventAndOrganizationId = eventRepository.findEventAndOrganizationIdById(ticket.getEventId());
+        return detectBoxColor(getOutputColorConfiguration(eventAndOrganizationId, configurationManager), ticket.getCategoryId());
+    }
+
+    private static String detectBoxColor(CheckInOutputColorConfiguration outputColorConfiguration, Integer categoryId) {
+        if(outputColorConfiguration == null) {
+            return null;
+        }
+        return outputColorConfiguration.getConfigurations().stream()
+            .filter(cc -> cc.getCategories().contains(categoryId))
+            .map(CheckInOutputColorConfiguration.ColorConfiguration::getColorName)
+            .findFirst()
+            .orElse(outputColorConfiguration.getDefaultColorName());
     }
 
     List<AdditionalServiceInfo> getAdditionalServicesForTicket(TicketInfoContainer ticket) {
