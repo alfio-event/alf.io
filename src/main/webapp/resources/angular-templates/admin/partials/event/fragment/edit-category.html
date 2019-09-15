@@ -215,7 +215,7 @@
 <div class="row">
     <div class="col-xs-12">
         <div class="form-group">
-            <label for="checkInAllowed" class="control-label">Check-in is allowed</label>
+            <label for="checkInAllowed" class="control-label">Check-in can be done</label>
             <select name="checkInAllowed" data-ng-model="checkInAllowed" class="form-control" id="checkInAllowed" ng-options="type.code as type.description for type in checkInAllowedOptions"></select>
         </div>
     </div>
@@ -232,6 +232,16 @@
         <div class="form-group" bs-form-error="ticketCategory.validCheckInToString">
             <label for="{{buildPrefix($index, 'validCheckInToString')}}">to</label>
             <input ng-model="ticketCategory.validCheckInToString" display-on-top="true" placeholder="{{eventEndDate}}" single-date no-init-date="true" start-model="ticketCategory.validCheckInTo" id="{{buildPrefix($index, 'validCheckInToString')}}" class="form-control">
+        </div>
+    </div>
+</div>
+
+<div class="row" data-ng-if="checkInStrategiesVisible">
+    <div class="col-xs-12">
+        <div class="form-group">
+            <label for="ticketCheckInStrategy" class="control-label">Multi-day check-in</label>
+            <select name="ticketCheckInStrategy" data-ng-model="ticketCheckInStrategy" class="form-control" id="ticketCheckInStrategy" ng-options="type.code as type.description for type in ticketCheckInStrategies"></select>
+            <p class="help-block">Attendees must do the first check-in by using their ticket. Then, if you print their badge using Alf.io, you can request them to repeat the check-in every morning, by using their badge</p>
         </div>
     </div>
 </div>

@@ -168,7 +168,8 @@
             var checkInEvents = [
                 'CHECK_IN',
                 'MANUAL_CHECK_IN',
-                'REVERT_CHECK_IN'
+                'REVERT_CHECK_IN',
+                'BADGE_SCAN'
             ];
             return ctrl.audit.filter(function(a) {
                 return a.entityType === 'TICKET' && checkInEvents.indexOf(a.eventType) > -1;
@@ -270,6 +271,8 @@
                                 return "Check-in";
                             case "REVERT_CHECK_IN":
                                 return "Check-in Reverted";
+                            case "BADGE_SCAN":
+                                return "Badge scanned";
                             default:
                                 return type;
                         }

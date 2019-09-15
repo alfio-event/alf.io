@@ -14,28 +14,23 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model;
+package alfio.manager.support;
 
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Delegate;
+import alfio.model.TicketWithCategory;
 
-@RequiredArgsConstructor
-public class TicketWithCategory implements TicketInfoContainer {
+import java.util.List;
 
-    @Delegate
-    private final Ticket ticket;
-    private final TicketCategory category;
+import static alfio.manager.support.CheckInStatus.SUCCESS;
 
-    public String getCategoryName() {
-        return category != null ? category.getName() : null;
+public class SuccessfulCheckIn extends TicketAndCheckInResult {
+    private final List<AdditionalServiceInfo> additionalServices;
+
+    public SuccessfulCheckIn(TicketWithCategory ticket, List<AdditionalServiceInfo> additionalServices) {
+        super(ticket, new DefaultCheckInResult(SUCCESS, "success"));
+        this.additionalServices = additionalServices;
     }
 
-    public TicketCategory getCategory() {
-        return category;
+    public List<AdditionalServiceInfo> getAdditionalServices() {
+        return additionalServices;
     }
-
-    protected Ticket getTicket() {
-        return ticket;
-    }
-
 }
