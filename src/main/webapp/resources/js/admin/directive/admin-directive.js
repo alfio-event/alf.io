@@ -593,7 +593,9 @@
                             }
                         }
                         if(data && data.configurations) {
-                            var configurations = data.configurations.filter(function(c) { return c.categories.filter(function(tc) { return tc.id === $scope.ticketCategory}); });
+                            var configurations = data.configurations
+                                .map(function(c) { c.categories = c.categories.filter(function(tcId) { return tcId === $scope.ticketCategory.id}); return c;})
+                                .filter(function(c) {return c.categories.length > 0;});
                             if(configurations.length > 0) {
                                 $scope.ticketCategory['badgeColor'] = configurations[0].colorName;
                             }
