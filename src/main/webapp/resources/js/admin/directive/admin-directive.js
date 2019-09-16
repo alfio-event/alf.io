@@ -582,22 +582,26 @@
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-category.html',
             controller: function($scope, ConfigurationService) {
 
-                ConfigurationService.loadSingleConfigForEvent($scope.event.id, 'CHECK_IN_COLOR_CONFIGURATION').then(function(result) {
-                    var data = {};
-                    if(result.data && result.data.length > 0) {
-                        try {
-                            data = JSON.parse(result.data);
-                        } catch(e) {
-                            console.error("cannot deserialize JSON", e);
+                if($scope.event.id !== undefined) {
+                    ConfigurationService.loadSingleConfigForEvent($scope.event.id, 'CHECK_IN_COLOR_CONFIGURATION').then(function(result) {
+                        var data = {};
+                        if(result.data && result.data.length > 0) {
+                            try {
+                                data = JSON.parse(result.data);
+                            } catch(e) {
+                                console.error("cannot deserialize JSON", e);
+                            }
                         }
-                    }
-                    if(data && data.configurations) {
-                        var configurations = data.configurations.filter(function(c) { return c.categories.filter(function(tc) { return tc.id === $scope.ticketCategory}); });
-                        if(configurations.length > 0) {
-                            $scope.ticketCategory['badgeColor'] = configurations[0].colorName;
+                        if(data && data.configurations) {
+                            var configurations = data.configurations
+                                .map(function(c) { c.categories = c.categories.filter(function(tcId) { return tcId === $scope.ticketCategory.id}); return c;})
+                                .filter(function(c) {return c.categories.length > 0;});
+                            if(configurations.length > 0) {
+                                $scope.ticketCategory['badgeColor'] = configurations[0].colorName;
+                            }
                         }
-                    }
-                });
+                    });
+                }
 
                 $scope.buildPrefix = function(index, name) {
                     return angular.isDefined(index) ? index + "-" + name : name;
