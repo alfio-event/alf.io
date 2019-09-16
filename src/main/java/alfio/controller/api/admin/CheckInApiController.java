@@ -207,6 +207,7 @@ public class CheckInApiController {
                 Set<String> addFields = loadLabelLayout(event)
                     .map(layout -> {
                         Set<String> union = new HashSet<>(layout.content.thirdRow);
+                        union.addAll(layout.content.additionalRows);
                         union.addAll(layout.qrCode.additionalInfo);
                         if(additionalFields != null && !additionalFields.isEmpty()) {
                             union.addAll(additionalFields);
