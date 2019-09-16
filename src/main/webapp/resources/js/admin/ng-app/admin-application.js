@@ -759,6 +759,14 @@
                 controllerAs: 'ctrl'
             });
 
+            function createDateTimeObject(dateString) {
+                var d = moment(dateString, 'YYYY-MM-DD HH:mm');
+                return {
+                    date: d.format('YYYY-MM-DD'),
+                    time: d.format('HH:mm')
+                };
+            }
+
             modal.result.then(function(res) {
                 var startAndEndDate = res[0];
                 var selectedEvent = res[1];
@@ -785,6 +793,15 @@
                     $scope.event.vatPercentage = eventToCopy.vatPercentage;
                     $scope.event.vatIncluded = eventToCopy.vatIncluded;
                     $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
+                    $scope.event.ticketCategories = eventToCopy.ticketCategories.map(function(tc) {return {
+                        name: tc.name,
+                        bounded: tc.bounded,
+                        ordinal: tc.ordinal,
+                        dateString: tc.formattedInception + " / " + tc.formattedExpiration,
+                        inception: createDateTimeObject(tc.formattedInception),
+                        expiration: createDateTimeObject(tc.formattedExpiration),
+                        maxTickets: tc.maxTickets
+                    }});
                     //
                 });
             });
