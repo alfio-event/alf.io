@@ -774,6 +774,9 @@
                     $scope.event.websiteUrl = result.event.websiteUrl;
                     $scope.event.termsAndConditionsUrl = result.event.termsAndConditionsUrl;
                     $scope.event.privacyPolicyUrl = result.event.privacyPolicyUrl;
+                    $scope.event.locales = result.event.locales;
+                    $scope.event.description = angular.copy(result.event.description);
+                    $scope.event.freeOfCharge = result.event.freeOfCharge;
                     //
                 });
             });

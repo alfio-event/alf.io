@@ -364,19 +364,28 @@
                     var locales = $scope.obj.locales;
                     return (r.value & locales) === r.value;
                 };
-                EventService.getSupportedLanguages().success(function(allLanguages) {
-                    var selected = _.filter(allLanguages, isLangSelected);
-                    if(selected.length === 0 && allLanguages.length > 0) {
-                        $scope.addDescription(allLanguages[0]);
-                        selected.push(allLanguages[0]);
-                    }
-                    $scope.selectedLanguages.langs = _.map(selected, function(r) {
-                        return r.value;
-                    });
 
-                    $scope.allLanguages = allLanguages;
-                    evaluateAvailableLanguages(allLanguages);
+                function handleLocales() {
+                    EventService.getSupportedLanguages().success(function(allLanguages) {
+                        var selected = _.filter(allLanguages, isLangSelected);
+                        if(selected.length === 0 && allLanguages.length > 0) {
+                            $scope.addDescription(allLanguages[0]);
+                            selected.push(allLanguages[0]);
+                        }
+                        $scope.selectedLanguages.langs = _.map(selected, function(r) {
+                            return r.value;
+                        });
+
+                        $scope.allLanguages = allLanguages;
+                        evaluateAvailableLanguages(allLanguages);
+                    });
+                }
+
+                handleLocales();
+                $scope.$watch('obj.locales', function(newValue) {
+                    handleLocales();
                 });
+
                 $scope.addDescription = function(language) {
                     $scope.toggleLanguageSelection(language);
                     evaluateAvailableLanguages($scope.allLanguages);
