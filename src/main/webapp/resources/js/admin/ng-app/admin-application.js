@@ -736,13 +736,18 @@
         };
 
 
+
+
         $scope.openCopyEvent = function() {
+            var currentEventInScope = angular.copy($scope.event);
+
             var modal = $uibModal.open({
                 size: 'lg',
-                template: '<copy-event></copy-event>',
+                template: '<copy-event dismiss="ctrl.onDismiss()" event="ctrl.eventTemplate"></copy-event>',
                 backdrop: 'static',
                 controller: function($scope) {
                     var ctrl = this;
+                    ctrl.eventTemplate = currentEventInScope;
                     ctrl.onEditComplete = function(item) {
                         modal.close(item);
                     };

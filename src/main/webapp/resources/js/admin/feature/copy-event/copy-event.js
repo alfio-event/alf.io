@@ -5,7 +5,11 @@
 
 angular.module('adminApplication').component('copyEvent', {
     templateUrl: '/resources/js/admin/feature/copy-event/copy-event.html',
-    controller: copyEventCtrl
+    controller: copyEventCtrl,
+    bindings: {
+        dismiss: '&',
+        event:'<'
+    }
 });
 
 
@@ -16,6 +20,8 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter) {
     var ctrl = this;
 
     ctrl.newEvent = {
+        begin: ctrl.event.begin,
+        end: ctrl.event.end
     };
 
     ctrl.$onInit = function() {
@@ -23,6 +29,10 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter) {
             ctrl.events = res[0].data.concat(res[1].data);
         });
     }
+
+    ctrl.cancel = function() {
+        ctrl.dismiss();
+    };
 
     ctrl.match = function(criteria) {
         var criteriaLower = criteria.toLowerCase();
