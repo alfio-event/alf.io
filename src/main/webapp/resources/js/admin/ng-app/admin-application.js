@@ -762,6 +762,20 @@
             modal.result.then(function(res) {
                 var startAndEndDate = res[0];
                 var selectedEvent = res[1];
+
+                EventService.getEvent(selectedEvent.shortName).success(function(result) {
+                    console.log(selectedEvent);
+                    console.log(result);
+                    // copy
+                    $scope.event.location = result.event.location;
+                    $scope.event.geolocation = {timeZone: result.event.timeZone};
+                    $scope.event.availableSeats = selectedEvent.availableSeats;
+                    $scope.event.fileBlobId = selectedEvent.fileBlobId;
+                    $scope.event.websiteUrl = result.event.websiteUrl;
+                    $scope.event.termsAndConditionsUrl = result.event.termsAndConditionsUrl;
+                    $scope.event.privacyPolicyUrl = result.event.privacyPolicyUrl;
+                    //
+                });
             });
         }
 
