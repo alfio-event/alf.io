@@ -568,6 +568,10 @@
                     initPaymentProxies();
                 }, true);
 
+                $scope.$watch('obj.allowedPaymentProxies', function() {
+                    initPaymentProxies();
+                }, true);
+
             }
         }
     }]);

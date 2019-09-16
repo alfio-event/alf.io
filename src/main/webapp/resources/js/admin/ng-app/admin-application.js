@@ -767,16 +767,24 @@
                     console.log(selectedEvent);
                     console.log(result);
                     // copy
-                    $scope.event.location = result.event.location;
-                    $scope.event.geolocation = {timeZone: result.event.timeZone};
+
+                    var eventToCopy = result.event;
+
+                    $scope.event.location = eventToCopy.location;
+                    $scope.event.geolocation = {timeZone: eventToCopy.timeZone};
                     $scope.event.availableSeats = selectedEvent.availableSeats;
                     $scope.event.fileBlobId = selectedEvent.fileBlobId;
-                    $scope.event.websiteUrl = result.event.websiteUrl;
-                    $scope.event.termsAndConditionsUrl = result.event.termsAndConditionsUrl;
-                    $scope.event.privacyPolicyUrl = result.event.privacyPolicyUrl;
-                    $scope.event.locales = result.event.locales;
-                    $scope.event.description = angular.copy(result.event.description);
-                    $scope.event.freeOfCharge = result.event.freeOfCharge;
+                    $scope.event.websiteUrl = eventToCopy.websiteUrl;
+                    $scope.event.termsAndConditionsUrl = eventToCopy.termsAndConditionsUrl;
+                    $scope.event.privacyPolicyUrl = eventToCopy.privacyPolicyUrl;
+                    $scope.event.locales = eventToCopy.locales;
+                    $scope.event.description = angular.copy(eventToCopy.description);
+                    $scope.event.freeOfCharge = eventToCopy.freeOfCharge;
+                    $scope.event.regularPrice = eventToCopy.regularPrice;
+                    $scope.event.currency = eventToCopy.currency;
+                    $scope.event.vatPercentage = eventToCopy.vatPercentage;
+                    $scope.event.vatIncluded = eventToCopy.vatIncluded;
+                    $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
                     //
                 });
             });
