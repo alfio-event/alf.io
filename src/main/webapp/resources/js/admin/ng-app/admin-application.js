@@ -803,7 +803,8 @@
                         maxTickets: tc.maxTickets,
                         price: tc.price,
                         tokenGenerationRequested: tc.accessRestricted,
-                        code: tc.code
+                        code: tc.code,
+                        description: tc.description ? angular.copy(tc.description) : null
                     }});
                     //
                 });
