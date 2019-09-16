@@ -8,7 +8,8 @@ angular.module('adminApplication').component('copyEvent', {
     controller: copyEventCtrl,
     bindings: {
         dismiss: '&',
-        event:'<'
+        onCopy:'<',
+        event:'<',
     }
 });
 
@@ -34,15 +35,16 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter) {
         ctrl.dismiss();
     };
 
+    ctrl.submit = function() {
+        ctrl.onCopy([ctrl.newEvent, ctrl.selectedEvent]);
+    };
+
     ctrl.match = function(criteria) {
         var criteriaLower = criteria.toLowerCase();
-
         var splitted = criteriaLower.split(/\s+/);
-
         return function(item) {
             for(var i = 0; i < splitted.length; i++) {
                 var c = splitted[i];
-                console.log(c);
                 if(item.shortName.toLowerCase().indexOf(c) >= 0
                                || item.displayName.toLowerCase().indexOf(c) >= 0
                                || $filter('formatDate')(item.formattedBegin).indexOf(c) >= 0

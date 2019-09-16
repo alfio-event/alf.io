@@ -743,7 +743,7 @@
 
             var modal = $uibModal.open({
                 size: 'lg',
-                template: '<copy-event dismiss="ctrl.onDismiss()" event="ctrl.eventTemplate"></copy-event>',
+                template: '<copy-event dismiss="ctrl.onDismiss()" event="ctrl.eventTemplate" on-copy="ctrl.onEditComplete"></copy-event>',
                 backdrop: 'static',
                 controller: function($scope) {
                     var ctrl = this;
@@ -757,6 +757,11 @@
                 },
                 bindToController: true,
                 controllerAs: 'ctrl'
+            });
+
+            modal.result.then(function(res) {
+                var startAndEndDate = res[0];
+                var selectedEvent = res[1];
             });
         }
 
