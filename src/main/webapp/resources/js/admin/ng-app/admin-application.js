@@ -800,7 +800,10 @@
                         dateString: tc.formattedInception + " / " + tc.formattedExpiration,
                         inception: createDateTimeObject(tc.formattedInception),
                         expiration: createDateTimeObject(tc.formattedExpiration),
-                        maxTickets: tc.maxTickets
+                        maxTickets: tc.maxTickets,
+                        price: tc.price,
+                        tokenGenerationRequested: tc.accessRestricted,
+                        code: tc.code
                     }});
                     //
                 });
