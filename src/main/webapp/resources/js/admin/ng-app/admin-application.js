@@ -771,16 +771,24 @@
                 };
             }
 
+            function fromDateTimeObjectToMoment(dt) {
+                return moment(dt.date+' ' + dt.time, 'YYYY-MM-DD HH:mm');
+            }
+
             modal.result.then(function(res) {
                 var startAndEndDate = res[0];
                 var selectedEvent = res[1];
 
                 EventService.getEvent(selectedEvent.shortName).success(function(result) {
-                    console.log(selectedEvent);
-                    console.log(result);
                     // copy
+                    var momentStartEvent = fromDateTimeObjectToMoment(startAndEndDate.begin);
+                    var momentEventToCopyStart = moment(result.event.formattedBegin, 'YYYY-MM-DD HH:mm');
 
                     var eventToCopy = result.event;
+
+                    $scope.event.dateString = startAndEndDate.dateString;
+                    $scope.event.begin = angular.copy(startAndEndDate.begin);
+                    $scope.event.end = angular.copy(startAndEndDate.end);
 
                     $scope.event.location = eventToCopy.location;
                     $scope.event.geolocation = {timeZone: eventToCopy.timeZone};
@@ -797,29 +805,35 @@
                     $scope.event.vatPercentage = eventToCopy.vatPercentage;
                     $scope.event.vatIncluded = eventToCopy.vatIncluded;
                     $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
-                    $scope.event.ticketCategories = eventToCopy.ticketCategories.map(function(tc) {return {
-                        name: tc.name,
-                        bounded: tc.bounded,
-                        ordinal: tc.ordinal,
-                        dateString: tc.formattedInception + " / " + tc.formattedExpiration,
-                        inception: createDateTimeObject(tc.formattedInception),
-                        expiration: createDateTimeObject(tc.formattedExpiration),
-                        maxTickets: tc.maxTickets,
-                        price: tc.price,
-                        tokenGenerationRequested: tc.accessRestricted,
-                        code: tc.code,
-                        description: tc.description ? angular.copy(tc.description) : null,
-                        // check in custom dates
-                        validCheckInFromString: tc.formattedValidCheckInFrom,
-                        validCheckInFrom: createDateTimeObject(tc.formattedValidCheckInFrom),
-                        validCheckInToString: tc.formattedValidCheckInTo,
-                        validCheckInTo: createDateTimeObject(tc.formattedValidCheckInTo),
-                        // validity custom dates
-                        customValidityStartToString: tc.formattedTicketValidityStart,
-                        ticketValidityStart: createDateTimeObject(tc.formattedTicketValidityStart),
-                        customValidityEndToString: tc.formattedTicketValidityEnd,
-                        ticketValidityEnd: createDateTimeObject(tc.formattedTicketValidityEnd)
-                    }});
+                    $scope.event.ticketCategories = eventToCopy.ticketCategories.map(function(tc) {
+                        //inception/expiration : we keep the same date interval
+                        var categoryAdjustedStart = moment(momentStartEvent).add(moment(tc.formattedInception).diff(momentEventToCopyStart)).format('YYYY-MM-DD HH:mm');
+                        var categoryAdjustedEnd = moment(momentStartEvent).add(moment(tc.formattedExpiration).diff(momentEventToCopyStart)).format('YYYY-MM-DD HH:mm');
+
+                        return {
+                            name: tc.name,
+                            bounded: tc.bounded,
+                            ordinal: tc.ordinal,
+                            dateString: categoryAdjustedStart + ' / ' + categoryAdjustedEnd,
+                            inception: createDateTimeObject(categoryAdjustedStart),
+                            expiration: createDateTimeObject(categoryAdjustedEnd),
+                            maxTickets: tc.maxTickets,
+                            price: tc.price,
+                            tokenGenerationRequested: tc.accessRestricted,
+                            code: tc.code,
+                            description: tc.description ? angular.copy(tc.description) : null,
+                            // check in custom dates
+                            validCheckInFromString: tc.formattedValidCheckInFrom,
+                            validCheckInFrom: createDateTimeObject(tc.formattedValidCheckInFrom),
+                            validCheckInToString: tc.formattedValidCheckInTo,
+                            validCheckInTo: createDateTimeObject(tc.formattedValidCheckInTo),
+                            // validity custom dates
+                            customValidityStartToString: tc.formattedTicketValidityStart,
+                            ticketValidityStart: createDateTimeObject(tc.formattedTicketValidityStart),
+                            customValidityEndToString: tc.formattedTicketValidityEnd,
+                            ticketValidityEnd: createDateTimeObject(tc.formattedTicketValidityEnd)
+                        };
+                    });
                     //
                 });
             });
