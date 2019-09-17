@@ -713,6 +713,23 @@
                     $scope.definedLanguages = filterLanguages(true);
                     $scope.availableLanguages = filterLanguages(false);
                 }
+
+                //super ugly!
+                $scope.$parent.editCategoryCallback = function() {
+                    if($scope.ticketValidityType !== 'CUSTOM') {
+                        delete $scope.ticketCategory.customValidityStartFromString;
+                        delete $scope.ticketCategory.ticketValidityStart;
+                        delete $scope.ticketCategory.customValidityStartToString;
+                        delete $scope.ticketCategory.ticketValidityEnd;
+                    }
+
+                    if($scope.checkInAllowed !== 'CUSTOM') {
+                        delete $scope.ticketCategory.validCheckInFromString;
+                        delete $scope.ticketCategory.validCheckInFrom;
+                        delete $scope.ticketCategory.validCheckInToString;
+                        delete $scope.ticketCategory.validCheckInTo;
+                    }
+                }
             }
         };
     });
