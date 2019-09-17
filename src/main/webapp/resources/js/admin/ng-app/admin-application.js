@@ -809,10 +809,16 @@
                         tokenGenerationRequested: tc.accessRestricted,
                         code: tc.code,
                         description: tc.description ? angular.copy(tc.description) : null,
-                        validCheckInFromString: tc.validCheckInFrom,
-                        validCheckInFrom: createDateTimeObject(tc.validCheckInFrom),
-                        validCheckInToString: tc.validCheckInTo,
-                        validCheckInTo: createDateTimeObject(tc.validCheckInTo)
+                        // check in custom dates
+                        validCheckInFromString: tc.formattedValidCheckInFrom,
+                        validCheckInFrom: createDateTimeObject(tc.formattedValidCheckInFrom),
+                        validCheckInToString: tc.formattedValidCheckInTo,
+                        validCheckInTo: createDateTimeObject(tc.formattedValidCheckInTo),
+                        // validity custom dates
+                        customValidityStartToString: tc.formattedTicketValidityStart,
+                        ticketValidityStart: createDateTimeObject(tc.formattedTicketValidityStart),
+                        customValidityEndToString: tc.formattedTicketValidityEnd,
+                        ticketValidityEnd: createDateTimeObject(tc.formattedTicketValidityEnd)
                     }});
                     //
                 });
