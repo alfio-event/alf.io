@@ -791,7 +791,7 @@
                     $scope.event.end = angular.copy(startAndEndDate.end);
 
                     $scope.event.location = eventToCopy.location;
-                    $scope.event.geolocation = {timeZone: eventToCopy.timeZone};
+                    $scope.event.geolocation = {timeZone: eventToCopy.timeZone, latitude: eventToCopy.latitude, longitude: eventToCopy.longitude};
                     $scope.event.availableSeats = selectedEvent.availableSeats;
                     $scope.event.fileBlobId = selectedEvent.fileBlobId;
                     $scope.event.websiteUrl = eventToCopy.websiteUrl;
@@ -806,11 +806,15 @@
                     $scope.event.vatIncluded = eventToCopy.vatIncluded;
                     $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
                     $scope.event.ticketCategories = eventToCopy.ticketCategories.map(function(tc) {
-                        //inception/expiration : we keep the same date interval
-                        var categoryAdjustedStart = moment(momentStartEvent).add(moment(tc.formattedInception).diff(momentEventToCopyStart)).format('YYYY-MM-DD HH:mm');
-                        var categoryAdjustedEnd = moment(momentStartEvent).add(moment(tc.formattedExpiration).diff(momentEventToCopyStart)).format('YYYY-MM-DD HH:mm');
 
-                        return {
+                        var adjustDate = function(formattedDate) {
+                            return moment(momentStartEvent).add(moment(formattedDate, 'YYYY-MM-DD HH:mm').diff(momentEventToCopyStart)).format('YYYY-MM-DD HH:mm');
+                        }
+
+                        //inception/expiration : we keep the same date interval
+                        var categoryAdjustedStart = adjustDate(tc.formattedInception);
+                        var categoryAdjustedEnd = adjustDate(tc.formattedExpiration);
+                        var cat = {
                             name: tc.name,
                             bounded: tc.bounded,
                             ordinal: tc.ordinal,
@@ -822,17 +826,32 @@
                             tokenGenerationRequested: tc.accessRestricted,
                             code: tc.code,
                             description: tc.description ? angular.copy(tc.description) : null,
-                            // check in custom dates
-                            validCheckInFromString: tc.formattedValidCheckInFrom,
-                            validCheckInFrom: createDateTimeObject(tc.formattedValidCheckInFrom),
-                            validCheckInToString: tc.formattedValidCheckInTo,
-                            validCheckInTo: createDateTimeObject(tc.formattedValidCheckInTo),
-                            // validity custom dates
-                            customValidityStartToString: tc.formattedTicketValidityStart,
-                            ticketValidityStart: createDateTimeObject(tc.formattedTicketValidityStart),
-                            customValidityEndToString: tc.formattedTicketValidityEnd,
-                            ticketValidityEnd: createDateTimeObject(tc.formattedTicketValidityEnd)
                         };
+
+                        if (tc.formattedValidCheckInFrom) {
+                            var adjustedCheckInValidStart = adjustDate(tc.formattedValidCheckInFrom);
+                            cat.validCheckInFromString = adjustedCheckInValidStart;
+                            cat.validCheckInFrom = createDateTimeObject(adjustedCheckInValidStart);
+                        }
+
+                        if (tc.formattedValidCheckInTo) {
+                            var adjustedCheckInValidEnd = adjustDate(tc.formattedValidCheckInTo);
+                            cat.validCheckInToString = adjustedCheckInValidEnd;
+                            cat.validCheckInTo = createDateTimeObject(adjustedCheckInValidEnd);
+                        }
+
+                        if (tc.formattedTicketValidityStart) {
+                            var adjustedValidityStart = adjustDate(tc.formattedTicketValidityStart);
+                            cat.customValidityStartToString = adjustedValidityStart;
+                            cat.ticketValidityStart = createDateTimeObject(adjustedValidityStart);
+                        }
+
+                        if (tc.formattedTicketValidityEnd) {
+                            var adjustedValidityEnd = adjustDate(tc.formattedTicketValidityEnd);
+                            cat.customValidityEndToString = adjustedValidityEnd;
+                            cat.ticketValidityEnd = createDateTimeObject(adjustedValidityEnd);
+                        }
+                        return cat;
                     });
                     //
                 });
