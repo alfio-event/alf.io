@@ -760,6 +760,10 @@
             });
 
             function createDateTimeObject(dateString) {
+                if(dateString == null) {
+                    return null;
+                }
+
                 var d = moment(dateString, 'YYYY-MM-DD HH:mm');
                 return {
                     date: d.format('YYYY-MM-DD'),
@@ -804,7 +808,11 @@
                         price: tc.price,
                         tokenGenerationRequested: tc.accessRestricted,
                         code: tc.code,
-                        description: tc.description ? angular.copy(tc.description) : null
+                        description: tc.description ? angular.copy(tc.description) : null,
+                        validCheckInFromString: tc.validCheckInFrom,
+                        validCheckInFrom: createDateTimeObject(tc.validCheckInFrom),
+                        validCheckInToString: tc.validCheckInTo,
+                        validCheckInTo: createDateTimeObject(tc.validCheckInTo)
                     }});
                     //
                 });
