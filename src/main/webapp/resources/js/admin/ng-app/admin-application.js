@@ -1372,20 +1372,24 @@
                     ctrl.event = event;
                     ctrl.close = function() {
                         modal.close();
-                    }
+                    };
                     ctrl.onCreation = function(reservationInfo) {
-                        AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
-                            ctrl.reservationDescriptor = reservationDescriptor.data.data;
-                            ctrl.showReservation = true;
-                        })
-                    }
+                        AdminReservationService.confirm(reservationInfo.eventName, reservationInfo.reservationId).then(function(reservationDescriptor) {
+                            ctrl.onConfirm(reservationInfo);
+                        }, function(err) {
+                            AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
+                                ctrl.reservationDescriptor = reservationDescriptor.data.data;
+                                ctrl.showReservation = true;
+                            });
+                        });
+                    };
                     ctrl.onUpdate = function(reservationInfo) {
                         ctrl.resetReservationView = true;
                         AdminReservationService.load(reservationInfo.eventName, reservationInfo.reservationId).then(function (reservationDescriptor) {
                             ctrl.reservationDescriptor = reservationDescriptor.data.data;
                             ctrl.resetReservationView = false;
                         })
-                    }
+                    };
 
                     ctrl.onConfirm = function(reservationInfo) {
                         reloadTickets();
