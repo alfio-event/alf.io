@@ -70,14 +70,14 @@ public class AttendeeApiController {
 
     @PostMapping("/sponsor-scan")
     public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request, Principal principal) {
-        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, principal.getName()));
+        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, principal.getName()));
     }
 
     @PostMapping("/sponsor-scan/bulk")
     public ResponseEntity<List<TicketAndCheckInResult>> scanBadges(@RequestBody List<SponsorScanRequest> requests, Principal principal) {
         String username = principal.getName();
         return ResponseEntity.ok(requests.stream()
-            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, username))
+            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, username))
             .collect(Collectors.toList()));
     }
 
@@ -120,11 +120,15 @@ public class AttendeeApiController {
     public static class SponsorScanRequest {
         private final String eventName;
         private final String ticketIdentifier;
+        private final String notes;
 
         @JsonCreator
-        public SponsorScanRequest(@JsonProperty("eventName") String eventName, @JsonProperty("ticketIdentifier") String ticketIdentifier) {
+        public SponsorScanRequest(@JsonProperty("eventName") String eventName,
+                                  @JsonProperty("ticketIdentifier") String ticketIdentifier,
+                                  @JsonProperty("notes") String notes) {
             this.eventName = eventName;
             this.ticketIdentifier = ticketIdentifier;
+            this.notes = notes;
         }
     }
 
