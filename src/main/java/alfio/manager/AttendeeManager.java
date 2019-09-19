@@ -16,7 +16,6 @@
  */
 package alfio.manager;
 
-import alfio.model.support.TicketWithAdditionalFields;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.DefaultCheckInResult;
 import alfio.manager.support.SponsorAttendeeData;
@@ -28,6 +27,7 @@ import alfio.model.Ticket;
 import alfio.model.TicketWithCategory;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
+import alfio.model.support.TicketWithAdditionalFields;
 import alfio.repository.*;
 import alfio.repository.user.UserRepository;
 import alfio.util.EventUtil;
@@ -52,7 +52,7 @@ public class AttendeeManager {
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
-    public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String username) {
+    public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String notes, String username) {
         int userId = userRepository.getByUsername(username).getId();
         Optional<EventAndOrganizationId> maybeEvent = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName);
         if(maybeEvent.isEmpty()) {
@@ -70,7 +70,9 @@ public class AttendeeManager {
         Optional<ZonedDateTime> existingRegistration = sponsorScanRepository.getRegistrationTimestamp(userId, event.getId(), ticket.getId());
         if(existingRegistration.isEmpty()) {
             ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
-            sponsorScanRepository.insert(userId, ZonedDateTime.now(eventZoneId), event.getId(), ticket.getId());
+            sponsorScanRepository.insert(userId, ZonedDateTime.now(eventZoneId), event.getId(), ticket.getId(), notes);
+        } else {
+            sponsorScanRepository.updateNotes(userId, event.getId(), ticket.getId(), notes);
         }
         return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
     }
