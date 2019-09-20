@@ -166,6 +166,7 @@ public class EventModification {
     @Getter
     public static class AdditionalField implements WithRestrictedValues, WithLinkedCategories {
         private final int order;
+        private final boolean useDefinedOrder;
         private final String name;
         private final String type;
         private final boolean required;
@@ -183,6 +184,7 @@ public class EventModification {
 
         @JsonCreator
         public AdditionalField(@JsonProperty("order") int order,
+                               @JsonProperty("useDefinedOrder") Boolean useDefinedOrder,
                                @JsonProperty("name") String name,
                                @JsonProperty("type") String type,
                                @JsonProperty("required") boolean required,
@@ -194,6 +196,7 @@ public class EventModification {
                                @JsonProperty("forAdditionalService") AdditionalService linkedAdditionalService,
                                @JsonProperty("categoryIds") List<Integer> linkedCategoryIds) {
             this.order = order;
+            this.useDefinedOrder = Boolean.TRUE.equals(useDefinedOrder);
             this.name = name;
             this.type = type;
             this.required = required;

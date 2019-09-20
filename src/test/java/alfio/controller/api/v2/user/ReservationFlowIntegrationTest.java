@@ -237,7 +237,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
         // add additional fields before and after, with one mandatory
-        var af = new EventModification.AdditionalField(-1, "field1", "text", true, false,null, null, null,
+        var af = new EventModification.AdditionalField(-1, true, "field1", "text", true, false,null, null, null,
             Map.of("en", new EventModification.Description("field en", "", null)), null, null);
         eventManager.addAdditionalField(event, af);
 
@@ -245,7 +245,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
         ticketFieldRepository.updateFieldOrder(afId, -1);
 
-        var af2 = new EventModification.AdditionalField(1, "field2", "text", false, false,null, null, null,
+        var af2 = new EventModification.AdditionalField(1, true, "field2", "text", false, false,null, null, null,
             Map.of("en", new EventModification.Description("field2 en", "", null)), null, null);
         eventManager.addAdditionalField(event, af2);
         //
@@ -268,7 +268,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         additionalServiceId = addServRes.getBody().getId();
         //
 
-        var af3 = new EventModification.AdditionalField(2, "field3", "text", true, false, null, null, null,
+        var af3 = new EventModification.AdditionalField(2, true, "field3", "text", true, false, null, null, null,
             Map.of("en", new EventModification.Description("field3 en", "", null)), addServRes.getBody(), null);
         eventManager.addAdditionalField(event, af3);
 

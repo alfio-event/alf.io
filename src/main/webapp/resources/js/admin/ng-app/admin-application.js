@@ -695,10 +695,43 @@
         $scope.save = function(form, event) {
             validationPerformer($q, EventService.checkEvent, event, form, $scope, NotificationHandler).then(function() {
                 EventService.createEvent(event).success(function() {
-                    if(window.sessionStorage) {
-                        delete window.sessionStorage.new_event;
+                    if($scope.additionalFieldsToBeCreated) {
+                        EventService.getEvent(event.shortName).then(function(createdEvent) {
+                            $q.all($scope.additionalFieldsToBeCreated.map(function(af) {
+                                var description = {};
+                                angular.forEach(af.description, function(v,k) {
+                                    description[k] = {label: v.description.label, placeholder: v.description.placeholder, restrictedValues: v.description.restrictedValues}
+                                });
+
+                                var newAdditionalField = {
+                                    order: af.order,
+                                    useDefinedOrder: true,
+                                    name: af.name,
+                                    type: af.type,
+                                    required: af.required,
+                                    readOnly: af.readOnly,
+                                    minLength: af.minLength,
+                                    maxLength: af.maxLength,
+                                    restrictedValues: af.restrictedValues.map(function(rv) {return {value: rv}}),
+                                    description: description,
+                                    forAdditionalService: null,
+                                    categoryIds: []
+                                };
+
+                                return EventService.addField(event.shortName, newAdditionalField);
+                            })).then(function(res) {
+                                if(window.sessionStorage) {
+                                    delete window.sessionStorage.new_event;
+                                }
+                                $state.go('events.single.detail', {eventName: event.shortName});
+                            });
+                        });
+                    } else {
+                        if(window.sessionStorage) {
+                            delete window.sessionStorage.new_event;
+                        }
+                        $state.go('events.single.detail', {eventName: event.shortName});
                     }
-                    $state.go('events.single.detail', {eventName: event.shortName});
                 });
             }, angular.noop);
         };
@@ -778,6 +811,13 @@
             modal.result.then(function(res) {
                 var startAndEndDate = res[0];
                 var selectedEvent = res[1];
+
+                var additionalFields = res[2];
+
+
+                if (additionalFields && additionalFields.length > 0) {
+                    $scope.additionalFieldsToBeCreated = additionalFields;
+                }
 
                 EventService.getEvent(selectedEvent.shortName).success(function(result) {
                     // copy

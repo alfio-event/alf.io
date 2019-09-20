@@ -36,7 +36,8 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter) {
     };
 
     ctrl.submit = function() {
-        ctrl.onCopy([ctrl.newEvent, ctrl.selectedEvent]);
+        var selectedAdditionalFields = ctrl.additionalFields.filter(function(af) {return ctrl.selectedAdditionalFields[af.name]});
+        ctrl.onCopy([ctrl.newEvent, ctrl.selectedEvent, selectedAdditionalFields]);
     };
 
     ctrl.match = function(criteria) {
@@ -58,6 +59,13 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter) {
 
     ctrl.onSelect = function($item, $model, $label) {
         ctrl.selectedEvent = $item;
+        EventService.getAdditionalFields(ctrl.selectedEvent.shortName).then(function(res) {
+            ctrl.additionalFields = res.data;
+            ctrl.selectedAdditionalFields = {};
+            angular.forEach(res.data, function(r) {
+                ctrl.selectedAdditionalFields[r.name] = true;
+            });
+        });
     }
 }
 

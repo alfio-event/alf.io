@@ -304,6 +304,7 @@ public class EventCreationRequest{
 
             return new EventModification.AdditionalField(
                 position,
+                null,
                 name,
                 code,
                 Boolean.TRUE.equals(required),
