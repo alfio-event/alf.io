@@ -702,7 +702,6 @@
                                 angular.forEach(af.description, function(v,k) {
                                     description[k] = {label: v.description.label, placeholder: v.description.placeholder, restrictedValues: v.description.restrictedValues}
                                 });
-
                                 var newAdditionalField = {
                                     order: af.order,
                                     useDefinedOrder: true,
@@ -715,7 +714,7 @@
                                     restrictedValues: af.restrictedValues.map(function(rv) {return {value: rv}}),
                                     description: description,
                                     forAdditionalService: null,
-                                    categoryIds: []
+                                    categoryIds: af.categoryIds.map(function(name) {return createdEvent.data.event.ticketCategories.filter(function(tc) {return tc.name === name})[0].id})
                                 };
 
                                 return EventService.addField(event.shortName, newAdditionalField);
@@ -811,9 +810,7 @@
             modal.result.then(function(res) {
                 var startAndEndDate = res[0];
                 var selectedEvent = res[1];
-
                 var additionalFields = res[2];
-
 
                 if (additionalFields && additionalFields.length > 0) {
                     $scope.additionalFieldsToBeCreated = additionalFields;
@@ -825,6 +822,14 @@
                     var momentEventToCopyStart = moment(result.event.formattedBegin, 'YYYY-MM-DD HH:mm');
 
                     var eventToCopy = result.event;
+
+                    if($scope.additionalFieldsToBeCreated) {
+                        angular.forEach($scope.additionalFieldsToBeCreated, function(af) {
+                            af.categoryIds = af.categoryIds.map(function(id) {
+                                return eventToCopy.ticketCategories.filter(function(tc) {return tc.id === id})[0].name;
+                            });
+                        });
+                    }
 
                     $scope.event.dateString = startAndEndDate.dateString;
                     $scope.event.begin = angular.copy(startAndEndDate.begin);
