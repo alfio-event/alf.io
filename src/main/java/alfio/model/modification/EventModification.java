@@ -314,6 +314,7 @@ public class EventModification {
         private final List<AdditionalServiceText> title;
         private final List<AdditionalServiceText> description;
         private final BigDecimal finalPrice;
+        private final String currency;
         private final alfio.model.AdditionalService.AdditionalServiceType type;
         private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy;
 
@@ -367,6 +368,7 @@ public class EventModification {
             this.title = title;
             this.description = description;
             this.finalPrice = finalPrice;
+            this.currency = currencyCode;
             this.type = type;
             this.supplementPolicy = supplementPolicy;
         }
