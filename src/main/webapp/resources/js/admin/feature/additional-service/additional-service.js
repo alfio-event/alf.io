@@ -230,7 +230,12 @@
             };
             if(angular.isDefined(ctrl.eventStartDate)) {
                 var d = moment.max(moment(ctrl.eventStartDate), moment().startOf('hour'));
+                var now = moment().startOf('hour');
                 ctrl.item = angular.extend(ctrl.item, {
+                    inception : {
+                        date: now.format('YYYY-MM-DD'),
+                        time: now.format('HH:mm')
+                    },
                     expiration : {
                         date: d.format('YYYY-MM-DD'),
                         time: d.format('HH:mm')
