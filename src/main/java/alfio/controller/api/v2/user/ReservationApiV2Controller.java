@@ -341,6 +341,8 @@ public class ReservationApiV2Controller {
             if(invoiceOnly && reservationCost.getPriceWithVAT() > 0) {
                 //override, that's why we save it
                 contactAndTicketsForm.setInvoiceRequested(true);
+            } else if (reservationCost.getPriceWithVAT() == 0) {
+                contactAndTicketsForm.setInvoiceRequested(false);
             }
 
             CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event.mustUseFirstAndLastName(), false);
