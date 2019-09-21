@@ -14,7 +14,7 @@ angular.module('adminApplication').component('copyEvent', {
 });
 
 
-function copyEventCtrl(EventService, $q, $templateCache, $filter) {
+function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
 
     $templateCache.put('copy-event-typeahead-event.html', '<a>{{match.label.displayName}} - {{match.label.formattedBegin | formatDate}} / {{match.label.formattedEnd | formatDate}}</a>');
 
@@ -37,7 +37,8 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter) {
 
     ctrl.submit = function() {
         var selectedAdditionalFields = ctrl.additionalFields.filter(function(af) {return ctrl.selectedAdditionalFields[af.name]});
-        ctrl.onCopy([ctrl.newEvent, ctrl.selectedEvent, selectedAdditionalFields]);
+        var selectedAdditionalServices = ctrl.additionalServices.filter(function(as) {return ctrl.selectedAdditionalServices[as.id]});
+        ctrl.onCopy([ctrl.newEvent, ctrl.selectedEvent, selectedAdditionalFields, selectedAdditionalServices]);
     };
 
     ctrl.match = function(criteria) {
@@ -59,6 +60,16 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter) {
 
     ctrl.onSelect = function($item, $model, $label) {
         ctrl.selectedEvent = $item;
+
+        $http.get('/admin/api/event/'+$item.id+'/additional-services/').then(function(res) {
+            ctrl.additionalServices = res.data;
+            console.log(res.data);
+            ctrl.selectedAdditionalServices = {};
+            angular.forEach(res.data, function(r) {
+                ctrl.selectedAdditionalServices[r.id] = true;
+            });
+        });
+
         EventService.getAdditionalFields(ctrl.selectedEvent.shortName).then(function(res) {
             ctrl.additionalFields = res.data;
             ctrl.selectedAdditionalFields = {};
@@ -69,6 +80,6 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter) {
     }
 }
 
-copyEventCtrl.$inject = ['EventService', '$q', '$templateCache', '$filter'];
+copyEventCtrl.$inject = ['EventService', '$q', '$templateCache', '$filter', '$http'];
 
 })();
