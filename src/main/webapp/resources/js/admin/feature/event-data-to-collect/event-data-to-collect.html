@@ -83,7 +83,17 @@
             </div>
             <hr data-ng-if="field.context === 'ADDITIONAL_SERVICE'" />
             <div data-ng-if="field.context === 'ADDITIONAL_SERVICE'">
-                <i class="fa fa-info-circle"></i> collected only if <i><a ui-sref="events.single.donations({eventName: $ctrl.event.shortName})">{{$ctrl.additionalServiceDescription($ctrl.event, field.additionalServiceId)}}</a></i> has been selected.
+
+                <i class="fa fa-info-circle"></i> collected only if
+                    <span ng-if="$ctrl.additionalServiceType($ctrl.event, field.additionalServiceId) === 'DONATION'">
+                        <strong>donation</strong>:
+                        <i><a ui-sref="events.single.donations({eventName: $ctrl.event.shortName})">{{$ctrl.additionalServiceDescription($ctrl.event, field.additionalServiceId)}}</a></i>
+                    </span>
+                    <span ng-if="$ctrl.additionalServiceType($ctrl.event, field.additionalServiceId) !== 'DONATION'">
+                        <strong>additional option</strong>:
+                        <i><a ui-sref="events.single.additionalServices({eventName: $ctrl.event.shortName})">{{$ctrl.additionalServiceDescription($ctrl.event, field.additionalServiceId)}}</a></i>
+                    </span>
+                has been selected.
             </div>
             <hr data-ng-if="field.categoryIds && field.categoryIds.length > 0" />
             <div class="row" data-ng-if="field.categoryIds && field.categoryIds.length > 0">

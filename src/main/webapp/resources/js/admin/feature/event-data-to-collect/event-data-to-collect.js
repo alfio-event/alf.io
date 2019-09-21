@@ -119,6 +119,7 @@
         ctrl.deleteFieldModal = deleteFieldModal;
         ctrl.editField = editField;
         ctrl.additionalServiceDescription = additionalServiceDescription;
+        ctrl.additionalServiceType = additionalServiceType;
         ctrl.getCategoryDescription = getCategoryDescription;
         ctrl.openStats = openStats;
 
@@ -350,6 +351,11 @@
                 return service.title.map(function(t) { return t.value; }).join(' / ');
             }
             return "#"+id;
+        }
+
+        function additionalServiceType(event, id) {
+            var service = _.find(event.additionalServices, function (as) { return as.id === id;});
+            return service ? service.type : null;
         }
     }
 

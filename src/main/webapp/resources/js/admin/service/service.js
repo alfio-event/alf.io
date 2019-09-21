@@ -434,6 +434,10 @@
                 return modal.result.then(function(categories) {
                     return $http.put('/admin/api/events/'+event.shortName+'/rearrange-categories', categories).error(HttpErrorHandler.handle);
                 });
+            },
+
+            createAdditionalService: function(eventId, additionalService) {
+                return $http.post('/admin/api/event/'+eventId+'/additional-services/', additionalService).error(HttpErrorHandler.handle);
             }
         };
         return service;

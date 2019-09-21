@@ -11,6 +11,7 @@
                     <li role="menuitem" data-ui-sref-active="active"><a data-ui-sref="events.single.compose-custom-message({eventName: ctrl.event.shortName})"><i class="fa fa-envelope"></i> compose message</a></li>
                     <li role="menuitem" ng-if="ctrl.event.status === 'PUBLIC'"><a ng-click="ctrl.deactivateEvent(ctrl.event)"><i class="fa fa-eye-slash"></i> hide from list</a></li>
                     <li role="menuitem" data-ui-sref-active="active"><a data-ui-sref="events.single.checkIn({eventName: ctrl.event.shortName})"><i class="fa fa-check"></i> Check-in</a></li>
+                    <li role="menuitem" data-ui-sref-active="active"><a data-ui-sref="events.new({eventName: ctrl.event.shortName})"><i class="fa fa-copy"></i> Copy this event</a></li>
                     <li role="menuitem" data-ui-sref-active="active"><a ng-click="ctrl.openDeleteWarning(ctrl.event)"><i class="fa fa-trash"></i> Delete</a></li>
                 </ul>
             </li>

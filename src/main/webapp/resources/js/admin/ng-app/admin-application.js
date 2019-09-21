@@ -127,7 +127,7 @@
                 templateUrl: BASE_STATIC_URL + "/event/index.html"
             })
             .state('events.new', {
-                url: '/new',
+                url: '/new?eventName',
                 templateUrl: BASE_STATIC_URL + "/event/edit-event.html",
                 controller: 'CreateEventController',
                 data: {
@@ -592,7 +592,7 @@
 
     };
 
-    admin.controller('CreateEventController', function($scope, $state, $rootScope,
+    admin.controller('CreateEventController', function($scope, $state, $rootScope, $uibModal,
                                                        $q, OrganizationService, PaymentProxyService,
                                                        EventService, LocationService, PAYMENT_PROXY_DESCRIPTIONS, TicketCategoryEditorService,
                                                        NotificationHandler) {
@@ -695,10 +695,48 @@
         $scope.save = function(form, event) {
             validationPerformer($q, EventService.checkEvent, event, form, $scope, NotificationHandler).then(function() {
                 EventService.createEvent(event).success(function() {
-                    if(window.sessionStorage) {
-                        delete window.sessionStorage.new_event;
-                    }
-                    $state.go('events.single.detail', {eventName: event.shortName});
+                    $scope.additionalFieldsToBeCreated = $scope.additionalFieldsToBeCreated || [];
+                    $scope.additionalServicesToBeCreated = $scope.additionalServicesToBeCreated || [];
+
+                    EventService.getEvent(event.shortName).then(function(createdEvent) {
+                        $q.all($scope.additionalServicesToBeCreated.map(function(as) {
+                            return EventService.createAdditionalService(createdEvent.data.event.id, as);
+                        })).then(function(createdAdditionalServices) {
+                            var mappedAdditionalServicesId = {};
+                            for(var i = 0; i < $scope.additionalServicesToBeCreated.length; i++) {
+                                mappedAdditionalServicesId[$scope.additionalServicesToBeCreated[i].id] =  createdAdditionalServices[i].data;
+                            }
+
+                            return $q.all($scope.additionalFieldsToBeCreated.map(function(af) {
+                                var description = {};
+                                angular.forEach(af.description, function(v,k) {
+                                    description[k] = {label: v.description.label, placeholder: v.description.placeholder, restrictedValues: v.description.restrictedValues}
+                                });
+                                var newAdditionalField = {
+                                    order: af.order,
+                                    useDefinedOrder: true,
+                                    name: af.name,
+                                    type: af.type,
+                                    required: af.required,
+                                    readOnly: af.readOnly,
+                                    minLength: af.minLength,
+                                    maxLength: af.maxLength,
+                                    restrictedValues: af.restrictedValues.map(function(rv) {return {value: rv}}),
+                                    description: description,
+                                    forAdditionalService: mappedAdditionalServicesId[af.additionalServiceId],
+                                    categoryIds: af.categoryIds.map(function(name) {return createdEvent.data.event.ticketCategories.filter(function(tc) {return tc.name === name})[0].id})
+                                };
+
+                                return EventService.addField(event.shortName, newAdditionalField);
+                            }));
+                        }).then(function(res) {
+                            if(window.sessionStorage) {
+                                delete window.sessionStorage.new_event;
+                            }
+                            $state.go('events.single.detail', {eventName: event.shortName});
+                        });
+                    });
+
                 });
             }, angular.noop);
         };
@@ -734,6 +772,162 @@
             }
             return _.map(dynamic, 'name').join(', ');
         };
+
+
+
+
+        $scope.openCopyEvent = function(eventNameToPreselect) {
+            var currentEventInScope = angular.copy($scope.event);
+
+            var modal = $uibModal.open({
+                size: 'lg',
+                template: '<copy-event dismiss="ctrl.onDismiss()" event="ctrl.eventTemplate" on-copy="ctrl.onEditComplete" event-name-to-preselect="ctrl.eventNameToPreselect"></copy-event>',
+                backdrop: 'static',
+                controller: function($scope) {
+                    var ctrl = this;
+                    ctrl.eventTemplate = currentEventInScope;
+                    ctrl.eventNameToPreselect = eventNameToPreselect;
+                    ctrl.onEditComplete = function(item) {
+                        modal.close(item);
+                    };
+                    ctrl.onDismiss = function() {
+                        modal.dismiss();
+                    };
+                },
+                bindToController: true,
+                controllerAs: 'ctrl'
+            });
+
+            function createDateTimeObject(dateString) {
+                if(dateString == null) {
+                    return null;
+                }
+
+                var d = moment(dateString, 'YYYY-MM-DD HH:mm');
+                return {
+                    date: d.format('YYYY-MM-DD'),
+                    time: d.format('HH:mm')
+                };
+            }
+
+            function fromDateTimeObjectToMoment(dt) {
+                return moment(dt.date+' ' + dt.time, 'YYYY-MM-DD HH:mm');
+            }
+
+            modal.result.then(function(res) {
+                var startAndEndDate = res[0];
+                var selectedEvent = res[1];
+                var additionalFields = res[2];
+                var additionalServices = res[3];
+
+                if (additionalFields && additionalFields.length > 0) {
+                    $scope.additionalFieldsToBeCreated = additionalFields;
+                }
+
+                if (additionalServices &&  additionalServices.length > 0) {
+                    $scope.additionalServicesToBeCreated = additionalServices;
+                }
+
+                EventService.getEvent(selectedEvent.shortName).success(function(result) {
+                    // copy
+                    var momentStartEvent = fromDateTimeObjectToMoment(startAndEndDate.begin);
+                    var momentEventToCopyStart = moment(result.event.formattedBegin, 'YYYY-MM-DD HH:mm');
+
+                    var eventToCopy = result.event;
+
+                    var adjustDate = function(formattedDate) {
+                        return moment(momentStartEvent).add(moment(formattedDate, 'YYYY-MM-DD HH:mm').diff(momentEventToCopyStart)).format('YYYY-MM-DD HH:mm');
+                    }
+
+                    if($scope.additionalFieldsToBeCreated) {
+                        angular.forEach($scope.additionalFieldsToBeCreated, function(af) {
+                            af.categoryIds = af.categoryIds.map(function(id) {
+                                return eventToCopy.ticketCategories.filter(function(tc) {return tc.id === id})[0].name;
+                            });
+                        });
+                    }
+
+                    if ($scope.additionalServicesToBeCreated) {
+                        angular.forEach($scope.additionalServicesToBeCreated, function(as) {
+                            //adjust time
+                            as.inception = createDateTimeObject(adjustDate(fromDateTimeObjectToMoment(as.inception).format('YYYY-MM-DD HH:mm')));
+                            as.expiration = createDateTimeObject(adjustDate(fromDateTimeObjectToMoment(as.expiration).format('YYYY-MM-DD HH:mm')));
+                        });
+                    }
+
+                    $scope.event.dateString = startAndEndDate.dateString;
+                    $scope.event.begin = angular.copy(startAndEndDate.begin);
+                    $scope.event.end = angular.copy(startAndEndDate.end);
+
+                    $scope.event.location = eventToCopy.location;
+                    $scope.event.geolocation = {timeZone: eventToCopy.timeZone, latitude: eventToCopy.latitude, longitude: eventToCopy.longitude};
+                    $scope.event.availableSeats = selectedEvent.availableSeats;
+                    $scope.event.fileBlobId = selectedEvent.fileBlobId;
+                    $scope.event.websiteUrl = eventToCopy.websiteUrl;
+                    $scope.event.termsAndConditionsUrl = eventToCopy.termsAndConditionsUrl;
+                    $scope.event.privacyPolicyUrl = eventToCopy.privacyPolicyUrl;
+                    $scope.event.locales = eventToCopy.locales;
+                    $scope.event.description = angular.copy(eventToCopy.description);
+                    $scope.event.freeOfCharge = eventToCopy.freeOfCharge;
+                    $scope.event.regularPrice = eventToCopy.regularPrice;
+                    $scope.event.currency = eventToCopy.currency;
+                    $scope.event.vatPercentage = eventToCopy.vatPercentage;
+                    $scope.event.vatIncluded = eventToCopy.vatIncluded;
+                    $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
+                    $scope.event.ticketCategories = eventToCopy.ticketCategories.map(function(tc) {
+
+
+
+                        //inception/expiration : we keep the same date interval
+                        var categoryAdjustedStart = adjustDate(tc.formattedInception);
+                        var categoryAdjustedEnd = adjustDate(tc.formattedExpiration);
+                        var cat = {
+                            name: tc.name,
+                            bounded: tc.bounded,
+                            ordinal: tc.ordinal,
+                            dateString: categoryAdjustedStart + ' / ' + categoryAdjustedEnd,
+                            inception: createDateTimeObject(categoryAdjustedStart),
+                            expiration: createDateTimeObject(categoryAdjustedEnd),
+                            maxTickets: tc.maxTickets,
+                            price: tc.price,
+                            tokenGenerationRequested: tc.accessRestricted,
+                            code: tc.code,
+                            description: tc.description ? angular.copy(tc.description) : null,
+                        };
+
+                        if (tc.formattedValidCheckInFrom) {
+                            var adjustedCheckInValidStart = adjustDate(tc.formattedValidCheckInFrom);
+                            cat.validCheckInFromString = adjustedCheckInValidStart;
+                            cat.validCheckInFrom = createDateTimeObject(adjustedCheckInValidStart);
+                        }
+
+                        if (tc.formattedValidCheckInTo) {
+                            var adjustedCheckInValidEnd = adjustDate(tc.formattedValidCheckInTo);
+                            cat.validCheckInToString = adjustedCheckInValidEnd;
+                            cat.validCheckInTo = createDateTimeObject(adjustedCheckInValidEnd);
+                        }
+
+                        if (tc.formattedTicketValidityStart) {
+                            var adjustedValidityStart = adjustDate(tc.formattedTicketValidityStart);
+                            cat.customValidityStartToString = adjustedValidityStart;
+                            cat.ticketValidityStart = createDateTimeObject(adjustedValidityStart);
+                        }
+
+                        if (tc.formattedTicketValidityEnd) {
+                            var adjustedValidityEnd = adjustDate(tc.formattedTicketValidityEnd);
+                            cat.customValidityEndToString = adjustedValidityEnd;
+                            cat.ticketValidityEnd = createDateTimeObject(adjustedValidityEnd);
+                        }
+                        return cat;
+                    });
+                    //
+                });
+            });
+        }
+
+        if($state && $state.params && $state.params.eventName) {
+            $scope.openCopyEvent($state.params.eventName);
+        }
 
 
     });

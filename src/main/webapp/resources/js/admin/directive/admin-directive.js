@@ -364,19 +364,28 @@
                     var locales = $scope.obj.locales;
                     return (r.value & locales) === r.value;
                 };
-                EventService.getSupportedLanguages().success(function(allLanguages) {
-                    var selected = _.filter(allLanguages, isLangSelected);
-                    if(selected.length === 0 && allLanguages.length > 0) {
-                        $scope.addDescription(allLanguages[0]);
-                        selected.push(allLanguages[0]);
-                    }
-                    $scope.selectedLanguages.langs = _.map(selected, function(r) {
-                        return r.value;
-                    });
 
-                    $scope.allLanguages = allLanguages;
-                    evaluateAvailableLanguages(allLanguages);
+                function handleLocales() {
+                    EventService.getSupportedLanguages().success(function(allLanguages) {
+                        var selected = _.filter(allLanguages, isLangSelected);
+                        if(selected.length === 0 && allLanguages.length > 0) {
+                            $scope.addDescription(allLanguages[0]);
+                            selected.push(allLanguages[0]);
+                        }
+                        $scope.selectedLanguages.langs = _.map(selected, function(r) {
+                            return r.value;
+                        });
+
+                        $scope.allLanguages = allLanguages;
+                        evaluateAvailableLanguages(allLanguages);
+                    });
+                }
+
+                handleLocales();
+                $scope.$watch('obj.locales', function(newValue) {
+                    handleLocales();
                 });
+
                 $scope.addDescription = function(language) {
                     $scope.toggleLanguageSelection(language);
                     evaluateAvailableLanguages($scope.allLanguages);
@@ -556,6 +565,10 @@
                 });
 
                 $scope.$watch("allowedPaymentProxies", function() {
+                    initPaymentProxies();
+                }, true);
+
+                $scope.$watch('obj.allowedPaymentProxies', function() {
                     initPaymentProxies();
                 }, true);
 
@@ -745,6 +758,23 @@
                     $scope.ticketCategory.description[language.locale] = '';
                     $scope.definedLanguages = filterLanguages(true);
                     $scope.availableLanguages = filterLanguages(false);
+                }
+
+                //super ugly!
+                $scope.$parent.editCategoryCallback = function() {
+                    if($scope.ticketValidityType !== 'CUSTOM') {
+                        delete $scope.ticketCategory.customValidityStartFromString;
+                        delete $scope.ticketCategory.ticketValidityStart;
+                        delete $scope.ticketCategory.customValidityStartToString;
+                        delete $scope.ticketCategory.ticketValidityEnd;
+                    }
+
+                    if($scope.checkInAllowed !== 'CUSTOM') {
+                        delete $scope.ticketCategory.validCheckInFromString;
+                        delete $scope.ticketCategory.validCheckInFrom;
+                        delete $scope.ticketCategory.validCheckInToString;
+                        delete $scope.ticketCategory.validCheckInTo;
+                    }
                 }
             }
         };

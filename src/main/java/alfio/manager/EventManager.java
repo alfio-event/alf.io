@@ -952,8 +952,12 @@ public class EventManager {
     }
     
 	public void addAdditionalField(EventAndOrganizationId event, AdditionalField field) {
-		Integer order = ticketFieldRepository.findMaxOrderValue(event.getId());
-		insertAdditionalField(event, field, order == null ? 0 : order + 1);
+        if (field.isUseDefinedOrder()) {
+            insertAdditionalField(event, field, field.getOrder());
+        } else {
+            Integer order = ticketFieldRepository.findMaxOrderValue(event.getId());
+            insertAdditionalField(event, field, order == null ? 0 : order + 1);
+        }
 	}
 	
 	public void deleteAdditionalField(int ticketFieldConfigurationId) {

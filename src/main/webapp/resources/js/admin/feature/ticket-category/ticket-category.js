@@ -107,6 +107,11 @@
                         if(!form.$valid) {
                             return;
                         }
+
+                        if($scope.editCategoryCallback) {
+                            $scope.editCategoryCallback(); //<- ugly workaround to cleanup not up to date data
+                        }
+
                         if(angular.isDefined(event.id)) {
                             //remove all empty descriptions
                             if(category.description) {
