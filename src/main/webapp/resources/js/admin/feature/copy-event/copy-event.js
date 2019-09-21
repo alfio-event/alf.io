@@ -10,6 +10,7 @@ angular.module('adminApplication').component('copyEvent', {
         dismiss: '&',
         onCopy:'<',
         event:'<',
+        eventNameToPreselect: '<'
     }
 });
 
@@ -28,6 +29,14 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
     ctrl.$onInit = function() {
         $q.all([EventService.getAllActiveEvents(), EventService.getAllExpiredEvents()]).then(function(res) {
             ctrl.events = res[0].data.concat(res[1].data);
+            if(ctrl.eventNameToPreselect) {
+                for (var i = 0; i < ctrl.events.length; i++) {
+                    if(ctrl.events[i].shortName === ctrl.eventNameToPreselect) {
+                        ctrl.onSelect(ctrl.events[i]);
+                        break;
+                    }
+                }
+            }
         });
     }
 
@@ -58,7 +67,7 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
         }
     }
 
-    ctrl.onSelect = function($item, $model, $label) {
+    ctrl.onSelect = function($item) {
         ctrl.selectedEvent = $item;
 
         $http.get('/admin/api/event/'+$item.id+'/additional-services/').then(function(res) {

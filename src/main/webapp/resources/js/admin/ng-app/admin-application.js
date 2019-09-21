@@ -127,7 +127,7 @@
                 templateUrl: BASE_STATIC_URL + "/event/index.html"
             })
             .state('events.new', {
-                url: '/new',
+                url: '/new?eventName',
                 templateUrl: BASE_STATIC_URL + "/event/edit-event.html",
                 controller: 'CreateEventController',
                 data: {
@@ -776,16 +776,17 @@
 
 
 
-        $scope.openCopyEvent = function() {
+        $scope.openCopyEvent = function(eventNameToPreselect) {
             var currentEventInScope = angular.copy($scope.event);
 
             var modal = $uibModal.open({
                 size: 'lg',
-                template: '<copy-event dismiss="ctrl.onDismiss()" event="ctrl.eventTemplate" on-copy="ctrl.onEditComplete"></copy-event>',
+                template: '<copy-event dismiss="ctrl.onDismiss()" event="ctrl.eventTemplate" on-copy="ctrl.onEditComplete" event-name-to-preselect="ctrl.eventNameToPreselect"></copy-event>',
                 backdrop: 'static',
                 controller: function($scope) {
                     var ctrl = this;
                     ctrl.eventTemplate = currentEventInScope;
+                    ctrl.eventNameToPreselect = eventNameToPreselect;
                     ctrl.onEditComplete = function(item) {
                         modal.close(item);
                     };
@@ -922,6 +923,10 @@
                     //
                 });
             });
+        }
+
+        if($state && $state.params && $state.params.eventName) {
+            $scope.openCopyEvent($state.params.eventName);
         }
 
 

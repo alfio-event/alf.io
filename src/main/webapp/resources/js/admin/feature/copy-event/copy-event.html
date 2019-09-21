@@ -8,7 +8,6 @@
         <div class="form-group">
             <label>Search event:</label>
             <input class="form-control" type="text" ng-model="selected"
-                   required
                    uib-typeahead="event for event in $ctrl.events | filter: $ctrl.match($viewValue)"
                    typeahead-template-url="copy-event-typeahead-event.html"
                    typeahead-input-formatter="$model.displayName"
