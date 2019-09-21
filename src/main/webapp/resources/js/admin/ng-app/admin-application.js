@@ -695,9 +695,19 @@
         $scope.save = function(form, event) {
             validationPerformer($q, EventService.checkEvent, event, form, $scope, NotificationHandler).then(function() {
                 EventService.createEvent(event).success(function() {
-                    if($scope.additionalFieldsToBeCreated) {
-                        EventService.getEvent(event.shortName).then(function(createdEvent) {
-                            $q.all($scope.additionalFieldsToBeCreated.map(function(af) {
+                    $scope.additionalFieldsToBeCreated = $scope.additionalFieldsToBeCreated || [];
+                    $scope.additionalServicesToBeCreated = $scope.additionalServicesToBeCreated || [];
+
+                    EventService.getEvent(event.shortName).then(function(createdEvent) {
+                        $q.all($scope.additionalServicesToBeCreated.map(function(as) {
+                            return EventService.createAdditionalService(createdEvent.data.event.id, as);
+                        })).then(function(createdAdditionalServices) {
+                            var mappedAdditionalServicesId = {};
+                            for(var i = 0; i < $scope.additionalServicesToBeCreated.length; i++) {
+                                mappedAdditionalServicesId[$scope.additionalServicesToBeCreated[i].id] =  createdAdditionalServices[i].data;
+                            }
+
+                            return $q.all($scope.additionalFieldsToBeCreated.map(function(af) {
                                 var description = {};
                                 angular.forEach(af.description, function(v,k) {
                                     description[k] = {label: v.description.label, placeholder: v.description.placeholder, restrictedValues: v.description.restrictedValues}
@@ -713,24 +723,20 @@
                                     maxLength: af.maxLength,
                                     restrictedValues: af.restrictedValues.map(function(rv) {return {value: rv}}),
                                     description: description,
-                                    forAdditionalService: null,
+                                    forAdditionalService: mappedAdditionalServicesId[af.additionalServiceId],
                                     categoryIds: af.categoryIds.map(function(name) {return createdEvent.data.event.ticketCategories.filter(function(tc) {return tc.name === name})[0].id})
                                 };
 
                                 return EventService.addField(event.shortName, newAdditionalField);
-                            })).then(function(res) {
-                                if(window.sessionStorage) {
-                                    delete window.sessionStorage.new_event;
-                                }
-                                $state.go('events.single.detail', {eventName: event.shortName});
-                            });
+                            }));
+                        }).then(function(res) {
+                            if(window.sessionStorage) {
+                                delete window.sessionStorage.new_event;
+                            }
+                            $state.go('events.single.detail', {eventName: event.shortName});
                         });
-                    } else {
-                        if(window.sessionStorage) {
-                            delete window.sessionStorage.new_event;
-                        }
-                        $state.go('events.single.detail', {eventName: event.shortName});
-                    }
+                    });
+
                 });
             }, angular.noop);
         };
@@ -811,9 +817,14 @@
                 var startAndEndDate = res[0];
                 var selectedEvent = res[1];
                 var additionalFields = res[2];
+                var additionalServices = res[3];
 
                 if (additionalFields && additionalFields.length > 0) {
                     $scope.additionalFieldsToBeCreated = additionalFields;
+                }
+
+                if (additionalServices &&  additionalServices.length > 0) {
+                    $scope.additionalServicesToBeCreated = additionalServices;
                 }
 
                 EventService.getEvent(selectedEvent.shortName).success(function(result) {
@@ -823,11 +834,23 @@
 
                     var eventToCopy = result.event;
 
+                    var adjustDate = function(formattedDate) {
+                        return moment(momentStartEvent).add(moment(formattedDate, 'YYYY-MM-DD HH:mm').diff(momentEventToCopyStart)).format('YYYY-MM-DD HH:mm');
+                    }
+
                     if($scope.additionalFieldsToBeCreated) {
                         angular.forEach($scope.additionalFieldsToBeCreated, function(af) {
                             af.categoryIds = af.categoryIds.map(function(id) {
                                 return eventToCopy.ticketCategories.filter(function(tc) {return tc.id === id})[0].name;
                             });
+                        });
+                    }
+
+                    if ($scope.additionalServicesToBeCreated) {
+                        angular.forEach($scope.additionalServicesToBeCreated, function(as) {
+                            //adjust time
+                            as.inception = createDateTimeObject(adjustDate(fromDateTimeObjectToMoment(as.inception).format('YYYY-MM-DD HH:mm')));
+                            as.expiration = createDateTimeObject(adjustDate(fromDateTimeObjectToMoment(as.expiration).format('YYYY-MM-DD HH:mm')));
                         });
                     }
 
@@ -852,9 +875,7 @@
                     $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
                     $scope.event.ticketCategories = eventToCopy.ticketCategories.map(function(tc) {
 
-                        var adjustDate = function(formattedDate) {
-                            return moment(momentStartEvent).add(moment(formattedDate, 'YYYY-MM-DD HH:mm').diff(momentEventToCopyStart)).format('YYYY-MM-DD HH:mm');
-                        }
+
 
                         //inception/expiration : we keep the same date interval
                         var categoryAdjustedStart = adjustDate(tc.formattedInception);
