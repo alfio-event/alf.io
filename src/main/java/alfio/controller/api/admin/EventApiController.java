@@ -280,7 +280,7 @@ public class EventApiController {
         return ResponseEntity.ok(OK);
     }
 
-    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Creation", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Payment ID", "Payment Method");
+    private static final List<String> FIXED_FIELDS = Arrays.asList("ID", "Category", "Event", "Status", "OriginalPrice", "PaidPrice", "Discount", "VAT", "ReservationID", "Full Name", "First Name", "Last Name", "E-Mail", "Locked", "Language", "Confirmation", "Billing Address", "Country Code", "Payment ID", "Payment Method");
     private static final List<SerializablePair<String, String>> FIXED_PAIRS = FIXED_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList());
     private static final List<String> ITALIAN_E_INVOICING_FIELDS = List.of("Fiscal Code", "Reference Type", "Addressee Code", "PEC");
 
@@ -332,7 +332,6 @@ public class EventApiController {
             TicketReservation reservation = trs.getTicketReservation();
             List<String> line = new ArrayList<>();
             if(fields.contains("ID")) {line.add(t.getUuid());}
-            if(fields.contains("Creation")) {line.add(t.getCreation().withZoneSameInstant(eventZoneId).toString());}
             if(fields.contains("Category")) {line.add(categoriesMap.get(t.getCategoryId()).getName());}
             if(fields.contains("Event")) {line.add(eventName);}
             if(fields.contains("Status")) {line.add(t.getStatus().toString());}
@@ -349,6 +348,7 @@ public class EventApiController {
             if(fields.contains("Language")) {line.add(String.valueOf(t.getUserLanguage()));}
             if(fields.contains("Confirmation")) {line.add(reservation.getConfirmationTimestamp().withZoneSameInstant(eventZoneId).toString());}
             if(fields.contains("Billing Address")) {line.add(reservation.getBillingAddress());}
+            if(fields.contains("Country Code")) {line.add(reservation.getVatCountryCode());}
             boolean paymentIdRequested = fields.contains("Payment ID");
             boolean paymentGatewayRequested = fields.contains("Payment Method");
             if((paymentIdRequested || paymentGatewayRequested)) {
