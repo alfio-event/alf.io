@@ -613,9 +613,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         List<String[]> csv = csvReader.readAll();
         assertEquals(2, csv.size());
         assertEquals(ticketIdentifier, csv.get(1)[0]);
-        assertEquals("default", csv.get(1)[2]);
-        assertEquals("ACQUIRED", csv.get(1)[4]);
-        assertEquals(fullName, csv.get(1)[10]);
+        assertEquals("default", csv.get(1)[1]);
+        assertEquals("ACQUIRED", csv.get(1)[3]);
+        assertEquals(fullName, csv.get(1)[9]);
     }
 
     private void validatePayment(String eventName, String reservationIdentifier) {
