@@ -175,7 +175,7 @@ public interface TicketFieldRepository extends FieldRepository {
         return configuration.getRestrictedValues().stream()
             .map(name -> {
                 int count = valueStats.getOrDefault(name, 0);
-                return new RestrictedValueStats(name, count, new BigDecimal(count).divide(new BigDecimal(total), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED).intValue());
+                return new RestrictedValueStats(name, count, total == 0 ? 0 : new BigDecimal(count).divide(new BigDecimal(total), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED).intValue());
             }).collect(Collectors.toList());
 
     }
