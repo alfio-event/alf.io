@@ -66,6 +66,8 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -604,7 +606,13 @@ public class EventApiController {
                 Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), templateManager, reservationModel, extensionManager);
 
                 if(pdf.isPresent()) {
-                    zipOS.putNextEntry(new ZipEntry("invoice-" + eventName +"-nr-"+ document.getNumber() + "-reservation-" + reservation.getId() + ".pdf"));
+                    ZonedDateTime invoiceDate = ZonedDateTime.parse((String) reservationModel.get("confirmationDate"));
+                    String formattedDate = invoiceDate.format(DateTimeFormatter.ofPattern("YYYY-MM-dd-HHmmss"));
+                    String fileName = new StringBuilder(event.getShortName())
+                        .append("-").append(formattedDate)
+                        .append("-").append(document.getNumber())
+                        .append(".pdf").toString();
+                    zipOS.putNextEntry(new ZipEntry(fileName));
                     StreamUtils.copy(pdf.get(), zipOS);
                 }
             }
