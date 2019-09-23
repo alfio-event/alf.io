@@ -47,8 +47,8 @@ public interface SpecialPriceRepository {
     @Query(SELECT_FREE)
     List<SpecialPrice> findActiveNotAssignedByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
 
-    @Query(SELECT_FREE + " limit :limitTo")
-    List<SpecialPrice> findActiveNotAssignedByCategoryIdLimitTo(@Bind("ticketCategoryId") int ticketCategoryId, @Bind("limitTo") int limitTo);
+    @Query(SELECT_FREE + " and session_id is null limit 1 for update skip locked")
+    Optional<SpecialPrice> findFirstActiveNotAssignedForUpdate(@Bind("ticketCategoryId") int ticketCategoryId);
 
     @Query("update special_price set session_id = :sessionId, access_code_id_fk = :accessCodeId where id in (" +
         "select id from special_price where ticket_category_id = :ticketCategoryId and " +IS_FREE+ " and access_code_id_fk is null limit :limitTo" +
