@@ -17,7 +17,9 @@
 package alfio.model.transaction.capabilities;
 
 import alfio.manager.payment.PaymentSpecification;
+import alfio.model.Event;
 import alfio.model.transaction.Capability;
+import alfio.model.transaction.Transaction;
 import alfio.model.transaction.TransactionInitializationToken;
 
 import java.util.List;
@@ -28,4 +30,6 @@ public interface ServerInitiatedTransaction extends Capability {
     TransactionInitializationToken initTransaction(PaymentSpecification paymentSpecification, Map<String, List<String>> params);
 
     TransactionInitializationToken errorToken(String errorMessage);
+
+    boolean discardTransaction(Transaction transaction, Event event);
 }

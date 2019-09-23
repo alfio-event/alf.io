@@ -544,7 +544,7 @@ public class ReservationApiV2Controller {
                 TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, LocaleUtil.forLanguageTag(reservation.getUserLanguage()),
                     templateManager, billingModel, forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF,
                     extensionManager, response.getOutputStream());
-                return ResponseEntity.ok(null);
+                return ResponseEntity.ok().build();
             } catch (IOException ioe) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             }
@@ -582,7 +582,15 @@ public class ReservationApiV2Controller {
         return ResponseEntity.ok(res);
     }
 
-    private Optional<Pair<Event, TicketReservation>> getEventReservationPair(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId) {
+    @DeleteMapping("/event/{eventName}/reservation/{reservationId}/payment")
+    public ResponseEntity<Boolean> deletePaymentAttempt(@PathVariable("eventName") String eventName,
+                                                        @PathVariable("reservationId") String reservationId) {
+
+        var res = getEventReservationPair(eventName, reservationId).map(et -> ticketReservationManager.cancelPendingPayment(et.getRight().getId(), et.getLeft())).orElse(false);
+        return ResponseEntity.ok(res);
+    }
+
+    private Optional<Pair<Event, TicketReservation>> getEventReservationPair(String eventName, String reservationId) {
         return eventRepository.findOptionalByShortName(eventName)
             .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
             .filter(pair -> pair.getRight().isPresent())
