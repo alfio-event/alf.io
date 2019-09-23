@@ -493,6 +493,23 @@ public class TicketReservationManager {
 
     }
 
+    public boolean cancelPendingPayment(String reservationId, Event event) {
+        var optionalReservation = findById(reservationId);
+        if(optionalReservation.isEmpty()) {
+            return false;
+        }
+        var optionalTransaction = transactionRepository.loadOptionalByReservationId(reservationId);
+        if(optionalTransaction.isEmpty() || optionalTransaction.get().getStatus() != Transaction.Status.PENDING) {
+            log.warn("Trying to cancel a non-pending transaction for reservation {}", reservationId);
+            return false;
+        }
+        paymentManager.lookupByTransactionAndCapabilities(optionalTransaction.get(), List.of(ServerInitiatedTransaction.class))
+            .ifPresent(provider -> ((ServerInitiatedTransaction)provider).discardTransaction(optionalTransaction.get(), event));
+        reTransitionToPending(reservationId);
+        auditingRepository.insert(reservationId, null, event.getId(), RESET_PAYMENT, new Date(), RESERVATION, reservationId);
+        return true;
+    }
+
     private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, PaymentProxy paymentProxy) {
         var status = ticketReservationRepository.findOptionalStatusAndValidationById(spec.getReservationId()).orElseThrow().getStatus();
         if(status != COMPLETE) {
@@ -1938,11 +1955,26 @@ public class TicketReservationManager {
             return Optional.of(provider.errorToken(errorMessage));
         }
         var transactionToken = provider.initTransaction(paymentSpecification, params);
-        if(reservation.getStatus() == PENDING) {
-            ticketReservationRepository.updateReservationStatus(reservation.getId(), EXTERNAL_PROCESSING_PAYMENT.name());
+        if(transitionToExternalProcessingPayment(reservation)) {
+           auditingRepository.insert(reservationId, null, event.getId(), INIT_PAYMENT, new Date(), RESERVATION, reservationId);
         }
         transactionRepository.updateStatusForReservation(reservationId, Transaction.Status.PENDING);
         return Optional.of(transactionToken);
+    }
+
+    private boolean transitionToExternalProcessingPayment(TicketReservation reservation) {
+        var reservationId = reservation.getId();
+        var optionalTransaction = transactionRepository.loadOptionalByReservationId(reservation.getId());
+        if(optionalTransaction.filter(ot -> ot.getStatus() == Transaction.Status.PENDING).isEmpty()) {
+            log.warn("trying to transition reservation {} to EXTERNAL_PROCESSING_PAYMENT but the current transaction is not PENDING. Ignoring the request...", reservationId);
+            return false;
+        }
+        if(reservation.getStatus() != PENDING) {
+            log.warn("trying to transition reservation {} to EXTERNAL_PROCESSING_PAYMENT but the current status is {}. Ignoring the request...", reservationId, reservation.getStatus());
+            return false;
+        }
+        ticketReservationRepository.updateReservationStatus(reservation.getId(), EXTERNAL_PROCESSING_PAYMENT.name());
+        return true;
     }
 
     public void checkOfflinePaymentsStatus() {

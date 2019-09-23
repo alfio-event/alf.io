@@ -123,6 +123,19 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         };
     }
 
+    @Override
+    public boolean discardTransaction(Transaction transaction, Event event) {
+        var paymentId = transaction.getPaymentId();
+        try {
+            var requestOptions = baseStripeManager.options(event).orElseThrow();
+            var paymentIntent = PaymentIntent.retrieve(paymentId, requestOptions);
+            paymentIntent.cancel(requestOptions);
+        } catch (StripeException e) {
+            log.warn("got Stripe error while trying to cancel transaction", e);
+        }
+        return false;
+    }
+
     private StripeSCACreditCardToken buildTokenFromTransaction(Transaction transaction) {
         String clientSecret = Optional.ofNullable(transaction.getMetadata()).map(m -> m.get(CLIENT_SECRET_METADATA)).orElse(null);
         String chargeId = transaction.getStatus() == Transaction.Status.COMPLETE ? transaction.getTransactionId() : null;
