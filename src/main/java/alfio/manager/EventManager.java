@@ -285,7 +285,7 @@ public class EventManager {
             as.getVatType(),
             Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
             as.getType(),
-            as.getSupplementPolicy()).getChecksum();
+            as.getSupplementPolicy(), null).getChecksum();
         return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
     }
 
