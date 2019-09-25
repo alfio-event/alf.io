@@ -27,9 +27,10 @@ import java.util.*;
 @QueryRepository
 public interface AdditionalServiceRepository {
 
-    String SELECT_ADDITIONAL_SERVICE = "select additional_service.*, (select count(*) from additional_service_item where additional_service_id_fk = additional_service.id and status = 'ACQUIRED') as count_confirmed from additional_service";
+    String SELECT_PREFIX = "select distinct(ads.*), sum(case asi.status when 'ACQUIRED' then 1 else 0 end) as count_confirmed from additional_service ads left join additional_service_item asi on asi.additional_service_id_fk = ads.id where ads.event_id_fk = :eventId";
+    String SELECT_SUFFIX = " group by ads.id order by ads.ordinal";
 
-    @Query(SELECT_ADDITIONAL_SERVICE + " where event_id_fk = :eventId order by ordinal")
+    @Query(SELECT_PREFIX + SELECT_SUFFIX)
     List<AdditionalService> loadAllForEvent(@Bind("eventId") int eventId);
 
     NamedParameterJdbcTemplate getJdbcTemplate();
@@ -45,10 +46,13 @@ public interface AdditionalServiceRepository {
         return res;
     }
 
-    @Query(SELECT_ADDITIONAL_SERVICE + " where id = :id and event_id_fk = :eventId")
+    @Query(SELECT_PREFIX + " and ads.supplement_policy = :supplementPolicy" + SELECT_SUFFIX)
+    List<AdditionalService> findAllInEventWithPolicy(@Bind("eventId") int eventId, @Bind("supplementPolicy") AdditionalService.SupplementPolicy policy);
+
+    @Query(SELECT_PREFIX + " and ads.id = :id" + SELECT_SUFFIX)
     AdditionalService getById(@Bind("id") int id, @Bind("eventId") int eventId);
 
-    @Query(SELECT_ADDITIONAL_SERVICE + " where id = :id and event_id_fk = :eventId")
+    @Query(SELECT_PREFIX + " and ads.id = :id" + SELECT_SUFFIX)
     Optional<AdditionalService> getOptionalById(@Bind("id") int id, @Bind("eventId") int eventId);
 
     @Query("delete from additional_service where id = :id and event_id_fk = :eventId")
@@ -71,6 +75,4 @@ public interface AdditionalServiceRepository {
                @Bind("inceptionTs") ZonedDateTime inception, @Bind("expirationTs") ZonedDateTime expiration, @Bind("vat") BigDecimal vat,
                @Bind("vatType") AdditionalService.VatType vatType, @Bind("srcPriceCts") int srcPriceCts);
 
-    @Query(SELECT_ADDITIONAL_SERVICE + " where event_id_fk = :eventId and supplement_policy = :supplementPolicy order by ordinal")
-    List<AdditionalService> findAllInEventWithPolicy(@Bind("eventId") int eventId, @Bind("supplementPolicy") AdditionalService.SupplementPolicy policy);
 }
