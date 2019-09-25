@@ -27,7 +27,10 @@ import java.util.*;
 @QueryRepository
 public interface AdditionalServiceRepository {
 
-    @Query("select * from additional_service where event_id_fk = :eventId order by ordinal")
+    String SELECT_PREFIX = "select distinct(ads.*), sum(case asi.status when 'ACQUIRED' then 1 else 0 end) as count_confirmed from additional_service ads left join additional_service_item asi on asi.additional_service_id_fk = ads.id where ads.event_id_fk = :eventId";
+    String SELECT_SUFFIX = " group by ads.id order by ads.ordinal";
+
+    @Query(SELECT_PREFIX + SELECT_SUFFIX)
     List<AdditionalService> loadAllForEvent(@Bind("eventId") int eventId);
 
     NamedParameterJdbcTemplate getJdbcTemplate();
@@ -43,10 +46,13 @@ public interface AdditionalServiceRepository {
         return res;
     }
 
-    @Query("select * from additional_service where id = :id and event_id_fk = :eventId")
+    @Query(SELECT_PREFIX + " and ads.supplement_policy = :supplementPolicy" + SELECT_SUFFIX)
+    List<AdditionalService> findAllInEventWithPolicy(@Bind("eventId") int eventId, @Bind("supplementPolicy") AdditionalService.SupplementPolicy policy);
+
+    @Query(SELECT_PREFIX + " and ads.id = :id" + SELECT_SUFFIX)
     AdditionalService getById(@Bind("id") int id, @Bind("eventId") int eventId);
 
-    @Query("select * from additional_service where id = :id and event_id_fk = :eventId")
+    @Query(SELECT_PREFIX + " and ads.id = :id" + SELECT_SUFFIX)
     Optional<AdditionalService> getOptionalById(@Bind("id") int id, @Bind("eventId") int eventId);
 
     @Query("delete from additional_service where id = :id and event_id_fk = :eventId")
@@ -69,6 +75,4 @@ public interface AdditionalServiceRepository {
                @Bind("inceptionTs") ZonedDateTime inception, @Bind("expirationTs") ZonedDateTime expiration, @Bind("vat") BigDecimal vat,
                @Bind("vatType") AdditionalService.VatType vatType, @Bind("srcPriceCts") int srcPriceCts);
 
-    @Query("select * from additional_service where event_id_fk = :eventId and supplement_policy = :supplementPolicy order by ordinal")
-    List<AdditionalService> findAllInEventWithPolicy(@Bind("eventId") int eventId, @Bind("supplementPolicy") AdditionalService.SupplementPolicy policy);
 }
