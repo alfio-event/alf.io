@@ -53,6 +53,7 @@ import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -518,8 +519,10 @@ public class TicketReservationManager {
         String invoiceNumber = optionalInvoiceNumber.orElseGet(() -> {
                 int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getEvent().getOrganizationId());
                 invoiceSequencesRepository.incrementSequenceFor(spec.getEvent().getOrganizationId());
-                String pattern = configurationManager.getFor(ConfigurationKeys.INVOICE_NUMBER_PATTERN, ConfigurationLevel.event(spec.getEvent())).getValueOrDefault("%d");
-                return String.format(pattern, invoiceSequence);
+                String pattern = configurationManager
+                    .getFor(ConfigurationKeys.INVOICE_NUMBER_PATTERN, ConfigurationLevel.event(spec.getEvent()))
+                    .getValueOrDefault("%d");
+                return String.format(ObjectUtils.firstNonNull(StringUtils.trimToNull(pattern), "%d"), invoiceSequence);
         });
 
         ticketReservationRepository.setInvoiceNumber(reservationId, invoiceNumber);
