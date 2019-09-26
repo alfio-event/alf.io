@@ -53,6 +53,7 @@ import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.time.DateUtils;
@@ -535,8 +536,10 @@ public class TicketReservationManager {
         String invoiceNumber = optionalInvoiceNumber.orElseGet(() -> {
                 int invoiceSequence = invoiceSequencesRepository.lockReservationForUpdate(spec.getEvent().getOrganizationId());
                 invoiceSequencesRepository.incrementSequenceFor(spec.getEvent().getOrganizationId());
-                String pattern = configurationManager.getFor(ConfigurationKeys.INVOICE_NUMBER_PATTERN, ConfigurationLevel.event(spec.getEvent())).getValueOrDefault("%d");
-                return String.format(pattern, invoiceSequence);
+                String pattern = configurationManager
+                    .getFor(ConfigurationKeys.INVOICE_NUMBER_PATTERN, ConfigurationLevel.event(spec.getEvent()))
+                    .getValueOrDefault("%d");
+                return String.format(ObjectUtils.firstNonNull(StringUtils.trimToNull(pattern), "%d"), invoiceSequence);
         });
 
         ticketReservationRepository.setInvoiceNumber(reservationId, invoiceNumber);
@@ -625,7 +628,7 @@ public class TicketReservationManager {
         Locale language = findReservationLanguage(reservationId);
 
         final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
-        createBillingDocumentModel(event, finalReservation, username);
+        createBillingDocument(event, finalReservation, username);
         sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
 
         extensionManager.handleReservationConfirmation(finalReservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), event.getId());
@@ -681,7 +684,7 @@ public class TicketReservationManager {
                                                                            OrderSummary summary) {
         if(mustGenerateBillingDocument(summary, ticketReservation)) { //#459 - include PDF invoice in reservation email
             BillingDocument.Type type = ticketReservation.getHasInvoiceNumber() ? INVOICE : RECEIPT;
-            return generateBillingDocumentAttachment(event, ticketReservation, language, getOrCreateBillingDocumentModel(event, ticketReservation, null), type);
+            return generateBillingDocumentAttachment(event, ticketReservation, language, getOrCreateBillingDocument(event, ticketReservation, null).getModel(), type);
         }
         return List.of();
     }
@@ -764,13 +767,13 @@ public class TicketReservationManager {
         ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.CREDIT_NOTE_ISSUED.toString());
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.CREDIT_NOTE_ISSUED, new Date(), RESERVATION, reservationId);
         Map<String, Object> model = prepareModelForReservationEmail(event, reservation);
-        Map<String, Object> billingDocumentModel = createBillingDocumentModel(event, reservation, username, BillingDocument.Type.CREDIT_NOTE);
+        BillingDocument billingDocument = createBillingDocument(event, reservation, username, BillingDocument.Type.CREDIT_NOTE);
         notificationManager.sendSimpleEmail(event,
             reservationId,
             reservation.getEmail(),
             getReservationEmailSubject(event, getReservationLocale(reservation), "credit-note-issued-email-subject", reservation.getId()),
             () -> templateManager.renderTemplate(event, TemplateResource.CREDIT_NOTE_ISSUED_EMAIL, model, getReservationLocale(reservation)),
-            generateBillingDocumentAttachment(event, reservation, getReservationLocale(reservation), billingDocumentModel, CREDIT_NOTE)
+            generateBillingDocumentAttachment(event, reservation, getReservationLocale(reservation), billingDocument.getModel(), CREDIT_NOTE)
         );
     }
 
@@ -788,16 +791,16 @@ public class TicketReservationManager {
         }
         OrderSummary summary = orderSummaryForReservationId(reservation.getId(), event);
         if(TicketReservationManager.mustGenerateBillingDocument(summary, reservation)) {
-            getOrCreateBillingDocumentModel(event, reservation, username);
+            getOrCreateBillingDocument(event, reservation, username);
         }
     }
 
     @Transactional
-    public Map<String, Object> createBillingDocumentModel(Event event, TicketReservation reservation, String username) {
-        return createBillingDocumentModel(event, reservation, username, reservation.getHasInvoiceNumber() ? INVOICE : RECEIPT);
+    public BillingDocument createBillingDocument(Event event, TicketReservation reservation, String username) {
+        return createBillingDocument(event, reservation, username, reservation.getHasInvoiceNumber() ? INVOICE : RECEIPT);
     }
 
-    private Map<String, Object> createBillingDocumentModel(Event event, TicketReservation reservation, String username, BillingDocument.Type type) {
+    private BillingDocument createBillingDocument(Event event, TicketReservation reservation, String username, BillingDocument.Type type) {
         Optional<String> vat = getVAT(event);
         String existingModel = reservation.getInvoiceModel();
         boolean existingModelPresent = StringUtils.isNotBlank(existingModel);
@@ -810,16 +813,16 @@ public class TicketReservationManager {
         }
         AffectedRowCountAndKey<Long> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, type, json.asJsonString(model), ZonedDateTime.now(), event.getOrganizationId());
         auditingRepository.insert(reservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.BILLING_DOCUMENT_GENERATED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), singletonList(singletonMap("documentId", doc.getKey())));
-        return model;
+        return billingDocumentRepository.findById(doc.getKey(), reservation.getId()).orElseThrow(IllegalStateException::new);
     }
 
     @Transactional
-    public Map<String, Object> getOrCreateBillingDocumentModel(Event event, TicketReservation reservation, String username) {
+    public BillingDocument getOrCreateBillingDocument(Event event, TicketReservation reservation, String username) {
         Optional<BillingDocument> existing = billingDocumentRepository.findLatestByReservationId(reservation.getId());
         if(existing.isPresent()) {
-            return existing.get().getModel();
+            return existing.get();
         }
-        return createBillingDocumentModel(event, reservation, username);
+        return createBillingDocument(event, reservation, username);
     }
 
     @Transactional(readOnly = true)

@@ -690,7 +690,7 @@ public class AdminReservationManager {
     @Transactional
     public Result<Boolean> regenerateBillingDocument(String eventName, String reservationId, String username) {
         return loadReservation(eventName, reservationId, username).map(res -> {
-            ticketReservationManager.createBillingDocumentModel(res.getRight(), res.getLeft(), username);
+            ticketReservationManager.createBillingDocument(res.getRight(), res.getLeft(), username);
             return true;
         });
     }
@@ -740,7 +740,7 @@ public class AdminReservationManager {
 
     private void internalRegenerateBillingDocument(Event event, String reservationId, String username) {
         ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, null);
-        ticketReservationManager.createBillingDocumentModel(event, ticketReservationRepository.findReservationById(reservationId), username);
+        ticketReservationManager.createBillingDocument(event, ticketReservationRepository.findReservationById(reservationId), username);
     }
 
     private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {

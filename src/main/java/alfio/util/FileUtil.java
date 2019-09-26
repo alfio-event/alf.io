@@ -16,15 +16,20 @@
  */
 package alfio.util;
 
+import alfio.model.BillingDocument;
+
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import java.util.Optional;
 
 public class FileUtil {
-    public static boolean sendPdf(byte[] res, HttpServletResponse response, String eventName, String reservationId, String type) {
+    public static boolean sendPdf(byte[] res, HttpServletResponse response, String eventName, String reservationId, BillingDocument billingDocument) {
         return Optional.ofNullable(res).map(pdf -> {
             try {
-                sendHeaders(response, eventName, reservationId, type);
+                sendHeaders(response, eventName, reservationId, billingDocument);
                 response.getOutputStream().write(pdf);
                 return true;
             } catch(IOException e) {
@@ -34,9 +39,23 @@ public class FileUtil {
     }
 
 
-    public static void sendHeaders(HttpServletResponse response, String eventName, String reservationId, String type) {
-        response.setHeader("Content-Disposition", "attachment; filename=\"" + type+  "-" + eventName + "-" + reservationId + ".pdf\"");
+    public static void sendHeaders(HttpServletResponse response, String eventName, String reservationId, BillingDocument billingDocument) {
+        response.setHeader("Content-Disposition", "attachment; filename=\"" + getBillingDocumentFileName(eventName, reservationId, billingDocument) + "\"");
         response.setContentType("application/pdf");
+    }
+
+    public static String getBillingDocumentFileName(String eventShortName, String reservationId, BillingDocument document) {
+        if(document.getType() == BillingDocument.Type.INVOICE) {
+            Map<String, Object> reservationModel = document.getModel();
+            ZonedDateTime invoiceDate = ZonedDateTime.parse((String) reservationModel.get("confirmationDate"));
+            String formattedDate = invoiceDate.format(DateTimeFormatter.ofPattern("YYYY-MM-dd-HHmmss"));
+            return new StringBuilder(eventShortName)
+                .append("-").append(formattedDate)
+                .append("-").append(document.getNumber())
+                .append(".pdf").toString();
+        } else {
+            return new StringBuilder("receipt-").append(eventShortName).append("-").append(reservationId).toString();
+        }
     }
 
 }

@@ -216,7 +216,7 @@ public class DataMigrator {
             log.info("creating BillingDocument(s) for event {}", event.getDisplayName());
             for (String reservationId : reservations) {
                 TicketReservation reservation = ticketReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new);
-                ticketReservationManager.getOrCreateBillingDocumentModel(event, reservation, null);
+                ticketReservationManager.getOrCreateBillingDocument(event, reservation, null);
             }
             log.info("checked {} BillingDocument(s) for event {}", reservations.size(), event.getDisplayName());
         }

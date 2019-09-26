@@ -604,7 +604,8 @@ public class EventApiController {
                 Optional<byte[]> pdf = TemplateProcessor.buildInvoicePdf(event, fileUploadManager, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), templateManager, reservationModel, extensionManager);
 
                 if(pdf.isPresent()) {
-                    zipOS.putNextEntry(new ZipEntry("invoice-" + eventName +"-nr-"+ document.getNumber() + "-reservation-" + reservation.getId() + ".pdf"));
+                    String fileName = FileUtil.getBillingDocumentFileName(event.getShortName(), reservation.getId(), document);
+                    zipOS.putNextEntry(new ZipEntry(fileName));
                     StreamUtils.copy(pdf.get(), zipOS);
                 }
             }
