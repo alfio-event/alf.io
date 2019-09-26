@@ -219,7 +219,7 @@ public class TicketApiV2Controller {
                                                                        BindingResult bindingResult,
                                                                        Authentication authentication) {
 
-        var a = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
+        var a = ticketReservationManager.fetchComplete(eventName, ticketIdentifier);
         if (a.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
