@@ -816,3 +816,7 @@ div.preformatted {
     background-color: #343a40;
     color: #343a40;
 }
+
+.daterangepicker select.hourselect, .daterangepicker select.minuteselect, .daterangepicker select.secondselect, .daterangepicker select.ampmselect {
+    width: 60px !important;
+}
