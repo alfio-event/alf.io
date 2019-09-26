@@ -145,7 +145,7 @@ public class AdminReservationApiController {
                                                    Principal principal,
                                                    HttpServletResponse response) {
         Result<Boolean> result = adminReservationManager.getSingleBillingDocumentAsPdf(eventName, reservationId, documentId, principal.getName())
-            .map(res -> sendPdf(res.getRight(), response, eventName, reservationId, res.getLeft().getType().toString().toLowerCase()));
+            .map(res -> sendPdf(res.getRight(), response, eventName, reservationId, res.getLeft()));
         if(result.isSuccess()) {
             return ResponseEntity.ok(null);
         } else {

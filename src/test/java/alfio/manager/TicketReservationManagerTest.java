@@ -997,6 +997,9 @@ class TicketReservationManagerTest {
 
         when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(BillingDocument.Type.class), anyString(), any(ZonedDateTime.class), anyInt()))
             .thenReturn(new AffectedRowCountAndKey<>(1, 1l));
+        when(billingDocumentRepository.findById(anyLong(), anyString()))
+            .thenReturn(Optional.of(new BillingDocument(1, 1, "1", "42", BillingDocument.Type.INVOICE, "{}", ZonedDateTime.now(),
+                BillingDocument.Status.VALID, null)));
         when(json.fromJsonString(anyString(), eq(OrderSummary.class))).thenReturn(mock(OrderSummary.class));
         when(json.asJsonString(any())).thenReturn("{}");
 

@@ -537,12 +537,12 @@ public class ReservationApiV2Controller {
                 return ResponseEntity.notFound().build();
             }
 
-            Map<String, Object> billingModel = ticketReservationManager.getOrCreateBillingDocumentModel(event, reservation, null);
+            BillingDocument billingDocument = ticketReservationManager.getOrCreateBillingDocument(event, reservation, null);
 
             try {
-                FileUtil.sendHeaders(response, event.getShortName(), reservation.getId(), forInvoice ? "invoice" : "receipt");
+                FileUtil.sendHeaders(response, event.getShortName(), reservation.getId(), billingDocument);
                 TemplateProcessor.buildReceiptOrInvoicePdf(event, fileUploadManager, LocaleUtil.forLanguageTag(reservation.getUserLanguage()),
-                    templateManager, billingModel, forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF,
+                    templateManager, billingDocument.getModel(), forInvoice ? TemplateResource.INVOICE_PDF : TemplateResource.RECEIPT_PDF,
                     extensionManager, response.getOutputStream());
                 return ResponseEntity.ok(null);
             } catch (IOException ioe) {
