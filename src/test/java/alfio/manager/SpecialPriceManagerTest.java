@@ -61,6 +61,9 @@ public class SpecialPriceManagerTest {
     private SpecialPriceManager specialPriceManager;
     private ConfigurationManager configurationManager;
 
+    private final SpecialPrice specialPrice1 = new SpecialPrice(0, "123", 0, 0, "FREE", null, null, null, null);
+    private final SpecialPrice specialPrice2 = new SpecialPrice(0, "456", 0, 0, "FREE", null, null, null,  null);
+
     @BeforeEach
     public void init() {
         eventManager = mock(EventManager.class);
@@ -75,7 +78,6 @@ public class SpecialPriceManagerTest {
         i18nManager = mock(I18nManager.class);
         configurationManager = mock(ConfigurationManager.class);
 
-        List<SpecialPrice> specialPrices = asList(new SpecialPrice(0, "123", 0, 0, "FREE", null, null, null, null), new SpecialPrice(0, "456", 0, 0, "FREE", null, null, null,  null));
         when(i18nManager.getEventLanguages(anyInt())).thenReturn(Collections.singletonList(ContentLanguage.ITALIAN));
         when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
@@ -84,7 +86,6 @@ public class SpecialPriceManagerTest {
         when(eventManager.getEventAndOrganizationId(anyString(), anyString())).thenReturn(event);
         when(eventManager.loadTicketCategories(eq(event))).thenReturn(Collections.singletonList(ticketCategory));
         when(ticketCategory.getId()).thenReturn(0);
-        when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0))).thenReturn(specialPrices);
         when(eventManager.getEventUrl(eq(event))).thenReturn("http://my-event");
         when(eventManager.loadOrganizer(eq(event), anyString())).thenReturn(organization);
         when(event.getShortName()).thenReturn("eventName");
@@ -98,6 +99,7 @@ public class SpecialPriceManagerTest {
 
     @Test
     public void linkAssigneeToCode() throws Exception {
+        when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0), eq(2))).thenReturn(List.of(specialPrice1, specialPrice2));
         testAssigneeLink(specialPriceManager, CODES_NOT_REQUESTED);
         testAssigneeLink(specialPriceManager, CODES_PARTIALLY_REQUESTED);
         testAssigneeLink(specialPriceManager, CODES_REQUESTED);
@@ -132,6 +134,7 @@ public class SpecialPriceManagerTest {
     public void sendAllCodes() throws Exception {
         when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
+        when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0), eq(2))).thenReturn(List.of(specialPrice1, specialPrice2));
         assertTrue(specialPriceManager.sendCodeToAssignee(CODES_REQUESTED, "", 0, ""));
         verify(notificationManager, times(CODES_REQUESTED.size())).sendSimpleEmail(eq(event), isNull(), anyString(), anyString(), any());
     }
@@ -140,6 +143,7 @@ public class SpecialPriceManagerTest {
     public void sendSuccessfulComplete() throws Exception {
         when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
+        when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0), eq(1))).thenReturn(List.of(specialPrice1));
         sendMessage(null);
     }
 
@@ -147,6 +151,7 @@ public class SpecialPriceManagerTest {
     public void trimLanguageTag() throws Exception {
         when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL));
+        when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0), eq(1))).thenReturn(List.of(specialPrice1));
         assertTrue(specialPriceManager.sendCodeToAssignee(singletonList(new SendCodeModification("123", "me", "me@domain.com", " it")), "", 0, ""));
         ArgumentCaptor<TextTemplateGenerator> templateCaptor = ArgumentCaptor.forClass(TextTemplateGenerator.class);
         verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq("me@domain.com"), anyString(), templateCaptor.capture());
@@ -167,6 +172,7 @@ public class SpecialPriceManagerTest {
         when(messageSource.getMessage(eq("show-event.promo-code-type.partner"), isNull(), isNull(), any())).thenReturn("Partner");
         when(configurationManager.getFor(eq(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL), any()))
             .thenReturn(new ConfigurationManager.MaybeConfiguration(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL, new ConfigurationKeyValuePathLevel(null, "true", null)));
+        when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0), eq(1))).thenReturn(List.of(specialPrice1));
         sendMessage("Partner");
     }
 
