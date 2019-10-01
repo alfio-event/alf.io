@@ -405,6 +405,9 @@ public class AdminReservationManager {
         TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getVat(), event.getVatStatus(), null);
         ticketRepository.updateTicketPrice(reservedForUpdate, categoryId, event.getId(), category.getSrcPriceCts(), unitToCents(priceContainer.getFinalPrice(), currencyCode), unitToCents(priceContainer.getVAT(), currencyCode), unitToCents(priceContainer.getAppliedDiscount(), currencyCode), currencyCode);
         List<SpecialPrice> codes = category.isAccessRestricted() ? bindSpecialPriceTokens(categoryId, attendees) : Collections.emptyList();
+        if(category.isAccessRestricted() && codes.size() < attendees.size()) {
+            return Result.error(ErrorCode.CategoryError.NOT_ENOUGH_SEATS);
+        }
         assignTickets(event, attendees, categoryId, reservedForUpdate, codes, reservationId, arm.getLanguage(), category.getSrcPriceCts());
         List<Ticket> tickets = reservedForUpdate.stream().map(id -> ticketRepository.findById(id, categoryId)).collect(toList());
         return Result.success(tickets);
@@ -452,10 +455,8 @@ public class AdminReservationManager {
 
     private List<SpecialPrice> bindSpecialPriceTokens(int categoryId, List<Attendee> attendees) {
         specialPriceTokenGenerator.generatePendingCodesForCategory(categoryId);
-        List<SpecialPrice> codes = specialPriceRepository.findActiveNotAssignedByCategoryId(categoryId)
-            .stream()
-            .limit(attendees.size())
-            .collect(toList());
+        List<SpecialPrice> codes = specialPriceRepository.findActiveNotAssignedByCategoryId(categoryId, attendees.size());
+
         codes.forEach(c -> specialPriceRepository.updateStatus(c.getId(), SpecialPrice.Status.PENDING.toString(), null, null));
         return codes;
     }

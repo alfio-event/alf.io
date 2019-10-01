@@ -223,7 +223,7 @@ class TicketReservationManagerTest {
             groupManager,
             billingDocumentRepository,
             jdbcTemplate,
-            json);
+            json, promoCodeDiscountRepository);
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);

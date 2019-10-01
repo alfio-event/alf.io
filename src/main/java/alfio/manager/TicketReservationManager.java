@@ -68,6 +68,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.validation.BindingResult;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -139,6 +140,7 @@ public class TicketReservationManager {
     private final BillingDocumentRepository billingDocumentRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final Json json;
+    private final PromoCodeDiscountRepository promoCodeRepository;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -181,7 +183,8 @@ public class TicketReservationManager {
                                     GroupManager groupManager,
                                     BillingDocumentRepository billingDocumentRepository,
                                     NamedParameterJdbcTemplate jdbcTemplate,
-                                    Json json) {
+                                    Json json,
+                                    PromoCodeDiscountRepository promoCodeRepository) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -215,8 +218,9 @@ public class TicketReservationManager {
         this.billingDocumentRepository = billingDocumentRepository;
         this.jdbcTemplate = jdbcTemplate;
         this.json = json;
+        this.promoCodeRepository = promoCodeRepository;
     }
-    
+
     /**
      * Create a ticket reservation. It will create a reservation _only_ if it can find enough tickets. Note that it will not do date/validity validation. This must be ensured by the
      * caller.
@@ -1983,6 +1987,31 @@ public class TicketReservationManager {
     public void checkOfflinePaymentsStatus() {
         eventRepository.findAllActives(ZonedDateTime.now(Clock.systemUTC()))
             .forEach(this::checkOfflinePaymentsForEvent);
+    }
+
+    public Optional<String> createTicketReservation(Event event,
+                                                    List<TicketReservationWithOptionalCodeModification> list,
+                                                    List<ASReservationWithOptionalCodeModification> additionalServices,
+                                                    Optional<String> promoCodeDiscount,
+                                                    Locale locale,
+                                                    BindingResult bindingResult) {
+        Date expiration = DateUtils.addMinutes(new Date(), getReservationTimeout(event));
+        try {
+            String reservationId = createTicketReservation(event,
+                list, additionalServices, expiration,
+                promoCodeDiscount,
+                locale, false);
+            return Optional.of(reservationId);
+        } catch (TicketReservationManager.NotEnoughTicketsException nete) {
+            bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
+        } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
+            bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
+        } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
+            bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
+        } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
+            bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+        }
+        return Optional.empty();
     }
 
     public Result<Boolean> discardMatchingPayment(String eventName,

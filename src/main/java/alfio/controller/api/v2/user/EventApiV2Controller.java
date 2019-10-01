@@ -29,10 +29,10 @@ import alfio.controller.support.Formatters;
 import alfio.manager.*;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
@@ -44,12 +44,11 @@ import alfio.util.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
@@ -59,7 +58,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -94,8 +92,7 @@ public class EventApiV2Controller {
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final EventStatisticsManager eventStatisticsManager;
     private final RecaptchaService recaptchaService;
-    private final PromoCodeDiscountRepository promoCodeDiscountRepository;
-    private final SpecialPriceRepository specialPriceRepository;
+    private final PromoCodeRequestManager promoCodeRequestManager;
 
 
     @GetMapping("events")
@@ -223,7 +220,7 @@ public class EventApiV2Controller {
                 //promotion codes
                 boolean hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBooleanOrDefault(true) &&
                     (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
-                        promoCodeDiscountRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
+                        promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
                 boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).getValueAsBooleanOrDefault(false);
                 var promoConf = new EventWithAdditionalInfo.PromotionsConfiguration(hasAccessPromotions, usePartnerCode);
                 //
@@ -298,7 +295,7 @@ public class EventApiV2Controller {
             var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), ConfigurationLevel.event(event));
             var ticketCategoryLevelConfiguration = configurationManager.getAllCategoriesAndValueWith(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
             var messageSource = messageSourceManager.getMessageSourceForEvent(event);
-            var appliedPromoCode = checkCode(event, code);
+            var appliedPromoCode = promoCodeRequestManager.checkCode(event, code);
 
 
             Optional<SpecialPrice> specialCode = appliedPromoCode.getValue().getLeft();
@@ -455,7 +452,7 @@ public class EventApiV2Controller {
             Optional<ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>>> codeCheck = Optional.empty();
 
             if(StringUtils.trimToNull(reservation.getPromoCode()) != null) {
-                var resCheck = checkCode(event, reservation.getPromoCode());
+                var resCheck = promoCodeRequestManager.checkCode(event, reservation.getPromoCode());
                 if(!resCheck.isSuccess()) {
                     bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND);
                 }
@@ -471,10 +468,10 @@ public class EventApiV2Controller {
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
 
-            Optional<String> reservationIdRes = createTicketReservation(reservation, bindingResult, request, event, locale, promoCodeDiscount);
+            Optional<String> reservationIdRes = createTicketReservation(reservation, bindingResult, event, locale, promoCodeDiscount);
 
             if (bindingResult.hasErrors()) {
-                return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, (String) null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
+                return new ResponseEntity<>(ValidatedResponse.toResponse(bindingResult, null), getCorsHeaders(), HttpStatus.UNPROCESSABLE_ENTITY);
             } else {
                 var reservationIdentifier = reservationIdRes.orElseThrow(IllegalStateException::new);
                 return ResponseEntity.ok(new ValidatedResponse<>(ValidationResult.success(), reservationIdentifier));
@@ -486,54 +483,33 @@ public class EventApiV2Controller {
 
     private Optional<String> createTicketReservation(ReservationForm reservation,
                                                      BindingResult bindingResult,
-                                                     ServletWebRequest request,
                                                      Event event,
                                                      Locale locale,
                                                      Optional<String> promoCodeDiscount) {
-        return reservation.validate(bindingResult, ticketReservationManager, eventManager, event).flatMap(selected -> {
-            Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
-            try {
-                String reservationId = ticketReservationManager.createTicketReservation(event,
-                    selected.getLeft(), selected.getRight(), expiration,
-                    promoCodeDiscount,
-                    locale, false);
-                return Optional.of(reservationId);
-            } catch (TicketReservationManager.NotEnoughTicketsException nete) {
-                bindingResult.reject(ErrorsCode.STEP_1_NOT_ENOUGH_TICKETS);
-            } catch (TicketReservationManager.MissingSpecialPriceTokenException missing) {
-                bindingResult.reject(ErrorsCode.STEP_1_ACCESS_RESTRICTED);
-            } catch (TicketReservationManager.InvalidSpecialPriceTokenException invalid) {
-                bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
-                //SessionUtil.cleanupSession(request.getRequest());
-            } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
-                bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
-            }
-            return Optional.empty();
-        });
+        return reservation.validate(bindingResult, ticketReservationManager, eventManager, event)
+            .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult));
     }
 
     @GetMapping("event/{eventName}/validate-code")
     public ResponseEntity<ValidatedResponse<EventCode>> validateCode(@PathVariable("eventName") String eventName,
                                                                      @RequestParam("code") String code) {
 
-        return eventRepository.findOptionalByShortName(eventName).map(e -> {
-            var res = checkCode(e, code);
-            if(res.isSuccess()) {
+        var res = promoCodeRequestManager.checkCode(eventName, code);
+        if(res.isSuccess()) {
+            var value = res.getValue();
+            var eventCode = value.getLeft()
+                .map(sp -> new EventCode(code, EventCode.EventCodeType.SPECIAL_PRICE, PromoCodeDiscount.DiscountType.NONE, null))
+                .orElseGet(() -> {
+                    var promoCodeDiscount = value.getRight().orElseThrow();
+                    var type = promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS ? EventCode.EventCodeType.ACCESS : EventCode.EventCodeType.DISCOUNT;
+                    String formattedDiscountAmount =  promoCodeDiscount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT ? MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), value.getMiddle().getCurrency()) : Integer.toString(promoCodeDiscount.getDiscountAmount());
+                    return new EventCode(code, type, promoCodeDiscount.getDiscountType(), formattedDiscountAmount);
+                });
 
-                var eventCode = res.getValue().getLeft()
-                    .map(sp -> new EventCode(code, EventCode.EventCodeType.SPECIAL_PRICE, PromoCodeDiscount.DiscountType.NONE, null))
-                    .orElseGet(() -> {
-                        var promoCodeDiscount = res.getValue().getRight().orElseThrow();
-                        var type = promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS ? EventCode.EventCodeType.ACCESS : EventCode.EventCodeType.DISCOUNT;
-                        String formattedDiscountAmount =  promoCodeDiscount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT ? MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), e.getCurrency()) : Integer.toString(promoCodeDiscount.getDiscountAmount());
-                        return new EventCode(code, type, promoCodeDiscount.getDiscountType(), formattedDiscountAmount);
-                    });
-
-                return ResponseEntity.ok(res.withValue(eventCode));
-            } else {
-                return new ResponseEntity<>(res.withValue(new EventCode(code,null, null, null)), HttpStatus.UNPROCESSABLE_ENTITY);
-            }
-        }).orElseGet(() -> ResponseEntity.notFound().build());
+            return ResponseEntity.ok(res.withValue(eventCode));
+        } else {
+            return new ResponseEntity<>(res.withValue(new EventCode(code,null, null, null)), HttpStatus.UNPROCESSABLE_ENTITY);
+        }
     }
 
 
@@ -544,47 +520,12 @@ public class EventApiV2Controller {
 
         Function<Pair<Optional<String>, BindingResult>, Optional<String>> handleErrors = (res) -> {
             if (res.getRight().hasErrors()) {
-                queryStrings.put("errors", res.getRight().getAllErrors().stream().map(oe -> oe.getCode()).collect(Collectors.joining(",")));
+                queryStrings.put("errors", res.getRight().getAllErrors().stream().map(DefaultMessageSourceResolvable::getCode).collect(Collectors.joining(",")));
             }
             return res.getLeft();
         };
 
-        var url = eventRepository.findOptionalByShortName(eventName).flatMap(e -> {
-
-            var checkedCode = checkCode(e, trimmedCode);
-
-            var codeType = getCodeType(e.getId(), trimmedCode);
-
-            var maybePromoCodeDiscount = checkedCode.getValue().getRight();
-
-            if(checkedCode.isSuccess() && codeType == CodeType.PROMO_CODE_DISCOUNT) {
-                queryStrings.put("code", trimmedCode);
-                return Optional.empty();
-            } else if(codeType == CodeType.TICKET_CATEGORY_CODE) {
-                var category = ticketCategoryRepository.findCodeInEvent(e.getId(), trimmedCode).get();
-                if(!category.isAccessRestricted()) {
-                    var res = makeSimpleReservation(e, category.getId(), trimmedCode, request, maybePromoCodeDiscount);
-                    return handleErrors.apply(res);
-                } else {
-                    var specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
-                    if(!specialPrice.isPresent()) {
-                        queryStrings.put("errors", ErrorsCode.STEP_1_CODE_NOT_FOUND);
-                        return Optional.empty();
-                    }
-                    var specialPriceP = specialPrice.get();
-                    // <- work only when TicketReservationManager.renewSpecialPrice is commented out
-                    var res = makeSimpleReservation(e, specialPriceP.getTicketCategoryId(), specialPriceP.getCode(), request, maybePromoCodeDiscount);
-                    return handleErrors.apply(res);
-                }
-            } else if (checkedCode.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
-                int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).get().getTicketCategoryId();
-                var res = makeSimpleReservation(e, ticketCategoryId, trimmedCode, request, maybePromoCodeDiscount);
-                return handleErrors.apply(res);
-            } else {
-                queryStrings.put("errors", ErrorsCode.STEP_1_CODE_NOT_FOUND);
-                return Optional.empty();
-            }
-        }).map(reservationId ->
+        var url = promoCodeRequestManager.createReservationFromPromoCode(eventName, trimmedCode, queryStrings::put, handleErrors, request).map(reservationId ->
             UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}")
                 .build(Map.of("eventShortName", eventName, "reservationId", reservationId))
                 .toString())
@@ -595,23 +536,6 @@ public class EventApiV2Controller {
                 }
             );
         return ResponseEntity.status(HttpStatus.MOVED_PERMANENTLY).header(HttpHeaders.LOCATION, url).build();
-    }
-
-    private Pair<Optional<String>, BindingResult> makeSimpleReservation(Event event,
-                                                   int ticketCategoryId,
-                                                   String promoCode,
-                                                   ServletWebRequest request,
-                                                   Optional<PromoCodeDiscount> promoCodeDiscount) {
-
-        Locale locale = RequestUtils.getMatchingLocale(request, event);
-        ReservationForm form = new ReservationForm();
-        form.setPromoCode(promoCode);
-        TicketReservationModification reservation = new TicketReservationModification();
-        reservation.setAmount(1);
-        reservation.setTicketCategoryId(ticketCategoryId);
-        form.setReservation(Collections.singletonList(reservation));
-        var bindingRes = new BeanPropertyBindingResult(form, "reservationForm");
-        return Pair.of(createTicketReservation(form, bindingRes, request, event, locale, promoCodeDiscount.map(PromoCodeDiscount::getPromoCode)), bindingRes);
     }
 
     private boolean shouldDisplayRestrictedCategory(Optional<SpecialPrice> specialCode, alfio.model.TicketCategory c, Optional<PromoCodeDiscount> optionalPromoCode) {
@@ -631,45 +555,6 @@ public class EventApiV2Controller {
         return ticketCategory.isAccessRestricted() && ticketCategory.getId() == promoCodeDiscount.getHiddenCategoryId();
     }
 
-    private ValidatedResponse<Pair<Optional<SpecialPrice>, Optional<PromoCodeDiscount>>> checkCode(Event event, String promoCode) {
-        ZoneId eventZoneId = event.getZoneId();
-        ZonedDateTime now = ZonedDateTime.now(eventZoneId);
-        Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
-        Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
-        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
-
-        var result = Pair.of(specialCode, promotionCodeDiscount);
-
-        var errorResponse = new ValidatedResponse<>(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND)), result);
-
-        //
-        if(specialCode.isPresent()) {
-            if (eventManager.getOptionalByIdAndActive(specialCode.get().getTicketCategoryId(), event.getId()).isEmpty()) {
-                return errorResponse;
-            }
-
-            if (specialCode.get().getStatus() != SpecialPrice.Status.FREE) {
-                return errorResponse;
-            }
-
-        } else if (promotionCodeDiscount.isPresent() && !promotionCodeDiscount.get().isCurrentlyValid(eventZoneId, now)) {
-            return errorResponse;
-        } else if (promotionCodeDiscount.isPresent() && isDiscountCodeUsageExceeded(promotionCodeDiscount.get())){
-            return errorResponse;
-        } else if(promotionCodeDiscount.isEmpty()) {
-            return errorResponse;
-        }
-        //
-
-
-        return new ValidatedResponse<>(ValidationResult.success(), result);
-    }
-
-    private boolean isDiscountCodeUsageExceeded(PromoCodeDiscount discount) {
-        return discount.getMaxUsage() != null && discount.getMaxUsage() <= promoCodeDiscountRepository.countConfirmedPromoCode(discount.getId(), categoriesOrNull(discount), null, categoriesOrNull(discount) != null ? "X" : null);
-    }
-
-
     private static HttpHeaders getCorsHeaders() {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Access-Control-Allow-Origin", "*");
@@ -687,23 +572,5 @@ public class EventApiV2Controller {
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
     }
 
-    enum CodeType {
-        SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
-    }
 
-    //not happy with that code...
-    private CodeType getCodeType(int eventId, String code) {
-        String trimmedCode = StringUtils.trimToNull(code);
-        if(trimmedCode == null) {
-            return CodeType.NOT_FOUND;
-        }  else if(specialPriceRepository.getByCode(trimmedCode).isPresent()) {
-            return CodeType.SPECIAL_PRICE;
-        } else if (promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode).isPresent()) {
-            return CodeType.PROMO_CODE_DISCOUNT;
-        } else if (ticketCategoryRepository.findCodeInEvent(eventId, trimmedCode).isPresent()) {
-            return CodeType.TICKET_CATEGORY_CODE;
-        } else {
-            return CodeType.NOT_FOUND;
-        }
-    }
 }

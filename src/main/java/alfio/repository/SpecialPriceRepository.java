@@ -45,8 +45,11 @@ public interface SpecialPriceRepository {
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId and status = 'FREE'")
     List<SpecialPrice> findActiveByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
 
-    @Query(SELECT_FREE)
-    List<SpecialPrice> findActiveNotAssignedByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId);
+    @Query(SELECT_FREE + " limit :limitTo for update skip locked")
+    List<SpecialPrice> findActiveNotAssignedByCategoryId(@Bind("ticketCategoryId") int ticketCategoryId, @Bind("limitTo") int limitTo);
+
+    @Query("select count(*) from special_price where ticket_category_id = :ticketCategoryId and " + IS_FREE)
+    Integer countFreeTokens(@Bind("ticketCategoryId") int ticketCategoryId);
 
     @Query(type= QueryType.MODIFYING_WITH_RETURN, value = "update special_price set access_code_id_fk = :accessCodeId where id in (" +
         "select id from special_price where ticket_category_id = :ticketCategoryId and " +IS_FREE+ " and access_code_id_fk is null for update skip locked limit :limitTo" +
