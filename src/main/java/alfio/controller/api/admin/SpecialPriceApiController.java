@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -51,20 +52,19 @@ public class SpecialPriceApiController {
 
     @ExceptionHandler
     @ResponseBody
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String handleExceptions(Exception e) {
+    public ResponseEntity<String> handleExceptions(Exception e) {
         log.error("Unexpected exception in SpecialPriceApiController", e);
         if(!(e instanceof IllegalArgumentException)) {
-            return e.toString();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.toString());
         }
-        return e.getMessage();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
     }
 
     @PostMapping("/events/{eventName}/categories/{categoryId}/link-codes")
-    public List<SendCodeModification> linkAssigneeToCodes(@PathVariable("eventName") String eventName,
-                                                          @PathVariable("categoryId") int categoryId,
-                                                          @RequestBody UploadBase64FileModification file,
-                                                          Principal principal) throws IOException {
+    public ResponseEntity<List<SendCodeModification>> linkAssigneeToCodes(@PathVariable("eventName") String eventName,
+                                                                         @PathVariable("categoryId") int categoryId,
+                                                                         @RequestBody UploadBase64FileModification file,
+                                                                         Principal principal) throws IOException {
 
         Validate.isTrue(StringUtils.isNotEmpty(eventName));
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream()); CSVReader reader = new CSVReader(isr)) {
@@ -74,7 +74,7 @@ public class SpecialPriceApiController {
                         return new SendCodeModification(StringUtils.trimToNull(line[0]), trim(line[1]), trim(line[2]), trim(line[3]));
                     })
                     .collect(Collectors.toList());
-            return specialPriceManager.linkAssigneeToCode(content, eventName, categoryId, principal.getName());
+            return ResponseEntity.ok(specialPriceManager.linkAssigneeToCode(content, eventName, categoryId, principal.getName()));
         }
     }
 
