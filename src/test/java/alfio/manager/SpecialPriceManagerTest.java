@@ -19,7 +19,6 @@ package alfio.manager;
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.TextTemplateGenerator;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
@@ -85,7 +84,7 @@ public class SpecialPriceManagerTest {
         when(eventManager.getEventAndOrganizationId(anyString(), anyString())).thenReturn(event);
         when(eventManager.loadTicketCategories(eq(event))).thenReturn(Collections.singletonList(ticketCategory));
         when(ticketCategory.getId()).thenReturn(0);
-        when(specialPriceRepository.findActiveByCategoryId(eq(0))).thenReturn(specialPrices);
+        when(specialPriceRepository.findActiveByCategoryIdForUpdate(eq(0))).thenReturn(specialPrices);
         when(eventManager.getEventUrl(eq(event))).thenReturn("http://my-event");
         when(eventManager.loadOrganizer(eq(event), anyString())).thenReturn(organization);
         when(event.getShortName()).thenReturn("eventName");
