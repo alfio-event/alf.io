@@ -252,14 +252,17 @@ public class CheckInApiController {
         private final QRCode qrCode;
         private final Content content;
         private final General general;
+        private final String mediaName;
 
         @JsonCreator
         private LabelLayout(@JsonProperty("qrCode") QRCode qrCode,
                             @JsonProperty("content") Content content,
-                            @JsonProperty("general") General general) {
+                            @JsonProperty("general") General general,
+                            @JsonProperty("mediaName") String mediaName) {
             this.qrCode = qrCode;
             this.content = content;
             this.general = general;
+            this.mediaName = mediaName;
         }
 
         @Getter
