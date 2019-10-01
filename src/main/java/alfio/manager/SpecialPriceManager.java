@@ -31,6 +31,7 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -42,6 +43,7 @@ import static java.util.stream.Collectors.toList;
 
 @Component
 @AllArgsConstructor
+@Transactional
 public class SpecialPriceManager {
 
     private static final Predicate<SendCodeModification> IS_CODE_PRESENT = v -> Optional.ofNullable(v.getCode()).isPresent();
@@ -55,9 +57,8 @@ public class SpecialPriceManager {
 
     private List<String> checkCodeAssignment(Set<SendCodeModification> input, int categoryId, EventAndOrganizationId event, String username) {
         final TicketCategory category = checkOwnership(categoryId, event, username);
-        List<String> availableCodes = specialPriceRepository.findActiveByCategoryId(category.getId())
+        List<String> availableCodes = specialPriceRepository.findActiveByCategoryIdForUpdate(category.getId(), input.size())
             .stream()
-            .filter(SpecialPrice::notSent)
             .map(SpecialPrice::getCode).collect(toList());
         Validate.isTrue(input.size() <= availableCodes.size(), "Requested codes: "+input.size()+ ", available: "+availableCodes.size()+".");
         List<String> requestedCodes = input.stream().filter(IS_CODE_PRESENT).map(SendCodeModification::getCode).collect(toList());
@@ -79,9 +80,9 @@ public class SpecialPriceManager {
         Set<SendCodeModification> set = new LinkedHashSet<>(input);
         List<String> availableCodes = checkCodeAssignment(set, categoryId, event, username);
         final Iterator<String> codes = availableCodes.iterator();
-        return Stream.concat(set.stream().filter(IS_CODE_PRESENT),
-                input.stream().filter(IS_CODE_PRESENT.negate())
-                        .map(p -> new SendCodeModification(codes.next(), p.getAssignee(), p.getEmail(), p.getLanguage()))).collect(toList());
+        return Stream.concat(set.stream().filter(IS_CODE_PRESENT), input.stream().filter(IS_CODE_PRESENT.negate())
+            .map(p -> new SendCodeModification(codes.next(), p.getAssignee(), p.getEmail(), p.getLanguage())))
+            .collect(toList());
     }
 
     public List<SpecialPrice> loadSentCodes(String eventName, int categoryId, String username) {
@@ -124,4 +125,6 @@ public class SpecialPriceManager {
         });
         return true;
     }
+
+
 }

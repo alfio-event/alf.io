@@ -18,7 +18,6 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.TicketInfo;
-import alfio.controller.api.v2.model.ValidatedResponse;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.Formatters;
 import alfio.controller.support.TemplateProcessor;
@@ -27,6 +26,7 @@ import alfio.manager.FileUploadManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.support.response.ValidatedResponse;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
@@ -219,7 +219,7 @@ public class TicketApiV2Controller {
                                                                        BindingResult bindingResult,
                                                                        Authentication authentication) {
 
-        var a = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier);
+        var a = ticketReservationManager.fetchComplete(eventName, ticketIdentifier);
         if (a.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

@@ -27,6 +27,7 @@ import alfio.controller.api.admin.UsersApiController;
 import alfio.controller.api.v1.AttendeeApiController;
 import alfio.controller.api.v2.InfoApiController;
 import alfio.controller.api.v2.TranslationsApiController;
+import alfio.controller.api.v2.model.BasicEventInfo;
 import alfio.controller.api.v2.model.EventCode;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.form.*;
@@ -292,7 +293,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     public void reservationFlowTest() throws Exception {
 
 
-        assertTrue(eventApiV2Controller.listEvents().getBody().isEmpty());
+        List<BasicEventInfo> body = eventApiV2Controller.listEvents().getBody();
+        assertNotNull(body);
+        assertTrue(body.isEmpty());
         ensureConfiguration();
 
 
@@ -303,12 +306,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals("oder", translationsApiController.getPublicTranslations("de", true).get("common.or"));
 
         var alfioInfo = infoApiController.getInfo(new MockHttpSession());
-        assertEquals(false, alfioInfo.isDemoModeEnabled());
-        assertEquals(true, alfioInfo.isDevModeEnabled());
-        assertEquals(false, alfioInfo.isProdModeEnabled());
-        assertEquals(true, alfioInfo.getAnalyticsConfiguration().isGoogleAnalyticsScrambledInfo());
-        assertEquals(null, alfioInfo.getAnalyticsConfiguration().getGoogleAnalyticsKey());
-        assertEquals(null, alfioInfo.getAnalyticsConfiguration().getClientId());
+        assertFalse(alfioInfo.isDemoModeEnabled());
+        assertTrue(alfioInfo.isDevModeEnabled());
+        assertFalse(alfioInfo.isProdModeEnabled());
+        assertTrue(alfioInfo.getAnalyticsConfiguration().isGoogleAnalyticsScrambledInfo());
+        assertNull(alfioInfo.getAnalyticsConfiguration().getGoogleAnalyticsKey());
+        assertNull(alfioInfo.getAnalyticsConfiguration().getClientId());
 
         //
 
@@ -537,18 +540,18 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
             // code existing
-            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
             var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
             var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals(reservationId, reservationInfo.getBody().getId());
 
-            assertEquals(1, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
 
-            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
@@ -557,18 +560,18 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         // check reservation auto creation with deletion from the admin side
         {
 
-            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
             var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
             var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals(reservationId, reservationInfo.getBody().getId());
 
-            assertEquals(1, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
             adminReservationManager.removeReservation(event.getShortName(), reservationId, false, false, user);
 
-            assertEquals(2, specialPriceRepository.findActiveNotAssignedByCategoryId(hiddenCategoryId).size());
+            assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));

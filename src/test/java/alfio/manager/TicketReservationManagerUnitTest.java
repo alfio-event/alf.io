@@ -145,7 +145,7 @@ public class TicketReservationManagerUnitTest {
             groupManager,
             billingDocumentRepository,
             mock(NamedParameterJdbcTemplate.class),
-            json);
+            json, promoCodeDiscountRepository);
 
     }
 

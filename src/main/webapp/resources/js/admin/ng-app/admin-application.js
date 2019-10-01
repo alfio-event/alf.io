@@ -1388,13 +1388,15 @@
 
     });
 
-    admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $window) {
+    admin.controller('SendInvitationsController', function($scope, $stateParams, $state, EventService, $window, NotificationHandler) {
         $scope.eventName = $stateParams.eventName;
         $scope.categoryId = $stateParams.categoryId;
 
         var loadSentCodes = function() {
             EventService.loadSentCodes($stateParams.eventName, $stateParams.categoryId).then(function(result) {
                 $scope.codes = result.data;
+            }, function(err) {
+                NotificationHandler.showError(err.data);
             })
         };
 
@@ -1408,11 +1410,15 @@
         $scope.sendCodes = function(data) {
             EventService.sendCodesByEmail($stateParams.eventName, $stateParams.categoryId, data).success(function() {
                 loadSentCodes();
-                $scope.success = true;
+                $scope.results = undefined;
+                NotificationHandler.showSuccess("Invitations have been sent.");
             }).error(function(e) {
-                $scope.errorMessage = e.data;
-                $scope.success = false;
+                NotificationHandler.showError(e.data);
             });
+        };
+
+        $scope.cancelCodes = function() {
+            $scope.results = undefined;
         };
 
         $scope.clearRecipient = function(id, code) {
@@ -1427,7 +1433,7 @@
             $scope.results = data;
         };
         $scope.uploadError = function(data) {
-            $scope.errorMessage = data;
+            NotificationHandler.showError(data);
             $scope.success = false;
         };
         $scope.uploadUrl = '/admin/api/events/'+$stateParams.eventName+'/categories/'+$stateParams.categoryId+'/link-codes';
