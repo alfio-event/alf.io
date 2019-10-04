@@ -49,7 +49,11 @@
                             <div class="input-group">
                                 <div class="form-control-static" ng-class="{'text-danger': $ctrl.reservation.status === 'STUCK'}">{{$ctrl.reservation.status}}</div>
                                 <div class="input-group-addon" style="padding: 0; background-color: transparent; border: 0" ng-if="!$ctrl.onUpdate">
-                                    <button type="button" ng-if="$ctrl.reservation.status === 'PENDING' || $ctrl.reservation.status === 'STUCK'" class="btn btn-sm btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px"><i class="fa fa-check"></i> Mark as Completed</button>
+                                    <button type="button" ng-if="$ctrl.displayConfirmButton" class="btn btn-sm btn-success pull-right" ng-disabled="viewReservation.$waiting" ng-click="$ctrl.confirm()" style="margin-bottom:20px">
+                                        <i class="fa fa-check"></i>
+                                        <span data-ng-if="$ctrl.reservation.status !== 'OFFLINE_PAYMENT'">Mark as Completed</span>
+                                        <span data-ng-if="$ctrl.reservation.status === 'OFFLINE_PAYMENT'">Confirm payment received</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
