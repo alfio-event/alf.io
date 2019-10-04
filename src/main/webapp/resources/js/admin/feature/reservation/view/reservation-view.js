@@ -115,6 +115,8 @@
                 }
             });
 
+            ctrl.displayConfirmButton = ['PENDING', 'OFFLINE_PAYMENT', 'STUCK'].indexOf(ctrl.reservation.status) > -1;
+
             CountriesService.getCountries().then(function(countries) {
                 ctrl.countries = countries;
             });
@@ -320,8 +322,18 @@
         };
 
         ctrl.confirm = function() {
-            AdminReservationService.confirm(ctrl.event.shortName, ctrl.reservation.id).then(function() {
-                if(ctrl.onConfirm) {ctrl.onConfirm({eventName: ctrl.event.shortName, reservationId: ctrl.reservation.id})} else {$window.location.reload();}
+            var promise;
+            if(ctrl.reservation.status === 'OFFLINE_PAYMENT') {
+                promise = EventService.registerPayment(ctrl.event.shortName, ctrl.reservation.id);
+            } else {
+                promise = AdminReservationService.confirm(ctrl.event.shortName, ctrl.reservation.id);
+            }
+            promise.then(function() {
+                if(ctrl.onConfirm) {
+                    ctrl.onConfirm({eventName: ctrl.event.shortName, reservationId: ctrl.reservation.id})
+                } else {
+                    $window.location.reload();
+                }
             });
         };
 
