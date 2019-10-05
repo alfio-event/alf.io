@@ -22,10 +22,10 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.extern.log4j.Log4j2;
-import okhttp3.OkHttpClient;
 import org.springframework.stereotype.Service;
 
 import javax.script.*;
+import java.net.http.HttpClient;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -46,7 +46,7 @@ import java.util.function.Supplier;
 @Log4j2
 public class ScriptingExecutionService {
 
-    private static final OkHttpClient HTTP_CLIENT = new OkHttpClient();
+    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final SimpleHttpClient SIMPLE_HTTP_CLIENT = new SimpleHttpClient(HTTP_CLIENT);
 
     private static final Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");

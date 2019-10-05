@@ -31,6 +31,7 @@ import java.util.Set;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
+//TODO: Currently HttpClient does not support multipart/form-data
 @Log4j2
 @AllArgsConstructor
 class MailgunMailer implements Mailer {

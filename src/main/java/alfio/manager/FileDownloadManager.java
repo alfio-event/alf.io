@@ -20,45 +20,55 @@ import alfio.model.modification.UploadBase64FileModification;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Objects;
 
 
 @Log4j2
 public class FileDownloadManager {
 
-    private final OkHttpClient client = new OkHttpClient();
+    private final HttpClient httpClient = HttpClient.newHttpClient();
 
     public DownloadedFile downloadFile(String url) {
-        Request request = new Request.Builder().url(url).build();
-
-        try(Response response = client.newCall(request).execute()) {
-            if(response.isSuccessful()) {
-                String[] parts = url.split("/");
-                String name = parts[parts.length - 1];
-
-                byte[] bytes = Objects.requireNonNull(response.body()).bytes();
-                if(bytes.length <= FileUploadManager.MAXIMUM_ALLOWED_SIZE) {
-                    return new DownloadedFile(
-                        bytes,
+        HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(url)).GET().build();
+        HttpResponse<byte[]> response = null;
+        try {
+            response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofByteArray());
+        } catch (IOException exception) {
+            logWarning(exception);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            logWarning(exception);
+        }
+        if(callSuccessful(response)) {
+            String[] parts = url.split("/");
+            String name = parts[parts.length - 1];
+            if(Objects.nonNull(response.body()) && response.body().length <= FileUploadManager.MAXIMUM_ALLOWED_SIZE) {
+                return new DownloadedFile(
+                        response.body(),
                         name,
-                        response.header("Content-Type", "application/octet-stream")
+                        response.headers().firstValue("Content-Type").orElseGet(() -> "application/octet-stream")
                     );
-                } else {
-                    return null;
-                }
             } else {
-                log.warn("downloading file not successful:" + response);
                 return null;
             }
-        } catch(IOException e) {
-            log.warn("error while downloading file", e);
+        } else {
+            log.warn("downloading file not successful:" + response);
             return null;
         }
+    }
+
+    private void logWarning(Throwable exception) {
+        log.warn("error while downloading file" + exception);
+    }
+
+    private boolean callSuccessful(HttpResponse<?> response) {
+        return response.statusCode() >= 200 && response.statusCode() < 300;
     }
 
     @Getter

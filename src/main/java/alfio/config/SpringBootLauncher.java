@@ -24,7 +24,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 
 import java.util.ArrayList;
 import java.util.List;
-
+// start point
 @Log4j2
 public class SpringBootLauncher {
 

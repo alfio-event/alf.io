@@ -28,6 +28,7 @@ import org.springframework.stereotype.Component;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 
+//TODO: Currently HttpClient does not support multipart/form-data
 @Component
 @AllArgsConstructor
 public class RecaptchaService {
