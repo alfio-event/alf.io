@@ -32,7 +32,7 @@ curl --silent   -X POST  http://localhost:8080/api/v1/admin/event/update/titolo 
 }" > /dev/null
 
 #
-# Getting the event stats
+# check the event stats
 stats=`curl --silent  -X GET http://localhost:8080/api/v1/admin/event/titolo/stats -H "Authorization: ApiKey ${API_KEY}" -H 'Cache-Control: no-cache' -H 'Content-Type: application/json'`
 
 #
