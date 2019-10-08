@@ -18,6 +18,7 @@ package alfio.controller.api.admin;
 
 import alfio.manager.EventManager;
 import alfio.manager.GroupManager;
+import alfio.manager.GroupManager.DuplicateGroupItemException;
 import alfio.manager.user.UserManager;
 import alfio.model.group.Group;
 import alfio.model.group.LinkedGroup;
@@ -44,6 +45,12 @@ public class GroupApiController {
     private final GroupManager groupManager;
     private final UserManager userManager;
     private final EventManager eventManager;
+
+    @ExceptionHandler(DuplicateGroupItemException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleDuplicateGroupItemException(DuplicateGroupItemException exc) {
+        return exc.getMessage();
+    }
 
     @GetMapping("/for/{organizationId}")
     public ResponseEntity<List<Group>> loadAllGroupsForOrganization(@PathVariable("organizationId") int organizationId, Principal principal) {

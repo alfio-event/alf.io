@@ -74,6 +74,9 @@ public interface GroupRepository {
     @Query("select * from group_member_active where a_group_id_fk = :groupId order by value")
     List<GroupMember> getItems(@Bind("groupId") int groupId);
 
+    @Query("select value from group_member where a_group_id_fk = :groupId order by value")
+    List<String> getAllValuesIncludingNotActive(@Bind("groupId") int groupId);
+
     @Query("insert into whitelisted_ticket(group_member_id_fk, group_link_id_fk, ticket_id_fk, requires_unique_value)" +
         " values(:itemId, :configurationId, :ticketId, :requiresUniqueValue)")
     int insertWhitelistedTicket(@Bind("itemId") int itemId, @Bind("configurationId") int configurationId, @Bind("ticketId") int ticketId, @Bind("requiresUniqueValue") Boolean requiresUniqueValue);
