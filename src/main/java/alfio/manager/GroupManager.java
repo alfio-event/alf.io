@@ -165,7 +165,7 @@ public class GroupManager {
         List<String> duplicates = grouped.entrySet().stream().filter(e -> e.getValue().size() > 1).map(Map.Entry::getKey).collect(Collectors.toList());
 
         return new Result.Builder<Integer>()
-            .checkPrecondition(duplicates::isEmpty, ErrorCode.lazy(() -> ErrorCode.custom("value.duplicate", String.join(", ", duplicates))))
+            .checkPrecondition(duplicates::isEmpty, ErrorCode.lazy(() -> ErrorCode.custom("value.duplicate", duplicates.stream().limit(10).collect(Collectors.joining(", ")))))
             .build(() -> Arrays.stream(groupRepository.insert(groupId, members)).sum());
     }
 
@@ -232,12 +232,18 @@ public class GroupManager {
             return Optional.empty();
         }
 
-        List<GroupMember> existingItems = groupRepository.getItems(listId);
+        List<String> existingValues = groupRepository.getAllValuesIncludingNotActive(listId);
         List<GroupMemberModification> notPresent = modification.getItems().stream()
-            .filter(i -> i.getId() == null && existingItems.stream().noneMatch(ali -> ali.getValue().equals(i.getValue())))
+            .filter(i -> i.getId() == null && !existingValues.contains(i.getValue().strip().toLowerCase()))
+            .distinct()
             .collect(Collectors.toList());
+
         if(!notPresent.isEmpty()) {
-            insertMembers(listId, notPresent);
+            var insertResult = insertMembers(listId, notPresent);
+            if(!insertResult.isSuccess()) {
+                var error = Objects.requireNonNull(insertResult.getFirstErrorOrNull());
+                throw new DuplicateGroupItemException(error.getDescription());
+            }
         }
         groupRepository.update(listId, modification.getName(), modification.getDescription());
         return loadComplete(listId);
@@ -279,5 +285,11 @@ public class GroupManager {
     public static class WhitelistValidationItem {
         private final int categoryId;
         private final String value;
+    }
+
+    public static class DuplicateGroupItemException extends RuntimeException {
+        public DuplicateGroupItemException(String message) {
+            super(message);
+        }
     }
 }

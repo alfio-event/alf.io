@@ -152,6 +152,12 @@
                 GroupService.updateGroup(ctrl.organizationId, ctrl.group).then(function(result) {
                     NotificationHandler.showSuccess('Group '+ctrl.group.name+' successfully updated');
                     $state.go('^.all', {orgId: ctrl.organizationId});
+                }, function(err) {
+                    if(err.data) {
+                        NotificationHandler.showError('Duplicates found: ' + err.data);
+                    } else {
+                        NotificationHandler.showError('Error while updating group');
+                    }
                 });
             } else {
                 GroupService.createGroup(ctrl.organizationId, ctrl.group).then(function(result) {
@@ -234,7 +240,7 @@
                     });
             },
             updateGroup: function(orgId, group) {
-                return $http.post('/admin/api/group/for/'+orgId+'/update/'+group.id, group)
+                return $http.post('/admin/api/group/for/'+orgId+'/update/'+group.id, group);
             },
             loadActiveGroup: function(eventName, categoryId) {
                 var url = '/admin/api/group/for/event/'+eventName + (angular.isDefined(categoryId) ? '/category/'+categoryId : '');
