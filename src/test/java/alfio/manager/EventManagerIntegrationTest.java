@@ -590,7 +590,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
         assertEquals(1, ticketRepository.countReleasedUnboundedTickets(event.getId()).intValue());
     }
 
-    //https://github.com/exteso/alf.io/issues/335
+    //https://github.com/alfio-event/alf.io/issues/335
     @Test
     public void testDecreaseRestrictedCategoryWithAlreadySentToken() {
 
