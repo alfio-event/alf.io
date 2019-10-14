@@ -22,12 +22,10 @@ import alfio.manager.*;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.extension.CustomEmailText;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
-import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketFieldRepository;
-import alfio.repository.TicketRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.EventUtil;
 import alfio.util.LocaleUtil;
@@ -64,6 +62,7 @@ public class TicketHelper {
     private final GroupManager groupManager;
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
+    private final TicketReservationRepository ticketReservationRepository;
 
 
     public Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
@@ -220,10 +219,14 @@ public class TicketHelper {
         return TemplateProcessor.buildEmailForOwnerChange(event, t, organization, ticketUrl, templateManager, ticketLanguage);
     }
 
-    private PartialTicketTextGenerator getConfirmationTextBuilder(Locale ticketLanguage, Event event, TicketReservation ticketReservation, Ticket ticket, TicketCategory ticketCategory) {
+    public PartialTicketTextGenerator getConfirmationTextBuilder(Locale ticketLanguage, Event event, TicketReservation ticketReservation, Ticket ticket, TicketCategory ticketCategory) {
         Organization organization = organizationRepository.getById(event.getOrganizationId());
         String ticketUrl = ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid());
-        return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, ticketCategory, templateManager, ticketUrl, ticketLanguage);
+
+        var initialOptions = extensionManager.handleTicketEmailCustomText(event, ticketReservation, ticketReservationRepository.getAdditionalInfo(ticketReservation.getId()), ticketFieldRepository.findAllByTicketId(ticket.getId()))
+            .map(CustomEmailText::toMap)
+            .orElse(Map.of());
+        return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, ticketCategory, templateManager, ticketUrl, ticketLanguage, initialOptions);
     }
 
 }

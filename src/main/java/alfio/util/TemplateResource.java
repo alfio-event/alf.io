@@ -128,7 +128,7 @@ public enum TemplateResource {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
-            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", sampleTicket(), ticketCategory);
+            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", sampleTicket(), ticketCategory, Map.of());
         }
     },
     TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
@@ -274,7 +274,7 @@ public enum TemplateResource {
             Collections.singletonList(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, "8", PriceContainer.VatStatus.INCLUDED, "1.00");
         String reservationUrl = "http://your-domain.tld/reservation-url/";
         String reservationShortId = "597e7e7b";
-        return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId, Optional.of("My Invoice\nAddress"), Optional.empty(), Optional.empty());
+        return prepareModelForConfirmationEmail(organization, event, reservation, vat, tickets, orderSummary, reservationUrl, reservationShortId, Optional.of("My Invoice\nAddress"), Optional.empty(), Optional.empty(), Map.of());
     }
 
     private static Map<String, Object> prepareSampleDataForChargeFailed(Organization organization, Event event) {
@@ -309,8 +309,9 @@ public enum TemplateResource {
                                                                        String reservationShortID,
                                                                        Optional<String> invoiceAddress,
                                                                        Optional<String> bankAccountNr,
-                                                                       Optional<String> bankAccountOwner) {
-        Map<String, Object> model = new HashMap<>();
+                                                                       Optional<String> bankAccountOwner,
+                                                                       Map<String, Object> additionalModelObjects) {
+        Map<String, Object> model = new HashMap<>(additionalModelObjects);
         model.put("organization", organization);
         model.put("event", event);
         model.put("ticketReservation", reservation);
@@ -409,8 +410,9 @@ public enum TemplateResource {
                                                                TicketReservation ticketReservation,
                                                                String ticketURL,
                                                                Ticket ticket,
-                                                               TicketCategory ticketCategory) {
-        Map<String, Object> model = new HashMap<>();
+                                                               TicketCategory ticketCategory,
+                                                               Map<String, Object> additionalOptions) {
+        Map<String, Object> model = new HashMap<>(additionalOptions);
         model.put("organization", organization);
         model.put("event", event);
         model.put("ticketReservation", ticketReservation);

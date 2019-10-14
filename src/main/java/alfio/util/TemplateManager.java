@@ -30,7 +30,10 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -117,6 +120,10 @@ public class TemplateManager {
             mv.addObject("country-name", COUNTRY_NAME);
             mv.addObject("additional-field-value", ADDITIONAL_FIELD_VALUE.apply(model.get("additional-fields")));
             mv.addObject("i18n", new CustomLocalizationMessageInterceptor(locale, messageSourceManager.getMessageSourceForEvent(eventAndOrganizationId)).createTranslator());
+            var updatedModel = mv.getModel();
+            updatedModel.putIfAbsent("custom-header-text", "");
+            updatedModel.putIfAbsent("custom-body-text", "");
+            updatedModel.putIfAbsent("custom-footer-text", "");
             return compile(resource, templateOutput).execute(mv.getModel());
         } catch (Exception e) {
             throw new IllegalStateException(e);
