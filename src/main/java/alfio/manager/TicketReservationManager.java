@@ -34,6 +34,7 @@ import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.AdditionalServiceItemPriceContainer;
 import alfio.model.decorator.AdditionalServicePriceContainer;
 import alfio.model.decorator.TicketPriceContainer;
+import alfio.model.extension.CustomEmailText;
 import alfio.model.group.LinkedGroup;
 import alfio.model.modification.ASReservationWithOptionalCodeModification;
 import alfio.model.modification.AdditionalServiceReservationModification;
@@ -823,10 +824,7 @@ public class TicketReservationManager {
     @Transactional
     public BillingDocument getOrCreateBillingDocument(Event event, TicketReservation reservation, String username) {
         Optional<BillingDocument> existing = billingDocumentRepository.findLatestByReservationId(reservation.getId());
-        if(existing.isPresent()) {
-            return existing.get();
-        }
-        return createBillingDocument(event, reservation, username);
+        return existing.orElseGet(() -> createBillingDocument(event, reservation, username));
     }
 
     @Transactional(readOnly = true)
@@ -852,7 +850,10 @@ public class TicketReservationManager {
         } else {
             ticketsWithCategory = Collections.emptyList();
         }
-        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, ticketsWithCategory, summary, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner);
+        var initialOptions = extensionManager.handleReservationEmailCustomText(event, reservation, ticketReservationRepository.getAdditionalInfo(reservation.getId()))
+            .map(CustomEmailText::toMap)
+            .orElse(Map.of());
+        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, ticketsWithCategory, summary, reservationUrl, reservationShortID, invoiceAddress, bankAccountNr, bankAccountOwner, initialOptions);
         boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
             && configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(reservation.getVatCountryCode())
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
