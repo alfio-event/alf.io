@@ -79,13 +79,17 @@ public class SimpleHttpClient {
     }
 
     public SimpleHttpClientResponse postForm(String url, Map<String, String> headers, Map<String, String> params) throws IOException {
-        //TODO: Currently HttpClient does not support multipart/form-data
-        throw new UnsupportedOperationException();
+        HttpRequest request = buildUrlAndHeader(url, headers, null)
+            .POST(HttpUtils.ofMimeMultipartData(params, null))
+            .build();
+        return callRemote(request);
     }
 
     public SimpleHttpClientCachedResponse postFileAndSaveResponse(String url, Map<String, String> headers, String file, String filename, String contentType) throws IOException {
-        //TODO: Currently HttpClient does not support multipart/form-data
-        throw new UnsupportedOperationException();
+        HttpRequest request = buildUrlAndHeader(url, headers, null)
+            .POST(HttpUtils.ofMimeMultipartData(file, filename, contentType, null))
+            .build();
+        return callRemoteAndSaveResponse(null);
     }
 
     public SimpleHttpClientCachedResponse postBodyAndSaveResponse(String url, Map<String, String> headers, String content, String contentType) throws IOException {
@@ -139,7 +143,7 @@ public class SimpleHttpClient {
 
     private SimpleHttpClientResponse doRequest(String url, Map<String, String> headers, String method, Object requestBody) throws IOException {
         HttpRequest request = buildUrlAndHeader(url, headers, NULL_REQUEST_BODY.contains(method) ? null : HttpUtils.APPLICATION_JSON)
-            .method(method,  buildRequestBody(requestBody))
+            .method(method, buildRequestBody(requestBody))
             .build();
         return callRemote(request);
     }
@@ -172,9 +176,9 @@ public class SimpleHttpClient {
             logInterruption(exception);
         }
         Path tempFile = null;
-        if(HttpUtils.callSuccessful(response)) {
+        if (HttpUtils.callSuccessful(response)) {
             InputStream body = response.body();
-            if(body != null) {
+            if (body != null) {
                 tempFile = Files.createTempFile("extension-out", ".tmp");
                 try (FileOutputStream out = new FileOutputStream(tempFile.toFile())) {
                     body.transferTo(out);
@@ -199,7 +203,7 @@ public class SimpleHttpClient {
         if (headers != null) {
             headers.forEach(requestBuilder::header);
         }
-        if(contentType != null) {
+        if (contentType != null) {
             requestBuilder.header(HttpUtils.CONTENT_TYPE, contentType);
         }
         return requestBuilder;
