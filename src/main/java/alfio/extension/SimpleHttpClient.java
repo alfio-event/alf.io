@@ -89,7 +89,7 @@ public class SimpleHttpClient {
         HttpRequest request = buildUrlAndHeader(url, headers, null)
             .POST(HttpUtils.ofMimeMultipartData(file, filename, contentType, null))
             .build();
-        return callRemoteAndSaveResponse(null);
+        return callRemoteAndSaveResponse(request);
     }
 
     public SimpleHttpClientCachedResponse postBodyAndSaveResponse(String url, Map<String, String> headers, String content, String contentType) throws IOException {
