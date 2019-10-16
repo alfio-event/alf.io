@@ -352,7 +352,7 @@ public class TicketReservationManager {
 
     List<SpecialPrice> reserveTokensForAccessCode(String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount accessCode) {
         try {
-            // since we're going to lock some codes for an access code, we lock the access code itself until we're done.
+            // since we're going to get some tokens for an access code, we lock the access code itself until we're done.
             // This will allow us to serialize the requests and limit the contention
             Validate.isTrue(promoCodeDiscountRepository.lockAccessCodeForUpdate(accessCode.getId()).equals(accessCode.getId()));
             int count = specialPriceRepository.bindToSessionForAccessCode(reservationId, ticketReservation.getTicketCategoryId(), accessCode.getId(), ticketReservation.getAmount());
