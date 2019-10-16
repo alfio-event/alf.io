@@ -131,6 +131,7 @@ class TicketReservationManagerTest {
         INVOICE_ADDRESS, new ConfigurationManager.MaybeConfiguration(INVOICE_ADDRESS),
         BANK_ACCOUNT_NR, new ConfigurationManager.MaybeConfiguration(BANK_ACCOUNT_NR),
         BANK_ACCOUNT_OWNER,  new ConfigurationManager.MaybeConfiguration(BANK_ACCOUNT_OWNER));
+    private PromoCodeDiscountRepository promoCodeDiscountRepository;
 
     @BeforeEach
     void init() {
@@ -146,7 +147,7 @@ class TicketReservationManagerTest {
         ticketCategoryRepository = mock(TicketCategoryRepository.class);
         ticketCategoryDescriptionRepository = mock(TicketCategoryDescriptionRepository.class);
         paymentManager = mock(PaymentManager.class);
-        PromoCodeDiscountRepository promoCodeDiscountRepository = mock(PromoCodeDiscountRepository.class);
+        promoCodeDiscountRepository = mock(PromoCodeDiscountRepository.class);
         specialPriceRepository = mock(SpecialPriceRepository.class);
         transactionRepository = mock(TransactionRepository.class);
         TemplateManager templateManager = mock(TemplateManager.class);
@@ -547,6 +548,7 @@ class TicketReservationManagerTest {
         when(ticketCategoryRepository.isAccessRestricted(eq(TICKET_CATEGORY_ID))).thenReturn(true);
         when(ticketReservation.getSrcPriceCts()).thenReturn(1000);
         when(ticket.getSrcPriceCts()).thenReturn(1000);
+        when(promoCodeDiscountRepository.lockAccessCodeForUpdate(eq(accessCodeId))).thenReturn(accessCodeId);
         when(specialPriceRepository.bindToAccessCode(eq(TICKET_CATEGORY_ID), eq(accessCodeId), eq(2))).thenReturn(List.of(
             new SpecialPrice(1, "AAAA", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), null, null, null, accessCodeId),
             new SpecialPrice(2, "BBBB", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), null, null, null, accessCodeId)

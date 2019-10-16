@@ -1012,7 +1012,8 @@ public class EventManager {
 		eventDeleterRepository.deleteTransactions(eventId);
         eventDeleterRepository.deleteBillingDocuments(eventId);
 		eventDeleterRepository.deleteReservation(eventId);
-		
+
+		eventDeleterRepository.deleteSpecialPrice(eventId);
 		eventDeleterRepository.deletePromoCode(eventId);
 		eventDeleterRepository.deleteTicketCategoryText(eventId);
 		eventDeleterRepository.deleteTicketCategory(eventId);

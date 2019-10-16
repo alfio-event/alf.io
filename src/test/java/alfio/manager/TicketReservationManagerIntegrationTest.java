@@ -63,8 +63,8 @@ import static org.junit.Assert.*;
 @Transactional
 public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
-    private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
-    public static final String ACCESS_CODE = "MYACCESSCODE";
+    static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
+    private static final String ACCESS_CODE = "MYACCESSCODE";
 
     @Autowired
     private EventManager eventManager;

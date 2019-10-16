@@ -33,7 +33,7 @@ import java.util.stream.Stream;
 @QueryRepository
 public interface SpecialPriceRepository {
 
-    String IS_FREE = " status = 'FREE' and recipient_name is null and recipient_email is null";
+    String IS_FREE = " status = 'FREE' and recipient_name is null and recipient_email is null and access_code_id_fk is null";
     String SELECT_FREE = "select * from special_price where ticket_category_id = :ticketCategoryId and " + IS_FREE;
 
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId")
@@ -52,7 +52,7 @@ public interface SpecialPriceRepository {
     Integer countFreeTokens(@Bind("ticketCategoryId") int ticketCategoryId);
 
     @Query(type= QueryType.MODIFYING_WITH_RETURN, value = "update special_price set access_code_id_fk = :accessCodeId where id in (" +
-        "select id from special_price where ticket_category_id = :ticketCategoryId and " +IS_FREE+ " and access_code_id_fk is null for update skip locked limit :limitTo" +
+        "select id from special_price where ticket_category_id = :ticketCategoryId and " +IS_FREE+ " and access_code_id_fk is null limit :limitTo" +
         ") returning *")
     List<SpecialPrice> bindToAccessCode(@Bind("ticketCategoryId") int ticketCategoryId, @Bind("accessCodeId") int accessCodeId, @Bind("limitTo") int limitTo);
 
@@ -83,7 +83,7 @@ public interface SpecialPriceRepository {
 
     @Query("update special_price set status = 'FREE', session_id = null, sent_ts = null, recipient_name = null, recipient_email = null, access_code_id_fk = null " +
         "where id in (select special_price_id_fk from ticket where tickets_reservation_id in (:reservationIds) and special_price_id_fk is not null) " +
-        "or access_code_id_fk in (select promo_code_id_fk from tickets_reservation where id in (:reservationIds))")
+        "or access_code_id_fk in (select promo_code_id_fk from tickets_reservation where id in (:reservationIds) and promo_code_id_fk is not null)")
     int resetToFreeAndCleanupForReservation(@Bind("reservationIds") List<String> reservationIds);
 
 
