@@ -67,7 +67,10 @@ public interface EventDeleterRepository {
 
 	@Query("delete from tickets_reservation where event_id_fk = :eventId")
 	int deleteReservation(@Bind("eventId") int eventId);
-	
+
+	@Query("delete from special_price where ticket_category_id in (select id from ticket_category where event_id = :eventId)")
+    int deleteSpecialPrice(@Bind("eventId") int eventId);
+
 	@Query("delete from promo_code where event_id_fk = :eventId")
 	int deletePromoCode(@Bind("eventId") int eventId);
 	

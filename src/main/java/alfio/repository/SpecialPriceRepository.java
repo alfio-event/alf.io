@@ -32,7 +32,7 @@ import java.util.stream.Stream;
 @QueryRepository
 public interface SpecialPriceRepository {
 
-    String IS_FREE = " status = 'FREE' and recipient_name is null and recipient_email is null";
+    String IS_FREE = " status = 'FREE' and recipient_name is null and recipient_email is null and access_code_id_fk is null";
     String SELECT_FREE = "select * from special_price where ticket_category_id = :ticketCategoryId and " + IS_FREE;
 
     @Query("select * from special_price where ticket_category_id = :ticketCategoryId")
@@ -52,8 +52,8 @@ public interface SpecialPriceRepository {
 
     @Query("update special_price set session_id = :sessionId, access_code_id_fk = :accessCodeId where id in (" +
         "select id from special_price where ticket_category_id = :ticketCategoryId and " +IS_FREE+ " and access_code_id_fk is null limit :limitTo" +
-        ")")
-    int bindToSession(@Bind("sessionId") String sessionIdentifier, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("accessCodeId") Integer accessCodeId, @Bind("limitTo") int limitTo);
+        ") and "+IS_FREE)
+    int bindToSessionForAccessCode(@Bind("sessionId") String sessionIdentifier, @Bind("ticketCategoryId") int ticketCategoryId, @Bind("accessCodeId") Integer accessCodeId, @Bind("limitTo") int limitTo);
 
     @Query("select * from special_price where session_id = :sessionId and access_code_id_fk = :accessCodeId")
     List<SpecialPrice> findBySessionIdAndAccessCodeId(@Bind("sessionId") String sessionIdentifier, @Bind("accessCodeId") int accessCodeId);
@@ -88,7 +88,7 @@ public interface SpecialPriceRepository {
 
     @Query("update special_price set status = 'FREE', session_id = null, sent_ts = null, recipient_name = null, recipient_email = null, access_code_id_fk = null " +
         "where id in (select special_price_id_fk from ticket where tickets_reservation_id in (:reservationIds) and special_price_id_fk is not null) " +
-        "or access_code_id_fk in (select promo_code_id_fk from tickets_reservation where id in (:reservationIds))")
+        "or access_code_id_fk in (select promo_code_id_fk from tickets_reservation where id in (:reservationIds) and promo_code_id_fk is not null)")
     int resetToFreeAndCleanupForReservation(@Bind("reservationIds") List<String> reservationIds);
 
     @Query("update special_price set status = 'FREE', session_id = null, sent_ts = null, recipient_name = null, recipient_email = null, access_code_id_fk = null " +
