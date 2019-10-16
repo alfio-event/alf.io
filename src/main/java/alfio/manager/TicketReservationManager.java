@@ -298,7 +298,7 @@ public class TicketReservationManager {
             && ticketReservation.getTicketCategoryId().equals(discount.getHiddenCategoryId())
             && ticketCategoryRepository.isAccessRestricted(discount.getHiddenCategoryId())
         ) {
-            specialPrices = reserveTokens(reservationId, ticketReservation, discount);
+            specialPrices = reserveTokensForAccessCode(reservationId, ticketReservation, discount);
         } else {
             //first check if there is another pending special price token bound to the current sessionId
             Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), specialPriceSessionId, ticketReservation);
@@ -350,13 +350,16 @@ public class TicketReservationManager {
         ticketRepository.updateTicketPrice(reservedForUpdate, category.getId(), event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
     }
 
-    private List<SpecialPrice> reserveTokens(String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount discount) {
+    List<SpecialPrice> reserveTokensForAccessCode(String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount accessCode) {
         try {
-            int count = specialPriceRepository.bindToSession(reservationId, ticketReservation.getTicketCategoryId(), discount.getId(), ticketReservation.getAmount());
+            // since we're going to lock some codes for an access code, we lock the access code itself until we're done.
+            // This will allow us to serialize the requests and limit the contention
+            Validate.isTrue(promoCodeDiscountRepository.lockAccessCodeForUpdate(accessCode.getId()).equals(accessCode.getId()));
+            int count = specialPriceRepository.bindToSessionForAccessCode(reservationId, ticketReservation.getTicketCategoryId(), accessCode.getId(), ticketReservation.getAmount());
             if(count != ticketReservation.getAmount()) {
                 throw new NotEnoughTicketsException();
             }
-            return specialPriceRepository.findBySessionIdAndAccessCodeId(reservationId, discount.getId());
+            return specialPriceRepository.findBySessionIdAndAccessCodeId(reservationId, accessCode.getId());
         } catch (Exception e) {
             log.trace("constraints violated", e);
             if(e instanceof NotEnoughTicketsException) {

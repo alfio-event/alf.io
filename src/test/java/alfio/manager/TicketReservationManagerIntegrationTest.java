@@ -62,8 +62,8 @@ import static org.junit.Assert.*;
 @Transactional
 public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest {
 
-    private static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
-    public static final String ACCESS_CODE = "MYACCESSCODE";
+    static final Map<String, String> DESCRIPTION = Collections.singletonMap("en", "desc");
+    private static final String ACCESS_CODE = "MYACCESSCODE";
 
     @Autowired
     private EventManager eventManager;
@@ -130,7 +130,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
     @Test
     public void testTicketSelection() {
-        List<TicketCategoryModification> categories = Arrays.asList(
+        List<TicketCategoryModification> categories = List.of(
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
@@ -159,13 +159,13 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         TicketReservationWithOptionalCodeModification mod2 = new TicketReservationWithOptionalCodeModification(tr2, Optional.empty());
-        String reservationId = ticketReservationManager.createTicketReservation(event, Arrays.asList(mod, mod2), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        String reservationId = ticketReservationManager.createTicketReservation(event, List.of(mod, mod2), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
         List<TicketReservation> reservations = ticketReservationManager.findAllReservationsInEvent(event.getId(), 0, null, null).getKey();
         assertEquals(1, reservations.size());
         assertEquals(reservationId, reservations.get(0).getId());
 
-        List<Ticket> pendingTickets = ticketRepository.findPendingTicketsInCategories(Arrays.asList(bounded.getId(), unbounded.getId()));
+        List<Ticket> pendingTickets = ticketRepository.findPendingTicketsInCategories(List.of(bounded.getId(), unbounded.getId()));
         assertEquals(19, pendingTickets.size());
         pendingTickets.forEach(t -> assertEquals(1000, t.getFinalPriceCts()));
         List<Ticket> tickets = ticketRepository.findFreeByEventId(event.getId());
@@ -518,7 +518,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
     @Test
     public void testCleanupExpiredReservations() {
-        List<TicketCategoryModification> categories = Arrays.asList(
+        List<TicketCategoryModification> categories = List.of(
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
@@ -543,7 +543,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         Assert.assertTrue(idsPendingQuery.get().isEmpty());
 
-        String reservationId = ticketReservationManager.createTicketReservation(event, Arrays.asList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), -2), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        String reservationId = ticketReservationManager.createTicketReservation(event, List.of(mod), Collections.emptyList(), DateUtils.addDays(new Date(), -2), Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
         List<String> reservationIdPending = idsPendingQuery.get();
         Assert.assertEquals(1, reservationIdPending.size());
@@ -556,7 +556,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
     @Test
     public void testCleanupOfflineExpiredReservations() {
-        List<TicketCategoryModification> categories = Arrays.asList(
+        List<TicketCategoryModification> categories = List.of(
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
@@ -576,7 +576,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         Date past = DateUtils.addDays(new Date(), -2);
         Date now = new Date();
 
-        String reservationId = ticketReservationManager.createTicketReservation(event, Arrays.asList(mod), Collections.emptyList(), past, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
+        String reservationId = ticketReservationManager.createTicketReservation(event, List.of(mod), Collections.emptyList(), past, Optional.empty(), Optional.empty(), Locale.ENGLISH, false);
 
         final Supplier<List<String>> idsOfflinePayment = () -> jdbcTemplate.queryForList("select id from tickets_reservation where validity < :date and status = 'OFFLINE_PAYMENT'", Collections.singletonMap("date", now), String.class);
 
