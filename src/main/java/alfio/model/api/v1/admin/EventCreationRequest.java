@@ -114,7 +114,7 @@ public class EventCreationRequest{
         int locales = original.getLocales();
         if(description != null){
             locales = description.stream()
-                .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l -> l.getFlag().equals(x.lang)).findFirst())
+                .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l -> l.getLanguage().equals(x.lang)).findFirst())
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .mapToInt(ContentLanguage::getValue).reduce(0, (x, y) -> x | y);
