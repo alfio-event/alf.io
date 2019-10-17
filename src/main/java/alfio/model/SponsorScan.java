@@ -28,15 +28,18 @@ public class SponsorScan {
     private final ZonedDateTime timestamp;
     private final int eventId;
     private final int ticketId;
+    private final String notes;
 
 
     public SponsorScan(@Column("user_id") int userId,
                        @Column("creation") ZonedDateTime timestamp,
                        @Column("event_id") int eventId,
-                       @Column("ticket_id") int ticketId) {
+                       @Column("ticket_id") int ticketId,
+                       @Column("notes") String notes) {
         this.userId = userId;
         this.timestamp = timestamp;
         this.eventId = eventId;
         this.ticketId = ticketId;
+        this.notes = notes;
     }
 }

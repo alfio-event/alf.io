@@ -41,6 +41,15 @@ public class TicketFieldConfigurationDescriptionAndValue {
     private final int count;
     private final String value;
 
+    public String getTranslatedValue() {
+        if(StringUtils.isBlank(value)) {
+            return value;
+        }
+        if(isSelectField()) {
+            return ticketFieldDescription.getRestrictedValuesDescription().getOrDefault(value, "MISSING_DESCRIPTION");
+        }
+        return value;
+    }
 
     public List<Triple<String, String, Boolean>> getTranslatedRestrictedValue() {
         Map<String, String> description = ticketFieldDescription.getRestrictedValuesDescription();
@@ -52,11 +61,11 @@ public class TicketFieldConfigurationDescriptionAndValue {
 
     public List<TicketFieldValue> getFields() {
         if(count == 1) {
-            return Collections.singletonList(new TicketFieldValue(0, 1, value));
+            return Collections.singletonList(new TicketFieldValue(0, 1, value, isAcceptingValues()));
         }
-        List<String> values = StringUtils.isBlank(value) ? Collections.emptyList() : Json.fromJson(value, new TypeReference<List<String>>() {});
+        List<String> values = StringUtils.isBlank(value) ? Collections.emptyList() : Json.fromJson(value, new TypeReference<>() {});
         return IntStream.range(0, count)
-            .mapToObj(i -> new TicketFieldValue(i, i+1, i < values.size() ? values.get(i) : ""))
+            .mapToObj(i -> new TicketFieldValue(i, i+1, i < values.size() ? values.get(i) : "", isAcceptingValues()))
             .collect(Collectors.toList());
 
     }
@@ -77,6 +86,10 @@ public class TicketFieldConfigurationDescriptionAndValue {
         return value;
     }
 
+    private boolean isAcceptingValues() {
+        return isEditable() || StringUtils.isBlank(value);
+    }
+
     public boolean isBeforeStandardFields() {
         return getOrder() < 0;
     }
@@ -92,6 +105,7 @@ public class TicketFieldConfigurationDescriptionAndValue {
         private final int fieldIndex;
         private final int fieldCounter;
         private final String fieldValue;
+        private final Boolean editable;
     }
 
 }

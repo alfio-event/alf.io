@@ -115,13 +115,13 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", 0,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
-            DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null);
+            DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, null);
         Result<Integer> result = eventManager.insertCategory(event, tcm, pair.getValue());
         assertTrue(result.isSuccess());
 

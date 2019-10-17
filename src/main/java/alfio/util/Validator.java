@@ -193,7 +193,8 @@ public final class Validator {
                                                             Optional<Errors> errorsOptional,
                                                             Event event,
                                                             String baseField,
-                                                            SameCountryValidator vatValidator) {
+                                                            SameCountryValidator vatValidator,
+                                                            Integer ticketCategoryId) {
         if(errorsOptional.isEmpty()) {
             return ValidationResult.success();//already validated
         }
@@ -230,13 +231,6 @@ public final class Validator {
             boolean isField = form.getAdditional() !=null && form.getAdditional().containsKey(fieldConf.getName());
 
             if(!isField) {
-                if (fieldConf.isRequired()) { // sometimes the field is not propagated, so, if it's required, we need to do some additional work
-                    if (form.getAdditional() == null) {
-                        form.setAdditional(new HashMap<>());
-                    }
-                    form.getAdditional().put(fieldConf.getName(), Collections.singletonList(""));
-                    errors.rejectValue(prefixForLambda + "additional["+fieldConf.getName()+"][0]", "error."+fieldConf.getName());
-                }
                 continue;
             }
             

@@ -188,7 +188,7 @@
             {{/hasRefund}}
         </div>
 
-        {{#ticketReservation.invoicingAdditionalInfo}}
+        {{#invoicingAdditionalInfo}}
         <pre>{{#italianEInvoicing}}
 {{#i18n}}invoice.vat [{{vatTranslation}}]{{/i18n}}: {{ticketReservation.vatNr}}
 {{#i18n}}invoice-fields.fiscalCode{{/i18n}}: {{fiscalCode}}
@@ -196,7 +196,7 @@
 {{#i18n}}invoice-fields.addressee-code{{/i18n}}: {{addresseeCode}}
 PEC: {{pec}}{{/italianEInvoicing}}
         </pre>
-        {{/ticketReservation.invoicingAdditionalInfo}}
+        {{/invoicingAdditionalInfo}}
 
         {{#isOfflinePayment}}
             <div class="mb" style="margin-top: 1em">

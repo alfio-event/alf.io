@@ -45,6 +45,7 @@ public class Audit {
         CHECK_IN,
         MANUAL_CHECK_IN,
         REVERT_CHECK_IN,
+        BADGE_SCAN,
         UPDATE_TICKET,
         UPDATE_TICKET_CATEGORY,
         UPDATE_INVOICE,

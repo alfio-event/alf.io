@@ -97,7 +97,7 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         Group group = groupManager.createNew("test", "This is a test", event.getOrganizationId());
@@ -145,7 +145,7 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, null));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         Group group = groupManager.createNew("test", "This is a test", event.getOrganizationId());

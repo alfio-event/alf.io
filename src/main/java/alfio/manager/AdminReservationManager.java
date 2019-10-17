@@ -471,8 +471,8 @@ public class AdminReservationManager {
         Optional<Iterator<SpecialPrice>> specialPriceIterator = Optional.of(codes).filter(c -> !c.isEmpty()).map(Collection::iterator);
         for(int i=0; i<reservedForUpdate.size(); i++) {
             Attendee attendee = attendees.get(i);
+            Integer ticketId = reservedForUpdate.get(i);
             if(!attendee.isEmpty()) {
-                Integer ticketId = reservedForUpdate.get(i);
                 ticketRepository.updateTicketOwnerById(ticketId, attendee.getEmailAddress(), attendee.getFullName(), attendee.getFirstName(), attendee.getLastName());
                 if(StringUtils.isNotBlank(attendee.getReference()) || attendee.isReassignmentForbidden()) {
                     updateExtRefAndLocking(categoryId, attendee, ticketId);
@@ -480,8 +480,8 @@ public class AdminReservationManager {
                 if(!attendee.getAdditionalInfo().isEmpty()) {
                     ticketFieldRepository.updateOrInsert(attendee.getAdditionalInfo(), ticketId, event.getId());
                 }
-                specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts));
             }
+            specialPriceIterator.map(Iterator::next).ifPresent(code -> ticketRepository.reserveTicket(reservationId, ticketId, code.getId(), userLanguage, srcPriceCts));
         }
     }
 
@@ -508,7 +508,7 @@ public class AdminReservationManager {
         int tickets = attendees.size();
         TicketCategoryModification tcm = new TicketCategoryModification(category.getExistingCategoryId(), category.getName(), tickets,
             inception, reservation.getExpiration(), Collections.emptyMap(), category.getPrice(), true, "",
-            true, null, null, null, null, null);
+            true, null, null, null, null, null, null);
         int notAllocated = getNotAllocatedTickets(event);
         int missingTickets = Math.max(tickets - notAllocated, 0);
         Event modified = increaseSeatsIfNeeded(ti, event, missingTickets, event);
@@ -549,7 +549,8 @@ public class AdminReservationManager {
                 fromZonedDateTime(existing.getValidCheckInFrom(modified.getZoneId())),
                 fromZonedDateTime(existing.getValidCheckInTo(modified.getZoneId())),
                 fromZonedDateTime(existing.getTicketValidityStart(modified.getZoneId())),
-                fromZonedDateTime(existing.getTicketValidityEnd(modified.getZoneId())));
+                fromZonedDateTime(existing.getTicketValidityEnd(modified.getZoneId())),
+                existing.getTicketCheckInStrategy());
             return eventManager.updateCategory(existingCategoryId, modified, tcm, username, true);
         }
         return Result.success(existing);
@@ -716,6 +717,7 @@ public class AdminReservationManager {
 
         ticketRepository.resetCategoryIdForUnboundedCategoriesWithTicketIds(ticketIds);
         ticketFieldRepository.deleteAllValuesForTicketIds(ticketIds);
+        specialPriceRepository.resetToFreeAndCleanupForTickets(ticketIds);
 
         List<String> reservationIds = ticketRepository.findReservationIds(ticketIds);
         List<String> ticketUUIDs = ticketRepository.findUUIDs(ticketIds);

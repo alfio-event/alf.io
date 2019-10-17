@@ -45,6 +45,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
@@ -310,6 +311,7 @@ public class EventController {
     }
 
     @RequestMapping(value = "/event/{eventName}/code/{code}", method = {RequestMethod.GET, RequestMethod.HEAD})
+    @Transactional
     public String handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, Model model, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale) {
         String trimmedCode = StringUtils.trimToNull(code);
         return eventRepository.findOptionalByShortName(eventName).map(event -> {
@@ -335,7 +337,7 @@ public class EventController {
     }
 
     private String initReservationForHiddenCategory(String eventName, Model model, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, Event event, String redirectToEvent, int categoryId) {
-        Optional<SpecialPrice> specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(categoryId).stream().findFirst();
+        Optional<SpecialPrice> specialPrice = specialPriceRepository.findFirstActiveNotAssignedForUpdate(categoryId);
         if(specialPrice.isEmpty()) {
             return redirectToEvent;
         }

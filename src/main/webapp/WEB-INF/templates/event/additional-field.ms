@@ -1,6 +1,7 @@
 <div class="form-group {{#field-has-error}}[{{elementNamePrefix}}additional[{{name}}][{{fieldIndex}}]] has-error{{/field-has-error}}">
     <label class="col-sm-3 control-label" for="{{name}}-title-{{uuid}}">{{labelDescription}}{{#isRequired}}*{{/isRequired}}</label>
     <div class="col-sm-9">
+    {{#editable}}
         {{#inputField}}
             <input type="{{inputType}}" name="{{elementNamePrefix}}additional[{{name}}][{{fieldIndex}}]" value="{{fieldValue}}" id="{{name}}-title-{{uuid}}{{^-first}}-{{fieldCounter}}{{/-first}}" class="form-control {{#isRequired}}field-required{{/isRequired}}"
                    {{#placeholderDescriptionDefined}}placeholder="{{placeholderDescription}}"{{/placeholderDescriptionDefined}}
@@ -39,5 +40,9 @@
                 {{#translatedRestrictedValue}}<option value="{{left}}" {{^right}}disabled{{/right}}>{{middle}}</option>{{/translatedRestrictedValue}}
             </select>
         {{/selectField}}
+    {{/editable}}
+    {{^editable}}
+        <div class="form-control-static">{{translatedValue}}</div>
+    {{/editable}}
     </div>
 </div>
