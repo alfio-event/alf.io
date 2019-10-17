@@ -101,7 +101,7 @@
                         </div>
                     </div>
                     <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)" class="form-group" ng-class="{'text-muted disabled-value': !isRestrictedValueEnabled(restrictedValue, field)}">
-                        <label class="col-xs-2 control-label"><language-flag lang="{{lang.flag}}"></language-flag> Text</label>
+                        <label class="col-xs-2 control-label">Text ({{lang.displayLanguage}})</label>
                         <div class="col-xs-10">
                             <input ng-model="field.description[lang.locale].restrictedValues[restrictedValue.value]" class="form-control" required data-ng-if="addNewField">
                             <input ng-model="field.description[lang.locale].description.restrictedValues[restrictedValue]" class="form-control" required data-ng-if="!addNewField && !restrictedValue.isNew">
@@ -153,7 +153,7 @@
     </div>
 
     <div ng-repeat="lang in allLanguages" ng-if="isLanguageSelected(lang.value, event.locales)">
-        <h4><language-flag lang="{{lang.flag}}"></language-flag> {{lang.displayLanguage}}</h4>
+        <h4>{{lang.displayLanguage}}</h4>
         <div class="form-horizontal">
             <div class="form-group">
                 <label class="col-xs-2 control-label">Label</label>

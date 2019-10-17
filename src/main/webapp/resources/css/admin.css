@@ -820,3 +820,9 @@ div.preformatted {
 .daterangepicker select.hourselect, .daterangepicker select.minuteselect, .daterangepicker select.secondselect, .daterangepicker select.ampmselect {
     width: 60px !important;
 }
+
+.language-breadcrumb {
+    padding: 0 !important;
+    background-color: white !important;
+    margin-bottom: 0 !important;
+}

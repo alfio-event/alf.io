@@ -20,7 +20,7 @@
             <span ng-switch-when="error.date" class="ml-1">Wrong Validity Range</span>
         </div>
         <div class="row">
-            <div class="col-xs-5">
+            <div class="col-xs-12 col-md-5">
                 <h5><i class="fa fa-calendar-check-o fa-1_5x"></i> <span class="sr-only">Ticket Sale period</span>
                     <span class="text-muted">
                         <span ng-if="$ctrl.ticketCategory.formattedInception">{{$ctrl.ticketCategory.formattedInception | formatDate}}</span>
@@ -54,12 +54,13 @@
                 </h5>
                 <h5 data-ng-if="$ctrl.ticketCategory.id" class="text-muted">ID: {{$ctrl.ticketCategory.id}}</h5>
             </div>
-            <div class="col-xs-7 category-detail">
-                <div ng-if="$ctrl.categoryHasDescriptions($ctrl.ticketCategory)">
-                    <div class="row category-description" data-ng-repeat="(lang, desc) in $ctrl.ticketCategory.description">
-                        <div class="col-xs-12">{{lang}} <display-commonmark-preview text="desc" button-text="View description"></display-commonmark-preview></div>
-                    </div>
-                </div>
+            <div class="col-md-7 category-detail hidden-xs" ng-if="$ctrl.categoryHasDescriptions($ctrl.ticketCategory)">
+                <uib-tabset>
+                    <uib-tab heading="{{lang}}" data-ng-repeat="(lang, desc) in $ctrl.ticketCategory.description">
+                        <div style="position: absolute; right: 15px; margin-top: 5px;"><display-commonmark-preview text="desc"></display-commonmark-preview></div>
+                        <pre class="white text-muted">{{desc}}</pre>
+                    </uib-tab>
+                </uib-tabset>
             </div>
         </div>
     </div>
