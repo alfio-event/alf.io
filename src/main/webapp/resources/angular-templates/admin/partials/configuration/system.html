@@ -23,7 +23,7 @@
                 <label>Supported translations</label>
                 <div class="checkbox" ng-repeat="lang in systemConf.allLanguages">
                     <label>
-                        <input type="checkbox" ng-checked="systemConf.isLanguageSelected(lang)" name="lang.value" ng-click="systemConf.toggleLanguageSelection(lang)"> <img ng-src="../resources/images/flags/{{lang.flag}}.gif" class="img-center"> <span ng-class="{'text-muted': !systemConf.isLanguageSelected(lang)}">{{lang.displayLanguage}}</span>
+                        <input type="checkbox" ng-checked="systemConf.isLanguageSelected(lang)" name="lang.value" ng-click="systemConf.toggleLanguageSelection(lang)"><span ng-class="{'text-muted': !systemConf.isLanguageSelected(lang)}">{{lang.displayLanguage}}</span>
                     </label>
                 </div>
             </div>
