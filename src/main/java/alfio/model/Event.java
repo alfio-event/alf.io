@@ -36,6 +36,8 @@ import java.util.Optional;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 
+import static java.time.temporal.ChronoField.OFFSET_SECONDS;
+
 @Getter
 @Log4j2
 public class Event extends EventAndOrganizationId implements EventHiddenFieldContainer {
@@ -253,5 +255,13 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
 
     public String getPrivacyPolicyLinkOrNull() {
         return StringUtils.trimToNull(privacyPolicyUrl);
+    }
+
+    public int getBeginTimeZoneOffset() {
+        return getBegin().getOffset().get(OFFSET_SECONDS);
+    }
+
+    public int getEndTimeZoneOffset() {
+        return getEnd().getOffset().get(OFFSET_SECONDS);
     }
 }

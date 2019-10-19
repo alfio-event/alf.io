@@ -98,20 +98,16 @@ public class EventApiV2Controller {
     @GetMapping("events")
     public ResponseEntity<List<BasicEventInfo>> listEvents() {
 
-        var langs = i18nManager.getSupportedLanguages();
+        var contentLanguages = i18nManager.getSupportedLanguages();
 
         var events = eventManager.getPublishedEvents()
             .stream()
             .map(e -> {
-
                 var messageSource = messageSourceManager.getMessageSourceForEvent(e);
-
-                var formattedBeginDate = Formatters.getFormattedDate(langs, e.getBegin(), "common.event.date-format", messageSource);
-                var formattedBeginTime = Formatters.getFormattedDate(langs, e.getBegin(), "common.event.time-format", messageSource);
-                var formattedEndDate = Formatters.getFormattedDate(langs, e.getEnd(), "common.event.date-format", messageSource);
-                var formattedEndTime = Formatters.getFormattedDate(langs, e.getEnd(), "common.event.time-format", messageSource);
+                var formattedDates = Formatters.getFormattedDates(e, messageSource, contentLanguages);
                 return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getLocation(),
-                    e.getTimeZone(), e.getSameDay(), formattedBeginDate, formattedBeginTime, formattedEndDate, formattedEndTime);
+                    e.getTimeZone(), DatesWithTimeZoneOffset.fromEvent(e), e.getSameDay(), formattedDates.beginDate, formattedDates.beginTime,
+                    formattedDates.endDate, formattedDates.endTime);
             })
             .collect(Collectors.toList());
         return new ResponseEntity<>(events, getCorsHeaders(), HttpStatus.OK);
@@ -190,10 +186,7 @@ public class EventApiV2Controller {
                 List<String> bankAccountOwner = Arrays.asList(configurationsValues.get(BANK_ACCOUNT_OWNER).getValueOrDefault("").split("\n"));
                 //
 
-                var formattedBeginDate = Formatters.getFormattedDate(event, event.getBegin(), "common.event.date-format", messageSource);
-                var formattedBeginTime = Formatters.getFormattedDate(event, event.getBegin(), "common.event.time-format", messageSource);
-                var formattedEndDate = Formatters.getFormattedDate(event, event.getEnd(), "common.event.date-format", messageSource);
-                var formattedEndTime = Formatters.getFormattedDate(event, event.getEnd(), "common.event.time-format", messageSource);
+                var formattedDates = Formatters.getFormattedDates(event, messageSource, event.getContentLanguages());
 
                 //invoicing information
                 boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(configurationsValues);
@@ -236,8 +229,8 @@ public class EventApiV2Controller {
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions, availablePaymentMethods,
                     bankAccount, bankAccountOwner,
-                    formattedBeginDate, formattedBeginTime,
-                    formattedEndDate, formattedEndTime,
+                    formattedDates.beginDate, formattedDates.beginTime,
+                    formattedDates.endDate, formattedDates.endTime,
                     invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
                     i18nOverride, availableTicketsCount), getCorsHeaders(), HttpStatus.OK);
             })

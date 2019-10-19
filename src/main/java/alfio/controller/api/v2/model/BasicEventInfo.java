@@ -31,6 +31,7 @@ public class BasicEventInfo implements DateValidity {
     private final String location;
 
     private final String timeZone;
+    private final DatesWithTimeZoneOffset datesWithOffset;
     private final boolean sameDay;
     private final Map<String, String> formattedBeginDate; // day, month, year
     private final Map<String, String> formattedBeginTime; //the hour/minute component
