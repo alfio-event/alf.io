@@ -187,6 +187,12 @@ public class EventWithAdditionalInfo implements DateValidity {
     public String getTimeZone() {
         return event.getTimeZone();
     }
+
+    @Override
+    public DatesWithTimeZoneOffset getDatesWithOffset() {
+        return DatesWithTimeZoneOffset.fromEvent(event);
+    }
+
     //
 
 
