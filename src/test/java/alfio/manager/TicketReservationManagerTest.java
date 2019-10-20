@@ -560,32 +560,6 @@ class TicketReservationManagerTest {
         verify(specialPriceRepository).batchUpdateStatus(eq(List.of(1,2)), eq(SpecialPrice.Status.PENDING), eq(accessCodeId));
     }
 
-    @Test
-    void cancelPendingReservationAndRenewCode() {
-        String RESERVATION_ID = "rid";
-        when(ticketRepository.releaseExpiredTicket(eq(RESERVATION_ID), anyInt(), anyInt(), anyString())).thenReturn(1);
-        when(eventRepository.findByReservationId(eq(RESERVATION_ID))).thenReturn(event);
-        when(ticketRepository.findTicketsInReservation(eq(RESERVATION_ID))).thenReturn(Collections.singletonList(ticket));
-        when(ticketRepository.findTicketIdsInReservation(eq(RESERVATION_ID))).thenReturn(Collections.singletonList(TICKET_ID));
-        when(ticket.getTicketsReservationId()).thenReturn(RESERVATION_ID);
-        when(ticketRepository.findBySpecialPriceId(eq(SPECIAL_PRICE_ID))).thenReturn(Optional.of(ticket));
-        TicketReservation reservation = mock(TicketReservation.class);
-        when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(reservation);
-        when(reservation.getStatus()).thenReturn(TicketReservationStatus.PENDING);
-        when(reservation.getId()).thenReturn(RESERVATION_ID);
-        when(ticketRepository.freeFromReservation(eq(singletonList(RESERVATION_ID)))).thenReturn(1);
-        when(ticketReservationRepository.remove(eq(singletonList(RESERVATION_ID)))).thenReturn(1);
-        when(specialPriceRepository.getByCode(eq(SPECIAL_PRICE_CODE))).thenReturn(Optional.of(specialPrice));
-        when(specialPrice.getStatus()).thenReturn(SpecialPrice.Status.PENDING);
-        //when(specialPrice.getSessionIdentifier()).thenReturn(SPECIAL_PRICE_SESSION_ID);
-        //verify(specialPriceRepository).resetToFreeAndCleanupForReservation(eq(singletonList(RESERVATION_ID)));
-        //verify(ticketRepository).resetCategoryIdForUnboundedCategories(eq(singletonList(RESERVATION_ID)));
-        //verify(ticketRepository).releaseExpiredTicket(eq(RESERVATION_ID), eq(EVENT_ID), eq(TICKET_ID), anyString());
-        //verify(ticketReservationRepository).remove(eq(singletonList(RESERVATION_ID)));
-        //verify(waitingQueueManager).fireReservationExpired(eq(RESERVATION_ID));
-        //FIXME, this test is most probably broken
-    }
-
     //reserve tickets for category
 
 
