@@ -24,7 +24,7 @@ public class ActiveTravisProfileResolver implements ActiveProfilesResolver {
     @Override
     public String[] resolve(Class<?> testClass) {
         String prop = System.getProperty("spring.profiles.active");
-        if (prop != null && prop.indexOf("travis") >= 0) {
+        if (prop != null && prop.contains("travis")) {
 
             IntegrationTestUtil.DB_CONF.get("PGSQL-TRAVIS")
                 .forEach(System::setProperty);
