@@ -17,7 +17,7 @@
 package alfio.controller.form;
 
 import alfio.manager.SameCountryValidator;
-import alfio.model.*;
+import alfio.model.Event;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
@@ -29,7 +29,10 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.ValidationUtils;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static alfio.util.ErrorsCode.STEP_2_INVALID_VAT;
@@ -166,8 +169,8 @@ public class ContactAndTicketsForm implements Serializable {
 
         }
 
-        if (email != null && !email.contains("@") && !bindingResult.hasFieldErrors("email")) {
-            bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL);
+        if (email != null && !bindingResult.hasFieldErrors("email") && !Validator.isEmailValid(email)) {
+            bindingResult.rejectValue("email", ErrorsCode.STEP_2_INVALID_EMAIL, new Object[] {}, null);
         }
 
         if(!postponeAssignment) {
