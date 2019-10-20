@@ -49,7 +49,8 @@ import static org.apache.commons.lang3.StringUtils.isAnyBlank;
 
 public final class Validator {
 
-    private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9]+.*?@.+?\\..+$");
+    // source: https://commons.apache.org/proper/commons-validator/apidocs/src-html/org/apache/commons/validator/routines/EmailValidator.html
+    private static final Pattern SIMPLE_E_MAIL_PATTERN = Pattern.compile("^\\s*?(.+)@(.+?)\\s*$");
 
     private Validator() {
     }
@@ -320,8 +321,8 @@ public final class Validator {
         }
     }
 
-    private static boolean isEmailValid(String email) {
-        return StringUtils.isNotEmpty(email) && SIMPLE_E_MAIL_PATTERN.matcher(email).matches();
+    public static boolean isEmailValid(String email) {
+        return StringUtils.isNotEmpty(email) && !email.strip().endsWith(".") && SIMPLE_E_MAIL_PATTERN.matcher(email).matches();
     }
 
     private static void validateMaxLength(String value, String fieldName, String errorCode, int maxLength, Errors errors) {
