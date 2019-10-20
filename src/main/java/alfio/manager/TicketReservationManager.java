@@ -1063,7 +1063,7 @@ public class TicketReservationManager {
         try {
             nestedTransactionTemplate.execute(tc -> {
                 Event event = eventRepository.findByReservationId(reservationId);
-                boolean enabled = configurationManager.getFor(AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true);
+                boolean enabled = configurationManager.getFor(AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
                 if (enabled) {
                     deleteOfflinePayment(event, reservationId, true, false, null);
                 } else {

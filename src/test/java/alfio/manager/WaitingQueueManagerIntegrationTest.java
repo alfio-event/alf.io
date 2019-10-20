@@ -174,13 +174,13 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
 
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Locale.ENGLISH, false);
+        var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
         TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
-        //FIXME re-enable test
-        //PaymentSpecification spec = new PaymentSpecification( reservationId, null, 0, event, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event.mustUseFirstAndLastName()) );
-//        PaymentResult result = ticketReservationManager.performPayment("", null, event, reservationId, "test@test.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, "", reservationCost, Optional.empty(), Optional.of(PaymentProxy.OFFLINE), false, null, null, null);
-//        assertTrue(result.isSuccessful());
-//
-//        assertEquals(0, eventRepository.findStatisticsFor(event.getId()).getDynamicAllocation());
+        var orderSummary = ticketReservationManager.orderSummaryForReservation(reservation, event);
+        PaymentSpecification spec = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(), event, "blabla", new CustomerName("a", "b", "c", true), "", null, Locale.ENGLISH, false, false, orderSummary, null, null, PriceContainer.VatStatus.INCLUDED, true, true);
+        PaymentResult result = ticketReservationManager.performPayment(spec, reservationCost, Optional.of(PaymentProxy.OFFLINE));
+        assertTrue(result.isSuccessful());
+        assertEquals(0, eventRepository.findStatisticsFor(event.getId()).getDynamicAllocation());
     }
 
     @Test
