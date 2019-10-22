@@ -360,12 +360,12 @@ public class TicketReservationManager {
             category.getCurrencyCode());
     }
 
-    List<SpecialPrice> reserveTokensForAccessCode(TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount discount) {
+    List<SpecialPrice> reserveTokensForAccessCode(TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount accessCode) {
         try {
             // since we're going to get some tokens for an access code, we lock the access code itself until we're done.
             // This will allow us to serialize the requests and limit the contention
             Validate.isTrue(promoCodeDiscountRepository.lockAccessCodeForUpdate(accessCode.getId()).equals(accessCode.getId()));
-            List<SpecialPrice> boundSpecialPrices = specialPriceRepository.bindToAccessCode(ticketReservation.getTicketCategoryId(), discount.getId(), ticketReservation.getAmount());
+            List<SpecialPrice> boundSpecialPrices = specialPriceRepository.bindToAccessCode(ticketReservation.getTicketCategoryId(), accessCode.getId(), ticketReservation.getAmount());
             if(boundSpecialPrices.size() != ticketReservation.getAmount()) {
                 throw new NotEnoughTicketsException();
             }

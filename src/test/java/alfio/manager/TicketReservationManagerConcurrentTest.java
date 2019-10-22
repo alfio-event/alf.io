@@ -23,6 +23,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.SpecialPrice;
+import alfio.model.TicketCategory;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
@@ -49,7 +50,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
@@ -103,13 +107,13 @@ public class TicketReservationManagerConcurrentTest {
                     new DateTimeModification(LocalDate.now(), LocalTime.now()),
                     new DateTimeModification(LocalDate.now(), LocalTime.now()),
                     DESCRIPTION, BigDecimal.TEN, true, "", true, null,
-                    null, null, null, null, null));
+                    null, null, null, null, null, TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT, null));
 
             Pair<Event, String> eventStringPair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
             event = eventStringPair.getLeft();
             username = eventStringPair.getRight();
             int eventId = event.getId();
-            firstCategoryId = ticketCategoryRepository.findByEventId(eventId).get(0).getId();
+            firstCategoryId = ticketCategoryRepository.findAllTicketCategories(eventId).get(0).getId();
 
             specialPriceTokenGenerator.generatePendingCodesForCategory(firstCategoryId);
             promoCodeDiscountRepository.addPromoCode(ACCESS_CODE, eventId, event.getOrganizationId(), ZonedDateTime.now(), ZonedDateTime.now().plusDays(1), 0, PromoCodeDiscount.DiscountType.NONE, null, 100, null, null, PromoCodeDiscount.CodeType.ACCESS, firstCategoryId);
@@ -129,7 +133,7 @@ public class TicketReservationManagerConcurrentTest {
                     tr.setAmount(1);
                     tr.setTicketCategoryId(firstCategoryId);
                     TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
-                    return ticketReservationManager.reserveTokensForAccessCode(UUID.randomUUID().toString(), mod, promoCodeDiscount);
+                    return ticketReservationManager.reserveTokensForAccessCode(mod, promoCodeDiscount);
                 });
             });
         }
