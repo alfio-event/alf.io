@@ -412,7 +412,8 @@ public class EventController {
         }
 
         final String redirectToEvent = "redirect:/event/" + eventName + "/";
-        return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, event)
+        String promoCodeOrNull = SessionUtil.retrievePromotionCodeDiscount(request.getRequest()).orElse(null);
+        return reservation.validate(bindingResult, ticketReservationManager, additionalServiceRepository, eventManager, promoCodeOrNull, event)
             .map(selected -> {
 
                 Date expiration = DateUtils.addMinutes(new Date(), ticketReservationManager.getReservationTimeout(event));
