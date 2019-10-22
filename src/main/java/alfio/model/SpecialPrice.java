@@ -37,6 +37,7 @@ public class SpecialPrice {
     private final ZonedDateTime sentTimestamp;
     private final String recipientName;
     private final String recipientEmail;
+    private final Integer accessCodeId;
 
     public SpecialPrice(@Column("id") int id,
                         @Column("code") String code,
@@ -46,7 +47,8 @@ public class SpecialPrice {
                         @Column("session_id") String sessionIdentifier,
                         @Column("sent_ts") ZonedDateTime sentTimestamp,
                         @Column("recipient_name") String recipientName,
-                        @Column("recipient_email") String recipientEmail) {
+                        @Column("recipient_email") String recipientEmail,
+                        @Column("access_code_id_fk") Integer accessCodeId) {
         this.id = id;
         this.code = code;
         this.priceInCents = priceInCents;
@@ -56,6 +58,7 @@ public class SpecialPrice {
         this.sentTimestamp = sentTimestamp;
         this.recipientName = recipientName;
         this.recipientEmail = recipientEmail;
+        this.accessCodeId = accessCodeId;
     }
 
     public boolean notSent() {

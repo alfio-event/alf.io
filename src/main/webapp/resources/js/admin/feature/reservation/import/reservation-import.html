@@ -158,6 +158,11 @@ where:
                     </div>
                     <div class="col-xs-12">
                         <div class="checkbox">
+                            <label><input type="checkbox" ng-model="$ctrl.reservation.notification.attendees" id="ticketInfo-{{$index}}-sendTicketsViaMail" value="true"> Send tickets via email</label>
+                        </div>
+                    </div>
+                    <div class="col-xs-12">
+                        <div class="checkbox">
                             <label><input type="checkbox" ng-model="ticketInfo.addSeatsIfNotAvailable" id="ticketInfo-{{$index}}-addSeatsIfNotAvailable" value="true"> Add extra seats to event if needed</label>
                         </div>
                         <div class="alert alert-warning" ng-if="ticketInfo.addSeatsIfNotAvailable && ticketInfo.category.existingCategoryId"><i class="fa fa-warning"></i> If you add tickets to a public category and the reservation expires, any added seats will be released to the public.</div>

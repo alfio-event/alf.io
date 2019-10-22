@@ -27,7 +27,7 @@ import java.time.ZonedDateTime;
 import java.util.Date;
 
 @Getter
-public class FullTicketInfo {
+public class FullTicketInfo implements TicketInfoContainer {
 
     @Delegate
     private final Ticket ticket;
@@ -92,6 +92,12 @@ public class FullTicketInfo {
                           @Column("tr_billing_address_city") String billingAddressCity,
                           @Column("tr_billing_address_zip") String billingAddressZip,
                           @Column("tr_invoicing_additional_information") @JSONData TicketReservationInvoicingAdditionalInfo invoicingAdditionalInfo,
+
+                          @Column("tr_src_price_cts") int reservationSrcPriceCts,
+                          @Column("tr_final_price_cts") int reservationFinalPriceCts,
+                          @Column("tr_vat_cts") int reservationVatCts,
+                          @Column("tr_discount_cts") int reservationDiscountCts,
+                          @Column("tr_currency_code") String reservationCurrencyCode,
                           //
                           @Column("tc_id") int tcId,
                           @Column("tc_inception") ZonedDateTime tcUtcInception,
@@ -107,7 +113,8 @@ public class FullTicketInfo {
                           @Column("tc_valid_checkin_from") ZonedDateTime validCheckInFrom,
                           @Column("tc_valid_checkin_to") ZonedDateTime validCheckInTo,
                           @Column("tc_ticket_validity_start") ZonedDateTime ticketValidityStart,
-                          @Column("tc_ticket_validity_end") ZonedDateTime ticketValidityEnd
+                          @Column("tc_ticket_validity_end") ZonedDateTime ticketValidityEnd,
+                          @Column("tc_ticket_checkin_strategy") TicketCategory.TicketCheckInStrategy ticketCheckInStrategy
                           ) {
 
         this.ticket = new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId, fullName, firstName, lastName, email,
@@ -115,10 +122,10 @@ public class FullTicketInfo {
         this.ticketReservation = new TicketReservation(trId, trValidity, trStatus, trFullName, trFirstName, trLastName, trEmail, trBillingAddress,
                 trConfirmationTimestamp, trLatestReminder, trPaymentMethod, trReminderSent, trPromoCodeDiscountId, trAutomatic, resUserLanguage,
             directAssignment, invoiceNumber, invoiceModel, reservationVatStatus, vatNr, vatCountry, invoiceRequested, usedVatPercent, vatIncluded, reservationCreationTimestamp, customerReference,
-            reservationRegistrationTimestamp);
+            reservationRegistrationTimestamp, reservationSrcPriceCts, reservationFinalPriceCts, reservationVatCts, reservationDiscountCts, reservationCurrencyCode);
         this.ticketCategory = new TicketCategory(tcId, tcUtcInception, tcUtcExpiration, tcMaxTickets, tcName,
                 tcAccessRestricted, tcStatus, tcEventId, bounded, tcSrcPriceCts, code, validCheckInFrom, validCheckInTo,
-                ticketValidityStart, ticketValidityEnd);
+                ticketValidityStart, ticketValidityEnd, ticketCheckInStrategy);
 
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountry, vatNr, invoicingAdditionalInfo);
 

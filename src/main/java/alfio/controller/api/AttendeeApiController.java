@@ -19,8 +19,8 @@ package alfio.controller.api;
 import alfio.manager.AttendeeManager;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
-import alfio.model.Ticket;
 import alfio.model.result.Result;
+import alfio.model.support.TicketWithAdditionalFields;
 import alfio.repository.SponsorScanRepository;
 import alfio.util.EventUtil;
 import alfio.util.Wrappers;
@@ -70,14 +70,14 @@ public class AttendeeApiController {
 
     @RequestMapping(value = "/sponsor-scan", method = RequestMethod.POST)
     public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request, Principal principal) {
-        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, principal.getName()));
+        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, principal.getName()));
     }
 
     @RequestMapping(value = "/sponsor-scan/bulk", method = RequestMethod.POST)
     public ResponseEntity<List<TicketAndCheckInResult>> scanBadges(@RequestBody List<SponsorScanRequest> requests, Principal principal) {
         String username = principal.getName();
         return ResponseEntity.ok(requests.stream()
-            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, username))
+            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, username))
             .collect(Collectors.toList()));
     }
 
@@ -108,7 +108,7 @@ public class AttendeeApiController {
      * @return
      */
     @GetMapping("/{eventKey}/ticket/{UUID}")
-    public Result<Ticket> getTicketDetails(@PathVariable("eventKey") String eventShortName, @PathVariable("UUID") String uuid, Principal principal) {
+    public Result<TicketWithAdditionalFields> getTicketDetails(@PathVariable("eventKey") String eventShortName, @PathVariable("UUID") String uuid, Principal principal) {
         return attendeeManager.retrieveTicket(eventShortName, uuid, principal.getName());
     }
 
@@ -120,11 +120,15 @@ public class AttendeeApiController {
     public static class SponsorScanRequest {
         private final String eventName;
         private final String ticketIdentifier;
+        private final String notes;
 
         @JsonCreator
-        public SponsorScanRequest(@JsonProperty("eventName") String eventName, @JsonProperty("ticketIdentifier") String ticketIdentifier) {
+        public SponsorScanRequest(@JsonProperty("eventName") String eventName,
+                                  @JsonProperty("ticketIdentifier") String ticketIdentifier,
+                                  @JsonProperty("notes") String notes) {
             this.eventName = eventName;
             this.ticketIdentifier = ticketIdentifier;
+            this.notes = notes;
         }
     }
 

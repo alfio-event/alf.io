@@ -27,6 +27,7 @@ public class EventStatisticView {
                               @Column("available_seats") int availableSeats,
                               @Column("not_sold_tickets") int notSoldTickets,
                               @Column("sold_tickets") int soldTickets,
+                              @Column("assigned_tickets") int assignedTickets,
                               @Column("checked_in_tickets") int checkedInTickets,
                               @Column("not_allocated_tickets") int notAllocatedTickets,
                               @Column("pending_tickets") int pendingTickets,
@@ -38,6 +39,7 @@ public class EventStatisticView {
         this.containsStuckReservations = containsStuckReservations;
         this.availableSeats = availableSeats;
         this.notSoldTickets = notSoldTickets;
+        this.assignedTickets = assignedTickets;
         this.soldTickets = soldTickets;
         this.checkedInTickets = checkedInTickets;
         this.notAllocatedTickets = notAllocatedTickets;
@@ -52,6 +54,7 @@ public class EventStatisticView {
     private final int availableSeats;
     private final int notSoldTickets;
     private final int soldTickets;
+    private final int assignedTickets;
     private final int checkedInTickets;
     private final int notAllocatedTickets;
     private final int pendingTickets;
@@ -63,7 +66,7 @@ public class EventStatisticView {
     }
 
     public static EventStatisticView empty(int eventId) {
-        return new EventStatisticView(false, false, 0, 0, 0, 0, 0, 0, 0, 0, eventId) {
+        return new EventStatisticView(false, false, 0, 0, 0, 0, 0, 0, 0, 0, 0, eventId) {
             @Override
             public boolean isLiveData() {
                 return false;

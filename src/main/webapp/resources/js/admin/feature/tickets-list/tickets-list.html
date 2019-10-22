@@ -18,13 +18,13 @@
         </div>
         <div class="col-xs-12 col-md-8">
             <div class="form-group">
-                <label>
+                <label class="width-100">
                     <span class="sr-only">Filter Tickets</span>
                     <div class="input-group">
                         <div class="input-group-addon">
                             <i class="fa fa-search"></i>
                         </div>
-                        <input class="form-control input-sm" ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData()" ng-model-options="{ debounce: 1000 }" placeholder="Filter Tickets">
+                        <input class="form-control" ng-model="$ctrl.toSearch" ng-change="$ctrl.updateFilteredData()" ng-model-options="{ debounce: 1000 }" placeholder="Filter Tickets">
                     </div>
                 </label>
             </div>
@@ -60,6 +60,8 @@
                         <dd data-ng-if="ticket.paid"><samp>{{::ticket.finalPrice | currency:ticket.currencyCode}}</samp> ({{::ticket.ticketReservation.paymentMethod}}) on {{::ticket.timestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</dd>
                         <dt data-ng-if="ticket.paid">Transaction info</dt>
                         <dd data-ng-if="ticket.paid"><samp>{{::ticket.transaction.transactionId}}</samp> on {{::ticket.transactionTimestamp | formatDate:'DD.MM.YYYY HH:mm:ss'}}</dd>
+                        <dt data-ng-if="::ticket.promoCodeOrToken">Code</dt>
+                        <dd data-ng-if="::ticket.promoCodeOrToken"><a data-ui-sref="events.single.reservationsList({eventName: $ctrl.event.shortName, search: ticket.promoCodeOrToken})" title="Find all reservations">{{::ticket.promoCodeOrToken}}</a></dd>
                     </dl>
                 </div>
             </div>

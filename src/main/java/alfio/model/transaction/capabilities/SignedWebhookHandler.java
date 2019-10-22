@@ -18,6 +18,7 @@ package alfio.model.transaction.capabilities;
 
 import alfio.manager.support.PaymentWebhookResult;
 import alfio.model.transaction.Capability;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.TransactionWebhookPayload;
 
@@ -29,6 +30,6 @@ public interface SignedWebhookHandler extends Capability {
 
     Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature);
 
-    PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction);
+    PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction, PaymentContext paymentContext);
 
 }

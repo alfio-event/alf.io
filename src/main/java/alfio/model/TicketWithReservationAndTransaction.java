@@ -37,6 +37,8 @@ public class TicketWithReservationAndTransaction {
     private final BillingDetails billingDetails;
     private final Optional<Transaction> transaction;
     private final Integer ticketsCountInReservation;
+    private final String promoCode;
+    private final String specialPriceToken;
 
 
     public TicketWithReservationAndTransaction(@Column("t_id") Integer id,
@@ -86,6 +88,12 @@ public class TicketWithReservationAndTransaction {
                                                @Column("tr_registration_ts") ZonedDateTime reservationRegistrationTimestamp,
                                                @Column("tr_customer_reference") String customerReference,
 
+                                               @Column("tr_src_price_cts") int reservationSrcPriceCts,
+                                               @Column("tr_final_price_cts") int reservationFinalPriceCts,
+                                               @Column("tr_vat_cts") int reservationVatCts,
+                                               @Column("tr_discount_cts") int reservationDiscountCts,
+                                               @Column("tr_currency_code") String reservationCurrencyCode,
+
                                                @Column("tr_billing_address_company") String billingAddressCompany,
                                                @Column("tr_billing_address_line1") String billingAddressLine1,
                                                @Column("tr_billing_address_line2") String billingAddressLine2,
@@ -106,7 +114,10 @@ public class TicketWithReservationAndTransaction {
                                                @Column("bt_gtw_fee") Long gatewayFee,
                                                @Column("bt_status") Transaction.Status transactionStatus,
                                                @Column("bt_metadata") @JSONData Map<String, String> metadata,
-                                               @Column("tickets_count") Integer ticketsCount
+                                               @Column("tickets_count") Integer ticketsCount,
+
+                                               @Column("promo_code") String promoCode,
+                                               @Column("special_price_token") String specialPriceToken
                                                ) {
 
         this.ticket = id != null ? new Ticket(id, uuid, creation, categoryId, status, eventId, ticketsReservationId,
@@ -120,7 +131,7 @@ public class TicketWithReservationAndTransaction {
             reminderSent, promoCodeDiscountId, automatic, trUserLanguage,
             directAssignmentRequested, invoiceNumber, invoiceModel, vatStatus, vatNr, vatCountryCode, invoiceRequested,
             usedVadPercent, vatIncluded, reservationCreationTimestamp, customerReference,
-            reservationRegistrationTimestamp);
+            reservationRegistrationTimestamp, reservationSrcPriceCts, reservationFinalPriceCts, reservationVatCts, reservationDiscountCts, reservationCurrencyCode);
 
         this.billingDetails = new BillingDetails(billingAddressCompany, billingAddressLine1, billingAddressLine2, billingAddressZip, billingAddressCity, vatCountryCode, vatNr, invoicingAdditionalInfo);
 
@@ -132,6 +143,9 @@ public class TicketWithReservationAndTransaction {
         }
 
         this.ticketsCountInReservation = ticketsCount;
+
+        this.promoCode = promoCode;
+        this.specialPriceToken = specialPriceToken;
 
     }
 }

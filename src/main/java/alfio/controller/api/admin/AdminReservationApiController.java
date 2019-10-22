@@ -38,7 +38,6 @@ import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -80,7 +79,7 @@ public class AdminReservationApiController {
 
     @RequestMapping(value = "/event/{eventName}/{reservationId}/confirm", method = RequestMethod.PUT)
     public Result<TicketReservationDescriptor> confirmReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
-        return adminReservationManager.confirmReservation(eventName, reservationId, principal.getName())
+        return adminReservationManager.confirmReservation(eventName, reservationId, principal.getName(), AdminReservationModification.Notification.EMPTY)
             .map(triple -> toReservationDescriptor(reservationId, triple));
     }
 

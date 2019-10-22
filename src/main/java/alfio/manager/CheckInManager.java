@@ -21,6 +21,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.audit.ScanAudit;
+import alfio.model.support.CheckInOutputColorConfiguration;
 import alfio.model.system.Configuration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
@@ -31,8 +32,6 @@ import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -50,6 +49,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -59,7 +59,9 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static alfio.manager.support.CheckInStatus.*;
+import static alfio.model.Audit.EventType.*;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.OptionalWrapper.optionally;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 
@@ -136,11 +138,19 @@ public class CheckInManager {
 
     public TicketAndCheckInResult checkIn(int eventId, String ticketIdentifier, Optional<String> ticketCode, String user) {
         TicketAndCheckInResult descriptor = extractStatus(eventId, ticketRepository.findByUUIDForUpdate(ticketIdentifier), ticketIdentifier, ticketCode);
-        if(descriptor.getResult().getStatus() == OK_READY_TO_BE_CHECKED_IN) {
+        var checkInStatus = descriptor.getResult().getStatus();
+        if(checkInStatus == OK_READY_TO_BE_CHECKED_IN) {
             checkIn(ticketIdentifier);
+            TicketWithCategory ticket = descriptor.getTicket();
             scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, SUCCESS, ScanAudit.Operation.SCAN);
-            auditingRepository.insert(descriptor.getTicket().getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
-            return new TicketAndCheckInResult(descriptor.getTicket(), new DefaultCheckInResult(SUCCESS, "success"));
+            auditingRepository.insert(ticket.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
+            // return also additional items, if any
+            return new SuccessfulCheckIn(ticket, getAdditionalServicesForTicket(ticket), loadBoxColor(ticket));
+        } else if(checkInStatus == BADGE_SCAN_ALREADY_DONE || checkInStatus == OK_READY_FOR_BADGE_SCAN) {
+            var auditingStatus = checkInStatus == OK_READY_FOR_BADGE_SCAN ? BADGE_SCAN_SUCCESS : checkInStatus;
+            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, auditingStatus, ScanAudit.Operation.SCAN);
+            auditingRepository.insert(descriptor.getTicket().getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, BADGE_SCAN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
+            return new TicketAndCheckInResult(null, new DefaultCheckInResult(auditingStatus, checkInStatus == OK_READY_FOR_BADGE_SCAN ? "scan successful" : "already scanned"));
         }
         return descriptor;
     }
@@ -205,19 +215,31 @@ public class CheckInManager {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(TICKET_NOT_FOUND, "Ticket with uuid " + ticketIdentifier + " not found"));
         }
 
-        if(ticketCode.filter(StringUtils::isNotEmpty).isEmpty()) {
-            return new TicketAndCheckInResult(null, new DefaultCheckInResult(EMPTY_TICKET_CODE, "Missing ticket code"));
-        }
-
         Ticket ticket = maybeTicket.get();
-        Event event = maybeEvent.get();
-        String code = ticketCode.get();
-
         if(ticket.getCategoryId() == null) {
             return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(INVALID_TICKET_STATE, "Invalid ticket state"));
         }
 
         TicketCategory tc = ticketCategoryRepository.getById(ticket.getCategoryId());
+
+        Event event = maybeEvent.get();
+        if(ticketCode.filter(StringUtils::isNotBlank).isEmpty()) {
+            if(ticket.isCheckedIn() && tc.getTicketCheckInStrategy() == TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY) {
+                if(!isBadgeValidNow(tc, event)) {
+                    // if the badge is not currently valid, we give an error
+                    return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(INVALID_TICKET_CATEGORY_CHECK_IN_DATE, "Not allowed to check in at this time."));
+                }
+                var ticketsReservationId = ticket.getTicketsReservationId();
+                int previousScan = auditingRepository.countAuditsOfTypesInTheSameDay(ticketsReservationId, Set.of(CHECK_IN.name(), MANUAL_CHECK_IN.name(), BADGE_SCAN.name()), ZonedDateTime.now(event.getZoneId()));
+                if(previousScan > 0) {
+                    return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(BADGE_SCAN_ALREADY_DONE, "Badge scan already done"));
+                }
+                return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(OK_READY_FOR_BADGE_SCAN, "Badge scan already done"));
+            }
+            return new TicketAndCheckInResult(null, new DefaultCheckInResult(EMPTY_TICKET_CODE, "Missing ticket code"));
+        }
+
+        String code = ticketCode.get();
 
         ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
         if(!tc.hasValidCheckIn(now, event.getZoneId())) {
@@ -249,6 +271,18 @@ public class CheckInManager {
         }
 
         return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new DefaultCheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
+    }
+
+    private static boolean isBadgeValidNow(TicketCategory tc, Event event) {
+        var zoneId = event.getZoneId();
+        var now = ZonedDateTime.now(zoneId);
+        return now.isAfter(toZoneIdIfNotNull(tc.getValidCheckInFrom(), zoneId).orElse(event.getBegin()))
+            && now.isAfter(toZoneIdIfNotNull(tc.getTicketValidityStart(), zoneId).orElse(event.getBegin()))
+            && now.isBefore(toZoneIdIfNotNull(tc.getTicketValidityEnd(), zoneId).orElse(event.getEnd()));
+    }
+
+    private static Optional<ZonedDateTime> toZoneIdIfNotNull(ZonedDateTime in, ZoneId zoneId) {
+        return Optional.ofNullable(in).map(d -> d.withZoneSameInstant(zoneId));
     }
 
     private static Pair<Cipher, SecretKeySpec>  getCypher(String key) {
@@ -332,6 +366,7 @@ public class CheckInManager {
             String eventKey = event.getPrivateKey();
 
             Function<FullTicketInfo, String> hashedHMAC = ticket -> DigestUtils.sha256Hex(ticket.hmacTicketInfo(eventKey));
+            var outputColorConfiguration = getOutputColorConfiguration(event);
 
             Function<FullTicketInfo, String> encryptedBody = ticket -> {
                 Map<String, String> info = new HashMap<>();
@@ -342,6 +377,10 @@ public class CheckInManager {
                 info.put("status", ticket.getStatus().toString());
                 info.put("uuid", ticket.getUuid());
                 info.put("category", ticket.getTicketCategory().getName());
+                if(outputColorConfiguration != null) {
+                    info.put("boxColor", detectBoxColor(outputColorConfiguration, ticket));
+                }
+
                 if (!additionalFields.isEmpty()) {
                     Map<String, String> fields = new HashMap<>();
                     fields.put("company", trimToEmpty(ticket.getBillingDetails().getCompanyName()));
@@ -374,18 +413,17 @@ public class CheckInManager {
                 if (tc.getValidCheckInTo() != null) {
                     info.put("validCheckInTo", Long.toString(tc.getValidCheckInTo(event.getZoneId()).toEpochSecond()));
                 }
+                if (tc.getTicketValidityStart() != null) {
+                    info.put("ticketValidityStart", Long.toString(tc.getTicketValidityStart(event.getZoneId()).toEpochSecond()));
+                }
+                if (tc.getTicketValidityEnd() != null) {
+                    info.put("ticketValidityEnd", Long.toString(tc.getTicketValidityEnd(event.getZoneId()).toEpochSecond()));
+                }
+                info.put("categoryCheckInStrategy", tc.getTicketCheckInStrategy().name());
                 //
 
-                List<BookedAdditionalService> additionalServices = additionalServiceItemRepository.getAdditionalServicesBookedForReservation(ticket.getTicketsReservationId(), ticket.getUserLanguage(), ticket.getEventId());
-                boolean additionalServicesEmpty = additionalServices.isEmpty();
-                if(!additionalServicesEmpty) {
-                    List<Integer> additionalServiceIds = additionalServices.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toList());
-                    Map<Integer, List<TicketFieldValueForAdditionalService>> fields = ticketFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
-                        .stream().collect(Collectors.groupingBy(TicketFieldValueForAdditionalService::getAdditionalServiceId));
-
-                    List<AdditionalServiceInfo> additionalServicesInfo = additionalServices.stream()
-                        .map(as -> new AdditionalServiceInfo(as.getAdditionalServiceName(), as.getCount(), fields.get(as.getAdditionalServiceId())))
-                        .collect(Collectors.toList());
+                var additionalServicesInfo = getAdditionalServicesForTicket(ticket);
+                if(!additionalServicesInfo.isEmpty()) {
                     info.put("additionalServicesInfoJson", Json.toJson(additionalServicesInfo));
                 }
                 String key = ticket.ticketCode(eventKey);
@@ -396,6 +434,51 @@ public class CheckInManager {
                 .collect(toMap(hashedHMAC, encryptedBody));
 
         }).orElseGet(Collections::emptyMap);
+    }
+
+    private CheckInOutputColorConfiguration getOutputColorConfiguration(EventAndOrganizationId event) {
+        return configurationManager.getStringConfigValue(Configuration.from(event, CHECK_IN_COLOR_CONFIGURATION))
+            .flatMap(str -> optionally(() -> Json.fromJson(str, CheckInOutputColorConfiguration.class)))
+            .orElse(null);
+    }
+
+    private String loadBoxColor(TicketInfoContainer ticket) {
+        var eventAndOrganizationId = eventRepository.findEventAndOrganizationIdById(ticket.getEventId());
+        return detectBoxColor(getOutputColorConfiguration(eventAndOrganizationId), ticket);
+    }
+
+    private String detectBoxColor(CheckInOutputColorConfiguration outputColorConfiguration, TicketInfoContainer ticket) {
+        if(outputColorConfiguration == null) {
+            return null;
+        }
+        return outputColorConfiguration.getConfigurations().stream()
+            .filter(cc -> cc.getCategories().contains(ticket.getCategoryId()))
+            .map(CheckInOutputColorConfiguration.ColorConfiguration::getColorName)
+            .findFirst()
+            .orElse(outputColorConfiguration.getDefaultColorName());
+    }
+
+    List<AdditionalServiceInfo> getAdditionalServicesForTicket(TicketInfoContainer ticket) {
+
+        // temporary: return a result only for the first ticket
+        String ticketsReservationId = ticket.getTicketsReservationId();
+        int firstId = ticketRepository.findFirstTicketIdInReservation(ticketsReservationId).orElseThrow();
+        if(ticket.getId() != firstId) {
+            return List.of();
+        }
+
+        List<BookedAdditionalService> additionalServices = additionalServiceItemRepository.getAdditionalServicesBookedForReservation(ticketsReservationId, ticket.getUserLanguage(), ticket.getEventId());
+        boolean additionalServicesEmpty = additionalServices.isEmpty();
+        if(!additionalServicesEmpty) {
+            List<Integer> additionalServiceIds = additionalServices.stream().map(BookedAdditionalService::getAdditionalServiceId).collect(Collectors.toList());
+            Map<Integer, List<TicketFieldValueForAdditionalService>> fields = ticketFieldRepository.loadTicketFieldsForAdditionalService(ticket.getId(), additionalServiceIds)
+                .stream().collect(Collectors.groupingBy(TicketFieldValueForAdditionalService::getAdditionalServiceId));
+
+            return additionalServices.stream()
+                .map(as -> new AdditionalServiceInfo(as.getAdditionalServiceName(), as.getCount(), fields.get(as.getAdditionalServiceId())))
+                .collect(Collectors.toList());
+        }
+        return List.of();
     }
 
     public CheckInStatistics getStatistics(String eventName, String username) {
@@ -410,11 +493,4 @@ public class CheckInManager {
         return configurationManager.getBooleanConfigValue(Configuration.from(event, CHECK_IN_STATS), true);
     }
 
-    @Getter
-    @RequiredArgsConstructor
-    private static class AdditionalServiceInfo {
-        private final String name;
-        private final int count;
-        private final List<TicketFieldValueForAdditionalService> fields;
-    }
 }

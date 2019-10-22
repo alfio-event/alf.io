@@ -122,6 +122,17 @@ public class PriceContainerTest {
             });
     }
 
+    @Test
+    void testDoNotProduceNegativePrices() {
+        var discount = mock(PromoCodeDiscount.class);
+        when(discount.getCodeType()).thenReturn(PromoCodeDiscount.CodeType.DISCOUNT);
+        when(discount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT);
+        when(discount.getFixedAmount()).thenReturn(true);
+        when(discount.getDiscountAmount()).thenReturn(3100);
+
+        PriceContainerImpl vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("30.00"), PriceContainer.VatStatus.INCLUDED_EXEMPT, discount);
+        assertEquals(new BigDecimal("0.00"), vs.getFinalPrice());
+    }
 
     private Stream<Pair<Integer, PriceContainer>> generateTestStream(PriceContainer.VatStatus vatStatus) {
         List<BigDecimal> vatPercentages = IntStream.range(100, 3000)

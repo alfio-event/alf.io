@@ -125,10 +125,19 @@ public enum TemplateResource {
     TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null);
+            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, null);
             return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", sampleTicket(), ticketCategory);
         }
     },
+
+    TICKET_ASSIGNED_NOTIFY_ORGANIZER("/alfio/templates/ticket-assigned-notification-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, null);
+            return buildModelForTicketAssignedNotificationEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", sampleTicket(), ticketCategory, "http://your-domain.tld/reservation-url");
+        }
+    },
+
     TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
@@ -154,7 +163,7 @@ public enum TemplateResource {
     TICKET_PDF("/alfio/templates/ticket.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null);
+            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, null);
             return buildModelForTicketPDF(organization, event, sampleTicketReservation(), ticketCategory, sampleTicket(), imageData, "ABCD", Collections.emptyMap());
         }
     },
@@ -247,7 +256,7 @@ public enum TemplateResource {
 
     private static TicketCategory sampleCategory() {
         return new TicketCategory(0, ZonedDateTime.now().minusDays(1), ZonedDateTime.now().plusDays(1), 100, "test category", false, TicketCategory.Status.ACTIVE,
-            0, true, 100, null, null, null, null, null);
+            0, true, 100, null, null, null, null, null, null);
     }
 
     private static Ticket sampleTicket(String firstName, String lastName, String email) {
@@ -261,7 +270,7 @@ public enum TemplateResource {
             "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
             PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456",
             "CH", false, new BigDecimal("8.00"), true,
-            ZonedDateTime.now().minusMinutes(1), "PO-1234", ZonedDateTime.now());
+            ZonedDateTime.now().minusMinutes(1), "PO-1234", ZonedDateTime.now(), 10000, 10800, 800, 0, "CHF");
     }
 
     private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
@@ -398,6 +407,19 @@ public enum TemplateResource {
         model.put("fullName", ticket.getFullName());
         model.put("organization", organization);
         model.put("ticketURL", ticketUrl);
+        return model;
+    }
+
+    public static Map<String, Object> buildModelForTicketAssignedNotificationEmail(Organization organization,
+                                                                                   Event event,
+                                                                                   TicketReservation ticketReservation,
+                                                                                   String ticketURL,
+                                                                                   Ticket ticket,
+                                                                                   TicketCategory ticketCategory,
+                                                                                   String ticketReservationURL) {
+        var model = buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, ticket, ticketCategory);
+        model.put("ticketCategoryName", ticketCategory.getName());
+        model.put("ticketReservationURL", ticketReservationURL);
         return model;
     }
 

@@ -593,6 +593,25 @@
                 };
 
                 $scope.advancedOptionsCollapsed = !hasCustomCheckIn($scope.ticketCategory) && !hasCustomTicketValidity($scope.ticketCategory);
+
+                $scope.checkInStrategiesVisible = function() {
+                    var event = $scope.event;
+                    if(event.begin.date && event.end.date) {
+                        return moment(event.end.date).diff(moment(event.begin.date), 'days') > 0;
+                    }
+                    return moment(event.end).endOf('day').diff(moment(event.begin).startOf('day'), 'days') > 0;
+                };
+
+                $scope.checkInStrategies = [
+                    {
+                        id: 'ONCE_PER_EVENT',
+                        name: 'Only upon first access to the venue'
+                    },
+                    {
+                        id: 'ONCE_PER_DAY',
+                        name: 'Once per day'
+                    }
+                ];
             }
         };
     });
@@ -1032,7 +1051,6 @@
                     if(!ctrl.displayEventData) {
                         delete ctrl.event;
                     }
-                    console.log("isConfiguration:", ctrl.isConfiguration(), detectCurrentView($state.current));
                     if(ctrl.isConfiguration()) {
                         displayConfiguration();
                     }

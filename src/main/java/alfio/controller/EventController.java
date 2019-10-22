@@ -45,6 +45,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
@@ -196,11 +197,13 @@ public class EventController {
             Map<Integer, String> categoriesDescription = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList()), locale.getLanguage());
 
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
-                .filter((c) -> !c.isAccessRestricted() || (specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent()))
+                .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
                 .map((m) -> {
                     int maxTickets = configurationManager.getIntConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), m.getId(), ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5);
                     PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null);
-                    if(filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
+                    if(specialCode.isPresent()) {
+                        maxTickets = Math.min(1, maxTickets);
+                    } else if(filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
                         maxTickets = filteredPromoCode.getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(filteredPromoCode.getId(), categoriesOrNull(filteredPromoCode), null, categoriesOrNull(filteredPromoCode) != null ? "X" : null);
                     }
                     return new SaleableTicketCategory(m, categoriesDescription.getOrDefault(m.getId(), ""),
@@ -246,7 +249,8 @@ public class EventController {
                 .addAttribute("promoCode", specialCode.map(SpecialPrice::getCode).orElse(null))
                 .addAttribute("locationDescriptor", ld)
                 .addAttribute("pageTitle", "show-event.header.title")
-                .addAttribute("hasPromoCodeDiscount", promoCodeDiscount.isPresent())
+                .addAttribute("hasPromoCodeDiscount", promoCodeDiscount.filter(c -> c.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT).isPresent())
+                .addAttribute("hasAccessCode", promoCodeDiscount.filter(c -> c.getCodeType() == PromoCodeDiscount.CodeType.ACCESS).isPresent())
                 .addAttribute("promoCodeDiscount", promoCodeDiscount.orElse(null))
                 .addAttribute("displayWaitingQueueForm", EventUtil.displayWaitingQueueForm(event, saleableTicketCategories, configurationManager, eventStatisticsManager.noSeatsAvailable()))
                 .addAttribute("displayCategorySelectionForWaitingQueue", saleableTicketCategories.stream().filter(waitingQueueTargetCategory).count() > 1)
@@ -275,6 +279,16 @@ public class EventController {
         }).orElse(REDIRECT + "/");
     }
 
+    private boolean shouldDisplayRestrictedCategory(Optional<SpecialPrice> specialCode, TicketCategory c, Optional<PromoCodeDiscount> optionalPromoCode) {
+        if(optionalPromoCode.isPresent()) {
+            var promoCode = optionalPromoCode.get();
+            if(promoCode.getCodeType() == PromoCodeDiscount.CodeType.ACCESS && c.getId() == promoCode.getHiddenCategoryId()) {
+                return true;
+            }
+        }
+        return specialCode.filter(sc -> sc.getTicketCategoryId() == c.getId()).isPresent();
+    }
+
 
     enum CodeType {
         SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
@@ -297,6 +311,7 @@ public class EventController {
     }
 
     @RequestMapping(value = "/event/{eventName}/code/{code}", method = {RequestMethod.GET, RequestMethod.HEAD})
+    @Transactional
     public String handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, Model model, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale) {
         String trimmedCode = StringUtils.trimToNull(code);
         return eventRepository.findOptionalByShortName(eventName).map(event -> {
@@ -310,12 +325,7 @@ public class EventController {
                 if(!category.isAccessRestricted()) {
                     return makeSimpleReservation(eventName, request, redirectAttributes, locale, null, event, category.getId());
                 } else {
-                    Optional<SpecialPrice> specialPrice = specialPriceRepository.findActiveNotAssignedByCategoryId(category.getId()).stream().findFirst();
-                    if(specialPrice.isEmpty()) {
-                        return redirectToEvent;
-                    }
-                    savePromoCode(eventName, specialPrice.get().getCode(), model, request.getRequest());
-                    return makeSimpleReservation(eventName, request, redirectAttributes, locale, specialPrice.get().getCode(), event, category.getId());
+                    return initReservationForHiddenCategory(eventName, model, request, redirectAttributes, locale, event, redirectToEvent, category.getId());
                 }
             } else if (res.isSuccess() && codeType == CodeType.SPECIAL_PRICE) {
                 int ticketCategoryId = specialPriceRepository.getByCode(trimmedCode).orElseThrow().getTicketCategoryId();
@@ -325,6 +335,16 @@ public class EventController {
             }
         }).orElse("redirect:/");
     }
+
+    private String initReservationForHiddenCategory(String eventName, Model model, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, Event event, String redirectToEvent, int categoryId) {
+        Optional<SpecialPrice> specialPrice = specialPriceRepository.findFirstActiveNotAssignedForUpdate(categoryId);
+        if(specialPrice.isEmpty()) {
+            return redirectToEvent;
+        }
+        savePromoCode(eventName, specialPrice.get().getCode(), model, request.getRequest());
+        return makeSimpleReservation(eventName, request, redirectAttributes, locale, specialPrice.get().getCode(), event, categoryId);
+    }
+
 
     private String makeSimpleReservation(String eventName, ServletWebRequest request, RedirectAttributes redirectAttributes, Locale locale, String trimmedCode, Event event, int ticketCategoryId) {
         ReservationForm form = new ReservationForm();
@@ -443,7 +463,10 @@ public class EventController {
     }
 
     private static boolean shouldApplyDiscount(PromoCodeDiscount promoCodeDiscount, TicketCategory ticketCategory) {
-        return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
+        if(promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.DISCOUNT) {
+            return promoCodeDiscount.getCategories().isEmpty() || promoCodeDiscount.getCategories().contains(ticketCategory.getId());
+        }
+        return ticketCategory.isAccessRestricted() && ticketCategory.getId() == promoCodeDiscount.getHiddenCategoryId();
     }
 
     private boolean isCaptchaInvalid(HttpServletRequest request, EventAndOrganizationId event) {

@@ -18,8 +18,8 @@ package alfio.util;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.form.WaitingQueueSubscriptionForm;
-import alfio.manager.EuVatChecker;
 import alfio.manager.GroupManager;
+import alfio.manager.SameCountryValidator;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import alfio.model.TicketFieldConfiguration;
@@ -193,7 +193,8 @@ public final class Validator {
                                                             Optional<Errors> errorsOptional,
                                                             Event event,
                                                             String baseField,
-                                                            EuVatChecker.SameCountryValidator vatValidator) {
+                                                            SameCountryValidator vatValidator,
+                                                            Integer ticketCategoryId) {
         if(errorsOptional.isEmpty()) {
             return ValidationResult.success();//already validated
         }
@@ -375,7 +376,7 @@ public final class Validator {
     @RequiredArgsConstructor
     public static class AdvancedTicketAssignmentValidator implements Function<AdvancedValidationContext, Result<Void>> {
 
-        private final EuVatChecker.SameCountryValidator vatValidator;
+        private final SameCountryValidator vatValidator;
         private final GroupManager.WhitelistValidator whitelistValidator;
 
 

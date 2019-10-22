@@ -66,6 +66,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT;
 import static alfio.model.modification.DateTimeModification.toZonedDateTime;
 import static alfio.util.EventUtil.*;
 import static alfio.util.OptionalWrapper.optionally;
@@ -261,7 +262,7 @@ public class EventManager {
 
     public void updateAdditionalField(int id, EventModification.UpdateAdditionalField f) {
         String serializedRestrictedValues = toSerializedRestrictedValues(f);
-        ticketFieldRepository.updateRequiredAndRestrictedValues(id, f.isRequired(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()));
+        ticketFieldRepository.updateField(id, f.isRequired(), !f.isReadOnly(), serializedRestrictedValues, toSerializedDisabledValues(f), generateJsonForList(f.getLinkedCategoriesIds()));
         f.getDescription().forEach((locale, value) -> {
             String val = Json.GSON.toJson(value.getDescription());
             if(0 == ticketFieldRepository.updateDescription(id, locale, val)) {
@@ -284,7 +285,7 @@ public class EventManager {
             as.getVatType(),
             Optional.ofNullable(as.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
             as.getType(),
-            as.getSupplementPolicy()).getChecksum();
+            as.getSupplementPolicy(), null).getChecksum();
         return additionalServiceRepository.loadAllForEvent(eventId).stream().filter(as1 -> as1.getChecksum().equals(checksum)).findFirst().map(AdditionalService::getId).orElse(null);
     }
 
@@ -344,6 +345,31 @@ public class EventManager {
                 Validate.isTrue(ids.size() == invalidatedTickets, String.format("error during ticket invalidation: expected %d, got %d", ids.size(), invalidatedTickets));
             }
         }
+    }
+
+    public EventModification.AdditionalService insertAdditionalService(Event event, EventModification.AdditionalService additionalService) {
+        int eventId = event.getId();
+        AffectedRowCountAndKey<Integer> result = additionalServiceRepository.insert(eventId,
+            Optional.ofNullable(additionalService.getPrice()).map(MonetaryUtil::unitToCents).orElse(0),
+            additionalService.isFixPrice(),
+            additionalService.getOrdinal(),
+            additionalService.getAvailableQuantity(),
+            additionalService.getMaxQtyPerOrder(),
+            additionalService.getInception().toZonedDateTime(event.getZoneId()),
+            additionalService.getExpiration().toZonedDateTime(event.getZoneId()),
+            additionalService.getVat(),
+            additionalService.getVatType(),
+            additionalService.getType(),
+            additionalService.getSupplementPolicy());
+        Validate.isTrue(result.getAffectedRowCount() == 1, "too many records updated");
+        int id = result.getKey();
+        Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
+            forEach(t -> additionalServiceTextRepository.insert(id, t.getLocale(), t.getType(), t.getValue()));
+
+        return EventModification.AdditionalService.from(additionalServiceRepository.getById(result.getKey(), eventId))
+            .withText(additionalServiceTextRepository.findAllByAdditionalServiceId(result.getKey()))
+            .withZoneId(event.getZoneId())
+            .build();
     }
 
     /**
@@ -543,7 +569,7 @@ public class EventManager {
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
                 toZonedDateTime(tc.getValidCheckInFrom(), zoneId), toZonedDateTime(tc.getValidCheckInTo(), zoneId),
-                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId));
+                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
@@ -563,7 +589,8 @@ public class EventManager {
             toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
             toZonedDateTime(tc.getValidCheckInTo(), zoneId),
             toZonedDateTime(tc.getTicketValidityStart(), zoneId),
-            toZonedDateTime(tc.getTicketValidityEnd(), zoneId));
+            toZonedDateTime(tc.getTicketValidityEnd(), zoneId),
+            Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
@@ -614,7 +641,8 @@ public class EventManager {
                 toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
                 toZonedDateTime(tc.getValidCheckInTo(), (zoneId)),
                 toZonedDateTime(tc.getTicketValidityStart(), zoneId),
-                toZonedDateTime(tc.getTicketValidityEnd(), zoneId));
+                toZonedDateTime(tc.getTicketValidityEnd(), zoneId),
+                Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
         TicketCategory updated = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         int addedTickets = 0;
         if(original.isBounded() ^ tc.isBounded()) {
@@ -770,7 +798,9 @@ public class EventManager {
                              List<Integer> categoriesId,
                              Integer maxUsage,
                              String description,
-                             String emailReference) {
+                             String emailReference,
+                             PromoCodeDiscount.CodeType codeType,
+                             Integer hiddenCategoryId) {
 
         Validate.isTrue(promoCode.length() >= 7, "min length is 7 chars");
         Validate.isTrue((eventId != null && organizationId == null) || (eventId == null && organizationId != null), "eventId or organizationId must be not null");
@@ -787,6 +817,10 @@ public class EventManager {
             Validate.isTrue(discountAmount >= 0, "fixed discount amount cannot be less than zero");
         }
 
+        if(PromoCodeDiscount.CodeType.ACCESS == codeType) {
+            Validate.isTrue(hiddenCategoryId != null, "Hidden category is required");
+        }
+
         //
         categoriesId = Optional.ofNullable(categoriesId).orElse(Collections.emptyList()).stream().filter(Objects::nonNull).collect(toList());
         //
@@ -795,18 +829,23 @@ public class EventManager {
             organizationId = eventRepository.findOrganizationIdByEventId(eventId);
         }
 
-        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType.toString(), Json.GSON.toJson(categoriesId), maxUsage, description, emailReference);
+        if(codeType == PromoCodeDiscount.CodeType.ACCESS) {
+            discountType = DiscountType.NONE;
+        }
+
+        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType, Json.GSON.toJson(categoriesId), maxUsage, description, emailReference, codeType, hiddenCategoryId);
     }
     
     public void deletePromoCode(int promoCodeId) {
         promoCodeRepository.deletePromoCode(promoCodeId);
     }
 
-    public void updatePromoCode(int promoCodeId, ZonedDateTime start, ZonedDateTime end, Integer maxUsage, List<Integer> categories, String description, String emailReference) {
+    public void updatePromoCode(int promoCodeId, ZonedDateTime start, ZonedDateTime end, Integer maxUsage, List<Integer> categories, String description, String emailReference, Integer hiddenCategoryId) {
         Validate.isTrue(StringUtils.length(description) < 1025, "Description can be maximum 1024 chars");
         Validate.isTrue(StringUtils.length(emailReference) < 257, "Description can be maximum 256 chars");
         String categoriesJson = CollectionUtils.isEmpty(categories) ? null : Json.toJson(categories);
-        promoCodeRepository.updateEventPromoCode(promoCodeId, start, end, maxUsage, categoriesJson, description, emailReference);
+
+        promoCodeRepository.updateEventPromoCode(promoCodeId, start, end, maxUsage, categoriesJson, description, emailReference, hiddenCategoryId);
     }
     
     public List<PromoCodeDiscountWithFormattedTime> findPromoCodesInEvent(int eventId) {
@@ -919,7 +958,8 @@ public class EventManager {
 		eventDeleterRepository.deleteTransactions(eventId);
         eventDeleterRepository.deleteBillingDocuments(eventId);
 		eventDeleterRepository.deleteReservation(eventId);
-		
+
+		eventDeleterRepository.deleteSpecialPrice(eventId);
 		eventDeleterRepository.deletePromoCode(eventId);
 		eventDeleterRepository.deleteTicketCategoryText(eventId);
 		eventDeleterRepository.deleteTicketCategory(eventId);

@@ -42,6 +42,7 @@
                 controller: function() {},
                 link: function($scope, element, attrs) {
                     var event = $scope.ctrl.event;
+                    console.log('assigned', event.assignedTickets, 'sold', event.soldTickets);
                     var buildSeries = function(event) {
                         return _.filter([{
                             value: event.checkedInTickets,
@@ -49,10 +50,15 @@
                             className: 'slice-success',
                             meta: 'Checked in ('+event.checkedInTickets+')'
                         },{
-                            value: event.soldTickets,
-                            name: 'Sold',
+                            value: event.assignedTickets,
+                            name: 'Acquired and Assigned',
                             className: 'slice-warning',
-                            meta: 'Sold ('+event.soldTickets+')'
+                            meta: 'Acquired and Assigned ('+event.assignedTickets+')'
+                        },{
+                            value: event.soldTickets - event.assignedTickets,
+                            name: 'To be assigned',
+                            className: 'slice-to-be-assigned',
+                            meta: 'To be assigned ('+(event.soldTickets - event.assignedTickets)+')'
                         },{
                             value: event.pendingTickets + event.releasedTickets,
                             name: 'Pending',

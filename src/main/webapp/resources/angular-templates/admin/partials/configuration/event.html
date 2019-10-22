@@ -220,7 +220,7 @@
             </div>
 
             <div class="page-header" data-ng-if="eventConf.payment || eventConf.paymentPaypal || eventConf.paymentStripe || eventConf.paymentMollie || eventConf.paymentOffline">
-                <h2>Alf.io PI settings</h2>
+                <h2>Check-in settings</h2>
             </div>
             <div data-ng-if="eventConf.alfioPi" class="panel panel-default">
                 <div class="panel-heading">
@@ -228,10 +228,30 @@
                 </div>
                 <div class="panel-body">
                     <div class="alert alert-info">
-                        <p><i class="fa fa-info-circle"></i> See <a href="https://github.com/exteso/alf.io-PI">Alf.io-PI repository</a> for more information.</p>
+                        <p><i class="fa fa-info-circle"></i> See <a href="https://github.com/alfio-event/alf.io-PI">Alf.io-PI repository</a> for more information.</p>
                     </div>
                     <div data-ng-repeat="setting in eventConf.alfioPiOptions">
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    </div>
+                    <div ng-if="eventConf.isLabelPrintingEnabled()" class="hidden-xs hidden-sm">
+                        <label-template config="eventConf.labelLayout" data-delete-handler="eventConf.delete(config)"></label-template>
+                    </div>
+                    <div class="hidden-xs hidden-sm row">
+                        <div class="col-md-6"><setting data-obj="eventConf.colorConfiguration" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting></div>
+                        <div class="col-md-6">
+                            <div class="row">
+                                <div class="col-md-8 col-md-push-2">
+                                    <h5>example:</h5>
+                                    <pre>{
+  "defaultColorName": "success",
+  "configurations": [{
+      "colorName": "info",
+      "categories": [1]
+  }]
+}</pre>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -30,4 +30,6 @@ public interface StatisticsContainer {
     int getDynamicAllocation();
 
     int getReleasedTickets();
+
+    int getAssignedTickets();
 }

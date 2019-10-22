@@ -86,7 +86,9 @@ public interface TicketFieldRepository extends FieldRepository {
     default void updateOrInsert(Map<String, List<String>> values, int ticketId, int eventId) {
         Map<String, TicketFieldValue> toUpdate = findAllByTicketIdGroupedByName(ticketId);
         values = Optional.ofNullable(values).orElseGet(Collections::emptyMap);
-        Map<String, Integer> fieldNameToId = findAdditionalFieldsForEvent(eventId).stream().collect(Collectors.toMap(TicketFieldConfiguration::getName, TicketFieldConfiguration::getId));
+        var additionalFieldsForEvent = findAdditionalFieldsForEvent(eventId);
+        var readOnlyFields = additionalFieldsForEvent.stream().filter(TicketFieldConfiguration::isReadOnly).map(TicketFieldConfiguration::getName).collect(Collectors.toSet());
+        Map<String, Integer> fieldNameToId = additionalFieldsForEvent.stream().collect(Collectors.toMap(TicketFieldConfiguration::getName, TicketFieldConfiguration::getId));
 
         values.forEach((fieldName, fieldValues) -> {
             String fieldValue;
@@ -100,11 +102,13 @@ public interface TicketFieldRepository extends FieldRepository {
 
             boolean isNotBlank = StringUtils.isNotBlank(fieldValue);
             if(toUpdate.containsKey(fieldName)) {
-                TicketFieldValue field = toUpdate.get(fieldName);
-                if(isNotBlank) {
-                    updateValue(field.getTicketId(), field.getTicketFieldConfigurationId(), fieldValue);
-                } else {
-                    deleteValue(field.getTicketId(), field.getTicketFieldConfigurationId());
+                if(!readOnlyFields.contains(fieldName)) {
+                    TicketFieldValue field = toUpdate.get(fieldName);
+                    if(isNotBlank) {
+                        updateValue(field.getTicketId(), field.getTicketFieldConfigurationId(), fieldValue);
+                    } else {
+                        deleteValue(field.getTicketId(), field.getTicketFieldConfigurationId());
+                    }
                 }
             } else if(fieldNameToId.containsKey(fieldName) && isNotBlank) {
                 insertValue(ticketId, fieldNameToId.get(fieldName), fieldValue);
@@ -171,7 +175,7 @@ public interface TicketFieldRepository extends FieldRepository {
         return configuration.getRestrictedValues().stream()
             .map(name -> {
                 int count = valueStats.getOrDefault(name, 0);
-                return new RestrictedValueStats(name, count, new BigDecimal(count).divide(new BigDecimal(total), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED).intValue());
+                return new RestrictedValueStats(name, count, total == 0 ? 0 : new BigDecimal(count).divide(new BigDecimal(total), 2, RoundingMode.HALF_UP).multiply(MonetaryUtil.HUNDRED).intValue());
             }).collect(Collectors.toList());
 
     }

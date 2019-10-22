@@ -30,6 +30,7 @@ from
   coalesce(pending_count,0) as pending_count,
   coalesce(checked_in_count,0) as checked_in_count,
   coalesce(sold_tickets_count,0) as sold_tickets_count,
+  coalesce(assigned_tickets_count, 0) as assigned_tickets_count,
   coalesce(released_count, 0) as released_count,
   case(bounded) when false then 0 else max_tickets - coalesce(sold_tickets_count,0 )  - coalesce(checked_in_count, 0) -  coalesce(pending_count, 0) end as not_sold_tickets,
   coalesce(stuck_count, 0) as stuck_count
@@ -44,6 +45,7 @@ left join
   sum(case(status = 'RELEASED') when true then 1 else 0 end) as released_count,
   sum(case(status = 'CHECKED_IN') when true then 1 else 0 end) checked_in_count,
   sum(case(status in ('TO_BE_PAID', 'ACQUIRED')) when true then 1 else 0 end) as sold_tickets_count,
+  sum(case(status in ('TO_BE_PAID', 'ACQUIRED') and email_address is not null) when true then 1 else 0 end) as assigned_tickets_count,
   category_id
 from ticket
 inner join ticket_category tc

@@ -367,6 +367,11 @@ a.emulate-nav-pills-link {
     background-color: #5bc0de;
     stroke:white;
 }
+.slice-to-be-assigned {
+    fill: #f0ce8d;
+    background-color: #f0ce8d;
+    stroke:white;
+}
 .slice-pending {
     fill: #7670b7;
     background-color: #7670b7;
@@ -724,4 +729,13 @@ span.path {
 
 .boolean-option > label {
     margin-left: 10px;
+}
+
+.width-100 {
+    width: 100%;
+}
+
+div.preformatted {
+    word-wrap: break-word;
+    white-space: pre-wrap;
 }

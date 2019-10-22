@@ -40,6 +40,7 @@ public class TicketFieldConfiguration {
     private final Integer maxLength;
     private final Integer minLength;
     private final boolean required;
+    private final boolean editable;
     private final List<String> restrictedValues;
     private final Context context;
     private final Integer additionalServiceId;
@@ -55,6 +56,7 @@ public class TicketFieldConfiguration {
                                     @Column("field_maxlength") Integer maxLength,
                                     @Column("field_minlength") Integer minLength,
                                     @Column("field_required") boolean required,
+                                    @Column("field_editable") boolean editable,
                                     @Column("field_restricted_values") String restrictedValues,
                                     @Column("context") Context context,
                                     @Column("additional_service_id") Integer additionalServiceId,
@@ -68,6 +70,7 @@ public class TicketFieldConfiguration {
         this.maxLength = maxLength;
         this.minLength = minLength;
         this.required = required;
+        this.editable = editable;
         this.restrictedValues = restrictedValues == null ? Collections.emptyList() : Json.GSON.fromJson(restrictedValues, new TypeToken<List<String>>(){}.getType());
         this.disabledValues = disabledValues == null ? Collections.emptyList() : Json.GSON.fromJson(disabledValues, new TypeToken<List<String>>(){}.getType());
         this.context = context;
@@ -110,5 +113,13 @@ public class TicketFieldConfiguration {
 
     public boolean isMinLengthDefined() {
         return minLength != null;
+    }
+
+    public boolean rulesApply(Integer ticketCategoryId) {
+        return categoryIds.isEmpty() || categoryIds.contains(ticketCategoryId);
+    }
+
+    public boolean isReadOnly() {
+        return !editable;
     }
 }
