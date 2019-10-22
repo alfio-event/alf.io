@@ -23,14 +23,17 @@ import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.SpecialPrice;
+import alfio.model.TicketReservation;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
+import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.repository.user.OrganizationRepository;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.After;
 import org.junit.Before;
@@ -57,8 +60,7 @@ import java.util.stream.Stream;
 import static alfio.manager.TicketReservationManagerIntegrationTest.DESCRIPTION;
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = {DataSourceConfiguration.class, TestConfiguration.class})
@@ -85,6 +87,8 @@ public class TicketReservationManagerConcurrentTest {
     private SpecialPriceTokenGenerator specialPriceTokenGenerator;
     @Autowired
     private PlatformTransactionManager platformTransactionManager;
+    @Autowired
+    private SpecialPriceRepository specialPriceRepository;
 
     private Event event;
     private String username;
@@ -148,6 +152,25 @@ public class TicketReservationManagerConcurrentTest {
             .count();
 
         assertEquals(AVAILABLE_SEATS, count);
+    }
+
+    @Test
+    public void testExpirationDuringReservation() {
+        TicketReservationModification tr = new TicketReservationModification();
+        tr.setAmount(1);
+        tr.setTicketCategoryId(firstCategoryId);
+        TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
+        var id1 = ticketReservationManager.createTicketReservation(event, List.of(mod), List.of(), DateUtils.addHours(new Date(), -1),
+            Optional.empty(), Optional.of(ACCESS_CODE), Locale.ENGLISH, false);
+        var id2 = ticketReservationManager.createTicketReservation(event, List.of(mod), List.of(), DateUtils.addHours(new Date(), 1),
+            Optional.empty(), Optional.of(ACCESS_CODE), Locale.ENGLISH, false);
+
+        ticketReservationManager.cleanupExpiredReservations(new Date());
+
+        assertTrue(ticketReservationManager.findById(id1).isEmpty());
+        Optional<TicketReservation> res2 = ticketReservationManager.findById(id2);
+        assertTrue(res2.isPresent());
+        assertEquals(1, specialPriceRepository.findAllByCategoryId(firstCategoryId).stream().filter(sp -> sp.getAccessCodeId() != null).count());
     }
 
     @After
