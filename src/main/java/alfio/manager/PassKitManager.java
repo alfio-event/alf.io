@@ -17,10 +17,7 @@
 package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
-import alfio.model.Event;
-import alfio.model.EventAndOrganizationId;
-import alfio.model.EventDescription;
-import alfio.model.Ticket;
+import alfio.model.*;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
@@ -151,6 +148,7 @@ public class PassKitManager {
 
 
         String eventDescription = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, ticket.getUserLanguage()).orElse("");
+        TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
         Pass pass = new Pass()
             .teamIdentifier(teamIdentifier)
             .passTypeIdentifier(typeIdentifier)
@@ -160,8 +158,8 @@ public class PassKitManager {
             .serialNumber(ticket.getUuid())
             //.authenticationToken(buildAuthenticationToken(ticket, event, event.getPrivateKey()))
             //.webServiceURL(StringUtils.removeEnd(configurationManager.getRequiredValue(Configuration.getSystemConfiguration(BASE_URL)), "/") + "/api/pass/event/" + event.getShortName() +"/")
-            .relevantDate(Date.from(event.getBegin().toInstant()))
-            .expirationDate(Date.from(event.getEnd().toInstant()))
+            .relevantDate(Date.from(Optional.ofNullable(category.getTicketValidityStart(event.getZoneId())).orElse(event.getBegin()).toInstant()))
+            .expirationDate(Date.from(Optional.ofNullable(category.getTicketValidityEnd(event.getZoneId())).orElse(event.getEnd()).toInstant()))
 
             .barcode(new Barcode(BarcodeFormat.QR, ticket.ticketCode(event.getPrivateKey())))
             .labelColor(Color.BLACK)
@@ -173,7 +171,7 @@ public class PassKitManager {
                         new TextField("eventStartDate", "Date", event.getBegin().format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(ticketLocale)))
                     ))
                     .primaryFields(List.of(
-                        new TextField("categoryId", event.getDisplayName(), ticketCategoryRepository.getById(ticket.getCategoryId()).getName())
+                        new TextField("categoryId", event.getDisplayName(), category.getName())
                     ))
                     .secondaryFields(
                         new TextField("location", "Venue", event.getLocation())
