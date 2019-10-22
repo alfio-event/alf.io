@@ -479,7 +479,7 @@ public class EventApiV2Controller {
                                                      Event event,
                                                      Locale locale,
                                                      Optional<String> promoCodeDiscount) {
-        return reservation.validate(bindingResult, ticketReservationManager, eventManager, event)
+        return reservation.validate(bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
             .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult));
     }
 
