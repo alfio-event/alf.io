@@ -255,7 +255,7 @@ public class MvcConfiguration implements WebMvcConfigurer {
                 // lockdown policy
 
                 response.addHeader("Content-Security-Policy", "default-src 'none'; "//block all by default
-                        + " script-src 'self' https://js.stripe.com https://checkout.stripe.com/ https://m.stripe.network https://api.stripe.com/ https://ssl.google-analytics.com/ https://www.google.com/recaptcha/api.js https://www.gstatic.com/recaptcha/api2/ https://maps.googleapis.com/;"//
+                        + " script-src 'self' https://js.stripe.com https://checkout.stripe.com/ https://m.stripe.network https://api.stripe.com/ https://ssl.google-analytics.com/ https://www.google.com/recaptcha/api.js https://www.gstatic.com/recaptcha/ https://maps.googleapis.com/;"//
                         + " style-src 'self' 'unsafe-inline';" // unsafe-inline for style is acceptable...
                         + " img-src 'self' https: data:;"//
                         + " child-src 'self';"
