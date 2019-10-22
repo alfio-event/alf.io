@@ -1232,7 +1232,16 @@ public class TicketReservationManager {
             + "/event/" + event.getShortName() + "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
     }
 
-    public int maxAmountOfTicketsForCategory(int organizationId, int eventId, int ticketCategoryId) {
+    public int maxAmountOfTicketsForCategory(int organizationId, int eventId, int ticketCategoryId, String promoCode) {
+        // verify if the promo code is present and if it's actually an access code
+        if(StringUtils.isNotBlank(promoCode)) {
+            Integer maxTicketsPerAccessCode = promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(eventId, promoCode)
+                .filter(d -> d.getCodeType() == PromoCodeDiscount.CodeType.ACCESS)
+                .map(PromoCodeDiscount::getMaxUsage).orElse(null);
+            if(maxTicketsPerAccessCode != null) {
+                return maxTicketsPerAccessCode;
+            }
+        }
         return configurationManager.getIntConfigValue(Configuration.from(organizationId, eventId, ticketCategoryId, ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), 5);
     }
     
