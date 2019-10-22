@@ -84,6 +84,7 @@ public class ReservationForm implements Serializable {
                                                                                                                                          TicketReservationManager tickReservationManager,
                                                                                                                                          AdditionalServiceRepository additionalServiceRepository,
                                                                                                                                          EventManager eventManager,
+                                                                                                                                         String sessionPromoCodeDiscount,
                                                                                                                                          Event event) {
         int selectionCount = ticketSelectionCount();
 
@@ -93,7 +94,7 @@ public class ReservationForm implements Serializable {
         }
 
         List<Pair<TicketReservationModification, Integer>> maxTicketsByTicketReservation = selected().stream()
-            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event.getOrganizationId(), event.getId(), r.getTicketCategoryId())))
+            .map(r -> Pair.of(r, tickReservationManager.maxAmountOfTicketsForCategory(event.getOrganizationId(), event.getId(), r.getTicketCategoryId(), sessionPromoCodeDiscount)))
             .collect(toList());
         Optional<Pair<TicketReservationModification, Integer>> error = maxTicketsByTicketReservation.stream()
             .filter(p -> p.getKey().getAmount() > p.getValue())

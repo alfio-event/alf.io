@@ -1848,7 +1848,10 @@
                 alert('please fill all the messages');
                 return;
             }
-            EventService.getMessagesPreview(eventName, categoryId, messages).success(function(result) {
+            var cId = (angular.isDefined(categoryId) && categoryId != null) ? categoryId : undefined;
+            EventService.getMessagesPreview(eventName, cId, messages).success(function(result) {
+                var categoryId = cId;
+
                 var preview = $uibModal.open({
                     size:'lg',
                     templateUrl:BASE_STATIC_URL + '/custom-message/preview.html',
