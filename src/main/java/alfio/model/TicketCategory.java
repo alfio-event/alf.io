@@ -36,6 +36,24 @@ public class TicketCategory {
         ACTIVE, NOT_ACTIVE
     }
 
+    /**
+     * Defines the check-in strategy that must be adopted for this TicketCategory
+     */
+    public enum TicketCheckInStrategy {
+        /**
+         * Default, retro-compatible. Attendees can check-in only once, using their ticket
+         */
+        ONCE_PER_EVENT,
+        /**
+         * Extends ONCE_PER_EVENT by adding the possibility to re-enter the event by using the printed badge.
+         * If an attendee tries to enter more than once in a single day, the operator will receive a warning.
+         * ** IMPORTANT **:
+         * additional check-ins can be done only using the printed badge.
+         * This ensures that a badge is printed only once
+         */
+        ONCE_PER_DAY
+    }
+
     private final int id;
     private final ZonedDateTime utcInception;
     private final ZonedDateTime utcExpiration;
@@ -51,6 +69,7 @@ public class TicketCategory {
     private final ZonedDateTime validCheckInTo;
     private final ZonedDateTime ticketValidityStart;
     private final ZonedDateTime ticketValidityEnd;
+    private final TicketCheckInStrategy ticketCheckInStrategy;
 
 
     public TicketCategory(@JsonProperty("id") @Column("id") int id,
@@ -67,7 +86,8 @@ public class TicketCategory {
                           @JsonProperty("validCheckInFrom") @Column("valid_checkin_from") ZonedDateTime validCheckInFrom,
                           @JsonProperty("validCheckInTo") @Column("valid_checkin_to") ZonedDateTime validCheckInTo,
                           @JsonProperty("ticketValidityStart") @Column("ticket_validity_start") ZonedDateTime ticketValidityStart,
-                          @JsonProperty("ticketValidityEnd") @Column("ticket_validity_end") ZonedDateTime ticketValidityEnd) {
+                          @JsonProperty("ticketValidityEnd") @Column("ticket_validity_end") ZonedDateTime ticketValidityEnd,
+                          @JsonProperty("ticketCheckInStrategy") @Column("ticket_checkin_strategy") TicketCheckInStrategy ticketCheckInStrategy) {
         this.id = id;
         this.utcInception = utcInception;
         this.utcExpiration = utcExpiration;
@@ -83,6 +103,7 @@ public class TicketCategory {
         this.validCheckInTo = validCheckInTo;
         this.ticketValidityStart = ticketValidityStart;
         this.ticketValidityEnd = ticketValidityEnd;
+        this.ticketCheckInStrategy = ticketCheckInStrategy;
     }
 
     public BigDecimal getPrice() {

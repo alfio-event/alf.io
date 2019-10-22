@@ -298,7 +298,7 @@ public class TicketReservationManager {
             && ticketReservation.getTicketCategoryId().equals(discount.getHiddenCategoryId())
             && ticketCategoryRepository.isAccessRestricted(discount.getHiddenCategoryId())
         ) {
-            specialPrices = reserveTokens(reservationId, ticketReservation, discount);
+            specialPrices = reserveTokensForAccessCode(reservationId, ticketReservation, discount);
         } else {
             //first check if there is another pending special price token bound to the current sessionId
             Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), specialPriceSessionId, ticketReservation);
@@ -350,13 +350,16 @@ public class TicketReservationManager {
         ticketRepository.updateTicketPrice(reservedForUpdate, category.getId(), event.getId(), category.getSrcPriceCts(), MonetaryUtil.unitToCents(priceContainer.getFinalPrice()), MonetaryUtil.unitToCents(priceContainer.getVAT()), MonetaryUtil.unitToCents(priceContainer.getAppliedDiscount()));
     }
 
-    private List<SpecialPrice> reserveTokens(String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount discount) {
+    List<SpecialPrice> reserveTokensForAccessCode(String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount accessCode) {
         try {
-            int count = specialPriceRepository.bindToSession(reservationId, ticketReservation.getTicketCategoryId(), discount.getId(), ticketReservation.getAmount());
+            // since we're going to get some tokens for an access code, we lock the access code itself until we're done.
+            // This will allow us to serialize the requests and limit the contention
+            Validate.isTrue(promoCodeDiscountRepository.lockAccessCodeForUpdate(accessCode.getId()).equals(accessCode.getId()));
+            int count = specialPriceRepository.bindToSessionForAccessCode(reservationId, ticketReservation.getTicketCategoryId(), accessCode.getId(), ticketReservation.getAmount());
             if(count != ticketReservation.getAmount()) {
                 throw new NotEnoughTicketsException();
             }
-            return specialPriceRepository.findBySessionIdAndAccessCodeId(reservationId, discount.getId());
+            return specialPriceRepository.findBySessionIdAndAccessCodeId(reservationId, accessCode.getId());
         } catch (Exception e) {
             log.trace("constraints violated", e);
             if(e instanceof NotEnoughTicketsException) {
@@ -814,6 +817,7 @@ public class TicketReservationManager {
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());
         model.put("euBusiness", euBusiness);
         model.put("publicId", configurationManager.getPublicReservationID(event, reservation));
+        model.put("invoicingAdditionalInfo", ticketReservationRepository.getAdditionalInfo(reservation.getId()).getInvoicingAdditionalInfo());
         return model;
     }
 
@@ -1673,7 +1677,10 @@ public class TicketReservationManager {
     public void releaseTicket(Event event, TicketReservation ticketReservation, final Ticket ticket) {
         var category = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         var isFree = ticket.getFinalPriceCts() == 0;
-        var enableFreeCancellation = configurationManager.getBooleanConfigValue(Configuration.from(event.getOrganizationId(), event.getId(), ticket.getId(), ALLOW_FREE_TICKETS_CANCELLATION), false);
+
+        var keyForAllowCancellation = ticket.getCategoryId() != null ?
+            Configuration.from(event.getOrganizationId(), event.getId(), ticket.getCategoryId(), ALLOW_FREE_TICKETS_CANCELLATION) : Configuration.from(event, ALLOW_FREE_TICKETS_CANCELLATION);
+        var enableFreeCancellation = configurationManager.getBooleanConfigValue(keyForAllowCancellation, false);
         var conditionsMet = CategoryEvaluator.isTicketCancellationAvailable(ticketCategoryRepository, ticket);
 
         // reported the conditions of TicketDecorator.getCancellationEnabled

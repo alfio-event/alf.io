@@ -120,8 +120,8 @@ dependencies {
     compile "javax.mail:mail:1.5.0-b01"
     compile 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
-    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC20"
-    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC20"
+    compile "com.openhtmltopdf:openhtmltopdf-core:0.0.1-RC21"
+    compile "com.openhtmltopdf:openhtmltopdf-pdfbox:0.0.1-RC21"
     compile "ch.digitalfondue.jfiveparse:jfiveparse:0.5.3"
     /**/
     compile "com.google.zxing:core:3.4.0"
@@ -144,7 +144,7 @@ dependencies {
     compile 'de.danielbechler:java-object-diff:0.95'
     compile 'com.github.scribejava:scribejava-core:5.0.0'
     compile 'ch.digitalfondue.vatchecker:vatchecker:1.2'
-    compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.0'
+    compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
     compile 'org.imgscalr:imgscalr-lib:4.2'
     compile 'org.aspectj:aspectjweaver:1.9.4'
 

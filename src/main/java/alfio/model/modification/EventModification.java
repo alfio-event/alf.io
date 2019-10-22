@@ -168,6 +168,7 @@ public class EventModification {
         private final String name;
         private final String type;
         private final boolean required;
+        private final boolean readOnly;
 
         private final Integer minLength;
         private final Integer maxLength;
@@ -184,6 +185,7 @@ public class EventModification {
                                @JsonProperty("name") String name,
                                @JsonProperty("type") String type,
                                @JsonProperty("required") boolean required,
+                               @JsonProperty("readOnly") boolean readOnly,
                                @JsonProperty("minLength") Integer minLength,
                                @JsonProperty("maxLength") Integer maxLength,
                                @JsonProperty("restrictedValues") List<RestrictedValue> restrictedValues,
@@ -194,6 +196,7 @@ public class EventModification {
             this.name = name;
             this.type = type;
             this.required = required;
+            this.readOnly = readOnly;
             this.minLength = minLength;
             this.maxLength = maxLength;
             this.restrictedValues = restrictedValues;
@@ -222,6 +225,7 @@ public class EventModification {
     public static class UpdateAdditionalField implements WithRestrictedValues, WithLinkedCategories {
         private final String type;
         private final boolean required;
+        private final boolean readOnly;
         private final List<String> restrictedValues;
         private final Map<String, TicketFieldDescriptionModification> description;
         private final List<String> disabledValues;
@@ -230,12 +234,14 @@ public class EventModification {
         @JsonCreator
         public UpdateAdditionalField(@JsonProperty("type") String type,
                                      @JsonProperty("required") boolean required,
+                                     @JsonProperty("readOnly") boolean readOnly,
                                      @JsonProperty("restrictedValues") List<String> restrictedValues,
                                      @JsonProperty("disabledValues") List<String> disabledValues,
                                      @JsonProperty("description") Map<String, TicketFieldDescriptionModification> description,
                                      @JsonProperty("categoryIds") List<Integer> linkedCategoriesIds) {
             this.type = type;
             this.required = required;
+            this.readOnly = readOnly;
             this.restrictedValues = restrictedValues;
             this.disabledValues = disabledValues;
             this.description = description;
@@ -307,6 +313,7 @@ public class EventModification {
         private final String currencyCode;
         private final alfio.model.AdditionalService.AdditionalServiceType type;
         private final alfio.model.AdditionalService.SupplementPolicy supplementPolicy;
+        private final Integer countConfirmed;
 
         @JsonCreator
         public AdditionalService(@JsonProperty("id") Integer id,
@@ -324,7 +331,7 @@ public class EventModification {
                                  @JsonProperty("description") List<AdditionalServiceText> description,
                                  @JsonProperty("type")alfio.model.AdditionalService.AdditionalServiceType type,
                                  @JsonProperty("supplementPolicy")alfio.model.AdditionalService.SupplementPolicy supplementPolicy) {
-            this(id, price, fixPrice, ordinal, availableQuantity, maxQtyPerOrder, inception, expiration, vat, vatType, additionalServiceFields, title, description, null, null, type, supplementPolicy);
+            this(id, price, fixPrice, ordinal, availableQuantity, maxQtyPerOrder, inception, expiration, vat, vatType, additionalServiceFields, title, description, null, null, type, supplementPolicy, null);
         }
 
         private AdditionalService(Integer id,
@@ -343,7 +350,8 @@ public class EventModification {
                                   BigDecimal finalPrice,
                                   String currencyCode,
                                   alfio.model.AdditionalService.AdditionalServiceType type,
-                                  alfio.model.AdditionalService.SupplementPolicy supplementPolicy) {
+                                  alfio.model.AdditionalService.SupplementPolicy supplementPolicy,
+                                  Integer countConfirmed) {
             this.id = id;
             this.price = price;
             this.fixPrice = fixPrice;
@@ -361,6 +369,7 @@ public class EventModification {
             this.currencyCode = currencyCode;
             this.type = type;
             this.supplementPolicy = supplementPolicy;
+            this.countConfirmed = countConfirmed;
         }
 
         public static Builder from(alfio.model.AdditionalService src) {
@@ -405,7 +414,7 @@ public class EventModification {
                 String currencyCode = priceContainer.map(PriceContainer::getCurrencyCode).orElse("");
                 return new AdditionalService(src.getId(), Optional.ofNullable(src.getSrcPriceCts()).map(MonetaryUtil::centsToUnit).orElse(BigDecimal.ZERO),
                     src.isFixPrice(), src.getOrdinal(), src.getAvailableQuantity(), src.getMaxQtyPerOrder(), DateTimeModification.fromZonedDateTime(src.getInception(zoneId)),
-                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode, src.getType(), src.getSupplementPolicy());
+                    DateTimeModification.fromZonedDateTime(src.getExpiration(zoneId)), src.getVat(), src.getVatType(), additionalServiceFields, title, description, finalPrice, currencyCode, src.getType(), src.getSupplementPolicy(), src.getCountConfirmed());
             }
 
         }

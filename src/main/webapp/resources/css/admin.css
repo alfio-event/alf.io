@@ -730,3 +730,12 @@ span.path {
 .boolean-option > label {
     margin-left: 10px;
 }
+
+.width-100 {
+    width: 100%;
+}
+
+div.preformatted {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}

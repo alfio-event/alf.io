@@ -236,7 +236,8 @@ public class EventCreationRequest{
                 customValidityOpt.flatMap((x) -> Optional.ofNullable(x.checkInFrom)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
                 customValidityOpt.flatMap((x) -> Optional.ofNullable(x.checkInTo)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
                 customValidityOpt.flatMap((x) -> Optional.ofNullable(x.validityStart)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
-                customValidityOpt.flatMap((x) -> Optional.ofNullable(x.validityEnd)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null)
+                customValidityOpt.flatMap((x) -> Optional.ofNullable(x.validityEnd)).map((x) -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
+                null
             );
         }
     }
@@ -306,6 +307,7 @@ public class EventCreationRequest{
                 name,
                 code,
                 Boolean.TRUE.equals(required),
+                false,
                 minLength,
                 maxLength,
                 restrictedValues,

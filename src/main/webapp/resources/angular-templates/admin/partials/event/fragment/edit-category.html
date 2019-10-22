@@ -118,6 +118,16 @@
         </div>
     </div>
 
+    <div class="row" data-ng-if="checkInStrategiesVisible()">
+        <div class="col-xs-12">
+            <div class="form-group" bs-form-error="ticketCategory.ticketCheckInStrategy">
+                <label for="{{buildPrefix($index, 'ticketCheckInStrategy')}}">Check-in is allowed</label>
+                <select class="form-control" id="{{buildPrefix($index, 'ticketCheckInStrategy')}}" name="ticketCheckInStrategy" ng-model="ticketCategory.ticketCheckInStrategy" ng-options="strategy.id as strategy.name for strategy in checkInStrategies">
+                </select>
+            </div>
+        </div>
+    </div>
+
     <h5><strong>Custom ticket validity</strong> <small>(will be displayed in ticket PDF, email and calendar invitation)</small></h5>
 
     <div class="row">
@@ -152,7 +162,9 @@
 
 <div class="form-group" bs-form-error="ticketCategory.code">
     <label for="{{buildPrefix($index, 'code')}}">Access Code</label> <a class="btn btn-xs btn-default" ng-click="toggleAccessCodeCollapse()"><i class="fa fa-info-circle"></i> help</a>
-    <input type="text" ng-model="ticketCategory.code" id="{{buildPrefix($index, 'code')}}" name="{{buildPrefix($index, 'code')}}" class="form-control" >
+    <input type="text" ng-model="ticketCategory.code" id="{{buildPrefix($index, 'code')}}" name="{{buildPrefix($index, 'code')}}" class="form-control" pattern="^[A-Za-z0-9_\-:@!$*,;]*$">
+    <field-error data-form-obj="ticketCategory" data-field-obj="ticketCategory.code" data-show-existing-errors="showExistingErrors"></field-error>
+    <span id="helpBlock" class="help-block">Allowed characters: Letters, numbers, and <code>-:_@!$*,;</code>. Spaces are not allowed.</span>
 </div>
 
 <div class="panel panel-default" uib-collapse="helpAccessCodeCollapse">

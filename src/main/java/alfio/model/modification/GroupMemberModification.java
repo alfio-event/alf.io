@@ -19,6 +19,10 @@ package alfio.model.modification;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import java.util.Optional;
 
 @Getter
 public class GroupMemberModification {
@@ -31,7 +35,29 @@ public class GroupMemberModification {
                                    @JsonProperty("value") String value,
                                    @JsonProperty("description") String description) {
         this.id = id;
-        this.value = value;
+        this.value = Optional.ofNullable(value).map(s -> s.strip().toLowerCase()).orElse(null);
         this.description = description;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GroupMemberModification that = (GroupMemberModification) o;
+
+        return new EqualsBuilder()
+            .append(id, that.id)
+            .append(value, that.value)
+            .isEquals();
+    }
+
+    @Override
+    public int hashCode() {
+        return new HashCodeBuilder()
+            .append(id)
+            .append(value)
+            .toHashCode();
     }
 }

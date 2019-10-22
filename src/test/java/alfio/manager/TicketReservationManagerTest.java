@@ -117,6 +117,7 @@ class TicketReservationManagerTest {
     private Organization organization;
     private BillingDocumentRepository billingDocumentRepository;
     private NamedParameterJdbcTemplate jdbcTemplate;
+    private PromoCodeDiscountRepository promoCodeDiscountRepository;
 
     @BeforeEach
     void init() {
@@ -131,7 +132,7 @@ class TicketReservationManagerTest {
         ticketCategoryRepository = mock(TicketCategoryRepository.class);
         ticketCategoryDescriptionRepository = mock(TicketCategoryDescriptionRepository.class);
         paymentManager = mock(PaymentManager.class);
-        PromoCodeDiscountRepository promoCodeDiscountRepository = mock(PromoCodeDiscountRepository.class);
+        promoCodeDiscountRepository = mock(PromoCodeDiscountRepository.class);
         specialPriceRepository = mock(SpecialPriceRepository.class);
         transactionRepository = mock(TransactionRepository.class);
         TemplateManager templateManager = mock(TemplateManager.class);
@@ -159,6 +160,7 @@ class TicketReservationManagerTest {
         when(ticketReservation.getDiscountCts()).thenReturn(0);
         when(ticketReservation.getCurrencyCode()).thenReturn("CHF");
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
+        when(ticketReservationRepository.getAdditionalInfo(any())).thenReturn(mock(TicketReservationAdditionalInfo.class));
         organization = mock(Organization.class);
         when(organization.getId()).thenReturn(ORG_ID);
         TicketSearchRepository ticketSearchRepository = mock(TicketSearchRepository.class);
@@ -537,7 +539,8 @@ class TicketReservationManagerTest {
         when(ticketCategoryRepository.isAccessRestricted(eq(TICKET_CATEGORY_ID))).thenReturn(true);
         when(ticketReservation.getSrcPriceCts()).thenReturn(1000);
         when(ticket.getSrcPriceCts()).thenReturn(1000);
-        when(specialPriceRepository.bindToSession(eq(RESERVATION_ID), eq(TICKET_CATEGORY_ID), eq(accessCodeId), eq(2))).thenReturn(2);
+        when(promoCodeDiscountRepository.lockAccessCodeForUpdate(eq(accessCodeId))).thenReturn(accessCodeId);
+        when(specialPriceRepository.bindToSessionForAccessCode(eq(RESERVATION_ID), eq(TICKET_CATEGORY_ID), eq(accessCodeId), eq(2))).thenReturn(2);
         when(specialPriceRepository.findBySessionIdAndAccessCodeId(eq(RESERVATION_ID), eq(accessCodeId))).thenReturn(List.of(
             new SpecialPrice(1, "AAAA", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), RESERVATION_ID, null, null, null, accessCodeId),
             new SpecialPrice(2, "BBBB", 0, TICKET_CATEGORY_ID, SpecialPrice.Status.FREE.name(), RESERVATION_ID, null, null, null, accessCodeId)

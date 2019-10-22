@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 
 @RequiredArgsConstructor
-public class TicketWithCategory {
+public class TicketWithCategory implements TicketInfoContainer {
 
     @Delegate
     private final Ticket ticket;
@@ -32,6 +32,10 @@ public class TicketWithCategory {
 
     public TicketCategory getCategory() {
         return category;
+    }
+
+    protected Ticket getTicket() {
+        return ticket;
     }
 
 }

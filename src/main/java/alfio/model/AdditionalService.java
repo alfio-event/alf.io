@@ -79,6 +79,7 @@ public class AdditionalService {
     private final SupplementPolicy supplementPolicy;
 
     private final Integer srcPriceCts;
+    private final Integer countConfirmed;
 
     public AdditionalService(@Column("id") int id,
                              @Column("event_id_fk") int eventId,
@@ -92,7 +93,8 @@ public class AdditionalService {
                              @Column("vat_type") VatType vatType,
                              @Column("src_price_cts") Integer srcPriceCts,
                              @Column("service_type") AdditionalServiceType type,
-                             @Column("supplement_policy") SupplementPolicy supplementPolicy) {
+                             @Column("supplement_policy") SupplementPolicy supplementPolicy,
+                             @Column("count_confirmed") Integer countConfirmed) {
         this.id = id;
         this.eventId = eventId;
         this.fixPrice = fixPrice;
@@ -106,6 +108,7 @@ public class AdditionalService {
         this.srcPriceCts = srcPriceCts;
         this.type = type;
         this.supplementPolicy = supplementPolicy;
+        this.countConfirmed = countConfirmed;
     }
 
     public ZonedDateTime getInception(ZoneId zoneId) {

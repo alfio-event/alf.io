@@ -6,10 +6,16 @@
     <div class="panel-heading">
         <div class="panel-title">
             <div class="row">
-                <div class="col-xs-9">
-                    <div class="h4"><span data-ng-repeat="pair in item.zippedTitleAndDescriptions" title="{{pair[0].locale}}"><span ng-class="{'text-danger': pair[0].value === ''}">{{pair[0] | showMissingASText}}</span> <span data-ng-if="!$last"> / </span></span></div>
+                <div class="col-xs-7">
+                    <div class="h4">
+                        <span data-ng-repeat="pair in item.zippedTitleAndDescriptions" title="{{pair[0].locale}}"><span ng-class="{'text-danger': pair[0].value === ''}">{{pair[0] | showMissingASText}}</span> <span data-ng-if="!$last"> / </span></span>
+                    </div>
                 </div>
-                <div class="col-xs-3">
+                <div class="col-xs-2 col-md-1">
+                    <div class="h4">
+                        <span class="label label-sm label-success" data-ng-if="item.countConfirmed > 0"><span class="hidden visible-md-inline visible-lg-inline">Confirmed: </span>{{item.countConfirmed}}</span></div>
+                    </div>
+                <div class="col-xs-3 col-md-4">
                     <div class="pull-right">
                         <button class="btn btn-sm btn-default" title="edit" data-ng-click="ctrl.edit(item)" type="button"><i class="fa fa-edit"></i> edit</button>
                         <button class="btn btn-sm btn-default" ng-if="!(ctrl.additionalServiceUseCount[item.id] > 0)" title="delete" data-ng-click="ctrl.delete(item)" type="button"><i class="fa fa-trash"></i> delete</button>
