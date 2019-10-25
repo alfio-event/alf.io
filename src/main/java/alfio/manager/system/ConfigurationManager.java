@@ -28,12 +28,14 @@ import alfio.model.system.Configuration.*;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.ConfigurationPathLevel;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.User;
 import alfio.repository.EventRepository;
 import alfio.repository.system.ConfigurationRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
@@ -537,6 +539,22 @@ public class ConfigurationManager {
         }
 
         return res;
+    }
+
+    public List<PaymentMethod> getBlacklistedMethodsForReservation(EventAndOrganizationId e, Collection<Integer> categoryIds) {
+        if(categoryIds.size() > 1) {
+            Map<Integer, String> blacklistForCategories = configurationRepository.getAllCategoriesAndValueWith(e.getOrganizationId(), e.getId(), PAYMENT_METHODS_BLACKLIST);
+            return categoryIds.stream()
+                .filter(blacklistForCategories::containsKey)
+                .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
+                .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
+                .collect(Collectors.toList());
+        } else if (categoryIds.size() > 0) {
+            return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
+                .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(Collectors.toList()))
+                .orElse(List.of());
+        }
+        return List.of();
     }
 
     public static class MaybeConfiguration {

@@ -182,7 +182,10 @@
             </div>
             <div class="panel-body">
                 <div data-ng-repeat="setting in systemConf.payment.settings">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"  ></setting>
+                    <div ng-if="setting.key === 'PAYMENT_METHODS_BLACKLIST'">
+                        <payment-method-blacklist current-selection="setting.value"></payment-method-blacklist>
+                    </div>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)" ng-if="setting.key !== 'PAYMENT_METHODS_BLACKLIST'"  ></setting>
                 </div>
             </div>
         </div>

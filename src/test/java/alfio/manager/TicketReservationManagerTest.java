@@ -835,6 +835,7 @@ class TicketReservationManagerTest {
             new CustomerName("Full Name", null, null, event.mustUseFirstAndLastName()), "", null, Locale.ENGLISH,
             true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         when(ticketReservation.getStatus()).thenReturn(IN_PAYMENT);
+        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of());
         PaymentResult result = trm.performPayment(spec, new TotalPrice(100, 0, 0, 0, "CHF"), Optional.of(PaymentProxy.STRIPE));
         if(expectSuccess) {
             assertTrue(result.isSuccessful());
@@ -843,7 +844,7 @@ class TicketReservationManagerTest {
             verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
             verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
 
-            verify(ticketRepository, expectCompleteReservation ? atLeastOnce() : never()).findTicketsInReservation(anyString());
+            verify(ticketRepository, expectCompleteReservation ? atLeastOnce() : times(1)).findTicketsInReservation(anyString());
 
             var verificationMode = expectCompleteReservation ? times(1) : never();
             verify(ticketReservationRepository, verificationMode).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.STRIPE.toString()), isNull());

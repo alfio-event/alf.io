@@ -460,6 +460,11 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_WHITELIST");
         }
 
+        if(paymentMethodIsBlacklisted(paymentProxy, spec)) {
+            log.warn("payment method {} forbidden for reservationId {}", paymentProxy.getPaymentMethod(), spec.getReservationId());
+            return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
+        }
+
         if(!initPaymentProcess(reservationCost, paymentProxy, spec)) {
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
@@ -500,6 +505,19 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_STRIPE_unexpected");
         }
 
+    }
+
+    private boolean paymentMethodIsBlacklisted(PaymentProxy paymentProxy, PaymentSpecification spec) {
+        var paymentMethod = paymentProxy.getPaymentMethod();
+        return configurationManager.getBlacklistedMethodsForReservation(spec.getEvent(), findCategoryIdsInReservation(spec.getReservationId()))
+            .stream().anyMatch(m -> m == paymentMethod);
+    }
+
+    public Collection<Integer> findCategoryIdsInReservation(String reservationId) {
+        return findTicketsInReservation(reservationId)
+            .stream()
+            .map(Ticket::getCategoryId)
+            .collect(Collectors.toSet());
     }
 
     public boolean cancelPendingPayment(String reservationId, Event event) {

@@ -44,7 +44,8 @@
         .controller('CategoryConfigurationController', CategoryConfigurationController)
         .directive('ticketCategoryConfiguration', ticketCategoryConfiguration)
         .service('ConfigurationService', ConfigurationService)
-        .directive('basicConfigurationNeeded', basicConfigurationNeeded);
+        .directive('basicConfigurationNeeded', basicConfigurationNeeded)
+        .directive('paymentMethodBlacklist', paymentMethodBlacklist);
 
     function ConfigurationService($http, HttpErrorHandler, $q, $timeout, $window) {
         var configurationCache = null;
@@ -649,5 +650,32 @@
             locales |= val;
         });
         controller.general.supportedTranslations.value = locales;
+    }
+
+    function paymentMethodBlacklist() {
+        return {
+            scope: {
+                currentSelection: '='
+            },
+            bindToController: true,
+            controllerAs: '$ctrl',
+            controller: ['PAYMENT_PROXY_DESCRIPTIONS', function (paymentMethods) {
+                var ctrl = this;
+                ctrl.isOptionSelected = function(key) {
+                    return ctrl.currentSelection != null && ctrl.currentSelection.indexOf(key) > -1;
+                };
+                ctrl.toggleSelected = function(key) {
+                    if(ctrl.isOptionSelected(key)) {
+                        ctrl.currentSelection = ctrl.currentSelection.split(',').filter(function(k) { return k !== key}).join(',');
+                    } else {
+                        var array = ctrl.currentSelection ? ctrl.currentSelection.split(',') : [];
+                        array.push(key);
+                        ctrl.currentSelection = array.join(',');
+                    }
+                };
+                ctrl.paymentMethods = paymentMethods;
+            }],
+            templateUrl: '../resources/js/admin/feature/configuration/payment-method-blacklist.html'
+        }
     }
 })();

@@ -1,0 +1,10 @@
+<div>
+    <label>Payment methods blacklist</label>
+    <div class="checkbox" ng-repeat="(key, value) in $ctrl.paymentMethods">
+        <label>
+            <input type="checkbox" ng-checked="$ctrl.isOptionSelected(key)" name="key" ng-click="$ctrl.toggleSelected(key)">
+            <del class="text-muted" ng-if="$ctrl.isOptionSelected(key)">{{value}}</del>
+            <span ng-if="!$ctrl.isOptionSelected(key)">{{value}}</span>
+        </label>
+    </div>
+</div>

@@ -630,6 +630,49 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             checkStatus(reservationId, HttpStatus.NOT_FOUND, null, null);
         }
 
+        //check blacklist payment methods
+        {
+            var form = new ReservationForm();
+            var categories = eventApiV2Controller.getTicketCategories(event.getShortName(), HIDDEN_CODE).getBody().getTicketCategories();
+
+            var c1 = new TicketReservationModification();
+            c1.setAmount(1);
+            int firstCategoryId = categories.get(0).getId();
+            c1.setTicketCategoryId(firstCategoryId);
+
+            var c2 = new TicketReservationModification();
+            c2.setAmount(1);
+            c2.setTicketCategoryId(categories.get(1).getId());
+
+            form.setReservation(List.of(c1, c2));
+            form.setPromoCode(HIDDEN_CODE);
+
+            var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals(HttpStatus.OK, res.getStatusCode());
+            var resBody = res.getBody();
+            assertTrue(resBody.isSuccess());
+            assertEquals(0, resBody.getErrorCount());
+            var reservationId = resBody.getValue();
+
+            checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
+
+            var blacklistedPaymentMethods = reservationApiV2Controller.getBlacklistedPaymentMethods(event.getShortName(), reservationId);
+            assertEquals(HttpStatus.OK, blacklistedPaymentMethods.getStatusCode());
+            assertTrue(blacklistedPaymentMethods.getBody().isEmpty());
+
+            configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), event.getId(), firstCategoryId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), PaymentProxy.STRIPE.name(), "");
+
+            blacklistedPaymentMethods = reservationApiV2Controller.getBlacklistedPaymentMethods(event.getShortName(), reservationId);
+            assertEquals(HttpStatus.OK, blacklistedPaymentMethods.getStatusCode());
+            assertFalse(blacklistedPaymentMethods.getBody().isEmpty());
+            assertEquals(List.of(PaymentMethod.CREDIT_CARD), blacklistedPaymentMethods.getBody());
+
+            var cancelRes = reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
+            assertEquals(HttpStatus.OK, cancelRes.getStatusCode());
+
+            checkStatus(reservationId, HttpStatus.NOT_FOUND, null, null);
+        }
+
         //buy 2 ticket, with additional service + field
         {
             var form = new ReservationForm();

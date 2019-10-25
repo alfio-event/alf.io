@@ -504,6 +504,23 @@ public class ReservationApiV2Controller {
     }
     //
 
+    /**
+     * returns the blacklisted payment methods for the current reservation, if any.
+     *
+     * @param eventName
+     * @param reservationId
+     * @return
+     */
+    @GetMapping("/event/{eventName}/reservation/{reservationId}/payment-blacklist")
+    public ResponseEntity<List<PaymentMethod>> getBlacklistedPaymentMethods(@PathVariable("eventName") String eventName,
+                                                                            @PathVariable("reservationId") String reservationId) {
+        return ResponseEntity.of(eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName)
+            .map(e -> {
+                var categories = ticketReservationManager.findCategoryIdsInReservation(reservationId);
+                return configurationManager.getBlacklistedMethodsForReservation(e, categories);
+            }));
+    }
+
     private ResponseEntity<Void> handleReservationWith(String eventName, String reservationId, Authentication authentication,
                                                        BiFunction<Event, TicketReservation, ResponseEntity<Void>> with) {
         ResponseEntity<Void> notFound = ResponseEntity.notFound().build();
