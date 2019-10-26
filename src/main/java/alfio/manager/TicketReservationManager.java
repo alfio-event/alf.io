@@ -157,6 +157,9 @@ public class TicketReservationManager {
     public static class TooManyTicketsForDiscountCodeException extends RuntimeException {
     }
 
+    public static class CannotProceedWithPayment extends RuntimeException {
+    }
+
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
                                     TicketRepository ticketRepository,
@@ -277,6 +280,11 @@ public class TicketReservationManager {
         if(isDiscountCodeUsageExceeded(reservationId)) {
             throw new TooManyTicketsForDiscountCodeException();
         }
+
+        if(!canProceedWithPayment(event, totalPrice, reservationId)) {
+            throw new CannotProceedWithPayment();
+        }
+
         return reservationId;
     }
 
@@ -2041,8 +2049,25 @@ public class TicketReservationManager {
             bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
         } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
             bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+        } catch (CannotProceedWithPayment cannotProceedWithPayment) {
+            bindingResult.reject("server-error");
+            log.error("missing payment methods", cannotProceedWithPayment);
         }
         return Optional.empty();
+    }
+
+    boolean canProceedWithPayment(Event event, TotalPrice totalPrice, String reservationId) {
+        if(!totalPrice.requiresPayment()) {
+            return true;
+        }
+        var categoriesInReservation = ticketRepository.getCategoriesIdToPayInReservation(reservationId);
+        var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(event, categoriesInReservation);
+        var availableMethods = paymentManager.getPaymentMethods(event).stream().filter(pm -> pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
+        if(availableMethods.size() == 0  || availableMethods.stream().allMatch(pm -> blacklistedPaymentMethods.contains(pm.getPaymentMethod()))) {
+            log.error("Cannot proceed with reservation. No payment methods available {} or all blacklisted {}", availableMethods, blacklistedPaymentMethods);
+            return false;
+        }
+        return true;
     }
 
     public Result<Boolean> discardMatchingPayment(String eventName,

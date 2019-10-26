@@ -369,8 +369,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getShortName(), selectedEvent.getShortName());
         assertEquals(event.getDisplayName(), selectedEvent.getDisplayName());
         assertEquals(event.getFileBlobId(), selectedEvent.getFileBlobId());
-        assertEquals(1, selectedEvent.getActivePaymentMethods().size());
-        assertTrue(selectedEvent.getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
         assertTrue(selectedEvent.getI18nOverride().isEmpty());
 
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(),"TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("common.vat", "EVENT.vat"))), "");
@@ -566,6 +564,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals(reservationId, reservationInfo.getBody().getId());
+            assertEquals(1, reservationInfo.getBody().getActivePaymentMethods().size());
+            assertTrue(reservationInfo.getBody().getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
 
             assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 

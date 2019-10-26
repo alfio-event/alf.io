@@ -17,6 +17,8 @@
 package alfio.manager;
 
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.PaymentManager.PaymentMethodDTO;
+import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.BankTransferManager;
 import alfio.manager.payment.OnSiteManager;
@@ -125,6 +127,7 @@ class TicketReservationManagerTest {
     private Json json;
     private UserRepository userRepository;
     private AuditingRepository auditingRepository;
+    private TotalPrice totalPrice;
 
     private Set<ConfigurationKeys> BANKING_KEY = Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER);
     private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> BANKING_INFO = Map.of(
@@ -252,6 +255,7 @@ class TicketReservationManagerTest {
         when(messageSource.getMessage(eq("ticket-has-changed-owner-subject"), any(), any())).thenReturn("subject");
         when(messageSource.getMessage(eq("reminder.ticket-not-assigned.subject"), any(), any())).thenReturn("subject");
         when(billingDocumentRepository.insert(anyInt(), anyString(), anyString(), any(), anyString(), any(), anyInt())).thenReturn(new AffectedRowCountAndKey<>(1, 1L));
+        totalPrice = mock(TotalPrice.class);
     }
 
     private void initUpdateTicketOwner(Ticket original, Ticket modified, String ticketId, String originalEmail, String originalName, UpdateTicketOwnerForm form) {
@@ -1217,5 +1221,42 @@ class TicketReservationManagerTest {
         assertEquals("First Last\nline1\nzip city\nSwitzerland", buildCompleteBillingAddress(customerName, "   ", "line1", null, "zip", "city", "CH", Locale.ENGLISH));
         assertEquals("Company\nFirst Last\nline1\nzip city\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", null, "zip", "city", "CH", Locale.ENGLISH));
         assertEquals("Company\nFirst Last\nline1\nline2\nzip city\nSwitzerland", buildCompleteBillingAddress(customerName, "Company", "line1", "line2", "zip", "city", "CH", Locale.ENGLISH));
+    }
+
+    @Test
+    void testValidatePaymentMethodsReservationFreeOfCharge() {
+        when(totalPrice.requiresPayment()).thenReturn(false);
+        when(configurationManager.getFor(eq(RESERVATION_TIMEOUT), any())).thenReturn(new ConfigurationManager.MaybeConfiguration(RESERVATION_TIMEOUT));
+        when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
+        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(Arrays.asList(PaymentMethod.values()));
+        when(paymentManager.getPaymentMethods(eq(event))).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
+        assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+    }
+
+    @Test
+    void testValidatePaymentMethodsAllBlacklisted() {
+        when(totalPrice.requiresPayment()).thenReturn(true);
+        when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
+        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(new ArrayList<>(EnumSet.complementOf(EnumSet.of(PaymentMethod.NONE))));
+        when(paymentManager.getPaymentMethods(eq(event))).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
+        assertFalse(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+    }
+
+    @Test
+    void testValidatePaymentMethodsAllowed() {
+        when(totalPrice.requiresPayment()).thenReturn(true);
+        when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
+        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of());
+        when(paymentManager.getPaymentMethods(eq(event))).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
+        assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+    }
+
+    @Test
+    void testValidatePaymentMethodsPartiallyAllowed() {
+        when(totalPrice.requiresPayment()).thenReturn(true);
+        when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1, 2));
+        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of(PaymentMethod.CREDIT_CARD));
+        when(paymentManager.getPaymentMethods(eq(event))).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
+        assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
     }
 }

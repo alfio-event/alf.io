@@ -241,5 +241,9 @@ public class PaymentManager {
         public Set<String> getOnlyForCurrency() {
             return paymentProxy.getOnlyForCurrency();
         }
+
+        public PaymentMethod getPaymentMethod() {
+            return paymentProxy.getPaymentMethod();
+        }
     }
 }
