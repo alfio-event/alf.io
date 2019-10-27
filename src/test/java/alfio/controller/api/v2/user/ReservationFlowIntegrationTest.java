@@ -515,6 +515,18 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals("1.00", reservationInfo.getBody().getOrderSummary().getTotalPrice());
             assertEquals("hidden", reservationInfo.getBody().getOrderSummary().getSummary().get(0).getName());
+
+            var activePaymentMethods = reservationInfo.getBody().getActivePaymentMethods();
+            assertFalse(activePaymentMethods.isEmpty());
+            assertTrue(activePaymentMethods.containsKey(PaymentMethod.BANK_TRANSFER));
+
+            configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), event.getId(), hiddenCategoryId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), PaymentProxy.OFFLINE.name(), "");
+
+            reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), res.getBody().getValue());
+            activePaymentMethods = reservationInfo.getBody().getActivePaymentMethods();
+            assertTrue(activePaymentMethods.isEmpty());
+
+            configurationRepository.deleteCategoryLevelByKey(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), event.getId(), hiddenCategoryId);
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
 
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
@@ -655,17 +667,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             var reservationId = resBody.getValue();
 
             checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
-
-            var blacklistedPaymentMethods = reservationApiV2Controller.getBlacklistedPaymentMethods(event.getShortName(), reservationId);
-            assertEquals(HttpStatus.OK, blacklistedPaymentMethods.getStatusCode());
-            assertTrue(blacklistedPaymentMethods.getBody().isEmpty());
-
-            configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), event.getId(), firstCategoryId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), PaymentProxy.STRIPE.name(), "");
-
-            blacklistedPaymentMethods = reservationApiV2Controller.getBlacklistedPaymentMethods(event.getShortName(), reservationId);
-            assertEquals(HttpStatus.OK, blacklistedPaymentMethods.getStatusCode());
-            assertFalse(blacklistedPaymentMethods.getBody().isEmpty());
-            assertEquals(List.of(PaymentMethod.CREDIT_CARD), blacklistedPaymentMethods.getBody());
 
             var cancelRes = reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, cancelRes.getStatusCode());
@@ -1086,7 +1087,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
                 // ONCE_PER_DAY is disabled by default, therefore we get an error
                 assertEquals(CheckInStatus.EMPTY_TICKET_CODE, ticketAndcheckInResult.getResult().getStatus());
-                // enable ONCE_PER_DAY
+                // enable ONCE_PER_DAYFalse
                 TicketCategory category = ticketCategoryRepository.getById(ticketwc.getCategoryId());
                 ticketCategoryRepository.update(category.getId(), category.getName(), category.getInception(event.getZoneId()), category.getExpiration(event.getZoneId()), category.getMaxTickets(), category.isAccessRestricted(),
                     MonetaryUtil.unitToCents(category.getPrice(), category.getCurrencyCode()), category.getCode(), category.getValidCheckInFrom(), category.getValidCheckInTo(), category.getTicketValidityStart(), category.getTicketValidityEnd(),

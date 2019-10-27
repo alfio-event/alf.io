@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.BankTransferManager;
 import alfio.manager.payment.PaymentSpecification;
@@ -2062,7 +2063,7 @@ public class TicketReservationManager {
         }
         var categoriesInReservation = ticketRepository.getCategoriesIdToPayInReservation(reservationId);
         var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(event, categoriesInReservation);
-        var availableMethods = paymentManager.getPaymentMethods(event).stream().filter(pm -> pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
+        var availableMethods = paymentManager.getPaymentMethods(event).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
         if(availableMethods.size() == 0  || availableMethods.stream().allMatch(pm -> blacklistedPaymentMethods.contains(pm.getPaymentMethod()))) {
             log.error("Cannot proceed with reservation. No payment methods available {} or all blacklisted {}", availableMethods, blacklistedPaymentMethods);
             return false;

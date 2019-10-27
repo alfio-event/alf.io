@@ -1234,6 +1234,15 @@ class TicketReservationManagerTest {
     }
 
     @Test
+    void testValidatePaymentMethodsPayPalError() {
+        when(totalPrice.requiresPayment()).thenReturn(true);
+        when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
+        when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(new ArrayList<>(EnumSet.complementOf(EnumSet.of(PaymentMethod.PAYPAL, PaymentMethod.NONE))));
+        when(paymentManager.getPaymentMethods(eq(event))).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod() == PaymentMethod.PAYPAL ? PaymentMethodStatus.ERROR : PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
+        assertFalse(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+    }
+
+    @Test
     void testValidatePaymentMethodsAllBlacklisted() {
         when(totalPrice.requiresPayment()).thenReturn(true);
         when(ticketRepository.getCategoriesIdToPayInReservation(RESERVATION_ID)).thenReturn(List.of(1));
