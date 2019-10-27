@@ -18,9 +18,8 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.v2.model.AdditionalService;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
-import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.model.TicketCategory;
-import alfio.controller.api.v2.model.EventWithAdditionalInfo.PaymentProxyWithParameters;
+import alfio.controller.api.v2.model.*;
 import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
@@ -36,7 +35,6 @@ import alfio.model.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
@@ -162,14 +160,6 @@ public class EventApiV2Controller {
 
                 var locationDescriptor = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
 
-                Map<PaymentMethod, PaymentProxyWithParameters> availablePaymentMethods = new EnumMap<>(PaymentMethod.class);
-
-                var activePaymentMethods = getActivePaymentMethods(event);
-
-                activePaymentMethods.forEach(apm -> {
-                    availablePaymentMethods.put(apm.getPaymentMethod(), new PaymentProxyWithParameters(apm, paymentManager.loadModelOptionsFor(Collections.singletonList(apm), event)));
-                });
-
                 //
                 boolean captchaForTicketSelection = isRecaptchaForTicketSelectionEnabled(configurationsValues);
                 String recaptchaApiKey = null;
@@ -227,7 +217,7 @@ public class EventApiV2Controller {
                     availableTicketsCount = ticketRepository.countFreeTicketsForUnbounded(event.getId());
                 }
 
-                return new ResponseEntity<>(new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions, availablePaymentMethods,
+                return new ResponseEntity<>(new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,
                     bankAccount, bankAccountOwner,
                     formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,
@@ -479,7 +469,7 @@ public class EventApiV2Controller {
                                                      Event event,
                                                      Locale locale,
                                                      Optional<String> promoCodeDiscount) {
-        return reservation.validate(bindingResult, ticketReservationManager, eventManager, event)
+        return reservation.validate(bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
             .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult));
     }
 

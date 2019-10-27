@@ -86,4 +86,7 @@ public interface PromoCodeDiscountRepository {
                              @Bind("description") String description,
                              @Bind("emailReference") String emailReference,
                              @Bind("hiddenCategoryId") Integer hiddenCategoryId);
+
+    @Query("select id from promo_code where code_type = 'ACCESS' and id = :id for update")
+    Integer lockAccessCodeForUpdate(@Bind("id") int id);
 }

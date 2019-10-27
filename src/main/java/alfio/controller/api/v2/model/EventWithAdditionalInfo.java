@@ -18,8 +18,6 @@ package alfio.controller.api.v2.model;
 
 import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.model.Event;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -35,7 +33,6 @@ public class EventWithAdditionalInfo implements DateValidity {
     private final String mapUrl;
     private final Organization.OrganizationContact organization;
     private final Map<String, String> description;
-    private final Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods;
 
     //payment related information
     private final String bankAccount;
@@ -150,10 +147,6 @@ public class EventWithAdditionalInfo implements DateValidity {
         return event.getFree();
     }
 
-    public Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods() {
-        return activePaymentMethods;
-    }
-
     public String getBankAccount() {
         return bankAccount;
     }
@@ -218,13 +211,6 @@ public class EventWithAdditionalInfo implements DateValidity {
 
     public Map<String, Map<String, String>> getI18nOverride() {
         return i18nOverride;
-    }
-
-    @AllArgsConstructor
-    @Getter
-    public static class PaymentProxyWithParameters {
-        private final PaymentProxy paymentProxy;
-        private final Map<String, ?> parameters;
     }
 
 

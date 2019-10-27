@@ -19,7 +19,7 @@ package alfio.controller.api.v2.model;
 import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
 import alfio.model.TicketReservation.TicketReservationStatus;
-import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing.ReferenceType;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -68,6 +68,8 @@ public class ReservationInfo {
     //reservation info group related info
     private final boolean containsCategoriesLinkedToGroups;
     //
+
+    private final Map<PaymentMethod, PaymentProxyWithParameters> activePaymentMethods;
 
 
     @AllArgsConstructor

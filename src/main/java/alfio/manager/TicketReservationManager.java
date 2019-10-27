@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.BankTransferManager;
 import alfio.manager.payment.PaymentSpecification;
@@ -157,6 +158,9 @@ public class TicketReservationManager {
     public static class TooManyTicketsForDiscountCodeException extends RuntimeException {
     }
 
+    public static class CannotProceedWithPayment extends RuntimeException {
+    }
+
     public TicketReservationManager(EventRepository eventRepository,
                                     OrganizationRepository organizationRepository,
                                     TicketRepository ticketRepository,
@@ -277,6 +281,11 @@ public class TicketReservationManager {
         if(isDiscountCodeUsageExceeded(reservationId)) {
             throw new TooManyTicketsForDiscountCodeException();
         }
+
+        if(!canProceedWithPayment(event, totalPrice, reservationId)) {
+            throw new CannotProceedWithPayment();
+        }
+
         return reservationId;
     }
 
@@ -302,7 +311,7 @@ public class TicketReservationManager {
             && ticketReservation.getTicketCategoryId().equals(discount.getHiddenCategoryId())
             && ticketCategoryRepository.isAccessRestricted(discount.getHiddenCategoryId())
         ) {
-            specialPrices = reserveTokens(ticketReservation, discount);
+            specialPrices = reserveTokensForAccessCode(ticketReservation, discount);
         } else {
             //first check if there is another pending special price token bound to the current sessionId
             Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), ticketReservation);
@@ -360,9 +369,12 @@ public class TicketReservationManager {
             category.getCurrencyCode());
     }
 
-    private List<SpecialPrice> reserveTokens(TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount discount) {
+    List<SpecialPrice> reserveTokensForAccessCode(TicketReservationWithOptionalCodeModification ticketReservation, PromoCodeDiscount accessCode) {
         try {
-            List<SpecialPrice> boundSpecialPrices = specialPriceRepository.bindToAccessCode(ticketReservation.getTicketCategoryId(), discount.getId(), ticketReservation.getAmount());
+            // since we're going to get some tokens for an access code, we lock the access code itself until we're done.
+            // This will allow us to serialize the requests and limit the contention
+            Validate.isTrue(promoCodeDiscountRepository.lockAccessCodeForUpdate(accessCode.getId()).equals(accessCode.getId()));
+            List<SpecialPrice> boundSpecialPrices = specialPriceRepository.bindToAccessCode(ticketReservation.getTicketCategoryId(), accessCode.getId(), ticketReservation.getAmount());
             if(boundSpecialPrices.size() != ticketReservation.getAmount()) {
                 throw new NotEnoughTicketsException();
             }
@@ -457,6 +469,11 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_WHITELIST");
         }
 
+        if(paymentMethodIsBlacklisted(paymentProxy, spec)) {
+            log.warn("payment method {} forbidden for reservationId {}", paymentProxy.getPaymentMethod(), spec.getReservationId());
+            return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
+        }
+
         if(!initPaymentProcess(reservationCost, paymentProxy, spec)) {
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
@@ -497,6 +514,19 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_STRIPE_unexpected");
         }
 
+    }
+
+    private boolean paymentMethodIsBlacklisted(PaymentProxy paymentProxy, PaymentSpecification spec) {
+        var paymentMethod = paymentProxy.getPaymentMethod();
+        return configurationManager.getBlacklistedMethodsForReservation(spec.getEvent(), findCategoryIdsInReservation(spec.getReservationId()))
+            .stream().anyMatch(m -> m == paymentMethod);
+    }
+
+    public Collection<Integer> findCategoryIdsInReservation(String reservationId) {
+        return findTicketsInReservation(reservationId)
+            .stream()
+            .map(Ticket::getCategoryId)
+            .collect(Collectors.toSet());
     }
 
     public boolean cancelPendingPayment(String reservationId, Event event) {
@@ -1284,7 +1314,16 @@ public class TicketReservationManager {
             + "/event/" + event.getShortName() + "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
     }
 
-    public int maxAmountOfTicketsForCategory(EventAndOrganizationId eventAndOrganizationId, int ticketCategoryId) {
+    public int maxAmountOfTicketsForCategory(EventAndOrganizationId eventAndOrganizationId, int ticketCategoryId, String promoCode) {
+        // verify if the promo code is present and if it's actually an access code
+        if(StringUtils.isNotBlank(promoCode)) {
+            Integer maxTicketsPerAccessCode = promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(eventAndOrganizationId.getId(), promoCode)
+                .filter(d -> d.getCodeType() == PromoCodeDiscount.CodeType.ACCESS)
+                .map(PromoCodeDiscount::getMaxUsage).orElse(null);
+            if(maxTicketsPerAccessCode != null) {
+                return maxTicketsPerAccessCode;
+            }
+        }
         return configurationManager.getFor(MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, ConfigurationLevel.ticketCategory(eventAndOrganizationId, ticketCategoryId)).getValueAsIntOrDefault(5);
     }
     
@@ -1330,6 +1369,7 @@ public class TicketReservationManager {
     private void cleanupReferencesToReservation(boolean expired, String username, String reservationId, EventAndOrganizationId event) {
         List<String> reservationIdsToRemove = singletonList(reservationId);
         specialPriceRepository.resetToFreeAndCleanupForReservation(reservationIdsToRemove);
+        groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         ticketRepository.resetCategoryIdForUnboundedCategories(reservationIdsToRemove);
         ticketFieldRepository.deleteAllValuesForReservations(reservationIdsToRemove);
         int updatedAS = additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservationId, expired ? AdditionalServiceItemStatus.EXPIRED : AdditionalServiceItemStatus.CANCELLED);
@@ -1339,7 +1379,6 @@ public class TicketReservationManager {
         Validate.isTrue(updatedTickets  + updatedAS > 0, "no items have been updated");
         transactionRepository.deleteForReservations(List.of(reservationId));
         waitingQueueManager.fireReservationExpired(reservationId);
-        groupManager.deleteWhitelistedTicketsForReservation(reservationId);
         auditingRepository.insert(reservationId, userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), expired ? Audit.EventType.CANCEL_RESERVATION_EXPIRED : Audit.EventType.CANCEL_RESERVATION, new Date(), Audit.EntityType.RESERVATION, reservationId);
     }
 
@@ -2011,8 +2050,25 @@ public class TicketReservationManager {
             bindingResult.reject(ErrorsCode.STEP_1_CODE_NOT_FOUND);
         } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
             bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
+        } catch (CannotProceedWithPayment cannotProceedWithPayment) {
+            bindingResult.reject("server-error");
+            log.error("missing payment methods", cannotProceedWithPayment);
         }
         return Optional.empty();
+    }
+
+    boolean canProceedWithPayment(Event event, TotalPrice totalPrice, String reservationId) {
+        if(!totalPrice.requiresPayment()) {
+            return true;
+        }
+        var categoriesInReservation = ticketRepository.getCategoriesIdToPayInReservation(reservationId);
+        var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(event, categoriesInReservation);
+        var availableMethods = paymentManager.getPaymentMethods(event).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
+        if(availableMethods.size() == 0  || availableMethods.stream().allMatch(pm -> blacklistedPaymentMethods.contains(pm.getPaymentMethod()))) {
+            log.error("Cannot proceed with reservation. No payment methods available {} or all blacklisted {}", availableMethods, blacklistedPaymentMethods);
+            return false;
+        }
+        return true;
     }
 
     public Result<Boolean> discardMatchingPayment(String eventName,

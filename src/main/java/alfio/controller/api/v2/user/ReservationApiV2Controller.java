@@ -17,6 +17,7 @@
 package alfio.controller.api.v2.user;
 
 import alfio.controller.api.support.TicketHelper;
+import alfio.controller.api.v2.model.PaymentProxyWithParameters;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
 import alfio.controller.api.v2.model.ReservationPaymentResult;
@@ -70,6 +71,7 @@ import java.util.stream.Collectors;
 import static alfio.model.PriceContainer.VatStatus.*;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.unitToCents;
+import static java.util.stream.Collectors.toMap;
 
 @RestController
 @AllArgsConstructor
@@ -126,9 +128,9 @@ public class ReservationApiV2Controller {
 
             var ticketFieldsFilterer = getTicketFieldsFilterer(reservationId, event);
 
+            var ticketsByCategory = tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId));
             //TODO: cleanup this transformation, we most likely don't need to fully load the ticket category
-            var ticketsInReservation = tickets.stream()
-                .collect(Collectors.groupingBy(Ticket::getCategoryId))
+            var ticketsInReservation = ticketsByCategory
                 .entrySet()
                 .stream()
                 .map(e -> {
@@ -168,7 +170,6 @@ public class ReservationApiV2Controller {
             var containsCategoriesLinkedToGroups = ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId());
             //
 
-
             return Optional.of(new ReservationInfo(reservation.getId(), shortReservationId,
                 reservation.getFirstName(), reservation.getLastName(), reservation.getEmail(),
                 reservation.getValidity().getTime(),
@@ -188,12 +189,26 @@ public class ReservationApiV2Controller {
                 reservation.getBillingAddress(),
                 additionalInfo.getBillingDetails(),
                 //
-                containsCategoriesLinkedToGroups
+                containsCategoriesLinkedToGroups,
+                getActivePaymentMethods(event, ticketsByCategory.keySet())
                 ));
         }));
 
         //
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(Event event, Collection<Integer> categoryIds) {
+        if(!event.isFreeOfCharge()) {
+            var blacklistedMethodsForReservation = configurationManager.getBlacklistedMethodsForReservation(event, categoryIds);
+            return paymentManager.getPaymentMethods(event)
+                .stream()
+                .filter(p -> !blacklistedMethodsForReservation.contains(p.getPaymentMethod()))
+                .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
+                .collect(toMap(PaymentManager.PaymentMethodDTO::getPaymentMethod, pm -> new PaymentProxyWithParameters(pm.getPaymentProxy(), paymentManager.loadModelOptionsFor(List.of(pm.getPaymentProxy()), event))));
+        } else {
+            return Map.of();
+        }
     }
 
     private Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, EventAndOrganizationId event) {
