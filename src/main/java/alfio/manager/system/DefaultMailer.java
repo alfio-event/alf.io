@@ -42,6 +42,7 @@ public class DefaultMailer implements Mailer {
         mailers.put("smtp", defaultMailer);
         mailers.put("mailgun", new MailgunMailer(configurationManager));
         mailers.put("mailjet", new MailjetMailer(configurationManager));
+        mailers.put("sendgrid", new SendGridMailer(configurationManager));
         mailers.put("disabled", new MockMailer(configurationManager, environment));
     }
 
