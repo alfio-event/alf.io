@@ -101,7 +101,7 @@ create view reservation_and_ticket_and_tx as (select
 
 from tickets_reservation
 left outer join ticket on tickets_reservation.id = ticket.tickets_reservation_id
-left outer join b_transaction on ticket.tickets_reservation_id = b_transaction.reservation_id
+left outer join (select * from b_transaction where status <> 'INVALID' ) as b_transaction on ticket.tickets_reservation_id = b_transaction.reservation_id
 left outer join promo_code on tickets_reservation.promo_code_id_fk = promo_code.id
 left outer join special_price on ticket.special_price_id_fk = special_price.id
 );
