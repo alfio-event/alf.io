@@ -27,36 +27,46 @@ import java.util.Set;
 import java.util.function.BiFunction;
 
 import static alfio.model.system.ConfigurationKeys.*;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static org.apache.commons.lang3.StringUtils.*;
 
 public class FeeCalculator {
     private final BigDecimal fee;
+    private final BigDecimal percentageFee;
     private final BigDecimal minimumFee;
-    private final boolean percentage;
+    private final BigDecimal maximumFee;
+    private final boolean maxFeeDefined;
     private final int numTickets;
     private final String currencyCode;
 
-    private FeeCalculator(String feeAsString, String minimumFeeAsString, String currencyCode, int numTickets) {
-        this.percentage = feeAsString.endsWith("%");
-        this.fee = new BigDecimal(defaultIfEmpty(substringBefore(feeAsString, "%"), "0"));
+    private FeeCalculator(String feeAsString, String percentageFeeAsString, String minimumFeeAsString, String maxFeeAsString, String currencyCode, int numTickets) {
+        this.fee = new BigDecimal(defaultIfEmpty(trimToNull(feeAsString), "0"));
+        this.percentageFee = new BigDecimal(defaultIfEmpty(substringBefore(trimToNull(percentageFeeAsString), "%"), "0"));
         this.minimumFee = new BigDecimal(defaultIfEmpty(trimToNull(minimumFeeAsString), "0"));
+        this.maximumFee = isEmpty(maxFeeAsString) ? null : new BigDecimal(trimToNull(maxFeeAsString));
+        this.maxFeeDefined = this.maximumFee != null;
         this.numTickets = numTickets;
         this.currencyCode = currencyCode;
     }
 
     private long calculate(long price) {
-        long result = percentage ? MonetaryUtil.calcPercentage(price, fee, BigDecimal::longValueExact) : MonetaryUtil.unitToCents(fee, currencyCode);
+        long percentage = MonetaryUtil.calcPercentage(price, percentageFee, BigDecimal::longValueExact);
+        long fixed = MonetaryUtil.unitToCents(fee, currencyCode) * numTickets;
         long minFee = MonetaryUtil.unitToCents(minimumFee, currencyCode, BigDecimal::longValueExact) * numTickets;
-        return Math.max(result, minFee);
+        long maxFee = maxFeeDefined ? MonetaryUtil.unitToCents(maximumFee, currencyCode, BigDecimal::longValueExact) * numTickets : Long.MAX_VALUE;
+        return min(maxFee, max(percentage + fixed, minFee));
     }
 
     public static BiFunction<Integer, Long, Optional<Long>> getCalculator(EventAndOrganizationId event, ConfigurationManager configurationManager, String currencyCode) {
         return (numTickets, amountInCent) -> {
             if(isPlatformModeEnabled(event, configurationManager)) {
-                var fees = configurationManager.getFor(Set.of(PLATFORM_FEE, PLATFORM_MINIMUM_FEE), ConfigurationLevel.event(event));
-                String feeAsString = fees.get(PLATFORM_FEE).getValueOrDefault("0");
+                var fees = configurationManager.getFor(Set.of(PLATFORM_FIXED_FEE, PLATFORM_PERCENTAGE_FEE, PLATFORM_MINIMUM_FEE, PLATFORM_MAXIMUM_FEE), ConfigurationLevel.event(event));
+                String fixedFee = fees.get(PLATFORM_FIXED_FEE).getValueOrDefault("0");
+                String percentageFee = fees.get(PLATFORM_PERCENTAGE_FEE).getValueOrDefault("0");
                 String minimumFee = fees.get(PLATFORM_MINIMUM_FEE).getValueOrDefault("0");
-                return Optional.of(new FeeCalculator(feeAsString, minimumFee, currencyCode, numTickets).calculate(amountInCent));
+                String maximumFee = fees.get(PLATFORM_MAXIMUM_FEE).getValueOrDefault("");
+                return Optional.of(new FeeCalculator(fixedFee, percentageFee, minimumFee, maximumFee, currencyCode, numTickets).calculate(amountInCent));
             }
             return Optional.empty();
         };
