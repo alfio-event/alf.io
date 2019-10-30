@@ -28,6 +28,7 @@ import alfio.model.extension.PdfGenerationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
+import alfio.repository.TransactionRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -51,6 +52,8 @@ public class ExtensionManager {
     private final TicketReservationRepository ticketReservationRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ConfigurationManager configurationManager;
+    private final TransactionRepository transactionRepository;
+
 
     public enum ExtensionEvent {
         RESERVATION_CONFIRMED,
@@ -75,7 +78,8 @@ public class ExtensionManager {
         STRIPE_CONNECT_STATE_GENERATION,
 
         CONFIRMATION_MAIL_CUSTOM_TEXT,
-        TICKET_MAIL_CUSTOM_TEXT
+        TICKET_MAIL_CUSTOM_TEXT,
+        REFUND_ISSUED
     }
 
     void handleEventCreation(Event event) {
@@ -98,6 +102,8 @@ public class ExtensionManager {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservation", reservation);
         payload.put("billingDetails", billingDetails);
+        transactionRepository.loadOptionalByReservationId(reservation.getId())
+            .ifPresent(tr -> payload.put("transaction", tr));
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
             event,
             organizationId,
@@ -253,6 +259,14 @@ public class ExtensionManager {
         payload.put("reservations", ticketReservationRepository.findByIds(reservationIds));
 
         syncCall(ExtensionEvent.RESERVATION_CREDIT_NOTE_ISSUED, event, event.getOrganizationId(), payload, Boolean.class);
+    }
+
+    void handleRefund(Event event, TicketReservation reservation, TransactionAndPaymentInfo info) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("reservation", reservation);
+        payload.put("transaction", info.getTransaction());
+        payload.put("paymentInfo", info.getPaymentInformation());
+        asyncCall(ExtensionEvent.REFUND_ISSUED, event, event.getOrganizationId(), payload);
     }
 
     public boolean handlePdfTransformation(String html, Event event, OutputStream outputStream) {
