@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.model.transaction.PaymentProxy;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -23,18 +24,7 @@ import java.util.Map;
 
 @AllArgsConstructor
 @Getter
-public class BasicEventInfo implements DateValidity {
-
-    private final String shortName;
-    private final String fileBlobId;
-    private final String displayName;
-    private final String location;
-
-    private final String timeZone;
-    private final DatesWithTimeZoneOffset datesWithOffset;
-    private final boolean sameDay;
-    private final Map<String, String> formattedBeginDate; // day, month, year
-    private final Map<String, String> formattedBeginTime; //the hour/minute component
-    private final Map<String, String> formattedEndDate;
-    private final Map<String, String> formattedEndTime;
+public class PaymentProxyWithParameters {
+    private final PaymentProxy paymentProxy;
+    private final Map<String, ?> parameters;
 }

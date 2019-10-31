@@ -14,17 +14,30 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.v2.model;
+package alfio.model.extension;
 
+import lombok.Data;
+
+import java.util.HashMap;
 import java.util.Map;
 
-public interface DateValidity {
+@Data
+public class CustomEmailText {
+    private String header;
+    private String body;
+    private String footer;
 
-    String getTimeZone();
-    DatesWithTimeZoneOffset getDatesWithOffset();
-    boolean isSameDay();
-    Map<String, String> getFormattedBeginDate();
-    Map<String, String> getFormattedBeginTime();
-    Map<String, String> getFormattedEndDate();
-    Map<String, String> getFormattedEndTime();
+    public Map<String, Object> toMap() {
+        Map<String, Object> result = new HashMap<>();
+        addIfNotBlank(header, "custom-header-text", result);
+        addIfNotBlank(body, "custom-body-text", result);
+        addIfNotBlank(footer, "custom-footer-text", result);
+        return result;
+    }
+
+    private static void addIfNotBlank(String in, String key, Map<String, Object> map) {
+        if(in != null && !in.isBlank()) {
+            map.put(key, in);
+        }
+    }
 }

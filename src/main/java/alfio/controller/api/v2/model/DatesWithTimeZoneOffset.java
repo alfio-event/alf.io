@@ -16,15 +16,25 @@
  */
 package alfio.controller.api.v2.model;
 
-import java.util.Map;
+import alfio.model.Event;
+import lombok.Data;
 
-public interface DateValidity {
+import java.time.ZonedDateTime;
 
-    String getTimeZone();
-    DatesWithTimeZoneOffset getDatesWithOffset();
-    boolean isSameDay();
-    Map<String, String> getFormattedBeginDate();
-    Map<String, String> getFormattedBeginTime();
-    Map<String, String> getFormattedEndDate();
-    Map<String, String> getFormattedEndTime();
+@Data
+public class DatesWithTimeZoneOffset {
+    private final long startDateTime;
+    private final int startTimeZoneOffset;
+    private final long endDateTime;
+    private final int endTimeZoneOffset;
+
+    public static DatesWithTimeZoneOffset fromEvent(Event event) {
+        return new DatesWithTimeZoneOffset(toEpochMilli(event.getBegin()),
+            event.getBeginTimeZoneOffset(), toEpochMilli(event.getEnd()), event.getEndTimeZoneOffset());
+    }
+
+    private static long toEpochMilli(ZonedDateTime in) {
+        return in.toInstant().toEpochMilli();
+    }
 }
+

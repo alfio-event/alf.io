@@ -10,21 +10,21 @@ alf.io
 ## Warning
 
 As the work for Alf.io [v2](https://github.com/alfio-event/alf.io/milestones) has started, this branch may contain **unstable** and **untested** code.
-If you want to build and deploy alf.io by yourself, we strongly suggest you to use the [1.x-maintenance](https://github.com/alfio-event/alf.io/tree/1.x-maintenance) branch.
+If you want to build and deploy alf.io by yourself, we strongly suggest you to use the [2.0-M1-maintenance](https://github.com/alfio-event/alf.io/tree/2.0-M1-maintenance) branch, as it contains production-ready code.
 
 ## Prerequisites
 
-You should have installed Java version **11** (e.g. [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html), [OpenJDK](http://openjdk.java.net/install/), or any other distribution) in order to build and run alf.io. Please note that for the build process the JDK is required.
+You should have installed Java version **11** (e.g. [Oracle's](http://www.oracle.com/technetwork/java/javase/downloads/index.html), [OpenJDK](http://openjdk.java.net/install/), or any other distribution) to build and run alf.io. Please note that for the build process the JDK is required.
 
 Postgresql version 9.6 or later.
 
-Additionally, the database user that create and use the tables should not be a "SUPERUSER", or else the row security policy checks will not be applied.
+Additionally, the database user that creates and uses the tables should not be a "SUPERUSER", or else the row security policy checks will not be applied.
 
 ## Run on your machine
 
 ### Gradle Build
 
-This build includes a copy of the Gradle wrapper. You don't have to have Gradle installed on your system in order to build
+This build includes a copy of the Gradle wrapper. You don't have to have Gradle installed on your system to build
 the project. Simply execute the wrapper along with the appropriate task, for example
 
 ```
@@ -39,11 +39,11 @@ You must specify a project property at the command line, such as
 ```
 The local "bootRun" task has the following prerequisites:
 
-- a PostgreSQL (version 9.6 or later) instance up and runnning on localhost:5432
-- a _postgres_ user having password: _password_
+- a PostgreSQL (version 9.6 or later) instance up and running on localhost:5432
+- a _postgres_ user having a password: _password_
 - a database named _alfio_
 
-once started, alf.io will create all the required tables on the database, and be available at http://localhost:8080/admin. You can login using the default Username _admin_ and the password which was printed on the console.
+once started, alf.io will create all the required tables in the database, and be available at http://localhost:8080/admin. You can log in using the default Username _admin_ and the password which was printed on the console.
 
 Note: if you want to test without installing a pgsql instance, we have configured the following tasks:
 
@@ -119,8 +119,8 @@ to make a couple of changes:
 ### Test alf.io application
  * Check alfio logs: `docker logs alfio`
  * Copy admin password in a secure place
- * Get IP of your docker container: (only on Mac/Windows, on linux the proxy will bind directly on your public IP)
-    * `boot2docker ip` on Mac/Windows
+ * Get IP of your docker container: (only on Mac/Windows, on Linux the proxy will bind directly on your public IP)
+    * `boot2docker IP` on Mac/Windows
  * Open browser at: `https://DOCKER_IP/admin`
  * Insert user admin and the password you just copied
 

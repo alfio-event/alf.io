@@ -60,7 +60,7 @@
                         <div class="panel-title">
                             <div class="row">
                                 <div class="col-xs-12 col-md-3" data-ng-class="{'text-danger':displayWarning}">
-                                    <div class="category-name" data-ng-class="{'category-active': !ticketCategory.expired}"><i class="fa" data-ng-class="{'fa-warning': displayWarning, 'fa-paperclip': !displayWarning}"></i> {{ticketCategory.name}}</div>
+                                    <div class="category-name" data-ng-class="{'category-active': !ticketCategory.expired}"><i class="fa" data-ng-class="{'fa-warning': displayWarning, 'fa-lock': !displayWarning && ticketCategory.accessRestricted, 'fa-unlock': !displayWarning && !ticketCategory.accessRestricted}"></i> {{ticketCategory.name}}</div>
                                 </div>
                                 <div class="hidden-xs hidden-sm col-md-4">
                                     <uib-progress max="getActualCapacity(ticketCategory, event)" uib-tooltip-template="'categoryStats.html'" tooltip-popup-close-delay="500">

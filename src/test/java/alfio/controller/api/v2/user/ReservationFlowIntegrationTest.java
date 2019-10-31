@@ -369,8 +369,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(event.getShortName(), selectedEvent.getShortName());
         assertEquals(event.getDisplayName(), selectedEvent.getDisplayName());
         assertEquals(event.getFileBlobId(), selectedEvent.getFileBlobId());
-        assertEquals(1, selectedEvent.getActivePaymentMethods().size());
-        assertTrue(selectedEvent.getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
         assertTrue(selectedEvent.getI18nOverride().isEmpty());
 
         configurationRepository.insertEventLevel(event.getOrganizationId(), event.getId(),"TRANSLATION_OVERRIDE", Json.toJson(Map.of("en", Map.of("common.vat", "EVENT.vat"))), "");
@@ -517,6 +515,18 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals("1.00", reservationInfo.getBody().getOrderSummary().getTotalPrice());
             assertEquals("hidden", reservationInfo.getBody().getOrderSummary().getSummary().get(0).getName());
+
+            var activePaymentMethods = reservationInfo.getBody().getActivePaymentMethods();
+            assertFalse(activePaymentMethods.isEmpty());
+            assertTrue(activePaymentMethods.containsKey(PaymentMethod.BANK_TRANSFER));
+
+            configurationRepository.insertTicketCategoryLevel(event.getOrganizationId(), event.getId(), hiddenCategoryId, ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), PaymentProxy.OFFLINE.name(), "");
+
+            reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), res.getBody().getValue());
+            activePaymentMethods = reservationInfo.getBody().getActivePaymentMethods();
+            assertTrue(activePaymentMethods.isEmpty());
+
+            configurationRepository.deleteCategoryLevelByKey(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), event.getId(), hiddenCategoryId);
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
 
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
@@ -566,6 +576,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals(reservationId, reservationInfo.getBody().getId());
+            assertEquals(1, reservationInfo.getBody().getActivePaymentMethods().size());
+            assertTrue(reservationInfo.getBody().getActivePaymentMethods().containsKey(PaymentMethod.BANK_TRANSFER));
 
             assertEquals(1, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
 
@@ -615,6 +627,38 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             ticketReservation.setAmount(1);
             ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
             form.setReservation(Collections.singletonList(ticketReservation));
+            var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals(HttpStatus.OK, res.getStatusCode());
+            var resBody = res.getBody();
+            assertTrue(resBody.isSuccess());
+            assertEquals(0, resBody.getErrorCount());
+            var reservationId = resBody.getValue();
+
+            checkStatus(reservationId, HttpStatus.OK, false, TicketReservation.TicketReservationStatus.PENDING);
+
+            var cancelRes = reservationApiV2Controller.cancelPendingReservation(event.getShortName(), reservationId);
+            assertEquals(HttpStatus.OK, cancelRes.getStatusCode());
+
+            checkStatus(reservationId, HttpStatus.NOT_FOUND, null, null);
+        }
+
+        //check blacklist payment methods
+        {
+            var form = new ReservationForm();
+            var categories = eventApiV2Controller.getTicketCategories(event.getShortName(), HIDDEN_CODE).getBody().getTicketCategories();
+
+            var c1 = new TicketReservationModification();
+            c1.setAmount(1);
+            int firstCategoryId = categories.get(0).getId();
+            c1.setTicketCategoryId(firstCategoryId);
+
+            var c2 = new TicketReservationModification();
+            c2.setAmount(1);
+            c2.setTicketCategoryId(categories.get(1).getId());
+
+            form.setReservation(List.of(c1, c2));
+            form.setPromoCode(HIDDEN_CODE);
+
             var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
             assertEquals(HttpStatus.OK, res.getStatusCode());
             var resBody = res.getBody();
@@ -1043,7 +1087,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
                 // ONCE_PER_DAY is disabled by default, therefore we get an error
                 assertEquals(CheckInStatus.EMPTY_TICKET_CODE, ticketAndcheckInResult.getResult().getStatus());
-                // enable ONCE_PER_DAY
+                // enable ONCE_PER_DAYFalse
                 TicketCategory category = ticketCategoryRepository.getById(ticketwc.getCategoryId());
                 ticketCategoryRepository.update(category.getId(), category.getName(), category.getInception(event.getZoneId()), category.getExpiration(event.getZoneId()), category.getMaxTickets(), category.isAccessRestricted(),
                     MonetaryUtil.unitToCents(category.getPrice(), category.getCurrencyCode()), category.getCode(), category.getValidCheckInFrom(), category.getValidCheckInTo(), category.getTicketValidityStart(), category.getTicketValidityEnd(),

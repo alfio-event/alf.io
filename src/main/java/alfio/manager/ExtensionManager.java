@@ -22,12 +22,15 @@ import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.extension.CustomEmailText;
 import alfio.model.extension.InvoiceGeneration;
 import alfio.model.extension.PdfGenerationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
+import alfio.repository.TransactionRepository;
 import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +44,7 @@ import java.util.*;
 
 @Component
 @AllArgsConstructor
+@Log4j2
 public class ExtensionManager {
 
     private final ExtensionService extensionService;
@@ -48,6 +52,8 @@ public class ExtensionManager {
     private final TicketReservationRepository ticketReservationRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ConfigurationManager configurationManager;
+    private final TransactionRepository transactionRepository;
+
 
     public enum ExtensionEvent {
         RESERVATION_CONFIRMED,
@@ -69,7 +75,11 @@ public class ExtensionManager {
         TICKET_CHECKED_IN,
         TICKET_REVERT_CHECKED_IN,
         PDF_GENERATION,
-        STRIPE_CONNECT_STATE_GENERATION
+        STRIPE_CONNECT_STATE_GENERATION,
+
+        CONFIRMATION_MAIL_CUSTOM_TEXT,
+        TICKET_MAIL_CUSTOM_TEXT,
+        REFUND_ISSUED
     }
 
     void handleEventCreation(Event event) {
@@ -92,6 +102,8 @@ public class ExtensionManager {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservation", reservation);
         payload.put("billingDetails", billingDetails);
+        transactionRepository.loadOptionalByReservationId(reservation.getId())
+            .ifPresent(tr -> payload.put("transaction", tr));
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
             event,
             organizationId,
@@ -147,6 +159,35 @@ public class ExtensionManager {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservationIds", stuckReservationsId);
         asyncCall(ExtensionEvent.STUCK_RESERVATIONS, event, organizationId, payload);
+    }
+
+    Optional<CustomEmailText> handleReservationEmailCustomText(Event event, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo) {
+        Map<String, Object> payload = Map.of(
+            "reservation", reservation,
+            "event", event,
+            "billingData", additionalInfo
+        );
+        try {
+            return Optional.ofNullable(syncCall(ExtensionEvent.CONFIRMATION_MAIL_CUSTOM_TEXT, event, event.getOrganizationId(), payload, CustomEmailText.class));
+        } catch(Exception ex) {
+            log.warn("Cannot get confirmation mail additional text", ex);
+            return Optional.empty();
+        }
+    }
+
+    public Optional<CustomEmailText> handleTicketEmailCustomText(Event event, TicketReservation reservation, TicketReservationAdditionalInfo additionalInfo, List<TicketFieldValue> fields) {
+        Map<String, Object> payload = Map.of(
+            "reservation", reservation,
+            "event", event,
+            "billingData", additionalInfo,
+            "additionalFields", fields
+        );
+        try {
+            return Optional.ofNullable(syncCall(ExtensionEvent.TICKET_MAIL_CUSTOM_TEXT, event, event.getOrganizationId(), payload, CustomEmailText.class));
+        } catch(Exception ex) {
+            log.warn("Cannot get ticket mail additional text", ex);
+            return Optional.empty();
+        }
     }
 
     private void handleReservationRemoval(Event event, Collection<String> reservationIds, ExtensionEvent extensionEvent) {
@@ -218,6 +259,14 @@ public class ExtensionManager {
         payload.put("reservations", ticketReservationRepository.findByIds(reservationIds));
 
         syncCall(ExtensionEvent.RESERVATION_CREDIT_NOTE_ISSUED, event, event.getOrganizationId(), payload, Boolean.class);
+    }
+
+    void handleRefund(Event event, TicketReservation reservation, TransactionAndPaymentInfo info) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("reservation", reservation);
+        payload.put("transaction", info.getTransaction());
+        payload.put("paymentInfo", info.getPaymentInformation());
+        asyncCall(ExtensionEvent.REFUND_ISSUED, event, event.getOrganizationId(), payload);
     }
 
     public boolean handlePdfTransformation(String html, Event event, OutputStream outputStream) {

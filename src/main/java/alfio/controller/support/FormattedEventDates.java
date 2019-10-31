@@ -14,17 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.api.v2.model;
+package alfio.controller.support;
+
+import lombok.RequiredArgsConstructor;
 
 import java.util.Map;
 
-public interface DateValidity {
-
-    String getTimeZone();
-    DatesWithTimeZoneOffset getDatesWithOffset();
-    boolean isSameDay();
-    Map<String, String> getFormattedBeginDate();
-    Map<String, String> getFormattedBeginTime();
-    Map<String, String> getFormattedEndDate();
-    Map<String, String> getFormattedEndTime();
+@RequiredArgsConstructor
+public class FormattedEventDates {
+    public final Map<String, String> beginDate;
+    public final Map<String, String> beginTime;
+    public final Map<String, String> endDate;
+    public final Map<String, String> endTime;
 }

@@ -18,9 +18,8 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.v2.model.AdditionalService;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
-import alfio.controller.api.v2.model.*;
 import alfio.controller.api.v2.model.TicketCategory;
-import alfio.controller.api.v2.model.EventWithAdditionalInfo.PaymentProxyWithParameters;
+import alfio.controller.api.v2.model.*;
 import alfio.controller.decorator.SaleableAdditionalService;
 import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.controller.form.ReservationForm;
@@ -36,7 +35,6 @@ import alfio.model.*;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
@@ -98,20 +96,16 @@ public class EventApiV2Controller {
     @GetMapping("events")
     public ResponseEntity<List<BasicEventInfo>> listEvents() {
 
-        var langs = i18nManager.getSupportedLanguages();
+        var contentLanguages = i18nManager.getSupportedLanguages();
 
         var events = eventManager.getPublishedEvents()
             .stream()
             .map(e -> {
-
                 var messageSource = messageSourceManager.getMessageSourceForEvent(e);
-
-                var formattedBeginDate = Formatters.getFormattedDate(langs, e.getBegin(), "common.event.date-format", messageSource);
-                var formattedBeginTime = Formatters.getFormattedDate(langs, e.getBegin(), "common.event.time-format", messageSource);
-                var formattedEndDate = Formatters.getFormattedDate(langs, e.getEnd(), "common.event.date-format", messageSource);
-                var formattedEndTime = Formatters.getFormattedDate(langs, e.getEnd(), "common.event.time-format", messageSource);
+                var formattedDates = Formatters.getFormattedDates(e, messageSource, contentLanguages);
                 return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getLocation(),
-                    e.getTimeZone(), e.getSameDay(), formattedBeginDate, formattedBeginTime, formattedEndDate, formattedEndTime);
+                    e.getTimeZone(), DatesWithTimeZoneOffset.fromEvent(e), e.getSameDay(), formattedDates.beginDate, formattedDates.beginTime,
+                    formattedDates.endDate, formattedDates.endTime);
             })
             .collect(Collectors.toList());
         return new ResponseEntity<>(events, getCorsHeaders(), HttpStatus.OK);
@@ -166,14 +160,6 @@ public class EventApiV2Controller {
 
                 var locationDescriptor = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
 
-                Map<PaymentMethod, PaymentProxyWithParameters> availablePaymentMethods = new EnumMap<>(PaymentMethod.class);
-
-                var activePaymentMethods = getActivePaymentMethods(event);
-
-                activePaymentMethods.forEach(apm -> {
-                    availablePaymentMethods.put(apm.getPaymentMethod(), new PaymentProxyWithParameters(apm, paymentManager.loadModelOptionsFor(Collections.singletonList(apm), event)));
-                });
-
                 //
                 boolean captchaForTicketSelection = isRecaptchaForTicketSelectionEnabled(configurationsValues);
                 String recaptchaApiKey = null;
@@ -190,10 +176,7 @@ public class EventApiV2Controller {
                 List<String> bankAccountOwner = Arrays.asList(configurationsValues.get(BANK_ACCOUNT_OWNER).getValueOrDefault("").split("\n"));
                 //
 
-                var formattedBeginDate = Formatters.getFormattedDate(event, event.getBegin(), "common.event.date-format", messageSource);
-                var formattedBeginTime = Formatters.getFormattedDate(event, event.getBegin(), "common.event.time-format", messageSource);
-                var formattedEndDate = Formatters.getFormattedDate(event, event.getEnd(), "common.event.date-format", messageSource);
-                var formattedEndTime = Formatters.getFormattedDate(event, event.getEnd(), "common.event.time-format", messageSource);
+                var formattedDates = Formatters.getFormattedDates(event, messageSource, event.getContentLanguages());
 
                 //invoicing information
                 boolean canGenerateReceiptOrInvoiceToCustomer = configurationManager.canGenerateReceiptOrInvoiceToCustomer(configurationsValues);
@@ -210,7 +193,7 @@ public class EventApiV2Controller {
                 //
 
                 //
-                boolean forceAssignment = configurationsValues.get(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBooleanOrDefault(false);
+                boolean forceAssignment = configurationsValues.get(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION).getValueAsBooleanOrDefault(true);
                 boolean enableAttendeeAutocomplete = configurationsValues.get(ENABLE_ATTENDEE_AUTOCOMPLETE).getValueAsBooleanOrDefault(true);
                 boolean enableTicketTransfer = configurationsValues.get(ENABLE_TICKET_TRANSFER).getValueAsBooleanOrDefault(true);
                 var assignmentConf = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete, enableTicketTransfer);
@@ -234,10 +217,10 @@ public class EventApiV2Controller {
                     availableTicketsCount = ticketRepository.countFreeTicketsForUnbounded(event.getId());
                 }
 
-                return new ResponseEntity<>(new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions, availablePaymentMethods,
+                return new ResponseEntity<>(new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,
                     bankAccount, bankAccountOwner,
-                    formattedBeginDate, formattedBeginTime,
-                    formattedEndDate, formattedEndTime,
+                    formattedDates.beginDate, formattedDates.beginTime,
+                    formattedDates.endDate, formattedDates.endTime,
                     invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
                     i18nOverride, availableTicketsCount), getCorsHeaders(), HttpStatus.OK);
             })
@@ -486,7 +469,7 @@ public class EventApiV2Controller {
                                                      Event event,
                                                      Locale locale,
                                                      Optional<String> promoCodeDiscount) {
-        return reservation.validate(bindingResult, ticketReservationManager, eventManager, event)
+        return reservation.validate(bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
             .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult));
     }
 

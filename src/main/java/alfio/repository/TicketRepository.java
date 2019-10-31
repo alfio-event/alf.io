@@ -321,4 +321,7 @@ public interface TicketRepository {
 
     @Query("update ticket set status = 'FREE' where event_id = :eventId and category_id in(:categoryId) and status = '"+RELEASED+"'")
     int revertToFreeForRestrictedCategories(@Bind("eventId") int eventId, @Bind("categoryId") List<Integer> categoryId);
+
+    @Query("select distinct category_id from ticket where tickets_reservation_id = :reservationId and src_price_cts > 0")
+    List<Integer> getCategoriesIdToPayInReservation(@Bind("reservationId") String reservationId);
 }

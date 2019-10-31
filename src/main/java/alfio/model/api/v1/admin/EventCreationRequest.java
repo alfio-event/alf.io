@@ -114,7 +114,7 @@ public class EventCreationRequest{
         int locales = original.getLocales();
         if(description != null){
             locales = description.stream()
-                .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l -> l.getFlag().equals(x.lang)).findFirst())
+                .map(x -> ContentLanguage.ALL_LANGUAGES.stream().filter(l -> l.getLanguage().equals(x.lang)).findFirst())
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .mapToInt(ContentLanguage::getValue).reduce(0, (x, y) -> x | y);
@@ -373,7 +373,7 @@ public class EventCreationRequest{
 
     }
 
-    public static Set<String> WITH_RESTRICTED_VALUES = Set.of(AdditionalInfoType.LIST_BOX.code, AdditionalInfoType.CHECKBOX.code, AdditionalInfoType.RADIO.code);
+    public static final Set<String> WITH_RESTRICTED_VALUES = Set.of(AdditionalInfoType.LIST_BOX.code, AdditionalInfoType.CHECKBOX.code, AdditionalInfoType.RADIO.code);
 
     @Getter
     @AllArgsConstructor

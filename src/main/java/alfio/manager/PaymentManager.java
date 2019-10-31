@@ -49,6 +49,7 @@ public class PaymentManager {
     private final ConfigurationManager configurationManager;
     private final AuditingRepository auditingRepository;
     private final UserRepository userRepository;
+    private final ExtensionManager extensionManager;
 
     private final List<PaymentProvider> paymentProviders; // injected by Spring
 
@@ -121,6 +122,7 @@ public class PaymentManager {
                 event.getId(),
                 Audit.EventType.REFUND, new Date(), Audit.EntityType.RESERVATION, reservation.getId(),
                 Collections.singletonList(changes));
+            extensionManager.handleRefund(event, reservation, getInfo(reservation, event));
         }
 
         return res;
@@ -240,6 +242,10 @@ public class PaymentManager {
 
         public Set<String> getOnlyForCurrency() {
             return paymentProxy.getOnlyForCurrency();
+        }
+
+        public PaymentMethod getPaymentMethod() {
+            return paymentProxy.getPaymentMethod();
         }
     }
 }

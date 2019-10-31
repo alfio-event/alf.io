@@ -52,9 +52,13 @@ public enum ConfigurationKeys {
 
     DEMO_MODE_ACCOUNT_EXPIRATION_DAYS("Account expiration days", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     PLATFORM_MODE_ENABLED("Enable Platform mode", false, SettingCategory.PAYMENT, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
-    PLATFORM_FEE("Platform fee to apply for each ticket sold (if you want to apply a percentage, just add '%' at the end). ", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    PLATFORM_MINIMUM_FEE("Platform minimum fee to apply to free tickets", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    PAYMENT_METHODS_BLACKLIST("Payment methods blacklist. Comma-separated list of methods", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    @Deprecated
+    PLATFORM_FEE("Platform fee to apply for each ticket sold", true, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    PLATFORM_FIXED_FEE("Platform fee to apply for each ticket sold", true, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    PLATFORM_PERCENTAGE_FEE("Platform Percentage fee to apply for each ticket", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    PLATFORM_MINIMUM_FEE("Platform minimum fee to apply for each ticket", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    PLATFORM_MAXIMUM_FEE("Platform maximum fee to apply for each ticket", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    PAYMENT_METHODS_BLACKLIST("Payment methods blacklist. Comma-separated list of methods", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM, TICKET_CATEGORY)),
 
     STRIPE_CC_ENABLED("Stripe enabled", false, SettingCategory.PAYMENT_STRIPE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     STRIPE_PUBLIC_KEY("Stripe's public key", false, SettingCategory.PAYMENT_STRIPE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
@@ -114,7 +118,7 @@ public enum ConfigurationKeys {
     ENABLE_CAPTCHA_FOR_OFFLINE_PAYMENTS("Enable captcha for offline payments / free of charge tickets (default false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
     BANK_ACCOUNT_NR("Bank Account number", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     BANK_ACCOUNT_OWNER("Bank Account owner", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXTAREA, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
-    AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT("Cancel Reservation automatically when payment is overdue", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
+    AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT("Cancel Reservation automatically when payment is overdue (default: false)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     PARTIAL_RESERVATION_ID_LENGTH("Partial reservationID length", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     REVOLUT_ENABLED("Revolut integration enabled", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),
     REVOLUT_MANUAL_REVIEW("Review matching transactions manually (default true)", false, SettingCategory.PAYMENT_OFFLINE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION, EVENT)),

@@ -17,6 +17,7 @@
 package alfio.controller.api.v2.user;
 
 import alfio.controller.api.support.TicketHelper;
+import alfio.controller.api.v2.model.DatesWithTimeZoneOffset;
 import alfio.controller.api.v2.model.TicketInfo;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.Formatters;
@@ -135,10 +136,9 @@ public class TicketApiV2Controller {
             Ticket ticket = data.getRight();
 
             Locale locale = LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(reservation.getUserLanguage(), event));
-            Organization organization = organizationRepository.getById(event.getOrganizationId());
             TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
             notificationManager.sendTicketByEmail(ticket,
-                event, locale, TemplateProcessor.buildPartialEmail(event, organization, reservation, category, templateManager, ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid()), locale),
+                event, locale, ticketHelper.getConfirmationTextBuilder(locale, event, reservation, ticket, category),
                 reservation, ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()));
             return ResponseEntity.ok(true);
 
@@ -187,11 +187,7 @@ public class TicketApiV2Controller {
 
 
         var messageSource = messageSourceManager.getMessageSourceForEvent(event);
-
-        var formattedBeginDate = Formatters.getFormattedDate(event, validityStart, "common.event.date-format", messageSource);
-        var formattedBeginTime = Formatters.getFormattedDate(event, validityStart, "common.event.time-format", messageSource);
-        var formattedEndDate = Formatters.getFormattedDate(event, validityEnd, "common.event.date-format", messageSource);
-        var formattedEndTime = Formatters.getFormattedDate(event, validityEnd, "common.event.time-format", messageSource);
+        var formattedDates = Formatters.getFormattedDates(event, messageSource, event.getContentLanguages());
         //
 
 
@@ -204,11 +200,12 @@ public class TicketApiV2Controller {
             ticketReservationManager.getShortReservationID(event, ticketReservation),
             deskPaymentRequired,
             event.getTimeZone(),
+            DatesWithTimeZoneOffset.fromEvent(event),
             sameDay,
-            formattedBeginDate,
-            formattedBeginTime,
-            formattedEndDate,
-            formattedEndTime)
+            formattedDates.beginDate,
+            formattedDates.beginTime,
+            formattedDates.endDate,
+            formattedDates.endTime)
         );
     }
 

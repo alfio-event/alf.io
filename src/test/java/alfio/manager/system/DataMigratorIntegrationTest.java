@@ -19,8 +19,6 @@ package alfio.manager.system;
 import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
-import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.controller.support.TemplateProcessor;
 import alfio.manager.EventManager;
 import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
@@ -51,8 +49,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -263,48 +259,6 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
 	        dataMigrator.fillReservationsLanguage();
 	        TicketReservation ticketReservation = ticketReservationManager.findById(reservationId).get();
 	        assertEquals("en", ticketReservation.getUserLanguage());
-        } finally {
-        	eventManager.deleteEvent(event.getId(), eventUsername.getValue());
-        }
-    }
-
-    @Test
-    public void testUpdateGender() throws IOException {
-        List<TicketCategoryModification> categories = Collections.singletonList(
-                new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
-        Pair<Event, String> eventUsername = initEvent(categories); 
-        Event event = eventUsername.getKey();
-        try {
-	        TicketReservationModification trm = new TicketReservationModification();
-	        trm.setAmount(2);
-	        trm.setTicketCategoryId(eventManager.loadTicketCategories(event).get(0).getId());
-	        TicketReservationWithOptionalCodeModification r = new TicketReservationWithOptionalCodeModification(trm, Optional.empty());
-	        Date expiration = DateUtils.addDays(new Date(), 1);
-	        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(r), Collections.emptyList(), expiration, Optional.empty(), Locale.ENGLISH, false);
-//	        ticketReservationManager.performPayment("TOKEN", null, event, reservationId, "email@email.ch", new CustomerName("Full Name", "Full", "Name", event), Locale.ENGLISH, null, null, new TotalPrice(1000, 10, 0, 0), Optional.empty(), Optional.of(PaymentProxy.ON_SITE), false, null, null, null, false, false);
-	        List<Ticket> tickets = ticketRepository.findTicketsInReservation(reservationId);
-	        UpdateTicketOwnerForm first = new UpdateTicketOwnerForm();
-	        first.setEmail("email@email.ch");
-	        //first.setTShirtSize("SMALL");
-	        //first.setGender("F");
-	        first.setFirstName("Full");
-            first.setLastName("Name");
-	        UpdateTicketOwnerForm second = new UpdateTicketOwnerForm();
-	        //second.setTShirtSize("SMALL-F");
-	        second.setEmail("email@email.ch");
-	        second.setFirstName("Full");
-            second.setLastName("Name");
-	        TemplateProcessor.renderPDFTicket(Locale.ITALIAN, event, ticketReservationManager.findById(reservationId).get(),
-                tickets.get(0), ticketCategoryRepository.getByIdAndActive(tickets.get(0).getCategoryId(), event.getId()), organizationRepository.getById(event.getOrganizationId()),
-                templateManager, fileUploadManager, "", new ByteArrayOutputStream(), t -> Collections.emptyList(), extensionManager);
-	        ticketReservationManager.updateTicketOwner(tickets.get(0), Locale.ITALIAN, event, first, (t) -> "", (t) -> "", Optional.empty());
-	        ticketReservationManager.updateTicketOwner(tickets.get(1), Locale.ITALIAN, event, second, (t) -> "", (t) -> "", Optional.empty());
-	        //FIXME
-	        //dataMigrator.fillTicketsGender();
-	        //ticketRepository.findTicketsInReservation(reservationId).forEach(t -> assertEquals("F", t.getGender()));
         } finally {
         	eventManager.deleteEvent(event.getId(), eventUsername.getValue());
         }
