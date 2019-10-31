@@ -1,24 +1,27 @@
-# Docsy Example
+# Alf.io website
 
-[Docsy](https://github.com/google/docsy) is a Hugo theme for technical documentation sites, providing easy site navigation, structure, and more. This **Docsy Example Project** uses the Docsy theme, as well as providing a skeleton documentation structure for you to use. You can either copy this project and edit it with your own content, or use the theme in your projects like any other [Hugo theme](https://gohugo.io/themes/installing-and-using-themes/).
+This website uses 
 
-This Docsy Example Project is hosted at [https://example.docsy.dev/](https://example.docsy.dev/).
+- [Hugo](https://gohugo.io) for generating the html
+- [Docsy](https://github.com/google/docsy) theme for Hugo, released under [Apache v2](https://github.com/google/docsy/blob/master/LICENSE).
 
-You can find detailed theme instructions in the Docsy user guide: https://docsy.dev/docs/
+## Getting started
 
-This is not an officially supported Google product. This project is currently maintained.
+**Please follow Docsy's [Getting Started](https://www.docsy.dev/docs/getting-started/) guide in order to prepare your environment.**
 
-## Cloning the Docsy Example Project
 
-The following will give you a project that is set up and ready to use (don't forget to use `--recurse-submodules` or you won't pull down some of the code you need to generate a working site). The `hugo server` command builds and serves the site. If you just want to build the site, run `hugo` instead.
+
+Since Docsy is included as a submodule, you have to make sure to clone also submodules. (don't forget to use `--recurse-submodules` or you won't pull down some of the code you need to generate a working site). 
+
+The `hugo server` command builds and serves the site. If you just want to build the site, run `hugo` instead.
 
 ```bash
-git clone --recurse-submodules --depth 1 https://github.com/google/docsy-example.git
-cd docsy-example
+git clone --recurse-submodules --depth 1 https://github.com/alfio-event/alf.io.git
+cd alf.io/website
 hugo server
 ```
 
-The theme is included as a Git submodule:
+The Docsy theme is included as a Git submodule:
 
 ```bash
 ▶ git submodule
@@ -51,8 +54,14 @@ To pull in changes, see `pull-deps.sh` script in the theme.-->
 
 ## Running the website locally
 
-Once you've cloned the site repo, from the repo root folder, run:
+Once you've cloned the site repo, move to the `website` folder and run:
 
 ```
 hugo server
 ```
+
+
+
+-------------------------------
+
+This website is is a modified version of the great [Docsy website example](https://github.com/google/docsy-example)
