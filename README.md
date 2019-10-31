@@ -3,7 +3,7 @@ alf.io
 
 alf.io
 
-[![Build Status](http://img.shields.io/travis/alfio-event/alf.io/master.svg)](https://travis-ci.org/alfio-event/alf.io) [![Coverage Status](https://img.shields.io/coveralls/alfio-event/alf.io.svg)](https://coveralls.io/r/alfio-event/alf.io)
+[![Financial Contributors on Open Collective](https://opencollective.com/alfio/all/badge.svg?label=financial+contributors)](https://opencollective.com/alfio) [![Build Status](http://img.shields.io/travis/alfio-event/alf.io/master.svg)](https://travis-ci.org/alfio-event/alf.io) [![Coverage Status](https://img.shields.io/coveralls/alfio-event/alf.io.svg)](https://coveralls.io/r/alfio-event/alf.io)
 [![Docker Hub Pulls](https://img.shields.io/docker/pulls/alfio/alf.io.svg)](https://hub.docker.com/r/alfio/alf.io/tags)
 [![Open Source Helpers](https://www.codetriage.com/exteso/alf.io/badges/users.svg)](https://www.codetriage.com/exteso/alf.io)
 
@@ -152,3 +152,33 @@ It will expire the 02/07/23 (as https://www.apple.com/certificateauthority/).
  - spring-boot: added when launched by spring-boot
  - demo: enable demo mode, the accounts for the admin will be created on the fly
  - disable-jobs: disable jobs
+
+## Contributors
+
+### Code Contributors
+
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+<a href="https://github.com/alfio-event/alf.io/graphs/contributors"><img src="https://opencollective.com/alfio/contributors.svg?width=890&button=false" /></a>
+
+### Financial Contributors
+
+Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/alfio/contribute)]
+
+#### Individuals
+
+<a href="https://opencollective.com/alfio"><img src="https://opencollective.com/alfio/individuals.svg?width=890"></a>
+
+#### Organizations
+
+Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/alfio/contribute)]
+
+<a href="https://opencollective.com/alfio/organization/0/website"><img src="https://opencollective.com/alfio/organization/0/avatar.svg"></a>
+<a href="https://opencollective.com/alfio/organization/1/website"><img src="https://opencollective.com/alfio/organization/1/avatar.svg"></a>
+<a href="https://opencollective.com/alfio/organization/2/website"><img src="https://opencollective.com/alfio/organization/2/avatar.svg"></a>
+<a href="https://opencollective.com/alfio/organization/3/website"><img src="https://opencollective.com/alfio/organization/3/avatar.svg"></a>
+<a href="https://opencollective.com/alfio/organization/4/website"><img src="https://opencollective.com/alfio/organization/4/avatar.svg"></a>
+<a href="https://opencollective.com/alfio/organization/5/website"><img src="https://opencollective.com/alfio/organization/5/avatar.svg"></a>
+<a href="https://opencollective.com/alfio/organization/6/website"><img src="https://opencollective.com/alfio/organization/6/avatar.svg"></a>
+<a href="https://opencollective.com/alfio/organization/7/website"><img src="https://opencollective.com/alfio/organization/7/avatar.svg"></a>
+<a href="https://opencollective.com/alfio/organization/8/website"><img src="https://opencollective.com/alfio/organization/8/avatar.svg"></a>
+<a href="https://opencollective.com/alfio/organization/9/website"><img src="https://opencollective.com/alfio/organization/9/avatar.svg"></a>
