@@ -18,21 +18,28 @@ package alfio.manager;
 
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
+import alfio.util.HttpUtils;
 import alfio.util.Json;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import okhttp3.*;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @AllArgsConstructor
 public class RecaptchaService {
 
-    private final OkHttpClient client = new OkHttpClient();
+    private final HttpClient client = HttpClient.newHttpClient();
 
     private final ConfigurationManager configurationManager;
 
@@ -43,20 +50,27 @@ public class RecaptchaService {
             .orElse(true);
     }
 
-    private static boolean recaptchaRequest(OkHttpClient client, String secret, String response) {
+    private static boolean recaptchaRequest(HttpClient client, String secret, String response) {
         if(response == null) {
             return false;
         }
 
         try {
-            RequestBody reqBody = new FormBody.Builder().add("secret", secret).add("response", response).build();
-            Request request = new Request.Builder().url("https://www.google.com/recaptcha/api/siteverify").post(reqBody).build();
+            Map<String, String> params = new HashMap<>(){
+                {
+                    put("secret", secret);
+                    put("response", response);
+                }
+            };
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("https://www.google.com/recaptcha/api/siteverify"))
+                .POST(HttpUtils.ofMimeMultipartData(params, null))
+                .build();
 
-            try(Response resp = client.newCall(request).execute()) {
-                ResponseBody body = resp.body();
-                return body != null && Json.fromJson(body.string(), RecatpchaResponse.class).success;
-            }
-        } catch (IOException e) {
+            HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString(Charset.defaultCharset()));
+            String body = httpResponse.body();
+            return body != null && Json.fromJson(body, RecatpchaResponse.class).success;
+        } catch (IOException | InterruptedException e) {
             return false;
         }
     }

@@ -17,13 +17,17 @@
 package alfio.manager.system;
 
 import alfio.model.EventAndOrganizationId;
+import alfio.util.HttpUtils;
 import alfio.util.Json;
 import lombok.extern.log4j.Log4j2;
-import okhttp3.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,7 +36,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 @Log4j2
 public class MailjetMailer implements Mailer  {
 
-    private final OkHttpClient client = new OkHttpClient();
+    private final HttpClient client = HttpClient.newHttpClient();
     private final ConfigurationManager configurationManager;
 
     public MailjetMailer(ConfigurationManager configurationManager) {
@@ -74,22 +78,27 @@ public class MailjetMailer implements Mailer  {
             mailPayload.put("Attachments", Arrays.stream(attachment).map(MailjetMailer::fromAttachment).collect(Collectors.toList()));
         }
 
-        RequestBody body = RequestBody.create(MediaType.parse("application/json"), Json.GSON.toJson(mailPayload));
-        Request request = new Request.Builder().url("https://api.mailjet.com/v3/send")
-            .header("Authorization", Credentials.basic(apiKeyPublic, apiKeyPrivate))
-            .post(body)
+        HttpRequest request = HttpRequest.newBuilder(URI.create("https://api.mailjet.com/v3/send"))
+            .header(HttpUtils.AUTHORIZATION, HttpUtils.basicAuth(apiKeyPublic, apiKeyPrivate))
+            .header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_JSON)
+            .POST(HttpRequest.BodyPublishers.ofString(Json.GSON.toJson(mailPayload)))
             .build();
-        try (Response resp = client.newCall(request).execute()) {
-            if (!resp.isSuccessful()) {
-                log.warn("sending email was not successful:" + resp);
-                throw new IllegalStateException("Attempt to send a message failed. Result is: "+resp.code());
+
+        try {
+            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+            if(!HttpUtils.callSuccessful(response)) {
+                log.warn("sending email was not successful:" + response);
+                throw new IllegalStateException("Attempt to send a message failed. Result is: "+response.statusCode());
             }
-        } catch(IOException e) {
+        } catch (IOException e) {
+            log.warn("error while sending email", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             log.warn("error while sending email", e);
         }
-
-
     }
+
+
 
     private static Map<String, String> fromAttachment(Attachment a) {
         Map<String, String> m = new HashMap<>();

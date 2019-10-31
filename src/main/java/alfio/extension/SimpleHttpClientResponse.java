@@ -29,7 +29,6 @@ import java.util.Map;
 public class SimpleHttpClientResponse {
     private final boolean successful;
     private final int code;
-    private final String message;
     private final Map<String, List<String>> headers;
     private final String body;
 
