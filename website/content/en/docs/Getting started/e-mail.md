@@ -2,7 +2,7 @@
 
 ###SMTP
 
-![](img/SMTP-email-options.PNG)
+![](img/email/SMTP-email-options.PNG)
 
 ##### Hostname
 You can find the SMTP hostnames of some common e-mail providers
@@ -39,7 +39,7 @@ is [here](https://javaee.github.io/javamail/docs/api/com/sun/mail/smtp/package-s
 
 ###Additional options
 
-![](img/e-mail-options.PNG)
+![](img/email/e-mail-options.PNG)
 
 Two extra options for all e-mail providers are the number of attempts at 
 sending an email and an additional CC. The first is clear, and the second

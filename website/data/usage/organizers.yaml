@@ -1,0 +1,31 @@
+organizersPerCountry:
+  - name: Switzerland
+    count: 10
+  - name: Italy
+    count: 8
+  - name: Netherlands
+    count: 2
+  - name: United States
+    count: 2
+  - name: United Kingdom
+    count: 2
+  - name: Spain
+    count: 2
+  - name: Belgium
+    count: 2
+  - name: Australia
+    count: 2
+  - name: Bahrain
+    count: 1
+  - name: Singapore
+    count: 1
+  - name: South Africa
+    count: 1
+  - name: Morocco
+    count: 1
+  - name: Japan
+    count: 1
+  - name: Argentina
+    count: 1
+  - name: Canada
+    count: 1

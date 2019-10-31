@@ -1,0 +1,265 @@
++++
+title = "Alf.io"
+linkTitle = "Alf.io"
+
++++
+
+{{< blocks/cover title="" image_anchor="top" height="full" color="secondary" >}}
+<div class="mx-auto">
+	<img src="../alfio-logo-white.svg" style="width: 250px; height: auto">
+	<h2 class="m-5">The open source ticket reservation system</h2>
+	<a class="btn btn-lg btn-secondary mr-3 mb-4" href="https://demo.alf.io/admin/" target="_blank">
+		Try it! <i class="fas fa-play-circle ml-2"></i>
+	</a>
+	<a class="btn btn-lg btn-success mr-3 mb-4" href="https://github.com/alfio-event/alf.io/releases/latest" target="_blank">
+		Download <i class="fas fa-download ml-2"></i>
+	</a>
+	<a class="btn btn-lg btn-primary mr-3 mb-4" href="{{< relref "/docs" >}}">
+		Documentation <i class="fas fa-arrow-alt-circle-right ml-2"></i>
+	</a>
+	<a class="btn btn-lg btn-dark mr-3 mb-4" href="https://github.com/google/docsy-example">
+		View on GitHub <i class="fab fa-github ml-2 "></i>
+	</a>
+	<div class="mx-auto mt-5">
+		{{< blocks/link-down color="light" >}}
+	</div>
+</div>
+{{< /blocks/cover >}}
+
+
+{{% blocks/alfio-lead color="white" %}}
+<div class="d-flex justify-content-center">
+	<div class="d-flex flex-column text-left">
+		<div class="mt-2 h4">Alf.io is a <strong>free and open source</strong> event attendance management system, developed for event organizers who care about privacy, security and fair pricing policy for their customers.</div>
+		<div class="mt-2 h4">It features an ecosystem of tools to cover the lifecycle of an event from ticket distribution, to event management, to reporting.</div>
+		<div class="mt-2">
+			<ul class="list-group list-group-flush">
+				<li class="list-group-item pt-5">
+					<div class="d-flex w-100 justify-content-between mb-3">
+						<h4>Alf.io web application</h4>
+						<p class="text-right"><span class="text-muted mr-2">GPLv3</span> <i class="fab fa-github"></i> <a href="https://github.com/alfio-event/alf.io">GitHub repository</a></p>
+					</div>
+					<p><strong>Public</strong>, the ticket shop, where people can reserve/buy their tickets
+					<p>Alf.io supports payments through Stripe, Revolut, Paypal, Bank Transfer, as well as on-site payments. It is possible to integrate it with 3rd party tools (eg. a CRM system) through Extensions.</p>
+					<p><strong>Backoffice</strong>, the admin area for the event organizers</p>
+
+				</li>
+				<li class="list-group-item pt-5">
+					<div class="d-flex w-100 justify-content-between mb-3">
+						<h4>Alf.io Scan</h4>
+						<p><span class="text-muted mr-2">Apache2</span> <i class="fab fa-github"></i> <a href="https://github.com/alfio-event/Alf.ioBackoffice">GitHub repository</a></p>
+					</div>
+					<p>Mobile app available for iOS and Android, which can be used by:</p>
+					<ul class="mb-3">
+						<li>Check-in operators, to perform check-in of attendees for small events, or where on-site printing is not needed</li>
+						<li>Sponsors/Exhibitors, to scan attendees’ badges and collect leads</li>
+					</ul>
+				</li>
+				<li class="list-group-item pt-5">
+					<div class="d-flex w-100 justify-content-between mb-3">
+						<h4>Alf.io-PI</h4>
+						<p><span class="text-muted mr-2">GPLv3</span> <i class="fab fa-github"></i> <a href="https://github.com/alfio-event/alf.io-PI">GitHub repository</a></p>
+					</div>
+					<p>RaspberryPI-powered, touchscreen, offline-capable, high throughput check-in station for performing check-in for big events and printing attendees’ badges on-site.</p>
+					<p>Upon first startup, stations form a cluster and download an encrypted list of attendees from the Alf.io instance. Data related to an attendee can be decrypted only upon scanning their ticket.<br>
+					Thanks to the resilient architecture, stations can operate offline and still guarantee that one ticket cannot be checked in twice on two different stations.
+					</p>
+					<p>
+					<p></p>
+					<p></p>
+				</li>
+					
+			</ul>
+		</div>
+        <div class="mt-5 h4 text-center">Do you organize Conferences, trade shows, workshops, meetups? <strong>Here's how alf.io can help you:</strong></div>
+		<img  class="mt-5" src="/img/home/alf.io-overview.svg" alt="Alf.io's features">
+	</div>
+</div>
+
+{{% /blocks/alfio-lead %}}
+
+
+
+{{< blocks/section color="light" >}}
+
+{{% blocks/feature icon="fa-hand-spock" title="Free, *as in Freedom*" %}}
+Alf.io is <a href="http://www.gnu.org/copyleft/gpl.html" class="link-success" target="_blank">free software</a>. You can use it whenever and wherever you want. You can also modify and redistribute it.
+{{% /blocks/feature %}}
+
+
+{{% blocks/feature icon="fas fa-shield-alt" title="Secure" %}}
+Alf.io has been built with security in mind. Because you care about your user's data. 
+It serves pages using HTTPS protocol and with strict Content [Security Policy](https://www.html5rocks.com/en/tutorials/security/content-security-policy/) rules
+{{% /blocks/feature %}}
+
+
+{{% blocks/feature icon="fas fa-mobile-alt" title="Mobile Ready" %}}
+The GUI has been built upon the wonderful [Twitter Bootstrap](https://getbootstrap.com) framework, which is "mobile-first". The best user experience on each device
+{{% /blocks/feature %}}
+
+{{< /blocks/section >}}
+{{< blocks/section color="white" >}}
+
+{{% blocks/feature icon="far fa-handshake" title="Fair" %}}
+Keep control of your event and keep attendees data away from big players. Don't annoy them with additional fees and pay only what is really needed!
+{{% /blocks/feature %}}
+
+{{% blocks/feature icon="fas fa-language" title="Multi-language" %}}
+The GUI is currently available in Italian, English, Spanish, German, Dutch, French, Turkish, Romanian and Portuguese. [Help us to translate it into your language!](https://poeditor.com/join/project/ttBYTmPYdr)
+{{% /blocks/feature %}}
+
+{{% blocks/feature icon="far fa-credit-card" title="PCI-Compliant" url="https://en.wikipedia.org/wiki/Payment_Card_Industry_Data_Security_Standard" %}}
+Alf.io uses [Stripe](https://stripe.com/) as gateway for payments done by credit card. This means that no sensitive data will be stored on your server and you’ll be automatically compliant with the strictest PCI requirements.
+{{% /blocks/feature %}}
+
+{{< /blocks/section >}}
+
+{{< blocks/section color="light" >}}
+
+{{% blocks/feature icon="far fa-lightbulb" title="Flexible" %}}
+You can define free-of-charge as well as paid events. 
+You can allow your users either to pre-pay the ticket by credit cardⁱ or PayPal, post-pay it by bank transfer, or even pay it at the entrance desk.
+
+ⁱ _The event organizer needs a Stripe account in order to get paid. No registration is required for the attendees_
+
+{{% /blocks/feature %}}
+
+{{% blocks/feature icon="fas fa-chart-bar" title="Measurable" %}}
+Simply create a Google Analytics(tm) account and configure your metrics. All the URLs are unique and let you analyze the incoming traffic. 
+Anonymous statistics and IP-Address scrambling are enabled by default, so you are already compliant with EU "cookie law".
+{{% /blocks/feature %}}
+
+{{% blocks/feature icon="fas fa-cloud" title="Cloud ready" %}}
+Already tested and deployed on:
+<div>
+	<ul class="list-unstyled">
+		<li>[Openshift](https://www.openshift.com/) ([tutorial](https://github.com/alfio-event/alf.io/blob/1.x-maintenance/docs/deployment/OpenShift.md))
+		<li>[Pivotal Cloud Foundry](https://run.pivotal.io/) ([tutorial](https://alf.io/tutorials/cloudfoundry/))
+		<li>[SAP Cloud Platform](https://www.sap.com/community/topic/cloud-platform.html) ([tutorial](https://blogs.sap.com/2017/05/20/deploying-alf.io-oss-event-ticketing-app-on-cloud-foundry/))
+		<li>[Heroku](https://www.heroku.com/) ([tutorial](https://alf.io/tutorials/heroku/))
+		<li>[Google Kubernetes Engine (GKE)](https://cloud.google.com/kubernetes-engine/) ([tutorial](https://github.com/stephanj/alfio-k8s))
+		<li>[Clever Cloud](https://www.clever-cloud.com/) (tutorial soon)
+	</ul>
+</div>
+
+{{% /blocks/feature %}}
+
+{{< /blocks/section >}}
+
+{{< blocks/section color="white" >}}
+<div class="container text-center">
+	<h2>Usage map:</h2>
+	<p class="mt-5">Alf.io doesn't send <b>any</b> usage statistics and/or metrics to us. Because we respect your privacy.<br> These are the organizers we know about, and we'd love to know <b>where</b> are you using it, so that we can show it on the map below.</p>
+	<a class="btn btn-outline-success btn-lg mt-4 mb-5" href="https://alfio-event.typeform.com/to/frPgBy" target="_blank">Tell us about you!</a>
+	<div id="regions_container" class="d-md-block d-xs-none" style="width:100%">
+		<div id="regions_div" class="w-100">
+			
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-xs-6 col-xs-offset-3">
+			<table class="table table-striped invisible d-xs-block d-md-none text-left">
+				<thead>
+					<tr>
+						<th>Country</th>
+						<th>Organizers</th>
+					</tr>
+				</thead>
+				<tbody id="regions_txt">
+
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+{{< /blocks/section >}}
+
+<section>
+	<div class="d-flex justify-content-center">
+		<div>
+				<h2 class="text-center">Sponsors</h2>
+
+				<p class="mt-3">
+					<i>Open Source</i> does not mean <i>free of charge</i>, it means <b>freedom</b>.<br> Although the code and the binaries might be <i>free of charge</i>, <i>and therefore cheap</i>, the time of the contributors is not.<br>There are some companies which are investing in alf.io, even if just for one feature, and we would like to <b>thank</b> them for helping the project.
+				</p>
+				
+				<div class="mt-5 d-flex justify-content-center">
+					<a href="https://swicket.io" target="_blank">
+						<img class="media-object" style="width: 240px;max-height: 100px;vertical-align: baseline;" src="/img/logos/logo-swicket.svg">
+					</a>
+				</div>
+
+				<div class="mt-4 d-flex justify-content-around">
+					<div>
+						<img class="media-object" style="max-width: 180px;margin-bottom:15px;margin-left:20px;" src="/img/logos/exteso_logo.jpg">
+					</div>
+					<div>
+						<a href="https://www.amicidelticino.ch" target="_blank">
+							<img class="media-object" src="/img/logos/amicidelticino-logo.png" style="max-height: 60px;">
+						</a>
+					</div>
+					<div>
+						<a href="https://www.netlify.com" class="text-center">
+							<img src="https://www.netlify.com/img/global/badges/netlify-color-accent.svg"/>
+						</a>
+					</div>
+				</div>
+				
+				<h4 class="mt-5 text-center">Do you want to be a sponsor? <a href="https://alfio-event.typeform.com/to/frPgBy" target="_blank">Drop us a line!</a></h4>
+		</div>
+	</div>
+
+</section>
+
+
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script>
+	(function() {
+
+		var organizersPerRegion = [
+                ['Switzerland', 10],
+                ['Italy', 8],
+                ['Netherlands', 2],
+                ['United States', 2],
+                ['United Kingdom', 2],
+                ['Spain', 2],
+                ['Belgium', 2],
+                ['Australia', 2],
+                ['Bahrain', 1],
+                ['Singapore', 1],
+                ['South Africa', 1],
+                ['Morocco', 1],
+                ['Japan', 1],
+                ['Argentina', 1],
+                ['Canada', 1]
+            ];
+
+    	var mapEl = $('#regions_container');
+		mapEl.ready(function() {
+			var data = [['Country', 'Organizers']];
+			organizersPerRegion.forEach(function(v) {data.push(v)});
+			google.charts.load('current', {'packages':['geochart']});
+			google.charts.setOnLoadCallback(drawRegionsMap(data));
+	
+			function drawRegionsMap(stats) {
+				return function() {
+					var data = google.visualization.arrayToDataTable(stats);
+					var options = {legend:'none'};
+					var chart = new google.visualization.GeoChart(document.getElementById('regions_div'));
+					chart.draw(data, options);
+				}
+			}
+		});
+	
+		$('#regions_txt').ready(function() {
+			var textEl = $('#regions_txt')
+			var template = '<tr><td>country</td><td class="text-center">organizers</td></tr>';
+			organizersPerRegion.map(function(opr) {
+				return template.replace('country', opr[0]).replace('organizers', opr[1]);
+			}).forEach(function(t) {
+				$(t).appendTo(textEl);
+			});
+		});
+	
+	})();
+</script>
