@@ -173,6 +173,5 @@ Become a financial contributor and help us sustain our community. [[Contribute](
 Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/alfio/contribute)]
 
 <a href="https://opencollective.com/alfio/organization/0/website"><img src="https://opencollective.com/alfio/organization/0/avatar.svg"></a>
-
 <a href="https://opencollective.com/alfio/organization/2/website"><img src="https://opencollective.com/alfio/organization/2/avatar.svg"></a>
 
