@@ -57,7 +57,7 @@ public class RecaptchaService {
             var params = Map.of("secret", secret, "response", response);
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://www.google.com/recaptcha/api/siteverify"))
-                .POST(HttpUtils.ofMimeMultipartData(params, null))
+                .POST(HttpUtils.ofMimeMultipartData(params))
                 .build();
 
             HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString(Charset.defaultCharset()));

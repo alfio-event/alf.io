@@ -80,14 +80,14 @@ public class SimpleHttpClient {
 
     public SimpleHttpClientResponse postForm(String url, Map<String, String> headers, Map<String, String> params) throws IOException {
         HttpRequest request = buildUrlAndHeader(url, headers, null)
-            .POST(HttpUtils.ofMimeMultipartData(params, null))
+            .POST(HttpUtils.ofMimeMultipartData(params))
             .build();
         return callRemote(request);
     }
 
     public SimpleHttpClientCachedResponse postFileAndSaveResponse(String url, Map<String, String> headers, String file, String filename, String contentType) throws IOException {
         HttpRequest request = buildUrlAndHeader(url, headers, null)
-            .POST(HttpUtils.ofMimeMultipartData(file, filename, contentType, null))
+            .POST(HttpUtils.ofMimeMultipartData(file, filename, contentType))
             .build();
         return callRemoteAndSaveResponse(request);
     }

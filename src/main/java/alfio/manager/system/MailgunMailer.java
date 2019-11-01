@@ -50,7 +50,7 @@ class MailgunMailer implements Mailer {
 
         Map<String, String> emailData = getEmailData(from, to, replyTo, cc, subject, text, html);
         if (ArrayUtils.isEmpty(attachments)) {
-            return HttpUtils.ofMimeMultipartData(emailData, null);
+            return HttpUtils.ofMimeMultipartData(emailData);
         } else {
             return buildCustomBodyPublisher(emailData, attachments);
         }

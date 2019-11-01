@@ -46,9 +46,9 @@ public class HttpUtils {
         return "Basic " + java.util.Base64.getEncoder().encodeToString((publicKey + ":" + privateKey).getBytes());
     }
 
-    public static <K, V> HttpRequest.BodyPublisher ofMimeMultipartData(Map<K, V> data, String boundary) throws IOException {
+    public static <K, V> HttpRequest.BodyPublisher ofMimeMultipartData(Map<K, V> data) {
         Objects.requireNonNull(data);
-        boundary = Objects.nonNull(boundary) ? boundary : new BigInteger(256, ThreadLocalRandom.current()).toString();
+        var boundary = new BigInteger(256, ThreadLocalRandom.current()).toString();
         return fromFormData(data, boundary);
     }
 
@@ -64,9 +64,9 @@ public class HttpUtils {
         return HttpRequest.BodyPublishers.ofByteArrays(byteArrays);
     }
 
-    public static HttpRequest.BodyPublisher ofMimeMultipartData(String file, String filename, String contentType, String boundary) throws IOException {
+    public static HttpRequest.BodyPublisher ofMimeMultipartData(String file, String filename, String contentType) throws IOException {
         Objects.requireNonNull(file);
-        boundary = Objects.nonNull(boundary) ? boundary : new BigInteger(256, ThreadLocalRandom.current()).toString();
+        var boundary = new BigInteger(256, ThreadLocalRandom.current()).toString();
         Path path = Paths.get(file);
         return buildFromFileContents(path, filename, contentType, boundary);
     }
