@@ -52,7 +52,7 @@ public class FileDownloadManager {
                 return new DownloadedFile(
                         response.body(),
                         name,
-                        response.headers().firstValue("Content-Type").orElseGet(() -> "application/octet-stream")
+                        response.headers().firstValue("Content-Type").orElse("application/octet-stream")
                     );
             } else {
                 return null;
@@ -64,7 +64,7 @@ public class FileDownloadManager {
     }
 
     private void logWarning(Throwable exception) {
-        log.warn("error while downloading file" + exception);
+        log.warn("error while downloading file", exception);
     }
 
     private boolean callSuccessful(HttpResponse<?> response) {

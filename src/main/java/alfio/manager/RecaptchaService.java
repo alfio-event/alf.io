@@ -32,7 +32,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -56,12 +55,7 @@ public class RecaptchaService {
         }
 
         try {
-            Map<String, String> params = new HashMap<>(){
-                {
-                    put("secret", secret);
-                    put("response", response);
-                }
-            };
+            var params = Map.of("secret", secret, "response", response);
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://www.google.com/recaptcha/api/siteverify"))
                 .POST(HttpUtils.ofMimeMultipartData(params, null))
