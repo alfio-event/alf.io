@@ -52,7 +52,7 @@ import static alfio.model.system.ConfigurationKeys.MOLLIE_CC_ENABLED;
 @AllArgsConstructor
 public class MollieCreditCardManager implements PaymentProvider {
 
-    private final HttpClient client = HttpClient.newHttpClient();
+    private final HttpClient client;
     private final ConfigurationManager configurationManager;
     private final MessageSourceManager messageSourceManager;
     private final TicketReservationRepository ticketReservationRepository;

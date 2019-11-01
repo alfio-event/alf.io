@@ -34,6 +34,7 @@ import javax.sql.DataSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -106,7 +107,7 @@ public class TestConfiguration {
 
     @Bean
     public FileDownloadManager fileDownloadManager() {
-        return new FileDownloadManager() {
+        return new FileDownloadManager(HttpClient.newHttpClient()) {
             @Override
             public DownloadedFile downloadFile(String url) {
                 return new DownloadedFile(BaseIntegrationTest.ONE_PIXEL_BLACK_GIF, "test", "image/gif");

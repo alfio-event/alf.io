@@ -46,8 +46,13 @@ import java.util.function.Supplier;
 @Log4j2
 public class ScriptingExecutionService {
 
-    private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
-    private static final SimpleHttpClient SIMPLE_HTTP_CLIENT = new SimpleHttpClient(HTTP_CLIENT);
+    private final HttpClient httpClient;
+    private final SimpleHttpClient simpleHttpClient;
+
+    public ScriptingExecutionService(HttpClient httpClient) {
+        this.httpClient = httpClient;
+        this.simpleHttpClient = new SimpleHttpClient(httpClient);
+    }
 
     private static final Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
     private final Cache<String, CompiledScript> compiledScriptCache = Caffeine.newBuilder()
@@ -81,7 +86,7 @@ public class ScriptingExecutionService {
     }
 
 
-    public static <T> T executeScript(String name, String script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
+    public <T> T executeScript(String name, String script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
         try {
             CompiledScript compiledScript = engine.compile(script);
             return executeScript(name, compiledScript, params, clazz, extensionLogger);
@@ -92,7 +97,7 @@ public class ScriptingExecutionService {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T executeScript(String name, CompiledScript script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
+    private <T> T executeScript(String name, CompiledScript script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
         try {
             if(params == null) {
                 params = Collections.emptyMap();
@@ -102,8 +107,8 @@ public class ScriptingExecutionService {
             engineScope.put("log", log);
             engineScope.put("extensionLogger", extensionLogger);
             engineScope.put("GSON", Json.GSON);
-            engineScope.put("httpClient", HTTP_CLIENT);
-            engineScope.put("simpleHttpClient", SIMPLE_HTTP_CLIENT);
+            engineScope.put("httpClient", httpClient);
+            engineScope.put("simpleHttpClient", simpleHttpClient);
             engineScope.put("returnClass", clazz);
             engineScope.putAll(params);
             T res = (T) script.eval(newContext);

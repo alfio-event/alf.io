@@ -38,8 +38,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class RecaptchaService {
 
-    private final HttpClient client = HttpClient.newHttpClient();
-
+    private final HttpClient client;
     private final ConfigurationManager configurationManager;
 
 

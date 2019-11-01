@@ -40,7 +40,7 @@ import static alfio.util.HttpUtils.CONTENT_TYPE;
 @AllArgsConstructor
 class MailgunMailer implements Mailer {
 
-    private final HttpClient client = HttpClient.newHttpClient();
+    private final HttpClient client;
     private final ConfigurationManager configurationManager;
 
     

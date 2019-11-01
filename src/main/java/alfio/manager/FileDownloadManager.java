@@ -32,7 +32,11 @@ import java.util.Objects;
 @Log4j2
 public class FileDownloadManager {
 
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient;
+
+    public FileDownloadManager(HttpClient httpClient) {
+        this.httpClient = httpClient;
+    }
 
     public DownloadedFile downloadFile(String url) {
         HttpRequest httpRequest = HttpRequest.newBuilder(URI.create(url)).GET().build();
