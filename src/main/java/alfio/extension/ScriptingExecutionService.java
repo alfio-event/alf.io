@@ -46,11 +46,9 @@ import java.util.function.Supplier;
 @Log4j2
 public class ScriptingExecutionService {
 
-    private final HttpClient httpClient;
     private final SimpleHttpClient simpleHttpClient;
 
     public ScriptingExecutionService(HttpClient httpClient) {
-        this.httpClient = httpClient;
         this.simpleHttpClient = new SimpleHttpClient(httpClient);
     }
 
@@ -107,7 +105,6 @@ public class ScriptingExecutionService {
             engineScope.put("log", log);
             engineScope.put("extensionLogger", extensionLogger);
             engineScope.put("GSON", Json.GSON);
-            engineScope.put("httpClient", httpClient);
             engineScope.put("simpleHttpClient", simpleHttpClient);
             engineScope.put("returnClass", clazz);
             engineScope.putAll(params);
