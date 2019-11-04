@@ -277,6 +277,9 @@ Already tested and deployed on:
     	var mapEl = $('#regions_container');
 		mapEl.ready(function() {
 			var data = [['Country', 'Organizers']];
+			organizersPerRegion.sort(function(a,b) {
+			    return a[1] - b[1];
+            });
 			organizersPerRegion.forEach(function(v) {data.push(v)});
 			google.charts.load('current', {'packages':['geochart']});
 			google.charts.setOnLoadCallback(drawRegionsMap(data));
