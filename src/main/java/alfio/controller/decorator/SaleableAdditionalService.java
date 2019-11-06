@@ -132,7 +132,7 @@ public class SaleableAdditionalService implements PriceContainer {
         if(vatType == AdditionalService.VatType.INHERITED) {
             return event.getVat();
         }
-        return additionalService.getVat();
+        return Optional.ofNullable(additionalService.getVat()).orElse(BigDecimal.ZERO);
     }
 
     public boolean getVatApplies() {
