@@ -20,3 +20,5 @@ out/
 !/src/main/webapp/resources/bower_components/angular-growl-v2/build/
 alfio-itest
 .gradletasknamecache
+website
+public
