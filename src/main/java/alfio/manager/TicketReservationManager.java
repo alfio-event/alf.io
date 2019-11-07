@@ -159,6 +159,9 @@ public class TicketReservationManager {
     }
 
     public static class CannotProceedWithPayment extends RuntimeException {
+        CannotProceedWithPayment(String message) {
+            super(message);
+        }
     }
 
     public TicketReservationManager(EventRepository eventRepository,
@@ -283,7 +286,7 @@ public class TicketReservationManager {
         }
 
         if(!canProceedWithPayment(event, totalPrice, reservationId)) {
-            throw new CannotProceedWithPayment();
+            throw new CannotProceedWithPayment("No payment method applicable for categories "+list.stream().map(t -> String.valueOf(t.getTicketCategoryId())).collect(Collectors.joining(", ")));
         }
 
         return reservationId;
@@ -2051,7 +2054,7 @@ public class TicketReservationManager {
         } catch (TicketReservationManager.TooManyTicketsForDiscountCodeException tooMany) {
             bindingResult.reject(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
         } catch (CannotProceedWithPayment cannotProceedWithPayment) {
-            bindingResult.reject("server-error");
+            bindingResult.reject(ErrorsCode.STEP_1_CATEGORIES_NOT_COMPATIBLE);
             log.error("missing payment methods", cannotProceedWithPayment);
         }
         return Optional.empty();
