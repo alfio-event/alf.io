@@ -87,8 +87,8 @@ public class PaymentManager {
 
     private List<PaymentMethodDTO> getPaymentMethods(PaymentContext context) {
         String blacklist = configurationManager.getFor(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST, context.getConfigurationLevel()).getValueOrDefault("");
-        return PaymentProxy.availableProxies()
-            .stream()
+        var proxies = Optional.ofNullable(context.getEvent()).map(Event::getAllowedPaymentProxies).orElseGet(PaymentProxy::availableProxies);
+        return proxies.stream()
             .filter(p -> !blacklist.contains(p.getKey()))
             .map(p -> {
                 Optional<PaymentProvider> paymentProvider = lookupProviderByMethod(p.getPaymentMethod(), context);
