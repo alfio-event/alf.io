@@ -45,12 +45,12 @@ class MailgunMailer implements Mailer {
 
     
     private static HttpRequest.BodyPublisher prepareBody(String from, String to, String replyTo, List<String> cc, String subject, String text,
-                                                         Optional<String> html, Attachment... attachments) throws IOException {
+                                                         Optional<String> html, Attachment... attachments) {
 
 
         Map<String, String> emailData = getEmailData(from, to, replyTo, cc, subject, text, html);
         if (ArrayUtils.isEmpty(attachments)) {
-            return HttpUtils.ofMimeMultipartData(emailData);
+            return HttpUtils.ofFormUrlEncodedBody(emailData);
         } else {
             return buildCustomBodyPublisher(emailData, attachments);
         }

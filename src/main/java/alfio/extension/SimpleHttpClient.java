@@ -28,7 +28,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -79,8 +78,8 @@ public class SimpleHttpClient {
     }
 
     public SimpleHttpClientResponse postForm(String url, Map<String, String> headers, Map<String, String> params) throws IOException {
-        HttpRequest request = buildUrlAndHeader(url, headers, null)
-            .POST(HttpUtils.ofMimeMultipartData(params))
+        HttpRequest request = buildUrlAndHeader(url, headers, "application/x-www-form-urlencoded")
+            .POST(HttpUtils.ofFormUrlEncodedBody(params))
             .build();
         return callRemote(request);
     }
@@ -151,7 +150,7 @@ public class SimpleHttpClient {
     private SimpleHttpClientResponse callRemote(HttpRequest request) throws IOException {
         HttpResponse<String> response = null;
         try {
-            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(Charset.defaultCharset()));
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             logInterruption(exception);

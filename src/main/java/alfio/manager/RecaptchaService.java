@@ -27,11 +27,8 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.Charset;
 import java.util.Map;
 
 @Component
@@ -55,12 +52,7 @@ public class RecaptchaService {
 
         try {
             var params = Map.of("secret", secret, "response", response);
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://www.google.com/recaptcha/api/siteverify"))
-                .POST(HttpUtils.ofMimeMultipartData(params))
-                .build();
-
-            HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString(Charset.defaultCharset()));
+            HttpResponse<String> httpResponse = HttpUtils.postForm(client, "https://www.google.com/recaptcha/api/siteverify", params);
             String body = httpResponse.body();
             return body != null && Json.fromJson(body, RecatpchaResponse.class).success;
         } catch (IOException | InterruptedException e) {
