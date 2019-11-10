@@ -19,7 +19,6 @@ package alfio.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.math.BigInteger;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -28,9 +27,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 
 public final class HttpUtils {
@@ -72,27 +69,6 @@ public final class HttpUtils {
         });
         return HttpRequest.BodyPublishers.ofString(sb.toString());
     }
-
-    @Deprecated
-    public static HttpRequest.BodyPublisher ofMimeMultipartData(String file, String filename, String contentType) throws IOException {
-        Objects.requireNonNull(file);
-        var boundary = new BigInteger(256, ThreadLocalRandom.current()).toString();
-        Path path = Paths.get(file);
-        return buildFromFileContents(path, filename, contentType, boundary);
-    }
-
-    @Deprecated
-    private static HttpRequest.BodyPublisher buildFromFileContents(Path path, String filename, String contentType, String boundary) throws IOException {
-        var byteArrays = new ArrayList<byte[]>();
-        byte[] separator = ("--" + boundary + "\r\nContent-Disposition: form-data; name=").getBytes(StandardCharsets.UTF_8);
-        byteArrays.add(separator);
-        byteArrays.add(("\"file\"; filename=\"" + filename + "\"\r\n" + CONTENT_TYPE + ": " + contentType + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
-        byteArrays.add(Files.readAllBytes(path));
-        byteArrays.add("\r\n".getBytes(StandardCharsets.UTF_8));
-        byteArrays.add(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8));
-        return HttpRequest.BodyPublishers.ofByteArrays(byteArrays);
-    }
-
 
     // https://stackoverflow.com/a/54675316
     public static class MultiPartBodyPublisher {

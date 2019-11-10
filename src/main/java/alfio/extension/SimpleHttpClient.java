@@ -21,9 +21,7 @@ import alfio.util.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -85,8 +83,16 @@ public class SimpleHttpClient {
     }
 
     public SimpleHttpClientCachedResponse postFileAndSaveResponse(String url, Map<String, String> headers, String file, String filename, String contentType) throws IOException {
-        HttpRequest request = buildUrlAndHeader(url, headers, null)
-            .POST(HttpUtils.ofMimeMultipartData(file, filename, contentType))
+        var mpb = new HttpUtils.MultiPartBodyPublisher();
+        mpb.addPart("file", () -> {
+            try {
+                return new FileInputStream(filename);
+            } catch (FileNotFoundException e) {
+                throw new IllegalStateException(e);
+            }
+        }, filename, contentType);
+        HttpRequest request = buildUrlAndHeader(url, headers, HttpUtils.MULTIPART_FORM_DATA+";boundary=\""+mpb.getBoundary()+"\"")
+            .POST(mpb.build())
             .build();
         return callRemoteAndSaveResponse(request);
     }
@@ -192,8 +198,8 @@ public class SimpleHttpClient {
     }
 
     // Thanks to: https://stackoverflow.com/questions/54208945/java-11-httpclient-not-sending-basic-authentication
-    public void addBasicAuthorization(HttpRequest.Builder requestBuilder, String username, String password) {
-        requestBuilder.header(HttpUtils.AUTHORIZATION, HttpUtils.basicAuth(username, password));
+    public String basicCredentials(String username, String password) {
+        return HttpUtils.basicAuth(username, password);
     }
 
     private static HttpRequest.Builder buildUrlAndHeader(String url, Map<String, String> headers, String contentType) {
