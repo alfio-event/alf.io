@@ -78,7 +78,7 @@ public class SimpleHttpClient {
     }
 
     public SimpleHttpClientResponse postForm(String url, Map<String, String> headers, Map<String, String> params) throws IOException {
-        HttpRequest request = buildUrlAndHeader(url, headers, "application/x-www-form-urlencoded")
+        HttpRequest request = buildUrlAndHeader(url, headers, HttpUtils.APPLICATION_FORM_URLENCODED)
             .POST(HttpUtils.ofFormUrlEncodedBody(params))
             .build();
         return callRemote(request);

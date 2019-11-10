@@ -23,18 +23,16 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.util.HttpUtils.CONTENT_TYPE;
 
 @Log4j2
 @AllArgsConstructor
@@ -43,47 +41,6 @@ class MailgunMailer implements Mailer {
     private final HttpClient client;
     private final ConfigurationManager configurationManager;
 
-    
-    private static HttpRequest.BodyPublisher prepareBody(String from, String to, String replyTo, List<String> cc, String subject, String text,
-                                                         Optional<String> html, Attachment... attachments) {
-
-
-        Map<String, String> emailData = getEmailData(from, to, replyTo, cc, subject, text, html);
-        if (ArrayUtils.isEmpty(attachments)) {
-            return HttpUtils.ofFormUrlEncodedBody(emailData);
-        } else {
-            return buildCustomBodyPublisher(emailData, attachments);
-        }
-    }
-
-    private static HttpRequest.BodyPublisher buildCustomBodyPublisher(Map<String, String> emailData, Attachment[] attachments) {
-        var boundary = new BigInteger(256, ThreadLocalRandom.current()).toString();
-        var byteArrays = new ArrayList<byte[]>();
-        byte[] separator = ("--" + boundary + "\r\nContent-Disposition: form-data; name=").getBytes(StandardCharsets.UTF_8);
-        addEmailData(emailData, byteArrays, separator);
-        addAttachments(byteArrays, separator, attachments);
-        byteArrays.add(("--" + boundary + "--").getBytes(StandardCharsets.UTF_8));
-        return HttpRequest.BodyPublishers.ofByteArrays(byteArrays);
-    }
-
-    private static void addEmailData(Map<String, String> emailData, ArrayList<byte[]> byteArrays, byte[] separator) {
-        for (Map.Entry<String, String> entry : emailData.entrySet()) {
-            byteArrays.add(separator);
-            byteArrays.add(("\"" + entry.getKey() + "\"\r\n\r\n" + entry.getValue() + "\r\n").getBytes(StandardCharsets.UTF_8));
-        }
-    }
-
-    private static void addAttachments(ArrayList<byte[]> byteArrays, byte[] separator, Attachment[] attachments) {
-        for(Attachment attachment : attachments) {
-            byte[] data = attachment.getSource();
-            byteArrays.add(separator);
-            byteArrays.add(("\"file\"; filename=\"" + attachment.getFilename()
-                + "\"\r\n" + CONTENT_TYPE + ": " + attachment.getContentType()
-                + "\r\n\r\n").getBytes(StandardCharsets.UTF_8));
-            byteArrays.add(data);
-            byteArrays.add("\r\n".getBytes(StandardCharsets.UTF_8));
-        }
-    }
 
     private static Map<String, String> getEmailData(String from, String to, String replyTo, List<String> cc, String subject, String text, Optional<String> html) {
         Map<String, String> emailData = Map.of(
@@ -119,13 +76,24 @@ class MailgunMailer implements Mailer {
 
             var replyTo = conf.get(MAIL_REPLY_TO).getValueOrDefault("");
 
-            HttpRequest.BodyPublisher bodyPublisher = prepareBody(from, to, replyTo, cc, subject, text, html, attachment);
+            var emailData = getEmailData(from, to, replyTo, cc, subject, text, html);
 
-            HttpRequest request = HttpRequest.newBuilder()
+            var requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + domain + "/messages"))
-                .header(HttpUtils.AUTHORIZATION, HttpUtils.basicAuth("api", apiKey))
-                .POST(bodyPublisher)
-                .build();
+                .header(HttpUtils.AUTHORIZATION, HttpUtils.basicAuth("api", apiKey));
+
+            if (ArrayUtils.isEmpty(attachment)) {
+                requestBuilder.header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_FORM_URLENCODED);
+                requestBuilder.POST(HttpUtils.ofFormUrlEncodedBody(emailData));
+            } else {
+                var mpb = new HttpUtils.MultiPartBodyPublisher();
+                requestBuilder.header(HttpUtils.CONTENT_TYPE, HttpUtils.MULTIPART_FORM_DATA+";boundary=\""+mpb.getBoundary()+"\"");
+                emailData.forEach((k, v) -> mpb.addPart(k, v));
+                Stream.of(attachment).forEach(a -> mpb.addPart("attachment", () -> new ByteArrayInputStream(a.getSource()), a.getFilename(), a.getContentType()));
+                requestBuilder.POST(mpb.build());
+            }
+
+            HttpRequest request = requestBuilder.build();
 
             HttpResponse<?> response = client.send(request, HttpResponse.BodyHandlers.discarding());
             if(!HttpUtils.callSuccessful(response)) {
