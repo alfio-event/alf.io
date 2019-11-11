@@ -213,7 +213,7 @@ public class SimpleHttpClientIntegrationTest {
     @Test
     public void testPostBody() throws IOException {
         mockServer
-            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-body").withBody(StringBody.exact("content", StandardCharsets.UTF_8)))
+            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-body").withHeader("Content-Type", "text/plain").withBody(StringBody.exact("content", StandardCharsets.UTF_8)))
             .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
 
         var res = simpleHttpClient.postBodyAndSaveResponse("http://localhost:4243/simple-post-body", Map.of(), "content", "text/plain");
