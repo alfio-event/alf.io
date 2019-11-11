@@ -21,8 +21,10 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockserver.integration.ClientAndServer;
+import org.mockserver.model.Body;
 import org.mockserver.model.HttpRequest;
 import org.mockserver.model.HttpResponse;
+import org.mockserver.model.JsonBody;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -123,5 +125,51 @@ public class SimpleHttpClientIntegrationTest {
         var res = simpleHttpClient.head("http://localhost:4243/simple-head-header", Map.of("Custom-Header", "Custom-Value"));
         Assert.assertTrue(res.isSuccessful());
         Assert.assertEquals(200, res.getCode());
+    }
+
+    @Test
+    public void testPost() throws IOException {
+        mockServer
+            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post"))
+            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+
+        var res = simpleHttpClient.post("http://localhost:4243/simple-post");
+        Assert.assertTrue(res.isSuccessful());
+        Assert.assertEquals(200, res.getCode());
+        Assert.assertEquals("Hello World!", res.getBody());
+        Assert.assertTrue(res.getHeaders().containsKey("Content-Type"));
+        Assert.assertEquals("text/plain", res.getHeaders().get("Content-Type").get(0));
+        Assert.assertEquals("text/plain", res.getHeader("Content-Type"));
+    }
+
+    @Test
+    public void testPostWithHeaders() throws IOException {
+        mockServer
+            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-header").withHeader("Custom-Header", "Custom-Value"))
+            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+
+        Assert.assertFalse(simpleHttpClient.post("http://localhost:4243/simple-post-header").isSuccessful());
+
+        Assert.assertTrue(simpleHttpClient.post("http://localhost:4243/simple-post-header", Map.of("Custom-Header", "Custom-Value")).isSuccessful());
+    }
+
+    @Test
+    public void postJson() throws IOException {
+        mockServer
+            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-json").withBody(JsonBody.json("{\"key\": \"value\"}")))
+            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+
+        var resNok = simpleHttpClient.post("http://localhost:4243/simple-post-json", Map.of(), Map.of("not", "correct"));
+        Assert.assertFalse(resNok.isSuccessful());
+        Assert.assertEquals(404, resNok.getCode());
+
+        var res = simpleHttpClient.post("http://localhost:4243/simple-post-json", Map.of(), Map.of("key", "value"));
+        Assert.assertTrue(res.isSuccessful());
+        Assert.assertEquals(200, res.getCode());
+
+
+        var res2 = simpleHttpClient.postJSON("http://localhost:4243/simple-post-json", Map.of(), Map.of("key", "value"));
+        Assert.assertTrue(res2.isSuccessful());
+        Assert.assertEquals(200, res2.getCode());
     }
 }

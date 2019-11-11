@@ -84,7 +84,7 @@ public class SimpleHttpClient {
         var mpb = new HttpUtils.MultiPartBodyPublisher();
         mpb.addPart("file", () -> {
             try {
-                return new FileInputStream(filename);
+                return new FileInputStream(file);
             } catch (FileNotFoundException e) {
                 throw new IllegalStateException(e);
             }

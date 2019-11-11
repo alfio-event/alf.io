@@ -37,6 +37,10 @@ public class SimpleHttpClientResponse {
         return tryParse(body, Object.class);
     }
 
+    public String getHeader(String name) {
+        return headers.containsKey(name) ? headers.get(name).stream().findFirst().orElse(null) : null;
+    }
+
     public <T> T getJsonBody(Class<T> clazz) {
         return tryParse(body, clazz);
     }
