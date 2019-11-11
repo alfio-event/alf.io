@@ -21,10 +21,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockserver.integration.ClientAndServer;
-import org.mockserver.model.Body;
-import org.mockserver.model.HttpRequest;
-import org.mockserver.model.HttpResponse;
-import org.mockserver.model.JsonBody;
+import org.mockserver.model.*;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -171,5 +168,20 @@ public class SimpleHttpClientIntegrationTest {
         var res2 = simpleHttpClient.postJSON("http://localhost:4243/simple-post-json", Map.of(), Map.of("key", "value"));
         Assert.assertTrue(res2.isSuccessful());
         Assert.assertEquals(200, res2.getCode());
+    }
+
+    @Test
+    public void postForm() throws IOException {
+        mockServer
+            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-form").withBody(
+                ParameterBody.params(
+                    Parameter.param("k1", "v1"),
+                    Parameter.param("k2", "v2")
+                )))
+            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+
+        var res = simpleHttpClient.postForm("http://localhost:4243/simple-post-form", Map.of(), Map.of("k1", "v1", "k2", "v2"));
+        Assert.assertTrue(res.isSuccessful());
+        Assert.assertEquals(200, res.getCode());
     }
 }
