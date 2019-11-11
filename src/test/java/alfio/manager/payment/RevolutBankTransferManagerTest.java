@@ -30,6 +30,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.net.http.HttpClient;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -82,7 +83,7 @@ class RevolutBankTransferManagerTest {
         BankTransferManager bankTransferManager = mock(BankTransferManager.class);
         configurationManager = mock(ConfigurationManager.class);
         transactionRepository = mock(TransactionRepository.class);
-        revolutBankTransferManager = new RevolutBankTransferManager(bankTransferManager, configurationManager, transactionRepository);
+        revolutBankTransferManager = new RevolutBankTransferManager(bankTransferManager, configurationManager, transactionRepository, HttpClient.newHttpClient());
         event = mock(Event.class);
 
         when(configurationManager.getShortReservationID(eq(event), eq(firstReservation))).thenReturn(FIRST_UUID.substring(0,8));

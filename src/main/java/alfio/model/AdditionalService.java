@@ -21,6 +21,7 @@ import lombok.Getter;
 import org.springframework.security.crypto.codec.Hex;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
@@ -127,17 +128,17 @@ public class AdditionalService {
     public String getChecksum() {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            digest.update(Boolean.toString(fixPrice).getBytes());
-            digest.update(Integer.toString(ordinal).getBytes());
-            digest.update(Integer.toString(availableQuantity).getBytes());
-            digest.update(Integer.toString(maxQtyPerOrder).getBytes());
-            digest.update(utcInception.toString().getBytes());
-            digest.update(utcExpiration.toString().getBytes());
-            digest.update(Optional.ofNullable(vat).map(BigDecimal::toString).orElse("").getBytes());
-            digest.update(vatType.name().getBytes());
-            digest.update(type.name().getBytes());
+            digest.update(Boolean.toString(fixPrice).getBytes(StandardCharsets.UTF_8));
+            digest.update(Integer.toString(ordinal).getBytes(StandardCharsets.UTF_8));
+            digest.update(Integer.toString(availableQuantity).getBytes(StandardCharsets.UTF_8));
+            digest.update(Integer.toString(maxQtyPerOrder).getBytes(StandardCharsets.UTF_8));
+            digest.update(utcInception.toString().getBytes(StandardCharsets.UTF_8));
+            digest.update(utcExpiration.toString().getBytes(StandardCharsets.UTF_8));
+            digest.update(Optional.ofNullable(vat).map(BigDecimal::toString).orElse("").getBytes(StandardCharsets.UTF_8));
+            digest.update(vatType.name().getBytes(StandardCharsets.UTF_8));
+            digest.update(type.name().getBytes(StandardCharsets.UTF_8));
             if (supplementPolicy != null) {
-                digest.update(supplementPolicy.name().getBytes());
+                digest.update(supplementPolicy.name().getBytes(StandardCharsets.UTF_8));
             }
             return new String(Hex.encode(digest.digest()));
         } catch (NoSuchAlgorithmException e) {

@@ -99,8 +99,8 @@ public class ExtensionService {
     }
 
 
-    private static ExtensionMetadata getMetadata(String name, String script) {
-        return ScriptingExecutionService.executeScript(
+    private ExtensionMetadata getMetadata(String name, String script) {
+        return scriptingExecutionService.executeScript(
             name,
             PRELOAD_SCRIPT + script + "\n;GSON.fromJson(JSON.stringify(getScriptMetadata()), returnClass);", //<- ugly hack, but the interop java<->js is simpler that way...
             Collections.emptyMap(),

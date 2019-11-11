@@ -53,6 +53,7 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.util.Arrays;
@@ -177,9 +178,14 @@ public class DataSourceConfiguration {
     }
 
     @Bean
+    public HttpClient getHttpClient() {
+        return HttpClient.newHttpClient();
+    }
+
+    @Bean
     @Profile("!"+Initializer.PROFILE_INTEGRATION_TEST)
-    public FileDownloadManager fileDownloadManager() {
-        return new FileDownloadManager();
+    public FileDownloadManager fileDownloadManager(HttpClient httpClient) {
+        return new FileDownloadManager(httpClient);
     }
 
     @Bean

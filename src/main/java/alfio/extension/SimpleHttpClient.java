@@ -18,26 +18,21 @@ package alfio.extension;
 
 import alfio.util.HttpUtils;
 import alfio.util.Json;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.log4j.Log4j2;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+@Log4j2
 public class SimpleHttpClient {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleHttpClient.class);
-
-    private static final Set<String> NULL_REQUEST_BODY = new HashSet<>(Arrays.asList("GET", "HEAD"));
+    private static final Set<String> NULL_REQUEST_BODY = Set.of("GET", "HEAD");
 
     private final HttpClient httpClient;
 
@@ -79,15 +74,23 @@ public class SimpleHttpClient {
     }
 
     public SimpleHttpClientResponse postForm(String url, Map<String, String> headers, Map<String, String> params) throws IOException {
-        HttpRequest request = buildUrlAndHeader(url, headers, null)
-            .POST(HttpUtils.ofMimeMultipartData(params, null))
+        HttpRequest request = buildUrlAndHeader(url, headers, HttpUtils.APPLICATION_FORM_URLENCODED)
+            .POST(HttpUtils.ofFormUrlEncodedBody(params))
             .build();
         return callRemote(request);
     }
 
     public SimpleHttpClientCachedResponse postFileAndSaveResponse(String url, Map<String, String> headers, String file, String filename, String contentType) throws IOException {
-        HttpRequest request = buildUrlAndHeader(url, headers, null)
-            .POST(HttpUtils.ofMimeMultipartData(file, filename, contentType, null))
+        var mpb = new HttpUtils.MultiPartBodyPublisher();
+        mpb.addPart("file", () -> {
+            try {
+                return new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                throw new IllegalStateException(e);
+            }
+        }, filename, contentType);
+        HttpRequest request = buildUrlAndHeader(url, headers, HttpUtils.MULTIPART_FORM_DATA+";boundary=\""+mpb.getBoundary()+"\"")
+            .POST(mpb.build())
             .build();
         return callRemoteAndSaveResponse(request);
     }
@@ -151,7 +154,7 @@ public class SimpleHttpClient {
     private SimpleHttpClientResponse callRemote(HttpRequest request) throws IOException {
         HttpResponse<String> response = null;
         try {
-            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(Charset.defaultCharset()));
+            response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             logInterruption(exception);
@@ -163,8 +166,8 @@ public class SimpleHttpClient {
             response.body());
     }
 
-    private void logInterruption(InterruptedException exception) {
-        LOGGER.warn("HTTP request interrupted", exception);
+    private static void logInterruption(InterruptedException exception) {
+        log.warn("HTTP request interrupted", exception);
     }
 
     private SimpleHttpClientCachedResponse callRemoteAndSaveResponse(HttpRequest request) throws IOException {
@@ -193,8 +196,8 @@ public class SimpleHttpClient {
     }
 
     // Thanks to: https://stackoverflow.com/questions/54208945/java-11-httpclient-not-sending-basic-authentication
-    public void addBasicAuthorization(HttpRequest.Builder requestBuilder, String username, String password) {
-        requestBuilder.header(HttpUtils.AUTHORIZATION, HttpUtils.basicAuth(username, password));
+    public String basicCredentials(String username, String password) {
+        return HttpUtils.basicAuth(username, password);
     }
 
     private static HttpRequest.Builder buildUrlAndHeader(String url, Map<String, String> headers, String contentType) {

@@ -211,6 +211,8 @@ dependencies {
     }
 
     implementation "org.joda:joda-money:1.0.1"
+
+    testCompile 'org.mock-server:mockserver-netty:5.7.1'
 }
 
 // -- license configuration

@@ -52,7 +52,7 @@ import static alfio.model.system.ConfigurationKeys.MOLLIE_CC_ENABLED;
 @AllArgsConstructor
 public class MollieCreditCardManager implements PaymentProvider {
 
-    private final HttpClient client = HttpClient.newHttpClient();
+    private final HttpClient client;
     private final ConfigurationManager configurationManager;
     private final MessageSourceManager messageSourceManager;
     private final TicketReservationRepository ticketReservationRepository;
@@ -62,7 +62,7 @@ public class MollieCreditCardManager implements PaymentProvider {
         Event event = eventRepository.findByShortName(eventShortName);
 
         HttpRequest request = requestFor("https://api.mollie.nl/v1/payments/"+paymentId, event).GET().build();
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(Charset.defaultCharset()));
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
         if(HttpUtils.callSuccessful(response) && Objects.nonNull(response.body())) {
             Map<String, Object> res = Json.GSON.fromJson(response.body(), (new TypeToken<Map<String, Object>>() {}).getType());
             //load metadata, check that reservationId match
@@ -124,7 +124,7 @@ public class MollieCreditCardManager implements PaymentProvider {
                 .header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_JSON)
                 .POST(HttpRequest.BodyPublishers.ofString(Json.GSON.toJson(payload)))
                 .build();
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(Charset.defaultCharset()));
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             String respBody = response.body();
             if(Objects.isNull(respBody)) {
                 respBody = "null";

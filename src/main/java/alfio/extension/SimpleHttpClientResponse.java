@@ -37,7 +37,15 @@ public class SimpleHttpClientResponse {
         return tryParse(body, Object.class);
     }
 
-    private static Object tryParse(String body, Class<?> clazz) {
+    public String getHeader(String name) {
+        return headers.containsKey(name) ? headers.get(name).stream().findFirst().orElse(null) : null;
+    }
+
+    public <T> T getJsonBody(Class<T> clazz) {
+        return tryParse(body, clazz);
+    }
+
+    private static <T> T tryParse(String body, Class<T> clazz) {
         try {
             return Json.GSON.fromJson(body, clazz);
         } catch (JsonSyntaxException jse) {

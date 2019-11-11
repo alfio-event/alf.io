@@ -27,20 +27,15 @@ import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.Charset;
-import java.util.HashMap;
 import java.util.Map;
 
 @Component
 @AllArgsConstructor
 public class RecaptchaService {
 
-    private final HttpClient client = HttpClient.newHttpClient();
-
+    private final HttpClient client;
     private final ConfigurationManager configurationManager;
 
 
@@ -56,18 +51,8 @@ public class RecaptchaService {
         }
 
         try {
-            Map<String, String> params = new HashMap<>(){
-                {
-                    put("secret", secret);
-                    put("response", response);
-                }
-            };
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://www.google.com/recaptcha/api/siteverify"))
-                .POST(HttpUtils.ofMimeMultipartData(params, null))
-                .build();
-
-            HttpResponse<String> httpResponse = client.send(request, HttpResponse.BodyHandlers.ofString(Charset.defaultCharset()));
+            var params = Map.of("secret", secret, "response", response);
+            HttpResponse<String> httpResponse = HttpUtils.postForm(client, "https://www.google.com/recaptcha/api/siteverify", params);
             String body = httpResponse.body();
             return body != null && Json.fromJson(body, RecatpchaResponse.class).success;
         } catch (IOException | InterruptedException e) {

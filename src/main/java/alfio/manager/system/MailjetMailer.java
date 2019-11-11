@@ -36,10 +36,11 @@ import static alfio.model.system.ConfigurationKeys.*;
 @Log4j2
 public class MailjetMailer implements Mailer  {
 
-    private final HttpClient client = HttpClient.newHttpClient();
+    private final HttpClient client;
     private final ConfigurationManager configurationManager;
 
-    public MailjetMailer(ConfigurationManager configurationManager) {
+    public MailjetMailer(HttpClient httpClient, ConfigurationManager configurationManager) {
+        this.client = httpClient;
         this.configurationManager = configurationManager;
     }
 
