@@ -34,7 +34,7 @@ public class SimpleHttpClient {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SimpleHttpClient.class);
 
-    private static final Set<String> NULL_REQUEST_BODY = new HashSet<>(Arrays.asList("GET", "HEAD"));
+    private static final Set<String> NULL_REQUEST_BODY = Set.of("GET", "HEAD");
 
     private final HttpClient httpClient;
 
