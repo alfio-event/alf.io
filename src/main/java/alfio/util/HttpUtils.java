@@ -52,8 +52,8 @@ public final class HttpUtils {
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
-    public static String basicAuth(String publicKey, String privateKey) {
-        return "Basic " + java.util.Base64.getEncoder().encodeToString((publicKey + ":" + privateKey).getBytes());
+    public static String basicAuth(String username, String password) {
+        return "Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes(StandardCharsets.UTF_8));
     }
 
     public static <K, V> HttpRequest.BodyPublisher ofFormUrlEncodedBody(Map<K, V> data) {
