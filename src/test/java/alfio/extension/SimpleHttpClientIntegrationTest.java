@@ -97,4 +97,31 @@ public class SimpleHttpClientIntegrationTest {
         Assert.assertTrue(body2.containsKey("key"));
         Assert.assertEquals("value", body2.get("key"));
     }
+
+    @Test
+    public void testHead() throws IOException {
+        mockServer
+            .when(HttpRequest.request().withMethod("HEAD").withPath("/simple-head"))
+            .respond(HttpResponse.response().withStatusCode(200));
+
+        var res = simpleHttpClient.head("http://localhost:4243/simple-head");
+        Assert.assertTrue(res.isSuccessful());
+        Assert.assertEquals(200, res.getCode());
+    }
+
+    @Test
+    public void testHeadWithHeaders() throws IOException {
+        mockServer
+            .when(HttpRequest.request().withMethod("HEAD").withPath("/simple-head-header").withHeader("Custom-Header", "Custom-Value"))
+            .respond(HttpResponse.response().withStatusCode(200));
+
+        var noHeader = simpleHttpClient.head("http://localhost:4243/simple-head-header");
+        Assert.assertFalse(noHeader.isSuccessful());
+        Assert.assertEquals(404, noHeader.getCode());
+
+
+        var res = simpleHttpClient.head("http://localhost:4243/simple-head-header", Map.of("Custom-Header", "Custom-Value"));
+        Assert.assertTrue(res.isSuccessful());
+        Assert.assertEquals(200, res.getCode());
+    }
 }

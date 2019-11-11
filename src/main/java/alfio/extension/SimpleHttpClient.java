@@ -18,8 +18,7 @@ package alfio.extension;
 
 import alfio.util.HttpUtils;
 import alfio.util.Json;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.log4j.Log4j2;
 
 import java.io.*;
 import java.net.URI;
@@ -30,9 +29,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+@Log4j2
 public class SimpleHttpClient {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SimpleHttpClient.class);
 
     private static final Set<String> NULL_REQUEST_BODY = Set.of("GET", "HEAD");
 
@@ -168,8 +166,8 @@ public class SimpleHttpClient {
             response.body());
     }
 
-    private void logInterruption(InterruptedException exception) {
-        LOGGER.warn("HTTP request interrupted", exception);
+    private static void logInterruption(InterruptedException exception) {
+        log.warn("HTTP request interrupted", exception);
     }
 
     private SimpleHttpClientCachedResponse callRemoteAndSaveResponse(HttpRequest request) throws IOException {
