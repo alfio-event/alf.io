@@ -78,4 +78,23 @@ public class SimpleHttpClientIntegrationTest {
         Assert.assertTrue(res.isSuccessful());
         Assert.assertEquals(200, res.getCode());
     }
+
+    @Test
+    public void testJsonBody() throws IOException {
+        mockServer
+            .when(HttpRequest.request().withMethod("GET").withPath("/simple-get-json"))
+            .respond(HttpResponse.response("{\"key\": \"value\"}").withStatusCode(200).withHeader("Content-Type", "application/json"));
+
+        var res = simpleHttpClient.get("http://localhost:4243/simple-get-json");
+
+        var body = res.getJsonBody(Map.class);
+        Assert.assertTrue(body instanceof Map);
+        Assert.assertTrue(body.containsKey("key"));
+        Assert.assertEquals("value", body.get("key"));
+
+        var body2 = (Map<String, String>) res.getJsonBody();
+        Assert.assertTrue(body2 instanceof Map);
+        Assert.assertTrue(body2.containsKey("key"));
+        Assert.assertEquals("value", body2.get("key"));
+    }
 }

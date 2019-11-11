@@ -37,7 +37,11 @@ public class SimpleHttpClientResponse {
         return tryParse(body, Object.class);
     }
 
-    private static Object tryParse(String body, Class<?> clazz) {
+    public <T> T getJsonBody(Class<T> clazz) {
+        return tryParse(body, clazz);
+    }
+
+    private static <T> T tryParse(String body, Class<T> clazz) {
         try {
             return Json.GSON.fromJson(body, clazz);
         } catch (JsonSyntaxException jse) {

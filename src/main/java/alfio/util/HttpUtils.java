@@ -25,8 +25,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -96,15 +94,6 @@ public final class HttpUtils {
             return this;
         }
 
-        public MultiPartBodyPublisher addPart(String name, Path value) {
-            PartsSpecification newPart = new PartsSpecification();
-            newPart.type = PartsSpecification.TYPE.FILE;
-            newPart.name = name;
-            newPart.path = value;
-            partsSpecificationList.add(newPart);
-            return this;
-        }
-
         public MultiPartBodyPublisher addPart(String name, Supplier<InputStream> value, String filename, String contentType) {
             PartsSpecification newPart = new PartsSpecification();
             newPart.type = PartsSpecification.TYPE.STREAM;
@@ -126,17 +115,15 @@ public final class HttpUtils {
         static class PartsSpecification {
 
             public enum TYPE {
-                STRING, FILE, STREAM, FINAL_BOUNDARY
+                STRING, STREAM, FINAL_BOUNDARY
             }
 
             PartsSpecification.TYPE type;
             String name;
             String value;
-            Path path;
             Supplier<InputStream> stream;
             String filename;
             String contentType;
-
         }
 
         class PartsIterator implements Iterator<byte[]> {
@@ -153,8 +140,12 @@ public final class HttpUtils {
 
             @Override
             public boolean hasNext() {
-                if (done) return false;
-                if (next != null) return true;
+                if (done) {
+                    return false;
+                }
+                if (next != null) {
+                    return true;
+                }
                 try {
                     next = computeNext();
                 } catch (IOException e) {
@@ -169,7 +160,9 @@ public final class HttpUtils {
 
             @Override
             public byte[] next() {
-                if (!hasNext()) throw new NoSuchElementException();
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
                 byte[] res = next;
                 next = null;
                 return res;
@@ -190,20 +183,14 @@ public final class HttpUtils {
                     if (PartsSpecification.TYPE.FINAL_BOUNDARY.equals(nextPart.type)) {
                         return nextPart.value.getBytes(StandardCharsets.UTF_8);
                     }
-                    String filename;
-                    String contentType;
-                    if (PartsSpecification.TYPE.FILE.equals(nextPart.type)) {
-                        Path path = nextPart.path;
-                        filename = path.getFileName().toString();
-                        contentType = Files.probeContentType(path);
-                        if (contentType == null) contentType = "application/octet-stream";
-                        currentFileInput = Files.newInputStream(path);
-                    } else {
-                        filename = nextPart.filename;
-                        contentType = nextPart.contentType;
-                        if (contentType == null) contentType = "application/octet-stream";
-                        currentFileInput = nextPart.stream.get();
+                    String filename = nextPart.filename;
+                    String contentType = nextPart.contentType;
+
+                    if (contentType == null) {
+                        contentType = "application/octet-stream";
                     }
+                    currentFileInput = nextPart.stream.get();
+
                     String partHeader =
                         "--" + boundary + "\r\n" +
                             "Content-Disposition: form-data; name=" + nextPart.name + "; filename=" + filename + "\r\n" +
