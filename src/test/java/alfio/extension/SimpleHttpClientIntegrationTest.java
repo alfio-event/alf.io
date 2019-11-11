@@ -202,6 +202,26 @@ public class SimpleHttpClientIntegrationTest {
         Assert.assertTrue(res.isSuccessful());
         Assert.assertEquals(200, res.getCode());
         Assert.assertNotNull(res.getTempFilePath());
-        Assert.assertEquals("Hello World!", FileUtils.readFileToString(new File(res.getTempFilePath()), StandardCharsets.UTF_8));
+        var saved = new File(res.getTempFilePath());
+        Assert.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8));
+
+        tmp.delete();
+        saved.delete();
+
+    }
+
+    @Test
+    public void testPostBody() throws IOException {
+        mockServer
+            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-body").withBody(StringBody.exact("content", StandardCharsets.UTF_8)))
+            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+
+        var res = simpleHttpClient.postBodyAndSaveResponse("http://localhost:4243/simple-post-body", Map.of(), "content", "text/plain");
+        Assert.assertTrue(res.isSuccessful());
+        Assert.assertEquals(200, res.getCode());
+        Assert.assertNotNull(res.getTempFilePath());
+        var saved = new File(res.getTempFilePath());
+        Assert.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8));
+        saved.delete();
     }
 }
