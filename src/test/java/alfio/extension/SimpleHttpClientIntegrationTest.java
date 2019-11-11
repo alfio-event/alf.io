@@ -16,6 +16,8 @@
  */
 package alfio.extension;
 
+import alfio.util.FileUtil;
+import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -23,8 +25,10 @@ import org.junit.Test;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.model.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.http.HttpClient;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 public class SimpleHttpClientIntegrationTest {
@@ -151,7 +155,7 @@ public class SimpleHttpClientIntegrationTest {
     }
 
     @Test
-    public void postJson() throws IOException {
+    public void testPostJson() throws IOException {
         mockServer
             .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-json").withBody(JsonBody.json("{\"key\": \"value\"}")))
             .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
@@ -171,7 +175,7 @@ public class SimpleHttpClientIntegrationTest {
     }
 
     @Test
-    public void postForm() throws IOException {
+    public void testPostForm() throws IOException {
         mockServer
             .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-form").withBody(
                 ParameterBody.params(
@@ -183,5 +187,21 @@ public class SimpleHttpClientIntegrationTest {
         var res = simpleHttpClient.postForm("http://localhost:4243/simple-post-form", Map.of(), Map.of("k1", "v1", "k2", "v2"));
         Assert.assertTrue(res.isSuccessful());
         Assert.assertEquals(200, res.getCode());
+    }
+
+    @Test
+    public void testPostFile() throws IOException {
+        mockServer
+            .when(HttpRequest.request().withMethod("POST").withPath("/simple-post-file").withBody(StringBody.subString("content", StandardCharsets.UTF_8)))
+            .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
+
+        File tmp = File.createTempFile("test", "test");
+        FileUtils.write(tmp, "content", StandardCharsets.UTF_8);
+
+        var res = simpleHttpClient.postFileAndSaveResponse("http://localhost:4243/simple-post-file", Map.of(), tmp.getAbsolutePath(), tmp.getName(), "text/plain");
+        Assert.assertTrue(res.isSuccessful());
+        Assert.assertEquals(200, res.getCode());
+        Assert.assertNotNull(res.getTempFilePath());
+        Assert.assertEquals("Hello World!", FileUtils.readFileToString(new File(res.getTempFilePath()), StandardCharsets.UTF_8));
     }
 }
