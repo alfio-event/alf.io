@@ -1,3 +1,11 @@
+---
+title: "How to limit access to a public ticket Category"
+linkTitle: "Limit access to a public Category"
+weight: 8
+description: >
+  How to limit access to a public Category to a group of members
+---
+
 ## How to limit access to a public category
 
 If you want to have a ticket category that is public (that is, visible for everybody) but whose tickets can be acquired/bought only from a group of people, you have to configure and use **groups** and limit access only to a group of **email addresses** or **internet domains**. 
@@ -12,13 +20,13 @@ In order to access the discounted price, students have to buy the tickets using 
 
 click on the "Groups " menu
 
-![groups-menu](img/groups-menu.webp) 
+![groups-menu](/img/tutorials/groups/groups-menu.webp) 
 
 Create a new group. You can enter addresses one by one, or you can upload a CSV files.
 
 In the example below, we are entering the email address info@students.myuniversity.com, which we'll use later on for activating a domain-based match on **students.myuniversity.com**
 
-![create-group](img/create-group.webp)
+![create-group](/img/tutorials/groups/create-group.webp)
 
 
 
@@ -48,13 +56,13 @@ and deny the following:
 
 Head back to the event detail page, find the "Students" category (or create a new one if you don't have it yet) and click on the "options" button
 
-![options-button](img/options-button.webp)
+![options-button](/img/tutorials/groups/options-button.webp)
 
 
 
 Then link the group as follows and save the configuration:
 
-![link-to-group](img/link-to-group.webp)
+![link-to-group](/img/tutorials/groups/link-to-group.webp)
 
 where:
 
@@ -74,6 +82,6 @@ where:
 
 once saved, reload the event page and you'll see the new setting:
 
-![group-active](img/group-active.webp)
+![group-active](/img/tutorials/groups/group-active.webp)
 
 enjoy!

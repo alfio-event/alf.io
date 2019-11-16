@@ -33,6 +33,7 @@ import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -50,7 +51,7 @@ public class V22_1_14_8__MigrateMailchimp extends BaseSpringJdbcMigration {
         ExtensionRepository extensionRepository = QueryFactory.from(ExtensionRepository.class, "PGSQL", jdbcTemplate.getDataSource());
         ExtensionLogRepository extensionLogRepository = QueryFactory.from(ExtensionLogRepository.class, "PGSQL", jdbcTemplate.getDataSource());
         PluginRepository pluginRepository = QueryFactory.from(PluginRepository.class, "PGSQL", jdbcTemplate.getDataSource());
-        ExtensionService extensionService = new ExtensionService(new ScriptingExecutionService(), extensionRepository, extensionLogRepository, new DataSourceTransactionManager(jdbcTemplate.getDataSource()));
+        ExtensionService extensionService = new ExtensionService(new ScriptingExecutionService(HttpClient.newHttpClient()), extensionRepository, extensionLogRepository, new DataSourceTransactionManager(jdbcTemplate.getDataSource()));
 
         extensionService.createOrUpdate(null, null, new Extension("-", "mailchimp", getMailChimpScript(), true));
 

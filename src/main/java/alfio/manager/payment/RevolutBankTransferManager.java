@@ -68,7 +68,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     private final BankTransferManager bankTransferManager;
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
-    private final HttpClient client = HttpClient.newBuilder().build();
+    private final HttpClient client;
     private static final Cache<String, List<String>> accountsCache = Caffeine.newBuilder()
         .expireAfterWrite(1, TimeUnit.HOURS)
         .build();

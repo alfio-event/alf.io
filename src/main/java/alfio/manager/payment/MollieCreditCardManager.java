@@ -28,16 +28,22 @@ import alfio.model.transaction.*;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.util.ErrorsCode;
+import alfio.util.HttpUtils;
 import alfio.util.Json;
 import com.google.gson.reflect.TypeToken;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import okhttp3.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import static alfio.model.system.ConfigurationKeys.MOLLIE_CC_ENABLED;
 
@@ -46,7 +52,7 @@ import static alfio.model.system.ConfigurationKeys.MOLLIE_CC_ENABLED;
 @AllArgsConstructor
 public class MollieCreditCardManager implements PaymentProvider {
 
-    private final OkHttpClient client = new OkHttpClient();
+    private final HttpClient client;
     private final ConfigurationManager configurationManager;
     private final MessageSourceManager messageSourceManager;
     private final TicketReservationRepository ticketReservationRepository;
@@ -55,35 +61,30 @@ public class MollieCreditCardManager implements PaymentProvider {
     public void handleWebhook(String eventShortName, String reservationId, String paymentId) throws Exception {
         Event event = eventRepository.findByShortName(eventShortName);
 
-        Request request = requestFor("https://api.mollie.nl/v1/payments/"+paymentId, event).get().build();
-        Response resp = client.newCall(request).execute();
+        HttpRequest request = requestFor("https://api.mollie.nl/v1/payments/"+paymentId, event).GET().build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        if(HttpUtils.callSuccessful(response) && Objects.nonNull(response.body())) {
+            Map<String, Object> res = Json.GSON.fromJson(response.body(), (new TypeToken<Map<String, Object>>() {}).getType());
+            //load metadata, check that reservationId match
 
-        try(ResponseBody responseBody = resp.body()) {
-            String respBody = responseBody.string();
-            if(!resp.isSuccessful()) {
-                String msg = "was not able to get payment id " + paymentId + " for event " + eventShortName + " : " + respBody;
-                log.warn(msg);
-                throw new Exception(msg);
-            } else {
-                Map<String, Object> res = Json.GSON.fromJson(respBody, (new TypeToken<Map<String, Object>>() {}).getType());
-
-                //load metadata, check that reservationId match
-
-                //see statuses: https://www.mollie.com/en/docs/status
-                String status = (String) res.get("status");
-                //open cancelled expired failed pending paid paidout refunded charged_back
-                if("paid".equals(status)) {
-                    //TODO: register payment -> fetch reservationId from metadata -> switch as paid etc...
-                } else if("expired".equals(status)) {
-                    //TODO: set reservation to expired so it can be handled by the job
-                }
+            //see statuses: https://www.mollie.com/en/docs/status
+            String status = (String) res.get("status");
+            //open cancelled expired failed pending paid paidout refunded charged_back
+            if("paid".equals(status)) {
+                //TODO: register payment -> fetch reservationId from metadata -> switch as paid etc...
+            } else if("expired".equals(status)) {
+                //TODO: set reservation to expired so it can be handled by the job
             }
+        } else {
+            String msg = "was not able to get payment id " + paymentId + " for event " + eventShortName + " : " + response.body();
+            log.warn(msg);
+            throw new Exception(msg);
         }
     }
 
-    private Request.Builder requestFor(String url, EventAndOrganizationId event) {
+    private HttpRequest.Builder requestFor(String url, EventAndOrganizationId event) {
         String mollieAPIKey = configurationManager.getFor(ConfigurationKeys.MOLLIE_API_KEY, ConfigurationLevel.organization(event.getOrganizationId())).getRequiredValue();
-        return new Request.Builder().url(url).header("Authorization", "Bearer " + mollieAPIKey);
+        return HttpRequest.newBuilder().uri(URI.create(url)).header("Authorization", "Bearer " + mollieAPIKey);
     }
 
     @Override
@@ -119,25 +120,25 @@ public class MollieCreditCardManager implements PaymentProvider {
 
             payload.put("metadata", MetadataBuilder.buildMetadata(spec, Map.of()));
 
-            RequestBody body = RequestBody.create(MediaType.parse("application/json"), Json.GSON.toJson(payload));
-            Request request = requestFor("https://api.mollie.nl/v1/payments", event)
-                .post(body)
+            HttpRequest request = requestFor("https://api.mollie.nl/v1/payments", event)
+                .header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_JSON)
+                .POST(HttpRequest.BodyPublishers.ofString(Json.GSON.toJson(payload)))
                 .build();
-
-            try (Response resp = client.newCall(request).execute()) {
-                ResponseBody responseBody = resp.body();
-                String respBody = responseBody != null ? responseBody.string() : "null";
-                if (resp.isSuccessful()) {
-                    ticketReservationRepository.updateReservationStatus(spec.getReservationId(), TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT.toString());
-                    Map<String, Object> res = Json.GSON.fromJson(respBody, (new TypeToken<Map<String, Object>>() {}).getType());
-                    @SuppressWarnings("unchecked")
-                    Map<String, String> links = (Map<String, String>) res.get("links");
-                    return PaymentResult.redirect( links.get("paymentUrl") );
-                } else {
-                    String msg = "was not able to create a payment for reservation id " + spec.getReservationId() + ": " + respBody;
-                    log.warn(msg);
-                    return PaymentResult.failed( ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION );
-                }
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            String respBody = response.body();
+            if(Objects.isNull(respBody)) {
+                respBody = "null";
+            }
+            if(HttpUtils.callSuccessful(response)) {
+                ticketReservationRepository.updateReservationStatus(spec.getReservationId(), TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT.toString());
+                Map<String, Object> res = Json.GSON.fromJson(respBody, (new TypeToken<Map<String, Object>>() {}).getType());
+                @SuppressWarnings("unchecked")
+                Map<String, String> links = (Map<String, String>) res.get("links");
+                return PaymentResult.redirect( links.get("paymentUrl") );
+            } else {
+                String msg = "was not able to create a payment for reservation id " + spec.getReservationId() + ": " + respBody;
+                log.warn(msg);
+                return PaymentResult.failed( ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION );
             }
         } catch (Exception e) {
             log.warn(e);

@@ -17,17 +17,20 @@
 package alfio.manager.system;
 
 import alfio.model.EventAndOrganizationId;
+import alfio.util.HttpUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import okhttp3.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
@@ -35,53 +38,25 @@ import static alfio.model.system.ConfigurationKeys.*;
 @AllArgsConstructor
 class MailgunMailer implements Mailer {
 
-    private final OkHttpClient client = new OkHttpClient();
+    private final HttpClient client;
     private final ConfigurationManager configurationManager;
 
-    
-    private static RequestBody prepareBody(String from, String to, String replyTo, List<String> cc, String subject, String text,
-                                    Optional<String> html, Attachment... attachments) {
 
-
-        if (ArrayUtils.isEmpty(attachments)) {
-            FormBody.Builder builder = new FormBody.Builder()
-                    .add("from", from)
-                    .add("to", to)
-                    .add("subject", subject)
-                    .add("text", text);
-            if(cc != null && !cc.isEmpty()) {
-                builder.add("cc", StringUtils.join(cc, ','));
-            }
-
-            if(StringUtils.isNotBlank(replyTo)) {
-                builder.add("h:Reply-To", replyTo);
-            }
-            html.ifPresent(htmlContent -> builder.add("html", htmlContent));
-            return builder.build();
-
-        } else {
-            MultipartBody.Builder multipartBuilder = new MultipartBody.Builder()
-                    .setType(MultipartBody.FORM);
-
-            multipartBuilder.addFormDataPart("from", from)
-                    .addFormDataPart("to", to)
-                    .addFormDataPart("subject", subject)
-                    .addFormDataPart("text", text);
-
-            if(cc != null && !cc.isEmpty()) {
-                multipartBuilder.addFormDataPart("cc", StringUtils.join(cc, ','));
-            }
-
-            html.ifPresent(htmlContent -> multipartBuilder.addFormDataPart("html", htmlContent));
-
-            for (Attachment attachment : attachments) {
-                byte[] data = attachment.getSource();
-                multipartBuilder.addFormDataPart("attachment", attachment
-                        .getFilename(), RequestBody.create(MediaType
-                        .parse(attachment.getContentType()), Arrays.copyOf(data, data.length)));
-            }
-            return multipartBuilder.build();
+    private static Map<String, String> getEmailData(String from, String to, String replyTo, List<String> cc, String subject, String text, Optional<String> html) {
+        Map<String, String> emailData = Map.of(
+            "from", from,
+            "to", to,
+            "subject", subject,
+            "text", text
+        );
+        if(cc != null && !cc.isEmpty()) {
+            emailData.put("cc", StringUtils.join(cc, ','));
         }
+        if(StringUtils.isNoneBlank(replyTo)) {
+            emailData.put("h:Reply-To", replyTo);
+        }
+        html.ifPresent(htmlContent -> emailData.put("html", htmlContent));
+        return emailData;
     }
 
     @Override
@@ -101,20 +76,31 @@ class MailgunMailer implements Mailer {
 
             var replyTo = conf.get(MAIL_REPLY_TO).getValueOrDefault("");
 
-            RequestBody formBody = prepareBody(from, to, replyTo, cc, subject, text, html, attachment);
+            var emailData = getEmailData(from, to, replyTo, cc, subject, text, html);
 
-            Request request = new Request.Builder()
-                    .url(baseUrl + domain + "/messages")
-                    .header("Authorization", Credentials.basic("api", apiKey))
-                    .post(formBody).build();
+            var requestBuilder = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + domain + "/messages"))
+                .header(HttpUtils.AUTHORIZATION, HttpUtils.basicAuth("api", apiKey));
 
-            try(Response resp = client.newCall(request).execute()) {
-                if (!resp.isSuccessful()) {
-                    log.warn("sending email was not successful:" + resp);
-                    throw new IllegalStateException("Attempt to send a message failed. Result is: "+resp.code());
-                }
+            if (ArrayUtils.isEmpty(attachment)) {
+                requestBuilder.header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_FORM_URLENCODED);
+                requestBuilder.POST(HttpUtils.ofFormUrlEncodedBody(emailData));
+            } else {
+                var mpb = new HttpUtils.MultiPartBodyPublisher();
+                requestBuilder.header(HttpUtils.CONTENT_TYPE, HttpUtils.MULTIPART_FORM_DATA+";boundary=\""+mpb.getBoundary()+"\"");
+                emailData.forEach((k, v) -> mpb.addPart(k, v));
+                Stream.of(attachment).forEach(a -> mpb.addPart("attachment", () -> new ByteArrayInputStream(a.getSource()), a.getFilename(), a.getContentType()));
+                requestBuilder.POST(mpb.build());
             }
-        } catch (IOException e) {
+
+            HttpRequest request = requestBuilder.build();
+
+            HttpResponse<?> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+            if(!HttpUtils.callSuccessful(response)) {
+                log.warn("sending email was not successful:" + response);
+                throw new IllegalStateException("Attempt to send a message failed. Result is: "+response.statusCode());
+            }
+        } catch (IOException | InterruptedException e) {
             log.warn("error while sending email", e);
         }
     }

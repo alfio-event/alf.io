@@ -1,0 +1,22 @@
+/*
+
+Add styles or override variables from the theme here.
+
+*/
+$google_font_name: "Source Sans Pro";
+$google_font_family: "Source+Sans+Pro";
+$web-font-path: "https://fonts.googleapis.com/css?family=#{$google_font_family}&display=swap";
+$td-enable-google-fonts: true;
+
+// Theme colors
+
+$primary: #ff8812;
+
+$secondary:     #6c757d;
+$success:       #28a745;
+$info:          #17a2b8;
+$warning:       #ffc107;
+$danger:        #dc3545;
+$light:         #f8f9fa;
+$dark:          #343a40;
+$primary-light: lighten($primary, 75%);

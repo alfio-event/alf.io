@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
+import java.net.http.HttpClient;
 import java.util.*;
 
 import static alfio.model.system.ConfigurationKeys.MAILER_TYPE;
@@ -34,14 +35,14 @@ public class DefaultMailer implements Mailer {
     private final Environment environment;
 
     @Autowired
-    public DefaultMailer(ConfigurationManager configurationManager, Environment environment) {
+    public DefaultMailer(ConfigurationManager configurationManager, Environment environment, HttpClient httpClient) {
         this.configurationManager = configurationManager;
         this.environment = environment;
         this.mailers = new HashMap<>();
         this.defaultMailer = new SmtpMailer(configurationManager);
         mailers.put("smtp", defaultMailer);
-        mailers.put("mailgun", new MailgunMailer(configurationManager));
-        mailers.put("mailjet", new MailjetMailer(configurationManager));
+        mailers.put("mailgun", new MailgunMailer(httpClient, configurationManager));
+        mailers.put("mailjet", new MailjetMailer(httpClient, configurationManager));
         mailers.put("sendgrid", new SendGridMailer(configurationManager));
         mailers.put("disabled", new MockMailer(configurationManager, environment));
     }

@@ -1,3 +1,10 @@
+---
+title: "Apple(tm) Wallet Integration"
+linkTitle: "Apple(tm) Wallet Integration"
+description: >
+  How to generate Apple(tm) passes for your tickets
+---
+
 ## How to configure Apple (tm) Pass integration
 
 ### create a new Apple (tm) Pass ID
@@ -12,11 +19,11 @@ download the certificate on your disk, as suggested during the generation proces
 
 make sure to select "My Certificates" under "Category", as shown by the screenshot below
 
-![](img/category.png)
+![](/img/configuration/apple-pass/category.png)
 
 Select your pass from the list
 
-![](img/export.png)
+![](/img/configuration/apple-pass/export.png)
 
 open context menu, then select "Export Pass ..." and export it as P12 file.
 Please make sure to enter a strong password, you'll need it afterwards.
@@ -31,11 +38,6 @@ and copy the output.
 
 then open you alf.io instance and set the relevant options:
 
-![](img/alfio-options.png)
+![](/img/configuration/apple-pass/alfio-options.png)
 
 that's it! Enjoy Apple (tm) Pass integration!
-
-
-
-
-

@@ -149,7 +149,6 @@ dependencies {
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
     compile "com.stripe:stripe-java:11.7.0"
     compile 'com.paypal.sdk:rest-api-sdk:1.14.0'
-    compile 'com.squareup.okhttp3:okhttp:3.13.1'
     compile "org.apache.commons:commons-lang3:3.9"
     compile "org.apache.commons:commons-text:1.6"
     compile "com.opencsv:opencsv:4.6"
@@ -213,6 +212,8 @@ dependencies {
     }
 
     implementation "org.joda:joda-money:1.0.1"
+
+    testCompile 'org.mock-server:mockserver-netty:5.7.1'
 }
 
 // -- license configuration
