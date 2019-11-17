@@ -1,16 +1,16 @@
 /**
  * This file is part of alf.io.
- *
+ * <p>
  * alf.io is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p>
  * alf.io is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -24,6 +24,13 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.net.ssl.SSLSession;
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,23 +45,73 @@ public class SendGridMailerTest {
 
     private ConfigurationManager configurationManager;
 
+    private HttpClient client;
+
     @Before
     public void setUp() throws Exception {
         configurationManager = mock(ConfigurationManager.class);
-        sendGridMailer = new SendGridMailer(configurationManager);
+        client = mock(HttpClient.class);
+        sendGridMailer = new SendGridMailer(client, configurationManager);
     }
 
     @Test
-    public void name() {
+    public void shouldSendEmail() throws IOException, InterruptedException {
         //Test data
         final var apiConfig = new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.SENDGRID_API_KEY, new ConfigurationKeyValuePathLevel("key", "value", ConfigurationPathLevel.SYSTEM));
         final var fromConfig = new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.SENDGRID_FROM, new ConfigurationKeyValuePathLevel("key", "value", ConfigurationPathLevel.SYSTEM));
         //Mock
         when(configurationManager.getFor(anySet(), any(ConfigurationLevel.class))).thenReturn(Map.of(ConfigurationKeys.SENDGRID_API_KEY, apiConfig, ConfigurationKeys.SENDGRID_FROM, fromConfig));
+        final HttpResponse<Object> httpResponse = createMockHttpResponse();
+        when(client.send(any(HttpRequest.class), any())).thenReturn(httpResponse);
         //Service call
-        sendGridMailer.send(new EventAndOrganizationId(1, 2), "Test", "TestEmail", List.<String>of(), "TestSubject", "Test", Optional.empty(), ArrayUtils.toArray());
+        sendGridMailer.send(new EventAndOrganizationId(1, 2), "Test", "TestEmail", List.of(), "TestSubject", "Test", Optional.empty(), ArrayUtils.toArray());
         //Verify
         verify(configurationManager).getFor(anySet(), any(ConfigurationLevel.class));
-        verifyNoMoreInteractions(configurationManager);
+        verify(client).send(any(HttpRequest.class), any());
+        verifyNoMoreInteractions(configurationManager, client);
+    }
+
+    private HttpResponse<Object> createMockHttpResponse() {
+        return new HttpResponse<>() {
+            @Override
+            public int statusCode() {
+                return 200;
+            }
+
+            @Override
+            public HttpRequest request() {
+                return null;
+            }
+
+            @Override
+            public Optional<HttpResponse<Object>> previousResponse() {
+                return Optional.empty();
+            }
+
+            @Override
+            public HttpHeaders headers() {
+                return null;
+            }
+
+            @Override
+            public Object body() {
+                return null;
+            }
+
+            @Override
+            public Optional<SSLSession> sslSession() {
+                return Optional.empty();
+            }
+
+            @Override
+            public URI uri() {
+                return null;
+            }
+
+            @Override
+            public HttpClient.Version version() {
+                return null;
+            }
+        };
     }
 }

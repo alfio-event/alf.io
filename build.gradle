@@ -163,7 +163,6 @@ dependencies {
     compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
     compile 'org.imgscalr:imgscalr-lib:4.2'
     compile 'org.aspectj:aspectjweaver:1.9.4'
-    compile group: 'com.sendgrid', name: 'sendgrid-java', version: '4.4.1'
 
     compile "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
 

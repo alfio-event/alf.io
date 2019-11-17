@@ -1,16 +1,16 @@
 /**
  * This file is part of alf.io.
- *
+ * <p>
  * alf.io is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p>
  * alf.io is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -18,89 +18,85 @@ package alfio.manager.system;
 
 import alfio.model.EventAndOrganizationId;
 import alfio.model.system.ConfigurationKeys;
-import com.sendgrid.Method;
-import com.sendgrid.Request;
-import com.sendgrid.SendGrid;
-import com.sendgrid.helpers.mail.Mail;
-import com.sendgrid.helpers.mail.objects.Attachments;
-import com.sendgrid.helpers.mail.objects.Content;
-import com.sendgrid.helpers.mail.objects.Email;
-import com.sendgrid.helpers.mail.objects.Personalization;
+import alfio.util.HttpUtils;
+import alfio.util.Json;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.http.MediaType;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Log4j2
 @AllArgsConstructor
 public class SendGridMailer implements Mailer {
-    private static final String ENDPOINT = "mail/send";
+
+    private final HttpClient client;
 
     private final ConfigurationManager configurationManager;
 
     @Override
     public void send(final EventAndOrganizationId event, final String fromName, final String to, final List<String> cc, final String subject, final String text, final Optional<String> html, final Attachment... attachment) {
-        //Get config
         final var config = configurationManager.getFor(Set.of(ConfigurationKeys.SENDGRID_API_KEY, ConfigurationKeys.SENDGRID_FROM, ConfigurationKeys.MAIL_REPLY_TO), ConfigurationLevel.event(event));
-        //Prepare email body
+        final var from = config.get(ConfigurationKeys.SENDGRID_FROM).getRequiredValue();
+        final var personalizations = createPersonalizations(to, cc, subject);
+        final var contents = createContents(text, html);
+        final var payload = new HashMap<String, Object>();
+        if (ArrayUtils.isNotEmpty(attachment)) {
+            addAttachments(payload, attachment);
+        }
+        payload.put("from", Map.of("email", from, "name", fromName));
+        payload.put("personalizations", personalizations);
+        payload.put("content", contents);
+        //prepare request
+        final var body = Json.GSON.toJson(payload);
+        final var request = HttpRequest.newBuilder(URI.create("https://api.sendgrid.com/v3/mail/send"))
+            .header(HttpUtils.AUTHORIZATION, String.format("Bearer %s", config.get(ConfigurationKeys.SENDGRID_API_KEY).getRequiredValue()))
+            .header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_JSON)
+            .POST(HttpRequest.BodyPublishers.ofString(body)).build();
         try {
-            final var body = prepareEmail(to, cc, subject, text, html, config, attachment);
-            //prepare request
-            final var request = new Request();
-            request.setMethod(Method.POST);
-            request.setEndpoint(ENDPOINT);
-            request.setBody(body);
-            final var sendGrid = new SendGrid(config.get(ConfigurationKeys.SENDGRID_API_KEY).getRequiredValue());
-            final var response = sendGrid.api(request);
-            if (!isSuccessful(response.getStatusCode())) {
-                log.warn("sending email was not successful: responseCode {}, responseBody {}", response.getStatusCode(), response.getBody());
-                throw new IllegalStateException(String.format("Attempt to send a message failed. Result is: %d", response.getStatusCode()));
+            HttpResponse<Void> response = client.send(request, HttpResponse.BodyHandlers.discarding());
+            if (!HttpUtils.callSuccessful(response)) {
+                log.warn("sending email was not successful: {} ", response);
+                throw new IllegalStateException("Attempt to send a message failed. Result is: " + response.statusCode());
             }
         } catch (IOException e) {
-            log.error("Unexpected exception during email sending", e);
+            log.warn("error while sending email", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("error while sending email", e);
         }
     }
 
-    private String prepareEmail(final String to, final List<String> cc, final String subject, final String text, final Optional<String> html, final Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> config, final Attachment[] attachment) throws IOException {
-        final var from = new Email(config.get(ConfigurationKeys.SENDGRID_FROM).getRequiredValue());
-        final var toEmail = new Email(to);
-        final var textContent = new Content(MediaType.TEXT_PLAIN_VALUE, text);
-        final var personalization = new Personalization();
-        personalization.addTo(toEmail);
-        personalization.setSubject(subject);
+    private List<Map<String, Object>> createPersonalizations(final String to, final List<String> cc, final String subject) {
+        final var recipients = new ArrayList<>();
+        recipients.add(Map.of("email", to));
         if (CollectionUtils.isNotEmpty(cc)) {
-            cc.stream()
-                .map(Email::new)
-                .forEach(personalization::addCc);
+            recipients.addAll(cc.stream().map(email -> Map.of("email", email)).collect(Collectors.toList()));
         }
-        final var mail = new Mail();
-        mail.setFrom(from);
-        mail.addContent(textContent);
-        mail.addPersonalization(personalization);
-        if (html != null) {
-            html.ifPresent(htmlContent -> mail.addContent(new Content(MediaType.TEXT_HTML_VALUE, htmlContent)));
-
-        }
-        if (ArrayUtils.isNotEmpty(attachment)) {
-            Arrays.stream(attachment)
-                .map(att -> new Attachments.Builder(att.getFilename(), new ByteArrayInputStream(att.getSource()))
-                    .withContentId(att.getIdentifier().name())
-                    .withType(att.getContentType()).build()).forEach(mail::addAttachments);
-        }
-        try {
-            return mail.build();
-        } catch (IOException e) {
-            log.error("Unexpected exception during email preparation", e);
-            throw e;
-        }
+        return List.of(Map.of("to", recipients, "subject", subject));
     }
 
-    private boolean isSuccessful(int code) {
-        return code >= 200 && code < 300;
+    private List<Map<String, String>> createContents(final String text, final Optional<String> html) {
+        final var contents = new ArrayList<Map<String, String>>();
+        contents.add(Map.of("type", MediaType.TEXT_PLAIN_VALUE, "value", text));
+        if (html != null) {
+            html.ifPresent(htmlContent -> contents.add(Map.of("type", MediaType.TEXT_HTML_VALUE, "value", htmlContent)));
+        }
+        return contents;
+    }
+
+    private void addAttachments(final Map<String, Object> payload, final Attachment[] attachment) {
+        final var attachments = Stream.of(attachment)
+            .map(attach -> Map.of("filename", attach.getFilename(), "content", attach.getSource(), "content_id", attach.getIdentifier().name(), "type", attach.getContentType())).collect(Collectors.toList());
+        payload.put("attachments", attachments);
     }
 }

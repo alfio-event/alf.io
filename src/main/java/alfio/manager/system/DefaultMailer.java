@@ -43,7 +43,7 @@ public class DefaultMailer implements Mailer {
         mailers.put("smtp", defaultMailer);
         mailers.put("mailgun", new MailgunMailer(httpClient, configurationManager));
         mailers.put("mailjet", new MailjetMailer(httpClient, configurationManager));
-        mailers.put("sendgrid", new SendGridMailer(configurationManager));
+        mailers.put("sendgrid", new SendGridMailer(httpClient, configurationManager));
         mailers.put("disabled", new MockMailer(configurationManager, environment));
     }
 
