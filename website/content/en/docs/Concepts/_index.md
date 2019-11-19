@@ -6,6 +6,4 @@ description: >
   What does Alf.io do, and how it can help you 
 ---
 
-{{% pageinfo %}}
-This section is WIP. 
-{{% /pageinfo %}}
+{{% wip %}}
