@@ -74,4 +74,6 @@ If you've found a problem in the docs, but you're not sure how to fix it yoursel
 * [Hugo documentation](https://gohugo.io/documentation/): Comprehensive reference for Hugo.
 * [Github Hello World!](https://guides.github.com/activities/hello-world/): A basic introduction to GitHub concepts and workflow.
 
+## Credits
 
+this page is based on the [Docsy's example project](https://github.com/google/docsy-example) contribution guidelines
