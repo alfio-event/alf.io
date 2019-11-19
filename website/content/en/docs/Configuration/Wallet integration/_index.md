@@ -1,6 +1,7 @@
 ---
 title: "Apple(tm) Wallet Integration"
-linkTitle: "Apple(tm) Wallet Integration"
+linkTitle: "Apple(tm) Wallet"
+weight: 5
 description: >
   How to generate Apple(tm) passes for your tickets
 ---
