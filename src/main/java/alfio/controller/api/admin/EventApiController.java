@@ -38,6 +38,7 @@ import alfio.repository.SponsorScanRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.util.*;
 import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
@@ -549,7 +550,7 @@ public class EventApiController {
     @PostMapping("/events/{eventName}/pending-payments/bulk-confirmation")
     public List<Triple<Boolean, String, String>> bulkConfirmation(@PathVariable("eventName") String eventName,
                                                                   Principal principal,
-                                                                  @RequestBody UploadBase64FileModification file) throws IOException {
+                                                                  @RequestBody UploadBase64FileModification file) throws IOException, CsvException {
 
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream()); CSVReader reader = new CSVReader(isr)) {
             Event event = loadEvent(eventName, principal);

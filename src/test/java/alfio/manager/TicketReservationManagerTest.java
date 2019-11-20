@@ -349,7 +349,7 @@ class TicketReservationManagerTest {
         when(ownerChangeTextBuilder.generate(eq(modified))).thenReturn("Hello, world");
         when(original.getUserLanguage()).thenReturn(USER_LANGUAGE);
         trm.updateTicketOwner(original, Locale.ENGLISH, event, form, (a) -> null, ownerChangeTextBuilder, Optional.empty());
-        verifyZeroInteractions(messageSource);
+        verifyNoInteractions(messageSource);
     }
 
     @Test

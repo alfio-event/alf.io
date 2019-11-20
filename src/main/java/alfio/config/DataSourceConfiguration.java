@@ -39,6 +39,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.extern.log4j.Log4j2;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
@@ -136,14 +137,13 @@ public class DataSourceConfiguration {
 
     @Bean
     public Flyway migrator(Environment env, PlatformProvider platform, DataSource dataSource) {
-        Flyway migration = new Flyway();
-        migration.setDataSource(dataSource);
-
-        migration.setValidateOnMigrate(false);
-        migration.setTarget(MigrationVersion.LATEST);
-        migration.setOutOfOrder(true);
-
-        migration.setLocations("alfio/db/PGSQL/");
+        var configuration = new FluentConfiguration()
+            .dataSource(dataSource)
+            .validateOnMigrate(false)
+            .target(MigrationVersion.LATEST)
+            .outOfOrder(true)
+            .locations("alfio/db/PGSQL/");
+        Flyway migration = new Flyway(configuration);
         migration.migrate();
         return migration;
     }

@@ -25,10 +25,12 @@ import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryFactory;
-import org.flywaydb.core.api.migration.spring.BaseSpringJdbcMigration;
+import org.flywaydb.core.api.migration.BaseJavaMigration;
+import org.flywaydb.core.api.migration.Context;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
@@ -39,10 +41,19 @@ import java.util.List;
 
 import static alfio.util.Wrappers.optionally;
 
-public class V22_1_14_8__MigrateMailchimp extends BaseSpringJdbcMigration {
+public class V22_1_14_8__MigrateMailchimp extends BaseJavaMigration {
+
+    private static String getMailChimpScript() {
+        try (InputStream is = new ClassPathResource("/alfio/extension/mailchimp.js").getInputStream()){
+            return StreamUtils.copyToString(is, StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new IllegalStateException("cannot read mailchimp file", e);
+        }
+    }
 
     @Override
-    public void migrate(JdbcTemplate jdbcTemplate) {
+    public void migrate(Context context) throws Exception {
+        var jdbcTemplate = new JdbcTemplate(new SingleConnectionDataSource(context.getConnection(), true));
         Integer enabledCount = jdbcTemplate.queryForObject("select count(*) from plugin_configuration where plugin_id = 'alfio.mailchimp' and conf_name = 'enabled' and conf_value = 'true'", Integer.class);
         if (enabledCount == null || enabledCount == 0) {
             return;
@@ -68,14 +79,6 @@ public class V22_1_14_8__MigrateMailchimp extends BaseSpringJdbcMigration {
                     .ifPresent(orgId -> extensionRepository.insertSettingValue("apiKey".equals(cv.name) ? apiKeyId : listIdId, "-" + orgId + "-" + cv.eventId, cv.value));
 
             }
-        }
-    }
-
-    private static String getMailChimpScript() {
-        try (InputStream is = new ClassPathResource("/alfio/extension/mailchimp.js").getInputStream()){
-            return StreamUtils.copyToString(is, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new IllegalStateException("cannot read mailchimp file", e);
         }
     }
 

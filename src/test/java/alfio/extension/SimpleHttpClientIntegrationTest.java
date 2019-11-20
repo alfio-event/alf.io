@@ -16,7 +16,6 @@
  */
 package alfio.extension;
 
-import alfio.util.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -91,12 +90,13 @@ public class SimpleHttpClientIntegrationTest {
         var res = simpleHttpClient.get("http://localhost:4243/simple-get-json");
 
         var body = res.getJsonBody(Map.class);
-        Assert.assertTrue(body instanceof Map);
+        Assert.assertNotNull(body);
         Assert.assertTrue(body.containsKey("key"));
         Assert.assertEquals("value", body.get("key"));
 
+        @SuppressWarnings("unchecked")
         var body2 = (Map<String, String>) res.getJsonBody();
-        Assert.assertTrue(body2 instanceof Map);
+        Assert.assertNotNull(body2);
         Assert.assertTrue(body2.containsKey("key"));
         Assert.assertEquals("value", body2.get("key"));
     }

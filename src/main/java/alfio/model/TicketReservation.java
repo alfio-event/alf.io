@@ -21,7 +21,7 @@ import alfio.util.Json;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
-import lombok.experimental.Wither;
+import lombok.With;
 import org.apache.commons.lang3.StringUtils;
 
 import java.math.BigDecimal;
@@ -55,7 +55,7 @@ public class TicketReservation implements PriceContainer {
     private final String invoiceNumber;
     @JsonIgnore
     private final String invoiceModel;
-    @Wither
+    @With
     private final PriceContainer.VatStatus vatStatus;
     private final String vatNr;
     private final String vatCountryCode;

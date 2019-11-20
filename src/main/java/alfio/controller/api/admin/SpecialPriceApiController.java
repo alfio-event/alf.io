@@ -21,6 +21,7 @@ import alfio.model.SpecialPrice;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.modification.UploadBase64FileModification;
 import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -64,7 +65,7 @@ public class SpecialPriceApiController {
     public ResponseEntity<List<SendCodeModification>> linkAssigneeToCodes(@PathVariable("eventName") String eventName,
                                                                          @PathVariable("categoryId") int categoryId,
                                                                          @RequestBody UploadBase64FileModification file,
-                                                                         Principal principal) throws IOException {
+                                                                         Principal principal) throws IOException, CsvException {
 
         Validate.isTrue(StringUtils.isNotEmpty(eventName));
         try(InputStreamReader isr = new InputStreamReader(file.getInputStream()); CSVReader reader = new CSVReader(isr)) {
