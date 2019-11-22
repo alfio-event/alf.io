@@ -49,3 +49,36 @@ Enable this flag if you want to generate only invoices. The default is to let th
 
 ### Enable the support for Italian e-invoicing
 Enable this flag if your business is based in Italy and you must comply with the E-Invoicing regulation
+
+## How it works
+
+### Reservation Process
+
+Depending on the value of the [Generate only Invoice](#generate-only-invoice) flag, the customer might have the possibility to choose whether or not they want to generate an invoice:
+
+![I want an invoice](/img/configuration/invoice/standard/003.png)
+
+Once they fill up the billing data and confirm, the Invoice Details will be saved
+
+![Invoice Details](/img/configuration/invoice/standard/004.png)
+
+they can check the invoice details and update if needed.
+
+Once the reservation is complete:
+
+- The invoice will be attached to the confirmation email
+- The customer will be able to download the invoice from the confirmation page
+
+### Backoffice
+
+#### Invoice management for reservation
+
+If you want to regenerate/download an invoice for a reservation, head to the Reservation Detail, and click on the "Billing Documents" tab
+
+![Download Single Invoice](/img/configuration/invoice/standard/005.png)
+
+#### Download all invoices for an event
+
+You can download all the invoices generated for an event, by selecting _Download_ -> _all invoices_ on the event detail page
+
+![Download All Invoices](/img/configuration/invoice/standard/006.png)
