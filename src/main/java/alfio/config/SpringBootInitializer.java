@@ -17,13 +17,10 @@
 package alfio.config;
 
 import com.openhtmltopdf.util.XRLog;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.ServletWebServerFactoryAutoConfiguration;
-import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Profiles;
@@ -36,12 +33,13 @@ import java.util.logging.Level;
 
 import static org.springframework.web.context.support.WebApplicationContextUtils.getRequiredWebApplicationContext;
 
-@SpringBootConfiguration
-@ImportAutoConfiguration({
-    ServletWebServerFactoryAutoConfiguration.class,
-    WebMvcAutoConfiguration.class,
-    DataSourceTransactionManagerAutoConfiguration.class
-})
+@EnableAutoConfiguration(exclude = {org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.session.SessionAutoConfiguration.class,
+    org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration.class})
+@Configuration
 @Profile(Initializer.PROFILE_SPRING_BOOT)
 public class SpringBootInitializer {
 
