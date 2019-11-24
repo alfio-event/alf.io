@@ -1,7 +1,7 @@
 ---
 title: "How to limit access to a public ticket Category"
 linkTitle: "Limit access to a public Category"
-weight: 8
+weight: 4
 description: >
   How to limit access to a public Category to a group of members
 ---

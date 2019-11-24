@@ -1,7 +1,7 @@
 ---
 title: "Import existing attendees"
 linkTitle: "Import existing attendees"
-weight: 2
+weight: 5
 description: >
   How to import a list of existing attendees into Alf.io
 ---
