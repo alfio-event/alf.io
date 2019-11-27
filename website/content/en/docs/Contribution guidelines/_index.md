@@ -53,7 +53,7 @@ If you want to run your own local Hugo server to preview your changes as you wor
 1. Fork the [Alf.io repo](https://github.com/alfio-event/alf.io) repo into your own project, then create a local copy using `git clone`. Don’t forget to use `--recurse-submodules` or you won’t pull down some of the code you need to generate a working site.
 
     ```
-    git clone --recurse-submodules --depth 1 https://github.com/google/docsy-example.git
+    git clone --recurse-submodules --depth 1 https://github.com/alfio-event/alf.io.git
     ```
 1. navigate to the "website" directory
     ```
