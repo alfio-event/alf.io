@@ -40,7 +40,7 @@
             });
         }])
         .component('groupsContainer', {
-            controller: ['$stateParams', '$state', ContainerCtrl],
+            controller: ['$stateParams', '$state', '$scope', ContainerCtrl],
             templateUrl: '../resources/js/admin/feature/group/all.html',
             bindings: {
                 organizations: '<'
@@ -63,8 +63,15 @@
         }).service('GroupService', ['$http', 'HttpErrorHandler', '$q', 'NotificationHandler', GroupService]);
 
 
-    function ContainerCtrl($stateParams, $state) {
+    function ContainerCtrl($stateParams, $state, $scope) {
         var ctrl = this;
+
+        $scope.$watch(function(){
+            return $stateParams.orgId
+        }, function(newVal, oldVal){
+            var orgId = parseInt(newVal, 10);
+            ctrl.organization = _.find(ctrl.organizations, function(org) {return org.id === orgId});
+        });
 
         ctrl.$onInit = function() {
             if(ctrl.organizations && ctrl.organizations.length > 0) {
