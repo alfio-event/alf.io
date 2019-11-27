@@ -20,7 +20,7 @@
             </tr>
             <tr ng-repeat="ext in $ctrl.extensions">
                 <td>
-                    <span class="path text-muted">System</span><span class="path text-muted" ng-repeat="path in ext.translatedPath">&gt; {{path}}</span>
+                    <span class="path text-muted">System</span><span class="path text-muted" ng-repeat="path in ext.translatedPath track by $index">&gt; {{path}}</span>
                 </td>
                 <td>{{ext.name}}</td>
                 <td><i class="fa" ng-class="{'fa-check-circle text-success': ext.enabled, 'fa-ban text-danger': !ext.enabled }"></i></td>
