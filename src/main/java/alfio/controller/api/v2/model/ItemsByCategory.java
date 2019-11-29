@@ -26,6 +26,7 @@ import java.util.List;
 public class ItemsByCategory {
 
     private final List<TicketCategory> ticketCategories;
+    private final List<TicketCategory> expiredCategories;
     private final List<AdditionalService> additionalServices;
 
     private final boolean waitingList;

@@ -64,6 +64,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.system.ConfigurationKeys.*;
+import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toList;
 
 
@@ -275,7 +276,7 @@ public class EventApiV2Controller {
         //
         return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
 
-            var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION), ConfigurationLevel.event(event));
+            var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, DISPLAY_EXPIRED_CATEGORIES), ConfigurationLevel.event(event));
             var ticketCategoryLevelConfiguration = configurationManager.getAllCategoriesAndValueWith(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
             var messageSource = messageSourceManager.getMessageSourceForEvent(event);
             var appliedPromoCode = promoCodeRequestManager.checkCode(event, code);
@@ -313,7 +314,7 @@ public class EventApiV2Controller {
             var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
 
             boolean displayTicketsLeft = configurations.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault(false);
-            var converted = valid.stream()
+            var categoriesByExpiredFlag = saleableTicketCategories.stream()
                 .map(stc -> {
                     var description = applyCommonMark(ticketCategoryDescriptions.getOrDefault(stc.getId(), Collections.emptyMap()));
                     var expiration = Formatters.getFormattedDate(event, stc.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
@@ -321,7 +322,7 @@ public class EventApiV2Controller {
                     return new TicketCategory(stc, description, inception, expiration, displayTicketsLeft && !stc.isAccessRestricted());
                 })
                 .sorted(Comparator.comparingInt(TicketCategory::getOrdinal))
-                .collect(Collectors.toList());
+                .collect(partitioningBy(TicketCategory::isExpired));
 
 
             var promoCode = Optional.of(appliedPromoCode).filter(ValidatedResponse::isSuccess)
@@ -360,11 +361,11 @@ public class EventApiV2Controller {
             List<SaleableTicketCategory> unboundedCategories = saleableTicketCategories.stream().filter(waitingQueueTargetCategory).collect(Collectors.toList());
             var tcForWaitingList = unboundedCategories.stream().map(stc -> new ItemsByCategory.TicketCategoryForWaitingList(stc.getId(), stc.getName())).collect(toList());
             //
+            var activeCategories = categoriesByExpiredFlag.get(false);
+            var expiredCategories = configurations.get(DISPLAY_EXPIRED_CATEGORIES).getValueAsBooleanOrDefault(true) ? categoriesByExpiredFlag.get(true) : List.<TicketCategory>of();
 
-            return new ResponseEntity<>(new ItemsByCategory(converted, additionalServicesRes, displayWaitingQueueForm, preSales, tcForWaitingList), getCorsHeaders(), HttpStatus.OK);
-        }).orElseGet(() -> {
-            return ResponseEntity.notFound().headers(getCorsHeaders()).build();
-        });
+            return new ResponseEntity<>(new ItemsByCategory(activeCategories, expiredCategories, additionalServicesRes, displayWaitingQueueForm, preSales, tcForWaitingList), getCorsHeaders(), HttpStatus.OK);
+        }).orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
 
     private static int getMaxAmountOfTicketsPerReservation(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> eventLevelConf,
