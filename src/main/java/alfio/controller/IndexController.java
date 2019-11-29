@@ -160,7 +160,7 @@ public class IndexController {
             try (var os = response.getOutputStream()) {
                 var idx = INDEX_PAGE.cloneNode(true);
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
-                os.write(idx.getOuterHTML().getBytes(StandardCharsets.UTF_8));
+                os.write(HtmlSerializer.serialize(idx).getBytes(StandardCharsets.UTF_8));
             }
         }
     }
@@ -208,7 +208,7 @@ public class IndexController {
             }
         });
 
-        return eventOpenGraph.getOuterHTML().getBytes(StandardCharsets.UTF_8);
+        return HtmlSerializer.serialize(eventOpenGraph).getBytes(StandardCharsets.UTF_8);
     }
 
     private static Element buildMetaTag(String propertyValue, String contentValue) {

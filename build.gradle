@@ -1,3 +1,4 @@
+import ch.digitalfondue.jfiveparse.HtmlSerializer
 import ch.digitalfondue.jfiveparse.NodeMatcher
 import ch.digitalfondue.jfiveparse.Parser
 import ch.digitalfondue.jfiveparse.Selector
@@ -28,7 +29,7 @@ buildscript {
 
         //this is for processing the index.html at compile time
         classpath "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
-        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.6.0"
+        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.6.2"
         //
     }
 
@@ -133,7 +134,7 @@ dependencies {
     /**/
     compile "com.openhtmltopdf:openhtmltopdf-core:1.0.1"
     compile "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.1"
-    compile "ch.digitalfondue.jfiveparse:jfiveparse:0.6.0"
+    compile "ch.digitalfondue.jfiveparse:jfiveparse:0.6.2"
     /**/
     compile "com.google.zxing:core:3.4.0"
     compile "com.google.zxing:javase:3.4.0"
@@ -264,7 +265,7 @@ processResources {
         })
 
         final alfioPublicIndex = new File((File) it.destinationDir, "alfio-public-frontend-index.html")
-        alfioPublicIndex.write(indexDoc.getOuterHTML(), "UTF-8", false)
+        alfioPublicIndex.write(HtmlSerializer.serialize(indexDoc), "UTF-8", false)
     }
 }
 
