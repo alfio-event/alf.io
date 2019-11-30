@@ -60,4 +60,7 @@ public interface OrganizationRepository {
         " union " +
         "(select * from organization where 'ROLE_ADMIN' in (select role from ba_user inner join authority on ba_user.username = authority.username where ba_user.username = :username) and id = :orgId)")
     Optional<Organization> findOrganizationForUser(@Bind("username") String username, @Bind("orgId") int orgId);
+
+    @Query("delete from organization where id in(:organizationIds) and id not in (select distinct(org_id) from j_user_organization where org_id in(:organizationIds))")
+    int deleteOrganizationsIfEmpty(@Bind("organizationIds") List<Integer> organizationIds);
 }

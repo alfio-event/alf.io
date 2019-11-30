@@ -20,23 +20,16 @@ import alfio.config.Initializer;
 import alfio.manager.*;
 import alfio.manager.system.AdminJobExecutor;
 import alfio.manager.system.AdminJobManager;
-import alfio.manager.system.ConfigurationManager;
-import alfio.manager.user.UserManager;
-import alfio.model.system.ConfigurationKeys;
-import alfio.model.user.User;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -59,14 +52,10 @@ public class Jobs {
     private static final int THIRTY_MINUTES = 30 * ONE_MINUTE;
 
     private final AdminReservationRequestManager adminReservationRequestManager;
-    private final ConfigurationManager configurationManager;
-    private final Environment environment;
-    private final EventManager eventManager;
     private final FileUploadManager fileUploadManager;
     private final NotificationManager notificationManager;
     private final SpecialPriceTokenGenerator specialPriceTokenGenerator;
     private final TicketReservationManager ticketReservationManager;
-    private final UserManager userManager;
     private final WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor;
     private final AdminJobManager adminJobManager;
 
@@ -83,23 +72,6 @@ public class Jobs {
         }
     }
 
-
-    //run each hour
-    @Scheduled(cron = "0 0 0/1 * * ?")
-    public void cleanupForDemoMode() {
-        if (environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
-            log.trace("running job cleanupForDemoMode");
-            try {
-                int expirationDate = configurationManager.getForSystem(ConfigurationKeys.DEMO_MODE_ACCOUNT_EXPIRATION_DAYS).getValueAsIntOrDefault(20);
-                List<Integer> userIds = userManager.disableAccountsOlderThan(DateUtils.addDays(new Date(), -expirationDate), User.Type.DEMO);
-                if (!userIds.isEmpty()) {
-                    eventManager.disableEventsFromUsers(userIds);
-                }
-            } finally {
-                log.trace("end job cleanupForDemoMode");
-            }
-        }
-    }
 
     @Scheduled(fixedRate = THIRTY_SECONDS)
     public void generateSpecialPriceCodes() {

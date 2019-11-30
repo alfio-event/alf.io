@@ -25,10 +25,13 @@ import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.user.UserManager;
+import alfio.repository.EventDeleterRepository;
+import alfio.repository.EventRepository;
 import alfio.repository.system.AdminJobQueueRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
+import alfio.repository.user.join.UserOrganizationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
@@ -134,7 +137,7 @@ public class DataSourceConfiguration {
     }
 
     @Bean
-    public Flyway migrator(Environment env, PlatformProvider platform, DataSource dataSource) {
+    public Flyway migrator(DataSource dataSource) {
         Flyway migration = new Flyway();
         migration.setDataSource(dataSource);
 
@@ -192,22 +195,18 @@ public class DataSourceConfiguration {
     @DependsOn("migrator")
     @Profile("!" + Initializer.PROFILE_DISABLE_JOBS)
     public Jobs jobs(AdminReservationRequestManager adminReservationRequestManager,
-                     ConfigurationManager configurationManager,
-                     Environment environment,
-                     EventManager eventManager,
                      FileUploadManager fileUploadManager,
                      NotificationManager notificationManager,
                      SpecialPriceTokenGenerator specialPriceTokenGenerator,
-                     UserManager userManager,
                      WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor,
                      TicketReservationManager ticketReservationManager,
                      AdminJobQueueRepository adminJobQueueRepository,
                      PlatformTransactionManager platformTransactionManager
                      ) {
-        return new Jobs(adminReservationRequestManager, configurationManager, environment, eventManager, fileUploadManager,
-            notificationManager, specialPriceTokenGenerator, ticketReservationManager, userManager,
-            waitingQueueSubscriptionProcessor, adminJobManager(adminJobQueueRepository, platformTransactionManager, ticketReservationManager));
-
+        return new Jobs(adminReservationRequestManager, fileUploadManager,
+            notificationManager, specialPriceTokenGenerator, ticketReservationManager,
+            waitingQueueSubscriptionProcessor,
+            adminJobManager(adminJobQueueRepository, platformTransactionManager, ticketReservationManager));
     }
 
     @Bean
@@ -220,6 +219,18 @@ public class DataSourceConfiguration {
     @Bean
     ReservationJobExecutor reservationJobExecutor(TicketReservationManager ticketReservationManager) {
         return new ReservationJobExecutor(ticketReservationManager);
+    }
+
+    @Bean
+    @Profile(Initializer.PROFILE_DEMO)
+    DemoModeDataManager demoModeDataManager(UserRepository userRepository,
+                                            UserOrganizationRepository userOrganizationRepository,
+                                            OrganizationRepository organizationRepository,
+                                            EventDeleterRepository eventDeleterRepository,
+                                            EventRepository eventRepository,
+                                            ConfigurationManager configurationManager) {
+        return new DemoModeDataManager(userRepository, userOrganizationRepository, organizationRepository,
+            eventDeleterRepository, eventRepository, configurationManager);
     }
 
     /**

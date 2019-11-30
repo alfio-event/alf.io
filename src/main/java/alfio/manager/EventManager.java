@@ -984,52 +984,7 @@ public class EventManager {
 	public void deleteEvent(int eventId, String username) {
 		final Event event = eventRepository.findById(eventId);
 		checkOwnership(event, username, event.getOrganizationId());
-		
-		eventDeleterRepository.deleteWaitingQueue(eventId);
-
-		eventDeleterRepository.deleteWhitelistedTickets(eventId);
-		eventDeleterRepository.deleteGroupLinks(eventId);
-		
-		eventDeleterRepository.deleteConfigurationEvent(eventId);
-		eventDeleterRepository.deleteConfigurationTicketCategory(eventId);
-		
-		eventDeleterRepository.deleteEmailMessage(eventId);
-		
-		eventDeleterRepository.deleteTicketFieldValue(eventId);
-		eventDeleterRepository.deleteFieldDescription(eventId);
-
-        eventDeleterRepository.deleteAdditionalServiceFieldValue(eventId);
-        eventDeleterRepository.deleteAdditionalServiceDescriptions(eventId);
-        eventDeleterRepository.deleteAdditionalServiceItems(eventId);
-
-		eventDeleterRepository.deleteTicketFieldConfiguration(eventId);
-
-        eventDeleterRepository.deleteAdditionalServices(eventId);
-
-		eventDeleterRepository.deleteEventMigration(eventId);
-		eventDeleterRepository.deleteSponsorScan(eventId);
-		eventDeleterRepository.deleteTicket(eventId);
-		eventDeleterRepository.deleteTransactions(eventId);
-        eventDeleterRepository.deleteBillingDocuments(eventId);
-		eventDeleterRepository.deleteReservation(eventId);
-
-		eventDeleterRepository.deleteSpecialPrice(eventId);
-		eventDeleterRepository.deletePromoCode(eventId);
-		eventDeleterRepository.deleteTicketCategoryText(eventId);
-		eventDeleterRepository.deleteTicketCategory(eventId);
-		eventDeleterRepository.deleteEventDescription(eventId);
-
-        eventDeleterRepository.deleteResources(eventId);
-        eventDeleterRepository.deleteScanAudit(eventId);
-		
-		eventDeleterRepository.deleteEvent(eventId);
-		
-	}
-
-    public void disableEventsFromUsers(List<Integer> userIds) {
-        if(!userIds.isEmpty()) {
-            eventRepository.disableEventsForUsers(userIds);
-        }
+        eventDeleterRepository.deleteAllForEvent(eventId);
     }
 
     public Optional<TicketCategory> getOptionalByIdAndActive(int ticketCategoryId, int eventId) {
