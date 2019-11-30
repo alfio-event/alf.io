@@ -177,8 +177,8 @@ public interface EventRepository {
     @Query("select available_seats from events_statistics where id = :eventId")
     Integer countExistingTickets(@Bind("eventId") int eventId);
 
-    @Query("update event set status = 'DISABLED' where org_id in (select org_id from j_user_organization where user_id in (:userIds))")
-    int disableEventsForUsers(@Bind("userIds") List<Integer> userIds);
+    @Query(value = "update event set status = 'DISABLED' where org_id in (select org_id from j_user_organization where user_id in (:userIds)) returning id", type = QueryType.MODIFYING_WITH_RETURN)
+    List<Integer> disableEventsForUsers(@Bind("userIds") Collection<Integer> userIds);
 
     @Query("select coalesce(sum(final_price_cts),0) from tickets_reservation where event_id_fk = :eventId and status = 'COMPLETE'")
     long getGrossIncome(@Bind("eventId") int eventId);

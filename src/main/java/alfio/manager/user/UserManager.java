@@ -248,13 +248,9 @@ public class UserManager {
 
     public void deleteUser(int userId, String currentUsername) {
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
-        Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot commit suicide");
-
-        userRepository.deleteUserFromSponsorScan(userId);
-        userRepository.deleteUserFromOrganization(userId);
-        userRepository.deleteUser(userId);
+        Assert.isTrue(userId != currentUser.getId(), "sorry but you cannot delete your own account.");
+        userRepository.deleteUserAndReferences(userId);
     }
-
 
     public void enable(int userId, String currentUsername, boolean status) {
         User currentUser = userRepository.findEnabledByUsername(currentUsername).orElseThrow(IllegalArgumentException::new);
@@ -296,11 +292,4 @@ public class UserManager {
     }
 
 
-    public List<Integer> disableAccountsOlderThan(Date date, User.Type type) {
-        List<Integer> userIds = userRepository.findUserToDisableOlderThan(date, type);
-        if(!userIds.isEmpty()) {
-            userRepository.disableAccountsOlderThan(date, type);
-        }
-        return userIds;
-    }
 }

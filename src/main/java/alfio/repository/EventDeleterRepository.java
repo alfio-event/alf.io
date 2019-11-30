@@ -104,4 +104,34 @@ public interface EventDeleterRepository {
     @Query("delete from billing_document where event_id_fk = :eventId")
     int deleteBillingDocuments(@Bind("eventId") int eventId);
 
+    default void deleteAllForEvent(int eventId) {
+        deleteWaitingQueue(eventId);
+        deleteWhitelistedTickets(eventId);
+        deleteGroupLinks(eventId);
+        deleteConfigurationEvent(eventId);
+        deleteConfigurationTicketCategory(eventId);
+        deleteEmailMessage(eventId);
+        deleteTicketFieldValue(eventId);
+        deleteFieldDescription(eventId);
+        deleteAdditionalServiceFieldValue(eventId);
+        deleteAdditionalServiceDescriptions(eventId);
+        deleteAdditionalServiceItems(eventId);
+        deleteTicketFieldConfiguration(eventId);
+        deleteAdditionalServices(eventId);
+        deleteEventMigration(eventId);
+        deleteSponsorScan(eventId);
+        deleteTicket(eventId);
+        deleteTransactions(eventId);
+        deleteBillingDocuments(eventId);
+        deleteReservation(eventId);
+        deleteSpecialPrice(eventId);
+        deletePromoCode(eventId);
+        deleteTicketCategoryText(eventId);
+        deleteTicketCategory(eventId);
+        deleteEventDescription(eventId);
+        deleteResources(eventId);
+        deleteScanAudit(eventId);
+        deleteEvent(eventId);
+    }
+
 }
