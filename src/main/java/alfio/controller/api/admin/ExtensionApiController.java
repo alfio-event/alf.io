@@ -128,9 +128,11 @@ public class ExtensionApiController {
     //
     @GetMapping("/setting/system")
     public Map<Integer, List<ExtensionParameterMetadataAndValue>> getParametersFor(Principal principal) {
-        ensureAdmin(principal);
-        return extensionService.getConfigurationParametersFor("-", "-%", "SYSTEM")
-            .stream().collect(Collectors.groupingBy(ExtensionParameterMetadataAndValue::getExtensionId));
+        if(userManager.isAdmin(userManager.findUserByUsername(principal.getName()))) {
+            return extensionService.getConfigurationParametersFor("-", "-%", "SYSTEM")
+                .stream().collect(Collectors.groupingBy(ExtensionParameterMetadataAndValue::getExtensionId));
+        }
+        return Map.of();
     }
 
     @PostMapping("/setting/system/bulk-update")
