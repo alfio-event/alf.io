@@ -51,6 +51,11 @@ public class ConfigurationApiController {
         return configurationManager.loadAllSystemConfigurationIncludingMissing(principal.getName());
     }
 
+    @GetMapping("/basic-configuration-needed")
+    public boolean isBasicConfigurationNeeded() {
+        return configurationManager.isBasicConfigurationNeeded();
+    }
+
     @PostMapping(value = "/update")
     public boolean updateConfiguration(@RequestBody ConfigurationModification configuration) {
         configurationManager.saveSystemConfiguration(ConfigurationKeys.fromString(configuration.getKey()), configuration.getValue());
