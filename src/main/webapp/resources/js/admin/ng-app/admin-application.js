@@ -409,12 +409,16 @@
         return deferred.promise;
     };
 
-    admin.controller('MenuController', ['$scope', '$http', '$window', 'UtilsService', '$state', '$rootScope', 'EventService', function($scope, $http, $window, UtilsService, $state, $rootScope, EventService) {
+    admin.controller('MenuController', ['$scope', '$http', '$window', 'UtilsService', '$state', '$rootScope', 'EventService', 'MenuButtonService', function($scope, $http, $window, UtilsService, $state, $rootScope, EventService, MenuButtonService) {
         var ctrl = this;
         ctrl.menuCollapsed = true;
         ctrl.eventName = $state.params.eventName;
         $rootScope.$on('$stateChangeSuccess', function(event, toState, toParams) {
             ctrl.eventName = toParams.eventName;
+        });
+        $rootScope.$on('EventLoaded', function(_, event) {
+            ctrl.event = event;
+            MenuButtonService.configureMenu(ctrl);
         });
         ctrl.toggleCollapse = function(currentStatus) {
             ctrl.menuCollapsed = !currentStatus;
