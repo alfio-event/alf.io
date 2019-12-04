@@ -44,6 +44,7 @@ Now that you have deployed Raspbian on your microSD card, we are finally able to
 > Disclaimer: The instructions here do not replace the one provided with the hardware you bought. You should refer to them when assembling your own configuration.
 
 Here's the (very shortened) sequences of steps to follow:
+
 1. Be sure to have inserted the microSD card in the Raspberry PI;
 1. Mount your Touchscreen on top of the Raspberry as described [here](https://www.element14.com/community/docs/DOC-78156/l/raspberry-pi-7-touchscreen-display). This is the most delicate part, so take your time;
 1. Place everything in the case and tighten the screws;
@@ -89,13 +90,13 @@ This section is dedicated to more experienced users, that sometime might find mo
 
 ## Install Alf.io-PI
 
-Installing the software on a Raspberry Pi 3+ has been extremly simplified with the release of a script, that download and install all the necessary bits directly from the internet on your device.
+Installing the software on a Raspberry Pi 3B+ has been extremly simplified with the release of a script, that download and install all the necessary bits directly from the internet on your device.
 
 Just open a new terminal and paste the following line
 
-```
+```bash
 $ curl -L https://github.com/alfio-event/alf.io-PI/releases/download/v0.9.9/get-alfio-pi.sh | bash
-````
+```
 
 then, wait for the magic to happen. Once finished the install, please follow the on-screen instructions and configure your alf.io https address as well as your credentials. 
 
