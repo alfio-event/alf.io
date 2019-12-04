@@ -1071,7 +1071,7 @@
             scope: {},
             controllerAs: 'ctrl',
             templateUrl: '/resources/angular-templates/admin/partials/main/sidebar.html',
-            controller: ['$location', '$anchorScroll', '$scope', 'NotificationHandler', '$uibModal', function($location, $anchorScroll, $scope, NotificationHandler, $uibModal) {
+            controller: ['$location', '$anchorScroll', '$scope', 'MenuButtonService', function($location, $anchorScroll, $scope, MenuButtonService) {
                 var ctrl = this;
                 var toUnbind = [];
                 var detectCurrentView = function(state) {
@@ -1100,56 +1100,7 @@
                                     $rootScope.$emit('ReloadEvent');
                                 })
                             };
-                            ctrl.openFieldSelectionModal = function() {
-                                EventService.exportAttendees(ctrl.event);
-                            };
-                            ctrl.downloadSponsorsScan = function() {
-                                var pathName = $window.location.pathname;
-                                if(!pathName.endsWith("/")) {
-                                    pathName = pathName + "/";
-                                }
-                                $window.open(pathName+"api/events/"+ctrl.event.shortName+"/sponsor-scan/export");
-                            };
-                            ctrl.openWaitingQueueModal = function() {
-                                var modal = $uibModal.open({
-                                    size:'lg',
-                                    templateUrl: '/resources/angular-templates/admin/partials/event/fragment/download-waiting-queue.html',
-                                    backdrop: 'static',
-                                    controllerAs: 'ctrl',
-                                    controller: function($scope) {
-                                        var outCtrl = ctrl;
-                                        var ctrl = this;
-                                        $scope.format = 'excel';
-
-                                        $scope.download = function() {
-                                            var queryString = "format="+$scope.format;
-                                            var pathName = $window.location.pathname;
-                                            if(!pathName.endsWith("/")) {
-                                                pathName = pathName + "/";
-                                            }
-                                            $window.open(pathName+"api/event/" + event.event.shortName + "/waiting-queue/download?"+queryString);
-                                        }
-
-                                        ctrl.close = function() {
-                                            modal.close();
-                                        }
-                                    }
-                                });
-                            };
-                            ctrl.downloadInvoices = function() {
-                                EventService.countInvoices(ctrl.event.shortName).then(function (res) {
-                                    var count = res.data;
-                                    if(count > 0) {
-                                        var pathName = $window.location.pathname;
-                                        if(!pathName.endsWith("/")) {
-                                            pathName = pathName + "/";
-                                        }
-                                        $window.open(pathName+"api/events/"+ctrl.event.shortName+"/all-invoices");
-                                    } else {
-                                        NotificationHandler.showInfo("No invoices have been found.");
-                                    }
-                                });
-                            };
+                            MenuButtonService.configureMenu(ctrl);
                             ctrl.goToCategory = function(category) {
                                 ctrl.navigateTo('ticket-category-'+category.id);
                             };
