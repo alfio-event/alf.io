@@ -144,6 +144,14 @@
                                 <li data-ui-sref-active="active" {{^isOwner}}data-ng-if="!ctrl.event.expired"{{/isOwner}}><a data-ui-sref="events.single.checkIn({eventName: ctrl.eventName})" ng-click="ctrl.menuCollapsed = true"><i class="fa fa-check"></i> Check-in</a></li>
                             </ul>
                             <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
+                                <li class="navbar-header"><h4>Download</h4></li>
+                                <li role="menuitem"><a data-ng-click="ctrl.openFieldSelectionModal()"><i class="fa fa-users"></i> attendees' data</a></li>
+                                <li role="menuitem"><a data-ng-click="ctrl.openWaitingQueueModal()" ><i class="fa fa-group"></i> waiting list</a></li>
+                                <li role="menuitem"><a data-ng-click="ctrl.downloadSponsorsScan()" ><i class="fa fa-barcode"></i> sponsors scan</a></li>
+                                <li role="menuitem"><a data-ng-click="ctrl.downloadInvoices()" ><i class="fa fa-file-o"></i> all invoices</a></li>
+                            </ul>
+
+                            <ul class="nav navbar-nav visible-sm visible-xs" ng-if="ctrl.eventName">
                                 <li class="navbar-header"><h4>Status</h4></li>
                                 <li data-ui-sref-active="active" waiting-queue-display-counter="" data-event-name="ctrl.eventName" data-style-class="navbar-link"></li>
                                 <li data-ui-sref-active="active" pending-payments-link="" data-style-class="emulate-nav-pills-link" data-event-name="ctrl.eventName"></li>
