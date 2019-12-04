@@ -298,6 +298,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertTrue(body.isEmpty());
         ensureConfiguration();
 
+        {
+            Principal p = Mockito.mock(Principal.class);
+            Mockito.when(p.getName()).thenReturn(user);
+            assertTrue(usersApiController.getAllOrganizations(p).stream().anyMatch(o -> event.getOrganizationId() == o.getId()));
+            assertEquals(event.getOrganizationId(), usersApiController.getOrganization(event.getOrganizationId(), p).getId());
+        }
 
         //
         assertEquals(3, translationsApiController.getSupportedLanguages().size());
