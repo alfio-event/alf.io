@@ -45,9 +45,9 @@ public interface OrganizationRepository {
     @Query("update organization set name = :name, description = :description, email = :email where id = :id")
     int update(@Bind("id") int id, @Bind("name") String name, @Bind("description") String description, @Bind("email") String email);
 
-    @Query("(select organization.* from organization inner join j_user_organization on org_id = organization.id where j_user_organization.user_id = (select ba_user.id from ba_user where ba_user.username = :username)) " +
+    @Query("select * from ((select organization.* from organization inner join j_user_organization on org_id = organization.id where j_user_organization.user_id = (select ba_user.id from ba_user where ba_user.username = :username)) " +
         " union " +
-        "(select * from organization where 'ROLE_ADMIN' in (select role from ba_user inner join authority on ba_user.username = authority.username where ba_user.username = :username))")
+        "(select * from organization where 'ROLE_ADMIN' in (select role from ba_user inner join authority on ba_user.username = authority.username where ba_user.username = :username))) as found_users order by found_users.name, id")
     List<Organization> findAllForUser(@Bind("username") String username);
 
 
