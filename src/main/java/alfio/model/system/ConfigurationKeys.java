@@ -54,7 +54,7 @@ public enum ConfigurationKeys {
     PLATFORM_MODE_ENABLED("Enable Platform mode", false, SettingCategory.PAYMENT, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM)),
     @Deprecated
     PLATFORM_FEE("Platform fee to apply for each ticket sold", true, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    PLATFORM_FIXED_FEE("Platform fee to apply for each ticket sold", true, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    PLATFORM_FIXED_FEE("Platform fee to apply for each ticket sold", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     PLATFORM_PERCENTAGE_FEE("Platform Percentage fee to apply for each ticket", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     PLATFORM_MINIMUM_FEE("Platform minimum fee to apply for each ticket", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     PLATFORM_MAXIMUM_FEE("Platform maximum fee to apply for each ticket", false, SettingCategory.PAYMENT, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
