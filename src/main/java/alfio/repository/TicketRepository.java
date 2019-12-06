@@ -85,6 +85,9 @@ public interface TicketRepository {
     @Query("select count(*) from ticket where status = 'FREE' and category_id is null and event_id = :eventId")
     Integer countFreeTicketsForUnbounded(@Bind("eventId") int eventId);
 
+    @Query("select case(show_public_statistics) when true then dynamic_allocation else 0 end from events_statistics where id = :eventId")
+    Integer countFreeTicketsForPublicStatistics(@Bind("eventId") int eventId);
+
     @Query("select count(*) from ticket where status in ('FREE', 'RELEASED') and category_id is null and event_id = :eventId")
     Integer countNotAllocatedFreeAndReleasedTicket(@Bind("eventId") int eventId);
 
