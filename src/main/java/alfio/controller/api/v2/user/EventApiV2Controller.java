@@ -215,7 +215,7 @@ public class EventApiV2Controller {
 
                 Integer availableTicketsCount = null;
                 if(configurationsValues.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault(false)) {
-                    availableTicketsCount = ticketRepository.countFreeTicketsForUnbounded(event.getId());
+                    availableTicketsCount = ticketRepository.countFreeTicketsForPublicStatistics(event.getId());
                 }
 
                 return new ResponseEntity<>(new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,
