@@ -315,25 +315,23 @@ public class WebSecurityConfig {
             http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
 
 
-            //FIXME create session and set csrf cookie if we are getting a v2 public api (temporary), will switch to pure cookie based
-            http.addFilterBefore(new Filter() {
-                @Override
-                public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+            //FIXME create session and set csrf cookie if we are getting a v2 public api, an admin api call , will switch to pure cookie based
+            http.addFilterBefore((servletRequest, servletResponse, filterChain) -> {
 
+                HttpServletRequest req = (HttpServletRequest) servletRequest;
+                HttpServletResponse res = (HttpServletResponse) servletResponse;
+                var reqUri = req.getRequestURI();
 
-                    HttpServletRequest req = (HttpServletRequest) servletRequest;
-                    HttpServletResponse res = (HttpServletResponse) servletResponse;
-                    if (req.getRequestURI().startsWith("/api/v2/public/") && "GET".equalsIgnoreCase(req.getMethod())) {
-                        CsrfToken csrf = csrfTokenRepository.loadToken(req);
-                        if(csrf == null) {
-                            csrf = csrfTokenRepository.generateToken(req);
-                        }
-                        Cookie cookie = new Cookie("XSRF-TOKEN", csrf.getToken());
-                        cookie.setPath("/");
-                        res.addCookie(cookie);
+                if ((reqUri.startsWith("/api/v2/public/") || reqUri.startsWith("/admin/api/") || reqUri.startsWith("/api/v2/admin/")) && "GET".equalsIgnoreCase(req.getMethod())) {
+                    CsrfToken csrf = csrfTokenRepository.loadToken(req);
+                    if (csrf == null) {
+                        csrf = csrfTokenRepository.generateToken(req);
                     }
-                    filterChain.doFilter(servletRequest, servletResponse);
+                    Cookie cookie = new Cookie("XSRF-TOKEN", csrf.getToken());
+                    cookie.setPath("/");
+                    res.addCookie(cookie);
                 }
+                filterChain.doFilter(servletRequest, servletResponse);
             }, RecaptchaLoginFilter.class);
 
             if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
