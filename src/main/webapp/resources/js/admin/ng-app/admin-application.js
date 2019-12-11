@@ -879,9 +879,6 @@
                     $scope.event.vatIncluded = eventToCopy.vatIncluded;
                     $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
 
-                    //
-                    eventToCopy.ticketCategories.filter(function(tc) {return tc.ordinal !== 0})
-
                     //legacy event, has all the ticket categories with ordinal 0
                     var isAllOrdinal0 = eventToCopy.ticketCategories.reduce(function(accumulator, tc) {return accumulator && (tc.ordinal === 0);}, true);
 
