@@ -212,6 +212,7 @@ dependencies {
     }
 
     implementation "org.joda:joda-money:1.0.1"
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 }
 
 // -- license configuration
@@ -271,6 +272,8 @@ processResources {
 compileJava {
     options.compilerArgs = ['-Xlint:all,-serial,-processing']
 }
+
+compileJava.dependsOn(processResources)
 
 //propagate the system properties to the tests
 test {

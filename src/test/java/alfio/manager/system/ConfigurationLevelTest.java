@@ -25,6 +25,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class ConfigurationLevelTest {
 
     @Test
+    void external() {
+        ConfigurationLevel external = ConfigurationLevel.external();
+        assertTrue(external instanceof ConfigurationLevels.ExternalLevel);
+        assertEquals(ConfigurationPathLevel.EXTERNAL, external.getPathLevel());
+    }
+
+    @Test
     void system() {
         ConfigurationLevel system = ConfigurationLevel.system();
         assertTrue(system instanceof ConfigurationLevels.SystemLevel);
