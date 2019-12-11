@@ -448,6 +448,12 @@
                     });
                 };
 
+                $scope.$watch('obj.location', function(newValue, oldValue) {
+                    if ($scope.obj && $scope.obj.location && !$scope.loadingMap && newValue != oldValue) {
+                        $scope.updateLocation($scope.obj.location);
+                    }
+                });
+
                 $scope.updateURL = function(eventName) {
                     if(!angular.isDefined(eventName) || eventName === '') {
                         return;
