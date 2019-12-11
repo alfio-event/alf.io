@@ -83,6 +83,9 @@ public interface ConfigurationRepository {
     @Query(SYSTEM_FIND_BY_KEY)
     Optional<Configuration> findOptionalByKey(@Bind("key") String key);
 
+    @Query(SYSTEM_FIND_BY_KEY)
+    List<Configuration> findByKeyAtSystemLevel(@Bind("key") String key);
+
     @Query(SYSTEM_FIND_BY_KEY + " UNION ALL " + ORGANIZATION_FIND_BY_KEY)
     List<Configuration> findByOrganizationAndKey(@Bind("organizationId") int organizationId, @Bind("key") String key);
 

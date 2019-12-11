@@ -26,6 +26,7 @@ import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 import org.springframework.core.io.ByteArrayResource;
 
 
@@ -92,17 +93,17 @@ public class TestConfiguration {
 
 
     @Bean
-    public static PropertyPlaceholderConfigurer propConfig() {
+    public static PropertySourcesPlaceholderConfigurer propConfig() {
         Properties properties = new Properties();
-        properties.put("alfio.version", "1.9-SNAPSHOT");
+        properties.put("alfio.version", "2.0-SNAPSHOT");
         properties.put("alfio.build-ts", ZonedDateTime.now(ZoneId.of("UTC")).minusDays(1).toString());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PrintWriter pw = new PrintWriter(out);
         properties.list(pw);
         pw.flush();
-        PropertyPlaceholderConfigurer ppc =  new PropertyPlaceholderConfigurer();
-        ppc.setLocation(new ByteArrayResource(out.toByteArray()));
-        return ppc;
+        var configurer =  new PropertySourcesPlaceholderConfigurer();
+        configurer.setLocation(new ByteArrayResource(out.toByteArray()));
+        return configurer;
     }
 
     @Bean

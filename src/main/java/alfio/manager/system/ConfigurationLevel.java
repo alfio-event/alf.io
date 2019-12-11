@@ -21,7 +21,12 @@ import alfio.model.system.ConfigurationPathLevel;
 
 public interface ConfigurationLevel {
 
+
     ConfigurationPathLevel getPathLevel(); //waiting for pattern matching...
+
+    static ConfigurationLevel external() {
+        return new ConfigurationLevels.ExternalLevel();
+    }
 
     static ConfigurationLevel system() {
         return new ConfigurationLevels.SystemLevel();

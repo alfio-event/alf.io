@@ -214,6 +214,7 @@ dependencies {
     implementation "org.joda:joda-money:1.0.1"
 
     testCompile 'org.mock-server:mockserver-netty:5.7.2'
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
     errorprone('com.google.errorprone:error_prone_core:2.3.4')
 }
@@ -279,6 +280,8 @@ compileJava {
     options.errorprone.disable('UnusedVariable')
     options.errorprone.disable('MixedMutabilityReturnType')
 }
+
+compileJava.dependsOn(processResources)
 
 //propagate the system properties to the tests
 test {

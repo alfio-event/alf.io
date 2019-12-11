@@ -19,6 +19,7 @@ package alfio.db.PGSQL;
 import alfio.extension.Extension;
 import alfio.extension.ExtensionService;
 import alfio.extension.ScriptingExecutionService;
+import alfio.manager.system.ExternalConfiguration;
 import alfio.repository.ExtensionLogRepository;
 import alfio.repository.ExtensionRepository;
 import ch.digitalfondue.npjt.Bind;
@@ -33,11 +34,13 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.util.StreamUtils;
 
+import javax.sql.DataSource;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 
 import static alfio.util.Wrappers.optionally;
 
@@ -59,10 +62,11 @@ public class V22_1_14_8__MigrateMailchimp extends BaseJavaMigration {
             return;
         }
 
-        ExtensionRepository extensionRepository = QueryFactory.from(ExtensionRepository.class, "PGSQL", jdbcTemplate.getDataSource());
-        ExtensionLogRepository extensionLogRepository = QueryFactory.from(ExtensionLogRepository.class, "PGSQL", jdbcTemplate.getDataSource());
-        PluginRepository pluginRepository = QueryFactory.from(PluginRepository.class, "PGSQL", jdbcTemplate.getDataSource());
-        ExtensionService extensionService = new ExtensionService(new ScriptingExecutionService(HttpClient.newHttpClient()), extensionRepository, extensionLogRepository, new DataSourceTransactionManager(jdbcTemplate.getDataSource()));
+        DataSource dataSource = Objects.requireNonNull(jdbcTemplate.getDataSource());
+        ExtensionRepository extensionRepository = QueryFactory.from(ExtensionRepository.class, "PGSQL", dataSource);
+        ExtensionLogRepository extensionLogRepository = QueryFactory.from(ExtensionLogRepository.class, "PGSQL", dataSource);
+        PluginRepository pluginRepository = QueryFactory.from(PluginRepository.class, "PGSQL", dataSource);
+        ExtensionService extensionService = new ExtensionService(new ScriptingExecutionService(HttpClient.newHttpClient()), extensionRepository, extensionLogRepository, new DataSourceTransactionManager(dataSource), new ExternalConfiguration());
 
         extensionService.createOrUpdate(null, null, new Extension("-", "mailchimp", getMailChimpScript(), true));
 

@@ -23,6 +23,14 @@ import static alfio.model.system.ConfigurationPathLevel.*;
 import static alfio.model.system.ConfigurationPathLevel.TICKET_CATEGORY;
 
 class ConfigurationLevels {
+
+    static class ExternalLevel implements ConfigurationLevel {
+        @Override
+        public ConfigurationPathLevel getPathLevel() {
+            return EXTERNAL;
+        }
+    }
+
     static class SystemLevel implements ConfigurationLevel {
         @Override
         public ConfigurationPathLevel getPathLevel() {

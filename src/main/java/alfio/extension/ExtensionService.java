@@ -18,6 +18,7 @@
 package alfio.extension;
 
 import alfio.manager.ExtensionManager;
+import alfio.manager.system.ExternalConfiguration;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.ExtensionLog;
 import alfio.model.ExtensionSupport;
@@ -47,16 +48,14 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 public class ExtensionService {
 
-    private final ScriptingExecutionService scriptingExecutionService;
-
-    private final ExtensionRepository extensionRepository;
-
-    private final ExtensionLogRepository extensionLogRepository;
-
-    private final PlatformTransactionManager platformTransactionManager;
-
     private static final String PRELOAD_SCRIPT = "\nvar HashMap = Java.type('java.util.HashMap');\n" +
         "var ExtensionUtils = Java.type('alfio.extension.ExtensionUtils');\n";
+
+    private final ScriptingExecutionService scriptingExecutionService;
+    private final ExtensionRepository extensionRepository;
+    private final ExtensionLogRepository extensionLogRepository;
+    private final PlatformTransactionManager platformTransactionManager;
+    private final ExternalConfiguration externalConfiguration;
 
 
     @AllArgsConstructor
@@ -202,7 +201,8 @@ public class ExtensionService {
 
     @Transactional(readOnly = true)
     public String getScript(String path, String name) {
-        return extensionRepository.getScript(path, name);
+        return externalConfiguration.getScript(path, name)
+            .orElseGet(() -> extensionRepository.getScript(path, name));
     }
 
     @Transactional(readOnly = true)
@@ -263,6 +263,22 @@ public class ExtensionService {
     * Return a copy of the input with added parameters and a set of missing mandatory parameters, if any
     * */
     private Pair<Set<String>, Map<String,Object>> addExtensionParameters(Map<String, Object> input, String basePath, ScriptPathNameHash activePath) {
+        if(ExternalConfiguration.isExternalPath(activePath.getPath())) {
+            return getExternalExtensionParameters(input, activePath);
+        } else {
+            return getExtensionParameters(input, basePath, activePath);
+        }
+    }
+
+    private Pair<Set<String>, Map<String, Object>> getExternalExtensionParameters(Map<String, Object> input, ScriptPathNameHash activePath) {
+        Map<String, Object> copy = new HashMap<>(input);
+        // we assume that external parameters are defined correctly.
+        copy.put("extensionParameters", externalConfiguration.getParametersForExtension(activePath.getName()));
+        return Pair.of(Set.of(), copy);
+    }
+
+
+    private Pair<Set<String>, Map<String, Object>> getExtensionParameters(Map<String, Object> input, String basePath, ScriptPathNameHash activePath) {
         Map<String, Object> copy = new HashMap<>(input);
         Map<String, String> nameAndValues = extensionRepository.findParametersForScript(activePath.getName(), activePath.getPath(), generatePossiblePath(basePath))
             .stream()
@@ -286,7 +302,9 @@ public class ExtensionService {
         //  - -
         // the one with the longest path win
         Set<String> paths = generatePossiblePath(basePath);
-        return extensionRepository.findActive(paths, async, event);
+        var allExtensions = new ArrayList<>(externalConfiguration.getAllExtensionsFor(event, async));
+        allExtensions.addAll(extensionRepository.findActive(paths, async, event));
+        return allExtensions;
     }
 
     private static Set<String> generatePossiblePath(String basePath, Comparator<String> comparator) {
