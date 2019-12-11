@@ -878,7 +878,14 @@
                     $scope.event.vatPercentage = eventToCopy.vatPercentage;
                     $scope.event.vatIncluded = eventToCopy.vatIncluded;
                     $scope.event.allowedPaymentProxies = angular.copy(eventToCopy.allowedPaymentProxies);
-                    $scope.event.ticketCategories = eventToCopy.ticketCategories.map(function(tc) {
+
+                    //
+                    eventToCopy.ticketCategories.filter(function(tc) {return tc.ordinal !== 0})
+
+                    //legacy event, has all the ticket categories with ordinal 0
+                    var isAllOrdinal0 = eventToCopy.ticketCategories.reduce(function(accumulator, tc) {return accumulator && (tc.ordinal === 0);}, true);
+
+                    $scope.event.ticketCategories = eventToCopy.ticketCategories.map(function(tc, idx) {
 
 
 
@@ -888,7 +895,7 @@
                         var cat = {
                             name: tc.name,
                             bounded: tc.bounded,
-                            ordinal: tc.ordinal,
+                            ordinal: isAllOrdinal0 ? idx : tc.ordinal,
                             dateString: categoryAdjustedStart + ' / ' + categoryAdjustedEnd,
                             inception: createDateTimeObject(categoryAdjustedStart),
                             expiration: createDateTimeObject(categoryAdjustedEnd),
