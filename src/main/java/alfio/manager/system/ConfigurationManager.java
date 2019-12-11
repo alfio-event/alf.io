@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.model.system.ConfigurationPathLevel.*;
+import static java.util.stream.Collectors.toList;
 
 @Component
 @Transactional
@@ -68,24 +69,32 @@ public class ConfigurationManager {
     private final ConfigurationRepository configurationRepository;
     private final UserManager userManager;
     private final EventRepository eventRepository;
+    private final ExternalConfiguration externalConfiguration;
 
     //TODO: refactor, not the most beautiful code, find a better solution...
     private Optional<Configuration> findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
+        var keyAsString = key.getValue();
+        var configList = new ArrayList<>(externalConfiguration.load(keyAsString));
         switch (path.pathLevel()) {
-            case SYSTEM: return configurationRepository.findOptionalByKey(key.getValue());
+            case SYSTEM:
+                configList.addAll(configurationRepository.findByKeyAtSystemLevel(keyAsString));
+                return selectPath(configList);
             case ORGANIZATION: {
                 OrganizationConfigurationPath o = from(path);
-                return selectPath(configurationRepository.findByOrganizationAndKey(o.getId(), key.getValue()));
+                configList.addAll(configurationRepository.findByOrganizationAndKey(o.getId(), key.getValue()));
+                return selectPath(configList);
             }
             case EVENT: {
                 EventConfigurationPath o = from(path);
-                return selectPath(configurationRepository.findByEventAndKey(o.getOrganizationId(),
-                    o.getId(), key.getValue()));
+                configList.addAll(configurationRepository.findByEventAndKey(o.getOrganizationId(),
+                    o.getId(), keyAsString));
+                return selectPath(configList);
             }
             case TICKET_CATEGORY: {
                 TicketCategoryConfigurationPath o = from(path);
-                return selectPath(configurationRepository.findByTicketCategoryAndKey(o.getOrganizationId(),
-                    o.getEventId(), o.getId(), key.getValue()));
+                configList.addAll(configurationRepository.findByTicketCategoryAndKey(o.getOrganizationId(),
+                    o.getEventId(), o.getId(), keyAsString));
+                return selectPath(configList);
             }
         }
         throw new IllegalStateException("Can't reach here");
@@ -220,7 +229,7 @@ public class ConfigurationManager {
             }
         } else {
             Optional<String> valueOpt = Optional.ofNullable(value);
-            if(conf.isEmpty()) {
+            if(conf.isEmpty() || conf.get().getConfigurationPathLevel() == EXTERNAL) {
                 valueOpt.ifPresent(v -> configurationRepository.insert(key.getValue(), v, key.getDescription()));
             } else {
                 configurationRepository.update(key.getValue(), value);
@@ -240,7 +249,8 @@ public class ConfigurationManager {
     public boolean isBasicConfigurationNeeded() {
         return ConfigurationKeys.basic().stream()
             .anyMatch(key -> {
-                boolean absent = configurationRepository.findOptionalByKey(key.getValue()).isEmpty();
+                boolean absent = externalConfiguration.getSingle(key.getValue())
+                    .or(() -> configurationRepository.findOptionalByKey(key.getValue())).isEmpty();
                 if (absent) {
                     log.warn("cannot find a value for " + key.getValue());
                 }
@@ -265,7 +275,7 @@ public class ConfigurationManager {
             .stream()
             .filter(pp -> paymentMethodsBlacklist.contains(pp.getKey()))
             .flatMap(pp -> pp.getSettingCategories().stream())
-            .collect(Collectors.toList());
+            .collect(toList());
 
         if(toBeRemoved.isEmpty()) {
             return result;
@@ -365,11 +375,11 @@ public class ConfigurationManager {
         final List<Configuration> existing = configurationRepository.findSystemConfiguration()
                 .stream()
                 .filter(c -> !ConfigurationKeys.fromString(c.getKey()).isInternal())
-                .collect(Collectors.toList());
+                .collect(toList());
         final List<Configuration> missing = Arrays.stream(ConfigurationKeys.visible())
                 .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
                 .map(mapEmptyKeys(ConfigurationPathLevel.SYSTEM))
-                .collect(Collectors.toList());
+                .collect(toList());
         List<Configuration> result = new LinkedList<>(existing);
         result.addAll(missing);
         return result.stream().sorted().collect(groupByCategory());
@@ -499,26 +509,25 @@ public class ConfigurationManager {
 
     public Map<ConfigurationKeys, MaybeConfiguration> getFor(Collection<ConfigurationKeys> keys, ConfigurationLevel configurationLevel) {
         var keysAsString = keys.stream().map(ConfigurationKeys::getValue).collect(Collectors.toSet());
-        List<ConfigurationKeyValuePathLevel> found; // waiting for switch expressions...
+        List<ConfigurationKeyValuePathLevel> found = new ArrayList<>(externalConfiguration.getAll(keysAsString));
         switch(configurationLevel.getPathLevel()) {
             case SYSTEM:
-                found = configurationRepository.findByKeysAtSystemLevel(keysAsString);
+                found.addAll(configurationRepository.findByKeysAtSystemLevel(keysAsString));
                 break;
             case ORGANIZATION:
-                found = configurationRepository.findByOrganizationAndKeys(((OrganizationLevel)configurationLevel).organizationId, keysAsString);
+                found.addAll(configurationRepository.findByOrganizationAndKeys(((OrganizationLevel)configurationLevel).organizationId, keysAsString));
                 break;
             case EVENT:
                 var eventLevel = (EventLevel) configurationLevel;
-                found = configurationRepository.findByEventAndKeys(eventLevel.organizationId, eventLevel.eventId, keysAsString);
+                found.addAll(configurationRepository.findByEventAndKeys(eventLevel.organizationId, eventLevel.eventId, keysAsString));
                 break;
             case TICKET_CATEGORY:
                 var categoryLevel = (CategoryLevel) configurationLevel;
-                found = configurationRepository.findByTicketCategoryAndKeys(categoryLevel.organizationId, categoryLevel.eventId, categoryLevel.categoryId, keysAsString);
+                found.addAll(configurationRepository.findByTicketCategoryAndKeys(categoryLevel.organizationId, categoryLevel.eventId, categoryLevel.categoryId, keysAsString));
                 break;
             default:
-                found = List.of();
+                break;
         }
-
         return buildKeyConfigurationMapResult(keys, found);
     }
 
@@ -548,10 +557,10 @@ public class ConfigurationManager {
                 .filter(blacklistForCategories::containsKey)
                 .flatMap(id -> Arrays.stream(blacklistForCategories.get(id).split(",")))
                 .map(name -> PaymentProxy.valueOf(name).getPaymentMethod())
-                .collect(Collectors.toList());
+                .collect(toList());
         } else if (categoryIds.size() > 0) {
             return configurationRepository.findByKeyAtCategoryLevel(e.getId(), e.getOrganizationId(), IterableUtils.get(categoryIds, 0), PAYMENT_METHODS_BLACKLIST.name())
-                .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(Collectors.toList()))
+                .map(v -> Arrays.stream(v.getValue().split(",")).map(name -> PaymentProxy.valueOf(name).getPaymentMethod()).collect(toList()))
                 .orElse(List.of());
         }
         return List.of();

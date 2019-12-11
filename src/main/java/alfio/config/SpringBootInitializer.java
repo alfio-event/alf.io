@@ -16,8 +16,10 @@
  */
 package alfio.config;
 
+import alfio.manager.system.ExternalConfiguration;
 import com.openhtmltopdf.util.XRLog;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,6 +41,7 @@ import static org.springframework.web.context.support.WebApplicationContextUtils
         org.springframework.boot.autoconfigure.web.servlet.HttpEncodingAutoConfiguration.class,
         org.springframework.boot.autoconfigure.session.SessionAutoConfiguration.class,
         org.springframework.boot.autoconfigure.quartz.QuartzAutoConfiguration.class})
+@EnableConfigurationProperties(ExternalConfiguration.class)
 @Configuration
 @Profile(Initializer.PROFILE_SPRING_BOOT)
 public class SpringBootInitializer {
