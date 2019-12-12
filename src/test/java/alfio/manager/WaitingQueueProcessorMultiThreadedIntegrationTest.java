@@ -29,7 +29,6 @@ import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketRepository;
-import alfio.repository.TicketReservationRepository;
 import alfio.repository.WaitingQueueRepository;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.user.AuthorityRepository;
@@ -85,8 +84,6 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
     private WaitingQueueRepository waitingQueueRepository;
     @Autowired
     private ConfigurationManager configurationManager;
-    @Autowired
-    private TicketReservationRepository ticketReservationRepository;
     @Autowired
     private ConfigurationRepository configurationRepository;
     @Autowired

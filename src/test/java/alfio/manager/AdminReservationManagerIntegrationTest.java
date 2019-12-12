@@ -184,7 +184,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
         assertTrue(tickets.size() == attendees);
         assertNotNull(data.getLeft());
         int categoryId = tickets.get(0).getCategoryId();
-        Event modified = eventManager.getSingleEvent(event.getShortName(), username);
+        eventManager.getSingleEvent(event.getShortName(), username);
         assertEquals(attendees + 1, eventRepository.countExistingTickets(event.getId()).intValue());
         assertEquals(attendees, ticketRepository.findPendingTicketsInCategories(Collections.singletonList(categoryId)).size());
         TicketCategory categoryModified = ticketCategoryRepository.getByIdAndActive(categoryId, event.getId());
@@ -226,7 +226,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
         int resExistingCategoryId = tickets.get(0).getCategoryId();
         int resNewCategoryId = tickets.get(2).getCategoryId();
 
-        Event modified = eventManager.getSingleEvent(event.getShortName(), username);
+        eventManager.getSingleEvent(event.getShortName(), username);
         assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());
         assertEquals(3, ticketRepository.findPendingTicketsInCategories(Arrays.asList(resExistingCategoryId, resNewCategoryId)).size());
         assertEquals(3, ticketRepository.findTicketsInReservation(data.getLeft().getId()).size());

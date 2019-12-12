@@ -39,7 +39,6 @@ class EventManagerCheckInConfigurationTest {
     private ConfigurationRepository configurationRepository;
     private ConfigurationManager.MaybeConfiguration configuration;
     private final int eventId = 0;
-    private final int availableSeats = 20;
 
 
     @BeforeEach
