@@ -48,7 +48,7 @@ public class FileUtil {
         if(document.getType() == BillingDocument.Type.INVOICE) {
             Map<String, Object> reservationModel = document.getModel();
             ZonedDateTime invoiceDate = ZonedDateTime.parse((String) reservationModel.get("confirmationDate"));
-            String formattedDate = invoiceDate.format(DateTimeFormatter.ofPattern("YYYY-MM-dd-HHmmss"));
+            String formattedDate = invoiceDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss"));
             return new StringBuilder(eventShortName)
                 .append("-").append(formattedDate)
                 .append("-").append(document.getNumber())
