@@ -212,7 +212,7 @@ public class TicketReservationManager {
         DefaultTransactionDefinition serialized = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
         serialized.setIsolationLevel(TransactionDefinition.ISOLATION_SERIALIZABLE);
         this.serializedTransactionTemplate = new TransactionTemplate(transactionManager, serialized);
-        this.nestedTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition((TransactionDefinition.PROPAGATION_NESTED)));
+        this.nestedTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED));
         this.ticketFieldRepository = ticketFieldRepository;
         this.additionalServiceRepository = additionalServiceRepository;
         this.additionalServiceItemRepository = additionalServiceItemRepository;
