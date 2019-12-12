@@ -284,7 +284,7 @@ public class ConfigurationManager {
             return null;
         }
         var key = safeValueOf(keyAsString);
-        return configurationRepository.findByEventAndKey(eventId, organizationId, key.name())
+        return configurationRepository.findByEventAndKey(organizationId, eventId, key.name())
             .stream()
             .findFirst()
             .map(Configuration::getValue)
