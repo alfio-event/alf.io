@@ -56,6 +56,7 @@ plugins {
     id 'net.researchgate.release' version '2.8.1'
     id 'org.springframework.boot' version '2.2.1.RELEASE'
     id 'org.sonarqube' version '2.8'
+    id 'net.ltgt.errorprone' version '1.1.1'
 }
 
 apply plugin: 'java'
@@ -213,6 +214,8 @@ dependencies {
     implementation "org.joda:joda-money:1.0.1"
 
     testCompile 'org.mock-server:mockserver-netty:5.7.2'
+
+    errorprone('com.google.errorprone:error_prone_core:2.3.4')
 }
 
 // -- license configuration
@@ -271,6 +274,10 @@ processResources {
 
 compileJava {
     options.compilerArgs = ['-Xlint:all,-serial,-processing']
+
+    // both checks are problematic with lombok code
+    options.errorprone.disable('UnusedVariable')
+    options.errorprone.disable('MixedMutabilityReturnType')
 }
 
 //propagate the system properties to the tests
