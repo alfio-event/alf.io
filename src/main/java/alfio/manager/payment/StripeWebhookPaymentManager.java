@@ -263,11 +263,11 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return baseStripeManager.accept(paymentMethod, context) && isConfigurationValid(context);
+        return baseStripeManager.accept(paymentMethod, context,
+            EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY), this::isConfigurationValid);
     }
 
-    private boolean isConfigurationValid(PaymentContext paymentContext) {
-        Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration = configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY), paymentContext.getConfigurationLevel());
+    private boolean isConfigurationValid(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration) {
         return configuration.get(BASE_URL).isPresent()
             && configuration.get(STRIPE_WEBHOOK_PAYMENT_KEY).isPresent()
             && configuration.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false);
