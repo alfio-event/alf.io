@@ -50,10 +50,7 @@
 
 <div>{{#i18n}}receipt.buyer{{/i18n}}</div>
 <pre style="font-size: 110%">
-{{ticketReservation.fullName}}
-{{#ticketReservation.hasBillingAddress}}
 {{ticketReservation.billingAddress}}
-{{/ticketReservation.hasBillingAddress}}
 {{ticketReservation.email}}
 </pre>
 
