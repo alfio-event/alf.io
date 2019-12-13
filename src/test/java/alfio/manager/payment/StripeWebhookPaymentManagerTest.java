@@ -19,13 +19,14 @@ package alfio.manager.payment;
 import alfio.manager.support.PaymentWebhookResult;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
 import alfio.model.Audit;
 import alfio.model.Event;
 import alfio.model.TicketReservation;
-import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.PaymentContext;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.Transaction;
 import alfio.model.transaction.TransactionWebhookPayload;
 import alfio.repository.*;
@@ -38,13 +39,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
-import static alfio.model.system.ConfigurationKeys.STRIPE_SECRET_KEY;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static alfio.manager.testSupport.StripeUtils.completeStripeConfiguration;
+import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.model.system.ConfigurationKeys.STRIPE_WEBHOOK_PAYMENT_KEY;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -68,8 +68,8 @@ class StripeWebhookPaymentManagerTest {
     private Environment environment;
     private TicketReservation ticketReservation;
 
-    private static final ConfigurationManager.MaybeConfiguration STRIPE_SECRET_KEY_CONF =
-        new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.STRIPE_SECRET_KEY,
+    private static final MaybeConfiguration STRIPE_SECRET_KEY_CONF =
+        new MaybeConfiguration(ConfigurationKeys.STRIPE_SECRET_KEY,
             new ConfigurationKeyValuePathLevel(null, "sk_live_", null));
 
     @BeforeEach
@@ -179,5 +179,48 @@ class StripeWebhookPaymentManagerTest {
         verify(auditingRepository, never()).insert(eq(RESERVATION_ID), isNull(), eq(EVENT_ID), eq(Audit.EventType.PAYMENT_CONFIRMED), any(), eq(Audit.EntityType.RESERVATION), eq(RESERVATION_ID), anyList());
     }
 
+    @Test
+    void stripeConfigurationIncompletePlatformModeOff() {
+        var configuration = new HashMap<>(completeStripeConfiguration(true));
+        configuration.put(STRIPE_CONNECTED_ID, new MaybeConfiguration(STRIPE_CONNECTED_ID));// missing config
+        configuration.put(PLATFORM_MODE_ENABLED, new MaybeConfiguration(PLATFORM_MODE_ENABLED));
+        configuration.put(STRIPE_WEBHOOK_PAYMENT_KEY, new MaybeConfiguration(STRIPE_WEBHOOK_PAYMENT_KEY));
+
+        var configurationLevel = ConfigurationLevel.organization(1);
+        when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
+            .thenReturn(configuration);
+        assertFalse(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+    }
+
+    @Test
+    void stripeConfigurationCompletePlatformModeOff() {
+        var configuration = new HashMap<>(completeStripeConfiguration(true));
+        configuration.put(STRIPE_CONNECTED_ID, new MaybeConfiguration(STRIPE_CONNECTED_ID));// missing config
+        configuration.put(PLATFORM_MODE_ENABLED, new MaybeConfiguration(PLATFORM_MODE_ENABLED));
+
+        var configurationLevel = ConfigurationLevel.organization(1);
+        when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
+            .thenReturn(configuration);
+        assertTrue(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+    }
+
+    @Test
+    void stripeConfigurationIncompletePlatformModeOn() {
+        var configuration = new HashMap<>(completeStripeConfiguration(true));
+        configuration.put(STRIPE_CONNECTED_ID, new MaybeConfiguration(STRIPE_CONNECTED_ID));// missing config
+
+        var configurationLevel = ConfigurationLevel.organization(1);
+        when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
+            .thenReturn(configuration);
+        assertFalse(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+    }
+
+    @Test
+    void stripeConfigurationCompletePlatformModeOn() {
+        var configurationLevel = ConfigurationLevel.organization(1);
+        when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
+            .thenReturn(completeStripeConfiguration(true));
+        assertTrue(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+    }
 
 }

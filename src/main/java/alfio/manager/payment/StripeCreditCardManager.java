@@ -39,12 +39,13 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static alfio.manager.payment.BaseStripeManager.STRIPE_MANAGER_TYPE_KEY;
-import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Component
 @Log4j2
@@ -103,8 +104,10 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return baseStripeManager.accept(paymentMethod, context)
-            && !configurationManager.getFor(STRIPE_ENABLE_SCA, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
+        return baseStripeManager.accept(paymentMethod, context, EnumSet.of(STRIPE_ENABLE_SCA, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY),
+            config -> !config.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false)
+                && config.get(STRIPE_SECRET_KEY).isPresent() && config.get(STRIPE_PUBLIC_KEY).isPresent()
+        );
     }
 
     @Override
