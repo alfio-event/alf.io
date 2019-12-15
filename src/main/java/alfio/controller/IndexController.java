@@ -25,10 +25,12 @@ import alfio.manager.user.UserManager;
 import alfio.model.ContentLanguage;
 import alfio.model.EventDescription;
 import alfio.model.FileBlobMetadata;
+import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventDescriptionRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.FileUploadRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.MustacheCustomTag;
 import alfio.util.RequestUtils;
@@ -51,13 +53,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
@@ -97,6 +97,7 @@ public class IndexController {
     private final MessageSourceManager messageSourceManager;
     private final EventDescriptionRepository eventDescriptionRepository;
     private final OrganizationRepository organizationRepository;
+    private final TicketReservationRepository ticketReservationRepository;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -113,25 +114,24 @@ public class IndexController {
     //url defined in the angular app in app-routing.module.ts
     /**
     <pre>
-    { path: '', component: EventListComponent, canActivate: [LanguageGuard] },
-    { path: 'event/:eventShortName', component: EventDisplayComponent, canActivate: [LanguageGuard] },
-    { path: 'event/:eventShortName/reservation/:reservationId', component: ReservationComponent, canActivate: [LanguageGuard, ReservationGuard], children: [
-        { path: 'book', component: BookingComponent, canActivate: [ReservationGuard] },
-        { path: 'overview', component: OverviewComponent, canActivate: [ReservationGuard] },
+     { path: '', component: EventListComponent, canActivate: [LanguageGuard] },
+     { path: 'event/:eventShortName', component: EventDisplayComponent, canActivate: [EventGuard, LanguageGuard] },
+     { path: 'event/:eventShortName/reservation/:reservationId', children: [
+        { path: 'book', component: BookingComponent, canActivate: reservationsGuard },
+        { path: 'overview', component: OverviewComponent, canActivate: reservationsGuard },
         { path: 'waitingPayment', redirectTo: 'waiting-payment'},
-        { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: [ReservationGuard] },
-        { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: [ReservationGuard] },
-        { path: 'success', component: SuccessComponent, canActivate: [ReservationGuard]},
-        { path: 'not-found', component: NotFoundComponent, canActivate: [ReservationGuard]}
-    ]},
-    { path: 'event/:eventShortName/ticket/:ticketId/view', component: ViewTicketComponent, canActivate: [LanguageGuard] }
+        { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: reservationsGuard },
+        { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: reservationsGuard },
+        { path: 'success', component: SuccessComponent, canActivate: reservationsGuard},
+        { path: 'not-found', component: NotFoundComponent, canActivate: reservationsGuard}
+     ]},
+     { path: 'event/:eventShortName/ticket/:ticketId/view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] }
     </pre>
 
      */
     @GetMapping({
         "/",
         "/event/{eventShortName}",
-        "/event/{eventShortName}/reservation/{reservationId}",
         "/event/{eventShortName}/reservation/{reservationId}/book",
         "/event/{eventShortName}/reservation/{reservationId}/overview",
         "/event/{eventShortName}/reservation/{reservationId}/waitingPayment",
@@ -162,6 +162,33 @@ public class IndexController {
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
                 os.write(HtmlSerializer.serialize(idx).getBytes(StandardCharsets.UTF_8));
             }
+        }
+    }
+
+    @GetMapping("/event/{eventShortName}/reservation/{reservationId}")
+    public String redirectToReservation(@PathVariable(value = "eventShortName") String eventShortName, @PathVariable(value = "reservationId") String reservationId) {
+        if (eventRepository.existsByShortName(eventShortName)) {
+            var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
+                .map(status -> reservationStatusToUrlMapping(status)).orElse("not-found");
+
+            var redirectUrl = "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
+                .buildAndExpand(Map.of("eventShortName", eventShortName, "reservationId", reservationId, "status",reservationStatusUrlSegment))
+                .toUriString();
+
+            return redirectUrl;
+        } else {
+            return "redirect:/";
+        }
+    }
+
+    private static String reservationStatusToUrlMapping(TicketReservationStatusAndValidation status) {
+        switch (status.getStatus()) {
+            case PENDING: return Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
+            case COMPLETE: return "success";
+            case OFFLINE_PAYMENT: return "waiting-payment";
+            case EXTERNAL_PROCESSING_PAYMENT:
+            case WAITING_EXTERNAL_CONFIRMATION: return "processing-payment";
+            default: return "not-found"; // <- this may be a little bit aggressive
         }
     }
 
