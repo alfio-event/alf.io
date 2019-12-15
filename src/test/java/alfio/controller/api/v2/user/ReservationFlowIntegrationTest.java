@@ -558,7 +558,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             // code existing
             assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
             var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
-            var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
+            var location = res.getHeaders().getLocation().toString();
+            var reservationId = location.substring(("/event/" + event.getShortName() + "/reservation/").length(), location.length() - "/book".length());
             var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals(reservationId, reservationInfo.getBody().getId());
@@ -578,7 +579,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             assertEquals(2, specialPriceRepository.countFreeTokens(hiddenCategoryId).intValue());
             var res = eventApiV2Controller.handleCode(event.getShortName(), URL_CODE_HIDDEN, new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
-            var reservationId = res.getHeaders().getLocation().toString().substring(("/event/" + event.getShortName() + "/reservation/").length());
+            var location = res.getHeaders().getLocation().toString();
+            var reservationId = location.substring(("/event/" + event.getShortName() + "/reservation/").length(), location.length() - "/book".length());
             var reservationInfo = reservationApiV2Controller.getReservationInfo(event.getShortName(), reservationId);
             assertEquals(HttpStatus.OK, reservationInfo.getStatusCode());
             assertEquals(reservationId, reservationInfo.getBody().getId());
