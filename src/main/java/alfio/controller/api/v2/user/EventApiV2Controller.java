@@ -510,7 +510,7 @@ public class EventApiV2Controller {
         };
 
         var url = promoCodeRequestManager.createReservationFromPromoCode(eventName, trimmedCode, queryStrings::put, handleErrors, request).map(reservationId ->
-            UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}")
+            UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/book")
                 .build(Map.of("eventShortName", eventName, "reservationId", reservationId))
                 .toString())
             .orElseGet(() -> {
