@@ -122,8 +122,9 @@ public class IndexController {
         { path: 'waitingPayment', redirectTo: 'waiting-payment'},
         { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: reservationsGuard },
         { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: reservationsGuard },
-        { path: 'success', component: SuccessComponent, canActivate: reservationsGuard},
-        { path: 'not-found', component: NotFoundComponent, canActivate: reservationsGuard}
+        { path: 'success', component: SuccessComponent, canActivate: reservationsGuard },
+        { path: 'not-found', component: NotFoundComponent, canActivate: reservationsGuard },
+        { path: 'error', component: ErrorComponent, canActivate: reservationsGuard }
      ]},
      { path: 'event/:eventShortName/ticket/:ticketId/view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] }
     </pre>
@@ -139,6 +140,7 @@ public class IndexController {
         "/event/{eventShortName}/reservation/{reservationId}/processing-payment",
         "/event/{eventShortName}/reservation/{reservationId}/success",
         "/event/{eventShortName}/reservation/{reservationId}/not-found",
+        "/event/{eventShortName}/reservation/{reservationId}/error",
         "/event/{eventShortName}/ticket/{ticketId}/view"
     })
     public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
@@ -182,12 +184,15 @@ public class IndexController {
     }
 
     private static String reservationStatusToUrlMapping(TicketReservationStatusAndValidation status) {
+        // PENDING, IN_PAYMENT, EXTERNAL_PROCESSING_PAYMENT, WAITING_EXTERNAL_CONFIRMATION, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED, CREDIT_NOTE_ISSUED
         switch (status.getStatus()) {
             case PENDING: return Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
             case COMPLETE: return "success";
             case OFFLINE_PAYMENT: return "waiting-payment";
             case EXTERNAL_PROCESSING_PAYMENT:
             case WAITING_EXTERNAL_CONFIRMATION: return "processing-payment";
+            case IN_PAYMENT:
+            case STUCK: return "error";
             default: return "not-found"; // <- this may be a little bit aggressive
         }
     }
