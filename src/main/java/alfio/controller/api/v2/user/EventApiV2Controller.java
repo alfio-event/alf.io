@@ -128,8 +128,7 @@ public class EventApiV2Controller {
                 var configurationsValues = configurationManager.getFor(List.of(
                     MAPS_PROVIDER,
                     MAPS_CLIENT_API_KEY,
-                    MAPS_HERE_APP_ID,
-                    MAPS_HERE_APP_CODE,
+                    MAPS_HERE_API_KEY,
                     RECAPTCHA_API_KEY,
                     BANK_ACCOUNT_NR,
                     BANK_ACCOUNT_OWNER,

@@ -40,8 +40,13 @@ public enum ConfigurationKeys {
 
     MAPS_PROVIDER("Select the maps provider (None, Google, Here)", false, SettingCategory.MAP, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     MAPS_CLIENT_API_KEY("Google maps' client api key", false, SettingCategory.MAP, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    MAPS_HERE_APP_ID("HERE map App ID", false, SettingCategory.MAP, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    MAPS_HERE_APP_CODE("HERE map App Code", false, SettingCategory.MAP, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+
+    @Deprecated
+    MAPS_HERE_APP_ID("HERE map App ID", true, SettingCategory.MAP, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    @Deprecated
+    MAPS_HERE_APP_CODE("HERE map App Code", true, SettingCategory.MAP, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+
+    MAPS_HERE_API_KEY("HERE map Api Key", false, SettingCategory.MAP, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
 
     RECAPTCHA_API_KEY("reCAPTCHA v2 api key", false, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),

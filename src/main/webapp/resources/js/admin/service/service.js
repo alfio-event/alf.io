@@ -503,9 +503,8 @@
 
         
         function handleHEREGeolocate(location, locService, apiKeyAndProvider, resolve, reject) {
-            var appId = apiKeyAndProvider.keys['MAPS_HERE_APP_ID'];
-            var appCode = apiKeyAndProvider.keys['MAPS_HERE_APP_CODE'];
-            $http.get('https://geocoder.cit.api.here.com/6.2/geocode.json', {params: {app_id: appId, app_code: appCode, searchtext: location}}).then(function(res) {
+            var apiKey = apiKeyAndProvider.keys['MAPS_HERE_API_KEY'];
+            $http.get('https://geocoder.ls.hereapi.com/6.2/geocode.json', {params: {apiKey: apiKey, searchtext: location}}).then(function(res) {
                 var view = res.data.Response.View;
                 if(view.length > 0 && view[0].Result.length > 0 && view[0].Result[0].Location) {
                     var location = view[0].Result[0].Location;

@@ -90,7 +90,7 @@ public class LocationDescriptor {
     private static String mapUrl(ConfigurationKeys.GeoInfoProvider provider) {
         switch (provider) {
             case GOOGLE: return "https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&key=${key}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
-            case HERE: return "https://image.maps.api.here.com/mia/1.6/mapview?c=${latitude},${longitude}&z=16&w=400&h=400&poi=${latitude},${longitude}&app_id=${appId}&app_code=${appCode}";
+            case HERE: return "https://image.maps.ls.hereapi.com/mia/1.6/mapview?c=${latitude},${longitude}&z=16&w=400&h=400&poi=${latitude},${longitude}&apikey=${key}";
             default: return "";
         }
     }
@@ -99,8 +99,7 @@ public class LocationDescriptor {
         if(ConfigurationKeys.GeoInfoProvider.GOOGLE == provider) {
             geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).getValue().ifPresent(key -> params.put("key", key));
         } else if (ConfigurationKeys.GeoInfoProvider.HERE == provider) {
-            geoConf.get(ConfigurationKeys.MAPS_HERE_APP_ID).getValue().ifPresent(appId -> params.put("appId", appId));
-            geoConf.get(ConfigurationKeys.MAPS_HERE_APP_CODE).getValue().ifPresent(appCode -> params.put("appCode", appCode));
+            geoConf.get(ConfigurationKeys.MAPS_HERE_API_KEY).getValue().ifPresent(key -> params.put("key", key));
         }
     }
 

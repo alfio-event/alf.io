@@ -67,11 +67,10 @@ public class LocationDescriptorTest {
     public void testLocationDescriptorHEREWithTypeSet() {
         var geoInfo = Map.of(
             ConfigurationKeys.MAPS_PROVIDER, buildMaybeConf(ConfigurationKeys.MAPS_PROVIDER, ConfigurationKeys.GeoInfoProvider.HERE.name()),
-            ConfigurationKeys.MAPS_HERE_APP_ID, buildMaybeConf(ConfigurationKeys.MAPS_HERE_APP_ID, "appId"),
-            ConfigurationKeys.MAPS_HERE_APP_CODE, buildMaybeConf(ConfigurationKeys.MAPS_HERE_APP_CODE, "appCode")
+            ConfigurationKeys.MAPS_HERE_API_KEY, buildMaybeConf(ConfigurationKeys.MAPS_HERE_API_KEY, "apiKey")
         );
 
-        final LocationDescriptor expected = locationDescriptorBuilder.apply("https://image.maps.api.here.com/mia/1.6/mapview?c=latitude,longitude&z=16&w=400&h=400&poi=latitude,longitude&app_id=appId&app_code=appCode");
+        final LocationDescriptor expected = locationDescriptorBuilder.apply("https://image.maps.ls.hereapi.com/mia/1.6/mapview?c=latitude,longitude&z=16&w=400&h=400&poi=latitude,longitude&apikey=apiKey");
         assertEquals(expected, LocationDescriptor.fromGeoData(Pair.of(latitude, longitude), timeZone, geoInfo));
     }
 
