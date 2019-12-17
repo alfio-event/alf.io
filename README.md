@@ -1,7 +1,9 @@
-alf.io
+[alf.io](https://alf.io)
 ========
 
-alf.io
+The open source ticket reservation system.
+
+[Alf.io](https://alf.io) is a free and open source event attendance management system, developed for event organizers who care about privacy, security and fair pricing policy for their customers.
 
 [![Financial Contributors on Open Collective](https://opencollective.com/alfio/all/badge.svg?label=financial+contributors)](https://opencollective.com/alfio) [![Build Status](http://img.shields.io/travis/alfio-event/alf.io/master.svg)](https://travis-ci.org/alfio-event/alf.io) [![Coverage Status](https://img.shields.io/coveralls/alfio-event/alf.io.svg)](https://coveralls.io/r/alfio-event/alf.io)
 [![Docker Hub Pulls](https://img.shields.io/docker/pulls/alfio/alf.io.svg)](https://hub.docker.com/r/alfio/alf.io/tags)
