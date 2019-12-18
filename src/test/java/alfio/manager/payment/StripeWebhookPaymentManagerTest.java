@@ -216,6 +216,17 @@ class StripeWebhookPaymentManagerTest {
     }
 
     @Test
+    void doNotConsiderConnectedIdIfConfigurationLevelIsSystem() {
+        var configuration = new HashMap<>(completeStripeConfiguration(true));
+        configuration.put(STRIPE_CONNECTED_ID, new MaybeConfiguration(STRIPE_CONNECTED_ID));// missing config
+
+        var configurationLevel = ConfigurationLevel.system();
+        when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
+            .thenReturn(configuration);
+        assertTrue(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+    }
+
+    @Test
     void stripeConfigurationCompletePlatformModeOn() {
         var configurationLevel = ConfigurationLevel.organization(1);
         when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
