@@ -25,6 +25,7 @@ import alfio.model.Event;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.PaymentInformation;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -278,7 +279,7 @@ class BaseStripeManager {
         var configuration = configurationManager.getFor(optionsToLoad, context.getConfigurationLevel());
         return paymentMethod == PaymentMethod.CREDIT_CARD
             && configuration.get(STRIPE_CC_ENABLED).getValueAsBooleanOrDefault(false)
-            && (!configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false) || configuration.get(STRIPE_CONNECTED_ID).isPresent())
+            && (!configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false) || context.getConfigurationLevel().getPathLevel() == ConfigurationPathLevel.SYSTEM || configuration.get(STRIPE_CONNECTED_ID).isPresent())
             && subValidator.test(configuration);
     }
 
