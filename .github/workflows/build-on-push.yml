@@ -32,11 +32,6 @@ jobs:
         java-version: 11
     - name: Build with Gradle
       run: ./gradlew build jacocoTestReport -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS -Dpgsql${{ matrix.postgresql }}
-  
-  upload-to-coveralls:
-    runs-on: ubuntu-latest
-    needs: [build]
-    steps:
-      - name: Upload to Coveralls
-        run: ./gradlew coveralls
-      
+    - name: upload-to-coveralls
+      if: matrix.postgresql == '12' # run only once
+      run: ./gradlew coveralls
