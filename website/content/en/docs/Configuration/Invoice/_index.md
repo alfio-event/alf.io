@@ -48,7 +48,7 @@ Enable this flag if you want to force every business customer to enter their TAX
 Enable this flag if you want to generate only invoices. The default is to let the attendee choose whether they want an invoice or a payment receipt.
 
 ### Enable the support for Italian e-invoicing
-Enable this flag if your business is based in Italy and you must comply with the E-Invoicing regulation
+Enable this flag if your business is based in Italy and you must comply with the E-Invoicing regulation, more [here](./italian-e-invoice/)
 
 ## How it works
 
