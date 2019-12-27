@@ -31,7 +31,7 @@ jobs:
             - name: Build with Gradle
               run: ./gradlew build -Dspring.profiles.active=travis -Ddbenv=PGSQL-TRAVIS
             - name: Upload artifact
-              run: s3cmd $S3_OPTIONS build/libs/alfio-*-boot.war $ARTIFACT_URI
+              run: s3cmd put $S3_OPTIONS build/libs/alfio-*-boot.war $ARTIFACT_URI
               env:
                   S3_OPTIONS: ${{ secrets.S3_OPTIONS }}
                   ARTIFACT_URI: ${{ secrets.S3_ARTIFACT_URI }}
