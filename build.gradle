@@ -23,13 +23,13 @@ import static java.lang.String.format
 buildscript {
 
     dependencies {
-        classpath 'com.opentable.components:otj-pg-embedded:0.13.1'
-        classpath 'org.postgresql:postgresql:42.2.8'
+        classpath 'com.opentable.components:otj-pg-embedded:0.13.3'
+        classpath 'org.postgresql:postgresql:42.2.9'
         classpath "org.springframework:spring-jdbc:$springVersion"
 
         //this is for processing the index.html at compile time
         classpath "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
-        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.6.2"
+        classpath "ch.digitalfondue.jfiveparse:jfiveparse:0.7.1"
         //
     }
 
@@ -54,7 +54,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.27.0'
     id 'com.github.hierynomus.license' version '0.15.0'
     id 'net.researchgate.release' version '2.8.1'
-    id 'org.springframework.boot' version '2.2.1.RELEASE'
+    id 'org.springframework.boot' version '2.2.2.RELEASE'
     id 'org.sonarqube' version '2.8'
     id 'net.ltgt.errorprone' version '1.1.1'
 }
@@ -128,19 +128,19 @@ dependencies {
         exclude module : 'spring-boot-starter-logging'
     }
     compile 'org.springframework.session:spring-session:1.3.5.RELEASE'
-    compile "ch.digitalfondue.npjt-extra:npjt-extra:2.0.1"
+    compile "ch.digitalfondue.npjt-extra:npjt-extra:2.0.2"
     compile "com.samskivert:jmustache:1.15"
     compile "javax.mail:mail:1.5.0-b01"
     compile 'com.moodysalem:LatLongToTimezoneMaven:1.2'
     /**/
     compile "com.openhtmltopdf:openhtmltopdf-core:1.0.1"
     compile "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.1"
-    compile "ch.digitalfondue.jfiveparse:jfiveparse:0.6.2"
+    compile "ch.digitalfondue.jfiveparse:jfiveparse:0.7.1"
     /**/
     compile "com.google.zxing:core:3.4.0"
     compile "com.google.zxing:javase:3.4.0"
     compile "org.flywaydb:flyway-core:6.0.8"
-    compile "org.postgresql:postgresql:42.2.6"
+    compile "org.postgresql:postgresql:42.2.9"
     compile "com.zaxxer:HikariCP:3.4.1"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
     compile "com.stripe:stripe-java:15.4.0"
@@ -150,8 +150,8 @@ dependencies {
     compile "com.opencsv:opencsv:5.0"
     compile 'commons-codec:commons-codec:1.13'
     compile 'net.sf.biweekly:biweekly:0.6.3'
-    compile 'com.atlassian.commonmark:commonmark:0.13.0'
-    compile 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.13.0'
+    compile 'com.atlassian.commonmark:commonmark:0.13.1'
+    compile 'com.atlassian.commonmark:commonmark-ext-gfm-tables:0.13.1'
     compile 'com.ryantenney.passkit4j:passkit4j:2.0.1'
     compile 'com.github.ben-manes.caffeine:caffeine:2.8.0'
     compile 'com.github.scribejava:scribejava-core:5.0.0'
@@ -213,7 +213,7 @@ dependencies {
 
     implementation "org.joda:joda-money:1.0.1"
 
-    testCompile 'org.mock-server:mockserver-netty:5.7.2'
+    testCompile 'org.mock-server:mockserver-netty:5.8.1'
     annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
 
     errorprone('com.google.errorprone:error_prone_core:2.3.4')
