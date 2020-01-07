@@ -33,7 +33,16 @@ import java.util.*;
 public class TicketReservation implements PriceContainer {
 
     public enum TicketReservationStatus {
-        PENDING, IN_PAYMENT, EXTERNAL_PROCESSING_PAYMENT, WAITING_EXTERNAL_CONFIRMATION, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED, CREDIT_NOTE_ISSUED
+        PENDING,
+        IN_PAYMENT,
+        EXTERNAL_PROCESSING_PAYMENT,
+        WAITING_EXTERNAL_CONFIRMATION,
+        OFFLINE_PAYMENT,
+        DEFERRED_OFFLINE_PAYMENT,
+        COMPLETE,
+        STUCK,
+        CANCELLED,
+        CREDIT_NOTE_ISSUED
     }
 
     private final String id;
