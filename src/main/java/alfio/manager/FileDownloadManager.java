@@ -45,9 +45,11 @@ public class FileDownloadManager {
             response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofByteArray());
         } catch (IOException exception) {
             logWarning(exception);
+            return null;
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             logWarning(exception);
+            return null;
         }
         if(callSuccessful(response)) {
             String[] parts = url.split("/");
