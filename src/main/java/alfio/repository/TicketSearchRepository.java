@@ -78,7 +78,7 @@ public interface TicketSearchRepository {
     @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_id in (:reservationIds) and tr_status = 'OFFLINE_PAYMENT' and bt_reservation_id is not null")
     List<TicketReservationWithTransaction> findOfflineReservationsWithTransaction(@Bind("reservationIds") List<String> reservationIds);
 
-    @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status = 'OFFLINE_PAYMENT'")
+    @Query("select distinct on(tr_id) "+RESERVATION_SEARCH_FIELD+", "+TRANSACTION_FIELDS+"," +PROMO_CODE_FIELDS+" from reservation_and_ticket_and_tx where tr_event_id = :eventId and tr_id is not null and tr_status in('OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT')")
     List<TicketReservationWithTransaction> findOfflineReservationsWithOptionalTransaction(@Bind("eventId") int eventId);
 
     @Query("select count(distinct tr_id) from (" + FIND_ALL_TICKETS_INCLUDING_NEW +" ) as d_tbl")

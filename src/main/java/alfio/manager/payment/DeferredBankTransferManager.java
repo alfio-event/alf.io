@@ -64,7 +64,7 @@ public class DeferredBankTransferManager implements PaymentProvider {
 
     @Override
     public Map<String, ?> getModelOptions(PaymentContext context) {
-        return null;
+        return Map.of("deferred", true);
     }
 
     @Override

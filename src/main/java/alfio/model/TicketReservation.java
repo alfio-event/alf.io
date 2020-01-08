@@ -216,4 +216,9 @@ public class TicketReservation implements PriceContainer {
     public Optional<BigDecimal> getOptionalVatPercentage() {
         return Optional.ofNullable(usedVatPercent);
     }
+
+    public boolean isPendingOfflinePayment() {
+        return status == TicketReservationStatus.OFFLINE_PAYMENT
+            || status == TicketReservationStatus.DEFERRED_OFFLINE_PAYMENT;
+    }
 }
