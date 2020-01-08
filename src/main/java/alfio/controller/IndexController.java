@@ -137,6 +137,7 @@ public class IndexController {
         "/event/{eventShortName}/reservation/{reservationId}/overview",
         "/event/{eventShortName}/reservation/{reservationId}/waitingPayment",
         "/event/{eventShortName}/reservation/{reservationId}/waiting-payment",
+        "/event/{eventShortName}/reservation/{reservationId}/deferred-payment",
         "/event/{eventShortName}/reservation/{reservationId}/processing-payment",
         "/event/{eventShortName}/reservation/{reservationId}/success",
         "/event/{eventShortName}/reservation/{reservationId}/not-found",
@@ -171,24 +172,22 @@ public class IndexController {
     public String redirectToReservation(@PathVariable(value = "eventShortName") String eventShortName, @PathVariable(value = "reservationId") String reservationId) {
         if (eventRepository.existsByShortName(eventShortName)) {
             var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
-                .map(status -> reservationStatusToUrlMapping(status)).orElse("not-found");
+                .map(IndexController::reservationStatusToUrlMapping).orElse("not-found");
 
-            var redirectUrl = "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
+            return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
                 .buildAndExpand(Map.of("eventShortName", eventShortName, "reservationId", reservationId, "status",reservationStatusUrlSegment))
                 .toUriString();
-
-            return redirectUrl;
         } else {
             return "redirect:/";
         }
     }
 
     private static String reservationStatusToUrlMapping(TicketReservationStatusAndValidation status) {
-        // PENDING, IN_PAYMENT, EXTERNAL_PROCESSING_PAYMENT, WAITING_EXTERNAL_CONFIRMATION, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED, CREDIT_NOTE_ISSUED
         switch (status.getStatus()) {
             case PENDING: return Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
             case COMPLETE: return "success";
             case OFFLINE_PAYMENT: return "waiting-payment";
+            case DEFERRED_OFFLINE_PAYMENT: return "deferred-payment";
             case EXTERNAL_PROCESSING_PAYMENT:
             case WAITING_EXTERNAL_CONFIRMATION: return "processing-payment";
             case IN_PAYMENT:

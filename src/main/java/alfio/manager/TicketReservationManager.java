@@ -649,7 +649,7 @@ public class TicketReservationManager {
         TicketReservation ticketReservation = findById(reservationId).orElseThrow(IllegalArgumentException::new);
         ticketReservationRepository.lockReservationForUpdate(reservationId);
         Validate.isTrue(ticketReservation.getPaymentMethod() == PaymentProxy.OFFLINE, "invalid payment method");
-        Validate.isTrue(ticketReservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT, "invalid status");
+        Validate.isTrue(ticketReservation.isPendingOfflinePayment(), "invalid status");
 
 
         ticketReservationRepository.confirmOfflinePayment(reservationId, TicketReservationStatus.COMPLETE.name(), ZonedDateTime.now(event.getZoneId()));
@@ -675,7 +675,7 @@ public class TicketReservationManager {
     void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
         var totalPrice = totalReservationCostWithVAT(reservationId);
         int priceWithVAT = totalPrice.getPriceWithVAT();
-        Long platformFee = FeeCalculator.getCalculator(event, configurationManager, Objects.requireNonNullElse(totalPrice.getCurrencyCode(), event.getCurrency()))
+        long platformFee = FeeCalculator.getCalculator(event, configurationManager, Objects.requireNonNullElse(totalPrice.getCurrencyCode(), event.getCurrency()))
             .apply(ticketRepository.countTicketsInReservation(reservationId), (long) priceWithVAT)
             .orElse(0L);
 
@@ -1231,6 +1231,7 @@ public class TicketReservationManager {
             formatCents(reservationCost.getPriceWithVAT(), currencyCode),
             formatCents(reservationCost.getVAT(), currencyCode),
             reservation.getStatus() == TicketReservationStatus.OFFLINE_PAYMENT,
+            reservation.getStatus() == DEFERRED_OFFLINE_PAYMENT,
             reservation.getPaymentMethod() == PaymentProxy.ON_SITE,
             Optional.ofNullable(event.getVat()).map(p -> MonetaryUtil.formatCents(MonetaryUtil.unitToCents(p, currencyCode), currencyCode)).orElse(null),
             reservation.getVatStatus(),

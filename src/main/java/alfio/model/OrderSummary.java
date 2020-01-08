@@ -30,6 +30,7 @@ public class OrderSummary {
     private final String totalPrice;
     private final String totalVAT;
     private final boolean waitingForPayment;
+    private final boolean deferredPayment;
     private final boolean cashPayment;
     private final String vatPercentage;
     private final PriceContainer.VatStatus vatStatus;
@@ -49,7 +50,7 @@ public class OrderSummary {
     }
 
     public boolean getNotYetPaid() {
-        return waitingForPayment || cashPayment;
+        return waitingForPayment || cashPayment || deferredPayment;
     }
 
     public int getTicketAmount() {

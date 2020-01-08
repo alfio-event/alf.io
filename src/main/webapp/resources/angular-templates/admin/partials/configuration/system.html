@@ -197,8 +197,8 @@
             <div class="panel-body">
                 <div class="alert alert-info">
                     <ul class="list-unstyled">
-                        <li><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></li>
-                        <li><i class="fa fa-info-circle"></i> Additionally, please refer to the following <a href="https://github.com/alfio-event/alf.io/blob/master/docs/howto/configuration/stripe-sca/index.md" target="_blank">tutorial</a> if you want to enable Strong Customer Authentication (aka 3DSecure 2.0)</li>
+                        <li><i class="fa fa-info-circle"></i> more info on Stripe API Keys <a rel="noreferrer noopener" href="https://stripe.com/docs/dashboard#api-keys" target="_blank">here</a></li>
+                        <li><i class="fa fa-info-circle"></i> Additionally, please refer to the following <a rel="noreferrer noopener" href="https://github.com/alfio-event/alf.io/blob/master/docs/howto/configuration/stripe-sca/index.md" target="_blank">tutorial</a> if you want to enable Strong Customer Authentication (aka 3DSecure 2.0)</li>
                     </ul>
                 </div>
                 <div data-ng-repeat="setting in systemConf.paymentStripe.settings">
@@ -240,21 +240,25 @@
 
         <div data-ng-if="systemConf.paymentOffline" class="panel panel-default">
             <div class="panel-heading">
-                <div class="panel-title"><i class="fa fa-exchange"></i> Offline payment configuration</div>
+                <div class="panel-title"><i class="fa fa-exchange"></i> Bank Transfer payment configuration</div>
             </div>
             <div class="panel-body">
                 <div class="alert alert-info">
-                    <p><i class="fa fa-info-circle"></i> In order to be able to accept offline payments, you must fill your <strong>Bank Account</strong> data.</p>
+                    <p><i class="fa fa-info-circle"></i> More info and documentation available <a href="https://alf.io/docs/configuration/payment/bank-transfer/" target="_blank">on the help page</a>.</p>
                 </div>
-                <div data-ng-repeat="setting in systemConf.paymentOffline.settings | filter: '!REVOLUT'">
+                <setting data-obj="systemConf.paymentOffline.enabled" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                <setting data-obj="systemConf.paymentOffline.deferredSetting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                <div data-ng-repeat="setting in systemConf.paymentOffline.generalSettings" ng-if="systemConf.paymentOffline.deferredSetting.value != 'true'">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
                 </div>
-                <div class="page-header">
-                    <h3>Revolut integration</h3>
-                </div>
-                <p>If the IBAN above is actually a Revolut Bank Account, you can enable the integration in order to check incoming payments automatically and flag the reservations as complete once the due amount has been received.</p>
-                <div data-ng-repeat="setting in systemConf.paymentOffline.settings | filter: 'REVOLUT'">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                <div ng-if="systemConf.paymentOffline.deferredSetting.value != 'true'">
+                    <div class="page-header">
+                        <h3>Revolut integration</h3>
+                    </div>
+                    <p>If the IBAN above is actually a Revolut Bank Account, you can enable the integration in order to check incoming payments automatically and flag the reservations as complete once the due amount has been received.</p>
+                    <div data-ng-repeat="setting in systemConf.paymentOffline.revolutSettings">
+                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                    </div>
                 </div>
             </div>
         </div>

@@ -188,21 +188,25 @@
 
             <div data-ng-if="eventConf.paymentOffline" class="panel panel-default">
                 <div class="panel-heading">
-                    <div class="panel-title"><i class="fa fa-exchange"></i> Offline payment configuration</div>
+                    <div class="panel-title"><i class="fa fa-exchange"></i> Bank Transfer payment configuration</div>
                 </div>
                 <div class="panel-body">
                     <div class="alert alert-info">
-                        <p><i class="fa fa-info-circle"></i> In order to be able to accept offline payments, you must fill your <strong>Bank Account</strong> data.</p>
+                        <p><i class="fa fa-info-circle"></i> More info and documentation available <a href="https://alf.io/docs/configuration/payment/bank-transfer/" target="_blank" rel="noreferrer noopener">on the help page</a>.</p>
                     </div>
-                    <div data-ng-repeat="setting in eventConf.paymentOffline.settings | filter: '!REVOLUT'">
+                    <setting data-obj="eventConf.paymentOffline.enabled" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    <setting data-obj="eventConf.paymentOffline.deferredSetting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    <div data-ng-repeat="setting in eventConf.paymentOffline.generalSettings" ng-if="eventConf.paymentOffline.deferredSetting.value != 'true'">
                         <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                     </div>
-                    <div class="page-header">
-                        <h3>Revolut integration</h3>
-                    </div>
-                    <p>If the IBAN above is actually a Revolut Bank Account, you can enable the integration in order to check incoming payments automatically and flag the reservations as complete once the due amount has been received.</p>
-                    <div data-ng-repeat="setting in eventConf.paymentOffline.settings | filter: 'REVOLUT'">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                    <div ng-if="eventConf.paymentOffline.deferredSetting.value != 'true'">
+                        <div class="page-header">
+                            <h3>Revolut integration</h3>
+                        </div>
+                        <p>If the IBAN above is actually a Revolut Bank Account, you can enable the integration in order to check incoming payments automatically and flag the reservations as complete once the due amount has been received.</p>
+                        <div data-ng-repeat="setting in eventConf.paymentOffline.revolutSettings">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -218,10 +222,7 @@
                     <div class="alert alert-info">
                         <p><i class="fa fa-info-circle"></i> See <a href="https://github.com/alfio-event/alf.io-PI">Alf.io-PI repository</a> for more information.</p>
                     </div>
-                    <div data-ng-repeat="setting in eventConf.alfioPiOptions">
-                        <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
-                    </div>
-                    <div ng-if="eventConf.isLabelPrintingEnabled()" class="hidden-xs hidden-sm">
+                    <div class="hidden-xs hidden-sm">
                         <label-template config="eventConf.labelLayout" data-delete-handler="eventConf.delete(config)"></label-template>
                     </div>
                     <div class="hidden-xs hidden-sm row">
