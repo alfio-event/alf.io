@@ -925,7 +925,7 @@ class TicketReservationManagerTest {
     void handleOfflinePaymentMethod() {
         when(ticketReservationRepository.findOptionalStatusAndValidationById(eq(RESERVATION_ID))).thenReturn(Optional.of(new TicketReservationStatusAndValidation(PENDING, true)));
         initConfirmReservation();
-        when(ticketReservationRepository.postponePayment(eq(RESERVATION_ID), any(Date.class), anyString(), anyString(), isNull(), isNull(), anyString(), isNull())).thenReturn(1);
+        when(ticketReservationRepository.postponePayment(eq(RESERVATION_ID), eq(OFFLINE_PAYMENT), any(Date.class), anyString(), anyString(), isNull(), isNull(), anyString(), isNull())).thenReturn(1);
         when(ticketReservation.getPromoCodeDiscountId()).thenReturn(null);
         when(configurationManager.getFor(eq(BANKING_KEY), any())).thenReturn(BANKING_INFO);
         BankTransferManager bankTransferManager = mock(BankTransferManager.class);

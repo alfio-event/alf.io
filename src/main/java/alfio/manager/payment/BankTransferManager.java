@@ -20,6 +20,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
+import alfio.model.TicketReservation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.TicketReservationRepository;
@@ -35,7 +36,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
+import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.model.system.ConfigurationKeys.BANK_TRANSFER_ENABLED;
 import static java.time.ZoneOffset.UTC;
 
 @Component
@@ -43,6 +46,9 @@ import static java.time.ZoneOffset.UTC;
 @AllArgsConstructor
 public class BankTransferManager implements PaymentProvider {
 
+    private static final EnumSet<ConfigurationKeys> OPTIONS_TO_LOAD = EnumSet.of(BANK_TRANSFER_ENABLED,
+        DEFERRED_BANK_TRANSFER_ENABLED, OFFLINE_PAYMENT_DAYS, REVOLUT_ENABLED, REVOLUT_API_KEY,
+        REVOLUT_LIVE_MODE, REVOLUT_MANUAL_REVIEW);
     private final ConfigurationManager configurationManager;
     private final TicketReservationRepository ticketReservationRepository;
     private final TransactionRepository transactionRepository;
@@ -63,17 +69,25 @@ public class BankTransferManager implements PaymentProvider {
     }
 
     Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options(PaymentContext paymentContext) {
-        return configurationManager.getFor(EnumSet.of(BANK_TRANSFER_ENABLED, OFFLINE_PAYMENT_DAYS, REVOLUT_ENABLED, REVOLUT_API_KEY, REVOLUT_LIVE_MODE, REVOLUT_MANUAL_REVIEW), paymentContext.getConfigurationLevel());
+        return configurationManager.getFor(OPTIONS_TO_LOAD, paymentContext.getConfigurationLevel());
+    }
+
+    boolean isPaymentDeferredEnabled(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options) {
+        return options.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault(false);
     }
 
     @Override
     public PaymentResult doPayment(PaymentSpecification spec) {
         transitionToOfflinePayment(spec);
+        overrideExistingTransactions(spec);
+        return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
+    }
+
+    void overrideExistingTransactions(PaymentSpecification spec) {
         PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
         transactionRepository.insert(UUID.randomUUID().toString(), null,
             spec.getReservationId(), ZonedDateTime.now(UTC), spec.getPriceWithVAT(), spec.getCurrencyCode(),
             "", PaymentProxy.OFFLINE.name(), 0L, 0L, Transaction.Status.PENDING, Map.of());
-        return PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
     }
 
     @Override
@@ -95,7 +109,11 @@ public class BankTransferManager implements PaymentProvider {
 
     private void transitionToOfflinePayment(PaymentSpecification spec) {
         ZonedDateTime deadline = getOfflinePaymentDeadline(spec.getPaymentContext(), configurationManager);
-        int updatedReservation = ticketReservationRepository.postponePayment(spec.getReservationId(), Date.from(deadline.toInstant()), spec.getEmail(),
+        postponePayment(spec, OFFLINE_PAYMENT, deadline);
+    }
+
+    void postponePayment(PaymentSpecification spec, TicketReservation.TicketReservationStatus status, ZonedDateTime deadline) {
+        int updatedReservation = ticketReservationRepository.postponePayment(spec.getReservationId(), status, Date.from(deadline.toInstant()), spec.getEmail(),
             spec.getCustomerName().getFullName(), spec.getCustomerName().getFirstName(), spec.getCustomerName().getLastName(), spec.getBillingAddress(), spec.getCustomerReference());
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got " + updatedReservation);
     }

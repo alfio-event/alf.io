@@ -39,6 +39,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,6 +60,7 @@ import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.EventUtil.JSON_DATETIME_FORMATTER;
 
 @Component
+@Order(1)
 @Transactional
 @Log4j2
 @AllArgsConstructor

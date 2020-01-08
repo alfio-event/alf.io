@@ -198,21 +198,25 @@
 
                 <div data-ng-if="organizationConf.paymentOffline" class="panel panel-default">
                     <div class="panel-heading">
-                        <div class="panel-title"><i class="fa fa-exchange"></i> Offline payment configuration</div>
+                        <div class="panel-title"><i class="fa fa-exchange"></i> Bank Transfer payment configuration</div>
                     </div>
                     <div class="panel-body">
                         <div class="alert alert-info">
-                            <p><i class="fa fa-info-circle"></i> In order to be able to accept offline payments, you must fill your <strong>Bank Account</strong> data.</p>
+                            <p><i class="fa fa-info-circle"></i> More info and documentation available <a href="https://alf.io/docs/configuration/payment/bank-transfer/" target="_blank" rel="noreferrer noopener">on the help page</a>.</p>
                         </div>
-                        <div data-ng-repeat="setting in organizationConf.paymentOffline.settings | filter: '!REVOLUT'">
+                        <setting data-obj="organizationConf.paymentOffline.enabled" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        <setting data-obj="organizationConf.paymentOffline.deferredSetting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        <div data-ng-repeat="setting in organizationConf.paymentOffline.generalSettings" ng-if="organizationConf.paymentOffline.deferredSetting.value != 'true'">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
                         </div>
-                        <div class="page-header">
-                            <h3>Revolut integration</h3>
-                        </div>
-                        <p>If the IBAN above is actually a Revolut Bank Account, you can enable the integration in order to check incoming payments automatically and flag the reservations as complete once the due amount has been received.</p>
-                        <div data-ng-repeat="setting in organizationConf.paymentOffline.settings | filter: 'REVOLUT'">
-                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                        <div ng-if="organizationConf.paymentOffline.deferredSetting.value != 'true'">
+                            <div class="page-header">
+                                <h3>Revolut integration</h3>
+                            </div>
+                            <p>If the IBAN above is actually a Revolut Bank Account, you can enable the integration in order to check incoming payments automatically and flag the reservations as complete once the due amount has been received.</p>
+                            <div data-ng-repeat="setting in organizationConf.paymentOffline.revolutSettings">
+                                <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"></setting>
+                            </div>
                         </div>
                     </div>
                 </div>

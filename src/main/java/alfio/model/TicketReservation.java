@@ -33,7 +33,16 @@ import java.util.*;
 public class TicketReservation implements PriceContainer {
 
     public enum TicketReservationStatus {
-        PENDING, IN_PAYMENT, EXTERNAL_PROCESSING_PAYMENT, WAITING_EXTERNAL_CONFIRMATION, OFFLINE_PAYMENT, COMPLETE, STUCK, CANCELLED, CREDIT_NOTE_ISSUED
+        PENDING,
+        IN_PAYMENT,
+        EXTERNAL_PROCESSING_PAYMENT,
+        WAITING_EXTERNAL_CONFIRMATION,
+        OFFLINE_PAYMENT,
+        DEFERRED_OFFLINE_PAYMENT,
+        COMPLETE,
+        STUCK,
+        CANCELLED,
+        CREDIT_NOTE_ISSUED
     }
 
     private final String id;
@@ -206,5 +215,10 @@ public class TicketReservation implements PriceContainer {
     @Override
     public Optional<BigDecimal> getOptionalVatPercentage() {
         return Optional.ofNullable(usedVatPercent);
+    }
+
+    public boolean isPendingOfflinePayment() {
+        return status == TicketReservationStatus.OFFLINE_PAYMENT
+            || status == TicketReservationStatus.DEFERRED_OFFLINE_PAYMENT;
     }
 }

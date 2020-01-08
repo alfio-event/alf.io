@@ -49,7 +49,7 @@
 
     function ConfigurationService($http, HttpErrorHandler, $q, $timeout, $window) {
         var configurationCache = null;
-        return {
+        var service = {
             loadSettingCategories: function() {
                 return $http.get('/admin/api/configuration/setting-categories').error(HttpErrorHandler.handle);
             },
@@ -153,19 +153,51 @@
                     }
                 }
 
-                var filterList = ['GENERAL', 'MAIL', 'MAP', 'PAYMENT_MOLLIE' /* temporary, until we implement Mollie */];
+                if(angular.isDefined(original['PAYMENT_OFFLINE']) && original['PAYMENT_OFFLINE'].length > 0) {
+                    var offlineCfg = service.sortConfigOptions(original['PAYMENT_OFFLINE']);
+                    var deferredOfflineConfig = service.findSingleConfig(offlineCfg, 'DEFERRED_BANK_TRANSFER_ENABLED');
+                    transformed.paymentOffline = {
+                        enabled: service.findSingleConfig(offlineCfg, 'BANK_TRANSFER_ENABLED'),
+                        generalSettings: offlineCfg.filter(function (s) {
+                            return s !== deferredOfflineConfig
+                                && !s.key.startsWith('REVOLUT')
+                                && s.key !== 'BANK_TRANSFER_ENABLED';
+                        }),
+                        deferredSetting: deferredOfflineConfig,
+                        revolutSettings: offlineCfg.filter(function (s) {
+                            return s.key.startsWith('REVOLUT');
+                        })
+                    }
+                }
+
+                var filterList = ['GENERAL', 'MAIL', 'MAP', 'PAYMENT_OFFLINE', 'PAYMENT_MOLLIE' /* temporary, until we implement Mollie */];
                 _.forEach(availableCategories.filter(function(x) { return filterList.indexOf(x) === -1; }), function(group) {
                     if(angular.isDefined(original[group]) && original[group].length > 0) {
                         transformed[_.camelCase(group)] = {
-                            settings: _.sortBy(original[group], function(s) {
-                                return s.componentType === 'BOOLEAN' ? 0 : 10;
-                            })
+                            settings: service.sortConfigOptions(original[group])
                         };
                     }
                 });
                 return transformed;
+            },
+            findSingleConfig: function(configs, key) {
+                var filtered = configs.filter(function(cfg) {
+                    return cfg.key === key;
+                });
+                return filtered.length > 0 ? filtered[0] : null;
+            },
+            /**
+             * sort options by type. Boolean options take precedence over text-based options.
+             * @param options
+             * @returns {*}
+             */
+            sortConfigOptions: function(options) {
+                return _.sortBy(options, function(s) {
+                    return s.componentType === 'BOOLEAN' ? 0 : 10;
+                })
             }
         };
+        return service;
     }
 
     ConfigurationService.$inject = ['$http', 'HttpErrorHandler', '$q', '$timeout', '$window'];
