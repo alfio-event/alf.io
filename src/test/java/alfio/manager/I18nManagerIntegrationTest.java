@@ -81,6 +81,7 @@ public class I18nManagerIntegrationTest extends BaseIntegrationTest {
         Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.SPANISH));
         Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.POLISH));
         Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.DANISH));
+        Assert.assertEquals("03/02/1999 04:05", formatDateWith(ContentLanguage.BULGARIAN));
     }
 
     private String formatDateWith(ContentLanguage cl) {

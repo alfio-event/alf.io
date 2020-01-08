@@ -38,8 +38,9 @@ public class ContentLanguage {
     public static final ContentLanguage SPANISH = new ContentLanguage(LocaleUtil.forLanguageTag("es"),0b100000000, LocaleUtil.forLanguageTag("es"));
     public static final ContentLanguage POLISH = new ContentLanguage(LocaleUtil.forLanguageTag("pl"),0b1000000000, LocaleUtil.forLanguageTag("pl"));
     public static final ContentLanguage DANISH = new ContentLanguage(LocaleUtil.forLanguageTag("da"),0b10000000000, LocaleUtil.forLanguageTag("da"));
+    public static final ContentLanguage BULGARIAN = new ContentLanguage(LocaleUtil.forLanguageTag("bg"),0b100000000000, LocaleUtil.forLanguageTag("bg"));
 
-    public static final List<ContentLanguage> ALL_LANGUAGES = List.of(ENGLISH, SPANISH, ITALIAN, GERMAN, DUTCH, FRENCH, ROMANIAN, PORTUGUESE, TURKISH, POLISH, DANISH);
+    public static final List<ContentLanguage> ALL_LANGUAGES = List.of(ENGLISH, SPANISH, ITALIAN, GERMAN, DUTCH, FRENCH, ROMANIAN, PORTUGUESE, TURKISH, POLISH, DANISH, BULGARIAN);
     public static final int ALL_LANGUAGES_IDENTIFIER = ALL_LANGUAGES.stream().mapToInt(ContentLanguage::getValue).reduce(0, (a,b) -> a|b);
 
     public static List<ContentLanguage> findAllFor(int bitMask) {
