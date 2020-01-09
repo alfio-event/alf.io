@@ -311,6 +311,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals("o", translationsApiController.getPublicTranslations("it", true).get("common.or"));
         assertEquals("oder", translationsApiController.getPublicTranslations("de", true).get("common.or"));
 
+        // check all public translations
+        ContentLanguage.ALL_LANGUAGES.forEach(cl -> assertFalse(translationsApiController.getPublicTranslations(cl.getLanguage(), true).isEmpty()));
+
         var alfioInfo = infoApiController.getInfo(new MockHttpSession());
         assertFalse(alfioInfo.isDemoModeEnabled());
         assertTrue(alfioInfo.isDevModeEnabled());
