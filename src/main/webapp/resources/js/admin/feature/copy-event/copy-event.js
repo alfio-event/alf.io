@@ -57,7 +57,7 @@ function copyEventCtrl(EventService, $q, $templateCache, $filter, $http) {
             for(var i = 0; i < splitted.length; i++) {
                 var c = splitted[i];
                 if(item.shortName.toLowerCase().indexOf(c) >= 0
-                               || item.displayName.toLowerCase().indexOf(c) >= 0
+                               || (item.displayName && item.displayName.toLowerCase().indexOf(c) >= 0)
                                || $filter('formatDate')(item.formattedBegin).indexOf(c) >= 0
                                || $filter('formatDate')(item.formattedEnd).indexOf(c) >= 0) {
                                return true;
