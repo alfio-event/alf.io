@@ -97,7 +97,7 @@ public class EventApiV2Controller {
     @GetMapping("events")
     public ResponseEntity<List<BasicEventInfo>> listEvents() {
 
-        var contentLanguages = i18nManager.getSupportedLanguages();
+        var contentLanguages = i18nManager.getAvailableLanguages();
 
         var events = eventManager.getPublishedEvents()
             .stream()

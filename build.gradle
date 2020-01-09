@@ -279,6 +279,7 @@ compileJava {
     // both checks are problematic with lombok code
     options.errorprone.disable('UnusedVariable')
     options.errorprone.disable('MixedMutabilityReturnType')
+    options.errorprone.disable('MissingOverride')
 }
 
 compileJava.dependsOn(processResources)

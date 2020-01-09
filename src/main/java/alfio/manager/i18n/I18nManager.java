@@ -33,20 +33,14 @@ import java.util.stream.Collectors;
 public class I18nManager {
 
     private final EventRepository eventRepository;
-    private final ConfigurationManager configurationManager;
 
     @Autowired
-    public I18nManager(EventRepository eventRepository, ConfigurationManager configurationManager) {
+    public I18nManager(EventRepository eventRepository) {
         this.eventRepository = eventRepository;
-        this.configurationManager = configurationManager;
     }
 
     public List<ContentLanguage> getAvailableLanguages() {
         return ContentLanguage.ALL_LANGUAGES;
-    }
-
-    public List<ContentLanguage> getSupportedLanguages() {
-        return ContentLanguage.findAllFor(configurationManager.getForSystem(ConfigurationKeys.SUPPORTED_LANGUAGES).getValueAsIntOrDefault(ContentLanguage.ENGLISH_IDENTIFIER));//default to English
     }
 
     public List<ContentLanguage> getEventLanguages(String eventName) {
@@ -56,7 +50,7 @@ public class I18nManager {
     }
 
     public List<ContentLanguage> getEventLanguages(int eventLocales) {
-        List<ContentLanguage> system = getSupportedLanguages();
+        List<ContentLanguage> system = getAvailableLanguages();
         return ContentLanguage.findAllFor(eventLocales)
             .stream()
             .filter(system::contains)

@@ -620,7 +620,7 @@ public class EventApiController {
 
     @GetMapping("/events-supported-languages")
     public List<ContentLanguage> getSupportedLanguages() {
-        return i18nManager.getSupportedLanguages();
+        return i18nManager.getAvailableLanguages();
     }
 
     @GetMapping("/events/{eventName}/category/{categoryId}/ticket")

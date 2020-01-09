@@ -34,7 +34,8 @@ public enum ConfigurationKeys {
     NOT_RECOGNIZED("option not recognized", true, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.noneOf(ConfigurationPathLevel.class)),
 
     INIT_COMPLETED("init succeeded", true, SettingCategory.GENERAL, ComponentType.TEXT, false, EnumSet.noneOf(ConfigurationPathLevel.class)),
-    SUPPORTED_LANGUAGES("supported languages", false, SettingCategory.GENERAL, ComponentType.LIST, true, EnumSet.of(SYSTEM)),
+    @Deprecated
+    SUPPORTED_LANGUAGES("supported languages", true, SettingCategory.GENERAL, ComponentType.LIST, true, EnumSet.of(SYSTEM)),
 
     BASE_URL("Base application url", false, SettingCategory.GENERAL, ComponentType.TEXT, true, EnumSet.of(SYSTEM)),
 
