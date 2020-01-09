@@ -19,6 +19,7 @@ package alfio.controller.support;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
 import lombok.experimental.UtilityClass;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.MessageSource;
 
 import java.time.ZonedDateTime;
@@ -26,10 +27,12 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 @UtilityClass
+@Log4j2
 public class Formatters {
-
 
     public static Map<String, String> getFormattedDate(Event event, ZonedDateTime date, String code, MessageSource messageSource) {
         return getFormattedDate(event.getContentLanguages(), date, code, messageSource);
@@ -37,11 +40,28 @@ public class Formatters {
 
     private static Map<String, String> getFormattedDate(List<ContentLanguage> languages, ZonedDateTime date, String code, MessageSource messageSource) {
         Map<String, String> formatted = new HashMap<>();
-        languages.forEach(cl -> {
-            var pattern = messageSource.getMessage(code, null, cl.getLocale());
-            formatted.put(cl.getLanguage(), DateTimeFormatter.ofPattern(pattern, cl.getLocale()).format(date));
-        });
+        languages.forEach(cl -> formatDateForLocale(date, code, messageSource, formatted::put, cl, false));
         return formatted;
+    }
+
+    static void formatDateForLocale(ZonedDateTime date,
+                                    String code,
+                                    MessageSource messageSource,
+                                    BiConsumer<String, String> storeFunction,
+                                    ContentLanguage cl,
+                                    boolean notifyError) {
+        String pattern = null;
+        try {
+            pattern = messageSource.getMessage(code, null, cl.getLocale());
+            storeFunction.accept(cl.getLanguage(), DateTimeFormatter.ofPattern(pattern, cl.getLocale()).format(date));
+        } catch (RuntimeException e) {
+            String message = "cannot parse pattern "+code+" ("+pattern+") for language "+ cl.getLanguage();
+            if(notifyError) {
+                throw new RuntimeException(message, e);
+            } else {
+                log.warn(message, e);
+            }
+        }
     }
 
     public static FormattedEventDates getFormattedDates(Event e, MessageSource messageSource, List<ContentLanguage> contentLanguages) {
