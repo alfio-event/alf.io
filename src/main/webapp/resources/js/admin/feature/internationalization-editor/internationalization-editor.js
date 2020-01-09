@@ -30,7 +30,7 @@
             loadAllLanguages();
             loadOverride();
             loadForLocale('en');
-        }
+        };
 
         function loadAllLanguages() {
             EventService.getAllLanguages().then(function(res) {
@@ -72,6 +72,9 @@
 
             return $promiseConf.then(function(res) {
                 var translations = _.find(res.data['TRANSLATIONS'], function(v) {return v.key === 'TRANSLATION_OVERRIDE'});
+                if(!translations) {
+                    return [];
+                }
                 return [translations, JSON.parse(translations.value || '{}')]
             });
         }
