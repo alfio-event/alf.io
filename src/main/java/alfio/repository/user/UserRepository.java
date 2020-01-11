@@ -93,9 +93,13 @@ public interface UserRepository {
     @Query("select id from ba_user where user_type = :type and enabled = true and user_creation_time < :date")
     List<Integer> findUsersToDeleteOlderThan(@Bind("date") Date date, @Bind("type") User.Type type);
 
+    @Query("delete from authority where username = (select username from ba_user where id = :id)")
+    int deleteUserFromAuthority(@Bind("id") int id);
+
     default void deleteUserAndReferences(int userId) {
         deleteUserFromSponsorScan(userId);
         deleteUserFromOrganization(userId);
+        deleteUserFromAuthority(userId);
         deleteUser(userId);
     }
 }
