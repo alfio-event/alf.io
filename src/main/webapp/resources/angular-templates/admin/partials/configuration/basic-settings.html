@@ -9,10 +9,6 @@
             <span>General settings</span>
         </div>
         <div data-ng-if="ctrl.general">
-            <div>
-                <label for="languages">Supported translations</label>
-                <select id="languages" class="form-control" multiple data-ng-model="ctrl.general.selectedLanguages" data-ng-options="lang.value as lang.displayLanguage for lang in ctrl.allLanguages" data-ng-change="ctrl.updateLocales()"></select>
-            </div>
             <div data-ng-repeat="setting in ctrl.general.settings">
                 <setting data-obj="setting" data-display-delete-if-needed="false"></setting>
             </div>

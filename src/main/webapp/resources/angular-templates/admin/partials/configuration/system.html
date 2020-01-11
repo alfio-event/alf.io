@@ -19,14 +19,6 @@
             <span>General settings</span>
         </div>
         <div data-ng-if="systemConf.general">
-            <div class="form-group">
-                <label>Supported translations</label>
-                <div class="checkbox" ng-repeat="lang in systemConf.allLanguages">
-                    <label>
-                        <input type="checkbox" ng-checked="systemConf.isLanguageSelected(lang)" name="lang.value" ng-click="systemConf.toggleLanguageSelection(lang)"><span ng-class="{'text-muted': !systemConf.isLanguageSelected(lang)}">{{lang.displayLanguage}}</span>
-                    </label>
-                </div>
-            </div>
             <div data-ng-repeat="setting in systemConf.general.settings">
                 <setting data-obj="setting" data-display-delete-if-needed="true" data-global-settings="systemConf.globalSettings" data-delete-handler="systemConf.delete(config)"></setting>
             </div>
