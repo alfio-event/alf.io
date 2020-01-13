@@ -18,27 +18,26 @@ package alfio.controller.api.v2.user;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.DatesWithTimeZoneOffset;
+import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.TicketInfo;
+import alfio.controller.api.v2.user.support.BookingInfoTicketLoader;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.Formatters;
 import alfio.controller.support.TemplateProcessor;
-import alfio.manager.ExtensionManager;
-import alfio.manager.FileUploadManager;
-import alfio.manager.NotificationManager;
-import alfio.manager.TicketReservationManager;
+import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.response.ValidatedResponse;
-import alfio.model.Event;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.*;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
 import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketFieldRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
+import alfio.util.Validator;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -51,8 +50,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @AllArgsConstructor
@@ -67,6 +68,7 @@ public class TicketApiV2Controller {
     private final OrganizationRepository organizationRepository;
     private final TemplateManager templateManager;
     private final NotificationManager notificationManager;
+    private final BookingInfoTicketLoader bookingInfoTicketLoader;
 
 
     @GetMapping(value = {
@@ -157,6 +159,19 @@ public class TicketApiV2Controller {
         }
     }
 
+    @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}/full")
+    public ResponseEntity<ReservationInfo.TicketsByTicketCategory> getTicket(@PathVariable("eventName") String eventName,
+                                                                             @PathVariable("ticketIdentifier") String ticketIdentifier) {
+
+        var optionalTicket = ticketReservationManager.fetchCompleteAndAssigned(eventName, ticketIdentifier)
+            .map(complete -> {
+                var ticket = complete.getRight();
+                var event = complete.getLeft();
+                var categoryName = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()).getName();
+                return new ReservationInfo.TicketsByTicketCategory(categoryName, List.of(bookingInfoTicketLoader.toBookingInfoTicket(ticket, event)));
+            });
+        return ResponseEntity.of(optionalTicket);
+    }
 
     @GetMapping("/api/v2/public/event/{eventName}/ticket/{ticketIdentifier}")
     public ResponseEntity<TicketInfo> getTicketInfo(@PathVariable("eventName") String eventName,
