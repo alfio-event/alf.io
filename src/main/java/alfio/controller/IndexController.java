@@ -27,10 +27,7 @@ import alfio.model.EventDescription;
 import alfio.model.FileBlobMetadata;
 import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeys;
-import alfio.repository.EventDescriptionRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.FileUploadRepository;
-import alfio.repository.TicketReservationRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.MustacheCustomTag;
 import alfio.util.RequestUtils;
@@ -98,6 +95,7 @@ public class IndexController {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final OrganizationRepository organizationRepository;
     private final TicketReservationRepository ticketReservationRepository;
+    private final TicketRepository ticketRepository;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -142,7 +140,8 @@ public class IndexController {
         "/event/{eventShortName}/reservation/{reservationId}/success",
         "/event/{eventShortName}/reservation/{reservationId}/not-found",
         "/event/{eventShortName}/reservation/{reservationId}/error",
-        "/event/{eventShortName}/ticket/{ticketId}/view"
+        "/event/{eventShortName}/ticket/{ticketId}/view",
+        "/event/{eventShortName}/ticket/{ticketId}/update"
     })
     public void replyToIndex(@PathVariable(value = "eventShortName", required = false) String eventShortName,
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,
