@@ -22,6 +22,7 @@ import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.api.v2.model.ReservationInfo.TicketsByTicketCategory;
 import alfio.controller.api.v2.model.ReservationPaymentResult;
 import alfio.controller.api.v2.model.ReservationStatusInfo;
+import alfio.controller.api.v2.user.support.BookingInfoTicketLoader;
 import alfio.controller.form.ContactAndTicketsForm;
 import alfio.controller.form.PaymentForm;
 import alfio.controller.support.TemplateProcessor;
@@ -65,7 +66,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static alfio.model.PriceContainer.VatStatus.*;
@@ -93,7 +93,7 @@ public class ReservationApiV2Controller {
     private final TicketHelper ticketHelper;
     private final EuVatChecker vatChecker;
     private final RecaptchaService recaptchaService;
-    private final AdditionalServiceItemRepository additionalServiceItemRepository;
+    private final BookingInfoTicketLoader bookingInfoTicketLoader;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -126,7 +126,7 @@ public class ReservationApiV2Controller {
             boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(reservationId);
             //
 
-            var ticketFieldsFilterer = getTicketFieldsFilterer(reservationId, event);
+            var ticketFieldsFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
 
             var ticketsByCategory = tickets.stream().collect(Collectors.groupingBy(Ticket::getCategoryId));
             //TODO: cleanup this transformation, we most likely don't need to fully load the ticket category
@@ -135,16 +135,9 @@ public class ReservationApiV2Controller {
                 .stream()
                 .map(e -> {
                     var tc = eventManager.getTicketCategoryById(e.getKey(), event.getId());
-                    var ts = e.getValue().stream().map(t -> {//
-
-
-                        // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
-                        boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
-                            (!hasPaidSupplement && configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, t.getCategoryId())).getValueAsBooleanOrDefault(false)) && // freeCancellationEnabled
-                            eventManager.checkTicketCancellationPrerequisites().apply(t); // cancellationPrerequisitesMet
-                        //
-                        return toBookingInfoTicket(t, cancellationEnabled, ticketFieldsFilterer.getFieldsForTicket(t.getUuid()), descriptionsByTicketFieldId, valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()));
-                    }).collect(Collectors.toList());
+                    var ts = e.getValue().stream()
+                        .map(t -> bookingInfoTicketLoader.toBookingInfoTicket(t, hasPaidSupplement, event, ticketFieldsFilterer, descriptionsByTicketFieldId, valuesByTicketIds))
+                        .collect(Collectors.toList());
                     return new TicketsByTicketCategory(tc.getName(), ts);
                 })
                 .collect(Collectors.toList());
@@ -209,13 +202,6 @@ public class ReservationApiV2Controller {
         } else {
             return Map.of();
         }
-    }
-
-    private Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, EventAndOrganizationId event) {
-        var fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-        return new Validator.TicketFieldsFilterer(fields, ticketHelper.getTicketUUIDToCategoryId(),
-            new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(reservationId)),
-            ticketReservationManager.findFirstInReservation(reservationId));
     }
 
     @GetMapping("/event/{eventName}/reservation/{reservationId}/status")
@@ -389,7 +375,7 @@ public class ReservationApiV2Controller {
 
             Map<ConfigurationKeys, Boolean> formValidationParameters = Collections.singletonMap(ENABLE_ITALY_E_INVOICING, italyEInvoicing);
 
-            var ticketFieldFilterer = getTicketFieldsFilterer(reservationId, event);
+            var ticketFieldFilterer = bookingInfoTicketLoader.getTicketFieldsFilterer(reservationId, event);
             //
             contactAndTicketsForm.validate(bindingResult, event,
                 new SameCountryValidator(configurationManager, extensionManager, event, reservationId, vatChecker),
@@ -629,45 +615,6 @@ public class ReservationApiV2Controller {
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-
-    private static ReservationInfo.AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, ReservationInfo.Description> description) {
-        var fields = t.getFields().stream().map(f -> new ReservationInfo.Field(f.getFieldIndex(), f.getFieldValue())).collect(Collectors.toList());
-        return new ReservationInfo.AdditionalField(t.getName(), t.getValue(), t.getType(), t.isRequired(), t.isEditable(),
-            t.getMinLength(), t.getMaxLength(), t.getRestrictedValues(),
-            fields, t.isBeforeStandardFields(), description);
-    }
-
-    private static Map<String, ReservationInfo.Description> fromFieldDescriptions(List<TicketFieldDescription> descs) {
-        return descs.stream().collect(Collectors.toMap(TicketFieldDescription::getLocale,
-            d -> new ReservationInfo.Description(d.getLabelDescription(), d.getPlaceholderDescription(), d.getRestrictedValuesDescription())));
-    }
-
-    private static ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket,
-                                                                         boolean cancellationEnabled,
-                                                                         List<TicketFieldConfiguration> ticketFields,
-                                                                         Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
-                                                                         List<TicketFieldValue> ticketFieldValues) {
-
-
-        var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::getTicketFieldConfigurationId, Function.identity()));
-
-
-        var tfcdav = ticketFields.stream()
-            .sorted(Comparator.comparing(TicketFieldConfiguration::getOrder))
-            .map(tfc -> {
-                var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!
-                var fieldValue = valueById.get(tfc.getId());
-                var t = new TicketFieldConfigurationDescriptionAndValue(tfc, tfd, tfc.getCount(), fieldValue == null ? null : fieldValue.getValue());
-                var descs = fromFieldDescriptions(descriptionsByTicketFieldId.get(t.getTicketFieldConfigurationId()));
-                return toAdditionalField(t, descs);
-            }).collect(Collectors.toList());
-
-        return new ReservationInfo.BookingInfoTicket(ticket.getUuid(),
-            ticket.getFirstName(), ticket.getLastName(),
-            ticket.getEmail(), ticket.getFullName(),
-            ticket.getUserLanguage(),
-            ticket.getAssigned(), ticket.getLockedAssignment(), ticket.getStatus() == Ticket.TicketStatus.ACQUIRED, cancellationEnabled, tfcdav);
-    }
 
     private Map<String, String> formatDateForLocales(Event event, ZonedDateTime date, String formattingCode) {
 
