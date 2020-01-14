@@ -14,43 +14,31 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.transaction.webhook;
+package alfio.model.transaction.token;
 
-import alfio.model.transaction.TransactionWebhookPayload;
+import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.PaymentToken;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
-public class MollieWebhookPayload implements TransactionWebhookPayload {
+public class MollieToken implements PaymentToken {
 
     private final String paymentId;
-    private final String eventName;
-    private final String reservationId;
+    private final PaymentMethod paymentMethod;
 
     @Override
-    public String getPayload() {
+    public String getToken() {
         return paymentId;
     }
 
     @Override
-    public String getType() {
-        return null;
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
     }
 
     @Override
-    public String getReservationId() {
-        return reservationId;
-    }
-
-    @Override
-    public Status getStatus() {
-        return null;
-    }
-
-    public String getPaymentId() {
-        return paymentId;
-    }
-
-    public String getEventName() {
-        return eventName;
+    public PaymentProxy getPaymentProvider() {
+        return PaymentProxy.MOLLIE;
     }
 }

@@ -18,9 +18,9 @@ package alfio.controller.payment.api.mollie;
 
 import alfio.manager.TicketReservationManager;
 import alfio.model.transaction.PaymentProxy;
-import alfio.util.RequestUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,6 +29,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
+import java.util.Optional;
+
+import static alfio.manager.payment.MollieWebhookPaymentManager.WEBHOOK_URL_TEMPLATE;
 
 @RestController
 @Log4j2
@@ -36,11 +39,16 @@ import java.util.Map;
 public class MolliePaymentWebhookController {
     private final TicketReservationManager ticketReservationManager;
 
-    @PostMapping("/api/payment/webhook/mollie/for/{eventShortName}")
-    public ResponseEntity<String> receivePaymentConfirmation(HttpServletRequest request, @PathVariable("eventShortName") String eventName) {
-        return RequestUtils.readRequest(request)
-            .map(content -> {
-                var result = ticketReservationManager.processTransactionWebhook(content, null, PaymentProxy.MOLLIE, Map.of("eventName", eventName));
+    @SuppressWarnings("MVCPathVariableInspection")
+    @PostMapping(WEBHOOK_URL_TEMPLATE)
+    public ResponseEntity<String> receivePaymentConfirmation(HttpServletRequest request,
+                                                             @PathVariable("eventShortName") String eventName,
+                                                             @PathVariable("reservationId") String reservationId) {
+        return Optional.ofNullable(StringUtils.trimToNull(request.getParameter("id")))
+            .map(id -> {
+                var content = "id="+id;
+                var result = ticketReservationManager.processTransactionWebhook(content, null, PaymentProxy.MOLLIE,
+                    Map.of("eventName", eventName, "reservationId", reservationId));
                 if(result.isSuccessful()) {
                     return ResponseEntity.ok("OK");
                 } else if(result.isError()) {
