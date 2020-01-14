@@ -21,6 +21,7 @@ import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.Event;
 import alfio.model.PaymentInformation;
+import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.ClientServerTokenRequest;
 import alfio.model.transaction.capabilities.PaymentInfo;
@@ -39,13 +40,12 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Predicate;
 
 import static alfio.manager.payment.BaseStripeManager.STRIPE_MANAGER_TYPE_KEY;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
 
 @Component
 @Log4j2
@@ -53,6 +53,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
     public static final String STRIPE_UNEXPECTED = "error.STEP2_STRIPE_unexpected";
     private static final String STRIPE_MANAGER = StripeCreditCardManager.class.getName();
+    public static final EnumSet<ConfigurationKeys> OPTIONS_TO_LOAD = EnumSet.of(STRIPE_ENABLE_SCA, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY);
 
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
@@ -103,11 +104,28 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
     }
 
     @Override
-    public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return baseStripeManager.accept(paymentMethod, context, EnumSet.of(STRIPE_ENABLE_SCA, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY),
-            config -> !config.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false)
-                && config.get(STRIPE_SECRET_KEY).isPresent() && config.get(STRIPE_PUBLIC_KEY).isPresent()
+    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        if(!isActive(paymentContext)) {
+            return EnumSet.noneOf(PaymentMethod.class);
+        }
+        return EnumSet.of(PaymentMethod.CREDIT_CARD);
+    }
+
+    @Override
+    public PaymentProxy getPaymentProxy() {
+        return PaymentProxy.STRIPE;
+    }
+
+    @Override
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
+        return baseStripeManager.accept(paymentMethod, context, OPTIONS_TO_LOAD,
+            checkConfiguration()
         );
+    }
+
+    private Predicate<Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration>> checkConfiguration() {
+        return config -> !config.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false)
+            && config.get(STRIPE_SECRET_KEY).isPresent() && config.get(STRIPE_PUBLIC_KEY).isPresent();
     }
 
     @Override
@@ -116,6 +134,16 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
         var hasMetadata = !transaction.getMetadata().isEmpty();
         var isCCManager = STRIPE_MANAGER.equals(transaction.getMetadata().get(STRIPE_MANAGER_TYPE_KEY)) || transaction.getMetadata().get("clientSecret") == null;
         return transaction.getPaymentProxy() == PaymentProxy.STRIPE && (!hasMetadata || isCCManager);
+    }
+
+    @Override
+    public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
+        return PaymentMethod.CREDIT_CARD;
+    }
+
+    @Override
+    public boolean isActive(PaymentContext paymentContext) {
+        return baseStripeManager.isActive(paymentContext, OPTIONS_TO_LOAD, checkConfiguration());
     }
 
     @Override

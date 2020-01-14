@@ -14,22 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.transaction.capabilities;
+package alfio.model.transaction;
 
-import alfio.manager.support.PaymentWebhookResult;
-import alfio.model.transaction.Capability;
-import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.Transaction;
-import alfio.model.transaction.TransactionWebhookPayload;
+import alfio.model.BillingDetails;
+import alfio.model.TotalPrice;
+import lombok.Data;
 
-import java.util.Optional;
+@Data
+public class TransactionRequest {
+    private final TotalPrice price;
+    private final BillingDetails billingDetails;
 
-public interface SignedWebhookHandler extends Capability {
-
-    String getWebhookSignatureKey();
-
-    Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature);
-
-    PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction, PaymentContext paymentContext);
-
+    public static TransactionRequest empty() {
+        return new TransactionRequest(null, null);
+    }
 }

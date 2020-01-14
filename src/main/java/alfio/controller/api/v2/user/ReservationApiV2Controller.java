@@ -183,7 +183,7 @@ public class ReservationApiV2Controller {
                 additionalInfo.getBillingDetails(),
                 //
                 containsCategoriesLinkedToGroups,
-                getActivePaymentMethods(event, ticketsByCategory.keySet())
+                getActivePaymentMethods(event, ticketsByCategory.keySet(), orderSummary, reservationId)
                 ));
         }));
 
@@ -191,10 +191,13 @@ public class ReservationApiV2Controller {
         return res.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(Event event, Collection<Integer> categoryIds) {
+    private Map<PaymentMethod, PaymentProxyWithParameters> getActivePaymentMethods(Event event,
+                                                                                   Collection<Integer> categoryIds,
+                                                                                   OrderSummary orderSummary,
+                                                                                   String reservationId) {
         if(!event.isFreeOfCharge()) {
             var blacklistedMethodsForReservation = configurationManager.getBlacklistedMethodsForReservation(event, categoryIds);
-            return paymentManager.getPaymentMethods(event)
+            return paymentManager.getPaymentMethods(event, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationRepository.getBillingDetailsForReservation(reservationId)))
                 .stream()
                 .filter(p -> !blacklistedMethodsForReservation.contains(p.getPaymentMethod()))
                 .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
@@ -283,7 +286,8 @@ public class ReservationApiV2Controller {
 
             PaymentToken paymentToken = paymentManager.getPaymentToken(reservationId).orElse(null);
             if(paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {
-                paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentMethod(), new PaymentContext(event, reservationId));
+                paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentMethod(),
+                    new PaymentContext(event, reservationId));
             }
             PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
                 event, ticketReservation.getEmail(), customerName, ticketReservation.getBillingAddress(), ticketReservation.getCustomerReference(),

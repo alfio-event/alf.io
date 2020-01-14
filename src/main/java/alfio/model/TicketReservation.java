@@ -18,6 +18,7 @@ package alfio.model;
 
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.Json;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
@@ -199,15 +200,8 @@ public class TicketReservation implements PriceContainer {
 
     @JsonIgnore
     public String getPaidAmount() {
-        //this is a hack, for the payment cases where we don't have a remote call like paypal/stripe
-        try {
-            if (invoiceModel != null) {
-                Map<?, ?> invoice = Json.fromJson(invoiceModel, Map.class);
-                if (invoice != null) {
-                    return invoice.get("totalPrice") != null ? invoice.get("totalPrice").toString() : null;
-                }
-            }
-        } catch(IllegalStateException e) {
+        if(finalPriceCts > 0) {
+            return MonetaryUtil.formatCents(finalPriceCts, currencyCode);
         }
         return null;
     }

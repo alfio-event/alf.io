@@ -17,7 +17,9 @@
 package alfio.model.transaction;
 
 import alfio.manager.system.ConfigurationLevel;
+import alfio.model.BillingDetails;
 import alfio.model.Event;
+import lombok.Data;
 
 import java.util.Optional;
 

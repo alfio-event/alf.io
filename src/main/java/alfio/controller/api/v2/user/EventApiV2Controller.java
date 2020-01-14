@@ -227,18 +227,6 @@ public class EventApiV2Controller {
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
 
-    private List<PaymentProxy> getActivePaymentMethods(Event event) {
-        if(!event.isFreeOfCharge()) {
-            return paymentManager.getPaymentMethods(event)
-                .stream()
-                .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
-                .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)
-                .collect(toList());
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
     private static Map<String, String> applyCommonMark(Map<String, String> in) {
         if (in == null) {
             return Collections.emptyMap();

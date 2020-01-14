@@ -21,13 +21,22 @@ import alfio.manager.support.PaymentResult;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public interface PaymentProvider {
 
-    boolean accept(PaymentMethod paymentMethod, PaymentContext context);
+    Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest);
+
+    PaymentProxy getPaymentProxy();
+
+    boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest);
 
     boolean accept(Transaction transaction);
+
+    PaymentMethod getPaymentMethodForTransaction(Transaction transaction);
+
+    boolean isActive(PaymentContext paymentContext);
 
     default PaymentResult getToken(PaymentSpecification spec) {
         return PaymentResult.initialized(UUID.randomUUID().toString());
