@@ -19,6 +19,7 @@ package alfio.manager.i18n;
 import alfio.model.EventAndOrganizationId;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
+import alfio.util.LocaleUtil;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.AbstractMessageSource;
@@ -27,6 +28,8 @@ import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class MessageSourceManager {
 
@@ -62,6 +65,18 @@ public class MessageSourceManager {
         } else {
             return messageSource;
         }
+    }
+
+    private static final String[] EMPTY_ARRAY = new String[]{};
+
+    public Map<String, String> getBundleAsMap(String baseName, boolean withSystemOverride, String lang) {
+        var locale = LocaleUtil.forLanguageTag(lang);
+        var messageSource = getRootMessageSource(withSystemOverride);
+        return getKeys(baseName, locale)
+            .stream()
+            .collect(Collectors.toMap(Function.identity(), k -> messageSource.getMessage(k, EMPTY_ARRAY, locale)
+                //replace all placeholder {0} -> {{0}} so it can be consumed by ngx-translate
+                .replaceAll("\\{(\\d+)\\}", "{{$1}}")));
     }
 
     private static class MessageSourceWithOverride extends AbstractMessageSource {
