@@ -22,10 +22,13 @@ import lombok.Data;
 
 @Data
 public class TransactionRequest {
+
+    private static final TransactionRequest EMPTY = new TransactionRequest(null, null);
+
     private final TotalPrice price;
     private final BillingDetails billingDetails;
 
     public static TransactionRequest empty() {
-        return new TransactionRequest(null, null);
+        return EMPTY;
     }
 }

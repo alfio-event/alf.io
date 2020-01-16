@@ -38,7 +38,6 @@ import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
-import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketFieldRepository;
 import alfio.repository.TicketReservationRepository;
@@ -267,7 +266,7 @@ public class ReservationApiV2Controller {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-            if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentMethod(), paymentForm.getCaptcha(), request, event)) {
+            if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentProxy(), paymentForm.getCaptcha(), request, event)) {
                 log.debug("captcha validation failed.");
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
@@ -286,7 +285,7 @@ public class ReservationApiV2Controller {
 
             PaymentToken paymentToken = paymentManager.getPaymentToken(reservationId).orElse(null);
             if(paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {
-                paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentMethod(),
+                paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentProxy(),
                     new PaymentContext(event, reservationId));
             }
             PaymentSpecification spec = new PaymentSpecification(reservationId, paymentToken, reservationCost.getPriceWithVAT(),
@@ -295,8 +294,7 @@ public class ReservationApiV2Controller {
                 orderSummary, ticketReservation.getVatCountryCode(), ticketReservation.getVatNr(), ticketReservation.getVatStatus(),
                 Boolean.TRUE.equals(paymentForm.getTermAndConditionsAccepted()), Boolean.TRUE.equals(paymentForm.getPrivacyPolicyAccepted()));
 
-            final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, Optional.ofNullable(paymentForm.getPaymentMethod()));
-
+            final PaymentResult status = ticketReservationManager.performPayment(spec, reservationCost, paymentForm.getPaymentProxy(), paymentForm.getSelectedPaymentMethod());
 
             if (status.isRedirect()) {
                 var body = ValidatedResponse.toResponse(bindingResult,

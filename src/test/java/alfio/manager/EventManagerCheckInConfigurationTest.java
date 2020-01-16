@@ -48,7 +48,7 @@ class EventManagerCheckInConfigurationTest {
         when(event.getOrganizationId()).thenReturn(1);
         configurationManager = mock(ConfigurationManager.class);
         configurationRepository = mock(ConfigurationRepository.class);
-        eventManager = new EventManager(null, null, null, null, null, null, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, null, configurationRepository);
+        eventManager = new EventManager(null, null, null, null, null, null, null, null, configurationManager, null, null, null, null, null, null, null, null, null, null, null, configurationRepository, null);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         configuration = mock(ConfigurationManager.MaybeConfiguration.class);
         when(configurationManager.getFor(eq(CHECK_IN_COLOR_CONFIGURATION), any())).thenReturn(configuration);

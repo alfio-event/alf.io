@@ -21,6 +21,7 @@ import alfio.manager.support.PaymentWebhookResult;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
+import alfio.model.TicketReservation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.WebhookHandler;
@@ -187,52 +188,87 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     private PaymentResult getPaymentResult(PaymentSpecification spec) {
         try {
             var event = spec.getEvent();
-            String eventName = event.getShortName();
             var configuration = getConfiguration(ConfigurationLevel.event(event));
-
+            var reservationId = spec.getReservationId();
+            var reservation = ticketReservationRepository.findReservationById(reservationId);
             String baseUrl = StringUtils.removeEnd(configuration.get(BASE_URL).getRequiredValue(), "/");
 
-            String reservationId = spec.getReservationId();
-            String bookUrl = baseUrl + "/event/" + eventName + "/reservation/" + reservationId + "/book";
+            var existingTransaction = transactionRepository.loadOptionalByReservationId(reservationId)
+                .filter(t -> t.getPaymentProxy() == PaymentProxy.MOLLIE && StringUtils.isNotEmpty(t.getPaymentId()));
 
-            var reservation = ticketReservationRepository.findReservationById(reservationId);
-            int tickets = ticketRepository.countTicketsInReservation(reservationId);
-            Map<String, Object> payload = Map.of(
-                "amount", Map.of("value", spec.getOrderSummary().getTotalPrice(), "currency", spec.getEvent().getCurrency()),
-                "description", String.format("%s - %d ticket(s) for event %s", configurationManager.getShortReservationID(spec.getEvent(), reservation), tickets, spec.getEvent().getDisplayName()),
-                "redirectUrl", bookUrl,
-                "webhookUrl", baseUrl + UriComponentsBuilder.fromPath(WEBHOOK_URL_TEMPLATE).buildAndExpand(eventName, reservationId).toUriString(),
-                "metadata", MetadataBuilder.buildMetadata(spec, Map.of())
-            );
-
-            // TODO if there is already another transaction pending, we should reuse the link
-
-            HttpRequest request = requestFor(PAYMENTS_ENDPOINT, configuration)
-                .header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_JSON)
-                .POST(HttpRequest.BodyPublishers.ofString(Json.GSON.toJson(payload)))
-                .build();
-            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
-            if(HttpUtils.callSuccessful(response)) {
-                try (var responseReader = new InputStreamReader(response.body())) {
-                    var body = new MolliePaymentDetails(JsonParser.parseReader(responseReader).getAsJsonObject());
-                    var paymentId = body.getPaymentId();
-                    var checkoutLink = body.getCheckoutLink();
-                    var expiration = body.getExpiresAt().orElseThrow().plusMinutes(5); // we give an additional slack to process the payment
-                    ticketReservationRepository.updateReservationStatus(reservationId, EXTERNAL_PROCESSING_PAYMENT.toString());
-                    ticketReservationRepository.updateValidity(reservationId, Date.from(expiration.toInstant()));
-                    invalidateExistingTransactions(reservationId, transactionRepository);
-                    transactionRepository.insert(paymentId, paymentId,
-                        reservationId, ZonedDateTime.now(spec.getEvent().getZoneId()),
-                        spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Mollie Payment",
-                        PaymentProxy.MOLLIE.name(), 0L,0L, Transaction.Status.PENDING, Map.of());
-                    return PaymentResult.redirect(checkoutLink);
-                }
+            if(existingTransaction.isEmpty()) {
+                return initPayment(reservation, spec, baseUrl, configuration);
             } else {
-                log.warn("was not able to create a payment for reservation id " + reservationId);
-                return PaymentResult.failed(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
+                return tryToReuseExistingTransaction(existingTransaction.get(), reservation, spec, baseUrl, configuration);
             }
         } catch (Exception e) {
             log.warn(e);
+            return PaymentResult.failed(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
+        }
+    }
+
+    private PaymentResult tryToReuseExistingTransaction(Transaction transaction,
+                                                        TicketReservation reservation,
+                                                        PaymentSpecification spec,
+                                                        String baseUrl,
+                                                        Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration) throws IOException, InterruptedException {
+        var getPaymentResponse = callGetPayment(transaction.getPaymentId(), configuration);
+        if(HttpUtils.callSuccessful(getPaymentResponse)) {
+            try (var responseReader = new InputStreamReader(getPaymentResponse.body())) {
+                var body = new MolliePaymentDetails(JsonParser.parseReader(responseReader).getAsJsonObject());
+                var status = body.getStatus();
+                if(status.equals("open")) {
+                    return PaymentResult.redirect(body.getCheckoutLink());
+                } else if (status.equals("pending")) {
+                    return PaymentResult.pending(transaction.getPaymentId());
+                }
+            }
+        }
+
+        // either get payment was not successful or the payment was cancelled.
+        // falling back to initPayment
+        return initPayment(reservation, spec, baseUrl, configuration);
+    }
+
+    private PaymentResult initPayment(TicketReservation reservation,
+                                      PaymentSpecification spec,
+                                      String baseUrl,
+                                      Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration) throws IOException, InterruptedException {
+        var event = spec.getEvent();
+        var eventName = event.getShortName();
+        var reservationId = reservation.getId();
+        String bookUrl = baseUrl + "/event/" + eventName + "/reservation/" + reservationId + "/book";
+        int tickets = ticketRepository.countTicketsInReservation(reservation.getId());
+        Map<String, Object> payload = Map.of(
+            "amount", Map.of("value", spec.getOrderSummary().getTotalPrice(), "currency", spec.getEvent().getCurrency()),
+            "description", String.format("%s - %d ticket(s) for event %s", configurationManager.getShortReservationID(spec.getEvent(), reservation), tickets, spec.getEvent().getDisplayName()),
+            "redirectUrl", bookUrl,
+            "webhookUrl", baseUrl + UriComponentsBuilder.fromPath(WEBHOOK_URL_TEMPLATE).buildAndExpand(eventName, reservationId).toUriString(),
+            "metadata", MetadataBuilder.buildMetadata(spec, Map.of())
+        );
+
+        HttpRequest request = requestFor(PAYMENTS_ENDPOINT, configuration)
+            .header(HttpUtils.CONTENT_TYPE, HttpUtils.APPLICATION_JSON)
+            .POST(HttpRequest.BodyPublishers.ofString(Json.GSON.toJson(payload)))
+            .build();
+        HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+        if(HttpUtils.callSuccessful(response)) {
+            try (var responseReader = new InputStreamReader(response.body())) {
+                var body = new MolliePaymentDetails(JsonParser.parseReader(responseReader).getAsJsonObject());
+                var paymentId = body.getPaymentId();
+                var checkoutLink = body.getCheckoutLink();
+                var expiration = body.getExpiresAt().orElseThrow().plusMinutes(5); // we give an additional slack to process the payment
+                ticketReservationRepository.updateReservationStatus(reservationId, EXTERNAL_PROCESSING_PAYMENT.toString());
+                ticketReservationRepository.updateValidity(reservationId, Date.from(expiration.toInstant()));
+                invalidateExistingTransactions(reservationId, transactionRepository);
+                transactionRepository.insert(paymentId, paymentId,
+                    reservationId, ZonedDateTime.now(spec.getEvent().getZoneId()),
+                    spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Mollie Payment",
+                    PaymentProxy.MOLLIE.name(), 0L,0L, Transaction.Status.PENDING, Map.of());
+                return PaymentResult.redirect(checkoutLink);
+            }
+        } else {
+            log.warn("was not able to create a payment for reservation id " + reservationId);
             return PaymentResult.failed(ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION);
         }
     }
@@ -244,7 +280,6 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
     @Override
     public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
-        // FIXME NPE
         return null;
     }
 
@@ -298,8 +333,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         var event = optionalEvent.get();
         try {
             var configuration = getConfiguration(ConfigurationLevel.event(event));
-            HttpRequest request = requestFor(PAYMENTS_ENDPOINT+"/"+paymentId, configuration).GET().build();
-            HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            HttpResponse<InputStream> response = callGetPayment(paymentId, configuration);
             if(HttpUtils.callSuccessful(response)) {
                 try (var reader = new InputStreamReader(response.body())) {
                     var body = new MolliePaymentDetails(JsonParser.parseReader(reader).getAsJsonObject());
@@ -318,13 +352,18 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
                     //see statuses: https://www.mollie.com/en/docs/status
 
+                    var transactionMetadata = transaction.getMetadata();
                     switch (status) {
                         case "paid":
+                            transactionMetadata.put("paymentMethod", body.getPaymentMethod().name());
                             transactionRepository.update(transaction.getId(), paymentId, paymentId, body.getConfirmationTimestamp().orElseThrow(),
                                 0L, 0L, Transaction.Status.COMPLETE, transaction.getMetadata());
                             return PaymentWebhookResult.successful(new MollieToken(paymentId, body.getPaymentMethod()));
                         case "failed":
                         case "expired":
+                            transactionMetadata.put("paymentMethod", Optional.ofNullable(body.getPaymentMethod()).map(PaymentMethod::name).orElse(null));
+                            transactionRepository.update(transaction.getId(), paymentId, paymentId, null,
+                                transaction.getPlatformFee(), transaction.getGatewayFee(), transaction.getStatus(), transactionMetadata);
                             return PaymentWebhookResult.failed("failed");
                         default:
                             return PaymentWebhookResult.notRelevant(status);
@@ -342,6 +381,11 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             log.error("got exception while trying to process Mollie Payment "+paymentId, ex);
             return PaymentWebhookResult.error(ex.getMessage());
         }
+    }
+
+    private HttpResponse<InputStream> callGetPayment(String paymentId, Map<ConfigurationKeys, MaybeConfiguration> configuration) throws IOException, InterruptedException {
+        HttpRequest request = requestFor(PAYMENTS_ENDPOINT+"/"+paymentId, configuration).GET().build();
+        return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
     }
 
     @Data

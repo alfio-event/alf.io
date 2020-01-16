@@ -3,11 +3,11 @@
     var filters = angular.module('utilFilters', []);
 
     filters.value('PAYMENT_PROXY_DESCRIPTIONS', {
-        'STRIPE': 'Credit card payments',
+        'STRIPE': 'Stripe: Credit cards',
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)',
         'PAYPAL' : 'PayPal',
-        'MOLLIE' : 'Mollie: (iDEAL, SOFORT, credit cards, etc.)'
+        'MOLLIE' : 'Mollie: Credit cards, iDEAL'
     });
 
     filters.filter('printSelectedOrganization', function() {

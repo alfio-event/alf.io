@@ -36,6 +36,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -55,10 +57,6 @@ public class PaymentManager {
 
     private final List<PaymentProvider> paymentProviders; // injected by Spring
 
-    public Optional<PaymentProvider> lookupProviderByMethod(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
-        return compatibleStream(paymentMethod, context, transactionRequest).findFirst();
-    }
-
     public Optional<PaymentProvider> lookupProviderByTransactionAndCapabilities(Transaction transaction, List<Class<? extends Capability>> capabilities) {
         return paymentProviders.stream()
             .filter(filterByCapabilities(capabilities))
@@ -70,30 +68,37 @@ public class PaymentManager {
                                                                     PaymentContext context,
                                                                     TransactionRequest transactionRequest,
                                                                     List<Class<? extends Capability>> capabilities) {
-        return doLookupProvidersByMethodAndCapabilities(paymentMethod, context, transactionRequest, capabilities).findFirst();
+        return compatibleStream(paymentMethod, context, transactionRequest)
+            .filter(p -> Objects.requireNonNull(capabilities).stream().allMatch(c -> c.isInstance(p))).findFirst();
     }
 
     Optional<PaymentProvider> lookupByTransactionAndCapabilities(Transaction transaction, List<Class<? extends Capability>> capabilities) {
         return paymentProviders.stream().filter(p -> p.accept(transaction)).filter(p -> capabilities.stream().allMatch(c -> c.isInstance(p))).findFirst();
     }
 
-    List<PaymentProvider> lookupProvidersByMethodAndCapabilities(PaymentMethod paymentMethod,
-                                                                 PaymentContext context,
-                                                                 TransactionRequest transactionRequest,
-                                                                 List<Class<? extends Capability>> capabilities) {
-        return doLookupProvidersByMethodAndCapabilities(paymentMethod, context, transactionRequest, capabilities).collect(Collectors.toList());
-    }
-
-    private Stream<PaymentProvider> doLookupProvidersByMethodAndCapabilities(PaymentMethod paymentMethod,
-                                                                             PaymentContext context,
-                                                                             TransactionRequest transactionRequest,
-                                                                             List<Class<? extends Capability>> capabilities) {
-        return compatibleStream(paymentMethod, context, transactionRequest)
-            .filter(p -> Objects.requireNonNull(capabilities).stream().allMatch(c -> c.isInstance(p)));
-    }
-
-    Stream<PaymentProvider> streamActiveProvidersByProxy(PaymentProxy paymentProxy, PaymentContext paymentContext) {
+    public Stream<PaymentProvider> streamActiveProvidersByProxy(PaymentProxy paymentProxy, PaymentContext paymentContext) {
         return streamActiveProvidersByProxyAndCapabilities(paymentProxy, paymentContext, List.of());
+    }
+
+    /**
+     * validates the compatibility between the selected proxies, and returns the conflicts
+     *
+     * @param paymentProxies the {@link PaymentProxy PaymentProxies} to validate
+     * @param organizationId the organization for which the validation is made
+     * @return the conflicting {@link PaymentProxy proxies}
+     */
+    List<Map.Entry<PaymentMethod, Set<PaymentProxy>>> validateSelection(List<PaymentProxy> paymentProxies, int organizationId) {
+        var paymentContext = new PaymentContext(null, ConfigurationLevel.organization(organizationId));
+
+        Map<PaymentMethod, Set<PaymentProxy>> proxiesByMethod = paymentProxies.stream()
+            .flatMap(proxy -> streamActiveProvidersByProxy(proxy, paymentContext))
+            .map(provider -> Pair.of(provider.getPaymentProxy(), provider.getSupportedPaymentMethods(paymentContext, TransactionRequest.empty())))
+            .flatMap(pair -> pair.getValue().stream().map(pm -> Pair.of(pm, pair.getKey()))) // flip
+            .collect(Collectors.groupingBy(Pair::getKey, Collectors.mapping(Pair::getValue, Collectors.toSet())));
+
+        return proxiesByMethod.entrySet().stream()
+            .filter(e -> e.getValue().size() > 1)
+            .collect(Collectors.toList());
     }
 
     Stream<PaymentProvider> streamActiveProvidersByProxyAndCapabilities(PaymentProxy paymentProxy,

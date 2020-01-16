@@ -172,6 +172,6 @@ public class BankTransferManager implements PaymentProvider {
 
     @Override
     public boolean isActive(PaymentContext paymentContext) {
-        return false;
+        return bankTransferActive(paymentContext, options(paymentContext));
     }
 }

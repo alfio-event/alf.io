@@ -846,7 +846,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             paymentForm.setPrivacyPolicyAccepted(true);
             paymentForm.setTermAndConditionsAccepted(true);
-            paymentForm.setPaymentMethod(PaymentProxy.OFFLINE);
+            paymentForm.setPaymentProxy(PaymentProxy.OFFLINE);
+            paymentForm.setSelectedPaymentMethod(PaymentMethod.BANK_TRANSFER);
 
             // bank transfer does not have a transaction, it's created on confirmOverview call
             var tStatus = reservationApiV2Controller.getTransactionStatus(event.getShortName(), reservationId, "BANK_TRANSFER");

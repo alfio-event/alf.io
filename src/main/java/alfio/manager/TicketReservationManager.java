@@ -464,16 +464,17 @@ public class TicketReservationManager {
 
     public PaymentResult performPayment(PaymentSpecification spec,
                                         TotalPrice reservationCost,
-                                        Optional<PaymentProxy> method) {
-        PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
+                                        PaymentProxy proxy,
+                                        PaymentMethod paymentMethod) {
+        PaymentProxy paymentProxy = evaluatePaymentProxy(proxy, reservationCost);
 
         if(!acquireGroupMembers(spec.getReservationId(), spec.getEvent())) {
             groupManager.deleteWhitelistedTicketsForReservation(spec.getReservationId());
             return PaymentResult.failed("error.STEP2_WHITELIST");
         }
 
-        if(paymentMethodIsBlacklisted(paymentProxy, spec)) {
-            log.warn("payment method {} forbidden for reservationId {}", paymentProxy.getPaymentMethod(), spec.getReservationId());
+        if(paymentMethodIsBlacklisted(paymentMethod, spec)) {
+            log.warn("payment method {} forbidden for reservationId {}", paymentMethod, spec.getReservationId());
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
 
@@ -494,9 +495,12 @@ public class TicketReservationManager {
             }
             if(reservationCost.requiresPayment()) {
                 var transactionRequest = new TransactionRequest(reservationCost, ticketReservationRepository.getBillingDetailsForReservation(spec.getReservationId()));
-                paymentResult = paymentManager.lookupProviderByMethod(paymentProxy.getPaymentMethod(), spec.getPaymentContext(), transactionRequest)
-                    .map( paymentProvider -> paymentProvider.getTokenAndPay(spec) )
-                    .orElseGet( () -> PaymentResult.failed("error.STEP2_STRIPE_unexpected") );
+                PaymentContext paymentContext = spec.getPaymentContext();
+                paymentResult = paymentManager.streamActiveProvidersByProxy(paymentProxy, paymentContext)
+                    .filter(paymentProvider -> paymentProvider.accept(paymentMethod, paymentContext, transactionRequest))
+                    .findFirst()
+                    .map(paymentProvider -> paymentProvider.getTokenAndPay(spec))
+                    .orElseGet(() -> PaymentResult.failed("error.STEP2_STRIPE_unexpected"));
             } else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
@@ -520,8 +524,7 @@ public class TicketReservationManager {
 
     }
 
-    private boolean paymentMethodIsBlacklisted(PaymentProxy paymentProxy, PaymentSpecification spec) {
-        var paymentMethod = paymentProxy.getPaymentMethod();
+    private boolean paymentMethodIsBlacklisted(PaymentMethod paymentMethod, PaymentSpecification spec) {
         return configurationManager.getBlacklistedMethodsForReservation(spec.getEvent(), findCategoryIdsInReservation(spec.getReservationId()))
             .stream().anyMatch(m -> m == paymentMethod);
     }
@@ -609,9 +612,9 @@ public class TicketReservationManager {
             .anyMatch(t -> allLinks.stream().anyMatch(lg -> lg.getTicketCategoryId() == null || lg.getTicketCategoryId().equals(t.getCategoryId())));
     }
 
-    private PaymentProxy evaluatePaymentProxy(Optional<PaymentProxy> method, TotalPrice reservationCost) {
-        if(method.isPresent()) {
-            return method.get();
+    private PaymentProxy evaluatePaymentProxy(PaymentProxy proxy, TotalPrice reservationCost) {
+        if(proxy != null) {
+            return proxy;
         }
         if(reservationCost.getPriceWithVAT() == 0) {
             return PaymentProxy.NONE;
@@ -2098,8 +2101,8 @@ public class TicketReservationManager {
     private void checkOfflinePaymentsForEvent(Event event) {
         log.trace("check offline payments for event {}", event.getShortName());
         var paymentContext = new PaymentContext(event);
-        var transactionRequest = TransactionRequest.empty();
-        var providers = paymentManager.lookupProvidersByMethodAndCapabilities(PaymentMethod.BANK_TRANSFER, paymentContext, transactionRequest, List.of(OfflineProcessor.class));
+        var providers = paymentManager.streamActiveProvidersByProxyAndCapabilities(PaymentProxy.OFFLINE, paymentContext, List.of(OfflineProcessor.class))
+            .collect(toList());
         if(providers.isEmpty()) {
             log.trace("No active offline provider has been found. Exiting...");
             return;
