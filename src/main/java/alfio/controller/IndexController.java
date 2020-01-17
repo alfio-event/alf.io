@@ -18,6 +18,7 @@ package alfio.controller;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
+import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
@@ -99,6 +100,7 @@ public class IndexController {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final OrganizationRepository organizationRepository;
     private final TicketReservationRepository ticketReservationRepository;
+    private final EventLoader eventLoader;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -167,8 +169,13 @@ public class IndexController {
                 var idx = INDEX_PAGE.cloneNode(true);
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
                 var head = idx.getElementsByTagName("head").get(0);
-                head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), "application/json", "info"));
-                head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "bundle_en"));
+                head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), "application/json", "preload-info", null));
+                head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "preload-bundle", "en"));
+                if (eventShortName != null) {
+                    eventLoader.loadEventInfo(eventShortName, session).ifPresent(ev -> {
+                        head.appendChild(buildScripTag(Json.toJson(ev), "application/json", "preload-event", eventShortName));
+                    });
+                }
                 JFiveParse.serialize(idx, osw);
             }
         }
@@ -188,11 +195,14 @@ public class IndexController {
         }
     }
 
-    private static Element buildScripTag(String content, String type, String id) {
+    private static Element buildScripTag(String content, String type, String id, String param) {
         var e = new Element("script");
         e.appendChild(new Text(content));
         e.setAttribute("type", type);
         e.setAttribute("id", id);
+        if (param != null) {
+            e.setAttribute("data-param", param);
+        }
         return e;
     }
 

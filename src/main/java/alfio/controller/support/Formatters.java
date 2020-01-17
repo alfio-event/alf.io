@@ -18,12 +18,14 @@ package alfio.controller.support;
 
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
+import alfio.util.MustacheCustomTag;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.MessageSource;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,5 +73,17 @@ public class Formatters {
             getFormattedDate(contentLanguages, e.getEnd(), "common.event.date-format", messageSource),
             getFormattedDate(contentLanguages, e.getEnd(), "common.event.time-format", messageSource)
         );
+    }
+
+    public static Map<String, String> applyCommonMark(Map<String, String> in) {
+        if (in == null) {
+            return Collections.emptyMap();
+        }
+
+        var res = new HashMap<String, String>();
+        in.forEach((k, v) -> {
+            res.put(k, MustacheCustomTag.renderToHtmlCommonmarkEscaped(v));
+        });
+        return res;
     }
 }
