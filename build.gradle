@@ -164,6 +164,7 @@ dependencies {
     compile 'ch.digitalfondue.vatchecker:vatchecker:1.4.2'
     compile 'ch.digitalfondue.basicxlsx:basicxlsx:0.5.1'
     compile 'org.imgscalr:imgscalr-lib:4.2'
+    compile 'org.mozilla:rhino-runtime:1.7.13'
 
     compile "com.github.alfio-event:alf.io-public-frontend:$alfioPublicFrontendVersion"
 
