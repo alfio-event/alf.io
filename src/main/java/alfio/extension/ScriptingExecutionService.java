@@ -22,12 +22,16 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.RemovalCause;
 import lombok.extern.log4j.Log4j2;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.NativeJavaClass;
+import org.mozilla.javascript.NativeJavaObject;
+import org.mozilla.javascript.Scriptable;
 import org.springframework.stereotype.Service;
 
-import javax.script.*;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -48,16 +52,8 @@ public class ScriptingExecutionService {
 
     private final SimpleHttpClient simpleHttpClient;
     private final Supplier<Executor> executorSupplier;
+    private final Scriptable sealedScope;
 
-    public ScriptingExecutionService(HttpClient httpClient, Supplier<Executor> executorSupplier) {
-        this.simpleHttpClient = new SimpleHttpClient(httpClient);
-        this.executorSupplier = executorSupplier;
-    }
-
-    private static final Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
-    private final Cache<String, CompiledScript> compiledScriptCache = Caffeine.newBuilder()
-        .expireAfterAccess(Duration.ofHours(12))
-        .build();
     private final Cache<String, Executor> asyncExecutors = Caffeine.newBuilder()
         .expireAfterAccess(Duration.ofHours(12))
         .removalListener((String key, Executor value, RemovalCause cause) -> {
@@ -67,17 +63,26 @@ public class ScriptingExecutionService {
         })
         .build();
 
+    public ScriptingExecutionService(HttpClient httpClient, Supplier<Executor> executorSupplier) {
+        this.simpleHttpClient = new SimpleHttpClient(httpClient);
+        this.executorSupplier = executorSupplier;
+        Context cx = Context.enter();
+        try {
+            sealedScope = cx.initSafeStandardObjects();
+            sealedScope.put("log", sealedScope, log);
+            sealedScope.put("GSON", sealedScope, Json.GSON);
+            sealedScope.put("simpleHttpClient", sealedScope, simpleHttpClient);
+            sealedScope.put("HashMap", sealedScope, new NativeJavaClass(sealedScope, HashMap.class));
+            sealedScope.put("ExtensionUtils", sealedScope, new NativeJavaClass(sealedScope, ExtensionUtils.class));
+        } finally {
+            Context.exit();
+        }
+    }
+
+
+
     public <T> T executeScript(String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params, Class<T> clazz, ExtensionLogger extensionLogger) {
-        CompiledScript compiledScript = compiledScriptCache.get(hash, key -> {
-            try {
-                return engine.compile(scriptFetcher.get());
-            } catch (Throwable se) {
-                log.warn("Was not able to compile script " + name, se);
-                extensionLogger.logError("Was not able to compile script: " + se.getMessage());
-                throw new IllegalStateException(se);
-            }
-        });
-        return executeScript(name, compiledScript, params, clazz, extensionLogger);
+        return executeScriptFinally(name, scriptFetcher.get(), params, clazz, extensionLogger);
     }
 
     public void executeScriptAsync(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params,  ExtensionLogger extensionLogger) {
@@ -87,36 +92,65 @@ public class ScriptingExecutionService {
 
 
     public <T> T executeScript(String name, String script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
-        try {
-            CompiledScript compiledScript = engine.compile(script);
-            return executeScript(name, compiledScript, params, clazz, extensionLogger);
-        } catch (ScriptException se) {
-            log.warn("Was not able to compile script", se);
-            throw new IllegalStateException(se);
+        return executeScriptFinally(name, script, params, clazz, extensionLogger);
+    }
+
+    public static class JavaClassInterop {
+
+        private final Map<String, Class> mapping;
+        private final Scriptable scope;
+
+        JavaClassInterop(Map<String, Class> mapping, Scriptable scope) {
+            this.mapping = mapping;
+            this.scope = scope;
+        }
+
+        public NativeJavaClass type(String clazz) {
+            if (mapping.containsKey(clazz)) {
+                return new NativeJavaClass(scope, mapping.get(clazz));
+            } else {
+                throw new IllegalArgumentException("");
+            }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T executeScript(String name, CompiledScript script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
+    private <T> T executeScriptFinally(String name, String script, Map<String, Object> params, Class<T> clazz,  ExtensionLogger extensionLogger) {
+        Context cx = Context.enter();
         try {
             if(params == null) {
                 params = Collections.emptyMap();
             }
-            ScriptContext newContext = new SimpleScriptContext();
-            Bindings engineScope = newContext.getBindings(ScriptContext.ENGINE_SCOPE);
-            engineScope.put("log", log);
-            engineScope.put("extensionLogger", extensionLogger);
-            engineScope.put("GSON", Json.GSON);
-            engineScope.put("simpleHttpClient", simpleHttpClient);
-            engineScope.put("returnClass", clazz);
-            engineScope.putAll(params);
-            T res = (T) script.eval(newContext);
+
+            Scriptable scope = cx.newObject(sealedScope);
+            scope.setPrototype(sealedScope);
+            scope.setParentScope(null);
+            scope.put("extensionLogger", scope, extensionLogger);
+
+            // retrocompatibility
+            scope.put("Java", scope, new JavaClassInterop(Map.of("alfio.model.CustomerName", alfio.model.CustomerName.class), scope));
+            //
+
+            scope.put("returnClass", scope, clazz);
+
+            for (var entry : params.entrySet()) {
+                scope.put(entry.getKey(), scope, entry.getValue());
+            }
+
+            Object res = cx.evaluateString(scope, script, name, 1, null);
             extensionLogger.logSuccess("Script executed successfully");
-            return res;
+            if (res instanceof NativeJavaObject) {
+                NativeJavaObject nativeRes = (NativeJavaObject) res;
+                return (T) nativeRes.unwrap();
+            } else {
+                return null;
+            }
         } catch (Throwable ex) { //
             log.warn("Error while executing script " + name + ":", ex);
             extensionLogger.logError("Error while executing script: " + ex.getMessage());
             throw new IllegalStateException(ex);
+        } finally {
+            Context.exit();
         }
     }
 }
