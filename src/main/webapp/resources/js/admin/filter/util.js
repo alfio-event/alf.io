@@ -90,7 +90,7 @@
                 }
             }
 
-            return _.filter(list, query);
+            return _.uniq(_.filter(list, query), false, 'id');
         }
     });
 

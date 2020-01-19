@@ -73,7 +73,12 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     private static final Set<PaymentMethod> EMPTY_METHODS = Collections.unmodifiableSet(EnumSet.noneOf(PaymentMethod.class));
     static final Map<String, PaymentMethod> SUPPORTED_METHODS = Map.of(
         "ideal", PaymentMethod.IDEAL,
-        "creditcard", PaymentMethod.CREDIT_CARD
+        "creditcard", PaymentMethod.CREDIT_CARD,
+        "applepay", PaymentMethod.APPLE_PAY,
+        "bancontact", PaymentMethod.BANCONTACT,
+        "inghomepay", PaymentMethod.ING_HOME_PAY,
+        "belfius", PaymentMethod.BELFIUS,
+        "przelewy24", PaymentMethod.PRZELEWY_24
         /*
             other available:
             applepay, bancontact, banktransfer, paypal, sofort, belfius, kbc, klarnapaylater, klarnasliceit, giftcard,

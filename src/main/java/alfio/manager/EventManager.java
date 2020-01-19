@@ -825,6 +825,7 @@ public class EventManager {
         return em.getAllowedPaymentProxies()
                 .stream()
                 .map(PaymentProxy::name)
+                .distinct()
                 .collect(joining(","));
     }
 
