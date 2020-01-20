@@ -21,9 +21,13 @@ import alfio.manager.support.PaymentWebhookResult;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
+import alfio.model.Event;
+import alfio.model.PaymentInformation;
 import alfio.model.TicketReservation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
+import alfio.model.transaction.capabilities.PaymentInfo;
+import alfio.model.transaction.capabilities.RefundRequest;
 import alfio.model.transaction.capabilities.WebhookHandler;
 import alfio.model.transaction.token.MollieToken;
 import alfio.model.transaction.webhook.MollieWebhookPayload;
@@ -34,6 +38,7 @@ import alfio.repository.TransactionRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
+import alfio.util.MonetaryUtil;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.gson.JsonObject;
@@ -67,7 +72,7 @@ import static alfio.util.MonetaryUtil.formatCents;
 @Component
 @Log4j2
 @AllArgsConstructor
-public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHandler {
+public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHandler, RefundRequest, PaymentInfo {
 
     public static final String WEBHOOK_URL_TEMPLATE = "/api/payment/webhook/mollie/event/{eventShortName}/reservation/{reservationId}";
     private static final Set<PaymentMethod> EMPTY_METHODS = Collections.unmodifiableSet(EnumSet.noneOf(PaymentMethod.class));
@@ -81,8 +86,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         "przelewy24", PaymentMethod.PRZELEWY_24
         /*
             other available:
-            applepay, bancontact, banktransfer, paypal, sofort, belfius, kbc, klarnapaylater, klarnasliceit, giftcard,
-            inghomepay, giropay, eps, przelewy24
+            banktransfer, paypal, sofort, kbc, klarnapaylater, klarnasliceit, giftcard, giropay, eps
         */
     );
     private static String MOLLIE_ENDPOINT = "https://api.mollie.com/v2/";
@@ -393,6 +397,57 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         return client.send(request, HttpResponse.BodyHandlers.ofInputStream());
     }
 
+    @Override
+    public boolean refund(Transaction transaction, Event event, Integer amount) {
+        var currencyCode = transaction.getCurrency();
+        var amountToRefund = Optional.ofNullable(amount)
+            .map(a -> MonetaryUtil.formatCents(a, currencyCode))
+            .orElseGet(transaction::getFormattedAmount);
+        var configuration = getConfiguration(ConfigurationLevel.event(event));
+        var paymentId = transaction.getPaymentId();
+        var request = requestFor(PAYMENTS_ENDPOINT+"/"+ paymentId +"/refunds", configuration)
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .POST(HttpUtils.ofFormUrlEncodedBody(Map.of(
+                "amount[currency]", currencyCode,
+                "amount[value]", amountToRefund
+            ))).build();
+
+        try {
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if(HttpUtils.callSuccessful(response)) {
+                // we ignore the answer, for now
+                return true;
+            } else {
+                log.warn("got {} response while calling refund API for payment ID {}", response.statusCode(), paymentId);
+                log.trace("detailed reply from mollie: {}", response::body);
+                return false;
+            }
+        } catch (Exception e) {
+            log.warn("error while calling refund API", e);
+            return false;
+        }
+    }
+
+    @Override
+    public Optional<PaymentInformation> getInfo(Transaction transaction, Event event) {
+        var configuration = getConfiguration(ConfigurationLevel.event(event));
+        try {
+            var getPaymentResponse = callGetPayment(transaction.getPaymentId(), configuration);
+            if(HttpUtils.callSuccessful(getPaymentResponse)) {
+                try (var responseReader = new InputStreamReader(getPaymentResponse.body())) {
+                    var body = new MolliePaymentDetails(JsonParser.parseReader(responseReader).getAsJsonObject());
+                    var paidAmount = body.getPaidAmount();
+                    var refundAmount = body.getRefundAmount().map(PaymentAmount::getValue).orElse(null);
+                    return Optional.of(new PaymentInformation(paidAmount.getValue(), refundAmount, null, null));
+                }
+            }
+        } catch (Exception e) {
+            log.warn("got exception while calling getInfo", e);
+            return Optional.empty();
+        }
+        return Optional.empty();
+    }
+
     @Data
     private static class MethodCacheKey {
         private final PaymentAmount amount;
@@ -459,6 +514,16 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
         PaymentMethod getPaymentMethod() {
             return SUPPORTED_METHODS.get(body.get("method").getAsString());
+        }
+
+        PaymentAmount getPaidAmount() {
+            var amount = body.getAsJsonObject("amount");
+            return new PaymentAmount(amount.get("value").getAsString(), amount.get("currency").getAsString());
+        }
+
+        Optional<PaymentAmount> getRefundAmount() {
+            return Optional.ofNullable(body.getAsJsonObject("amountRefunded"))
+                .map(refund -> new PaymentAmount(refund.get("value").getAsString(), refund.get("currency").getAsString()));
         }
     }
 }
