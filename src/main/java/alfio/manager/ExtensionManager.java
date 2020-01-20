@@ -111,7 +111,7 @@ public class ExtensionManager {
     }
 
     void handleTicketAssignment(Ticket ticket) {
-        if(ticket.getStatus() == Ticket.TicketStatus.ACQUIRED) {
+        if(!ticket.hasBeenSold()) {
             return; // ignore tickets if the reservation is not yet confirmed
         }
         int eventId = ticket.getEventId();
