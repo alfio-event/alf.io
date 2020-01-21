@@ -53,11 +53,15 @@ public class GroupApiController {
     }
 
     @GetMapping("/for/{organizationId}")
-    public ResponseEntity<List<Group>> loadAllGroupsForOrganization(@PathVariable("organizationId") int organizationId, Principal principal) {
+    public ResponseEntity<List<Group>> loadAllGroupsForOrganization(@PathVariable("organizationId") int organizationId, @RequestParam(name = "showAll", defaultValue = "false", required = false) boolean showAll, Principal principal) {
         if(notOwner(principal.getName(), organizationId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
-        return ResponseEntity.ok(groupManager.getAllForOrganization(organizationId));
+        if (showAll) {
+            return ResponseEntity.ok(groupManager.getAllForOrganization(organizationId));
+        } else {
+            return ResponseEntity.ok(groupManager.getAllActiveForOrganization(organizationId));
+        }
     }
 
     @GetMapping("/for/{organizationId}/detail/{listId}")

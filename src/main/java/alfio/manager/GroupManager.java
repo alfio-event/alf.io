@@ -116,7 +116,12 @@ public class GroupManager {
         return CollectionUtils.isNotEmpty(findLinks(eventId, categoryId));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
+    public List<Group> getAllActiveForOrganization(int organizationId) {
+        return groupRepository.getAllActiveForOrganization(organizationId);
+    }
+
+    @Transactional(readOnly = true)
     public List<Group> getAllForOrganization(int organizationId) {
         return groupRepository.getAllForOrganization(organizationId);
     }

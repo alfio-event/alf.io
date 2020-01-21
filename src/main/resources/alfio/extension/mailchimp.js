@@ -6,7 +6,7 @@ function getScriptMetadata() {
     return {
         id: 'mailchimp', //
         displayName: 'MailChimp integration',
-        version: 1, //
+        version: 2, //
         async: true,
         events: [
             'RESERVATION_CONFIRMED', //fired on reservation confirmation. No results expected.
@@ -38,13 +38,13 @@ var LIST_MEMBERS = "members/";
  */
 function executeScript(scriptEvent) {
     if('TICKET_ASSIGNED' === scriptEvent) {
-        var customerName = new CustomerName(ticket.fullName, ticket.firstName, ticket.lastName, event);
+        var customerName = new CustomerName(ticket.fullName, ticket.firstName, ticket.lastName, event.mustUseFirstAndLastName());
         subscribeUser(ticket.email, customerName, ticket.userLanguage, event);
     } else if ('RESERVATION_CONFIRMED' === scriptEvent) {
-        var customerName = new CustomerName(reservation.fullName, reservation.firstName, reservation.lastName, event);
+        var customerName = new CustomerName(reservation.fullName, reservation.firstName, reservation.lastName, event.mustUseFirstAndLastName());
         subscribeUser(reservation.email, customerName, reservation.userLanguage, event);
     } else if ('WAITING_QUEUE_SUBSCRIPTION' === scriptEvent) {
-        var customerName = new CustomerName(waitingQueueSubscription.fullName, waitingQueueSubscription.firstName, waitingQueueSubscription.lastName, event);
+        var customerName = new CustomerName(waitingQueueSubscription.fullName, waitingQueueSubscription.firstName, waitingQueueSubscription.lastName, event.mustUseFirstAndLastName());
         subscribeUser(waitingQueueSubscription.emailAddress, customerName, waitingQueueSubscription.userLanguage, event);
     }
 }

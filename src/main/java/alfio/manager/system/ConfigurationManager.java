@@ -16,6 +16,9 @@
  */
 package alfio.manager.system;
 
+import alfio.config.Initializer;
+import alfio.controller.api.v2.model.AlfioInfo;
+import alfio.controller.api.v2.model.AnalyticsConfiguration;
 import alfio.manager.system.ConfigurationLevels.CategoryLevel;
 import alfio.manager.system.ConfigurationLevels.EventLevel;
 import alfio.manager.system.ConfigurationLevels.OrganizationLevel;
@@ -40,9 +43,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpSession;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -70,6 +76,7 @@ public class ConfigurationManager {
     private final UserManager userManager;
     private final EventRepository eventRepository;
     private final ExternalConfiguration externalConfiguration;
+    private final Environment environment;
 
     //TODO: refactor, not the most beautiful code, find a better solution...
     private Optional<Configuration> findByConfigurationPathAndKey(ConfigurationPath path, ConfigurationKeys key) {
@@ -633,6 +640,19 @@ public class ConfigurationManager {
      */
     public Map<Integer, String> getAllCategoriesAndValueWith(EventAndOrganizationId event, ConfigurationKeys key) {
         return configurationRepository.getAllCategoriesAndValueWith(event.getOrganizationId(), event.getId(), key);
+    }
+
+    public AlfioInfo getInfo(HttpSession session) {
+        var demoMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO));
+        var devMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV));
+        var prodMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
+
+
+        var conf = getFor(Set.of(ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE, ConfigurationKeys.GOOGLE_ANALYTICS_KEY), ConfigurationLevel.system());
+
+        var analyticsConf = AnalyticsConfiguration.build(conf, session);
+
+        return new AlfioInfo(demoMode, devMode, prodMode, analyticsConf);
     }
 
 }

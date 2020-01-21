@@ -37,21 +37,10 @@ import java.util.Set;
 @AllArgsConstructor
 public class InfoApiController {
 
-    private final Environment environment;
     private final ConfigurationManager configurationManager;
 
     @GetMapping("info")
     public AlfioInfo getInfo(HttpSession session) {
-
-        var demoMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO));
-        var devMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEV));
-        var prodMode = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
-
-
-        var conf = configurationManager.getFor(Set.of(ConfigurationKeys.GOOGLE_ANALYTICS_ANONYMOUS_MODE, ConfigurationKeys.GOOGLE_ANALYTICS_KEY), ConfigurationLevel.system());
-
-        var analyticsConf = AnalyticsConfiguration.build(conf, session);
-
-        return new AlfioInfo(demoMode, devMode, prodMode, analyticsConf);
+        return configurationManager.getInfo(session);
     }
 }

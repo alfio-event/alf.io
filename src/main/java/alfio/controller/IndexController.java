@@ -18,6 +18,7 @@ package alfio.controller;
 
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
+import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
@@ -29,6 +30,7 @@ import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
+import alfio.util.Json;
 import alfio.util.MustacheCustomTag;
 import alfio.util.RequestUtils;
 import alfio.util.TemplateManager;
@@ -49,8 +51,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.security.SecureRandom;
@@ -76,10 +80,11 @@ public class IndexController {
 
     static {
         try (var idxIs = new ClassPathResource("alfio-public-frontend-index.html").getInputStream();
-             var idxOpenGraph = new ClassPathResource("alfio/web-templates/event-open-graph-page.html").getInputStream()) {
-            var parser = new Parser();
-            INDEX_PAGE = parser.parse(new InputStreamReader(idxIs, StandardCharsets.UTF_8));
-            OPEN_GRAPH_PAGE = parser.parse(new InputStreamReader(idxOpenGraph, StandardCharsets.UTF_8));
+             var idxOpenIs = new ClassPathResource("alfio/web-templates/event-open-graph-page.html").getInputStream();
+             var idxIsR = new InputStreamReader(idxIs, StandardCharsets.UTF_8);
+             var idxOpenGraphReader = new InputStreamReader(idxOpenIs, StandardCharsets.UTF_8)) {
+            INDEX_PAGE = JFiveParse.parse(idxIsR);
+            OPEN_GRAPH_PAGE = JFiveParse.parse(idxOpenGraphReader);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -95,7 +100,7 @@ public class IndexController {
     private final EventDescriptionRepository eventDescriptionRepository;
     private final OrganizationRepository organizationRepository;
     private final TicketReservationRepository ticketReservationRepository;
-    private final TicketRepository ticketRepository;
+    private final EventLoader eventLoader;
 
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
@@ -147,22 +152,31 @@ public class IndexController {
                              @RequestHeader(value = "User-Agent", required = false) String userAgent,
                              @RequestParam(value = "lang", required = false) String lang,
                              ServletWebRequest request,
-                             HttpServletResponse response) throws IOException {
+                             HttpServletResponse response,
+                             HttpSession session) throws IOException {
 
         response.setContentType(TEXT_HTML_CHARSET_UTF_8);
         response.setCharacterEncoding(UTF_8);
         var nonce = addCspHeader(response);
 
         if (eventShortName != null && RequestUtils.isSocialMediaShareUA(userAgent) && eventRepository.existsByShortName(eventShortName)) {
-            try (var os = response.getOutputStream()) {
+            try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
                 var res = getOpenGraphPage((Document) OPEN_GRAPH_PAGE.cloneNode(true), eventShortName, request, lang);
-                os.write(res);
+                JFiveParse.serialize(res, osw);
             }
         } else {
-            try (var os = response.getOutputStream()) {
+            try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
                 var idx = INDEX_PAGE.cloneNode(true);
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
-                os.write(HtmlSerializer.serialize(idx).getBytes(StandardCharsets.UTF_8));
+                var head = idx.getElementsByTagName("head").get(0);
+                head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), "application/json", "preload-info", null));
+                head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "preload-bundle", "en"));
+                if (eventShortName != null) {
+                    eventLoader.loadEventInfo(eventShortName, session).ifPresent(ev -> {
+                        head.appendChild(buildScripTag(Json.toJson(ev), "application/json", "preload-event", eventShortName));
+                    });
+                }
+                JFiveParse.serialize(idx, osw);
             }
         }
     }
@@ -181,6 +195,17 @@ public class IndexController {
         }
     }
 
+    private static Element buildScripTag(String content, String type, String id, String param) {
+        var e = new Element("script");
+        e.appendChild(new Text(content));
+        e.setAttribute("type", type);
+        e.setAttribute("id", id);
+        if (param != null) {
+            e.setAttribute("data-param", param);
+        }
+        return e;
+    }
+
     private static String reservationStatusToUrlMapping(TicketReservationStatusAndValidation status) {
         switch (status.getStatus()) {
             case PENDING: return Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
@@ -197,7 +222,7 @@ public class IndexController {
 
     // see https://github.com/alfio-event/alf.io/issues/708
     // use ngrok to test the preview
-    private byte[] getOpenGraphPage(Document eventOpenGraph, String eventShortName, ServletWebRequest request, String lang) {
+    private Document getOpenGraphPage(Document eventOpenGraph, String eventShortName, ServletWebRequest request, String lang) {
         var event = eventRepository.findByShortName(eventShortName);
         var locale = RequestUtils.getMatchingLocale(request, event);
         if (lang != null && event.getContentLanguages().stream().map(ContentLanguage::getLanguage).anyMatch(lang::equalsIgnoreCase)) {
@@ -238,7 +263,7 @@ public class IndexController {
             }
         });
 
-        return HtmlSerializer.serialize(eventOpenGraph).getBytes(StandardCharsets.UTF_8);
+        return eventOpenGraph;
     }
 
     private static Element buildMetaTag(String propertyValue, String contentValue) {

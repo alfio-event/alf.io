@@ -48,7 +48,10 @@ public interface GroupRepository {
     @Query("select * from group_active where id = :id")
     Optional<Group> getOptionalById(@Bind("id") int id);
 
-    @Query("select * from group_active where organization_id_fk = :organizationId")
+    @Query("select * from group_active where organization_id_fk = :organizationId order by name, description")
+    List<Group> getAllActiveForOrganization(@Bind("organizationId") int organizationId);
+
+    @Query("select * from a_group where organization_id_fk = :organizationId order by name, description")
     List<Group> getAllForOrganization(@Bind("organizationId") int organizationId);
 
     @Query("insert into group_link(a_group_id_fk, event_id_fk, ticket_category_id_fk, type, match_type, max_allocation)" +

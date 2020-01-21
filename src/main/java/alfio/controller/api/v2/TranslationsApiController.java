@@ -32,7 +32,6 @@ import java.text.Collator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RestController
@@ -44,29 +43,16 @@ public class TranslationsApiController {
     private final ConfigurationManager configurationManager;
     private final I18nManager i18nManager;
 
-    private static final String[] EMPTY_ARRAY = new String[]{};
-
-
     @GetMapping("/public/i18n/bundle/{lang}")
     public Map<String, String> getPublicTranslations(@PathVariable("lang") String lang,
                                                      @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
-        return getBundleAsMap("alfio.i18n.public", withSystemOverride, lang);
+        return messageSourceManager.getBundleAsMap("alfio.i18n.public", withSystemOverride, lang);
     }
 
     @GetMapping("/admin/i18n/bundle/{lang}")
     public Map<String, String> getAdminTranslations(@PathVariable("lang") String lang,
                                                     @RequestParam(value = "withSystemOverride", defaultValue = "true", required = false) boolean withSystemOverride) {
-        return getBundleAsMap("alfio.i18n.admin", withSystemOverride, lang);
-    }
-
-    private Map<String, String> getBundleAsMap(String baseName, boolean withSystemOverride, String lang) {
-        var locale = LocaleUtil.forLanguageTag(lang);
-        var messageSource = messageSourceManager.getRootMessageSource(withSystemOverride);
-        return messageSourceManager.getKeys(baseName, locale)
-            .stream()
-            .collect(Collectors.toMap(Function.identity(), k -> messageSource.getMessage(k, EMPTY_ARRAY, locale)
-                //replace all placeholder {0} -> {{0}} so it can be consumed by ngx-translate
-                .replaceAll("\\{(\\d+)\\}", "{{$1}}")));
+        return messageSourceManager.getBundleAsMap("alfio.i18n.admin", withSystemOverride, lang);
     }
 
     @GetMapping("/public/i18n/countries/{lang}")
