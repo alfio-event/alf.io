@@ -14,15 +14,31 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.transaction;
+package alfio.model.transaction.token;
 
-import java.util.Arrays;
+import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.PaymentToken;
+import lombok.AllArgsConstructor;
 
-public enum PaymentMethod {
+@AllArgsConstructor
+public class MollieToken implements PaymentToken {
 
-    CREDIT_CARD, PAYPAL, IDEAL, BANK_TRANSFER, ON_SITE, NONE, APPLE_PAY, BANCONTACT, ING_HOME_PAY, BELFIUS, PRZELEWY_24;
+    private final String paymentId;
+    private final PaymentMethod paymentMethod;
 
-    public static PaymentMethod safeParse(String asString) {
-        return Arrays.stream(PaymentMethod.values()).filter(v -> v.name().equals(asString)).findFirst().orElse(null);
+    @Override
+    public String getToken() {
+        return paymentId;
+    }
+
+    @Override
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    @Override
+    public PaymentProxy getPaymentProvider() {
+        return PaymentProxy.MOLLIE;
     }
 }

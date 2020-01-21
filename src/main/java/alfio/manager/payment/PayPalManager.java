@@ -305,7 +305,17 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     }
 
     @Override
-    public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
+    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        return EnumSet.of(PaymentMethod.PAYPAL);
+    }
+
+    @Override
+    public PaymentProxy getPaymentProxy() {
+        return PaymentProxy.PAYPAL;
+    }
+
+    @Override
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
 
         var paypalConf = configurationManager.getFor(Set.of(PAYPAL_ENABLED, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET),
             context.getConfigurationLevel());
@@ -319,6 +329,16 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     @Override
     public boolean accept(alfio.model.transaction.Transaction transaction) {
         return PaymentProxy.PAYPAL == transaction.getPaymentProxy();
+    }
+
+    @Override
+    public PaymentMethod getPaymentMethodForTransaction(alfio.model.transaction.Transaction transaction) {
+        return PaymentMethod.PAYPAL;
+    }
+
+    @Override
+    public boolean isActive(PaymentContext paymentContext) {
+        return false;
     }
 
     @Override

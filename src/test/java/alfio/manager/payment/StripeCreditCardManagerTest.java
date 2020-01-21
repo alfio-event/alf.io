@@ -22,6 +22,7 @@ import alfio.model.Event;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.TransactionRequest;
 import alfio.repository.TicketRepository;
 import com.stripe.exception.*;
 import com.stripe.net.RequestOptions;
@@ -34,8 +35,8 @@ import java.util.Optional;
 
 import static alfio.manager.testSupport.StripeUtils.completeStripeConfiguration;
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.model.system.ConfigurationKeys.STRIPE_CC_ENABLED;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -105,7 +106,7 @@ public class StripeCreditCardManagerTest {
         var configurationLevel = ConfigurationLevel.organization(1);
         when(configurationManager.getFor(EnumSet.of(PLATFORM_MODE_ENABLED, STRIPE_CC_ENABLED, STRIPE_CONNECTED_ID, STRIPE_ENABLE_SCA, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY), configurationLevel))
             .thenReturn(configuration);
-        assertFalse(stripeCreditCardManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+        assertFalse(stripeCreditCardManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel), TransactionRequest.empty()));
     }
 
     @Test
@@ -117,7 +118,7 @@ public class StripeCreditCardManagerTest {
         var configurationLevel = ConfigurationLevel.organization(1);
         when(configurationManager.getFor(EnumSet.of(PLATFORM_MODE_ENABLED, STRIPE_CC_ENABLED, STRIPE_CONNECTED_ID, STRIPE_ENABLE_SCA, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY), configurationLevel))
             .thenReturn(configuration);
-        assertTrue(stripeCreditCardManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+        assertTrue(stripeCreditCardManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel), TransactionRequest.empty()));
     }
 
     @Test
@@ -128,7 +129,7 @@ public class StripeCreditCardManagerTest {
         var configurationLevel = ConfigurationLevel.organization(1);
         when(configurationManager.getFor(EnumSet.of(PLATFORM_MODE_ENABLED, STRIPE_CC_ENABLED, STRIPE_CONNECTED_ID, STRIPE_ENABLE_SCA, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY), configurationLevel))
             .thenReturn(configuration);
-        assertFalse(stripeCreditCardManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+        assertFalse(stripeCreditCardManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel), TransactionRequest.empty()));
     }
 
     @Test
@@ -136,6 +137,6 @@ public class StripeCreditCardManagerTest {
         var configurationLevel = ConfigurationLevel.organization(1);
         when(configurationManager.getFor(EnumSet.of(PLATFORM_MODE_ENABLED, STRIPE_CC_ENABLED, STRIPE_CONNECTED_ID, STRIPE_ENABLE_SCA, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY), configurationLevel))
             .thenReturn(completeStripeConfiguration(false));
-        assertTrue(stripeCreditCardManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+        assertTrue(stripeCreditCardManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel), TransactionRequest.empty()));
     }
 }

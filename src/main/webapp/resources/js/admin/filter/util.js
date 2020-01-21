@@ -3,11 +3,11 @@
     var filters = angular.module('utilFilters', []);
 
     filters.value('PAYMENT_PROXY_DESCRIPTIONS', {
-        'STRIPE': 'Credit card payments',
+        'STRIPE': 'Stripe: Credit cards',
         'ON_SITE': 'On site (cash) payment',
         'OFFLINE': 'Offline payment (bank transfer, invoice, etc.)',
-        'PAYPAL' : 'PayPal'/*,
-        'MOLLIE' : 'Mollie (€ only): (iDEAL, SOFORT, credit cards, etc.)'*/
+        'PAYPAL' : 'PayPal',
+        'MOLLIE' : 'Mollie: Credit cards, iDEAL'
     });
 
     filters.filter('printSelectedOrganization', function() {
@@ -90,7 +90,7 @@
                 }
             }
 
-            return _.filter(list, query);
+            return _.uniq(_.filter(list, query), false, 'id');
         }
     });
 

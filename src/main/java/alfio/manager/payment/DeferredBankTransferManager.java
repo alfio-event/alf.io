@@ -17,21 +17,18 @@
 package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
-import alfio.manager.system.ConfigurationManager;
-import alfio.model.TicketReservation;
 import alfio.model.transaction.*;
 import alfio.repository.TicketReservationRepository;
-import alfio.repository.TransactionRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
 import static alfio.model.TicketReservation.TicketReservationStatus.DEFERRED_OFFLINE_PAYMENT;
-import static java.time.ZoneOffset.UTC;
 
 @Component
 @Order(0)
@@ -48,10 +45,20 @@ public class DeferredBankTransferManager implements PaymentProvider {
     }
 
     @Override
-    public boolean accept(PaymentMethod paymentMethod, PaymentContext paymentContext) {
+    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        return bankTransferManager.getSupportedPaymentMethods(paymentContext, transactionRequest);
+    }
+
+    @Override
+    public PaymentProxy getPaymentProxy() {
+        return bankTransferManager.getPaymentProxy();
+    }
+
+    @Override
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext paymentContext, TransactionRequest transactionRequest) {
         var options = bankTransferManager.options(paymentContext);
         return paymentContext.getEvent() != null
-            && bankTransferManager.bankTransferEnabled(paymentMethod, paymentContext, options)
+            && bankTransferManager.bankTransferEnabledForMethod(paymentMethod, paymentContext, options)
             && bankTransferManager.isPaymentDeferredEnabled(options);
     }
 
@@ -70,6 +77,18 @@ public class DeferredBankTransferManager implements PaymentProvider {
     @Override
     public boolean accept(Transaction transaction) {
         return PaymentProxy.OFFLINE == transaction.getPaymentProxy() && isReservationStatusCompatible(transaction);
+    }
+
+    @Override
+    public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
+        return bankTransferManager.getPaymentMethodForTransaction(transaction);
+    }
+
+    @Override
+    public boolean isActive(PaymentContext paymentContext) {
+        var options = bankTransferManager.options(paymentContext);
+        return bankTransferManager.bankTransferActive(paymentContext, options)
+            && bankTransferManager.isPaymentDeferredEnabled(options);
     }
 
     private Boolean isReservationStatusCompatible(Transaction transaction) {

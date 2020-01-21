@@ -46,7 +46,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.OfflineProcessor;
 import alfio.model.transaction.capabilities.ServerInitiatedTransaction;
-import alfio.model.transaction.capabilities.SignedWebhookHandler;
+import alfio.model.transaction.capabilities.WebhookHandler;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.repository.*;
@@ -464,16 +464,17 @@ public class TicketReservationManager {
 
     public PaymentResult performPayment(PaymentSpecification spec,
                                         TotalPrice reservationCost,
-                                        Optional<PaymentProxy> method) {
-        PaymentProxy paymentProxy = evaluatePaymentProxy(method, reservationCost);
+                                        PaymentProxy proxy,
+                                        PaymentMethod paymentMethod) {
+        PaymentProxy paymentProxy = evaluatePaymentProxy(proxy, reservationCost);
 
         if(!acquireGroupMembers(spec.getReservationId(), spec.getEvent())) {
             groupManager.deleteWhitelistedTicketsForReservation(spec.getReservationId());
             return PaymentResult.failed("error.STEP2_WHITELIST");
         }
 
-        if(paymentMethodIsBlacklisted(paymentProxy, spec)) {
-            log.warn("payment method {} forbidden for reservationId {}", paymentProxy.getPaymentMethod(), spec.getReservationId());
+        if(paymentMethodIsBlacklisted(paymentMethod, spec)) {
+            log.warn("payment method {} forbidden for reservationId {}", paymentMethod, spec.getReservationId());
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
 
@@ -496,9 +497,13 @@ public class TicketReservationManager {
                 return PaymentResult.failed(ErrorsCode.STEP_2_DISCOUNT_CODE_USAGE_EXCEEDED);
             }
             if(reservationCost.requiresPayment()) {
-                paymentResult = paymentManager.lookupProviderByMethod(paymentProxy.getPaymentMethod(), spec.getPaymentContext())
-                    .map( paymentProvider -> paymentProvider.getTokenAndPay(spec) )
-                    .orElseGet( () -> PaymentResult.failed("error.STEP2_STRIPE_unexpected") );
+                var transactionRequest = new TransactionRequest(reservationCost, ticketReservationRepository.getBillingDetailsForReservation(spec.getReservationId()));
+                PaymentContext paymentContext = spec.getPaymentContext();
+                paymentResult = paymentManager.streamActiveProvidersByProxy(paymentProxy, paymentContext)
+                    .filter(paymentProvider -> paymentProvider.accept(paymentMethod, paymentContext, transactionRequest))
+                    .findFirst()
+                    .map(paymentProvider -> paymentProvider.getTokenAndPay(spec))
+                    .orElseGet(() -> PaymentResult.failed("error.STEP2_STRIPE_unexpected"));
             } else {
                 paymentResult = PaymentResult.successful(NOT_YET_PAID_TRANSACTION_ID);
             }
@@ -522,8 +527,7 @@ public class TicketReservationManager {
 
     }
 
-    private boolean paymentMethodIsBlacklisted(PaymentProxy paymentProxy, PaymentSpecification spec) {
-        var paymentMethod = paymentProxy.getPaymentMethod();
+    private boolean paymentMethodIsBlacklisted(PaymentMethod paymentMethod, PaymentSpecification spec) {
         return configurationManager.getBlacklistedMethodsForReservation(spec.getEvent(), findCategoryIdsInReservation(spec.getReservationId()))
             .stream().anyMatch(m -> m == paymentMethod);
     }
@@ -618,9 +622,9 @@ public class TicketReservationManager {
             .anyMatch(t -> allLinks.stream().anyMatch(lg -> lg.getTicketCategoryId() == null || lg.getTicketCategoryId().equals(t.getCategoryId())));
     }
 
-    private PaymentProxy evaluatePaymentProxy(Optional<PaymentProxy> method, TotalPrice reservationCost) {
-        if(method.isPresent()) {
-            return method.get();
+    private PaymentProxy evaluatePaymentProxy(PaymentProxy proxy, TotalPrice reservationCost) {
+        if(proxy != null) {
+            return proxy;
         }
         if(reservationCost.getPriceWithVAT() == 0) {
             return PaymentProxy.NONE;
@@ -960,7 +964,7 @@ public class TicketReservationManager {
     private void reTransitionToPending(String reservationId) {
         reTransitionToPending(reservationId, true);
     }
-    
+
     //check internal consistency between the 3 values
     public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
 
@@ -1875,16 +1879,19 @@ public class TicketReservationManager {
         return StringUtils.isEmpty(reservation.getUserLanguage()) ? Locale.ENGLISH : LocaleUtil.forLanguageTag(reservation.getUserLanguage());
     }
 
-    public PaymentWebhookResult processTransactionWebhook(String body, String signature, PaymentMethod paymentMethod) {
+    public PaymentWebhookResult processTransactionWebhook(String body, String signature, PaymentProxy paymentProxy, Map<String, String> additionalInfo) {
         //load the payment provider using system configuration
-        var paymentProviderOptional = paymentManager.lookupProviderByMethod(paymentMethod, new PaymentContext())
-            .filter(pp -> pp instanceof SignedWebhookHandler);
+        var paymentProviderOptional = paymentManager.streamActiveProvidersByProxyAndCapabilities(paymentProxy, new PaymentContext(), List.of(WebhookHandler.class)).findFirst();
         if(paymentProviderOptional.isEmpty()) {
             return PaymentWebhookResult.error("payment provider not found");
         }
 
         var paymentProvider = paymentProviderOptional.get();
-        var optionalTransactionWebhookPayload = ((SignedWebhookHandler) paymentProvider).parseTransactionPayload(body, signature);
+        if(((WebhookHandler)paymentProvider).requiresSignedBody() && StringUtils.isBlank(signature)) {
+            return PaymentWebhookResult.error("signature is missing");
+        }
+
+        var optionalTransactionWebhookPayload = ((WebhookHandler)paymentProvider).parseTransactionPayload(body, signature, additionalInfo);
         if(optionalTransactionWebhookPayload.isEmpty()) {
             return PaymentWebhookResult.error("payload not recognized");
         }
@@ -1905,10 +1912,9 @@ public class TicketReservationManager {
 
         //reload the payment provider, this time within a more sensible context
         var paymentContext = new PaymentContext(eventRepository.findByReservationId(reservation.getId()));
-        return paymentManager.lookupProviderByMethod(paymentMethod, paymentContext)
-            .filter(pp -> pp instanceof SignedWebhookHandler)
+        return paymentManager.lookupProviderByTransactionAndCapabilities(transaction, List.of(WebhookHandler.class))
             .map(provider -> {
-                var paymentWebhookResult = ((SignedWebhookHandler) provider).processWebhook(transactionPayload, transaction, paymentContext);
+                var paymentWebhookResult = ((WebhookHandler) provider).processWebhook(transactionPayload, transaction, paymentContext);
                 var event = eventRepository.findByReservationId(reservation.getId());
                 switch(paymentWebhookResult.getType()) {
                     case NOT_RELEVANT: {
@@ -1951,15 +1957,16 @@ public class TicketReservationManager {
                         Date expiration = reservation.getValidity();
                         Date now = new Date();
                         int slackTime = configurationManager.getFor(RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT, paymentContext.getConfigurationLevel()).getValueAsIntOrDefault(10);
+                        PaymentMethod paymentMethodForTransaction = paymentProvider.getPaymentMethodForTransaction(transaction);
                         if(expiration.before(now)) {
-                            sendTransactionFailedEmail(event, reservation, paymentMethod, paymentWebhookResult, true);
+                            sendTransactionFailedEmail(event, reservation, paymentMethodForTransaction, paymentWebhookResult, true);
                             cancelReservation(reservation, false, null);
                             break;
                         } else if(DateUtils.addMinutes(expiration, -slackTime).before(now)) {
                             ticketReservationRepository.updateValidity(reservation.getId(), DateUtils.addMinutes(now, slackTime));
                         }
                         reTransitionToPending(reservation.getId(), false);
-                        sendTransactionFailedEmail(event, reservation, paymentMethod, paymentWebhookResult, false);
+                        sendTransactionFailedEmail(event, reservation, paymentMethodForTransaction, paymentWebhookResult, false);
                         break;
                     }
                     default:
@@ -2004,14 +2011,15 @@ public class TicketReservationManager {
     }
 
     public Optional<TransactionInitializationToken> initTransaction(Event event, String reservationId, PaymentMethod paymentMethod, Map<String, List<String>> params) {
-        var optionalProvider = paymentManager.lookupProviderByMethodAndCapabilities(paymentMethod, new PaymentContext(event), List.of(SignedWebhookHandler.class, ServerInitiatedTransaction.class));
+        ticketReservationRepository.lockReservationForUpdate(reservationId);
+        var reservation = ticketReservationRepository.findReservationById(reservationId);
+        var transactionRequest = new TransactionRequest(totalReservationCostWithVAT(reservation), ticketReservationRepository.getBillingDetailsForReservation(reservationId));
+        var optionalProvider = paymentManager.lookupProviderByMethodAndCapabilities(paymentMethod, new PaymentContext(event), transactionRequest, List.of(WebhookHandler.class, ServerInitiatedTransaction.class));
         if (optionalProvider.isEmpty()) {
             return Optional.empty();
         }
         var messageSource = messageSourceManager.getMessageSourceForEvent(event);
         var provider = (ServerInitiatedTransaction) optionalProvider.get();
-        ticketReservationRepository.lockReservationForUpdate(reservationId);
-        var reservation = ticketReservationRepository.findReservationById(reservationId);
         var paymentSpecification = new PaymentSpecification(reservation,
             totalReservationCostWithVAT(reservation), event, null,
             orderSummaryForReservation(reservation, event), false, false);
@@ -2081,7 +2089,8 @@ public class TicketReservationManager {
         }
         var categoriesInReservation = ticketRepository.getCategoriesIdToPayInReservation(reservationId);
         var blacklistedPaymentMethods = configurationManager.getBlacklistedMethodsForReservation(event, categoriesInReservation);
-        var availableMethods = paymentManager.getPaymentMethods(event).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
+        var transactionRequest = new TransactionRequest(totalPrice, ticketReservationRepository.getBillingDetailsForReservation(reservationId));
+        var availableMethods = paymentManager.getPaymentMethods(event, transactionRequest).stream().filter(pm -> pm.getStatus() == PaymentMethodStatus.ACTIVE && pm.getPaymentMethod() != PaymentMethod.NONE).collect(toList());
         if(availableMethods.size() == 0  || availableMethods.stream().allMatch(pm -> blacklistedPaymentMethods.contains(pm.getPaymentMethod()))) {
             log.error("Cannot proceed with reservation. No payment methods available {} or all blacklisted {}", availableMethods, blacklistedPaymentMethods);
             return false;
@@ -2106,7 +2115,8 @@ public class TicketReservationManager {
     private void checkOfflinePaymentsForEvent(Event event) {
         log.trace("check offline payments for event {}", event.getShortName());
         var paymentContext = new PaymentContext(event);
-        var providers = paymentManager.lookupProvidersByMethodAndCapabilities(PaymentMethod.BANK_TRANSFER, paymentContext, List.of(OfflineProcessor.class));
+        var providers = paymentManager.streamActiveProvidersByProxyAndCapabilities(PaymentProxy.OFFLINE, paymentContext, List.of(OfflineProcessor.class))
+            .collect(toList());
         if(providers.isEmpty()) {
             log.trace("No active offline provider has been found. Exiting...");
             return;

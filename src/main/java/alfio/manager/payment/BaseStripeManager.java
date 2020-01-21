@@ -278,11 +278,17 @@ class BaseStripeManager {
     boolean accept(PaymentMethod paymentMethod, PaymentContext context,
                    EnumSet<ConfigurationKeys> additionalKeys,
                    Predicate<Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration>> subValidator) {
+        return paymentMethod == PaymentMethod.CREDIT_CARD
+            && isActive(context, additionalKeys, subValidator);
+    }
+
+    boolean isActive(PaymentContext context,
+                     EnumSet<ConfigurationKeys> additionalKeys,
+                     Predicate<Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration>> subValidator) {
         var optionsToLoad = EnumSet.copyOf(additionalKeys);
         optionsToLoad.addAll(EnumSet.of(STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID));
         var configuration = configurationManager.getFor(optionsToLoad, context.getConfigurationLevel());
-        return paymentMethod == PaymentMethod.CREDIT_CARD
-            && configuration.get(STRIPE_CC_ENABLED).getValueAsBooleanOrDefault(false)
+        return configuration.get(STRIPE_CC_ENABLED).getValueAsBooleanOrDefault(false)
             && (!configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false) || context.getConfigurationLevel().getPathLevel() == ConfigurationPathLevel.SYSTEM || configuration.get(STRIPE_CONNECTED_ID).isPresent())
             && subValidator.test(configuration);
     }

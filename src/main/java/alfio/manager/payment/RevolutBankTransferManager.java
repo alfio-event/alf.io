@@ -23,10 +23,7 @@ import alfio.model.PaymentInformation;
 import alfio.model.TicketReservationWithTransaction;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
-import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProvider;
-import alfio.model.transaction.Transaction;
+import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.OfflineProcessor;
 import alfio.model.transaction.capabilities.PaymentInfo;
 import alfio.model.transaction.provider.RevolutTransactionDescriptor;
@@ -76,9 +73,24 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
         .build();
 
     @Override
-    public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        var options = bankTransferManager.options(context);
-        return bankTransferManager.bankTransferEnabled(paymentMethod, context, options)
+    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        return bankTransferManager.getSupportedPaymentMethods(paymentContext, transactionRequest);
+    }
+
+    @Override
+    public PaymentProxy getPaymentProxy() {
+        return bankTransferManager.getPaymentProxy();
+    }
+
+    @Override
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
+        return paymentMethod == PaymentMethod.BANK_TRANSFER && isActive(context);
+    }
+
+    @Override
+    public boolean isActive(PaymentContext paymentContext) {
+        var options = bankTransferManager.options(paymentContext);
+        return bankTransferManager.bankTransferActive(paymentContext, options)
             && options.get(REVOLUT_ENABLED).getValueAsBooleanOrDefault(false)
             && options.get(REVOLUT_API_KEY).isPresent();
     }
@@ -92,7 +104,6 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     public Map<String, ?> getModelOptions(PaymentContext context) {
         return bankTransferManager.getModelOptions(context);
     }
-
 
     @Override
     public Result<List<String>> checkPendingReservations(Collection<TicketReservationWithTransaction> reservations,
@@ -231,5 +242,10 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     @Override
     public boolean accept(Transaction transaction) {
         return false;
+    }
+
+    @Override
+    public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
+        return bankTransferManager.getPaymentMethodForTransaction(transaction);
     }
 }

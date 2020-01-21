@@ -25,10 +25,7 @@ import alfio.model.Event;
 import alfio.model.TicketReservation;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
 import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.Transaction;
-import alfio.model.transaction.TransactionWebhookPayload;
+import alfio.model.transaction.*;
 import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import com.stripe.model.Charge;
@@ -216,7 +213,7 @@ class StripeWebhookPaymentManagerTest {
         var configurationLevel = ConfigurationLevel.organization(1);
         when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
             .thenReturn(configuration);
-        assertFalse(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+        assertFalse(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel), TransactionRequest.empty()));
     }
 
     @Test
@@ -228,7 +225,7 @@ class StripeWebhookPaymentManagerTest {
         var configurationLevel = ConfigurationLevel.organization(1);
         when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
             .thenReturn(configuration);
-        assertTrue(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+        assertTrue(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel), TransactionRequest.empty()));
     }
 
     @Test
@@ -239,7 +236,7 @@ class StripeWebhookPaymentManagerTest {
         var configurationLevel = ConfigurationLevel.organization(1);
         when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
             .thenReturn(configuration);
-        assertFalse(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+        assertFalse(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel), TransactionRequest.empty()));
     }
 
     @Test
@@ -250,7 +247,7 @@ class StripeWebhookPaymentManagerTest {
         var configurationLevel = ConfigurationLevel.system();
         when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
             .thenReturn(configuration);
-        assertTrue(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+        assertTrue(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel), TransactionRequest.empty()));
     }
 
     @Test
@@ -258,7 +255,7 @@ class StripeWebhookPaymentManagerTest {
         var configurationLevel = ConfigurationLevel.organization(1);
         when(configurationManager.getFor(EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY, STRIPE_CC_ENABLED, PLATFORM_MODE_ENABLED, STRIPE_CONNECTED_ID), configurationLevel))
             .thenReturn(completeStripeConfiguration(true));
-        assertTrue(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel)));
+        assertTrue(stripeWebhookPaymentManager.accept(PaymentMethod.CREDIT_CARD, new PaymentContext(null, configurationLevel), TransactionRequest.empty()));
     }
 
 }

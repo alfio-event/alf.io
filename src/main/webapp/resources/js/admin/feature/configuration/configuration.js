@@ -171,7 +171,7 @@
                     }
                 }
 
-                var filterList = ['GENERAL', 'MAIL', 'MAP', 'PAYMENT_OFFLINE', 'PAYMENT_MOLLIE' /* temporary, until we implement Mollie */];
+                var filterList = ['GENERAL', 'MAIL', 'MAP', 'PAYMENT_OFFLINE'];
                 _.forEach(availableCategories.filter(function(x) { return filterList.indexOf(x) === -1; }), function(group) {
                     if(angular.isDefined(original[group]) && original[group].length > 0) {
                         transformed[_.camelCase(group)] = {
