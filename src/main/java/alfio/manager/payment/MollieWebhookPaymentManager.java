@@ -170,14 +170,23 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                     return EMPTY_METHODS;
                 }
                 var methodsObj = body.getAsJsonObject("_embedded").getAsJsonArray("methods");
+                var rejectedMethods = new ArrayList<String>();
                 var result = EnumSet.noneOf(PaymentMethod.class);
                 for(int i = 0; i < count; i++) {
-                    var parsed = SUPPORTED_METHODS.get(methodsObj.get(i).getAsJsonObject().get("id").getAsString());
+                    var methodId = methodsObj.get(i).getAsJsonObject().get("id").getAsString();
+                    var parsed = SUPPORTED_METHODS.get(methodId);
                     if (parsed != null) {
                         result.add(parsed);
+                    } else {
+                        rejectedMethods.add(methodId);
                     }
                 }
-                return result;
+                if(rejectedMethods.isEmpty()) {
+                    return result;
+                } else {
+                    log.warn("Unsupported payment methods found: {}. Please check configuration", rejectedMethods);
+                    throw new IllegalStateException("unsupported methods found");
+                }
             }
         } catch (IOException | InterruptedException e) {
             throw new IllegalStateException(e);
