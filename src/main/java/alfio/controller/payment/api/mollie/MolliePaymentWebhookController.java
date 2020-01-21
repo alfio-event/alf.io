@@ -14,36 +14,41 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.controller.payment.api.stripe;
+package alfio.controller.payment.api.mollie;
 
 import alfio.manager.TicketReservationManager;
-import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
-import alfio.util.RequestUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
+import java.util.Optional;
+
+import static alfio.manager.payment.MollieWebhookPaymentManager.WEBHOOK_URL_TEMPLATE;
 
 @RestController
 @Log4j2
 @AllArgsConstructor
-public class StripePaymentWebhookController {
-
+public class MolliePaymentWebhookController {
     private final TicketReservationManager ticketReservationManager;
 
-    @PostMapping("/api/payment/webhook/stripe/payment")
-    public ResponseEntity<String> receivePaymentConfirmation(@RequestHeader(value = "Stripe-Signature") String stripeSignature,
-                                                           HttpServletRequest request) {
-        return RequestUtils.readRequest(request)
-            .map(content -> {
-                var result = ticketReservationManager.processTransactionWebhook(content, stripeSignature, PaymentProxy.STRIPE, Map.of());
+    @SuppressWarnings("MVCPathVariableInspection")
+    @PostMapping(WEBHOOK_URL_TEMPLATE)
+    public ResponseEntity<String> receivePaymentConfirmation(HttpServletRequest request,
+                                                             @PathVariable("eventShortName") String eventName,
+                                                             @PathVariable("reservationId") String reservationId) {
+        return Optional.ofNullable(StringUtils.trimToNull(request.getParameter("id")))
+            .map(id -> {
+                var content = "id="+id;
+                var result = ticketReservationManager.processTransactionWebhook(content, null, PaymentProxy.MOLLIE,
+                    Map.of("eventName", eventName, "reservationId", reservationId));
                 if(result.isSuccessful()) {
                     return ResponseEntity.ok("OK");
                 } else if(result.isError()) {
@@ -52,6 +57,5 @@ public class StripePaymentWebhookController {
                 return ResponseEntity.ok(result.getReason());
             })
             .orElseGet(() -> ResponseEntity.badRequest().body("NOK"));
-
     }
 }

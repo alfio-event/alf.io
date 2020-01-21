@@ -18,6 +18,7 @@ package alfio.controller.form;
 
 import alfio.model.Event;
 import alfio.model.TotalPrice;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.ErrorsCode;
 import lombok.Data;
@@ -33,7 +34,8 @@ import java.util.Optional;
 public class PaymentForm implements Serializable {
 
     private String gatewayToken;
-    private PaymentProxy paymentMethod;
+    private PaymentProxy paymentProxy;
+    private PaymentMethod selectedPaymentMethod;
     private Boolean termAndConditionsAccepted;
     private Boolean privacyPolicyAccepted;
     private String hmac;
@@ -41,12 +43,12 @@ public class PaymentForm implements Serializable {
 
 
     public void validate(BindingResult bindingResult, Event event, TotalPrice reservationCost) {
-        List<PaymentProxy> allowedPaymentMethods = event.getAllowedPaymentProxies();
+        List<PaymentProxy> allowedProxies = event.getAllowedPaymentProxies();
 
-        Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentMethod);
+        Optional<PaymentProxy> paymentProxyOptional = Optional.ofNullable(paymentProxy);
         boolean priceGreaterThanZero = reservationCost.getPriceWithVAT() > 0;
-        boolean multiplePaymentMethods = allowedPaymentMethods.size() > 1;
-        if (multiplePaymentMethods && priceGreaterThanZero && paymentProxyOptional.isEmpty()) {
+        boolean multipleProxies = allowedProxies.size() > 1;
+        if (multipleProxies && priceGreaterThanZero && paymentProxyOptional.isEmpty()) {
             bindingResult.reject(ErrorsCode.STEP_2_MISSING_PAYMENT_METHOD);
         }
 

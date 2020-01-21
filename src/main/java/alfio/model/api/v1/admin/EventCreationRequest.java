@@ -145,7 +145,7 @@ public class EventCreationRequest{
             tickets != null ? tickets.max : original.getAvailableSeats(),
             tickets != null ? first(tickets.taxPercentage,original.getVat()) : original.getVat(),
             tickets != null ? first(tickets.taxIncludedInPrice,original.isVatIncluded()) : original.isVatIncluded(),
-            tickets != null ? first(tickets.paymentMethods,original.getAllowedPaymentProxies()) : original.getAllowedPaymentProxies(),
+            tickets != null ? first(tickets.paymentMethods, original.getAllowedPaymentProxies()) : original.getAllowedPaymentProxies(),
             tickets != null && tickets.categories != null ? tickets.categories.stream().map(tc -> tc.toTicketCategoryModification(findCategoryId(original, tc))).collect(Collectors.toList()) : null,
             tickets != null ? first(tickets.freeOfCharge,original.isFreeOfCharge()) : original.isFreeOfCharge(),
             null,

@@ -43,7 +43,8 @@ import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -108,6 +109,7 @@ public class EventManager {
     private final GroupRepository groupRepository;
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ConfigurationRepository configurationRepository;
+    private final PaymentManager paymentManager;
 
 
     public Event getSingleEvent(String eventName, String username) {
@@ -336,7 +338,7 @@ public class EventManager {
                 throw new IllegalArgumentException(format("cannot reduce max tickets to %d. There are already %d tickets allocated. Try updating categories first.", em.getAvailableSeats(), allocatedSeats));
             }
         }
-
+        validatePaymentProxies(em.getAllowedPaymentProxies(), em.getOrganizationId());
         String paymentProxies = collectPaymentProxies(em);
         BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
         eventRepository.updatePrices(em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(), vat, paymentProxies, eventId, em.getVatStatus(), em.getPriceInCents());
@@ -351,6 +353,14 @@ public class EventManager {
                 int invalidatedTickets = ticketRepository.invalidateTickets(ids);
                 Validate.isTrue(ids.size() == invalidatedTickets, String.format("error during ticket invalidation: expected %d, got %d", ids.size(), invalidatedTickets));
             }
+        }
+    }
+
+    private void validatePaymentProxies(List<PaymentProxy> paymentProxies, int organizationId) {
+        var conflicts = paymentManager.validateSelection(paymentProxies, organizationId);
+        if(!conflicts.isEmpty()) {
+            var firstConflict = IterableUtils.get(conflicts, 0);
+            throw new IllegalStateException("Conflicting providers found: "+firstConflict.getValue());
         }
     }
 
@@ -799,6 +809,7 @@ public class EventManager {
 
     private int insertEvent(EventModification em) {
         Validate.notNull(em.getAvailableSeats());
+        validatePaymentProxies(em.getAllowedPaymentProxies(), em.getOrganizationId());
         String paymentProxies = collectPaymentProxies(em);
         BigDecimal vat = !em.isInternal() || em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
         String privateKey = UUID.randomUUID().toString();
@@ -814,6 +825,7 @@ public class EventManager {
         return em.getAllowedPaymentProxies()
                 .stream()
                 .map(PaymentProxy::name)
+                .distinct()
                 .collect(joining(","));
     }
 

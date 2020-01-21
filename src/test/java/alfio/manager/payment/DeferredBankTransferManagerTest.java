@@ -21,10 +21,7 @@ import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
 import alfio.model.Event;
 import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeyValuePathLevel;
-import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.Transaction;
+import alfio.model.transaction.*;
 import alfio.repository.TicketReservationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,10 +59,10 @@ class DeferredBankTransferManagerTest {
         var paymentContext = new PaymentContext(event);
         when(bankTransferManager.options(paymentContext)).thenReturn(Map.of(DEFERRED_BANK_TRANSFER_ENABLED,
             new MaybeConfiguration(DEFERRED_BANK_TRANSFER_ENABLED, new ConfigurationKeyValuePathLevel(DEFERRED_BANK_TRANSFER_ENABLED.name(), "true", null))));
-        when(bankTransferManager.bankTransferEnabled(any(), eq(paymentContext), anyMap())).thenReturn(true);
+        when(bankTransferManager.bankTransferEnabledForMethod(any(), eq(paymentContext), anyMap())).thenReturn(true);
         when(bankTransferManager.isPaymentDeferredEnabled(anyMap())).thenCallRealMethod();
-        assertTrue(deferredBankTransferManager.accept(PaymentMethod.BANK_TRANSFER, paymentContext));
-        assertFalse(deferredBankTransferManager.accept(PaymentMethod.BANK_TRANSFER, new PaymentContext()));
+        assertTrue(deferredBankTransferManager.accept(PaymentMethod.BANK_TRANSFER, paymentContext, TransactionRequest.empty()));
+        assertFalse(deferredBankTransferManager.accept(PaymentMethod.BANK_TRANSFER, new PaymentContext(), TransactionRequest.empty()));
     }
 
     @Test
@@ -73,9 +70,9 @@ class DeferredBankTransferManagerTest {
         var paymentContext = new PaymentContext(event);
         when(bankTransferManager.options(paymentContext)).thenReturn(Map.of(DEFERRED_BANK_TRANSFER_ENABLED,
             new MaybeConfiguration(DEFERRED_BANK_TRANSFER_ENABLED)));
-        when(bankTransferManager.bankTransferEnabled(any(), eq(paymentContext), anyMap())).thenReturn(true);
+        when(bankTransferManager.bankTransferEnabledForMethod(any(), eq(paymentContext), anyMap())).thenReturn(true);
         when(bankTransferManager.isPaymentDeferredEnabled(anyMap())).thenCallRealMethod();
-        assertFalse(deferredBankTransferManager.accept(PaymentMethod.BANK_TRANSFER, paymentContext));
+        assertFalse(deferredBankTransferManager.accept(PaymentMethod.BANK_TRANSFER, paymentContext, TransactionRequest.empty()));
     }
 
     @Test

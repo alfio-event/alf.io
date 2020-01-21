@@ -115,6 +115,18 @@ public class EventApiV2Controller {
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
     }
 
+    private static Map<String, String> applyCommonMark(Map<String, String> in) {
+        if (in == null) {
+            return Collections.emptyMap();
+        }
+
+        var res = new HashMap<String, String>();
+        in.forEach((k, v) -> {
+            res.put(k, MustacheCustomTag.renderToHtmlCommonmarkEscaped(v));
+        });
+        return res;
+    }
+
     @PostMapping("event/{eventName}/waiting-list/subscribe")
     public ResponseEntity<ValidatedResponse<Boolean>> subscribeToWaitingList(@PathVariable("eventName") String eventName,
                                                                              @RequestBody WaitingQueueSubscriptionForm subscription,

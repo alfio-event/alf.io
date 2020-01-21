@@ -16,13 +16,19 @@
  */
 package alfio.model.transaction;
 
-import java.util.Arrays;
+import alfio.model.BillingDetails;
+import alfio.model.TotalPrice;
+import lombok.Data;
 
-public enum PaymentMethod {
+@Data
+public class TransactionRequest {
 
-    CREDIT_CARD, PAYPAL, IDEAL, BANK_TRANSFER, ON_SITE, NONE, APPLE_PAY, BANCONTACT, ING_HOME_PAY, BELFIUS, PRZELEWY_24;
+    private static final TransactionRequest EMPTY = new TransactionRequest(null, null);
 
-    public static PaymentMethod safeParse(String asString) {
-        return Arrays.stream(PaymentMethod.values()).filter(v -> v.name().equals(asString)).findFirst().orElse(null);
+    private final TotalPrice price;
+    private final BillingDetails billingDetails;
+
+    public static TransactionRequest empty() {
+        return EMPTY;
     }
 }

@@ -54,16 +54,30 @@ public class BankTransferManager implements PaymentProvider {
     private final TransactionRepository transactionRepository;
 
     @Override
-    public boolean accept(PaymentMethod paymentMethod, PaymentContext paymentContext) {
+    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        return EnumSet.of(PaymentMethod.BANK_TRANSFER);
+    }
+
+    @Override
+    public PaymentProxy getPaymentProxy() {
+        return PaymentProxy.OFFLINE;
+    }
+
+    @Override
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext paymentContext, TransactionRequest transactionRequest) {
         var options = options(paymentContext);
-        return bankTransferEnabled(paymentMethod, paymentContext, options)
+        return bankTransferEnabledForMethod(paymentMethod, paymentContext, options)
             && !options.get(REVOLUT_ENABLED).getValueAsBooleanOrDefault(false);
     }
 
-    boolean bankTransferEnabled(PaymentMethod paymentMethod, PaymentContext paymentContext, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options) {
+    boolean bankTransferEnabledForMethod(PaymentMethod paymentMethod, PaymentContext paymentContext, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options) {
         if(paymentMethod != PaymentMethod.BANK_TRANSFER) {
             return false;
         }
+        return bankTransferActive(paymentContext, options);
+    }
+
+    boolean bankTransferActive(PaymentContext paymentContext, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> options) {
         return options.get(BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault(false)
             && (paymentContext.getEvent() == null || getOfflinePaymentWaitingPeriod(paymentContext.getEvent(), options.get(OFFLINE_PAYMENT_DAYS).getValueAsIntOrDefault(5)).orElse(0) > 0);
     }
@@ -149,5 +163,15 @@ public class BankTransferManager implements PaymentProvider {
     @Override
     public boolean accept(Transaction transaction) {
         return PaymentProxy.OFFLINE == transaction.getPaymentProxy();
+    }
+
+    @Override
+    public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
+        return PaymentMethod.BANK_TRANSFER;
+    }
+
+    @Override
+    public boolean isActive(PaymentContext paymentContext) {
+        return bankTransferActive(paymentContext, options(paymentContext));
     }
 }

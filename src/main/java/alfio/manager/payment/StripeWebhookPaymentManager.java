@@ -50,17 +50,19 @@ import static alfio.manager.payment.BaseStripeManager.STRIPE_MANAGER_TYPE_KEY;
 import static alfio.model.TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT;
 import static alfio.model.TicketReservation.TicketReservationStatus.WAITING_EXTERNAL_CONFIRMATION;
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
 
 @Log4j2
 @Component
 @Transactional
-public class StripeWebhookPaymentManager implements PaymentProvider, RefundRequest, PaymentInfo, SignedWebhookHandler, ClientServerTokenRequest, ServerInitiatedTransaction {
+public class StripeWebhookPaymentManager implements PaymentProvider, RefundRequest, PaymentInfo, WebhookHandler, ClientServerTokenRequest, ServerInitiatedTransaction {
 
     private static final String STRIPE_MANAGER = StripeWebhookPaymentManager.class.getName();
     static final String CLIENT_SECRET_METADATA = "clientSecret";
     private static final String PAYMENT_INTENT_SUCCEEDED = "payment_intent.succeeded";
     private static final String PAYMENT_INTENT_PAYMENT_FAILED = "payment_intent.payment_failed";
     private static final String PAYMENT_INTENT_CREATED = "payment_intent.created";
+    private static final EnumSet<ConfigurationKeys> OPTIONS_TO_LOAD = EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY);
     private final ConfigurationManager configurationManager;
     private final BaseStripeManager baseStripeManager;
     private final TransactionRepository transactionRepository;
@@ -170,7 +172,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     @Override
-    public Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature) {
+    public Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature, Map<String, String> additionalInfo) {
         try {
             var stripeEvent = Webhook.constructEvent(body, signature, getWebhookSignatureKey());
             String eventType = stripeEvent.getType();
@@ -262,9 +264,8 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     @Override
-    public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return baseStripeManager.accept(paymentMethod, context,
-            EnumSet.of(STRIPE_ENABLE_SCA, BASE_URL, STRIPE_WEBHOOK_PAYMENT_KEY), this::isConfigurationValid);
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
+        return baseStripeManager.accept(paymentMethod, context, OPTIONS_TO_LOAD, this::isConfigurationValid);
     }
 
     private boolean isConfigurationValid(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration) {
@@ -274,9 +275,32 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
     }
 
     @Override
+    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        if(!isActive(paymentContext)) {
+            return EnumSet.noneOf(PaymentMethod.class);
+        }
+        return EnumSet.of(PaymentMethod.CREDIT_CARD);
+    }
+
+    @Override
+    public PaymentProxy getPaymentProxy() {
+        return PaymentProxy.STRIPE;
+    }
+
+    @Override
     public boolean accept(Transaction transaction) {
         var isWebHookManager = STRIPE_MANAGER.equals(transaction.getMetadata().get(STRIPE_MANAGER_TYPE_KEY)) || transaction.getMetadata().get("clientSecret") != null;
         return transaction.getPaymentProxy() == PaymentProxy.STRIPE && isWebHookManager;
+    }
+
+    @Override
+    public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
+        return PaymentMethod.CREDIT_CARD;
+    }
+
+    @Override
+    public boolean isActive(PaymentContext paymentContext) {
+        return baseStripeManager.isActive(paymentContext, OPTIONS_TO_LOAD, this::isConfigurationValid);
     }
 
     @Override

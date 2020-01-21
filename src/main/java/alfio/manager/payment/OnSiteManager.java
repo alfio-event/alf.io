@@ -25,8 +25,10 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static alfio.manager.TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID;
 import static alfio.model.system.ConfigurationKeys.ON_SITE_ENABLED;
@@ -42,13 +44,34 @@ public class OnSiteManager implements PaymentProvider {
     private final TransactionRepository transactionRepository;
 
     @Override
-    public boolean accept(PaymentMethod paymentMethod, PaymentContext context) {
-        return paymentMethod == PaymentMethod.ON_SITE && configurationManager.getFor(ON_SITE_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
+    public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
+        return EnumSet.of(PaymentMethod.ON_SITE);
+    }
+
+    @Override
+    public PaymentProxy getPaymentProxy() {
+        return PaymentProxy.ON_SITE;
+    }
+
+    @Override
+    public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
+        return paymentMethod == PaymentMethod.ON_SITE && isActive(context);
     }
 
     @Override
     public boolean accept(Transaction transaction) {
         return PaymentProxy.ON_SITE == transaction.getPaymentProxy();
+    }
+
+    @Override
+    public PaymentMethod getPaymentMethodForTransaction(Transaction transaction) {
+        return PaymentMethod.ON_SITE;
+    }
+
+    @Override
+    public boolean isActive(PaymentContext paymentContext) {
+        return configurationManager.getFor(ON_SITE_ENABLED, paymentContext.getConfigurationLevel())
+            .getValueAsBooleanOrDefault(false);
     }
 
     @Override
