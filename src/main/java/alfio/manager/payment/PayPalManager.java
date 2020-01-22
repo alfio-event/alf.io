@@ -143,6 +143,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
     private String createCheckoutRequest(PaymentSpecification spec) throws Exception {
         APIContext apiContext = getApiContext(spec.getEvent());
+        apiContext.setRequestId(spec.getReservationId());
 
         Optional<String> experienceProfileId = getOrCreateWebProfile(spec.getEvent(), spec.getLocale(), apiContext);
 
@@ -220,7 +221,9 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         paymentExecute.setPayerId(payPalToken.getPayerId());
         Payment result;
         try {
-            result = payment.execute(getApiContext(event), paymentExecute);
+            APIContext apiContext = getApiContext(event);
+            apiContext.setRequestId(reservationId);
+            result = payment.execute(apiContext, paymentExecute);
         } catch (PayPalRESTException e) {
             mappedException(e).ifPresent(message -> {
                 throw new HandledPayPalErrorException(message);

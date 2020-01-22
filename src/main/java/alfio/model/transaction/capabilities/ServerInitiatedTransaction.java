@@ -29,7 +29,7 @@ public interface ServerInitiatedTransaction extends Capability {
 
     TransactionInitializationToken initTransaction(PaymentSpecification paymentSpecification, Map<String, List<String>> params);
 
-    TransactionInitializationToken errorToken(String errorMessage);
+    TransactionInitializationToken errorToken(String errorMessage, boolean reservationStatusChanged);
 
     boolean discardTransaction(Transaction transaction, Event event);
 }

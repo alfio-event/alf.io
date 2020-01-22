@@ -32,6 +32,8 @@ public interface TransactionRepository {
 
     String SELECT_BY_RESERVATION_ID = "select * from b_transaction where reservation_id = :reservationId";
     String SELECT_VALID_BY_RESERVATION_ID = SELECT_BY_RESERVATION_ID + " and status not in ('INVALID', 'OFFLINE_DISABLE_MATCH')";
+    String UPDATE_TRANSACTION_BY_ID = "update b_transaction set gtw_tx_id = :gatewayTransactionId, gtw_payment_id = :paymentId, " +
+        "t_timestamp = :timestamp, plat_fee = :platformFee, gtw_fee = :gatewayFee, status = :status, metadata = to_json(:metadata::json) where id = :transactionId";
 
     @Query("insert into b_transaction(gtw_tx_id, gtw_payment_id, reservation_id, t_timestamp, price_cts, currency, description, payment_proxy, plat_fee, gtw_fee, status, metadata) " +
             "values(:transactionId, :paymentId, :reservationId, :timestamp, :priceInCents, :currency, :description, :paymentProxy, :platformFee, :gatewayFee, :status, to_json(:metadata::json))")
@@ -48,8 +50,7 @@ public interface TransactionRepository {
                @Bind("status") Transaction.Status status,
                @Bind("metadata") @JSONData Map<String, String> metadata);
 
-    @Query("update b_transaction set gtw_tx_id = :gatewayTransactionId, gtw_payment_id = :paymentId, " +
-        "t_timestamp = :timestamp, plat_fee = :platformFee, gtw_fee = :gatewayFee, status = :status, metadata = to_json(:metadata::json) where id = :transactionId")
+    @Query(UPDATE_TRANSACTION_BY_ID)
     int update(@Bind("transactionId") int id,
                @Bind("gatewayTransactionId") String gatewayTransactionId,
                @Bind("paymentId") String gatewayPaymentId,
@@ -59,8 +60,22 @@ public interface TransactionRepository {
                @Bind("status") Transaction.Status status,
                @Bind("metadata") @JSONData Map<String, String> metadata);
 
+    @Query(UPDATE_TRANSACTION_BY_ID + " and status = :expectedStatus")
+    int updateIfStatus(@Bind("transactionId") int id,
+                       @Bind("gatewayTransactionId") String gatewayTransactionId,
+                       @Bind("paymentId") String gatewayPaymentId,
+                       @Bind("timestamp") ZonedDateTime timestamp,
+                       @Bind("platformFee") long platformFee,
+                       @Bind("gatewayFee") long gatewayFee,
+                       @Bind("status") Transaction.Status status,
+                       @Bind("metadata") @JSONData Map<String, String> metadata,
+                       @Bind("expectedStatus") Transaction.Status expectedCurrentStatus);
+
     @Query("select * from b_transaction where reservation_id = :reservationId order by t_timestamp desc limit 1 for update")
     Optional<Transaction> lockLatestForUpdate(@Bind("reservationId") String reservationId);
+
+    @Query("select id from b_transaction where id = :id for update")
+    Integer lockByIdForUpdate(@Bind("id") Integer id);
 
     @Query("update b_transaction set status = :status where reservation_id = :reservationId")
     int updateStatusForReservation(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
