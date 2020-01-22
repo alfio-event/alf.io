@@ -18,12 +18,20 @@ package alfio.model.transaction;
 
 /**
  * Token used for transactions initiated on the backend side and finalized by the frontend side.
- * A typical example of this is Stripe SCE
+ * A typical example of this is Stripe SCA
  */
 public interface TransactionInitializationToken extends PaymentToken {
     String getClientSecret();
 
     default String getErrorMessage() {
         return null;
+    }
+
+    /**
+     * Override this method if you want to trigger a reload of the reservation page.
+     * @return true if the reservation should be reloaded, false otherwise
+     */
+    default boolean isReservationStatusChanged() {
+        return false;
     }
 }

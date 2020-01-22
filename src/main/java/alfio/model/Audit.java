@@ -43,6 +43,7 @@ public class Audit {
         UPDATE_EVENT,
         CANCEL_TICKET,
         PAYMENT_CONFIRMED,
+        PAYMENT_ALREADY_CONFIRMED,
         REFUND,
         CHECK_IN,
         MANUAL_CHECK_IN,

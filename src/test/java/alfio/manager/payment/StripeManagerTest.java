@@ -17,7 +17,6 @@
 package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
-import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
@@ -73,7 +72,7 @@ public class StripeManagerTest {
     public void successFlow() throws StripeException {
         BaseStripeManager baseStripeManager = new BaseStripeManager(configurationManager, configurationRepository, ticketRepository, mock(Environment.class)) {
             @Override
-            protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) throws StripeException {
+            protected Optional<Charge> charge(PaymentSpecification spec, Map<String, Object> chargeParams ) throws StripeException {
                 return Optional.of( new Charge() {{
                     setId(paymentId);
                     setDescription("description");
@@ -90,7 +89,7 @@ public class StripeManagerTest {
     void stripeError() {
         BaseStripeManager baseStripeManager = new BaseStripeManager(configurationManager, configurationRepository, ticketRepository, mock(Environment.class)) {
             @Override
-            protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) throws StripeException {
+            protected Optional<Charge> charge(PaymentSpecification spec, Map<String, Object> chargeParams ) throws StripeException {
                 throw new AuthenticationException("401", "42", "401", 401);
             }
         };
@@ -104,7 +103,7 @@ public class StripeManagerTest {
     public void internalError() {
         BaseStripeManager baseStripeManager = new BaseStripeManager(configurationManager, configurationRepository, ticketRepository, mock(Environment.class)) {
             @Override
-            protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) {
+            protected Optional<Charge> charge(PaymentSpecification spec, Map<String, Object> chargeParams) {
                 return Optional.of( new Charge() {{
                     setId(paymentId);
                     setDescription("description");

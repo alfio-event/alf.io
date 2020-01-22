@@ -546,11 +546,18 @@ public class TicketReservationManager {
             log.warn("Trying to cancel a non-pending transaction for reservation {}", reservationId);
             return false;
         }
-        paymentManager.lookupByTransactionAndCapabilities(optionalTransaction.get(), List.of(ServerInitiatedTransaction.class))
-            .ifPresent(provider -> ((ServerInitiatedTransaction)provider).discardTransaction(optionalTransaction.get(), event));
-        reTransitionToPending(reservationId);
-        auditingRepository.insert(reservationId, null, event.getId(), RESET_PAYMENT, new Date(), RESERVATION, reservationId);
-        return true;
+        Transaction transaction = optionalTransaction.get();
+        boolean remoteDeleteResult = paymentManager.lookupByTransactionAndCapabilities(transaction, List.of(ServerInitiatedTransaction.class))
+            .map(provider -> ((ServerInitiatedTransaction)provider).discardTransaction(optionalTransaction.get(), event))
+            .orElse(true);
+
+        if(remoteDeleteResult) {
+            reTransitionToPending(reservationId);
+            auditingRepository.insert(reservationId, null, event.getId(), RESET_PAYMENT, new Date(), RESERVATION, reservationId);
+            return true;
+        }
+        log.warn("Cannot delete payment with ID {} for reservation {}", transaction.getPaymentId(), reservationId);
+        return false;
     }
 
     private void transitionToComplete(PaymentSpecification spec, TotalPrice reservationCost, PaymentProxy paymentProxy) {
@@ -943,13 +950,18 @@ public class TicketReservationManager {
             && (!paymentMethodDTO.getPaymentProxy().equals(PaymentProxy.OFFLINE) || hasValidOfflinePaymentWaitingPeriod(new PaymentContext(event), configurationManager));
     }
 
-    private void reTransitionToPending(String reservationId) {
+    private void reTransitionToPending(String reservationId, boolean deleteTransactions) {
         int updatedReservation = ticketReservationRepository.updateReservationStatus(reservationId, TicketReservationStatus.PENDING.toString());
         Validate.isTrue(updatedReservation == 1, "expected exactly one updated reservation, got "+updatedReservation);
-        // delete all pending transactions, if any
-        transactionRepository.deleteForReservationsWithStatus(List.of(reservationId), Transaction.Status.PENDING);
+        if(deleteTransactions) {
+            // delete all pending transactions, if any
+            transactionRepository.deleteForReservationsWithStatus(List.of(reservationId), Transaction.Status.PENDING);
+        }
     }
-    
+    private void reTransitionToPending(String reservationId) {
+        reTransitionToPending(reservationId, true);
+    }
+
     //check internal consistency between the 3 values
     public Optional<Triple<Event, TicketReservation, Ticket>> from(String eventName, String reservationId, String ticketIdentifier) {
 
@@ -1950,7 +1962,7 @@ public class TicketReservationManager {
                         } else if(DateUtils.addMinutes(expiration, -slackTime).before(now)) {
                             ticketReservationRepository.updateValidity(reservation.getId(), DateUtils.addMinutes(now, slackTime));
                         }
-                        reTransitionToPending(reservation.getId());
+                        reTransitionToPending(reservation.getId(), false);
                         sendTransactionFailedEmail(event, reservation, paymentMethodForTransaction, paymentWebhookResult, false);
                         break;
                     }
@@ -2011,7 +2023,7 @@ public class TicketReservationManager {
         if(!acquireGroupMembers(reservationId, event)) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);
             var errorMessage = messageSource.getMessage("error.STEP2_WHITELIST", null, LocaleUtil.forLanguageTag(reservation.getUserLanguage()));
-            return Optional.of(provider.errorToken(errorMessage));
+            return Optional.of(provider.errorToken(errorMessage, false));
         }
         var transactionToken = provider.initTransaction(paymentSpecification, params);
         if(transitionToExternalProcessingPayment(reservation)) {

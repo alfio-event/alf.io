@@ -48,6 +48,7 @@ import org.springframework.core.env.Profiles;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
@@ -144,7 +145,7 @@ class BaseStripeManager {
     Optional<Charge> chargeCreditCard(PaymentSpecification spec) throws StripeException {
         var chargeParams = createParams(spec, Map.of());
         chargeParams.put("card", spec.getGatewayToken().getToken());
-        return charge( spec.getEvent(), chargeParams );
+        return charge(spec, chargeParams );
     }
 
     protected Map<String, Object> createParams(PaymentSpecification spec, Map<String, String> baseMetadata) {
@@ -163,8 +164,8 @@ class BaseStripeManager {
         return chargeParams;
     }
 
-    protected Optional<Charge> charge( Event event, Map<String, Object> chargeParams ) throws StripeException {
-        Optional<RequestOptions> opt = options(event);
+    protected Optional<Charge> charge(PaymentSpecification spec, Map<String, Object> chargeParams ) throws StripeException {
+        Optional<RequestOptions> opt = options(spec.getEvent(), builder -> builder.setIdempotencyKey(spec.getReservationId()));
         if(opt.isEmpty()) {
             return Optional.empty();
         }
@@ -191,9 +192,12 @@ class BaseStripeManager {
         return BalanceTransaction.retrieve(balanceTransaction, options);
     }
 
-
     Optional<RequestOptions> options(Event event) {
-        RequestOptions.RequestOptionsBuilder builder = RequestOptions.builder();
+        return options(event, UnaryOperator.identity());
+    }
+
+    Optional<RequestOptions> options(Event event, UnaryOperator<RequestOptions.RequestOptionsBuilder> optionsBuilderConfigurer) {
+        RequestOptions.RequestOptionsBuilder builder = optionsBuilderConfigurer.apply(RequestOptions.builder());
         if(isConnectEnabled(new PaymentContext(event))) {
             return configurationManager.getFor(STRIPE_CONNECTED_ID, ConfigurationLevel.event(event)).getValue()
                 .map(connectedId -> {
