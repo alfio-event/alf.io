@@ -109,7 +109,12 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
 
     @Override
     public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
-        return retrieveAvailablePaymentMethods(transactionRequest, getConfiguration(paymentContext.getConfigurationLevel()));
+        var configuration = getConfiguration(paymentContext.getConfigurationLevel());
+        if (checkIfActive(configuration)) {
+            return retrieveAvailablePaymentMethods(transactionRequest, configuration);
+        } else {
+            return Set.of();
+        }
     }
 
     @Override
