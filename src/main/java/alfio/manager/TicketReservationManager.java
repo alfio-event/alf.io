@@ -2029,7 +2029,6 @@ public class TicketReservationManager {
         if(transitionToExternalProcessingPayment(reservation)) {
            auditingRepository.insert(reservationId, null, event.getId(), INIT_PAYMENT, new Date(), RESERVATION, reservationId);
         }
-        transactionRepository.updateStatusForReservation(reservationId, Transaction.Status.PENDING);
         return Optional.of(transactionToken);
     }
 
