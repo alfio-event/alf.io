@@ -72,7 +72,7 @@ public interface ExtensionRepository {
     @Query("delete from extension_support where path = :path and name = :name")
     int deleteScriptForPath(@Bind("path") String path, @Bind("name") String name);
 
-    @Query("select * from extension_support order by name, path")
+    @Query("select * from extension_support order by path, name")
     List<ExtensionSupport> listAll();
 
     @Query("select a3.es_id, a3.path, a3.name, a3.hash from " +
