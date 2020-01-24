@@ -180,6 +180,7 @@ class TicketReservationManagerTest {
         when(ticketReservation.getVatCts()).thenReturn(0);
         when(ticketReservation.getDiscountCts()).thenReturn(0);
         when(ticketReservation.getCurrencyCode()).thenReturn(EVENT_CURRENCY);
+        when(ticketReservationRepository.findReservationByIdForUpdate(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticketReservationRepository.getAdditionalInfo(any())).thenReturn(mock(TicketReservationAdditionalInfo.class));
         organization = new Organization(ORGANIZATION_ID, "org", "desc", ORG_EMAIL);
@@ -243,7 +244,7 @@ class TicketReservationManagerTest {
         when(configurationManager.getForSystem(ConfigurationKeys.BASE_URL)).thenReturn(baseUrlConf);
         when(configurationManager.getFor(eq(ConfigurationKeys.BASE_URL), any())).thenReturn(baseUrlConf);
         when(configurationManager.hasAllConfigurationsForInvoice(eq(event))).thenReturn(false);
-        when(ticketReservationRepository.findReservationById(RESERVATION_ID)).thenReturn(ticketReservation);
+        when(ticketReservationRepository.findReservationByIdForUpdate(RESERVATION_ID)).thenReturn(ticketReservation);
         when(ticket.getId()).thenReturn(TICKET_ID);
         when(ticket.getSrcPriceCts()).thenReturn(10);
         when(ticketCategory.getId()).thenReturn(TICKET_CATEGORY_ID);
@@ -846,7 +847,7 @@ class TicketReservationManagerTest {
         if(expectSuccess) {
             assertTrue(result.isSuccessful());
             assertEquals(Optional.of(TRANSACTION_ID), result.getGatewayId());
-            verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
+            verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
             verify(ticketReservationRepository, atLeastOnce()).findReservationById(RESERVATION_ID);
             verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
 
@@ -885,7 +886,7 @@ class TicketReservationManagerTest {
         assertFalse(result.getGatewayId().isPresent());
         assertEquals(Optional.of("error-code"), result.getErrorCode());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.IN_PAYMENT.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), isNull(), eq(PaymentProxy.STRIPE.toString()), isNull());
-        verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
+        verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
         verify(ticketReservationRepository).updateReservationStatus(eq(RESERVATION_ID), eq(TicketReservationStatus.PENDING.toString()));
         verify(configurationManager, never()).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("12345"), eq("IT"), eq(true), eq(RESERVATION_ID));
@@ -915,7 +916,7 @@ class TicketReservationManagerTest {
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(ticketReservationRepository).updateTicketReservation(eq(RESERVATION_ID), eq(TicketReservationStatus.COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), anyString(), any(), eq(PaymentProxy.ON_SITE.toString()), isNull());
-        verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
+        verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
         verify(ticketRepository).updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.TO_BE_PAID.toString()));
         verify(specialPriceRepository).updateStatusForReservation(eq(singletonList(RESERVATION_ID)), eq(SpecialPrice.Status.TAKEN.toString()));
         verify(waitingQueueManager).fireReservationConfirmed(eq(RESERVATION_ID));
@@ -943,7 +944,7 @@ class TicketReservationManagerTest {
         assertTrue(result.isSuccessful());
         assertEquals(Optional.of(TicketReservationManager.NOT_YET_PAID_TRANSACTION_ID), result.getGatewayId());
         verify(waitingQueueManager, never()).fireReservationConfirmed(eq(RESERVATION_ID));
-        verify(ticketReservationRepository).lockReservationForUpdate(eq(RESERVATION_ID));
+        verify(ticketReservationRepository).findReservationByIdForUpdate(eq(RESERVATION_ID));
         verify(configurationManager).hasAllConfigurationsForInvoice(eq(event));
         verify(ticketReservationRepository).updateBillingData(eq(PriceContainer.VatStatus.INCLUDED), eq(100), eq(100), eq(0), eq(0), eq(EVENT_CURRENCY), eq("123456"), eq("IT"), eq(true), eq(RESERVATION_ID));
     }
@@ -965,7 +966,7 @@ class TicketReservationManagerTest {
         TicketReservation copy = copy(reservation);
         Event event = copy(this.event);
         when(ticketReservationRepository.findOptionalReservationById(eq(RESERVATION_ID))).thenReturn(Optional.of(copy));
-        when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(copy);
+        when(ticketReservationRepository.findReservationByIdForUpdate(eq(RESERVATION_ID))).thenReturn(copy);
         when(ticketRepository.updateTicketsStatusWithReservationId(eq(RESERVATION_ID), eq(TicketStatus.ACQUIRED.toString()))).thenReturn(1);
         when(ticketReservationRepository.updateTicketReservation(eq(RESERVATION_ID), eq(COMPLETE.toString()), anyString(), anyString(), isNull(), isNull(), anyString(), isNull(), any(), eq(PaymentProxy.OFFLINE.toString()), isNull())).thenReturn(1);
         when(configurationManager.getFor(eq(VAT_NR), any())).thenReturn(new ConfigurationManager.MaybeConfiguration(VAT_NR, new ConfigurationKeyValuePathLevel(null, "vatnr", null)));
@@ -1146,7 +1147,7 @@ class TicketReservationManagerTest {
         int ticketId = 2;
         when(ticket.getId()).thenReturn(ticketId);
         when(ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(EVENT_ID)).thenReturn(singletonList(ticket));
-        when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(ticketReservation);
+        when(ticketReservationRepository.findReservationByIdForUpdate(eq(RESERVATION_ID))).thenReturn(ticketReservation);
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
@@ -1173,7 +1174,7 @@ class TicketReservationManagerTest {
         int ticketId = 2;
         when(ticket.getId()).thenReturn(ticketId);
         when(ticketRepository.findAllAssignedButNotYetNotifiedForUpdate(EVENT_ID)).thenReturn(singletonList(ticket));
-        when(ticketReservationRepository.findReservationById(eq(RESERVATION_ID))).thenReturn(ticketReservation);
+        when(ticketReservationRepository.findReservationByIdForUpdate(eq(RESERVATION_ID))).thenReturn(ticketReservation);
 
         when(eventRepository.findByReservationId(RESERVATION_ID)).thenReturn(event);
         when(event.getZoneId()).thenReturn(ZoneId.systemDefault());

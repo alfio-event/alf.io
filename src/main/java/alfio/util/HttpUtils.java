@@ -40,7 +40,11 @@ public final class HttpUtils {
     public static final String AUTHORIZATION = "Authorization";
 
     public static boolean callSuccessful(HttpResponse<?> response) {
-        return response.statusCode() >= 200 && response.statusCode() < 300;
+        return statusCodeIsSuccessful(response.statusCode());
+    }
+
+    public static boolean statusCodeIsSuccessful(int statusCode) {
+        return statusCode >= 200 && statusCode < 300;
     }
 
     public static HttpResponse<String> postForm(HttpClient httpClient, String url, Map<String, String> params) throws IOException, InterruptedException {

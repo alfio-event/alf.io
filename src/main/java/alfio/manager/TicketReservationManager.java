@@ -482,11 +482,14 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION");
         }
 
-        TicketReservation reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
+        TicketReservation reservation = null;
 
         try {
             PaymentResult paymentResult;
-            ticketReservationRepository.lockReservationForUpdate(spec.getReservationId());
+            reservation = ticketReservationRepository.findReservationByIdForUpdate(spec.getReservationId());
+            if(reservation.getStatus() == COMPLETE) {
+                return PaymentResult.successful("");
+            }
             //save billing data in case we have to go back to PENDING
             ticketReservationRepository.updateBillingData(spec.getVatStatus(), reservation.getSrcPriceCts(), reservation.getFinalPriceCts(),
                 reservation.getVatCts(), reservation.getDiscountCts(), reservation.getCurrencyCode(), spec.getVatNr(), spec.getVatCountryCode(), spec.isInvoiceRequested(), spec.getReservationId());
