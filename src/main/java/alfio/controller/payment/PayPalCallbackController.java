@@ -45,7 +45,7 @@ public class PayPalCallbackController {
     @GetMapping("/confirm")
     public String payPalSuccess(@PathVariable("eventName") String eventName,
                                 @PathVariable("reservationId") String reservationId,
-                                @RequestParam(value = "paymentId", required = false) String payPalPaymentId,
+                                @RequestParam(value = "token", required = false) String payPalPaymentId,
                                 @RequestParam(value = "PayerID", required = false) String payPalPayerID,
                                 @RequestParam(value = "hmac") String hmac) {
 
@@ -68,15 +68,27 @@ public class PayPalCallbackController {
             payPalManager.saveToken(res.getId(), ev, token);
             return "redirect:/event/" + ev.getShortName() + "/reservation/" +res.getId() + "/overview";
         } else {
-            return payPalCancel(ev.getShortName(), res.getId());
+            return payPalCancel(ev.getShortName(), res.getId(), payPalPaymentId, hmac);
         }
     }
 
     @GetMapping("/cancel")
     public String payPalCancel(@PathVariable("eventName") String eventName,
-                               @PathVariable("reservationId") String reservationId) {
+                               @PathVariable("reservationId") String reservationId,
+                               @RequestParam(value = "token", required = false) String payPalPaymentId,
+                               @RequestParam(value = "hmac") String hmac) {
 
-        payPalManager.removeToken(reservationId);
+        if(eventRepository.findOptionalByShortName(eventName).isEmpty()) {
+            return "redirect:/";
+        }
+
+        Optional<TicketReservation> optionalReservation = ticketReservationManager.findById(reservationId);
+
+        if(optionalReservation.isEmpty()) {
+            return "redirect:/event/" + eventName;
+        }
+
+        payPalManager.removeToken(optionalReservation.get(), payPalPaymentId);
         return "redirect:/event/"+eventName+"/reservation/"+reservationId+"/overview";
     }
 }
