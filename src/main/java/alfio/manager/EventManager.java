@@ -1049,6 +1049,13 @@ public class EventManager {
         if (!UserManager.isAdmin(principal)) {
             throw new IllegalStateException("User must be admin");
         }
-        return eventRepository.getEventNamesByIds(eventIds).stream().collect(Collectors.toMap(Event::getId, Event::getShortName));
+        return eventRepository.getEventNamesByIds(eventIds).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));
+    }
+
+    public Map<Integer, String> getEventsNameInOrganization(int orgId, Principal principal) {
+        if (!UserManager.isAdmin(principal)) {
+            throw new IllegalStateException("User must be admin");
+        }
+        return eventRepository.getEventsNameInOrganization(orgId).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));
     }
 }

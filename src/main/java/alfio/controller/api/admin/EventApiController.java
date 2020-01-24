@@ -225,6 +225,11 @@ public class EventApiController {
         return eventManager.getEventNamesByIds(eventIds, principal);
     }
 
+    @GetMapping("/events/names-in-organization/{orgId}")
+    public Map<Integer, String> getEventsNameInOrganization(@PathVariable("orgId") int orgId, Principal principal) {
+        return eventManager.getEventsNameInOrganization(orgId, principal);
+    }
+
     @PostMapping("/events/new")
     public String insertEvent(@RequestBody EventModification eventModification) {
         eventManager.createEvent(eventModification);
