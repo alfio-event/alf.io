@@ -144,7 +144,8 @@ dependencies {
     compile "com.zaxxer:HikariCP:3.4.1"
     compile "org.apache.logging.log4j:log4j-api:$log4jVersion"
     compile "com.stripe:stripe-java:15.4.0"
-    compile 'com.paypal.sdk:rest-api-sdk:1.14.0'
+    implementation 'com.paypal.sdk:checkout-sdk:1.0.2'
+    implementation 'com.google.code.gson:gson:2.8.6'
     compile "org.apache.commons:commons-lang3:3.9"
     compile "org.apache.commons:commons-text:1.8"
     compile "com.opencsv:opencsv:5.0"
