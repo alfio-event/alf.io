@@ -220,6 +220,11 @@ public class EventApiController {
         }).reduce(ValidationResult::or).orElseGet(ValidationResult::success);
     }
 
+    @GetMapping("/events/name-by-ids")
+    public Map<Integer, String> getEventNamesByIds(@RequestParam("eventIds") List<Integer> eventIds, Principal principal) {
+        return eventManager.getEventNamesByIds(eventIds, principal);
+    }
+
     @PostMapping("/events/new")
     public String insertEvent(@RequestBody EventModification eventModification) {
         eventManager.createEvent(eventModification);

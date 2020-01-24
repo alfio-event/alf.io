@@ -30,11 +30,14 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Predicate;
@@ -289,6 +292,15 @@ public class UserManager {
                 return ValidationResult.of(errors);
             })
             .orElseGet(ValidationResult::failed);
+    }
+
+    public static boolean isAdmin(Principal principal) {
+        if (principal instanceof Authentication) {
+            return ((Authentication) principal).getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
+        }
+        return false;
     }
 
 

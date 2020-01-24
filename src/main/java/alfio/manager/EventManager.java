@@ -59,6 +59,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
@@ -1042,5 +1043,12 @@ public class EventManager {
         } else {
             log.warn("unauthorized access to event {}", eventName);
         }
+    }
+
+    public Map<Integer, String> getEventNamesByIds(List<Integer> eventIds, Principal principal) {
+        if (!UserManager.isAdmin(principal)) {
+            throw new IllegalStateException("User must be admin");
+        }
+        return eventRepository.getEventNamesByIds(eventIds).stream().collect(Collectors.toMap(Event::getId, Event::getShortName));
     }
 }
