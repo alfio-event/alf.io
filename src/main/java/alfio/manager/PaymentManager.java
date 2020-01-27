@@ -36,8 +36,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -249,13 +247,13 @@ public class PaymentManager {
         return transactionRepository.loadOptionalByReservationId(reservationId)
             .filter(t->t.getStatus() == Transaction.Status.PENDING)
             .flatMap(t -> {
-            if(t.getMetadata().containsKey(PAYMENT_TOKEN)) {
-                return lookupByTransactionAndCapabilities(t, List.of(ExtractPaymentTokenFromTransaction.class))
-                    .map(ExtractPaymentTokenFromTransaction.class::cast)
-                    .flatMap(paymentProvider -> paymentProvider.extractToken(t));
-            }
-            return Optional.empty();
-        });
+                if(t.getMetadata().containsKey(PAYMENT_TOKEN)) {
+                    return lookupByTransactionAndCapabilities(t, List.of(ExtractPaymentTokenFromTransaction.class))
+                        .map(ExtractPaymentTokenFromTransaction.class::cast)
+                        .flatMap(paymentProvider -> paymentProvider.extractToken(t));
+                }
+                return Optional.empty();
+            });
     }
 
     public boolean removePaymentTokenReservation(String reservationId) {

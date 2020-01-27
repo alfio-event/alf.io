@@ -37,6 +37,8 @@ import alfio.util.ErrorsCode;
 import alfio.util.HttpUtils;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.paypal.core.PayPalEnvironment;
 import com.paypal.core.PayPalHttpClient;
 import com.paypal.http.HttpResponse;
@@ -45,6 +47,7 @@ import com.paypal.orders.*;
 import com.paypal.payments.CapturesRefundRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -56,6 +59,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Supplier;
@@ -70,6 +74,9 @@ import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
 @AllArgsConstructor
 public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInfo, ExtractPaymentTokenFromTransaction {
 
+    private final Cache<String, PayPalHttpClient> cachedClients = Caffeine.newBuilder()
+        .expireAfterAccess(Duration.ofHours(1L))
+        .build();
     private final ConfigurationManager configurationManager;
     private final MessageSourceManager messageSourceManager;
     private final TicketReservationRepository ticketReservationRepository;
@@ -78,7 +85,12 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     private final Json json;
 
     private PayPalHttpClient getClient(EventAndOrganizationId event) {
-        return new PayPalHttpClient(getApiContext(event));
+        PayPalEnvironment apiContext = getApiContext(event);
+        return cachedClients.get(generateKey(apiContext), key -> new PayPalHttpClient(apiContext));
+    }
+
+    private String generateKey(PayPalEnvironment environment) {
+        return DigestUtils.sha256Hex(environment.baseUrl() + "::" + environment.clientId() + "::" + environment.clientSecret());
     }
 
     private PayPalEnvironment getApiContext(EventAndOrganizationId event) {
@@ -100,8 +112,9 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         String baseUrl = StringUtils.removeEnd(configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.event(spec.getEvent())).getRequiredValue(), "/");
         String bookUrl = baseUrl+"/event/" + eventName + "/reservation/" + spec.getReservationId() + "/payment/paypal/" + URL_PLACEHOLDER;
 
+        String hmac = computeHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getEvent());
         UriComponentsBuilder bookUrlBuilder = UriComponentsBuilder.fromUriString(bookUrl)
-            .queryParam("hmac", computeHMAC(spec.getCustomerName(), spec.getEmail(), spec.getBillingAddress(), spec.getEvent()));
+            .queryParam("hmac", hmac);
         String finalUrl = bookUrlBuilder.toUriString();
 
         ApplicationContext applicationContext = new ApplicationContext()
@@ -116,19 +129,24 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
             .checkoutPaymentIntent("CAPTURE")
             .purchaseUnits(List.of(new PurchaseUnitRequest().amountWithBreakdown(new AmountWithBreakdown().currencyCode(spec.getCurrencyCode()).value(spec.getOrderSummary().getTotalPrice()))));
         OrdersCreateRequest request = new OrdersCreateRequest().requestBody(orderRequest);
+        request.header("prefer","return=representation");
         request.header("PayPal-Request-Id", reservation.getId());
         HttpResponse<Order> response = getClient(spec.getEvent()).execute(request);
         if(HttpUtils.statusCodeIsSuccessful(response.statusCode())) {
             Order order = response.result();
+            var status = order.status();
 
-            if(!"CREATED".equals(order.status())) {
-                throw new Exception();
+            if("APPROVED".equals(status) || "COMPLETED".equals(status)) {
+                if("APPROVED".equals(status)) {
+                    saveToken(reservation.getId(), spec.getEvent(), new PayPalToken(order.payer().payerId(), order.id(), hmac));
+                }
+                return "/event/"+spec.getEvent().getShortName()+"/reservation/"+spec.getReservationId();
+            } else if("CREATED".equals(status)) {
+                //add 15 minutes of validity in case the paypal flow is slow
+                ticketReservationRepository.updateValidity(spec.getReservationId(), DateUtils.addMinutes(reservation.getValidity(), 15));
+                return order.links().stream().filter(l -> l.rel().equals("approve")).map(LinkDescription::href).findFirst().orElseThrow();
             }
 
-            //add 15 minutes of validity in case the paypal flow is slow
-            ticketReservationRepository.updateValidity(spec.getReservationId(), DateUtils.addMinutes(reservation.getValidity(), 15));
-
-            return order.links().stream().filter(l -> l.rel().equals("approve")).map(LinkDescription::href).findFirst().orElseThrow();
         }
         throw new IllegalStateException();
     }
@@ -179,11 +197,21 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
                     throw new IllegalStateException();
                 }
 
-                var capture = result.purchaseUnits().get(0).payments().captures().get(0);
-                var captureId = capture.id();
-                var payPalFee = capture.sellerReceivableBreakdown().paypalFee();
+                var captureOptional = result.purchaseUnits().stream()
+                    .map(PurchaseUnit::payments)
+                    .flatMap(pc -> pc.captures().stream())
+                    .findFirst();
+                var captureId = captureOptional.map(Capture::id).orElseGet(() -> {
+                    log.warn("PayPal: null Capture returned for OrderId {}", result.id());
+                    return result.id();
+                });
 
-                return new PayPalChargeDetails(captureId, result.id(), MonetaryUtil.unitToCents(new BigDecimal(payPalFee.value()), payPalFee.currencyCode()));
+                var payPalFee = captureOptional.map(Capture::sellerReceivableBreakdown)
+                    .map(MerchantReceivableBreakdown::paypalFee)
+                    .map(money -> MonetaryUtil.unitToCents(new BigDecimal(money.value()), money.currencyCode()))
+                    .orElse(0);
+
+                return new PayPalChargeDetails(captureId, result.id(), payPalFee);
             }
         } catch (HttpException e) {
             mappedException(e).ifPresent(message -> {
