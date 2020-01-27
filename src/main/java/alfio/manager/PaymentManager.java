@@ -205,13 +205,13 @@ public class PaymentManager {
         return transactionRepository.loadOptionalByReservationId(reservationId)
             .filter(t->t.getStatus() == Transaction.Status.PENDING)
             .flatMap(t -> {
-            if(t.getMetadata().containsKey(PAYMENT_TOKEN)) {
-                return lookupByTransactionAndCapabilities(t, List.of(ExtractPaymentTokenFromTransaction.class))
-                    .map(ExtractPaymentTokenFromTransaction.class::cast)
-                    .flatMap(paymentProvider -> paymentProvider.extractToken(t));
-            }
-            return Optional.empty();
-        });
+                if(t.getMetadata().containsKey(PAYMENT_TOKEN)) {
+                    return lookupByTransactionAndCapabilities(t, List.of(ExtractPaymentTokenFromTransaction.class))
+                        .map(ExtractPaymentTokenFromTransaction.class::cast)
+                        .flatMap(paymentProvider -> paymentProvider.extractToken(t));
+                }
+                return Optional.empty();
+            });
     }
 
     public boolean removePaymentTokenReservation(String reservationId) {
