@@ -144,7 +144,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
                 if("APPROVED".equals(status)) {
                     saveToken(reservation.getId(), spec.getEvent(), new PayPalToken(order.payer().payerId(), order.id(), hmac));
                 }
-                throw new AlreadyApprovedException();
+                return "/event/"+spec.getEvent().getShortName()+"/reservation/"+spec.getReservationId();
             } else if("CREATED".equals(status)) {
                 //add 15 minutes of validity in case the paypal flow is slow
                 ticketReservationRepository.updateValidity(spec.getReservationId(), DateUtils.addMinutes(reservation.getValidity(), 15));
@@ -329,8 +329,6 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
                 return PaymentResult.initialized(gatewayToken.getToken());
             }
             return PaymentResult.redirect(createCheckoutRequest(spec));
-        } catch(AlreadyApprovedException ex) {
-            return PaymentResult.redirect("/event/"+spec.getEvent().getShortName()+"/reservation/"+spec.getReservationId());
         } catch (Exception e) {
             log.error(e);
             return PaymentResult.failed( ErrorsCode.STEP_2_PAYMENT_REQUEST_CREATION );
@@ -401,10 +399,6 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         private final String captureId;
         private final String orderId;
         private final long payPalFee;
-    }
-
-    private static class AlreadyApprovedException extends RuntimeException {
-
     }
 
     private static boolean statusCodeIsSuccessful(HttpResponse<?> response) {
