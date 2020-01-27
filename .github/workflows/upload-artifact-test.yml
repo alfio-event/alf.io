@@ -4,6 +4,7 @@ on:
         - cron:  '55 23 * * *'
 jobs:
     build:
+        if: github.repository == 'alfio-event/alf.io'
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v1
