@@ -24,6 +24,7 @@ import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.*;
 import alfio.model.transaction.capabilities.ExtractPaymentTokenFromTransaction;
 import alfio.model.transaction.capabilities.PaymentInfo;
@@ -33,7 +34,6 @@ import alfio.repository.TicketRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.util.ErrorsCode;
-import alfio.util.HttpUtils;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import com.paypal.core.PayPalEnvironment;
@@ -48,6 +48,7 @@ import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.apache.commons.codec.digest.HmacUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -65,6 +66,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.PAYPAL_ENABLED;
 import static alfio.util.MonetaryUtil.*;
+import static java.util.Objects.requireNonNull;
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
 
 @Component
@@ -120,7 +122,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         OrdersCreateRequest request = new OrdersCreateRequest().requestBody(orderRequest);
         request.header("PayPal-Request-Id", reservation.getId());
         HttpResponse<Order> response = getClient(spec.getEvent()).execute(request);
-        if(HttpUtils.statusCodeIsSuccessful(response.statusCode())) {
+        if(requireNonNull(HttpStatus.resolve(response.statusCode())).is2xxSuccessful()) {
             Order order = response.result();
 
             if(!"CREATED".equals(order.status())) {
@@ -172,7 +174,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
             request.requestBody(new OrderRequest());
             HttpResponse<Order> response = getClient(event).execute(request);
 
-            if(HttpUtils.statusCodeIsSuccessful(response.statusCode())) {
+            if(statusCodeIsSuccessful(response)) {
                 var result = response.result();
                 // state can only be "created", "approved" or "failed".
                 // if we are at this stage, the only possible options are approved or failed, thus it's safe to re transition the reservation to a pending status: no payment has been made!
@@ -207,7 +209,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         try {
             if(paymentId != null) {
                 var orderResponse = getClient(event).execute(new OrdersGetRequest(paymentId));
-                if(HttpUtils.statusCodeIsSuccessful(orderResponse.statusCode()) && orderResponse.result() != null) {
+                if(statusCodeIsSuccessful(orderResponse) && orderResponse.result() != null) {
                     var order = orderResponse.result();
                     var payments = order.purchaseUnits().stream()
                         .map(PurchaseUnit::payments)
@@ -261,7 +263,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
                 new com.paypal.payments.RefundRequest().amount(new com.paypal.payments.Money().currencyCode(currency).value(formatCents(i, currency))))
             );
             var refundResponse = payPalClient.execute(refundRequest);
-            if(HttpUtils.statusCodeIsSuccessful(refundResponse.statusCode())) {
+            if(statusCodeIsSuccessful(refundResponse)) {
                 log.info("Paypal: refund for payment {} executed with success for amount: {}", captureId, amountOrFull);
                 return true;
             } else {
@@ -369,6 +371,10 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         private final String captureId;
         private final String orderId;
         private final long payPalFee;
+    }
+
+    private static boolean statusCodeIsSuccessful(HttpResponse<?> response) {
+        return requireNonNull(HttpStatus.resolve(response.statusCode())).is2xxSuccessful();
     }
 
 }
