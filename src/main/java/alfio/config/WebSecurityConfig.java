@@ -24,7 +24,6 @@ import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -144,11 +143,14 @@ public class WebSecurityConfig {
     @Order(0)
     public static class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
 
-        @Autowired
-        private UserRepository userRepository;
+        private final UserRepository userRepository;
+        private final AuthorityRepository authorityRepository;
 
-        @Autowired
-        private AuthorityRepository authorityRepository;
+        public APITokenAuthWebSecurity(UserRepository userRepository,
+                                       AuthorityRepository authorityRepository) {
+            this.userRepository = userRepository;
+            this.authorityRepository = authorityRepository;
+        }
 
         //https://stackoverflow.com/a/48448901
         @Override
@@ -206,26 +208,29 @@ public class WebSecurityConfig {
     @Order(1)
     public static class FormBasedWebSecurity extends WebSecurityConfigurerAdapter {
 
-        @Autowired
-        private Environment environment;
+        private final Environment environment;
+        private final UserManager userManager;
+        private final RecaptchaService recaptchaService;
+        private final ConfigurationManager configurationManager;
+        private final CsrfTokenRepository csrfTokenRepository;
+        private final DataSource dataSource;
+        private final PasswordEncoder passwordEncoder;
 
-        @Autowired
-        private UserManager userManager;
-
-        @Autowired
-        private RecaptchaService recaptchaService;
-
-        @Autowired
-        private ConfigurationManager configurationManager;
-
-        @Autowired
-        private CsrfTokenRepository csrfTokenRepository;
-
-        @Autowired
-        private DataSource dataSource;
-
-        @Autowired
-        private PasswordEncoder passwordEncoder;
+        public FormBasedWebSecurity(Environment environment,
+                                    UserManager userManager,
+                                    RecaptchaService recaptchaService,
+                                    ConfigurationManager configurationManager,
+                                    CsrfTokenRepository csrfTokenRepository,
+                                    DataSource dataSource,
+                                    PasswordEncoder passwordEncoder) {
+            this.environment = environment;
+            this.userManager = userManager;
+            this.recaptchaService = recaptchaService;
+            this.configurationManager = configurationManager;
+            this.csrfTokenRepository = csrfTokenRepository;
+            this.dataSource = dataSource;
+            this.passwordEncoder = passwordEncoder;
+        }
 
         @Override
         public void configure(AuthenticationManagerBuilder auth) throws Exception {
