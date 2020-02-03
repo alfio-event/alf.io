@@ -76,7 +76,9 @@ public class ExternalConfiguration {
     }
 
     public Map<String, String> getParametersForExtension(String id) {
-        return extensions.stream().filter(ExtensionOverride::isValid).map(ExtensionOverride::getParams)
+        return extensions.stream().filter(ExtensionOverride::isValid)
+            .filter(extensionOverride -> extensionOverride.id.equals(id))
+            .map(ExtensionOverride::getParams)
             .findFirst()
             .orElse(Map.of());
     }
