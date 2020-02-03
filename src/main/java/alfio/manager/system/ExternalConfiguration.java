@@ -94,6 +94,10 @@ public class ExternalConfiguration {
                 && isNotBlank(file)
                 && events != null && !events.isEmpty();
         }
+
+        Map<String, String> getParams() {
+            return Objects.requireNonNullElse(params, Map.of());
+        }
     }
 
     public static boolean isExternalPath(String path) {
