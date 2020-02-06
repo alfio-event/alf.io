@@ -17,20 +17,18 @@
 package alfio.manager.payment;
 
 import alfio.manager.ExtensionManager;
-import alfio.manager.payment.stripe.StripeConnectURL;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.TicketRepository;
 import alfio.repository.system.ConfigurationRepository;
+import alfio.util.oauth2.AuthorizationRequestDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -60,8 +58,8 @@ class StripeConnectManagerTest {
         when(map.get(any(ConfigurationKeys.class))).thenReturn(maybeConfiguration);
         when(maybeConfiguration.getRequiredValue()).thenReturn("");
         when(configurationManager.getFor(anyCollection(), any(ConfigurationLevel.class))).thenReturn(map);
-        when(extensionManager.generateStripeConnectStateParam(anyInt())).thenReturn(Optional.of(state));
-        StripeConnectURL connectURL = stripeConnectManager.getConnectURL(1);
+        when(extensionManager.generateOAuth2StateParam(anyInt())).thenReturn(Optional.of(state));
+        AuthorizationRequestDetails connectURL = stripeConnectManager.getConnectURL(1);
         assertEquals(state, connectURL.getState());
     }
 
@@ -74,8 +72,8 @@ class StripeConnectManagerTest {
         when(map.get(any(ConfigurationKeys.class))).thenReturn(maybeConfiguration);
         when(maybeConfiguration.getRequiredValue()).thenReturn("");
         when(configurationManager.getFor(anyCollection(), any(ConfigurationLevel.class))).thenReturn(map);
-        when(extensionManager.generateStripeConnectStateParam(anyInt())).thenReturn(Optional.empty());
-        StripeConnectURL connectURL = stripeConnectManager.getConnectURL(1);
+        when(extensionManager.generateOAuth2StateParam(anyInt())).thenReturn(Optional.empty());
+        AuthorizationRequestDetails connectURL = stripeConnectManager.getConnectURL(1);
         assertNotEquals(state, connectURL.getState());
     }
 }

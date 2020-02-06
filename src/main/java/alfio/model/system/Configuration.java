@@ -80,6 +80,7 @@ public class Configuration implements Comparable<Configuration> {
         return new HashCodeBuilder().append(configurationKey).append(configurationPathLevel).toHashCode();
     }
 
+    @FunctionalInterface
     public interface ConfigurationPath {
         ConfigurationPathLevel pathLevel();
     }

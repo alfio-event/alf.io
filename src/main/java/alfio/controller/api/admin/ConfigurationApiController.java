@@ -24,7 +24,6 @@ import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import lombok.Data;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,8 +32,7 @@ import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
-import static alfio.model.system.ConfigurationKeys.STRIPE_CONNECTED_ID;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @RestController
 @RequestMapping("/admin/api/configuration")
@@ -146,9 +144,12 @@ public class ConfigurationApiController {
     public Map<String, Boolean> loadPlatformModeStatus(@PathVariable("organizationId") int organizationId) {
         Map<String, Boolean> result = new HashMap<>();
         boolean platformModeEnabled = configurationManager.getForSystem(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false);
-        boolean stripeConnected = platformModeEnabled && StringUtils.isNotBlank(configurationManager.getFor(STRIPE_CONNECTED_ID, ConfigurationLevel.organization(organizationId)).getValueOrDefault(null));
         result.put("enabled", platformModeEnabled);
-        result.put("stripeConnected", stripeConnected);
+        if(platformModeEnabled) {
+            var options = configurationManager.getFor(List.of(STRIPE_CONNECTED_ID, MOLLIE_CONNECT_REFRESH_TOKEN), ConfigurationLevel.organization(organizationId));
+            result.put("stripeConnected", options.get(STRIPE_CONNECTED_ID).isPresent());
+            result.put("mollieConnected", options.get(MOLLIE_CONNECT_REFRESH_TOKEN).isPresent());
+        }
         return result;
     }
 

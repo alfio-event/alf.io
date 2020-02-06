@@ -75,7 +75,7 @@ public class ExtensionManager {
         TICKET_CHECKED_IN,
         TICKET_REVERT_CHECKED_IN,
         PDF_GENERATION,
-        STRIPE_CONNECT_STATE_GENERATION,
+        OAUTH2_STATE_GENERATION,
 
         CONFIRMATION_MAIL_CUSTOM_TEXT,
         TICKET_MAIL_CUSTOM_TEXT,
@@ -292,8 +292,8 @@ public class ExtensionManager {
         }
     }
 
-    public Optional<String> generateStripeConnectStateParam(int organizationId) {
-        return Optional.ofNullable(extensionService.executeScriptsForEvent(ExtensionEvent.STRIPE_CONNECT_STATE_GENERATION.name(),
+    public Optional<String> generateOAuth2StateParam(int organizationId) {
+        return Optional.ofNullable(extensionService.executeScriptsForEvent(ExtensionEvent.OAUTH2_STATE_GENERATION.name(),
             "-" + organizationId,
             Map.of("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organizationId)).getRequiredValue(), "organizationId", organizationId),
             String.class));

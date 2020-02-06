@@ -14,16 +14,14 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.manager.payment.stripe;
+package alfio.util.oauth2;
 
 import lombok.Data;
 
 @Data
-public class StripeConnectURL {
-
-    public static final String CONNECT_REDIRECT_PATH = "/admin/configuration/payment/stripe/authorize";
-
-    private final String authorizationURL;
-    private final String state;
+public class AccessTokenRequestDetails {
+    private final String clientId;
+    private final String clientSecret;
+    private final String tokenUrl;
     private final String code;
 }

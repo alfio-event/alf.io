@@ -161,7 +161,6 @@
                                 <i class="fa" ng-class="{'fa-check': organizationConf.stripeConnected, 'fa-question': !organizationConf.stripeConnected}"></i> <span ng-if="organizationConf.stripeConnected">Connected</span> <span ng-if="!organizationConf.stripeConnected">NOT Connected</span>
                             </div>
                         </div>
-
                     </div>
                 </div>
 
@@ -182,19 +181,28 @@
                     </div>
                 </div>
 
-                <!--<div data-ng-if="organizationConf.paymentMollie" class="panel panel-default">
+                <div data-ng-if="organizationConf.paymentMollie" class="panel panel-default">
                     <div class="panel-heading">
                         <div class="panel-title"> Mollie configuration</div>
                     </div>
-                    <div class="panel-body">
-                        <div class="alert alert-info">
-                            <p><i class="fa fa-info-circle"></i> in order to accept payments through Mollie, you must have Live API key.</p>
-                        </div>
+                    <div class="panel-body" ng-if="!organizationConf.platformModeEnabled">
                         <div data-ng-repeat="setting in organizationConf.paymentMollie.settings">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
                     </div>
-                </div>-->
+                    <div class="panel-body" ng-if="organizationConf.platformModeEnabled">
+                        <div class="row">
+                            <div class="col-xs-4 col-md-3">
+                                <a ng-href="/admin/configuration/payment/mollie/connect/{{organizationConf.organizationId}}">
+                                    <img src="/resources/images/payment/mollie-connect-button.png" srcset="/resources/images/payment/mollie-connect-button@2x.png 2x">
+                                </a>
+                            </div>
+                            <div class="col-xs-8 col-md-9" ng-class="{'text-success': organizationConf.mollieConnected}">
+                                <i class="fa" ng-class="{'fa-check': organizationConf.mollieConnected, 'fa-question': !organizationConf.mollieConnected}"></i> <span ng-if="organizationConf.mollieConnected">Connected</span> <span ng-if="!organizationConf.mollieConnected">NOT Connected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <div data-ng-if="organizationConf.paymentOffline" class="panel panel-default">
                     <div class="panel-heading">
