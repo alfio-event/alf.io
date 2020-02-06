@@ -101,7 +101,7 @@ class BaseStripeManager {
         return configurationManager.getFor(PLATFORM_MODE_ENABLED, context.getConfigurationLevel()).getValueAsBooleanOrDefault(false);
     }
 
-    String getSystemApiKey() {
+    String getSystemSecretKey() {
         return configurationManager.getForSystem(STRIPE_SECRET_KEY).getRequiredValue();
     }
 
@@ -203,7 +203,7 @@ class BaseStripeManager {
                 .map(connectedId -> {
                     //connected stripe account
                     builder.setStripeAccount(connectedId);
-                    return builder.setApiKey(getSystemApiKey()).build();
+                    return builder.setApiKey(getSystemSecretKey()).build();
                 });
         }
         return Optional.of(builder.setApiKey(getSecretKey(event)).build());

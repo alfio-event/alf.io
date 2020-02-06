@@ -315,6 +315,7 @@
                     var platformModeStatus = result[3].data;
                     organizationConf.platformModeEnabled = platformModeStatus.enabled;
                     organizationConf.stripeConnected = platformModeStatus.stripeConnected;
+                    organizationConf.mollieConnected = platformModeStatus.mollieConnected;
                     organizationConf.extensionSettings = result[4].data;
                     organizationConf.cancel = function() {
                         load();

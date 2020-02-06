@@ -16,11 +16,11 @@
  */
 package alfio.controller;
 
+import alfio.manager.payment.MollieConnectManager;
+import alfio.manager.payment.OAuthPaymentProviderConnector;
 import alfio.manager.payment.StripeConnectManager;
-import alfio.manager.payment.stripe.StripeConnectResult;
-import alfio.manager.payment.stripe.StripeConnectURL;
 import alfio.manager.user.UserManager;
-import alfio.model.system.Configuration;
+import alfio.util.oauth2.AccessTokenResponseDetails;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -30,68 +30,83 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.security.Principal;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static alfio.manager.payment.stripe.StripeConnectURL.CONNECT_REDIRECT_PATH;
+import static alfio.manager.payment.MollieConnectManager.MOLLIE_CONNECT_REDIRECT_PATH;
+import static alfio.manager.payment.StripeConnectManager.STRIPE_CONNECT_REDIRECT_PATH;
 
 @Controller
 @AllArgsConstructor
 @Log4j2
 public class AdminConfigurationController {
 
-    private static final String STRIPE_CONNECT_ORG = "stripe.connect.org";
-    private static final String STRIPE_CONNECT_STATE_PREFIX = "stripe.connect.state.";
-    private final StripeConnectManager stripeConnectManager;
+    private static final String CONNECT_ORG = ".connect.org";
+    private static final String CONNECT_STATE_PREFIX = ".connect.state.";
     private static final String REDIRECT_ADMIN = "redirect:/admin/";
+    private static final List<String> CONNECT_PROVIDERS = List.of("stripe", "mollie");
+
+    private final StripeConnectManager stripeConnectManager;
+    private final MollieConnectManager mollieConnectManager;
     private final UserManager userManager;
 
-    @GetMapping("/admin/configuration/payment/stripe/connect/{orgId}")
+    @GetMapping("/admin/configuration/payment/{provider}/connect/{orgId}")
     public String redirectToStripeConnect(Principal principal,
                                           @PathVariable("orgId") Integer orgId,
+                                          @PathVariable("provider") String provider,
                                           HttpSession session) {
-        if(userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), orgId)) {
-            StripeConnectURL connectURL = stripeConnectManager.getConnectURL(orgId);
-            session.setAttribute(STRIPE_CONNECT_STATE_PREFIX +orgId, connectURL.getState());
-            session.setAttribute(STRIPE_CONNECT_ORG, orgId);
-            return "redirect:" + connectURL.getAuthorizationURL();
+        if(CONNECT_PROVIDERS.contains(provider) && userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), orgId)) {
+            var connectURL = getConnector(provider).getConnectURL(orgId);
+            session.setAttribute(provider+CONNECT_STATE_PREFIX +orgId, connectURL.getState());
+            session.setAttribute(provider+CONNECT_ORG, orgId);
+            return "redirect:" + connectURL.getAuthorizationUrl();
         }
         return REDIRECT_ADMIN;
     }
 
 
-    @GetMapping(CONNECT_REDIRECT_PATH)
+    @GetMapping({ STRIPE_CONNECT_REDIRECT_PATH, MOLLIE_CONNECT_REDIRECT_PATH })
     public String authorize(Principal principal,
                             @RequestParam("state") String state,
                             @RequestParam(value = "code", required = false) String code,
                             @RequestParam(value = "error", required = false) String errorCode,
                             @RequestParam(value = "error_description", required = false) String errorDescription,
+                            HttpServletRequest request,
                             HttpSession session,
                             RedirectAttributes redirectAttributes) {
 
-        return Optional.ofNullable(session.getAttribute(STRIPE_CONNECT_ORG))
+        boolean isMollie = request.getRequestURI().equals(MOLLIE_CONNECT_REDIRECT_PATH);
+        var provider = isMollie ? "mollie" : "stripe";
+
+        return Optional.ofNullable(session.getAttribute(provider + CONNECT_ORG))
             .map(Integer.class::cast)
             .filter(orgId -> userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), orgId))
             .map(orgId -> {
-                session.removeAttribute(STRIPE_CONNECT_ORG);
-                String persistedState = (String) session.getAttribute(STRIPE_CONNECT_STATE_PREFIX + orgId);
-                session.removeAttribute(STRIPE_CONNECT_STATE_PREFIX + orgId);
+                session.removeAttribute(provider + CONNECT_ORG);
+                String persistedState = (String) session.getAttribute(provider + CONNECT_STATE_PREFIX + orgId);
+                session.removeAttribute(provider + CONNECT_STATE_PREFIX + orgId);
                 boolean stateVerified = Objects.equals(persistedState, state);
                 if(stateVerified && code != null) {
-                    StripeConnectResult connectResult = stripeConnectManager.storeConnectedAccountId(code, Configuration.from(orgId));
+                    AccessTokenResponseDetails connectResult = getConnector(provider).storeConnectedAccountId(code, orgId);
                     if(connectResult.isSuccess()) {
                         return "redirect:/admin/#/configuration/organization/"+orgId;
                     }
                 } else if(stateVerified && StringUtils.isNotEmpty(errorCode)) {
-                    log.warn("error from stripe. {}={}", errorCode, errorDescription);
+                    log.warn("error from {}. {}={}", provider, errorCode, errorDescription);
                     redirectAttributes.addFlashAttribute("errorMessage", StringUtils.defaultString(errorDescription, errorCode));
                     return REDIRECT_ADMIN;
                 }
                 redirectAttributes.addFlashAttribute("errorMessage", "Couldn't connect your account. Please retry.");
                 return REDIRECT_ADMIN;
             }).orElse(REDIRECT_ADMIN);
+    }
+
+    private OAuthPaymentProviderConnector getConnector(String providerAsString) {
+        return "mollie".equals(providerAsString) ? mollieConnectManager : stripeConnectManager;
     }
 
 }
