@@ -100,6 +100,7 @@ public class CustomMessageManager {
                     model.addAttribute("reservationURL", ticketReservationManager.reservationUrl(t.getTicketsReservationId(), event));
                     model.addAttribute("reservationID", ticketReservationManager.getShortReservationID(event, t.getTicketsReservationId()));
                     model.addAttribute("ticketURL", ticketReservationManager.ticketUpdateUrl(event, t.getUuid()));
+                    model.addAttribute("ticketID", t.getUuid());
                     return Triple.of(t, t.getEmail(), model);
                 })
                 .forEach(triple -> {
@@ -133,6 +134,7 @@ public class CustomMessageManager {
         model.addAttribute("reservationURL", "https://this-is-the-reservation-url");
         model.addAttribute("ticketURL", "https://this-is-the-ticket-url");
         model.addAttribute("reservationID", "RESID");
+        model.addAttribute("ticketID", "TICKETID");
         return input.stream()
                 .map(m -> MessageModification.preview(m, renderResource(m.getSubject(), event, model, m.getLocale(), templateManager),
                     renderResource(m.getText(), event, model, m.getLocale(), templateManager), m.isAttachTicket()))
