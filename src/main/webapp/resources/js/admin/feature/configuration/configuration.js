@@ -45,7 +45,15 @@
         .directive('ticketCategoryConfiguration', ticketCategoryConfiguration)
         .service('ConfigurationService', ConfigurationService)
         .directive('basicConfigurationNeeded', basicConfigurationNeeded)
-        .directive('paymentMethodBlacklist', paymentMethodBlacklist);
+        .directive('paymentMethodBlacklist', paymentMethodBlacklist)
+        .filter('mollieConnect', function() {
+            return function(options, connected) {
+                return options.filter(function(o) {
+                    var index = o.key.indexOf('_CONNECT');
+                    return connected ? index > -1 : index === -1;
+                })
+            }
+        });
 
     function ConfigurationService($http, HttpErrorHandler, $q, $timeout, $window) {
         var configurationCache = null;

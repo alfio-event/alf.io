@@ -19,10 +19,23 @@ package alfio.manager.system;
 import alfio.model.EventAndOrganizationId;
 import alfio.model.system.ConfigurationPathLevel;
 
+import java.util.OptionalInt;
+
 public interface ConfigurationLevel {
 
 
     ConfigurationPathLevel getPathLevel(); //waiting for pattern matching...
+    default OptionalInt getOrganizationId() {
+        return OptionalInt.empty();
+    }
+
+    default OptionalInt getEventId() {
+        return OptionalInt.empty();
+    }
+
+    default OptionalInt getTicketCategoryId() {
+        return OptionalInt.empty();
+    }
 
     static ConfigurationLevel external() {
         return new ConfigurationLevels.ExternalLevel();
