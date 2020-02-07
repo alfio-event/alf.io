@@ -36,6 +36,7 @@ public class Configuration implements Comparable<Configuration> {
     private final ConfigurationKeys configurationKey;
     private final ConfigurationPathLevel configurationPathLevel;
     private final boolean basic;
+    private final boolean internal;
 
 
     public Configuration(@Column("id") int id,
@@ -49,6 +50,7 @@ public class Configuration implements Comparable<Configuration> {
         this.description = configurationKey.getDescription();
         this.configurationPathLevel = configurationPathLevel;
         this.basic = this.configurationKey.isBasic();
+        this.internal = this.configurationKey.isInternal();
     }
 
     public ComponentType getComponentType() {

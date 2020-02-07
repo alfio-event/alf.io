@@ -359,7 +359,7 @@ public class ConfigurationManager {
                 ConfigurationKeys.SettingCategory key = e.getKey();
                 Set<Configuration> entries = new TreeSet<>(e.getValue());
                 if(existing.containsKey(key)) {
-                    List<Configuration> configurations = existing.get(key);
+                    List<Configuration> configurations = existing.get(key).stream().filter(Predicate.not(Configuration::isInternal)).collect(Collectors.toList());
                     entries.removeAll(configurations);
                     entries.addAll(configurations);
                 }

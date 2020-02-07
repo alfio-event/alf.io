@@ -162,13 +162,13 @@ public enum ConfigurationKeys {
 
     //
     MOLLIE_CC_ENABLED("Enabled", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION)),
-    MOLLIE_PROFILE_ID("Profile ID", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
-    MOLLIE_LIVE_MODE("Live mode (default false)", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     MOLLIE_API_KEY("API key", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     MOLLIE_CONNECT_CLIENT_ID("Mollie Connect Client ID", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    MOLLIE_CONNECT_REFRESH_TOKEN("Mollie Connect Refresh Token", true, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(ORGANIZATION)),
+    MOLLIE_CONNECT_REFRESH_TOKEN("Mollie Connect Refresh Token", true, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.noneOf(ConfigurationPathLevel.class)),
     MOLLIE_CONNECT_CLIENT_SECRET("Mollie Connect Client Secret", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     MOLLIE_CONNECT_CALLBACK("Mollie Connect Callback URL", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
+    MOLLIE_CONNECT_PROFILE_ID("Profile ID", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.TEXT, false, EnumSet.of(SYSTEM, ORGANIZATION)),
+    MOLLIE_CONNECT_LIVE_MODE("Live mode (default false)", false, SettingCategory.PAYMENT_MOLLIE, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION)),
     //
 
     ON_SITE_ENABLED("On site enabled", false, SettingCategory.PAYMENT, ComponentType.BOOLEAN, false, EnumSet.of(SYSTEM, ORGANIZATION)),

@@ -230,7 +230,7 @@ public class EventApiV2Controller {
 
     private List<PaymentProxy> getActivePaymentMethods(Event event) {
         if(!event.isFreeOfCharge()) {
-            return paymentManager.getPaymentMethods(event)
+            return paymentManager.getPaymentMethods(event.getOrganizationId())
                 .stream()
                 .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
                 .map(PaymentManager.PaymentMethodDTO::getPaymentProxy)

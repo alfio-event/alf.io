@@ -186,7 +186,7 @@
                         <div class="panel-title"> Mollie configuration</div>
                     </div>
                     <div class="panel-body" ng-if="!organizationConf.platformModeEnabled">
-                        <div data-ng-repeat="setting in organizationConf.paymentMollie.settings">
+                        <div data-ng-repeat="setting in organizationConf.paymentMollie.settings | mollieConnect:false">
                             <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
                     </div>
@@ -200,6 +200,9 @@
                             <div class="col-xs-8 col-md-9" ng-class="{'text-success': organizationConf.mollieConnected}">
                                 <i class="fa" ng-class="{'fa-check': organizationConf.mollieConnected, 'fa-question': !organizationConf.mollieConnected}"></i> <span ng-if="organizationConf.mollieConnected">Connected</span> <span ng-if="!organizationConf.mollieConnected">NOT Connected</span>
                             </div>
+                        </div>
+                        <div data-ng-repeat="setting in organizationConf.paymentMollie.settings | mollieConnect:true">
+                            <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="organizationConf.delete(config)"  ></setting>
                         </div>
                     </div>
                 </div>

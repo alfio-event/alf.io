@@ -19,8 +19,9 @@ package alfio.manager.system;
 import alfio.model.system.ConfigurationPathLevel;
 import lombok.AllArgsConstructor;
 
+import java.util.OptionalInt;
+
 import static alfio.model.system.ConfigurationPathLevel.*;
-import static alfio.model.system.ConfigurationPathLevel.TICKET_CATEGORY;
 
 class ConfigurationLevels {
 
@@ -46,6 +47,11 @@ class ConfigurationLevels {
         public ConfigurationPathLevel getPathLevel() {
             return ORGANIZATION;
         }
+
+        @Override
+        public OptionalInt getOrganizationId() {
+            return OptionalInt.of(organizationId);
+        }
     }
 
     @AllArgsConstructor
@@ -56,6 +62,16 @@ class ConfigurationLevels {
         @Override
         public ConfigurationPathLevel getPathLevel() {
             return EVENT;
+        }
+
+        @Override
+        public OptionalInt getOrganizationId() {
+            return OptionalInt.of(organizationId);
+        }
+
+        @Override
+        public OptionalInt getEventId() {
+            return OptionalInt.of(eventId);
         }
     }
 
@@ -68,6 +84,21 @@ class ConfigurationLevels {
         @Override
         public ConfigurationPathLevel getPathLevel() {
             return TICKET_CATEGORY;
+        }
+
+        @Override
+        public OptionalInt getOrganizationId() {
+            return OptionalInt.of(organizationId);
+        }
+
+        @Override
+        public OptionalInt getEventId() {
+            return OptionalInt.of(eventId);
+        }
+
+        @Override
+        public OptionalInt getTicketCategoryId() {
+            return OptionalInt.of(categoryId);
         }
     }
 }
