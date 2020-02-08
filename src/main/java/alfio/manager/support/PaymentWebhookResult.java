@@ -30,12 +30,14 @@ public class PaymentWebhookResult {
         TRANSACTION_INITIATED,
         SUCCESSFUL,
         FAILED,
+        CANCELLED,
         ERROR
     }
 
     private final Type type;
     private final PaymentToken paymentToken;
     private final String reason;
+    private final String redirectUrl;
 
     public boolean isSuccessful() {
         return type == Type.SUCCESSFUL;
@@ -46,22 +48,30 @@ public class PaymentWebhookResult {
     }
 
     public static PaymentWebhookResult successful(PaymentToken paymentToken) {
-        return new PaymentWebhookResult(Type.SUCCESSFUL, paymentToken, null);
+        return new PaymentWebhookResult(Type.SUCCESSFUL, paymentToken, null, null);
     }
 
     public static PaymentWebhookResult failed(String reason) {
-        return new PaymentWebhookResult(Type.FAILED, null, reason);
+        return new PaymentWebhookResult(Type.FAILED, null, reason, null);
+    }
+
+    public static PaymentWebhookResult cancelled() {
+        return new PaymentWebhookResult(Type.CANCELLED, null, null, null);
     }
 
     public static PaymentWebhookResult error(String reason) {
-        return new PaymentWebhookResult(Type.ERROR, null, reason);
+        return new PaymentWebhookResult(Type.ERROR, null, reason, null);
     }
 
     public static PaymentWebhookResult notRelevant(String reason) {
-        return new PaymentWebhookResult(Type.NOT_RELEVANT, null, reason);
+        return new PaymentWebhookResult(Type.NOT_RELEVANT, null, reason, null);
     }
 
     public static PaymentWebhookResult processStarted(PaymentToken paymentToken) {
-        return new PaymentWebhookResult(Type.TRANSACTION_INITIATED, paymentToken, null);
+        return new PaymentWebhookResult(Type.TRANSACTION_INITIATED, paymentToken, null, null);
+    }
+
+    public static PaymentWebhookResult redirect(String redirectUrl) {
+        return new PaymentWebhookResult(Type.TRANSACTION_INITIATED, null, null, redirectUrl);
     }
 }

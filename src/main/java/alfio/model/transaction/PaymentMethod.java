@@ -20,7 +20,7 @@ import java.util.Arrays;
 
 public enum PaymentMethod {
 
-    CREDIT_CARD, PAYPAL, IDEAL, BANK_TRANSFER, ON_SITE, NONE, APPLE_PAY, BANCONTACT, ING_HOME_PAY, BELFIUS, PRZELEWY_24;
+    CREDIT_CARD, PAYPAL, IDEAL, BANK_TRANSFER, ON_SITE, NONE, APPLE_PAY, BANCONTACT, ING_HOME_PAY, BELFIUS, KBC, PRZELEWY_24;
 
     public static PaymentMethod safeParse(String asString) {
         return Arrays.stream(PaymentMethod.values()).filter(v -> v.name().equals(asString)).findFirst().orElse(null);

@@ -71,7 +71,7 @@ public interface TransactionRepository {
                        @Bind("metadata") @JSONData Map<String, String> metadata,
                        @Bind("expectedStatus") Transaction.Status expectedCurrentStatus);
 
-    @Query("select * from b_transaction where reservation_id = :reservationId order by t_timestamp desc limit 1 for update")
+    @Query(SELECT_VALID_BY_RESERVATION_ID + " order by t_timestamp desc limit 1 for update")
     Optional<Transaction> lockLatestForUpdate(@Bind("reservationId") String reservationId);
 
     @Query("select id from b_transaction where id = :id for update")
@@ -101,6 +101,9 @@ public interface TransactionRepository {
 
     @Query(SELECT_VALID_BY_RESERVATION_ID + " and status = :status")
     Optional<Transaction> loadOptionalByReservationIdAndStatus(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
+
+    @Query(SELECT_VALID_BY_RESERVATION_ID + " and status = :status for update")
+    Optional<Transaction> loadOptionalByReservationIdAndStatusForUpdate(@Bind("reservationId") String reservationId, @Bind("status") Transaction.Status status);
 
     @Query("select * from b_transaction where id = :id and status = :status")
     Optional<Transaction> loadOptionalByIdAndStatus(@Bind("id") int id, @Bind("status") Transaction.Status status);

@@ -20,12 +20,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
+import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
@@ -33,10 +34,14 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.session.jdbc.config.annotation.web.http.EnableJdbcHttpSession;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
 import org.springframework.web.servlet.ViewResolver;
-import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistration;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.view.AbstractUrlBasedView;
 import org.springframework.web.servlet.view.UrlBasedViewResolver;
 
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 
@@ -47,22 +52,29 @@ import java.util.List;
 public class MvcConfiguration implements WebMvcConfigurer {
 
     private final Environment environment;
+    private final String frontendVersion;
 
-    @Autowired
-    public MvcConfiguration(Environment environment) {
+    public MvcConfiguration(Environment environment, @Value("${alfio.frontend.version}") String frontendVersion) {
         this.environment = environment;
+        this.frontendVersion = frontendVersion;
     }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         ResourceHandlerRegistration reg = registry.addResourceHandler("/resources/**").addResourceLocations("/resources/");
-        int cacheMinutes = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE)) ? 15 : 0;
+        boolean isLive = environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_LIVE));
+        int cacheMinutes = isLive ? 15 : 0;
         reg.setCachePeriod(cacheMinutes * 60);
 
         //
         registry
             .addResourceHandler("/webjars/**")
-            .addResourceLocations("/webjars/");
+            .addResourceLocations("/webjars/")
+            .setCacheControl(CacheControl.maxAge(Duration.ofDays(isLive ? 10 : 0)).mustRevalidate());
+
+        registry.addResourceHandler("/assets/**")
+            .addResourceLocations("/webjars/alfio-public-frontend/" + frontendVersion + "/alfio-public-frontend/assets/");
+
     }
 
     @Override
