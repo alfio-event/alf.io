@@ -550,7 +550,7 @@ public class TicketReservationManager {
             return false;
         }
         Transaction transaction = optionalTransaction.get();
-        boolean remoteDeleteResult = paymentManager.lookupByTransactionAndCapabilities(transaction, List.of(ServerInitiatedTransaction.class))
+        boolean remoteDeleteResult = paymentManager.lookupProviderByTransactionAndCapabilities(transaction, List.of(ServerInitiatedTransaction.class))
             .map(provider -> ((ServerInitiatedTransaction)provider).discardTransaction(optionalTransaction.get(), event))
             .orElse(true);
 
@@ -1880,8 +1880,12 @@ public class TicketReservationManager {
     }
 
     public PaymentWebhookResult processTransactionWebhook(String body, String signature, PaymentProxy paymentProxy, Map<String, String> additionalInfo) {
-        //load the payment provider using system configuration
-        var paymentProviderOptional = paymentManager.streamActiveProvidersByProxyAndCapabilities(paymentProxy, new PaymentContext(), List.of(WebhookHandler.class)).findFirst();
+        return processTransactionWebhook(body, signature, paymentProxy, additionalInfo, new PaymentContext());
+    }
+
+    public PaymentWebhookResult processTransactionWebhook(String body, String signature, PaymentProxy paymentProxy, Map<String, String> additionalInfo, PaymentContext paymentContext) {
+        //load the payment provider using given configuration
+        var paymentProviderOptional = paymentManager.streamActiveProvidersByProxyAndCapabilities(paymentProxy, paymentContext, List.of(WebhookHandler.class)).findFirst();
         if(paymentProviderOptional.isEmpty()) {
             return PaymentWebhookResult.error("payment provider not found");
         }
@@ -1902,7 +1906,11 @@ public class TicketReservationManager {
             return PaymentWebhookResult.notRelevant("reservation not found");
         }
         var reservation = optionalReservation.get();
-        var transaction = transactionRepository.loadByReservationId(reservation.getId());
+        var optionalTransaction = transactionRepository.lockLatestForUpdate(reservation.getId());
+        if(optionalTransaction.isEmpty()) {
+            return PaymentWebhookResult.notRelevant("transaction not found");
+        }
+        var transaction = optionalTransaction.get();
 
         if(reservationStatusNotCompatible(reservation) || transaction.getStatus() != Transaction.Status.PENDING) {
             log.warn("discarding transaction webhook {} for reservation id {} ({}). Transaction status is: {}", transactionPayload.getType(), reservation.getId(), reservation.getStatus(), transaction.getStatus());
@@ -1910,71 +1918,120 @@ public class TicketReservationManager {
         }
 
 
+        //FIXME in some cases the reload is redundant
         //reload the payment provider, this time within a more sensible context
-        var paymentContext = new PaymentContext(eventRepository.findByReservationId(reservation.getId()));
+        var paymentContextReloaded = new PaymentContext(eventRepository.findByReservationId(reservation.getId()));
         return paymentManager.lookupProviderByTransactionAndCapabilities(transaction, List.of(WebhookHandler.class))
             .map(provider -> {
-                var paymentWebhookResult = ((WebhookHandler) provider).processWebhook(transactionPayload, transaction, paymentContext);
+                var paymentWebhookResult = ((WebhookHandler)provider).processWebhook(transactionPayload, transaction, paymentContextReloaded);
                 var event = eventRepository.findByReservationId(reservation.getId());
-                switch(paymentWebhookResult.getType()) {
-                    case NOT_RELEVANT: {
-                        log.trace("Discarding event {} for reservation {}", transactionPayload.getType(), reservation.getId());
-                        break;
-                    }
-                    case TRANSACTION_INITIATED: {
-                        if(reservation.getStatus() == EXTERNAL_PROCESSING_PAYMENT) {
-                            String status = WAITING_EXTERNAL_CONFIRMATION.name();
-                            log.trace("Event {} received. Setting status {} for reservation {}", transactionPayload.getType(), status, reservation.getId());
-                            ticketReservationRepository.updateReservationStatus(reservation.getId(), status);
-                        } else {
-                            log.trace("Ignoring Event {}, as it cannot be applied for reservation {} ({})", transactionPayload.getType(), reservation.getId(), reservation.getStatus());
-                        }
-                        break;
-                    }
-                    case SUCCESSFUL: {
-                        log.trace("Event {} for reservation {} has been successfully processed.", transactionPayload.getType(), reservation.getId());
-                        var totalPrice = totalReservationCostWithVAT(reservation);
-                        var paymentToken = paymentWebhookResult.getPaymentToken();
-                        var paymentSpecification = new PaymentSpecification(reservation, totalPrice, event, paymentToken,
-                            orderSummaryForReservation(reservation, event), true, eventHasPrivacyPolicy(event));
-                        transitionToComplete(paymentSpecification, totalPrice, paymentToken.getPaymentProvider());
-                        break;
-                    }
-                    case FAILED: {
+                String operationType = transactionPayload.getType();
+                return handlePaymentWebhookResult(event, paymentProvider, paymentWebhookResult, reservation, transaction, paymentContextReloaded, operationType);
+            })
+            .orElseGet(() -> PaymentWebhookResult.error("payment provider not found"));
+    }
 
-                        // depending on when we actually receive the event, we could have two possibilities:
-                        //
-                        //      1) the user is still waiting on the payment page. In this case, there's no harm in reverting the reservation status to PENDING
-                        //      2) the user has given up and we're officially in background mode.
-                        //
-                        // either way, we have to notify the user about the charge failure. Then:
-                        //
-                        //      - if the reservation has expired, we cancel it and keep its data for reference, and we notify also the organizer.
-                        //      - if the reservation is still valid, we can ensure that the user has at least 10 min left to retry
+    private PaymentWebhookResult handlePaymentWebhookResult(Event event,
+                                                            PaymentProvider paymentProvider,
+                                                            PaymentWebhookResult paymentWebhookResult,
+                                                            TicketReservation reservation,
+                                                            Transaction transaction,
+                                                            PaymentContext paymentContext,
+                                                            String operationType) {
 
-                        log.debug("Event {} for reservation {} has failed with reason: {}", transactionPayload.getType(), reservation.getId(), paymentWebhookResult.getReason());
-
-                        Date expiration = reservation.getValidity();
-                        Date now = new Date();
-                        int slackTime = configurationManager.getFor(RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT, paymentContext.getConfigurationLevel()).getValueAsIntOrDefault(10);
-                        PaymentMethod paymentMethodForTransaction = paymentProvider.getPaymentMethodForTransaction(transaction);
-                        if(expiration.before(now)) {
-                            sendTransactionFailedEmail(event, reservation, paymentMethodForTransaction, paymentWebhookResult, true);
-                            cancelReservation(reservation, false, null);
-                            break;
-                        } else if(DateUtils.addMinutes(expiration, -slackTime).before(now)) {
-                            ticketReservationRepository.updateValidity(reservation.getId(), DateUtils.addMinutes(now, slackTime));
-                        }
-                        reTransitionToPending(reservation.getId(), false);
-                        sendTransactionFailedEmail(event, reservation, paymentMethodForTransaction, paymentWebhookResult, false);
-                        break;
-                    }
-                    default:
-                        // do nothing for ERROR/REJECTED
-                        break;
+        switch(paymentWebhookResult.getType()) {
+            case NOT_RELEVANT: {
+                log.trace("Discarding event {} for reservation {}", operationType, reservation.getId());
+                break;
+            }
+            case TRANSACTION_INITIATED: {
+                if(reservation.getStatus() == EXTERNAL_PROCESSING_PAYMENT) {
+                    String status = WAITING_EXTERNAL_CONFIRMATION.name();
+                    log.trace("Event {} received. Setting status {} for reservation {}", operationType, status, reservation.getId());
+                    ticketReservationRepository.updateReservationStatus(reservation.getId(), status);
+                } else {
+                    log.trace("Ignoring Event {}, as it cannot be applied for reservation {} ({})", operationType, reservation.getId(), reservation.getStatus());
                 }
-                return paymentWebhookResult;
-            }).orElseGet(() -> PaymentWebhookResult.error("payment provider not found"));
+                break;
+            }
+            case SUCCESSFUL: {
+                log.trace("Event {} for reservation {} has been successfully processed.", operationType, reservation.getId());
+                var totalPrice = totalReservationCostWithVAT(reservation);
+                var paymentToken = paymentWebhookResult.getPaymentToken();
+                var paymentSpecification = new PaymentSpecification(reservation, totalPrice, event, paymentToken,
+                    orderSummaryForReservation(reservation, event), true, eventHasPrivacyPolicy(event));
+                transitionToComplete(paymentSpecification, totalPrice, paymentToken.getPaymentProvider());
+                break;
+            }
+            case FAILED: {
+
+                // depending on when we actually receive the event, we could have two possibilities:
+                //
+                //      1) the user is still waiting on the payment page. In this case, there's no harm in reverting the reservation status to PENDING
+                //      2) the user has given up and we're officially in background mode.
+                //
+                // either way, we have to notify the user about the charge failure. Then:
+                //
+                //      - if the reservation has expired, we cancel it and keep its data for reference, and we notify also the organizer.
+                //      - if the reservation is still valid, we can ensure that the user has at least 10 min left to retry
+
+                log.debug("Event {} for reservation {} has failed with reason: {}", operationType, reservation.getId(), paymentWebhookResult.getReason());
+
+                Date expiration = reservation.getValidity();
+                Date now = new Date();
+                int slackTime = configurationManager.getFor(RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT, paymentContext.getConfigurationLevel()).getValueAsIntOrDefault(10);
+                PaymentMethod paymentMethodForTransaction = paymentProvider.getPaymentMethodForTransaction(transaction);
+                if(expiration.before(now)) {
+                    sendTransactionFailedEmail(event, reservation, paymentMethodForTransaction, paymentWebhookResult, true);
+                    cancelReservation(reservation, false, null);
+                    break;
+                } else if(DateUtils.addMinutes(expiration, -slackTime).before(now)) {
+                    ticketReservationRepository.updateValidity(reservation.getId(), DateUtils.addMinutes(now, slackTime));
+                }
+                reTransitionToPending(reservation.getId(), false);
+                sendTransactionFailedEmail(event, reservation, paymentMethodForTransaction, paymentWebhookResult, false);
+                break;
+            }
+            case CANCELLED: {
+                reTransitionToPending(reservation.getId(), false);
+                log.debug("Event {} for reservation {} has been cancelled", operationType, reservation.getId());
+                break;
+            }
+            default:
+                // do nothing for ERROR/REJECTED
+                break;
+        }
+        return paymentWebhookResult;
+    }
+
+    public Optional<PaymentResult> forceTransactionCheck(Event event, TicketReservation reservation) {
+        var optionalTransaction = transactionRepository.loadOptionalByReservationIdAndStatusForUpdate(reservation.getId(), Transaction.Status.PENDING);
+        if(optionalTransaction.isEmpty()) {
+            return Optional.empty();
+        }
+        var transaction = optionalTransaction.get();
+        PaymentContext paymentContext = new PaymentContext(event, reservation.getId());
+        return paymentManager.lookupProviderByTransactionAndCapabilities(transaction, List.of(WebhookHandler.class))
+            .map(provider -> {
+                var paymentWebhookResult = ((WebhookHandler)provider).forceTransactionCheck(reservation, transaction, paymentContext);
+                handlePaymentWebhookResult(event, provider, paymentWebhookResult, reservation, transaction, paymentContext, "force-check");
+
+                switch(paymentWebhookResult.getType()) {
+                    case FAILED:
+                    case REJECTED:
+                        return PaymentResult.failed(paymentWebhookResult.getReason());
+                    case NOT_RELEVANT:
+                    case ERROR:
+                        // to be on the safe side, we ignore errors when trying to reload the payment
+                        // because they could be caused by network/availability problems
+                        return PaymentResult.pending(transaction.getPaymentId());
+                    case TRANSACTION_INITIATED:
+                        return StringUtils.isNotEmpty(paymentWebhookResult.getRedirectUrl()) ? PaymentResult.redirect(paymentWebhookResult.getRedirectUrl()) : PaymentResult.pending(transaction.getPaymentId());
+                    default:
+                        return PaymentResult.successful(paymentWebhookResult.getPaymentToken().getToken());
+                }
+
+            });
     }
 
     private boolean reservationStatusNotCompatible(TicketReservation reservation) {
@@ -1991,7 +2048,7 @@ public class TicketReservationManager {
         "reservation", reservation,
         "reservationId", shortReservationID,
         "eventName", event.getDisplayName(),
-        "provider", paymentMethod.name(),
+        "provider", Objects.requireNonNullElse(paymentMethod.name(), ""),
         "reason", paymentWebhookResult.getReason(),
         "reservationUrl", reservationUrl(reservation, event));
 

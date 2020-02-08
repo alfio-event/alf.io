@@ -78,4 +78,11 @@ public class PaymentApiController {
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
     }
+
+    @GetMapping("/api/v2/public/event/{eventName}/reservation/{reservationId}/transaction/force-check")
+    public ResponseEntity<PaymentResult> forceCheckStatus(@PathVariable("eventName") String eventName,
+                                                              @PathVariable("reservationId") String reservationId) {
+        return ResponseEntity.of(getEventReservationPair(eventName, reservationId)
+            .flatMap(pair -> ticketReservationManager.forceTransactionCheck(pair.getLeft(), pair.getRight())));
+    }
 }

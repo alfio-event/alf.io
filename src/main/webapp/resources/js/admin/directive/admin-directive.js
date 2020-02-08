@@ -570,14 +570,11 @@
                     $scope.currencies = result.data;
                 });
 
-                $scope.$watch("allowedPaymentProxies", function() {
-                    initPaymentProxies();
-                }, true);
-
-                $scope.$watch('obj.allowedPaymentProxies', function() {
-                    initPaymentProxies();
-                }, true);
-
+                if(angular.isDefined($scope.fullEditMode)) {
+                    $scope.$watch("allowedPaymentProxies", function() {
+                        initPaymentProxies();
+                    }, true);
+                }
             }
         }
     }]);

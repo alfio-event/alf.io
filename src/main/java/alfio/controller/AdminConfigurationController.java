@@ -55,10 +55,10 @@ public class AdminConfigurationController {
     private final UserManager userManager;
 
     @GetMapping("/admin/configuration/payment/{provider}/connect/{orgId}")
-    public String redirectToStripeConnect(Principal principal,
-                                          @PathVariable("orgId") Integer orgId,
-                                          @PathVariable("provider") String provider,
-                                          HttpSession session) {
+    public String oAuthRedirectToAuthorizationURL(Principal principal,
+                                                  @PathVariable("orgId") Integer orgId,
+                                                  @PathVariable("provider") String provider,
+                                                  HttpSession session) {
         if(CONNECT_PROVIDERS.contains(provider) && userManager.isOwnerOfOrganization(userManager.findUserByUsername(principal.getName()), orgId)) {
             var connectURL = getConnector(provider).getConnectURL(orgId);
             session.setAttribute(provider+CONNECT_STATE_PREFIX +orgId, connectURL.getState());

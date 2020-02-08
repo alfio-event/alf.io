@@ -70,10 +70,6 @@ public class PaymentManager {
             .filter(p -> Objects.requireNonNull(capabilities).stream().allMatch(c -> c.isInstance(p))).findFirst();
     }
 
-    Optional<PaymentProvider> lookupByTransactionAndCapabilities(Transaction transaction, List<Class<? extends Capability>> capabilities) {
-        return paymentProviders.stream().filter(p -> p.accept(transaction)).filter(p -> capabilities.stream().allMatch(c -> c.isInstance(p))).findFirst();
-    }
-
     public Stream<PaymentProvider> streamActiveProvidersByProxy(PaymentProxy paymentProxy, PaymentContext paymentContext) {
         return streamActiveProvidersByProxyAndCapabilities(paymentProxy, paymentContext, List.of());
     }
@@ -144,7 +140,7 @@ public class PaymentManager {
     public boolean refund(TicketReservation reservation, Event event, Integer amount, String username) {
         Transaction transaction = transactionRepository.loadByReservationId(reservation.getId());
 
-        boolean res = lookupByTransactionAndCapabilities(transaction, List.of(RefundRequest.class))
+        boolean res = lookupProviderByTransactionAndCapabilities(transaction, List.of(RefundRequest.class))
             .map(paymentProvider -> ((RefundRequest)paymentProvider).refund(transaction, event, amount))
             .orElse(false);
 
@@ -186,7 +182,7 @@ public class PaymentManager {
     }
 
     private TransactionAndPaymentInfo internalGetInfo(TicketReservation reservation, Event event, Transaction transaction) {
-        return lookupByTransactionAndCapabilities(transaction, List.of(PaymentInfo.class))
+        return lookupProviderByTransactionAndCapabilities(transaction, List.of(PaymentInfo.class))
             .map(provider -> {
                 Optional<PaymentInformation> info = ((PaymentInfo) provider).getInfo(transaction, event);
                 return new TransactionAndPaymentInfo(reservation.getPaymentMethod(), transaction, info.orElse(null));
@@ -248,7 +244,7 @@ public class PaymentManager {
             .filter(t->t.getStatus() == Transaction.Status.PENDING)
             .flatMap(t -> {
                 if(t.getMetadata().containsKey(PAYMENT_TOKEN)) {
-                    return lookupByTransactionAndCapabilities(t, List.of(ExtractPaymentTokenFromTransaction.class))
+                    return lookupProviderByTransactionAndCapabilities(t, List.of(ExtractPaymentTokenFromTransaction.class))
                         .map(ExtractPaymentTokenFromTransaction.class::cast)
                         .flatMap(paymentProvider -> paymentProvider.extractToken(t));
                 }

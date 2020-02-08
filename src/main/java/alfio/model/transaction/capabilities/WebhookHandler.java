@@ -17,6 +17,7 @@
 package alfio.model.transaction.capabilities;
 
 import alfio.manager.support.PaymentWebhookResult;
+import alfio.model.TicketReservation;
 import alfio.model.transaction.Capability;
 import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.Transaction;
@@ -32,6 +33,8 @@ public interface WebhookHandler extends Capability {
     Optional<TransactionWebhookPayload> parseTransactionPayload(String body, String signature, Map<String, String> additionalInfo);
 
     PaymentWebhookResult processWebhook(TransactionWebhookPayload payload, Transaction transaction, PaymentContext paymentContext);
+
+    PaymentWebhookResult forceTransactionCheck(TicketReservation reservation, Transaction transaction, PaymentContext paymentContext);
 
     default boolean requiresSignedBody() {
         return true;

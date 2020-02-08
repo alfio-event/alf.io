@@ -248,6 +248,7 @@ processResources {
         gradleProperties.withReader { properties.load(it) }
         properties['alfio.version'] = project.version
         properties['alfio.build-ts'] = ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)
+        properties['alfio.frontend.version'] = alfioPublicFrontendVersion
         gradleProperties.withWriter { properties.store(it, null) }
 
 
@@ -308,7 +309,8 @@ bootRun {
         "-Ddatasource.username=${project.datasourceUsername}",
         "-Ddatasource.password=${project.datasourcePassword}",
         "-Dalfio.version=${project.version}",
-        "-Dalfio.build-ts=${ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)}"
+        "-Dalfio.build-ts=${ZonedDateTime.now(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_ZONED_DATE_TIME)}",
+        "-Dalfio.frontend.version=$alfioPublicFrontendVersion"
     ]
     if(externalConfig.exists()) {
         opts += externalConfig.readLines()

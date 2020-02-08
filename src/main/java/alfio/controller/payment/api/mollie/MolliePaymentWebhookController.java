@@ -17,7 +17,9 @@
 package alfio.controller.payment.api.mollie;
 
 import alfio.manager.TicketReservationManager;
+import alfio.model.transaction.PaymentContext;
 import alfio.model.transaction.PaymentProxy;
+import alfio.repository.EventRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -38,6 +40,7 @@ import static alfio.manager.payment.MollieWebhookPaymentManager.WEBHOOK_URL_TEMP
 @AllArgsConstructor
 public class MolliePaymentWebhookController {
     private final TicketReservationManager ticketReservationManager;
+    private final EventRepository eventRepository;
 
     @SuppressWarnings("MVCPathVariableInspection")
     @PostMapping(WEBHOOK_URL_TEMPLATE)
@@ -45,17 +48,18 @@ public class MolliePaymentWebhookController {
                                                              @PathVariable("eventShortName") String eventName,
                                                              @PathVariable("reservationId") String reservationId) {
         return Optional.ofNullable(StringUtils.trimToNull(request.getParameter("id")))
-            .map(id -> {
-                var content = "id="+id;
-                var result = ticketReservationManager.processTransactionWebhook(content, null, PaymentProxy.MOLLIE,
-                    Map.of("eventName", eventName, "reservationId", reservationId));
-                if(result.isSuccessful()) {
-                    return ResponseEntity.ok("OK");
-                } else if(result.isError()) {
-                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.getReason());
-                }
-                return ResponseEntity.ok(result.getReason());
-            })
+            .flatMap(id -> eventRepository.findOptionalByShortName(eventName)
+                    .map(event -> {
+                        var content = "id="+id;
+                        var result = ticketReservationManager.processTransactionWebhook(content, null, PaymentProxy.MOLLIE,
+                            Map.of("eventName", eventName, "reservationId", reservationId), new PaymentContext(event, reservationId));
+                        if(result.isSuccessful()) {
+                            return ResponseEntity.ok("OK");
+                        } else if(result.isError()) {
+                            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.getReason());
+                        }
+                        return ResponseEntity.ok(result.getReason());
+                    }))
             .orElseGet(() -> ResponseEntity.badRequest().body("NOK"));
     }
 }
