@@ -56,6 +56,7 @@ import ch.digitalfondue.jfiveparse.Parser;
 import ch.digitalfondue.jfiveparse.Selector;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.zxing.BinaryBitmap;
+import com.google.zxing.DecodeHintType;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
@@ -935,7 +936,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             var fullTicketInfo = ticketRepository.findByUUID(ticket.getUuid());
             var qrCodeReader = new QRCodeReader();
-            var qrCodeRead = qrCodeReader.decode(new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(ImageIO.read(new ByteArrayInputStream(ticketQRCodeResp.getContentAsByteArray()))))));
+            var qrCodeRead = qrCodeReader.decode(new BinaryBitmap(new HybridBinarizer(new BufferedImageLuminanceSource(ImageIO.read(new ByteArrayInputStream(ticketQRCodeResp.getContentAsByteArray()))))), Map.of(DecodeHintType.PURE_BARCODE, Boolean.TRUE));
             assertEquals(fullTicketInfo.ticketCode(event.getPrivateKey()), qrCodeRead.getText());
 
             //can only be done for free tickets
