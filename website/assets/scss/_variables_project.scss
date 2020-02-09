@@ -20,3 +20,8 @@ $danger:        #dc3545;
 $light:         #f8f9fa;
 $dark:          #343a40;
 $primary-light: lighten($primary, 75%);
+
+.alfio-docs img {
+    margin: 30px;
+    box-shadow: 0 0.3rem 0.5rem rgba(0, 0, 0, 0.15) !important;
+}

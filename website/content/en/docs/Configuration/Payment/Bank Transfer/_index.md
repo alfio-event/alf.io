@@ -15,12 +15,18 @@ If you want to accept payments via Bank Transfer, head to the Payment section of
 
 Enable the Bank Transfer payment method at organization level
 
+### Send payment instructions manually
+
+- **default: disabled**
+
+If Alf.io's offline payment handling is not enough for your use case, for instance because you need to send a paper version of the invoice, you can enable this flag, and send the payment instructions manually. More info [here](external-payment/)
+
 ### Cancel Reservation automatically when payment is overdue
 
-- **default: true** 2.0-M1
-- **default: false** 2.0-M2+
+- **default: disabled**
 
-Controls whether or not to delete automatically reservations whose payment is expired
+Controls whether or not to delete automatically reservations whose payment is expired. 
+The default is to keep reservations until the organizer deletes them explicitly
 
 ### Maximum number of days allowed to pay an offline ticket
 
@@ -43,7 +49,7 @@ This parameter tells alf.io when it should send a reminder/warning email to the 
 Details about the organizer's Bank Account. E.g. Address of the bank and SWIFT code for international payments
 
 
-## How it works
+## How the process works
 
 ### Reservation Process
 
