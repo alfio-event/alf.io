@@ -19,7 +19,7 @@ package alfio.controller.api.admin;
 import alfio.manager.EventManager;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.modification.PromoCodeDiscountModification;
-import alfio.model.modification.PromoCodeDiscountWithFormattedTime;
+import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import lombok.RequiredArgsConstructor;
@@ -73,12 +73,12 @@ public class PromoCodeDiscountApiController {
     }
 
     @GetMapping("/events/{eventId}/promo-code")
-    public List<PromoCodeDiscountWithFormattedTime> listPromoCodeInEvent(@PathVariable("eventId") int eventId) {
+    public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInEvent(@PathVariable("eventId") int eventId) {
         return eventManager.findPromoCodesInEvent(eventId);
     }
 
     @GetMapping("/organization/{organizationId}/promo-code")
-    public List<PromoCodeDiscountWithFormattedTime> listPromoCodeInOrganization(@PathVariable("organizationId") int organizationId) {
+    public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInOrganization(@PathVariable("organizationId") int organizationId) {
         return eventManager.findPromoCodesInOrganization(organizationId);
     }
     

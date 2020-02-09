@@ -16,27 +16,29 @@
  */
 package alfio.model.modification;
 
+import alfio.model.EventStatistic;
+import alfio.model.PromoCodeDiscount;
+import alfio.util.MonetaryUtil;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.experimental.Delegate;
+import org.apache.commons.lang3.StringUtils;
+
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import alfio.model.EventStatistic;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import lombok.experimental.Delegate;
-import alfio.model.PromoCodeDiscount;
-
-public class PromoCodeDiscountWithFormattedTime {
+public class PromoCodeDiscountWithFormattedTimeAndAmount {
 
     @JsonIgnore
     @Delegate
     private final PromoCodeDiscount promo;
-
     @JsonIgnore
     private final ZoneId eventZoneId;
+    private final String eventCurrency;
 
-    public PromoCodeDiscountWithFormattedTime(PromoCodeDiscount promo, ZoneId eventZoneId) {
+    public PromoCodeDiscountWithFormattedTimeAndAmount(PromoCodeDiscount promo, ZoneId eventZoneId, String eventCurrency) {
         this.promo = promo;
         this.eventZoneId = eventZoneId;
+        this.eventCurrency = eventCurrency;
     }
 
     public boolean isCurrentlyValid() {
@@ -53,5 +55,12 @@ public class PromoCodeDiscountWithFormattedTime {
 
     public String getFormattedEnd() {
         return getUtcEnd().withZoneSameInstant(eventZoneId).format(EventStatistic.JSON_DATE_FORMATTER);
+    }
+
+    public String getFormattedDiscountAmount() {
+        if(promo.getFixedAmount() && StringUtils.isNotBlank(eventCurrency)) {
+            return MonetaryUtil.formatCents(promo.getDiscountAmount(), eventCurrency);
+        }
+        return null;
     }
 }
