@@ -50,7 +50,7 @@
                             </td>
                             <td>
                                 <button class="btn btn-success btn-xs" data-ng-disabled="loading" data-ng-click="registerPayment(eventName, pending.ticketReservation.id)"><i class="fa fa-check"></i> confirm</button>
-                                <button data-ng-disabled="loading" ng-if="pending.ticketReservation.invoiceNumber" data-ng-click="deletePayment(eventName, pending.ticketReservation.id, true)" class="btn btn-warning btn-xs" uib-tooltip="Issue a Credit Note for this Reservation"><i class="fa fa-undo"></i> credit</button>
+                                <button data-ng-disabled="loading" ng-if="pending.ticketReservation.status === 'OFFLINE_PAYMENT' && pending.ticketReservation.invoiceNumber" data-ng-click="deletePayment(eventName, pending.ticketReservation.id, true)" class="btn btn-warning btn-xs" uib-tooltip="Issue a Credit Note for this Reservation"><i class="fa fa-undo"></i> credit</button>
                                 <button data-ng-disabled="loading" data-ng-click="deletePayment(eventName, pending.ticketReservation.id, false)" class="btn btn-danger btn-xs" uib-tooltip="Cancel the payment and delete the Reservation"><i class="fa fa-trash-o"></i> delete</button>
                             </td>
                         </tr>

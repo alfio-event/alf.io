@@ -54,6 +54,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT;
+import static alfio.model.system.ConfigurationKeys.DEFERRED_BANK_TRANSFER_ENABLED;
 import static alfio.test.util.IntegrationTestUtil.AVAILABLE_SEATS;
 import static alfio.test.util.IntegrationTestUtil.initEvent;
 import static org.junit.Assert.*;
@@ -225,6 +226,63 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
         ticketReservationManager.deleteOfflinePayment(event, reservationId2, false, false, null);
 
         Assert.assertFalse(ticketReservationManager.findById(reservationId2).isPresent());
+    }
+
+    @Test
+    public void deferredOfflinePayment() {
+        // enable deferred payment
+        configurationRepository.insert(DEFERRED_BANK_TRANSFER_ENABLED.name(), "true", "");
+
+        List<TicketCategoryModification> categories = List.of(
+            new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                new DateTimeModification(LocalDate.now(), LocalTime.now()),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+        Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
+        Event event = eventAndUsername.getKey();
+
+        TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
+
+
+        TicketReservationModification trForDeferred = new TicketReservationModification();
+        trForDeferred.setAmount(1);
+        trForDeferred.setTicketCategoryId(unbounded.getId());
+        TicketReservationWithOptionalCodeModification modForDeferred = new TicketReservationWithOptionalCodeModification(trForDeferred, Optional.empty());
+        String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(modForDeferred), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
+
+        TotalPrice totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+
+        PaymentSpecification specificationDeferred = new PaymentSpecification(reservationId, null, totalPrice.getPriceWithVAT(),
+            event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
+            "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+
+        PaymentResult confirm = ticketReservationManager.performPayment(specificationDeferred, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
+        assertTrue(confirm.isSuccessful());
+
+        var status = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId).orElseThrow().getStatus();
+        assertEquals(TicketReservation.TicketReservationStatus.DEFERRED_OFFLINE_PAYMENT, status);
+
+        // confirm deferred payment
+        ticketReservationManager.confirmOfflinePayment(event, reservationId, null);
+
+        reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(modForDeferred), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
+
+        specificationDeferred = new PaymentSpecification(reservationId, null, totalPrice.getPriceWithVAT(),
+            event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
+            "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
+
+        confirm = ticketReservationManager.performPayment(specificationDeferred, totalPrice, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
+        assertTrue(confirm.isSuccessful());
+
+        try {
+            ticketReservationManager.deleteOfflinePayment(event, reservationId, false, true, null);
+            fail("Credit should not be enabled for deferred payments");
+        } catch (IllegalArgumentException ex) {
+            // do nothing, because this is the expected behavior
+        }
+
+        ticketReservationManager.deleteOfflinePayment(event, reservationId, false, false, null);
+        Assert.assertFalse(ticketReservationManager.findById(reservationId).isPresent());
     }
 
     @Test
