@@ -32,7 +32,6 @@ import com.github.scribejava.core.oauth.OAuth20Service;
 import com.google.gson.JsonParser;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -46,7 +45,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static alfio.model.system.ConfigurationKeys.*;
-import static java.util.Objects.requireNonNull;
+import static alfio.util.HttpUtils.statusCodeIsSuccessful;
 
 @AllArgsConstructor
 @Log4j2
@@ -130,7 +129,4 @@ public class MollieConnectManager implements OAuthPaymentProviderConnector {
         }
     }
 
-    private static boolean statusCodeIsSuccessful(int statusCode) {
-        return requireNonNull(HttpStatus.resolve(statusCode)).is2xxSuccessful();
-    }
 }

@@ -66,6 +66,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.PAYPAL_ENABLED;
+import static alfio.util.HttpUtils.statusCodeIsSuccessful;
 import static alfio.util.MonetaryUtil.*;
 import static java.util.Objects.requireNonNull;
 import static org.apache.commons.collections4.CollectionUtils.emptyIfNull;
@@ -189,7 +190,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
             request.requestBody(new OrderRequest());
             HttpResponse<Order> response = getClient(event).execute(request);
 
-            if(statusCodeIsSuccessful(response)) {
+            if(statusCodeIsSuccessful(response.statusCode())) {
                 var result = response.result();
                 // state can only be "created", "approved" or "failed".
                 // if we are at this stage, the only possible options are approved or failed, thus it's safe to re transition the reservation to a pending status: no payment has been made!
@@ -234,7 +235,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         try {
             if(paymentId != null) {
                 var orderResponse = getClient(event).execute(new OrdersGetRequest(paymentId));
-                if(statusCodeIsSuccessful(orderResponse) && orderResponse.result() != null) {
+                if(statusCodeIsSuccessful(orderResponse.statusCode()) && orderResponse.result() != null) {
                     var order = orderResponse.result();
                     var payments = order.purchaseUnits().stream()
                         .map(PurchaseUnit::payments)
@@ -288,7 +289,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
                 new com.paypal.payments.RefundRequest().amount(new com.paypal.payments.Money().currencyCode(currency).value(formatCents(i, currency))))
             );
             var refundResponse = payPalClient.execute(refundRequest);
-            if(statusCodeIsSuccessful(refundResponse)) {
+            if(statusCodeIsSuccessful(refundResponse.statusCode())) {
                 log.info("Paypal: refund for payment {} executed with success for amount: {}", captureId, amountOrFull);
                 return true;
             } else {
@@ -416,10 +417,6 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
         private final String captureId;
         private final String orderId;
         private final long payPalFee;
-    }
-
-    private static boolean statusCodeIsSuccessful(HttpResponse<?> response) {
-        return requireNonNull(HttpStatus.resolve(response.statusCode())).is2xxSuccessful();
     }
 
 }

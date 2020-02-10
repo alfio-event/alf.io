@@ -53,7 +53,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.24.0'
     id 'com.github.hierynomus.license' version '0.15.0'
     id 'net.researchgate.release' version '2.8.1'
-    id 'org.springframework.boot' version '2.1.12.RELEASE'
+    id 'org.springframework.boot' version '2.2.2.RELEASE'
     id 'org.sonarqube' version '2.7'
 }
 
@@ -129,8 +129,8 @@ dependencies {
     compile "org.springframework.boot:spring-boot-properties-migrator", {
         exclude module : 'spring-boot-starter-logging'
     }
-    compile "org.springframework.security:spring-security-web:$springSecurityConfigVersion"
-    compile "org.springframework.security:spring-security-config:$springSecurityConfigVersion"
+    compile "org.springframework.security:spring-security-web:$springVersion"
+    compile "org.springframework.security:spring-security-config:$springVersion"
     compile 'org.springframework.session:spring-session:1.3.5.RELEASE'
     compile "ch.digitalfondue.npjt-extra:npjt-extra:2.0.1"
     compile "com.samskivert:jmustache:1.15"
