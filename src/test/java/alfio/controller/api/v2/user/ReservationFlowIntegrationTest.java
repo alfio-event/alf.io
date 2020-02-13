@@ -482,6 +482,22 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             ticketCategoryRepository.fixDates(visibleCat.getId(), tc.getInception(event.getZoneId()).minusDays(2), tc.getExpiration(event.getZoneId()));
         }
 
+        // dynamic promo codes can be applied only automatically
+        {
+            eventManager.addPromoCode("DYNAMIC_CODE", event.getId(), null, ZonedDateTime.now().minusDays(2), event.getEnd().plusDays(2), 10, PromoCodeDiscount.DiscountType.PERCENTAGE, null, 3, "description", "test@test.ch", PromoCodeDiscount.CodeType.DYNAMIC, null);
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, eventApiV2Controller.validateCode(event.getShortName(), "DYNAMIC_CODE").getStatusCode());
+
+            // try to enter it anyway
+            var form = new ReservationForm();
+            var ticketReservation = new TicketReservationModification();
+            form.setPromoCode("DYNAMIC_CODE");
+            ticketReservation.setAmount(1);
+            ticketReservation.setTicketCategoryId(eventApiV2Controller.getTicketCategories(event.getShortName(), null).getBody().getTicketCategories().get(0).getId());
+            form.setReservation(Collections.singletonList(ticketReservation));
+            var res = eventApiV2Controller.reserveTickets(event.getShortName(), "en", form, new BeanPropertyBindingResult(form, "reservation"), new ServletWebRequest(new MockHttpServletRequest(), new MockHttpServletResponse()));
+            assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, res.getStatusCode());
+        }
+
         // hidden category check
         {
 

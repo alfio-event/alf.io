@@ -57,7 +57,7 @@
 
             loader().then(function(res) {
                 ctrl.promocodes = res.data.filter(function(pc) {
-                    return pc.codeType === 'DISCOUNT';
+                    return pc.codeType === 'DISCOUNT' || pc.codeType === 'DYNAMIC';
                 });
                 ctrl.accesscodes = res.data.filter(function(pc) {
                     return pc.codeType === 'ACCESS';

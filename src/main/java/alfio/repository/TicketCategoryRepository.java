@@ -139,4 +139,7 @@ public interface TicketCategoryRepository {
 
     @Query("select ticket_checkin_strategy from ticket_category where id = :id")
     TicketCategory.TicketCheckInStrategy getCheckInStrategy(@Bind("id") int categoryId);
+
+    @Query("select count(*) from ticket_category where id in (:categoryIds) and src_price_cts > 0")
+    Integer countPaidCategoriesInReservation(@Bind("categoryIds") Collection<Integer> categoryIds);
 }

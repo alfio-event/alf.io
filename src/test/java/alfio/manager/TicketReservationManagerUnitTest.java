@@ -19,11 +19,13 @@ package alfio.manager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
@@ -34,11 +36,11 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class TicketReservationManagerUnitTest {
     private static final String TICKET_RESERVATION_ID = "abcdef";
@@ -162,11 +164,15 @@ public class TicketReservationManagerUnitTest {
         AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
         when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
 
-        TotalPrice included = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        TotalPrice included = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
         assertEquals(10, included.getPriceWithVAT());
         assertEquals(1, included.getVAT());
 
-        TotalPrice notIncluded = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscountNotIncluded = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        TotalPrice notIncluded = priceAndDiscountNotIncluded.getLeft();
+        assertTrue(priceAndDiscountNotIncluded.getRight().isEmpty());
         assertEquals(11, notIncluded.getPriceWithVAT());
         assertEquals(1, notIncluded.getVAT());
     }
@@ -175,7 +181,9 @@ public class TicketReservationManagerUnitTest {
     public void calcReservationCostWithASVatIncludedInherited() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.INHERITED, 10, 10);
         //first: event price vat included, additional service VAT inherited
-        TotalPrice first = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        TotalPrice first = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
         assertEquals(20, first.getPriceWithVAT());
         assertEquals(2, first.getVAT());
     }
@@ -184,7 +192,9 @@ public class TicketReservationManagerUnitTest {
     public void calcReservationCostWithASVatIncludedASNoVat() {
         initReservationWithAdditionalServices(true, AdditionalService.VatType.NONE, 10, 10);
         //second: event price vat included, additional service VAT n/a
-        TotalPrice second = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        TotalPrice second = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
         assertEquals(20, second.getPriceWithVAT());
         assertEquals(1, second.getVAT());
     }
@@ -193,7 +203,9 @@ public class TicketReservationManagerUnitTest {
     public void calcReservationCostWithASVatNotIncludedASInherited() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.INHERITED, 10, 10);
         //third: event price vat not included, additional service VAT inherited
-        TotalPrice third = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        TotalPrice third = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
         assertEquals(22, third.getPriceWithVAT());
         assertEquals(2, third.getVAT());
     }
@@ -202,7 +214,9 @@ public class TicketReservationManagerUnitTest {
     public void calcReservationCostWithASVatNotIncludedASNone() {
         initReservationWithAdditionalServices(false, AdditionalService.VatType.NONE, 10, 10);
         //fourth: event price vat not included, additional service VAT n/a
-        TotalPrice fourth = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
+        TotalPrice fourth = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
         assertEquals(21, fourth.getPriceWithVAT());
         assertEquals(1, fourth.getVAT());
     }
@@ -308,6 +322,41 @@ public class TicketReservationManagerUnitTest {
         when(additionalServiceTextRepository.findBestMatchByLocaleAndType(anyInt(), eq("en"), eq(AdditionalServiceText.TextType.TITLE))).thenReturn(text);
     }
 
+    @Test
+    void doNotCallExtensionIfTicketsAreFreeOfCharge() {
+        var ticketReservationMock = mock(TicketReservationWithOptionalCodeModification.class);
+        when(ticketReservationMock.getTicketCategoryId()).thenReturn(1);
+        when(ticketCategoryRepository.countPaidCategoriesInReservation(anyCollection())).thenReturn(0);
+        Optional<String> result = manager.createDynamicPromoCodeIfNeeded(event, List.of(ticketReservationMock), TICKET_RESERVATION_ID);
+        assertTrue(result.isEmpty());
+        verifyNoInteractions(extensionManager);
+    }
 
+    @Test
+    void callExtensionIfTicketsMustBePaid() {
+        var ticketReservationMock = mock(TicketReservationWithOptionalCodeModification.class);
+        when(ticketReservationMock.getTicketCategoryId()).thenReturn(1);
+        when(ticketCategoryRepository.countPaidCategoriesInReservation(anyCollection())).thenReturn(1);
+        var promoCode = mock(PromoCodeDiscount.class);
+        when(promoCode.getPromoCode()).thenReturn("abcd");
+        when(extensionManager.handleDynamicDiscount(eq(event), anyMap(), eq(TICKET_RESERVATION_ID))).thenReturn(Optional.of(promoCode));
+        when(promoCodeDiscountRepository.addPromoCodeIfNotExists(eq("abcd"), any(), anyInt(), any(), any(), anyInt(), any(), any(), any(), isNull(), isNull(), any(), isNull())).thenReturn(0);
+        Optional<String> result = manager.createDynamicPromoCodeIfNeeded(event, List.of(ticketReservationMock), TICKET_RESERVATION_ID);
+        assertFalse(result.isEmpty());
+        verifyNoInteractions(auditingRepository);
+    }
 
+    @Test
+    void addAuditingIfPromoCodeHasBeenCreated() {
+        var ticketReservationMock = mock(TicketReservationWithOptionalCodeModification.class);
+        when(ticketReservationMock.getTicketCategoryId()).thenReturn(1);
+        when(ticketCategoryRepository.countPaidCategoriesInReservation(anyCollection())).thenReturn(1);
+        var promoCode = mock(PromoCodeDiscount.class);
+        when(promoCode.getPromoCode()).thenReturn("abcd");
+        when(extensionManager.handleDynamicDiscount(eq(event), anyMap(), eq(TICKET_RESERVATION_ID))).thenReturn(Optional.of(promoCode));
+        when(promoCodeDiscountRepository.addPromoCodeIfNotExists(eq("abcd"), any(), anyInt(), any(), any(), anyInt(), any(), any(), any(), isNull(), isNull(), any(), isNull())).thenReturn(1);
+        Optional<String> result = manager.createDynamicPromoCodeIfNeeded(event, List.of(ticketReservationMock), TICKET_RESERVATION_ID);
+        assertFalse(result.isEmpty());
+        verify(auditingRepository).insert(eq(TICKET_RESERVATION_ID), any(), anyInt(), eq(Audit.EventType.DYNAMIC_DISCOUNT_CODE_CREATED), any(), eq(Audit.EntityType.RESERVATION), eq(TICKET_RESERVATION_ID));
+    }
 }

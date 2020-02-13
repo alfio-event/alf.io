@@ -148,7 +148,7 @@ public class DataMigrator {
                 .map(ticketsReservationAndTransactions -> {
                     var tickets = ticketsReservationAndTransactions.stream().map(TicketWithReservationAndTransaction::getTicket).collect(toList());
                     var ticketReservation = ticketsReservationAndTransactions.get(0).getTicketReservation();
-                    var totalPrice = ticketReservationManager.totalReservationCostWithVAT(event, ticketReservation, tickets);
+                    var totalPrice = ticketReservationManager.totalReservationCostWithVAT(event, ticketReservation, tickets).getLeft();
                     var calculator = new ReservationPriceCalculator(ticketReservation, totalPrice, tickets, event);
                     var currencyCode = calculator.getCurrencyCode();
                     return new MapSqlParameterSource("reservationId", calculator.reservation.getId())

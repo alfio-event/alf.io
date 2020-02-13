@@ -18,6 +18,7 @@ package alfio.controller.api.v2.model;
 
 import alfio.model.BillingDetails;
 import alfio.model.OrderSummary;
+import alfio.model.SummaryRow.SummaryType;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -189,7 +190,7 @@ public class ReservationInfo {
         public ReservationInfoOrderSummary(OrderSummary orderSummary) {
             this.summary = orderSummary.getSummary()
                 .stream()
-                .map(s -> new ReservationInfoOrderSummaryRow(s.getName(), s.getAmount(), s.getPrice(), s.getSubTotal()))
+                .map(s -> new ReservationInfoOrderSummaryRow(s.getName(), s.getAmount(), s.getPrice(), s.getSubTotal(), s.getType()))
                 .collect(Collectors.toList());
             this.totalPrice = orderSummary.getTotalPrice();
             this.free = orderSummary.getFree();
@@ -209,5 +210,6 @@ public class ReservationInfo {
         private final int amount;
         private final String price;
         private final String subTotal;
+        private final SummaryType type;
     }
 }
