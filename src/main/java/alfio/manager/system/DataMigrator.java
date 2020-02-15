@@ -21,9 +21,7 @@ import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.system.EventMigration;
 import alfio.model.transaction.PaymentProxy;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.TicketSearchRepository;
+import alfio.repository.*;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.repository.system.EventMigrationRepository;
 import alfio.util.MonetaryUtil;
@@ -73,6 +71,9 @@ public class DataMigrator {
     private final NamedParameterJdbcTemplate jdbc;
     private final TicketReservationManager ticketReservationManager;
     private final TicketSearchRepository ticketSearchRepository;
+    private final PromoCodeDiscountRepository promoCodeDiscountRepository;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
+    private final AdditionalServiceRepository additionalServiceRepository;
 
     static {
         PRICE_UPDATE_BY_KEY.put("event", "update event set src_price_cts = :srcPriceCts, vat_status = :vatStatus where id = :eventId");
@@ -92,7 +93,10 @@ public class DataMigrator {
                         ConfigurationRepository configurationRepository,
                         NamedParameterJdbcTemplate jdbc,
                         TicketReservationManager ticketReservationManager,
-                        TicketSearchRepository ticketSearchRepository) {
+                        TicketSearchRepository ticketSearchRepository,
+                        PromoCodeDiscountRepository promoCodeDiscountRepository,
+                        AdditionalServiceItemRepository additionalServiceItemRepository,
+                        AdditionalServiceRepository additionalServiceRepository) {
         this.eventMigrationRepository = eventMigrationRepository;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -104,6 +108,9 @@ public class DataMigrator {
         this.transactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW));
         this.ticketReservationManager = ticketReservationManager;
         this.ticketSearchRepository = ticketSearchRepository;
+        this.promoCodeDiscountRepository = promoCodeDiscountRepository;
+        this.additionalServiceItemRepository = additionalServiceItemRepository;
+        this.additionalServiceRepository = additionalServiceRepository;
     }
 
     public void migrateEventsToCurrentVersion() {
@@ -144,12 +151,15 @@ public class DataMigrator {
             .collect(groupingBy(trt -> trt.getTicketReservation().getId()));
         log.trace("found {} reservations to fix for event {}", byReservationId.size(), event.getShortName());
         if(!byReservationId.isEmpty()) {
+            var additionalServices = additionalServiceRepository.loadAllForEvent(event.getId());
             var reservationsToUpdate = byReservationId.values().stream()
                 .map(ticketsReservationAndTransactions -> {
                     var tickets = ticketsReservationAndTransactions.stream().map(TicketWithReservationAndTransaction::getTicket).collect(toList());
                     var ticketReservation = ticketsReservationAndTransactions.get(0).getTicketReservation();
-                    var totalPrice = ticketReservationManager.totalReservationCostWithVAT(event, ticketReservation, tickets).getLeft();
-                    var calculator = new ReservationPriceCalculator(ticketReservation, totalPrice, tickets, event);
+                    var promoCodeDiscountId = ticketReservation.getPromoCodeDiscountId();
+                    var discount = promoCodeDiscountId != null ? promoCodeDiscountRepository.findById(promoCodeDiscountId) : null;
+                    var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(ticketReservation.getId());
+                    var calculator = new ReservationPriceCalculator(ticketReservation, discount, tickets, additionalServiceItems, additionalServices, event);
                     var currencyCode = calculator.getCurrencyCode();
                     return new MapSqlParameterSource("reservationId", calculator.reservation.getId())
                         .addValue("srcPrice", calculator.getSrcPriceCts())

@@ -202,6 +202,11 @@
                         });
                     }
 
+                    $scope.discountTypes = {
+                        PERCENTAGE: 'Percentage',
+                        FIXED_AMOUNT_RESERVATION: 'Fixed amount, per reservation',
+                        FIXED_AMOUNT: 'Fixed amount, per ticket'
+                    };
 
                     $scope.promocode = {
                         discountType :'PERCENTAGE',

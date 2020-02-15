@@ -168,16 +168,16 @@ public class EventApiV2Controller {
 
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
                 .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
-                .map((m) -> {
-                    int maxTickets = getMaxAmountOfTicketsPerReservation(configurations, ticketCategoryLevelConfiguration, m.getId());
-                    PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null);
+                .map((category) -> {
+                    int maxTickets = getMaxAmountOfTicketsPerReservation(configurations, ticketCategoryLevelConfiguration, category.getId());
+                    PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, category)).orElse(null);
                     if (specialCode.isPresent()) {
                         maxTickets = Math.min(1, maxTickets);
                     } else if (filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
                         maxTickets = filteredPromoCode.getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(filteredPromoCode.getId(), categoriesOrNull(filteredPromoCode), null, categoriesOrNull(filteredPromoCode) != null ? "X" : null);
                     }
-                    return new SaleableTicketCategory(m,
-                        now, event, ticketReservationManager.countAvailableTickets(event, m), maxTickets,
+                    return new SaleableTicketCategory(category,
+                        now, event, ticketReservationManager.countAvailableTickets(event, category), maxTickets,
                         filteredPromoCode);
                 })
                 .collect(Collectors.toList());
@@ -363,7 +363,7 @@ public class EventApiV2Controller {
                 .orElseGet(() -> {
                     var promoCodeDiscount = value.getRight().orElseThrow();
                     var type = promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS ? EventCode.EventCodeType.ACCESS : EventCode.EventCodeType.DISCOUNT;
-                    String formattedDiscountAmount =  promoCodeDiscount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT ? MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), value.getMiddle().getCurrency()) : Integer.toString(promoCodeDiscount.getDiscountAmount());
+                    String formattedDiscountAmount = PromoCodeDiscount.format(promoCodeDiscount, value.getMiddle().getCurrency());
                     return new EventCode(code, type, promoCodeDiscount.getDiscountType(), formattedDiscountAmount);
                 });
 
@@ -468,6 +468,10 @@ public class EventApiV2Controller {
             case FIXED_AMOUNT:
                 amount = MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), event.getCurrency());
                 code = "reservation.dynamic.discount.confirmation.fix-per-ticket.message";
+                break;
+            case FIXED_AMOUNT_RESERVATION:
+                amount = MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), event.getCurrency());
+                code = "reservation.dynamic.discount.confirmation.fix-per-reservation.message";
                 break;
             default:
                 throw new IllegalStateException("Unexpected discount code type");

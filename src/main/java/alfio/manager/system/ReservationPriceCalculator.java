@@ -17,30 +17,42 @@
 package alfio.manager.system;
 
 import alfio.model.*;
+import alfio.model.decorator.AdditionalServiceItemPriceContainer;
+import alfio.model.decorator.TicketPriceContainer;
 import alfio.util.MonetaryUtil;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
 
 @RequiredArgsConstructor
 public class ReservationPriceCalculator implements PriceContainer {
     final TicketReservation reservation;
-    final TotalPrice totalPrice;
+    final PromoCodeDiscount discount;
     final List<Ticket> tickets;
+    final List<AdditionalServiceItem> additionalServiceItems;
+    final List<AdditionalService> additionalServices;
     final Event event;
 
     @Override
     public int getSrcPriceCts() {
-        return tickets.stream().mapToInt(Ticket::getSrcPriceCts).sum();
+        return tickets.stream().mapToInt(Ticket::getSrcPriceCts).sum() + additionalServiceItems.stream().mapToInt(AdditionalServiceItem::getSrcPriceCts).sum();
     }
 
     @Override
     public BigDecimal getAppliedDiscount() {
-        return MonetaryUtil.centsToUnit(Math.abs(totalPrice.getDiscount()), reservation.getCurrencyCode());
+        if(discount != null) {
+            if (discount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION) {
+                return MonetaryUtil.centsToUnit(discount.getDiscountAmount(), reservation.getCurrencyCode());
+            }
+            return MonetaryUtil.centsToUnit(tickets.stream().mapToInt(Ticket::getDiscountCts).sum() + additionalServiceItems.stream().mapToInt(AdditionalServiceItem::getDiscountCts).sum(), reservation.getCurrencyCode());
+        }
+        return BigDecimal.ZERO;
     }
 
     @Override
@@ -57,4 +69,32 @@ public class ReservationPriceCalculator implements PriceContainer {
     public VatStatus getVatStatus() {
         return firstNonNull(reservation.getVatStatus(), event.getVatStatus());
     }
+
+    @Override
+    public Optional<PromoCodeDiscount> getDiscount() {
+        return Optional.ofNullable(discount);
+    }
+
+    @Override
+    public BigDecimal getTaxablePrice() {
+        var ticketsTaxablePrice = tickets.stream()
+            .map(t -> TicketPriceContainer.from(t, reservation.getVatStatus(), getVatPercentageOrZero(), event.getVatStatus(), discount).getTaxablePrice())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        var additionalServiceTaxablePrice = additionalServiceItems.stream()
+            .map(asi -> AdditionalServiceItemPriceContainer.from(asi, additionalServices.stream().filter(as -> as.getId() == asi.getAdditionalServiceId()).findFirst().orElseThrow(), event, discount).getTaxablePrice())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        var totalTicketsAndAdditional = ticketsTaxablePrice.add(additionalServiceTaxablePrice);
+        if(discount != null && discount.getDiscountType() != PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION) {
+            // no need to add the discounted price here, since the single items are already taking it into account
+            return totalTicketsAndAdditional;
+        }
+        return totalTicketsAndAdditional.subtract(getAppliedDiscount());
+    }
+
+    public static ReservationPriceCalculator from(TicketReservation reservation, PromoCodeDiscount discount, List<Ticket> tickets, Event event, List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItemsByAdditionalService) {
+        var additionalServiceItems = additionalServiceItemsByAdditionalService.stream().flatMap(p -> p.getRight().stream()).collect(Collectors.toList());
+        var additionalServices = additionalServiceItemsByAdditionalService.stream().map(Pair::getKey).collect(Collectors.toList());
+        return new ReservationPriceCalculator(reservation, discount, tickets, additionalServiceItems, additionalServices, event);
+    }
+
 }

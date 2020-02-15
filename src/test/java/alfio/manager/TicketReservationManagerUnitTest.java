@@ -154,7 +154,6 @@ public class TicketReservationManagerUnitTest {
     @Test
     public void calcReservationCostOnlyTickets() throws Exception {
         when(event.isVatIncluded()).thenReturn(true, false);
-        when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.INCLUDED, PriceContainer.VatStatus.NOT_INCLUDED);
         when(event.getVat()).thenReturn(BigDecimal.TEN);
         when(eventRepository.findByReservationId(eq(TICKET_RESERVATION_ID))).thenReturn(event);
         when(ticketReservationRepository.findReservationById(eq(TICKET_RESERVATION_ID))).thenReturn(reservation);
@@ -164,12 +163,14 @@ public class TicketReservationManagerUnitTest {
         AdditionalServiceItemRepository additionalServiceItemRepository = mock(AdditionalServiceItemRepository.class);
         when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.emptyList());
 
+        when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.INCLUDED);
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
         TotalPrice included = priceAndDiscount.getLeft();
         assertTrue(priceAndDiscount.getRight().isEmpty());
         assertEquals(10, included.getPriceWithVAT());
         assertEquals(1, included.getVAT());
 
+        when(event.getVatStatus()).thenReturn(PriceContainer.VatStatus.NOT_INCLUDED);
         Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscountNotIncluded = manager.totalReservationCostWithVAT(TICKET_RESERVATION_ID);
         TotalPrice notIncluded = priceAndDiscountNotIncluded.getLeft();
         assertTrue(priceAndDiscountNotIncluded.getRight().isEmpty());
@@ -308,9 +309,11 @@ public class TicketReservationManagerUnitTest {
         when(additionalServiceItem.getCurrencyCode()).thenReturn("CHF");
         AdditionalService additionalService = mock(AdditionalService.class);
         when(additionalService.getCurrencyCode()).thenReturn("CHF");
+        when(additionalService.getId()).thenReturn(1);
 
         when(additionalServiceItemRepository.findByReservationUuid(eq(TICKET_RESERVATION_ID))).thenReturn(Collections.singletonList(additionalServiceItem));
         when(additionalServiceItem.getAdditionalServiceId()).thenReturn(1);
+        when(additionalServiceRepository.loadAllForEvent(eq(1))).thenReturn(List.of(additionalService));
         when(additionalServiceRepository.getById(eq(1), eq(1))).thenReturn(additionalService);
         when(additionalServiceItem.getSrcPriceCts()).thenReturn(asSrcPrice);
         when(additionalService.getVatType()).thenReturn(additionalServiceVatType);

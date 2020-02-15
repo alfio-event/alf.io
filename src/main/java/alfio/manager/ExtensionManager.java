@@ -311,7 +311,7 @@ public class ExtensionManager {
             values.put("reservationId", reservationId);
             var dynamicDiscountResult = syncCall(ExtensionEvent.DYNAMIC_DISCOUNT_APPLICATION, event,
                 values, DynamicDiscount.class);
-            if(dynamicDiscountResult.getDiscountType() == PromoCodeDiscount.DiscountType.NONE) {
+            if(dynamicDiscountResult == null || dynamicDiscountResult.getDiscountType() == PromoCodeDiscount.DiscountType.NONE) {
                 return Optional.empty();
             }
             var now = ZonedDateTime.now(Clock.systemUTC());
