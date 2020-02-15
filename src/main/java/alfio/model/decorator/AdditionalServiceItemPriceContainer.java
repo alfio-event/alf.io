@@ -17,6 +17,7 @@
 package alfio.model.decorator;
 
 import alfio.model.*;
+import alfio.util.MonetaryUtil;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
@@ -41,7 +42,7 @@ public class AdditionalServiceItemPriceContainer implements SummaryPriceContaine
 
     @Override
     public Optional<PromoCodeDiscount> getDiscount() {
-        return Optional.ofNullable(discount);
+        return Optional.ofNullable(discount).filter(d -> d.getDiscountType() != PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION);
     }
 
     @Override
@@ -65,6 +66,14 @@ public class AdditionalServiceItemPriceContainer implements SummaryPriceContaine
         } else {
             return VatStatus.NONE;
         }
+    }
+
+    @Override
+    public BigDecimal getTaxablePrice() {
+        if(getVatStatus() == VatStatus.NONE) {
+            return BigDecimal.ZERO;
+        }
+        return MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
     }
 
     public static AdditionalServiceItemPriceContainer from(AdditionalServiceItem item, AdditionalService additionalService, Event event, PromoCodeDiscount discount) {

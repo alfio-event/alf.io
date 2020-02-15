@@ -107,6 +107,8 @@ public class AdminReservationManager {
     private final ExtensionManager extensionManager;
     private final BillingDocumentRepository billingDocumentRepository;
     private final FileUploadManager fileUploadManager;
+    private final PromoCodeDiscountRepository promoCodeDiscountRepository;
+    private final AdditionalServiceRepository additionalServiceRepository;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username, Notification notification) {
@@ -590,7 +592,9 @@ public class AdminReservationManager {
                 var totalPrice = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
                 var currencyCode = totalPrice.getCurrencyCode();
                 var updatedTickets = ticketRepository.findTicketsInReservation(reservationId);
-                var calculator = new ReservationPriceCalculator(reservation, totalPrice, updatedTickets, e);
+                var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
+                List<AdditionalServiceItem> additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);
+                var calculator = new ReservationPriceCalculator(reservation, discount, updatedTickets, additionalServiceItems, additionalServiceRepository.loadAllForEvent(e.getId()), e);
                 ticketReservationRepository.updateBillingData(calculator.getVatStatus(),
                     calculator.getSrcPriceCts(), unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode),
                     unitToCents(calculator.getAppliedDiscount(), currencyCode), calculator.getCurrencyCode(), reservation.getVatNr(), reservation.getVatCountryCode(),

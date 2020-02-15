@@ -17,6 +17,7 @@
 package alfio.model;
 
 import alfio.util.Json;
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import com.google.gson.reflect.TypeToken;
 import lombok.Getter;
@@ -39,7 +40,11 @@ public class PromoCodeDiscount {
     }
     
     public enum DiscountType {
-        FIXED_AMOUNT, PERCENTAGE, NONE
+        FIXED_AMOUNT, PERCENTAGE, FIXED_AMOUNT_RESERVATION, NONE;
+
+        public static boolean isFixedAmount(DiscountType discountType) {
+            return discountType == FIXED_AMOUNT || discountType == FIXED_AMOUNT_RESERVATION;
+        }
     }
 
     private final int id;
@@ -102,7 +107,7 @@ public class PromoCodeDiscount {
     }
     
     public boolean getFixedAmount() {
-        return DiscountType.FIXED_AMOUNT == discountType;
+        return DiscountType.FIXED_AMOUNT == discountType || DiscountType.FIXED_AMOUNT_RESERVATION == discountType;
     }
 
     public static Set<Integer> categoriesOrNull(PromoCodeDiscount code) {
@@ -118,5 +123,12 @@ public class PromoCodeDiscount {
 
     public boolean isDynamic() {
         return codeType == CodeType.DYNAMIC;
+    }
+
+    public static String format(PromoCodeDiscount discount, String eventCurrencyCode) {
+        if(discount.getDiscountType() == DiscountType.PERCENTAGE) {
+            return Integer.toString(discount.getDiscountAmount());
+        }
+        return MonetaryUtil.formatCents(discount.getDiscountAmount(), eventCurrencyCode);
     }
 }

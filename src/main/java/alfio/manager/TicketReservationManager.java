@@ -26,6 +26,7 @@ import alfio.manager.support.*;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
+import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.AdditionalServiceItem.AdditionalServiceItemStatus;
 import alfio.model.PromoCodeDiscount.CodeType;
@@ -1182,30 +1183,24 @@ public class TicketReservationManager {
 
     private static Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount,
                                                           Event event,
-                                                          PriceContainer.VatStatus reservationVatStatus,
+                                                          TicketReservation reservation,
                                                           List<Ticket> tickets,
-                                                          Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
+                                                          List<Pair<AdditionalService, List<AdditionalServiceItem>>> additionalServiceItems) {
 
-        List<TicketPriceContainer> ticketPrices = tickets.stream().map(t -> TicketPriceContainer.from(t, reservationVatStatus, event.getVat(), event.getVatStatus(), promoCodeDiscount)).collect(toList());
-        BigDecimal totalVAT = calcTotal(ticketPrices, PriceContainer::getRawVAT);
-        BigDecimal totalDiscount = calcTotal(ticketPrices, PriceContainer::getAppliedDiscount);
-        BigDecimal totalNET = calcTotal(ticketPrices, PriceContainer::getFinalPrice);
-        int discountedTickets = (int) ticketPrices.stream().filter(t -> t.getAppliedDiscount().compareTo(BigDecimal.ZERO) > 0).count();
-        int discountAppliedCount = discountedTickets <= 1 || promoCodeDiscount.getCodeType() == CodeType.DYNAMIC || promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT ? discountedTickets : 1;
-
-        List<AdditionalServiceItemPriceContainer> asPrices = additionalServiceItems
-            .flatMap(generateASIPriceContainers(event, promoCodeDiscount))
-            .collect(toList());
-
-        BigDecimal asTotalVAT = calcTotal(asPrices, PriceContainer::getRawVAT);
-        BigDecimal asTotalDiscount = calcTotal(asPrices, PriceContainer::getAppliedDiscount);
-        BigDecimal asTotalNET = calcTotal(asPrices, PriceContainer::getFinalPrice);
         String currencyCode = event.getCurrency();
-        return Pair.of(new TotalPrice(unitToCents(totalNET.add(asTotalNET), currencyCode), unitToCents(totalVAT.add(asTotalVAT), currencyCode), -(MonetaryUtil.unitToCents(totalDiscount.add(asTotalDiscount), currencyCode)), discountAppliedCount, currencyCode), Optional.ofNullable(promoCodeDiscount));
-    }
-
-    private static BigDecimal calcTotal(List<? extends PriceContainer> elements, Function<? super PriceContainer, BigDecimal> operator) {
-        return elements.stream().map(operator).reduce(BigDecimal.ZERO, BigDecimal::add);
+        List<TicketPriceContainer> ticketPrices = tickets.stream().map(t -> TicketPriceContainer.from(t, reservation.getVatStatus(), event.getVat(), event.getVatStatus(), promoCodeDiscount)).collect(toList());
+        int discountedTickets = (int) ticketPrices.stream().filter(t -> t.getAppliedDiscount().compareTo(BigDecimal.ZERO) > 0).count();
+        int discountAppliedCount = discountedTickets <= 1 || promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT ? discountedTickets : 1;
+        if(discountAppliedCount == 0 && promoCodeDiscount != null && promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT_RESERVATION) {
+            discountAppliedCount = 1;
+        }
+        var reservationPriceCalculator = ReservationPriceCalculator.from(reservation, promoCodeDiscount, tickets, event, additionalServiceItems);
+        var price = new TotalPrice(unitToCents(reservationPriceCalculator.getFinalPrice(), currencyCode),
+            unitToCents(reservationPriceCalculator.getVAT(), currencyCode),
+            -(MonetaryUtil.unitToCents(reservationPriceCalculator.getAppliedDiscount(), currencyCode)),
+            discountAppliedCount,
+            currencyCode);
+        return Pair.of(price, Optional.ofNullable(promoCodeDiscount));
     }
 
     private static Function<Pair<AdditionalService, List<AdditionalServiceItem>>, Stream<? extends AdditionalServiceItemPriceContainer>> generateASIPriceContainers(Event event, PromoCodeDiscount discount) {
@@ -1229,7 +1224,7 @@ public class TicketReservationManager {
     public Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(Event event, TicketReservation reservation, List<Ticket> tickets) {
         Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId())
             .map(promoCodeDiscountRepository::findById);
-        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation.getVatStatus(), tickets, collectAdditionalServiceItems(reservation.getId(), event));
+        return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation, tickets, collectAdditionalServiceItems(reservation.getId(), event));
     }
 
     private String formatPromoCode(PromoCodeDiscount promoCodeDiscount, List<Ticket> tickets, Locale locale, Event event) {
@@ -1306,7 +1301,7 @@ public class TicketReservationManager {
                 summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts, currencyCode), formatCents(priceBeforeVat, currencyCode), ticketsByCategory.size(), formatCents(subTotal, currencyCode), formatCents(subTotalBeforeVat, currencyCode), subTotal, SummaryType.TICKET));
             });
 
-        summary.addAll(collectAdditionalServiceItems(reservationId, event)
+        summary.addAll(streamAdditionalServiceItems(reservationId, event)
             .map(entry -> {
                 String language = locale.getLanguage();
                 AdditionalServiceText title = additionalServiceTextRepository.findBestMatchByLocaleAndType(entry.getKey().getId(), language, AdditionalServiceText.TextType.TITLE);
@@ -1321,7 +1316,7 @@ public class TicketReservationManager {
             }).collect(toList()));
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
-            String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount(), currencyCode) : (promo.getDiscountAmount()+"%"));
+            String formattedSingleAmount = "-" + (DiscountType.isFixedAmount(promo.getDiscountType())  ? formatCents(promo.getDiscountAmount(), currencyCode) : (promo.getDiscountAmount()+"%"));
             summary.add(new SummaryRow(formatPromoCode(promo, ticketRepository.findTicketsInReservation(reservationId), locale, event),
                 formattedSingleAmount,
                 formattedSingleAmount,
@@ -1332,13 +1327,16 @@ public class TicketReservationManager {
         return summary;
     }
 
-    private Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> collectAdditionalServiceItems(String reservationId, Event event) {
+    private Stream<Pair<AdditionalService, List<AdditionalServiceItem>>> streamAdditionalServiceItems(String reservationId, Event event) {
         return additionalServiceItemRepository.findByReservationUuid(reservationId)
             .stream()
             .collect(Collectors.groupingBy(AdditionalServiceItem::getAdditionalServiceId))
             .entrySet()
             .stream()
             .map(entry -> Pair.of(additionalServiceRepository.getById(entry.getKey(), event.getId()), entry.getValue()));
+    }
+    private List<Pair<AdditionalService, List<AdditionalServiceItem>>> collectAdditionalServiceItems(String reservationId, Event event) {
+        return streamAdditionalServiceItems(reservationId, event).collect(Collectors.toList());
     }
 
     String reservationUrl(String reservationId) {
