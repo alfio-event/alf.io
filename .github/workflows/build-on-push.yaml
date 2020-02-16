@@ -8,6 +8,17 @@ jobs:
         strategy:
             matrix:
                 postgresql: ['9.6','10','11','12']
+        services:
+            postgres:
+                image: postgres:${{ matrix.postgresql }}
+                env:
+                    POSTGRES_USER: postgres
+                    POSTGRES_PASSWORD: postgres
+                    POSTGRES_DB: alfio
+                ports:
+                    - 5432:5432
+                # needed because the postgres container does not provide a healthcheck
+                options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
         steps:
             - uses: actions/checkout@v1
             - uses: actions/cache@v1
@@ -22,10 +33,6 @@ jobs:
                   key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('**/gradlew') }}
                   restore-keys: |
                       ${{ runner.os }}-gradlew-
-            - uses: harmon758/postgresql-action@v1
-              with:
-                  postgresql version: ${{ matrix.postgresql }}
-                  postgresql db: 'alfio'
             - name: Set up JDK 11
               uses: actions/setup-java@v1
               with:
