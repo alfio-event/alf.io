@@ -60,17 +60,41 @@ public interface PromoCodeDiscountRepository {
                      @Bind("codeType") PromoCodeDiscount.CodeType codeType,
                      @Bind("hiddenCategoryId") Integer hiddenCategoryId);
 
+    @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage, description, email_reference, code_type, hidden_category_id) "
+        + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage, :description, :emailReference, :codeType, :hiddenCategoryId) "
+        + " ON CONFLICT (promo_code, event_id_fk) where event_id_fk is not null do nothing"
+    )
+    int addPromoCodeIfNotExists(@Bind("promoCode") String promoCode,
+                                @Bind("eventId") Integer eventId,
+                                @Bind("organizationId") int organizationId,
+                                @Bind("start") ZonedDateTime start,
+                                @Bind("end") ZonedDateTime end,
+                                @Bind("discountAmount") int discountAmount,
+                                @Bind("discountType") PromoCodeDiscount.DiscountType discountType,
+                                @Bind("categories") String categories,
+                                @Bind("maxUsage") Integer maxUsage,
+                                @Bind("description") String description,
+                                @Bind("emailReference") String emailReference,
+                                @Bind("codeType") PromoCodeDiscount.CodeType codeType,
+                                @Bind("hiddenCategoryId") Integer hiddenCategoryId);
+
     @Query("select * from promo_code where promo_code = :promoCode and ("
         +" event_id_fk = :eventId or "
         +" (event_id_fk is null and organization_id_fk = (select org_id from event where id = :eventId))) "
         +" order by event_id_fk is null limit 1")
     Optional<PromoCodeDiscount> findPromoCodeInEventOrOrganization(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
 
+    @Query("select * from promo_code where promo_code = :promoCode and code_type <> 'DYNAMIC' and ("
+        +" event_id_fk = :eventId or "
+        +" (event_id_fk is null and organization_id_fk = (select org_id from event where id = :eventId))) "
+        +" order by event_id_fk is null limit 1")
+    Optional<PromoCodeDiscount> findPublicPromoCodeInEventOrOrganization(@Bind("eventId") int eventId, @Bind("promoCode") String promoCode);
+
     @Query("select count(*) from promo_code where event_id_fk = :eventId or (event_id_fk is null and organization_id_fk = :organizationId)")
     Integer countByEventAndOrganizationId(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
 
     @Query("select count(b.id) from tickets_reservation a, ticket b" +
-        " where (:currentId is null or a.id <> :currentId) and a.status in ('OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and a.promo_code_id_fk = :id" +
+        " where (:currentId is null or a.id <> :currentId) and a.status in ('OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and a.promo_code_id_fk = :id" +
         " and b.tickets_reservation_id = a.id and (:categoriesJson is null or b.category_id in (:categories))")
     Integer countConfirmedPromoCode(@Bind("id") int id, @Bind("categories") Collection<Integer> categories, @Bind("currentId") String currentReservationId, @Bind("categoriesJson") String categoriesJson);
 

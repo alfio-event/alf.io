@@ -53,7 +53,7 @@
             }
 
             if(loadPartially.paymentPending) {
-                EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPagePendingPayment - 1, ctrl.toSearch, ['IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'WAITING_EXTERNAL_CONFIRMATION', 'OFFLINE_PAYMENT']).then(function (res) {
+                EventService.findAllReservations(ctrl.event.shortName, ctrl.currentPagePendingPayment - 1, ctrl.toSearch, ['IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'WAITING_EXTERNAL_CONFIRMATION', 'OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT']).then(function (res) {
                     ctrl.paymentPendingReservations = res.data.left;
                     ctrl.paymentPendingFoundReservations = res.data.right;
                 });

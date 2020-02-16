@@ -25,21 +25,8 @@
             </div>
 
             <div class="form-group" ng-if="promocode.codeType == 'DISCOUNT'">
-                <label class="control-label">Discount type</label>
-                <div>
-                    <div class="radio-inline">
-                        <label>
-                            <input type="radio" name="discountType" data-ng-model="promocode.discountType" data-ng-value="'FIXED_AMOUNT'" required>
-                            Fixed amount
-                        </label>
-                    </div>
-                    <div class="radio-inline">
-                        <label>
-                            <input type="radio" name="discountType" data-ng-model="promocode.discountType" data-ng-value="'PERCENTAGE'" required>
-                            Percentage
-                        </label>
-                    </div>
-                </div>
+                <label class="control-label" for="discountType">Discount type</label>
+                <select class="form-control" id="discountType" ng-options="key as value for (key , value) in discountTypes" ng-model="promocode.discountType"></select>
             </div>
 
             <div class="form-group" bs-form-error="promocode.discountAmount" ng-if="promocode.codeType == 'DISCOUNT'">
@@ -48,7 +35,7 @@
                     <input type="number" id="discountAmount" data-ng-model="promocode.discountAmount" class="form-control" min="0" required/>
                     <div class="input-group-addon">
                         <span data-ng-if="promocode.discountType === 'PERCENTAGE'">%</span>
-                        <span data-ng-if="promocode.discountType === 'FIXED_AMOUNT'">{{event.currency}}</span>
+                        <span data-ng-if="promocode.discountType !== 'PERCENTAGE'">{{event.currency}}<span data-ng-if="promocode.discountType === 'FIXED_AMOUNT'"> (per ticket)</span></span>
                     </div>
                 </div>
                 <field-error data-form-obj="discountAmount" data-field-obj="promocode.discountAmount" data-show-existing-errors="showExistingErrors"></field-error>

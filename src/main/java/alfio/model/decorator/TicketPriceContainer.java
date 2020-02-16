@@ -40,7 +40,7 @@ public class TicketPriceContainer implements SummaryPriceContainer {
     @Override
     public Optional<PromoCodeDiscount> getDiscount() {
         return Optional.ofNullable(promoCodeDiscount)
-            .filter(discount -> discount.getCategories().isEmpty() || discount.getCategories().contains(getCategoryId()));
+            .filter(discount -> discount.getDiscountType() != PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION && (discount.getCategories().isEmpty() || discount.getCategories().contains(getCategoryId())));
     }
 
     @Override
