@@ -17,19 +17,19 @@
         <tbody>
         <tr data-ng-repeat="promocode in $ctrl.promocodes" data-ng-class="{'text-muted': promocode.expired}">
             <td ng-if="promocode.useCount > 0"><a data-ui-sref="events.single.reservationsList({eventName: $ctrl.event.shortName, search: promocode.promoCode})" title="Find all reservations">{{::promocode.promoCode}}</a> <span data-ng-if="promocode.expired">(Expired)</span></td>
-            <td ng-if="!promocode.useCount || promocode.useCount === 0">{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span></td>
+            <td ng-if="!promocode.useCount || promocode.useCount === 0">{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span><span data-ng-if="!promocode.expired && promocode.codeType === 'DYNAMIC'">(auto)</span></td>
             <td class="text-right">{{promocode.useCount}}</td>
             <td class="text-right">{{promocode.maxUsage}}</td>
             <td>{{::promocode.formattedStart | formatDate}}</td>
             <td>{{::promocode.formattedEnd | formatDate}}</td>
             <td ng-if="!$ctrl.isAccess">
-                <span data-ng-if="promocode.codeType === 'DISCOUNT' && promocode.discountType === 'PERCENTAGE'">-{{::promocode.discountAmount}}%</span>
-                <span data-ng-if="promocode.codeType === 'DISCOUNT' && promocode.discountType === 'FIXED_AMOUNT'">-{{::promocode.formattedDiscountAmount | money : ($ctrl.event.currency || "")}}</span>
+                <span data-ng-if="!$ctrl.isAccess && promocode.discountType === 'PERCENTAGE'">-{{::promocode.discountAmount}}%</span>
+                <span data-ng-if="!$ctrl.isAccess && promocode.discountType === 'FIXED_AMOUNT'">-{{::promocode.formattedDiscountAmount | money : ($ctrl.event.currency || "")}}</span>
             </td>
             <td ng-if="$ctrl.forEvent">
                 <div ng-if="promocode.categories.length > 0"><p ng-repeat="categoryId in promocode.categories">{{::$ctrl.ticketCategoriesById[categoryId].name}}</p></div>
                 <div ng-if="promocode.hiddenCategoryId">{{::$ctrl.ticketCategoriesById[promocode.hiddenCategoryId].name}}</div>
-                <div class="text-muted" ng-if="promocode.codeType === 'DISCOUNT' && (promocode.categories == null || promocode.categories.length == 0)">Apply to all</div>
+                <div class="text-muted" ng-if="promocode.codeType !== 'ACCESS' && (promocode.categories == null || promocode.categories.length == 0)">Apply to all</div>
             </td>
             <td ng-bind="promocode.description"></td>
             <td ng-bind="promocode.emailReference"></td>

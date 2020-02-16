@@ -114,7 +114,7 @@ public class TicketReservationManagerConcurrentTest {
 
             specialPriceTokenGenerator.generatePendingCodesForCategory(firstCategoryId);
             promoCodeDiscountRepository.addPromoCode(ACCESS_CODE, eventId, event.getOrganizationId(), ZonedDateTime.now(), ZonedDateTime.now().plusDays(1), 0, PromoCodeDiscount.DiscountType.NONE, null, 100, null, null, PromoCodeDiscount.CodeType.ACCESS, firstCategoryId);
-            promoCodeDiscount = promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(eventId, ACCESS_CODE).orElseThrow();
+            promoCodeDiscount = promoCodeDiscountRepository.findPublicPromoCodeInEventOrOrganization(eventId, ACCESS_CODE).orElseThrow();
             return null;
         });
     }

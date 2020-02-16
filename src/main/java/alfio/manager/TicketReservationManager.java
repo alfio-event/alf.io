@@ -28,8 +28,10 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.AdditionalServiceItem.AdditionalServiceItemStatus;
+import alfio.model.PromoCodeDiscount.CodeType;
 import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.SpecialPrice.Status;
+import alfio.model.SummaryRow.SummaryType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketReservation.TicketReservationStatus;
 import alfio.model.decorator.AdditionalServiceItemPriceContainer;
@@ -248,7 +250,9 @@ public class TicketReservationManager {
                                           boolean forWaitingQueue) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
         String reservationId = UUID.randomUUID().toString();
         
-        Optional<PromoCodeDiscount> discount = promotionCodeDiscount.flatMap(promoCodeDiscount -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
+        Optional<PromoCodeDiscount> discount = promotionCodeDiscount
+            .or(() -> createDynamicPromoCodeIfNeeded(event, list, reservationId))
+            .flatMap(promoCodeDiscount -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
         
         ticketReservationRepository.createNewReservation(reservationId,
             ZonedDateTime.now(event.getZoneId()),
@@ -277,7 +281,7 @@ public class TicketReservationManager {
         });
 
         additionalServices.forEach(as -> reserveAdditionalServicesForReservation(event.getId(), reservationId, as, discount.orElse(null)));
-        var totalPrice = totalReservationCostWithVAT(reservationId);
+        var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         var vatStatus = event.getVatStatus();
         ticketReservationRepository.updateBillingData(event.getVatStatus(), calculateSrcPrice(vatStatus, totalPrice), totalPrice.getPriceWithVAT(), totalPrice.getVAT(), Math.abs(totalPrice.getDiscount()), event.getCurrency(), null, null, false, reservationId);
         auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.RESERVATION_CREATE, new Date(), Audit.EntityType.RESERVATION, reservationId);
@@ -290,6 +294,26 @@ public class TicketReservationManager {
         }
 
         return reservationId;
+    }
+
+    Optional<String> createDynamicPromoCodeIfNeeded(Event event, List<TicketReservationWithOptionalCodeModification> list, String reservationId) {
+
+        var paidCategories = ticketCategoryRepository.countPaidCategoriesInReservation(list.stream().map(TicketReservationWithOptionalCodeModification::getTicketCategoryId).collect(Collectors.toSet()));
+        if(paidCategories == null || paidCategories == 0) {
+            return Optional.empty();
+        }
+
+        var newCodeOptional = extensionManager.handleDynamicDiscount(event, list.stream().collect(groupingBy(TicketReservationWithOptionalCodeModification::getTicketCategoryId, counting())), reservationId);
+        if(newCodeOptional.isPresent()) {
+            var newCode = newCodeOptional.get();
+            int result = promoCodeDiscountRepository.addPromoCodeIfNotExists(newCode.getPromoCode(), event.getId(),
+                event.getOrganizationId(), newCode.getUtcStart(), newCode.getUtcEnd(), newCode.getDiscountAmount(),
+                newCode.getDiscountType(), "[]", null, null, null, newCode.getCodeType(), null);
+            if(result > 0) {
+                auditingRepository.insert(reservationId, null, event.getId(), Audit.EventType.DYNAMIC_DISCOUNT_CODE_CREATED, new Date(), Audit.EntityType.RESERVATION, reservationId);
+            }
+        }
+        return newCodeOptional.map(PromoCodeDiscount::getPromoCode);
     }
 
     private int calculateSrcPrice(PriceContainer.VatStatus vatStatus, TotalPrice totalPrice) {
@@ -310,7 +334,7 @@ public class TicketReservationManager {
     void reserveTicketsForCategory(Event event, String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale, boolean forWaitingQueue, PromoCodeDiscount discount) {
 
         List<SpecialPrice> specialPrices;
-        if(discount != null && discount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS
+        if(discount != null && discount.getCodeType() == CodeType.ACCESS
             && ticketReservation.getTicketCategoryId().equals(discount.getHiddenCategoryId())
             && ticketCategoryRepository.isAccessRestricted(discount.getHiddenCategoryId())
         ) {
@@ -687,7 +711,7 @@ public class TicketReservationManager {
     }
 
     void registerAlfioTransaction(Event event, String reservationId, PaymentProxy paymentProxy) {
-        var totalPrice = totalReservationCostWithVAT(reservationId);
+        var totalPrice = totalReservationCostWithVAT(reservationId).getLeft();
         int priceWithVAT = totalPrice.getPriceWithVAT();
         long platformFee = FeeCalculator.getCalculator(event, configurationManager, Objects.requireNonNullElse(totalPrice.getCurrencyCode(), event.getCurrency()))
             .apply(ticketRepository.countTicketsInReservation(reservationId), (long) priceWithVAT)
@@ -1156,7 +1180,7 @@ public class TicketReservationManager {
         }
     }
 
-    private static TotalPrice totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount,
+    private static Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount,
                                                           Event event,
                                                           PriceContainer.VatStatus reservationVatStatus,
                                                           List<Ticket> tickets,
@@ -1167,7 +1191,7 @@ public class TicketReservationManager {
         BigDecimal totalDiscount = calcTotal(ticketPrices, PriceContainer::getAppliedDiscount);
         BigDecimal totalNET = calcTotal(ticketPrices, PriceContainer::getFinalPrice);
         int discountedTickets = (int) ticketPrices.stream().filter(t -> t.getAppliedDiscount().compareTo(BigDecimal.ZERO) > 0).count();
-        int discountAppliedCount = discountedTickets <= 1 || promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT ? discountedTickets : 1;
+        int discountAppliedCount = discountedTickets <= 1 || promoCodeDiscount.getCodeType() == CodeType.DYNAMIC || promoCodeDiscount.getDiscountType() == DiscountType.FIXED_AMOUNT ? discountedTickets : 1;
 
         List<AdditionalServiceItemPriceContainer> asPrices = additionalServiceItems
             .flatMap(generateASIPriceContainers(event, promoCodeDiscount))
@@ -1177,7 +1201,7 @@ public class TicketReservationManager {
         BigDecimal asTotalDiscount = calcTotal(asPrices, PriceContainer::getAppliedDiscount);
         BigDecimal asTotalNET = calcTotal(asPrices, PriceContainer::getFinalPrice);
         String currencyCode = event.getCurrency();
-        return new TotalPrice(unitToCents(totalNET.add(asTotalNET), currencyCode), unitToCents(totalVAT.add(asTotalVAT), currencyCode), -(MonetaryUtil.unitToCents(totalDiscount.add(asTotalDiscount), currencyCode)), discountAppliedCount, currencyCode);
+        return Pair.of(new TotalPrice(unitToCents(totalNET.add(asTotalNET), currencyCode), unitToCents(totalVAT.add(asTotalVAT), currencyCode), -(MonetaryUtil.unitToCents(totalDiscount.add(asTotalDiscount), currencyCode)), discountAppliedCount, currencyCode), Optional.ofNullable(promoCodeDiscount));
     }
 
     private static BigDecimal calcTotal(List<? extends PriceContainer> elements, Function<? super PriceContainer, BigDecimal> operator) {
@@ -1194,20 +1218,25 @@ public class TicketReservationManager {
      * @param reservationId
      * @return
      */
-    public TotalPrice totalReservationCostWithVAT(String reservationId) {
+    public Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(String reservationId) {
         return totalReservationCostWithVAT(ticketReservationRepository.findReservationById(reservationId));
     }
 
-    public TotalPrice totalReservationCostWithVAT(TicketReservation reservation) {
+    public Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(TicketReservation reservation) {
         return totalReservationCostWithVAT(eventRepository.findByReservationId(reservation.getId()), reservation, ticketRepository.findTicketsInReservation(reservation.getId()));
     }
 
-    public TotalPrice totalReservationCostWithVAT(Event event, TicketReservation reservation, List<Ticket> tickets) {
-        Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById);
+    public Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(Event event, TicketReservation reservation, List<Ticket> tickets) {
+        Optional<PromoCodeDiscount> promoCodeDiscount = Optional.ofNullable(reservation.getPromoCodeDiscountId())
+            .map(promoCodeDiscountRepository::findById);
         return totalReservationCostWithVAT(promoCodeDiscount.orElse(null), event, reservation.getVatStatus(), tickets, collectAdditionalServiceItems(reservation.getId(), event));
     }
 
-    private String formatPromoCode(PromoCodeDiscount promoCodeDiscount, List<Ticket> tickets) {
+    private String formatPromoCode(PromoCodeDiscount promoCodeDiscount, List<Ticket> tickets, Locale locale, Event event) {
+
+        if(promoCodeDiscount.getCodeType() == CodeType.DYNAMIC) {
+            return messageSourceManager.getMessageSourceForEvent(event).getMessage("reservation.dynamic.discount.description", null, locale); //we don't expose the internal promo code
+        }
 
         List<Ticket> filteredTickets = tickets.stream().filter(ticket -> promoCodeDiscount.getCategories().contains(ticket.getCategoryId())).collect(toList());
 
@@ -1232,8 +1261,9 @@ public class TicketReservationManager {
     }
 
     public OrderSummary orderSummaryForReservation(TicketReservation reservation, Event event) {
-        TotalPrice reservationCost = totalReservationCostWithVAT(reservation);
-        PromoCodeDiscount discount = Optional.ofNullable(reservation.getPromoCodeDiscountId()).map(promoCodeDiscountRepository::findById).orElse(null);
+        var totalPriceAndDiscount = totalReservationCostWithVAT(reservation);
+        TotalPrice reservationCost = totalPriceAndDiscount.getLeft();
+        PromoCodeDiscount discount = totalPriceAndDiscount.getRight().orElse(null);
         //
         boolean free = reservationCost.getPriceWithVAT() == 0;
         String refundedAmount = null;
@@ -1273,7 +1303,7 @@ public class TicketReservationManager {
                 final int ticketPriceCts = firstTicket.getSummarySrcPriceCts();
                 final int priceBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(firstTicket));
                 String categoryName = ticketCategoryRepository.getByIdAndActive(categoryId, event.getId()).getName();
-                summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts, currencyCode), formatCents(priceBeforeVat, currencyCode), ticketsByCategory.size(), formatCents(subTotal, currencyCode), formatCents(subTotalBeforeVat, currencyCode), subTotal, SummaryRow.SummaryType.TICKET));
+                summary.add(new SummaryRow(categoryName, formatCents(ticketPriceCts, currencyCode), formatCents(priceBeforeVat, currencyCode), ticketsByCategory.size(), formatCents(subTotal, currencyCode), formatCents(subTotalBeforeVat, currencyCode), subTotal, SummaryType.TICKET));
             });
 
         summary.addAll(collectAdditionalServiceItems(reservationId, event)
@@ -1287,16 +1317,17 @@ public class TicketReservationManager {
                 AdditionalServiceItemPriceContainer first = prices.get(0);
                 final int subtotal = prices.stream().mapToInt(AdditionalServiceItemPriceContainer::getSrcPriceCts).sum();
                 final int subtotalBeforeVat = SummaryPriceContainer.getSummaryPriceBeforeVatCts(prices);
-                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts(), currencyCode), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first)), currencyCode), prices.size(), formatCents(subtotal, currencyCode), formatCents(subtotalBeforeVat, currencyCode), subtotal, SummaryRow.SummaryType.ADDITIONAL_SERVICE);
+                return new SummaryRow(title.getValue(), formatCents(first.getSrcPriceCts(), currencyCode), formatCents(SummaryPriceContainer.getSummaryPriceBeforeVatCts(singletonList(first)), currencyCode), prices.size(), formatCents(subtotal, currencyCode), formatCents(subtotalBeforeVat, currencyCode), subtotal, SummaryType.ADDITIONAL_SERVICE);
             }).collect(toList()));
 
         Optional.ofNullable(promoCodeDiscount).ifPresent(promo -> {
             String formattedSingleAmount = "-" + (promo.getDiscountType() == DiscountType.FIXED_AMOUNT ? formatCents(promo.getDiscountAmount(), currencyCode) : (promo.getDiscountAmount()+"%"));
-            summary.add(new SummaryRow(formatPromoCode(promo, ticketRepository.findTicketsInReservation(reservationId)),
+            summary.add(new SummaryRow(formatPromoCode(promo, ticketRepository.findTicketsInReservation(reservationId), locale, event),
                 formattedSingleAmount,
                 formattedSingleAmount,
                 reservationCost.getDiscountAppliedCount(),
-                formatCents(reservationCost.getDiscount(), currencyCode), formatCents(reservationCost.getDiscount(), currencyCode), reservationCost.getDiscount(), SummaryRow.SummaryType.PROMOTION_CODE));
+                formatCents(reservationCost.getDiscount(), currencyCode), formatCents(reservationCost.getDiscount(), currencyCode), reservationCost.getDiscount(),
+                promo.isDynamic() ? SummaryType.DYNAMIC_DISCOUNT : SummaryType.PROMOTION_CODE));
         });
         return summary;
     }
@@ -1342,7 +1373,7 @@ public class TicketReservationManager {
         // verify if the promo code is present and if it's actually an access code
         if(StringUtils.isNotBlank(promoCode)) {
             Integer maxTicketsPerAccessCode = promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(eventAndOrganizationId.getId(), promoCode)
-                .filter(d -> d.getCodeType() == PromoCodeDiscount.CodeType.ACCESS)
+                .filter(d -> d.getCodeType() == CodeType.ACCESS)
                 .map(PromoCodeDiscount::getMaxUsage).orElse(null);
             if(maxTicketsPerAccessCode != null) {
                 return maxTicketsPerAccessCode;
@@ -1957,7 +1988,7 @@ public class TicketReservationManager {
             }
             case SUCCESSFUL: {
                 log.trace("Event {} for reservation {} has been successfully processed.", operationType, reservation.getId());
-                var totalPrice = totalReservationCostWithVAT(reservation);
+                var totalPrice = totalReservationCostWithVAT(reservation).getLeft();
                 var paymentToken = paymentWebhookResult.getPaymentToken();
                 var paymentSpecification = new PaymentSpecification(reservation, totalPrice, event, paymentToken,
                     orderSummaryForReservation(reservation, event), true, eventHasPrivacyPolicy(event));
@@ -2071,7 +2102,7 @@ public class TicketReservationManager {
     public Optional<TransactionInitializationToken> initTransaction(Event event, String reservationId, PaymentMethod paymentMethod, Map<String, List<String>> params) {
         ticketReservationRepository.lockReservationForUpdate(reservationId);
         var reservation = ticketReservationRepository.findReservationById(reservationId);
-        var transactionRequest = new TransactionRequest(totalReservationCostWithVAT(reservation), ticketReservationRepository.getBillingDetailsForReservation(reservationId));
+        var transactionRequest = new TransactionRequest(totalReservationCostWithVAT(reservation).getLeft(), ticketReservationRepository.getBillingDetailsForReservation(reservationId));
         var optionalProvider = paymentManager.lookupProviderByMethodAndCapabilities(paymentMethod, new PaymentContext(event), transactionRequest, List.of(WebhookHandler.class, ServerInitiatedTransaction.class));
         if (optionalProvider.isEmpty()) {
             return Optional.empty();
@@ -2079,7 +2110,7 @@ public class TicketReservationManager {
         var messageSource = messageSourceManager.getMessageSourceForEvent(event);
         var provider = (ServerInitiatedTransaction) optionalProvider.get();
         var paymentSpecification = new PaymentSpecification(reservation,
-            totalReservationCostWithVAT(reservation), event, null,
+            totalReservationCostWithVAT(reservation).getLeft(), event, null,
             orderSummaryForReservation(reservation, event), false, false);
         if(!acquireGroupMembers(reservationId, event)) {
             groupManager.deleteWhitelistedTicketsForReservation(reservationId);

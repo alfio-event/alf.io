@@ -34,7 +34,8 @@ public class PromoCodeDiscount {
 
     public enum CodeType {
         DISCOUNT,
-        ACCESS
+        ACCESS,
+        DYNAMIC
     }
     
     public enum DiscountType {
@@ -105,10 +106,17 @@ public class PromoCodeDiscount {
     }
 
     public static Set<Integer> categoriesOrNull(PromoCodeDiscount code) {
+        if(code.codeType == CodeType.DYNAMIC) {
+            return null;
+        }
         if(code.codeType == CodeType.DISCOUNT) {
             Set<Integer> categories = code.getCategories();
             return CollectionUtils.isEmpty(categories) ? null : categories;
         }
         return Set.of(code.hiddenCategoryId);
+    }
+
+    public boolean isDynamic() {
+        return codeType == CodeType.DYNAMIC;
     }
 }
