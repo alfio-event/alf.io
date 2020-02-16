@@ -42,3 +42,5 @@ jobs:
             - name: upload-to-coveralls
               if: matrix.postgresql == '12' # run only once
               run: ./gradlew coveralls
+              env:
+                 COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
