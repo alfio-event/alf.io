@@ -13,7 +13,7 @@ jobs:
                 image: postgres:${{ matrix.postgresql }}
                 env:
                     POSTGRES_USER: postgres
-                    #POSTGRES_PASSWORD:
+                    POSTGRES_PASSWORD: postgres
                     POSTGRES_DB: alfio
                 ports:
                     - 5432:5432
