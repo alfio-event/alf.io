@@ -48,7 +48,7 @@ plugins {
     id 'io.freefair.lombok' version '3.6.6'
     id 'java'
     id 'idea'
-    id 'jacoco'
+    id 'org.kordamp.gradle.jacoco' version '0.32.0'
     id 'org.kordamp.gradle.coveralls' version '0.32.0'
     id 'com.github.ben-manes.versions' version '0.24.0'
     id 'com.github.hierynomus.license' version '0.15.0'
