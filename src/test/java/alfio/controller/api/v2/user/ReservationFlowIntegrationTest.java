@@ -31,6 +31,8 @@ import alfio.controller.api.v2.model.BasicEventInfo;
 import alfio.controller.api.v2.model.EventCode;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.form.*;
+import alfio.extension.Extension;
+import alfio.extension.ExtensionService;
 import alfio.manager.*;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
@@ -62,6 +64,7 @@ import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
 import com.opencsv.CSVReader;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
@@ -87,6 +90,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -205,6 +209,20 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
 
+    //********** UCR testing development necessities **************************
+
+    // will be needed to insert the extension.js script into the database
+    @Autowired
+    private ExtensionRepository extensionRepository;
+
+    @Autowired
+    private ExtensionLogRepository extensionLogRepository;
+
+    @Autowired
+    private ExtensionService extensionService;
+
+    //********* End UCR testing development necessities ***********************
+
     private Event event;
     private String user;
 
@@ -292,7 +310,23 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void reservationFlowTest() throws Exception {
+        // - means the whole system
+        //read and concatenate and pass to script parameter
+//        when you finish parsing the input, we can generate the hash parameter
+        // as soon as the test starts, we insert the extension in the database (prepare the environment)
+        try (var extensionInputStream = getClass().getResourceAsStream("/extension.js")) {
+            List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
+            String concatenation = String.join("\n", extensionStream);
+            String hash = DigestUtils.sha256Hex(concatenation);
+            extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
+            extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
+//            int asyncNumber = extensionRepository.insert("-", "AsyncName", "displayName", hash, true, true, concatenation);
+//            assertEquals(1, asyncNumber);
+//            int syncNumber = extensionRepository.insert("-", "SyncName", "displayName", hash, true, false, concatenation);
+//            assertEquals(1, syncNumber);
+        }
 
+        // method to perform concatenation from java
 
         List<BasicEventInfo> body = eventApiV2Controller.listEvents().getBody();
         assertNotNull(body);
@@ -539,6 +573,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             configurationRepository.deleteCategoryLevelByKey(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), event.getId(), hiddenCategoryId);
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
 
+            // we expect that we have the corresponding event logged which is RESERVATION_CANCELLED
+            List<ExtensionLog> extLogWithOneRecord = extensionLogRepository.getPage(null, null, null, 100, 0);
+            // there should only be one element in the extLogWithOneRecord
+            assertEquals(1, extLogWithOneRecord.size()); // cannot expect 1, check if one of rows containes reservation cancelled
+            //we have to assert the one entry in the log is RESERVATION_CANCELLED
+            assertEquals("RESERVATION_CANCELLED", extLogWithOneRecord.get(0).getDescription());
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
         }
