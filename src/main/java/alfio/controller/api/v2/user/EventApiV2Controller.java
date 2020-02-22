@@ -595,11 +595,11 @@ public class EventApiV2Controller {
                 amount = String.valueOf(promoCodeDiscount.getDiscountAmount());
                 break;
             case FIXED_AMOUNT:
-                amount = MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), event.getCurrency());
+                amount = event.getCurrency() + " " + MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), event.getCurrency());
                 code = "reservation.dynamic.discount.confirmation.fix-per-ticket.message";
                 break;
             case FIXED_AMOUNT_RESERVATION:
-                amount = MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), event.getCurrency());
+                amount = event.getCurrency() + " " + MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), event.getCurrency());
                 code = "reservation.dynamic.discount.confirmation.fix-per-reservation.message";
                 break;
             default:
