@@ -304,7 +304,7 @@ public class TicketReservationManager {
             return Optional.empty();
         }
 
-        var newCodeOptional = extensionManager.handleDynamicDiscount(event, list.stream().collect(groupingBy(TicketReservationWithOptionalCodeModification::getTicketCategoryId, counting())), reservationId);
+        var newCodeOptional = extensionManager.handleDynamicDiscount(event, list.stream().collect(groupingBy(TicketReservationWithOptionalCodeModification::getTicketCategoryId, summingLong(TicketReservationWithOptionalCodeModification::getAmount))), reservationId);
         if(newCodeOptional.isPresent()) {
             var newCode = newCodeOptional.get();
             int result = promoCodeDiscountRepository.addPromoCodeIfNotExists(newCode.getPromoCode(), event.getId(),
