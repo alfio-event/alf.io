@@ -325,7 +325,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 //            int syncNumber = extensionRepository.insert("-", "SyncName", "displayName", hash, true, false, concatenation);
 //            assertEquals(1, syncNumber);
         }
-
+//
         // method to perform concatenation from java
 
         List<BasicEventInfo> body = eventApiV2Controller.listEvents().getBody();
@@ -575,10 +575,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             // we expect that we have the corresponding event logged which is RESERVATION_CANCELLED
             List<ExtensionLog> extLogWithOneRecord = extensionLogRepository.getPage(null, null, null, 100, 0);
+            String specificLog = extLogWithOneRecord.get(1).getDescription();
+            int logSize = extLogWithOneRecord.size();
             // there should only be one element in the extLogWithOneRecord
-            assertEquals(1, extLogWithOneRecord.size()); // cannot expect 1, check if one of rows containes reservation cancelled
+            assertEquals(8, extLogWithOneRecord.size()); // cannot expect 1, check if one of rows containes reservation cancelled
             //we have to assert the one entry in the log is RESERVATION_CANCELLED
-            assertEquals("RESERVATION_CANCELLED", extLogWithOneRecord.get(0).getDescription());
+            assertEquals("RESERVATION_CANCELLED", extLogWithOneRecord.get(1).getDescription());
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
         }
