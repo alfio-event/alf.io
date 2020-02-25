@@ -1009,9 +1009,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 Mockito.when(sponsorPrincipal.getName()).thenReturn(sponsorUser.getUsername());
 
                 // check failures
-                assertEquals(CheckInStatus.EVENT_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest("not-existing-event", "not-existing-ticket", null), sponsorPrincipal).getBody().getResult().getStatus());
-                assertEquals(CheckInStatus.TICKET_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, "not-existing-ticket", null), sponsorPrincipal).getBody().getResult().getStatus());
-                assertEquals(CheckInStatus.INVALID_TICKET_STATE, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketIdentifier, null), sponsorPrincipal).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.EVENT_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest("not-existing-event", "not-existing-ticket", null, null), sponsorPrincipal).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.TICKET_NOT_FOUND, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, "not-existing-ticket", null, null), sponsorPrincipal).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.INVALID_TICKET_STATE, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketIdentifier, null, null), sponsorPrincipal).getBody().getResult().getStatus());
                 //
 
 
@@ -1069,7 +1069,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
                 // check register sponsor scan success flow
                 assertTrue(attendeeApiController.getScannedBadges(event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().isEmpty());
-                assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null), sponsorPrincipal).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticketwc.getUuid(), null, null), sponsorPrincipal).getBody().getResult().getStatus());
                 assertEquals(1, attendeeApiController.getScannedBadges(event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
 
                 // check export
@@ -1082,11 +1082,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 Assert.assertEquals("sponsor", csvSponsorScan.get(1)[0]);
                 Assert.assertEquals("Test Testson", csvSponsorScan.get(1)[3]);
                 Assert.assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
-                Assert.assertEquals("", csvSponsorScan.get(1)[5]);
+                Assert.assertEquals("", csvSponsorScan.get(1)[8]);
+                Assert.assertEquals(SponsorScan.LeadStatus.WARM.name(), csvSponsorScan.get(1)[9]);
                 //
 
                 // check update notes
-                assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!"), sponsorPrincipal).getBody().getResult().getStatus());
+                assertEquals(CheckInStatus.SUCCESS, attendeeApiController.scanBadge(new AttendeeApiController.SponsorScanRequest(eventName, ticket.getUuid(), "this is a very good lead!", "HOT"), sponsorPrincipal).getBody().getResult().getStatus());
                 assertEquals(1, attendeeApiController.getScannedBadges(event.getShortName(), EventUtil.JSON_DATETIME_FORMATTER.format(LocalDateTime.of(1970, 1, 1, 0, 0)), sponsorPrincipal).getBody().size());
                 response = new MockHttpServletResponse();
                 eventApiController.downloadSponsorScanExport(event.getShortName(), "csv", response, principal);
@@ -1097,7 +1098,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 Assert.assertEquals("sponsor", csvSponsorScan.get(1)[0]);
                 Assert.assertEquals("Test Testson", csvSponsorScan.get(1)[3]);
                 Assert.assertEquals("testmctest@test.com", csvSponsorScan.get(1)[4]);
-                Assert.assertEquals("this is a very good lead!", csvSponsorScan.get(1)[5]);
+                Assert.assertEquals("this is a very good lead!", csvSponsorScan.get(1)[8]);
+                Assert.assertEquals(SponsorScan.LeadStatus.HOT.name(), csvSponsorScan.get(1)[9]);
 
                 // #742 - test multiple check-ins
 

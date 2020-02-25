@@ -24,22 +24,29 @@ import java.time.ZonedDateTime;
 @Getter
 public class SponsorScan {
 
+    public enum LeadStatus {
+        COLD, WARM, HOT
+    }
+
     private final int userId;
     private final ZonedDateTime timestamp;
     private final int eventId;
     private final int ticketId;
     private final String notes;
+    private final LeadStatus leadStatus;
 
 
     public SponsorScan(@Column("user_id") int userId,
                        @Column("creation") ZonedDateTime timestamp,
                        @Column("event_id") int eventId,
                        @Column("ticket_id") int ticketId,
-                       @Column("notes") String notes) {
+                       @Column("notes") String notes,
+                       @Column("lead_status") LeadStatus leadStatus) {
         this.userId = userId;
         this.timestamp = timestamp;
         this.eventId = eventId;
         this.ticketId = ticketId;
         this.notes = notes;
+        this.leadStatus = leadStatus;
     }
 }
