@@ -29,6 +29,7 @@ import java.net.http.HttpClient;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -47,20 +48,22 @@ import java.util.function.Supplier;
 public class ScriptingExecutionService {
 
     private final SimpleHttpClient simpleHttpClient;
+    private final Supplier<Executor> executorSupplier;
 
-    public ScriptingExecutionService(HttpClient httpClient) {
+    public ScriptingExecutionService(HttpClient httpClient, Supplier<Executor> executorSupplier) {
         this.simpleHttpClient = new SimpleHttpClient(httpClient);
+        this.executorSupplier = executorSupplier;
     }
 
     private static final Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
     private final Cache<String, CompiledScript> compiledScriptCache = Caffeine.newBuilder()
         .expireAfterAccess(12, TimeUnit.HOURS)
         .build();
-    private final Cache<String, ExecutorService> asyncExecutors = Caffeine.newBuilder()
+    private final Cache<String, Executor> asyncExecutors = Caffeine.newBuilder()
         .expireAfterAccess(12, TimeUnit.HOURS)
-        .removalListener((String key, ExecutorService value, RemovalCause cause) -> {
-            if (value != null) {
-                value.shutdown();
+        .removalListener((String key, Executor value, RemovalCause cause) -> {
+            if (value != null && value instanceof ExecutorService) {
+                ((ExecutorService) value).shutdown();
             }
         })
         .build();
@@ -79,8 +82,8 @@ public class ScriptingExecutionService {
     }
 
     public void executeScriptAsync(String path, String name, String hash, Supplier<String> scriptFetcher, Map<String, Object> params,  ExtensionLogger extensionLogger) {
-        Optional.ofNullable(asyncExecutors.get(path, key -> Executors.newSingleThreadExecutor()))
-            .ifPresent(it -> it.submit(() -> executeScript(name, hash, scriptFetcher, params, Object.class, extensionLogger)));
+        Optional.ofNullable(asyncExecutors.get(path, key -> executorSupplier.get()))
+            .ifPresent(it -> it.execute(() -> executeScript(name, hash, scriptFetcher, params, Object.class, extensionLogger)));
     }
 
 
