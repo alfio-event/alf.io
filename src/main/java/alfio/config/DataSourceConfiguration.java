@@ -64,6 +64,9 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 
 @Configuration
 @EnableTransactionManagement
@@ -136,6 +139,12 @@ public class DataSourceConfiguration {
     @Bean
     public List<ParameterConverter> getAdditionalParameterConverters() {
         return Arrays.asList(new JSONColumnMapper.Converter(), new ArrayColumnMapper.Converter());
+    }
+
+    @Bean
+    @Profile("!"+Initializer.PROFILE_INTEGRATION_TEST)
+    public Supplier<Executor> getNewSingleThreadExecutorSupplier() {
+        return () -> Executors.newSingleThreadExecutor();
     }
 
     @Bean

@@ -16,13 +16,13 @@
  */
 package alfio;
 
+import alfio.config.Initializer;
 import alfio.config.support.PlatformProvider;
 import alfio.manager.FileDownloadManager;
 import alfio.test.util.IntegrationTestUtil;
 import alfio.util.BaseIntegrationTest;
 import com.opentable.db.postgres.embedded.EmbeddedPostgres;
 import com.zaxxer.hikari.HikariDataSource;
-import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -42,7 +42,8 @@ import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Properties;
-
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 
 @Configuration
@@ -114,5 +115,11 @@ public class TestConfiguration {
                 return new DownloadedFile(BaseIntegrationTest.ONE_PIXEL_BLACK_GIF, "test", "image/gif");
             }
         };
+    }
+
+    @Bean
+    @Profile(Initializer.PROFILE_INTEGRATION_TEST)
+    public Supplier<Executor> getCurrentThreadExecutorSupplier() {
+        return () -> (job) -> job.run();
     }
 }

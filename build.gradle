@@ -282,6 +282,7 @@ compileJava {
     options.errorprone.disable('UnusedVariable')
     options.errorprone.disable('MixedMutabilityReturnType')
     options.errorprone.disable('MissingOverride')
+    options.errorprone.disable('JavaTimeDefaultTimeZone') // a little bit too noisy
 }
 
 compileJava.dependsOn(processResources)
