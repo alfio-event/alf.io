@@ -402,8 +402,9 @@ public class EventApiController {
         header.add("Timestamp");
         header.add("Full name");
         header.add("Email");
-        header.add("Sponsor notes");
         header.addAll(fields.stream().map(TicketFieldConfiguration::getName).collect(toList()));
+        header.add("Sponsor notes");
+        header.add("Lead Status");
 
         Stream<String[]> sponsorScans = userManager.findAllEnabledUsers(principal.getName()).stream()
             .map(u -> Pair.of(u, userManager.getUserRole(u)))
@@ -425,8 +426,11 @@ public class EventApiController {
             line.add(sponsorScan.getTimestamp().toString());
             line.add(ticket.getFullName());
             line.add(ticket.getEmail());
-            line.add(sponsorScan.getNotes());
+
             line.addAll(p.getRight());
+
+            line.add(sponsorScan.getNotes());
+            line.add(sponsorScan.getLeadStatus().name());
             return line.toArray(new String[0]);
         });
 

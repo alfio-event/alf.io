@@ -21,10 +21,7 @@ import alfio.manager.support.DefaultCheckInResult;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
 import alfio.manager.user.UserManager;
-import alfio.model.Event;
-import alfio.model.EventAndOrganizationId;
-import alfio.model.Ticket;
-import alfio.model.TicketWithCategory;
+import alfio.model.*;
 import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.support.TicketWithAdditionalFields;
@@ -52,7 +49,7 @@ public class AttendeeManager {
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
 
-    public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String notes, String username) {
+    public TicketAndCheckInResult registerSponsorScan(String eventShortName, String ticketUid, String notes, SponsorScan.LeadStatus leadStatus, String username) {
         int userId = userRepository.getByUsername(username).getId();
         Optional<EventAndOrganizationId> maybeEvent = eventRepository.findOptionalEventAndOrganizationIdByShortName(eventShortName);
         if(maybeEvent.isEmpty()) {
@@ -70,9 +67,9 @@ public class AttendeeManager {
         Optional<ZonedDateTime> existingRegistration = sponsorScanRepository.getRegistrationTimestamp(userId, event.getId(), ticket.getId());
         if(existingRegistration.isEmpty()) {
             ZoneId eventZoneId = eventRepository.getZoneIdByEventId(event.getId());
-            sponsorScanRepository.insert(userId, ZonedDateTime.now(eventZoneId), event.getId(), ticket.getId(), notes);
+            sponsorScanRepository.insert(userId, ZonedDateTime.now(eventZoneId), event.getId(), ticket.getId(), notes, leadStatus);
         } else {
-            sponsorScanRepository.updateNotes(userId, event.getId(), ticket.getId(), notes);
+            sponsorScanRepository.updateNotesAndLeadStatus(userId, event.getId(), ticket.getId(), notes, leadStatus);
         }
         return new TicketAndCheckInResult(new TicketWithCategory(ticket, null), new DefaultCheckInResult(CheckInStatus.SUCCESS, "success"));
     }
