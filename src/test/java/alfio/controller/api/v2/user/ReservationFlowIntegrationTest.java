@@ -310,22 +310,18 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void reservationFlowTest() throws Exception {
-        // - means the whole system
-        //read and concatenate and pass to script parameter
-//        when you finish parsing the input, we can generate the hash parameter
-        // as soon as the test starts, we insert the extension in the database (prepare the environment)
+        // as soon as the test starts, insert the extension in the database (prepare the environment)
         try (var extensionInputStream = getClass().getResourceAsStream("/extension.js")) {
+            // read extensionInputStream and split by line (each element in the list extensionStream is a line from extension.js)
             List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
+            // concatenate each line into one continuous string concatenation
             String concatenation = String.join("\n", extensionStream);
-            String hash = DigestUtils.sha256Hex(concatenation);
+            // generate the hssh paramater from concatenation, do we need this??
+            // String hash = DigestUtils.sha256Hex(concatenation);
             extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
             extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
-//            int asyncNumber = extensionRepository.insert("-", "AsyncName", "displayName", hash, true, true, concatenation);
-//            assertEquals(1, asyncNumber);
-//            int syncNumber = extensionRepository.insert("-", "SyncName", "displayName", hash, true, false, concatenation);
-//            assertEquals(1, syncNumber);
         }
-//
+
         // method to perform concatenation from java
 
         List<BasicEventInfo> body = eventApiV2Controller.listEvents().getBody();
@@ -581,6 +577,12 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals(8, extLogWithOneRecord.size()); // cannot expect 1, check if one of rows containes reservation cancelled
             //we have to assert the one entry in the log is RESERVATION_CANCELLED
             assertEquals("RESERVATION_CANCELLED", extLogWithOneRecord.get(1).getDescription());
+
+            // clear the log table (what is the second parameter here? see docs for options
+            // jdbcTemplate.update() would return the number of rows affected, thus we would currently expect 8 rows to be deleted
+            // assertEquals("number of extension_log rows affected from update()", 8, jdbcTemplate.update("truncate table extension_log", Map.of("reservationId", reservationId)));
+            // int clearTableReturn = jdbcTemplate.update("truncate table extension_log", Map.of("reservationId", reservationId));
+
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
         }
