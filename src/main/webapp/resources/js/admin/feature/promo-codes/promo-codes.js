@@ -57,7 +57,7 @@
 
             loader().then(function(res) {
                 ctrl.promocodes = res.data.filter(function(pc) {
-                    return pc.codeType === 'DISCOUNT';
+                    return pc.codeType === 'DISCOUNT' || pc.codeType === 'DYNAMIC';
                 });
                 ctrl.accesscodes = res.data.filter(function(pc) {
                     return pc.codeType === 'ACCESS';
@@ -202,6 +202,11 @@
                         });
                     }
 
+                    $scope.discountTypes = {
+                        PERCENTAGE: 'Percentage',
+                        FIXED_AMOUNT_RESERVATION: 'Fixed amount, per reservation',
+                        FIXED_AMOUNT: 'Fixed amount, per ticket'
+                    };
 
                     $scope.promocode = {
                         discountType :'PERCENTAGE',

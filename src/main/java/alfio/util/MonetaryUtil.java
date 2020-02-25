@@ -69,6 +69,11 @@ public final class MonetaryUtil {
         return new BigDecimal(cents).divide(BigDecimal.TEN.pow(scale), scale, HALF_UP);
     }
 
+    public static BigDecimal fixScale(BigDecimal raw, String currencyCode) {
+        var currencyUnit = CurrencyUnit.of(currencyCode.toUpperCase(Locale.ENGLISH));
+        return raw.setScale(currencyUnit.getDecimalPlaces(), HALF_UP);
+    }
+
     public static int unitToCents(BigDecimal unit, String currencyCode) {
         if (StringUtils.isEmpty(currencyCode)) {
             return 0;

@@ -25,8 +25,7 @@ import java.util.Optional;
 import java.util.function.BinaryOperator;
 import java.util.function.UnaryOperator;
 
-import static alfio.util.MonetaryUtil.HUNDRED;
-import static java.math.RoundingMode.HALF_UP;
+import static alfio.util.MonetaryUtil.*;
 import static java.math.RoundingMode.UNNECESSARY;
 
 public interface PriceContainer {
@@ -113,13 +112,21 @@ public interface PriceContainer {
         if(getSrcPriceCts() == 0 || vatStatus == null) {
             return BigDecimal.ZERO;
         }
-        final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
+        final BigDecimal price = centsToUnit(getSrcPriceCts(), getCurrencyCode());
         BigDecimal discountedPrice = price.subtract(getAppliedDiscount());
         if(vatStatus != VatStatus.INCLUDED) {
-            return discountedPrice.add(getVAT(discountedPrice, vatStatus, getVatPercentageOrZero()));
+            return discountedPrice.add(getVAT());
         } else {
             return discountedPrice;
         }
+    }
+
+    /**
+     * Returns the taxable price.
+     * This is often the price itself, but it can also be a fraction of it, if some of the items are not taxable
+     */
+    default BigDecimal getTaxablePrice() {
+        return centsToUnit(getSrcPriceCts(), getCurrencyCode()).subtract(getAppliedDiscount());
     }
 
     /**
@@ -128,20 +135,7 @@ public interface PriceContainer {
      */
     @JsonIgnore
     default BigDecimal getVAT() {
-        final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
-        return getVAT(price.subtract(getAppliedDiscount()), getVatStatus(), getVatPercentageOrZero());
-    }
-
-
-    /**
-     * Returns the VAT, with a reasonable, less error-prone, rounding
-     * @return vat
-     * @see MonetaryUtil#ROUNDING_SCALE
-     */
-    @JsonIgnore
-    default BigDecimal getRawVAT() {
-        final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
-        return getVatStatus().extractRawVAT(price.subtract(getAppliedDiscount()), getVatPercentageOrZero());
+        return getVAT(getTaxablePrice(), getVatStatus(), getVatPercentageOrZero());
     }
 
 
@@ -150,15 +144,18 @@ public interface PriceContainer {
      */
     @JsonIgnore
     default BigDecimal getAppliedDiscount() {
-        return getDiscount().map(discount -> {
-            final BigDecimal price = MonetaryUtil.centsToUnit(getSrcPriceCts(), getCurrencyCode());
-            if(discount.getFixedAmount()) {
-                return MonetaryUtil.centsToUnit(Math.min(getSrcPriceCts(), discount.getDiscountAmount()), getCurrencyCode());
-            } else {
-                int discountAmount = discount.getDiscountAmount();
-                return price.multiply(new BigDecimal(discountAmount).divide(HUNDRED, 2, UNNECESSARY)).setScale(2, HALF_UP);
-            }
-        }).orElse(BigDecimal.ZERO);
+        return getDiscount()
+            // do not take into account reservation-level discount
+            .filter(discount -> discount.getDiscountType() != PromoCodeDiscount.DiscountType.FIXED_AMOUNT_RESERVATION)
+            .map(discount -> {
+                String currencyCode = getCurrencyCode();
+                final BigDecimal price = centsToUnit(getSrcPriceCts(), currencyCode);
+                if(discount.getFixedAmount()) {
+                    return centsToUnit(Math.min(getSrcPriceCts(), discount.getDiscountAmount()), currencyCode);
+                } else {
+                    return fixScale(price.multiply(new BigDecimal(discount.getDiscountAmount()).divide(HUNDRED, 2, UNNECESSARY)), currencyCode);
+                }
+            }).orElse(BigDecimal.ZERO);
     }
 
     static BigDecimal getVAT(BigDecimal price, VatStatus vatStatus, BigDecimal vatPercentage) {

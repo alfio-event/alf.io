@@ -176,7 +176,9 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification mod = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(mod), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.<String>empty(), Locale.ENGLISH, false);
         var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
-        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice reservationCost = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
         var orderSummary = ticketReservationManager.orderSummaryForReservation(reservation, event);
         PaymentSpecification spec = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(), event, "blabla", new CustomerName("a", "b", "c", true), "", null, Locale.ENGLISH, false, false, orderSummary, null, null, PriceContainer.VatStatus.INCLUDED, true, true);
         PaymentResult result = ticketReservationManager.performPayment(spec, reservationCost, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
@@ -212,7 +214,9 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification single = new TicketReservationWithOptionalCodeModification(tr2, Optional.empty());
 
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(multi), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice reservationCost = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
         PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
@@ -220,7 +224,9 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(result.isSuccessful());
 
         String reservationIdSingle = ticketReservationManager.createTicketReservation(event, Collections.singletonList(single), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCostSingle = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingle);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscountSingle = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice reservationCostSingle = priceAndDiscountSingle.getLeft();
+        assertTrue(priceAndDiscountSingle.getRight().isEmpty());
         specification = new PaymentSpecification(reservationIdSingle, null, reservationCostSingle.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
@@ -272,7 +278,9 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         TicketReservationWithOptionalCodeModification single = new TicketReservationWithOptionalCodeModification(tr2, Optional.empty());
 
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(multi), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice reservationCost = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
         PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
@@ -280,8 +288,10 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         assertTrue(result.isSuccessful());
 
         String reservationIdSingle = ticketReservationManager.createTicketReservation(event, Collections.singletonList(single), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCostSingle = ticketReservationManager.totalReservationCostWithVAT(reservationIdSingle);
-        specification = new PaymentSpecification(reservationIdSingle, null, reservationCost.getPriceWithVAT(),
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscountSingle = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice reservationCostSingle = priceAndDiscountSingle.getLeft();
+        assertTrue(priceAndDiscountSingle.getRight().isEmpty());
+        specification = new PaymentSpecification(reservationIdSingle, null, reservationCostSingle.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);
         PaymentResult resultSingle = ticketReservationManager.performPayment(specification, reservationCostSingle, PaymentProxy.OFFLINE, PaymentMethod.BANK_TRANSFER);
@@ -369,7 +379,9 @@ public class WaitingQueueManagerIntegrationTest extends BaseIntegrationTest {
         tr.setTicketCategoryId(category.getId());
         TicketReservationWithOptionalCodeModification tcm = new TicketReservationWithOptionalCodeModification(tr, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event, Collections.singletonList(tcm), Collections.emptyList(), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice reservationCost = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
         PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);

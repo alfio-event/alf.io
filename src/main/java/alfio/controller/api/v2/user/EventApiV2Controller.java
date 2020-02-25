@@ -33,12 +33,14 @@ import alfio.manager.support.response.ValidatedResponse;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.modification.TicketReservationModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.*;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpHeaders;
@@ -61,8 +63,7 @@ import java.util.stream.Collectors;
 
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 import static alfio.model.system.ConfigurationKeys.*;
-import static java.util.stream.Collectors.partitioningBy;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.*;
 
 
 @RestController
@@ -89,6 +90,7 @@ public class EventApiV2Controller {
     private final RecaptchaService recaptchaService;
     private final PromoCodeRequestManager promoCodeRequestManager;
     private final EventLoader eventLoader;
+    private final ExtensionManager extensionManager;
 
 
     @GetMapping("events")
@@ -166,16 +168,16 @@ public class EventApiV2Controller {
 
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
                 .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
-                .map((m) -> {
-                    int maxTickets = getMaxAmountOfTicketsPerReservation(configurations, ticketCategoryLevelConfiguration, m.getId());
-                    PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, m)).orElse(null);
+                .map((category) -> {
+                    int maxTickets = getMaxAmountOfTicketsPerReservation(configurations, ticketCategoryLevelConfiguration, category.getId());
+                    PromoCodeDiscount filteredPromoCode = promoCodeDiscount.filter(promoCode -> shouldApplyDiscount(promoCode, category)).orElse(null);
                     if (specialCode.isPresent()) {
                         maxTickets = Math.min(1, maxTickets);
                     } else if (filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
                         maxTickets = filteredPromoCode.getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(filteredPromoCode.getId(), categoriesOrNull(filteredPromoCode), null, categoriesOrNull(filteredPromoCode) != null ? "X" : null);
                     }
-                    return new SaleableTicketCategory(m,
-                        now, event, ticketReservationManager.countAvailableTickets(event, m), maxTickets,
+                    return new SaleableTicketCategory(category,
+                        now, event, ticketReservationManager.countAvailableTickets(event, category), maxTickets,
                         filteredPromoCode);
                 })
                 .collect(Collectors.toList());
@@ -361,7 +363,7 @@ public class EventApiV2Controller {
                 .orElseGet(() -> {
                     var promoCodeDiscount = value.getRight().orElseThrow();
                     var type = promoCodeDiscount.getCodeType() == PromoCodeDiscount.CodeType.ACCESS ? EventCode.EventCodeType.ACCESS : EventCode.EventCodeType.DISCOUNT;
-                    String formattedDiscountAmount =  promoCodeDiscount.getDiscountType() == PromoCodeDiscount.DiscountType.FIXED_AMOUNT ? MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), value.getMiddle().getCurrency()) : Integer.toString(promoCodeDiscount.getDiscountAmount());
+                    String formattedDiscountAmount = PromoCodeDiscount.format(promoCodeDiscount, value.getMiddle().getCurrency());
                     return new EventCode(code, type, promoCodeDiscount.getDiscountType(), formattedDiscountAmount);
                 });
 
@@ -371,6 +373,32 @@ public class EventApiV2Controller {
         }
     }
 
+    @PostMapping("event/{eventName}/check-discount")
+    public ResponseEntity<DynamicDiscount> checkDiscount(@PathVariable("eventName") String eventName, @RequestBody ReservationForm reservation) {
+        return eventRepository.findOptionalByShortName(eventName)
+            .flatMap(event -> {
+                Map<Integer, Long> quantityByCategory = reservation.getReservation().stream()
+                    .filter(trm -> trm.getAmount() > 0)
+                    .collect(groupingBy(TicketReservationModification::getTicketCategoryId, summingLong(TicketReservationModification::getAmount)));
+                if(quantityByCategory.isEmpty() || ticketCategoryRepository.countPaidCategoriesInReservation(quantityByCategory.keySet()) == 0) {
+                    return Optional.empty();
+                }
+                return extensionManager.handleDynamicDiscount(event, quantityByCategory, null)
+                    .filter(d -> d.getDiscountType() != PromoCodeDiscount.DiscountType.NONE)
+                    .map(d -> {
+                        String formattedDiscount;
+                        if(d.getDiscountType() == PromoCodeDiscount.DiscountType.PERCENTAGE) {
+                           formattedDiscount = String.valueOf(d.getDiscountAmount());
+                        } else {
+                            formattedDiscount = MonetaryUtil.formatCents(d.getDiscountAmount(), event.getCurrency());
+                        }
+                        return new DynamicDiscount(formattedDiscount, d.getDiscountType(), formatDynamicCodeMessage(event, d));
+                    });
+            })
+            .filter(d -> d.getDiscountType() != PromoCodeDiscount.DiscountType.NONE)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.noContent().build());
+    }
 
     @GetMapping("event/{eventName}/code/{code}")
     public ResponseEntity<Void> handleCode(@PathVariable("eventName") String eventName, @PathVariable("code") String code, ServletWebRequest request) {
@@ -424,6 +452,35 @@ public class EventApiV2Controller {
     private boolean isCaptchaInvalid(String recaptchaResponse, HttpServletRequest request, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configurationValues) {
         return eventLoader.isRecaptchaForTicketSelectionEnabled(configurationValues)
             && !recaptchaService.checkRecaptcha(recaptchaResponse, request);
+    }
+
+    private Map<String, String> formatDynamicCodeMessage(Event event, PromoCodeDiscount promoCodeDiscount) {
+        Validate.isTrue(promoCodeDiscount != null && promoCodeDiscount.getDiscountType() != PromoCodeDiscount.DiscountType.NONE);
+        var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+        Map<String, String> res = new HashMap<>();
+        String code;
+        String amount;
+        switch(promoCodeDiscount.getDiscountType()) {
+            case PERCENTAGE:
+                code = "reservation.dynamic.discount.confirmation.percentage.message";
+                amount = String.valueOf(promoCodeDiscount.getDiscountAmount());
+                break;
+            case FIXED_AMOUNT:
+                amount = event.getCurrency() + " " + MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), event.getCurrency());
+                code = "reservation.dynamic.discount.confirmation.fix-per-ticket.message";
+                break;
+            case FIXED_AMOUNT_RESERVATION:
+                amount = event.getCurrency() + " " + MonetaryUtil.formatCents(promoCodeDiscount.getDiscountAmount(), event.getCurrency());
+                code = "reservation.dynamic.discount.confirmation.fix-per-reservation.message";
+                break;
+            default:
+                throw new IllegalStateException("Unexpected discount code type");
+        }
+
+        for (ContentLanguage cl : event.getContentLanguages()) {
+            res.put(cl.getLocale().getLanguage(), messageSource.getMessage(code, new Object[]{amount}, cl.getLocale()));
+        }
+        return res;
     }
 
 

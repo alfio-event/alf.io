@@ -122,7 +122,9 @@ public class CheckInManagerIntegrationTest {
 
         var additionalServicesModification = new ASReservationWithOptionalCodeModification(additionalServices, Optional.empty());
         String reservationId = ticketReservationManager.createTicketReservation(event, List.of(tickets), List.of(additionalServicesModification), DateUtils.addDays(new Date(), 1), Optional.empty(), Locale.ENGLISH, false);
-        TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        Pair<TotalPrice, Optional<PromoCodeDiscount>> priceAndDiscount = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+        TotalPrice reservationCost = priceAndDiscount.getLeft();
+        assertTrue(priceAndDiscount.getRight().isEmpty());
         PaymentSpecification specification = new PaymentSpecification(reservationId, null, reservationCost.getPriceWithVAT(),
             event, "email@example.com", new CustomerName("full name", "full", "name", event.mustUseFirstAndLastName()),
             "billing address", null, Locale.ENGLISH, true, false, null, "IT", "123456", PriceContainer.VatStatus.INCLUDED, true, false);

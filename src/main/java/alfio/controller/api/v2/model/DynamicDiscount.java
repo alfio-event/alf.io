@@ -14,30 +14,16 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model;
+package alfio.controller.api.v2.model;
 
+import alfio.model.PromoCodeDiscount;
 import lombok.Data;
 
+import java.util.Map;
+
 @Data
-public class SummaryRow {
-    private final String name;
-    private final String price;
-    private final String priceBeforeVat;
-    private final int amount;
-    private final String subTotal;
-    private final String subTotalBeforeVat;
-    private final int originalSubTotal;
-    private final SummaryType type;
-
-    public enum SummaryType {
-        TICKET, PROMOTION_CODE, DYNAMIC_DISCOUNT, ADDITIONAL_SERVICE
-    }
-
-    public String getDescriptionForPayment() {
-        return amount + " x " + name;
-    }
-
-    public boolean isDiscount() {
-        return type == SummaryType.PROMOTION_CODE || type == SummaryType.DYNAMIC_DISCOUNT;
-    }
+public class DynamicDiscount {
+    private final String discount;
+    private final PromoCodeDiscount.DiscountType discountType;
+    private final Map<String, String> formattedMessage;
 }

@@ -14,30 +14,25 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model;
+package alfio.model.extension;
 
+import alfio.model.PromoCodeDiscount;
 import lombok.Data;
 
+import java.util.Arrays;
+
 @Data
-public class SummaryRow {
-    private final String name;
-    private final String price;
-    private final String priceBeforeVat;
-    private final int amount;
-    private final String subTotal;
-    private final String subTotalBeforeVat;
-    private final int originalSubTotal;
-    private final SummaryType type;
+public class DynamicDiscount {
 
-    public enum SummaryType {
-        TICKET, PROMOTION_CODE, DYNAMIC_DISCOUNT, ADDITIONAL_SERVICE
-    }
+    private String amount;
+    private String type;
+    private String code;
 
-    public String getDescriptionForPayment() {
-        return amount + " x " + name;
-    }
 
-    public boolean isDiscount() {
-        return type == SummaryType.PROMOTION_CODE || type == SummaryType.DYNAMIC_DISCOUNT;
+    public PromoCodeDiscount.DiscountType getDiscountType() {
+        return Arrays.stream(PromoCodeDiscount.DiscountType.values())
+            .filter(v -> v.name().equalsIgnoreCase(type))
+            .findFirst()
+            .orElse(PromoCodeDiscount.DiscountType.NONE);
     }
 }

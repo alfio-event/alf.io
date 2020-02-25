@@ -60,13 +60,16 @@ public class PriceContainerTest {
         assertEquals(new BigDecimal("13.00"), vs.getFinalPrice());
 
         PromoCodeDiscount promoCodeDiscount = mock(PromoCodeDiscount.class);
-        when(promoCodeDiscount.getDiscountAmount()).thenReturn(100, 10);
-        when(promoCodeDiscount.getFixedAmount()).thenReturn(true, false);
-        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT, PromoCodeDiscount.DiscountType.PERCENTAGE);
 
+        when(promoCodeDiscount.getDiscountAmount()).thenReturn(100);
+        when(promoCodeDiscount.getFixedAmount()).thenReturn(true);
+        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT);
         vs = new PriceContainerImpl(1100, "CHF", new BigDecimal("8.00"), PriceContainer.VatStatus.NOT_INCLUDED, promoCodeDiscount);
         assertEquals(new BigDecimal("10.80"), vs.getFinalPrice());
 
+        when(promoCodeDiscount.getDiscountAmount()).thenReturn(10);
+        when(promoCodeDiscount.getFixedAmount()).thenReturn(false);
+        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.PERCENTAGE);
         vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("10.00"), PriceContainer.VatStatus.NOT_INCLUDED, promoCodeDiscount);
         assertEquals(new BigDecimal("9.90"), vs.getFinalPrice());
     }
@@ -77,13 +80,16 @@ public class PriceContainerTest {
         assertEquals(new BigDecimal("10.00"), vs.getFinalPrice());
 
         PromoCodeDiscount promoCodeDiscount = mock(PromoCodeDiscount.class);
-        when(promoCodeDiscount.getDiscountAmount()).thenReturn(100, 10);
-        when(promoCodeDiscount.getFixedAmount()).thenReturn(true, false);
-        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT, PromoCodeDiscount.DiscountType.PERCENTAGE);
 
+        when(promoCodeDiscount.getDiscountAmount()).thenReturn(100);
+        when(promoCodeDiscount.getFixedAmount()).thenReturn(true);
+        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT);
         vs = new PriceContainerImpl(1100, "CHF", new BigDecimal("8.00"), PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT, promoCodeDiscount);
         assertEquals(new BigDecimal("10.00"), vs.getFinalPrice());
 
+        when(promoCodeDiscount.getDiscountAmount()).thenReturn(10);
+        when(promoCodeDiscount.getFixedAmount()).thenReturn(false);
+        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.PERCENTAGE);
         vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("10.00"), PriceContainer.VatStatus.NOT_INCLUDED_EXEMPT, promoCodeDiscount);
         assertEquals(new BigDecimal("9.00"), vs.getFinalPrice());
     }
@@ -94,13 +100,16 @@ public class PriceContainerTest {
         assertEquals(new BigDecimal("7.69"), vs.getFinalPrice());
 
         PromoCodeDiscount promoCodeDiscount = mock(PromoCodeDiscount.class);
-        when(promoCodeDiscount.getDiscountAmount()).thenReturn(100, 10);
-        when(promoCodeDiscount.getFixedAmount()).thenReturn(true, false);
-        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT, PromoCodeDiscount.DiscountType.PERCENTAGE);
+        when(promoCodeDiscount.getDiscountAmount()).thenReturn(100);
+        when(promoCodeDiscount.getFixedAmount()).thenReturn(true);
+        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.FIXED_AMOUNT);
 
         vs = new PriceContainerImpl(1100, "CHF", new BigDecimal("8.00"), PriceContainer.VatStatus.INCLUDED_EXEMPT, promoCodeDiscount);
         assertEquals(new BigDecimal("9.26"), vs.getFinalPrice());
 
+        when(promoCodeDiscount.getDiscountAmount()).thenReturn(10);
+        when(promoCodeDiscount.getFixedAmount()).thenReturn(false);
+        when(promoCodeDiscount.getDiscountType()).thenReturn(PromoCodeDiscount.DiscountType.PERCENTAGE);
         vs = new PriceContainerImpl(1000, "CHF", new BigDecimal("10.00"), PriceContainer.VatStatus.INCLUDED_EXEMPT, promoCodeDiscount);
         assertEquals(new BigDecimal("8.18"), vs.getFinalPrice());
     }

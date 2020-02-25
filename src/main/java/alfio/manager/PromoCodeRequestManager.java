@@ -131,7 +131,7 @@ public class PromoCodeRequestManager {
         ZonedDateTime now = ZonedDateTime.now(eventZoneId);
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
-        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
+        Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPublicPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
 
         var result = Pair.of(specialCode, promotionCodeDiscount);
 
@@ -165,7 +165,7 @@ public class PromoCodeRequestManager {
             return PromoCodeType.NOT_FOUND;
         }  else if(specialPriceRepository.getByCode(trimmedCode).isPresent()) {
             return PromoCodeType.SPECIAL_PRICE;
-        } else if (promoCodeRepository.findPromoCodeInEventOrOrganization(eventId, trimmedCode).isPresent()) {
+        } else if (promoCodeRepository.findPublicPromoCodeInEventOrOrganization(eventId, trimmedCode).isPresent()) {
             return PromoCodeType.PROMO_CODE_DISCOUNT;
         } else if (ticketCategoryRepository.findCodeInEvent(eventId, trimmedCode).isPresent()) {
             return PromoCodeType.TICKET_CATEGORY_CODE;

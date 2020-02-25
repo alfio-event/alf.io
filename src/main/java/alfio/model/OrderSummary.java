@@ -61,7 +61,7 @@ public class OrderSummary {
 
         //filter out the promotions code that have been inserted in the order but not used
         return summary.stream()
-            .filter(s-> !(SummaryRow.SummaryType.PROMOTION_CODE == s.getType() && s.getAmount() == 0))
+            .filter(s-> !(s.isDiscount() && s.getAmount() == 0))
             .collect(Collectors.toList());
     }
 
@@ -93,6 +93,6 @@ public class OrderSummary {
     }
 
     public String getDescriptionForPayment() {
-        return summary.stream().filter(r -> r.getType() != SummaryRow.SummaryType.PROMOTION_CODE).map(SummaryRow::getDescriptionForPayment).collect(Collectors.joining(", "));
+        return summary.stream().filter(r -> !r.isDiscount()).map(SummaryRow::getDescriptionForPayment).collect(Collectors.joining(", "));
     }
 }

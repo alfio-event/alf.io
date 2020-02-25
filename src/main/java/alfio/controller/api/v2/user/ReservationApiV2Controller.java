@@ -38,9 +38,7 @@ import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketFieldRepository;
-import alfio.repository.TicketReservationRepository;
+import alfio.repository.*;
 import alfio.util.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -93,6 +91,9 @@ public class ReservationApiV2Controller {
     private final EuVatChecker vatChecker;
     private final RecaptchaService recaptchaService;
     private final BookingInfoTicketLoader bookingInfoTicketLoader;
+    private final PromoCodeDiscountRepository promoCodeDiscountRepository;
+    private final AdditionalServiceItemRepository additionalServiceItemRepository;
+    private final AdditionalServiceRepository additionalServiceRepository;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -259,7 +260,7 @@ public class ReservationApiV2Controller {
             }
 
 
-            final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId);
+            final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservationId).getLeft();
 
             paymentForm.validate(bindingResult, event, reservationCost);
             if (bindingResult.hasErrors()) {
@@ -332,7 +333,7 @@ public class ReservationApiV2Controller {
             var event = er.getLeft();
             var reservation = er.getRight();
             var locale = LocaleUtil.forLanguageTag(lang, event);
-            final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus()));
+            final TotalPrice reservationCost = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(event.getVatStatus())).getLeft();
             boolean forceAssignment = configurationManager.getFor(FORCE_TICKET_OWNER_ASSIGNMENT_AT_RESERVATION, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(false);
 
             if(forceAssignment || ticketReservationManager.containsCategoriesLinkedToGroups(reservationId, event.getId())) {
@@ -444,8 +445,10 @@ public class ReservationApiV2Controller {
                     var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
                     var currencyCode = reservation.getCurrencyCode();
                     PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
-                    var updatedPrice = ticketReservationManager.totalReservationCostWithVAT(reservation.withVatStatus(vatStatus));// update VatStatus to the new value for calculating the new price
-                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), updatedPrice, ticketReservationManager.findTicketsInReservation(reservationId), event);
+                    var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
+                    var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);
+                    var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
+                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServiceRepository.loadAllForEvent(event.getId()), event);
                     ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
                         unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode), unitToCents(calculator.getAppliedDiscount(), currencyCode),
                         reservation.getCurrencyCode(), StringUtils.trimToNull(vatValidation.getVatNr()),
