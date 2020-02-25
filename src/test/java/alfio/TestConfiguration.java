@@ -16,6 +16,7 @@
  */
 package alfio;
 
+import alfio.config.Initializer;
 import alfio.config.support.PlatformProvider;
 import alfio.manager.FileDownloadManager;
 import alfio.test.util.IntegrationTestUtil;
@@ -117,6 +118,7 @@ public class TestConfiguration {
     }
 
     @Bean
+    @Profile(Initializer.PROFILE_INTEGRATION_TEST)
     public Supplier<Executor> getCurrentThreadExecutorSupplier() {
         return () -> (job) -> job.run();
     }
