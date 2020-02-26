@@ -108,6 +108,7 @@ import static org.apache.commons.lang3.time.DateUtils.truncate;
 @Component
 @Transactional
 @Log4j2
+@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class TicketReservationManager {
     
     public static final String NOT_YET_PAID_TRANSACTION_ID = "not-paid";
@@ -252,18 +253,19 @@ public class TicketReservationManager {
         String reservationId = UUID.randomUUID().toString();
         
         Optional<PromoCodeDiscount> discount = promotionCodeDiscount
-            .or(() -> createDynamicPromoCodeIfNeeded(event, list, reservationId))
             .flatMap(promoCodeDiscount -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
-        
+
+        Optional<PromoCodeDiscount> dynamicDiscount = createDynamicPromoCode(discount, event, list, reservationId);
+
         ticketReservationRepository.createNewReservation(reservationId,
             ZonedDateTime.now(event.getZoneId()),
-            reservationExpiration, discount.map(PromoCodeDiscount::getId).orElse(null),
+            reservationExpiration, dynamicDiscount.or(() -> discount).map(PromoCodeDiscount::getId).orElse(null),
             locale.getLanguage(),
             event.getId(),
             event.getVat(),
             event.isVatIncluded(),
             event.getCurrency());
-        list.forEach(t -> reserveTicketsForCategory(event, reservationId, t, locale, forWaitingQueue, discount.orElse(null)));
+        list.forEach(t -> reserveTicketsForCategory(event, reservationId, t, locale, forWaitingQueue, discount.orElse(null), dynamicDiscount.orElse(null)));
 
         int ticketCount = list
             .stream()
@@ -295,6 +297,14 @@ public class TicketReservationManager {
         }
 
         return reservationId;
+    }
+
+    private Optional<PromoCodeDiscount> createDynamicPromoCode(Optional<PromoCodeDiscount> existingDiscount, Event event, List<TicketReservationWithOptionalCodeModification> list, String reservationId) {
+        if(existingDiscount.filter(dt -> dt.getCodeType() != CodeType.ACCESS).isEmpty()) {
+            return createDynamicPromoCodeIfNeeded(event, list, reservationId)
+                .flatMap(promoCodeDiscount -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
+        }
+        return existingDiscount;
     }
 
     Optional<String> createDynamicPromoCodeIfNeeded(Event event, List<TicketReservationWithOptionalCodeModification> list, String reservationId) {
@@ -332,14 +342,20 @@ public class TicketReservationManager {
         return Pair.of(reservationsForEvent, ticketSearchRepository.countReservationsForEvent(eventId, toSearch, toFilter));
     }
 
-    void reserveTicketsForCategory(Event event, String reservationId, TicketReservationWithOptionalCodeModification ticketReservation, Locale locale, boolean forWaitingQueue, PromoCodeDiscount discount) {
+    void reserveTicketsForCategory(Event event,
+                                   String reservationId,
+                                   TicketReservationWithOptionalCodeModification ticketReservation,
+                                   Locale locale,
+                                   boolean forWaitingQueue,
+                                   PromoCodeDiscount accessCodeOrDiscount,
+                                   PromoCodeDiscount dynamicDiscount) {
 
         List<SpecialPrice> specialPrices;
-        if(discount != null && discount.getCodeType() == CodeType.ACCESS
-            && ticketReservation.getTicketCategoryId().equals(discount.getHiddenCategoryId())
-            && ticketCategoryRepository.isAccessRestricted(discount.getHiddenCategoryId())
+        if(accessCodeOrDiscount != null && accessCodeOrDiscount.getCodeType() == CodeType.ACCESS
+            && ticketReservation.getTicketCategoryId().equals(accessCodeOrDiscount.getHiddenCategoryId())
+            && ticketCategoryRepository.isAccessRestricted(accessCodeOrDiscount.getHiddenCategoryId())
         ) {
-            specialPrices = reserveTokensForAccessCode(ticketReservation, discount);
+            specialPrices = reserveTokensForAccessCode(ticketReservation, accessCodeOrDiscount);
         } else {
             //first check if there is another pending special price token bound to the current sessionId
             Optional<SpecialPrice> specialPrice = fixToken(ticketReservation.getSpecialPrice(), ticketReservation.getTicketCategoryId(), event.getId(), ticketReservation);
@@ -364,7 +380,7 @@ public class TicketReservationManager {
             if(specialPrices.size() == 1) {
                 var ticketId = reservedForUpdate.get(0);
                 var sp = specialPrices.get(0);
-                var accessCodeId = discount != null && discount.getHiddenCategoryId() != null ? discount.getId() : null;
+                var accessCodeId = accessCodeOrDiscount != null && accessCodeOrDiscount.getHiddenCategoryId() != null ? accessCodeOrDiscount.getId() : null;
                 ticketRepository.reserveTicket(reservationId, ticketId,sp.getId(), locale.getLanguage(), category.getSrcPriceCts(), category.getCurrencyCode());
                 specialPriceRepository.updateStatus(sp.getId(), Status.PENDING.toString(), null, accessCodeId);
             } else {
@@ -379,13 +395,14 @@ public class TicketReservationManager {
                 specialPriceRepository.batchUpdateStatus(
                     specialPrices.stream().map(SpecialPrice::getId).collect(toList()),
                     Status.PENDING,
-                    Objects.requireNonNull(discount).getId());
+                    Objects.requireNonNull(accessCodeOrDiscount).getId());
             }
         } else {
             ticketRepository.reserveTickets(reservationId, reservedForUpdate, ticketReservation.getTicketCategoryId(), locale.getLanguage(), category.getSrcPriceCts(), category.getCurrencyCode());
         }
         Ticket ticket = ticketRepository.findById(reservedForUpdate.get(0), category.getId());
-        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getVat(), event.getVatStatus(), discount);
+        var discountToApply = ObjectUtils.firstNonNull(dynamicDiscount, accessCodeOrDiscount);
+        TicketPriceContainer priceContainer = TicketPriceContainer.from(ticket, null, event.getVat(), event.getVatStatus(), discountToApply);
         var currencyCode = priceContainer.getCurrencyCode();
         ticketRepository.updateTicketPrice(reservedForUpdate,
             category.getId(),
