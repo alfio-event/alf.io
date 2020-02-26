@@ -332,6 +332,26 @@ public class IndexController {
         }
     }
 
+    public static String createAuth0RedirectionURL(String domain, String redirectURI, String clientId, List<String> scopes){
+        StringBuilder builder = new StringBuilder();
+        builder.append("https://");
+        builder.append(domain);
+        builder.append("/authorize?redirect_uri=");
+        builder.append(redirectURI);
+        builder.append("&client_id=");
+        builder.append(clientId);
+        builder.append("&scope=");
+        for(int i = 0; i < scopes.size(); i++){
+            if(i != 0)
+                builder.append("%20");
+            builder.append(scopes.get(i));
+        }
+        builder.append("&response_type=code");
+        return builder.toString();
+    }
+
+
+
     @PostMapping("/authenticate")
     public String doLogin() {
         return REDIRECT_ADMIN;
