@@ -210,7 +210,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     private NamedParameterJdbcTemplate jdbcTemplate;
 
     //********** UCR testing development necessities **************************
-
+    // will eventually need jdbcTemplate for clearing a database table
     // will be needed to insert the extension.js script into the database
     @Autowired
     private ExtensionRepository extensionRepository;
@@ -316,26 +316,17 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
             // concatenate each line into one continuous string concatenation
             String concatenation = String.join("\n", extensionStream);
-            // generate the hssh paramater from concatenation, do we need this??
-            // String hash = DigestUtils.sha256Hex(concatenation);
-            System.out.println("****Sanity check*********************");
-//            extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
-//            System.out.println(extensionRepository.getScript("-", "asyncName"));
             extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
             System.out.println(extensionRepository.getScript("-", "syncName"));
         }
-
-        // method to perform concatenation from java
-
         List<BasicEventInfo> body = eventApiV2Controller.listEvents().getBody();
         assertNotNull(body);
         assertTrue(body.isEmpty());
         ensureConfiguration();
         // check if EVENT_CREATED was logged
-//        we have to assert the one entry in the log is RESERVATION_CANCELLED
         List<ExtensionLog> textLog = extensionLogRepository.getPage(null, null, null, 100, 0);
         // expect that this list should be the correct size which should be 2
-//        assertEquals("Size of log", 2, textLog.size());
+        assertEquals("Size of log", 2, textLog.size());
         // expect the correct elements in the list in the right order
         assertEquals("EVENT_CREATED", textLog.get(1).getDescription());
 
@@ -598,19 +589,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             // we expect that we have the corresponding event logged which is RESERVATION_CANCELLED
             List<ExtensionLog> extLogWithOneRecord = extensionLogRepository.getPage(null, null, null, 100, 0);
-            String specificLog = extLogWithOneRecord.get(1).getDescription();
-            int logSize = extLogWithOneRecord.size();
-            // there should only be one element in the extLogWithOneRecord
-//            assertEquals(8, extLogWithOneRecord.size()); // cannot expect 1, check if one of rows containes reservation cancelled
-//            we have to assert the one entry in the log is RESERVATION_CANCELLED
-//            assertEquals("RESERVATION_CANCELLED", extLogWithOneRecord.get(1).getDescription());
-
-            // clear the log table (what is the second parameter here? see docs for options
-            // jdbcTemplate.update() would return the number of rows affected, thus we would currently expect 8 rows to be deleted
-            // assertEquals("number of extension_log rows affected from update()", 8, jdbcTemplate.update("truncate table extension_log", Map.of("reservationId", reservationId)));
-            // int clearTableReturn = jdbcTemplate.update("truncate table extension_log", Map.of("reservationId", reservationId));
-
-            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
         }
         //
