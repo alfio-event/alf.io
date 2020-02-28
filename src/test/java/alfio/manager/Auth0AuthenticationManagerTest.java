@@ -9,7 +9,6 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Profile("auth0")
 public class Auth0AuthenticationManagerTest
 {
     private final String DOMAIN = "domain_test";
