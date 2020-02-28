@@ -16,7 +16,7 @@
  */
 package alfio.config;
 
-import alfio.manager.RecaptchaService;
+import alfio.manager.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.Role;
@@ -24,8 +24,7 @@ import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.UserRepository;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -62,8 +61,7 @@ import javax.sql.DataSource;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Collection;
-import java.util.Locale;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -200,10 +198,251 @@ public class WebSecurityConfig {
         return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
     }
 
+    //FIXME 2 almost identical configurations
+    @Profile("auth0")
+    @Configuration
+    @Order(1)
+    public static class OpenIdFormBasedWebSecurity extends WebSecurityConfigurerAdapter {
+
+        private final Environment environment;
+        private final UserManager userManager;
+        private final RecaptchaService recaptchaService;
+        private final ConfigurationManager configurationManager;
+        private final CsrfTokenRepository csrfTokenRepository;
+        private final DataSource dataSource;
+        private final PasswordEncoder passwordEncoder;
+        private final OpenIdAuthenticationManager openIdAuthenticationManager;
+
+        public OpenIdFormBasedWebSecurity(Environment environment,
+                                          UserManager userManager,
+                                          RecaptchaService recaptchaService,
+                                          ConfigurationManager configurationManager,
+                                          CsrfTokenRepository csrfTokenRepository,
+                                          DataSource dataSource,
+                                          PasswordEncoder passwordEncoder, OpenIdAuthenticationManager openIdAuthenticationManager) {
+            this.environment = environment;
+            this.userManager = userManager;
+            this.recaptchaService = recaptchaService;
+            this.configurationManager = configurationManager;
+            this.csrfTokenRepository = csrfTokenRepository;
+            this.dataSource = dataSource;
+            this.passwordEncoder = passwordEncoder;
+            this.openIdAuthenticationManager = openIdAuthenticationManager;
+        }
+
+        @Override
+        public void configure(AuthenticationManagerBuilder auth) throws Exception {
+            auth.jdbcAuthentication().dataSource(dataSource)
+                .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
+                .authoritiesByUsernameQuery("select username, role from authority where username = ?")
+                .passwordEncoder(passwordEncoder);
+        }
+
+        @Override
+        protected void configure(HttpSecurity http) throws Exception {
+
+            if(environment.acceptsProfiles(Profiles.of("!"+Initializer.PROFILE_DEV))) {
+                http.requiresChannel().antMatchers("/healthz").requiresInsecure()
+                    .and()
+                    .requiresChannel().mvcMatchers("/**").requiresSecure();
+            }
+
+            CsrfConfigurer<HttpSecurity> configurer =
+                http.exceptionHandling()
+                    .accessDeniedHandler((request, response, accessDeniedException) -> {
+                        if(!response.isCommitted()) {
+                            if("XMLHttpRequest".equals(request.getHeader(X_REQUESTED_WITH))) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            } else if(!response.isCommitted()) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                RequestDispatcher dispatcher = request.getRequestDispatcher("/session-expired");
+                                dispatcher.forward(request, response);
+                            }
+                        }
+                    })
+                    .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(X_REQUESTED_WITH, "XMLHttpRequest"))
+                    .and()
+                    .headers().cacheControl().disable()
+                    .and()
+                    .csrf();
+
+            Pattern pattern = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
+            Predicate<HttpServletRequest> csrfWhitelistPredicate = r -> r.getRequestURI().startsWith("/api/webhook/")
+                || r.getRequestURI().startsWith("/api/payment/webhook/")
+                || pattern.matcher(r.getMethod()).matches();
+            csrfWhitelistPredicate = csrfWhitelistPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
+            configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfWhitelistPredicate::test));
+
+            String[] ownershipRequired = new String[] {
+                ADMIN_API + "/overridable-template",
+                ADMIN_API + "/additional-services",
+                ADMIN_API + "/events/*/additional-field",
+                ADMIN_API + "/event/*/additional-services/",
+                ADMIN_API + "/overridable-template/",
+                ADMIN_API + "/events/*/promo-code",
+                ADMIN_API + "/reservation/event/*/reservations/list",
+                ADMIN_API + "/events/*/email/",
+                ADMIN_API + "/event/*/waiting-queue/load",
+                ADMIN_API + "/events/*/pending-payments",
+                ADMIN_API + "/events/*/export",
+                ADMIN_API + "/events/*/sponsor-scan/export",
+                ADMIN_API + "/events/*/invoices/**",
+                ADMIN_API + "/reservation/event/*/*/audit"
+
+            };
+
+            configurer.csrfTokenRepository(csrfTokenRepository)
+                .and()
+                .authorizeRequests()
+                .antMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
+                .antMatchers(ADMIN_API + "/organizations/new").hasRole(ADMIN)
+                .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers(HttpMethod.GET, ownershipRequired).hasAnyRole(ADMIN, OWNER)
+                .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new", ADMIN_API + "/reservation/event/*/*").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify", ADMIN_API + "/reservation/event/*/*/confirm").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
+                .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
+                .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers("/api/attendees/**").denyAll()
+                .antMatchers("/callback").permitAll()
+                .antMatchers("/**").permitAll()
+                .and()
+                .formLogin()
+                .loginPage("/authentication")
+                .loginProcessingUrl("/authenticate")
+                .failureUrl("/authentication?failed")
+                .and().logout().permitAll();
+
+
+            //
+            http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
+            List<String> scopes = Arrays.asList("email", "openid");
+            http.addFilterBefore(new FormBasedWebSecurity.OpenIdAuthenticationFilter(configurationManager, "/authentication", openIdAuthenticationManager, scopes), RecaptchaLoginFilter.class);
+
+
+            //FIXME create session and set csrf cookie if we are getting a v2 public api, an admin api call , will switch to pure cookie based
+            http.addFilterBefore((servletRequest, servletResponse, filterChain) -> {
+
+                HttpServletRequest req = (HttpServletRequest) servletRequest;
+                HttpServletResponse res = (HttpServletResponse) servletResponse;
+                var reqUri = req.getRequestURI();
+
+                if ((reqUri.startsWith("/api/v2/public/") || reqUri.startsWith("/admin/api/") || reqUri.startsWith("/api/v2/admin/")) && "GET".equalsIgnoreCase(req.getMethod())) {
+                    CsrfToken csrf = csrfTokenRepository.loadToken(req);
+                    if (csrf == null) {
+                        csrf = csrfTokenRepository.generateToken(req);
+                    }
+                    Cookie cookie = new Cookie("XSRF-TOKEN", csrf.getToken());
+                    cookie.setPath("/");
+                    res.addCookie(cookie);
+                }
+                filterChain.doFilter(servletRequest, servletResponse);
+            }, RecaptchaLoginFilter.class);
+
+            if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
+                http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, "/authenticate"), RecaptchaLoginFilter.class);
+            }
+        }
+
+        private static class OpenIdAuthenticationFilter extends GenericFilterBean {
+            private final ConfigurationManager configurationManager;
+            private final RequestMatcher requestMatcher;
+            private OpenIdAuthenticationManager openIdAuthenticationManager;
+            private List<String> scopes;
+
+            private OpenIdAuthenticationFilter(ConfigurationManager configurationManager, String loginURL, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> scopes) {
+                this.configurationManager = configurationManager;
+                this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
+                this.openIdAuthenticationManager = openIdAuthenticationManager;
+                this.scopes = scopes;
+            }
+
+            @Override
+            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+                HttpServletRequest req = (HttpServletRequest) request;
+                HttpServletResponse res = (HttpServletResponse) response;
+
+                if(requestMatcher.matches(req)) {
+                    res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl(scopes));
+                    return;
+                }
+
+                chain.doFilter(request, response);
+            }
+        }
+
+
+        private static class RecaptchaLoginFilter extends GenericFilterBean {
+            private final RequestMatcher requestMatcher;
+            private final RecaptchaService recaptchaService;
+            private final String recaptchaFailureUrl;
+            private final ConfigurationManager configurationManager;
+
+
+            RecaptchaLoginFilter(RecaptchaService recaptchaService,
+                                 String loginProcessingUrl,
+                                 String recaptchaFailureUrl,
+                                 ConfigurationManager configurationManager) {
+                this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
+                this.recaptchaService = recaptchaService;
+                this.recaptchaFailureUrl = recaptchaFailureUrl;
+                this.configurationManager = configurationManager;
+            }
+
+
+            @Override
+            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+                HttpServletRequest req = (HttpServletRequest) request;
+                HttpServletResponse res = (HttpServletResponse) response;
+                if(requestMatcher.matches(req) &&
+                    configurationManager.getForSystem(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true) &&
+                    !recaptchaService.checkRecaptcha(null, req)) {
+                    res.sendRedirect(recaptchaFailureUrl);
+                    return;
+                }
+
+                chain.doFilter(request, response);
+            }
+        }
+
+
+        // generate a user if it does not exists, to be used by the demo profile
+        private static class UserCreatorBeforeLoginFilter extends GenericFilterBean {
+
+            private final UserManager userManager;
+            private final RequestMatcher requestMatcher;
+
+            UserCreatorBeforeLoginFilter(UserManager userManager, String loginProcessingUrl) {
+                this.userManager = userManager;
+                this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
+            }
+
+
+
+            @Override
+            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+                HttpServletRequest req = (HttpServletRequest) request;
+
+                //ensure organization/user
+                if(requestMatcher.matches(req) && req.getParameter("username") != null && req.getParameter("password") != null) {
+                    String username = req.getParameter("username");
+                    if(!userManager.usernameExists(username)) {
+                        int orgId = userManager.createOrganization(username, "Demo organization", username);
+                        userManager.insertUser(orgId, username, "", "", username, Role.OWNER, User.Type.DEMO, req.getParameter("password"), null, null);
+                    }
+                }
+
+                chain.doFilter(request, response);
+            }
+        }
+    }
+
 
     /**
      * Default form based configuration.
      */
+    @Profile("!auth0")
     @Configuration
     @Order(1)
     public static class FormBasedWebSecurity extends WebSecurityConfigurerAdapter {
@@ -307,6 +546,7 @@ public class WebSecurityConfig {
                 .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
                 .antMatchers("/api/attendees/**").denyAll()
+                .antMatchers("/callback").permitAll()
                 .antMatchers("/**").permitAll()
                 .and()
                 .formLogin()
@@ -341,6 +581,33 @@ public class WebSecurityConfig {
 
             if(environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO))) {
                 http.addFilterAfter(new UserCreatorBeforeLoginFilter(userManager, "/authenticate"), RecaptchaLoginFilter.class);
+            }
+        }
+
+        private static class OpenIdAuthenticationFilter extends GenericFilterBean {
+            private final ConfigurationManager configurationManager;
+            private final RequestMatcher requestMatcher;
+            private OpenIdAuthenticationManager openIdAuthenticationManager;
+            private List<String> scopes;
+
+            private OpenIdAuthenticationFilter(ConfigurationManager configurationManager, String loginURL, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> scopes) {
+                this.configurationManager = configurationManager;
+                this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
+                this.openIdAuthenticationManager = openIdAuthenticationManager;
+                this.scopes = scopes;
+            }
+
+            @Override
+            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+                HttpServletRequest req = (HttpServletRequest) request;
+                HttpServletResponse res = (HttpServletResponse) response;
+
+                if(requestMatcher.matches(req)) {
+                    res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl(scopes));
+                    return;
+                }
+
+                chain.doFilter(request, response);
             }
         }
 
