@@ -209,9 +209,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
 
-    //********** UCR testing development necessities **************************
-    // will eventually need jdbcTemplate for clearing a database table
-    // will be needed to insert the extension.js script into the database
     @Autowired
     private ExtensionRepository extensionRepository;
 
@@ -221,7 +218,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private ExtensionService extensionService;
 
-    //********* End UCR testing development necessities ***********************
 
     private Event event;
     private String user;
@@ -312,23 +308,18 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     public void reservationFlowTest() throws Exception {
         // as soon as the test starts, insert the extension in the database (prepare the environment)
         try (var extensionInputStream = getClass().getResourceAsStream("/extension.js")) {
-            // read extensionInputStream and split by line (each element in the list extensionStream is a line from extension.js)
             List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
-            // concatenate each line into one continuous string concatenation
             String concatenation = String.join("\n", extensionStream);
             extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
-            System.out.println(extensionRepository.getScript("-", "syncName"));
         }
         List<BasicEventInfo> body = eventApiV2Controller.listEvents().getBody();
         assertNotNull(body);
         assertTrue(body.isEmpty());
         ensureConfiguration();
         // check if EVENT_CREATED was logged
-        List<ExtensionLog> textLog = extensionLogRepository.getPage(null, null, null, 100, 0);
-        // expect that this list should be the correct size which should be 2
-        assertEquals("Size of log", 2, textLog.size());
-        // expect the correct elements in the list in the right order
-        assertEquals("EVENT_CREATED", textLog.get(1).getDescription());
+        List<ExtensionLog> extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
+        assertEquals("Size of log", 2, extLogs.size());
+        assertEquals("EVENT_CREATED", extLogs.get(1).getDescription());
 
 
         {
@@ -587,8 +578,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             configurationRepository.deleteCategoryLevelByKey(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), event.getId(), hiddenCategoryId);
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
 
-            // we expect that we have the corresponding event logged which is RESERVATION_CANCELLED
-            List<ExtensionLog> extLogWithOneRecord = extensionLogRepository.getPage(null, null, null, 100, 0);
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
         }
         //
