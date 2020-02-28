@@ -27,6 +27,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,7 +63,7 @@ public class ExternalConfiguration {
     public Optional<String> getScript(String path, String name) {
         if(EXTERNAL_EXTENSION_PATH.equals(path)) {
             return extensions.stream().filter(e -> e.isValid() && e.id.equals(name))
-                .map(ExtensionOverride::getFile)
+                .map(ExtensionOverride::getContent)
                 .findFirst();
         }
         return Optional.empty();
@@ -90,6 +91,7 @@ public class ExternalConfiguration {
         private List<String> events;
         private boolean async;
         private Map<String, String> params;
+        private String type = "plain"; // plain or base64
 
         boolean isValid() {
             return isNotBlank(id)
@@ -99,6 +101,13 @@ public class ExternalConfiguration {
 
         Map<String, String> getParams() {
             return Objects.requireNonNullElse(params, Map.of());
+        }
+
+        String getContent() {
+            if("base64".equals(type) && isNotBlank(file)) {
+                return new String(Base64.getDecoder().decode(file), StandardCharsets.UTF_8);
+            }
+            return file;
         }
     }
 
