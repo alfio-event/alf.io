@@ -1,14 +1,9 @@
 package alfio.manager;
 
-import alfio.controller.IndexController;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.*;
-import org.springframework.context.annotation.Profile;
 
-import java.io.IOException;
 import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class Auth0AuthenticationManagerTest
 {

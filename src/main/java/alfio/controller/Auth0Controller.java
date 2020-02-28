@@ -1,18 +1,13 @@
 package alfio.controller;
 
-import alfio.config.WebSecurityConfig;
 import alfio.manager.Auth0AuthenticationManager;
 import com.auth0.jwt.JWT;
-import com.auth0.jwt.interfaces.*;
+import com.auth0.jwt.interfaces.Claim;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Profile;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.*;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +17,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.*;
 import java.security.Principal;
-import java.util.*;
+import java.util.Map;
 
 @Profile("auth0")
 @Controller
