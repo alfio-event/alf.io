@@ -16,30 +16,21 @@
  */
 package alfio.controller;
 
-import alfio.config.Initializer;
-import alfio.config.WebSecurityConfig;
+import alfio.config.*;
 import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.system.ConfigurationLevel;
-import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.*;
 import alfio.manager.user.UserManager;
-import alfio.model.ContentLanguage;
-import alfio.model.EventDescription;
-import alfio.model.FileBlobMetadata;
-import alfio.model.TicketReservationStatusAndValidation;
+import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
-import alfio.util.Json;
-import alfio.util.MustacheCustomTag;
-import alfio.util.RequestUtils;
-import alfio.util.TemplateManager;
+import alfio.util.*;
 import ch.digitalfondue.jfiveparse.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.codec.binary.Hex;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
-import org.springframework.core.env.Profiles;
+import org.springframework.core.env.*;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -49,20 +40,14 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import javax.servlet.http.*;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.security.Principal;
-import java.security.SecureRandom;
+import java.security.*;
 import java.util.*;
 import java.util.regex.Pattern;
 
-import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
-import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Controller
 @AllArgsConstructor
@@ -331,26 +316,6 @@ public class IndexController {
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
         }
     }
-
-    public static String createAuth0RedirectionURL(String domain, String redirectURI, String clientId, List<String> scopes){
-        StringBuilder builder = new StringBuilder();
-        builder.append("https://");
-        builder.append(domain);
-        builder.append("/authorize?redirect_uri=");
-        builder.append(redirectURI);
-        builder.append("&client_id=");
-        builder.append(clientId);
-        builder.append("&scope=");
-        for(int i = 0; i < scopes.size(); i++){
-            if(i != 0)
-                builder.append("%20");
-            builder.append(scopes.get(i));
-        }
-        builder.append("&response_type=code");
-        return builder.toString();
-    }
-
-
 
     @PostMapping("/authenticate")
     public String doLogin() {
