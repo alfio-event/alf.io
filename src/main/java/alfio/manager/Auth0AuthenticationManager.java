@@ -67,7 +67,7 @@ public class Auth0AuthenticationManager implements OpenIdAuthenticationManager
     {
         Map<String, String> body = new HashMap<String, String>() {{
             put("code", code);
-            put ("grant_type", "authorization_code");
+            put("grant_type", "authorization_code");
             put("client_id", clientId);
             put("client_secret", clientSecret);
             put("redirect_uri", callbackURI);

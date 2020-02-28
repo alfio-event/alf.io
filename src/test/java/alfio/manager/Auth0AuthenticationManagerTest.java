@@ -1,6 +1,7 @@
 package alfio.manager;
 
 import alfio.controller.IndexController;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.*;
 import org.springframework.context.annotation.Profile;
 
@@ -34,6 +35,15 @@ public class Auth0AuthenticationManagerTest
         String claimsUrl = authenticationManager.buildClaimsRetrieverUrl();
         String expectedURL = "https://domain_test/claims";
         Assert.assertEquals(expectedURL, claimsUrl);
+    }
+
+    @Test
+    public void auth0_build_body_test() throws JsonProcessingException
+    {
+        String code = "code";
+        String body = authenticationManager.buildRetrieveClaimsUrlBody(code);
+        String expectedBody = "{\"code\":\"code\",\"grant_type\":\"authorization_code\",\"client_secret\":\"1234\",\"redirect_uri\":\"callback\",\"client_id\":\"123\"}";
+        Assert.assertEquals(expectedBody, body);
     }
 
 }
