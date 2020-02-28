@@ -2,12 +2,14 @@ package alfio.manager;
 
 import alfio.controller.IndexController;
 import org.junit.*;
+import org.springframework.context.annotation.Profile;
 
 import java.io.IOException;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Profile("auth0")
 public class Auth0AuthenticationManagerTest
 {
     private final String DOMAIN = "domain_test";
