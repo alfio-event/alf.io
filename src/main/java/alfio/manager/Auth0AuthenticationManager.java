@@ -1,10 +1,12 @@
 package alfio.manager;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.*;
 
 @Component
 @Profile("auth0")
@@ -58,5 +60,21 @@ public class Auth0AuthenticationManager implements OpenIdAuthenticationManager
         builder.append(domain);
         builder.append(claimsUrl);
         return builder.toString();
+    }
+
+    @Override
+    public String buildRetrieveClaimsUrlBody(String code) throws JsonProcessingException
+    {
+        Map<String, String> body = new HashMap<String, String>() {{
+            put("code", code);
+            put ("grant_type", "authorization_code");
+            put("client_id", clientId);
+            put("client_secret", clientSecret);
+            put("redirect_uri", callbackURI);
+        }};
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        return objectMapper.writeValueAsString(body);
     }
 }
