@@ -35,8 +35,9 @@ function executeScript(scriptEvent) {
     log.warn('hello from script with event: ' + scriptEvent);
     extensionLogger.logInfo(scriptEvent);//logs into the extension_log table
     if(scriptEvent === 'INVOICE_GENERATION') {
-	return {
-		invoiceNumber: 'blabla'
-	};
+        return {
+            invoiceNumber: 'blabla'
+        };
     }
+    return null;
 }
