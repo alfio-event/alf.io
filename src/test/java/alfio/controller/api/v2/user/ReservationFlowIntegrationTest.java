@@ -31,6 +31,8 @@ import alfio.controller.api.v2.model.BasicEventInfo;
 import alfio.controller.api.v2.model.EventCode;
 import alfio.controller.api.v2.model.Language;
 import alfio.controller.form.*;
+import alfio.extension.Extension;
+import alfio.extension.ExtensionService;
 import alfio.manager.*;
 import alfio.manager.support.CheckInStatus;
 import alfio.manager.support.TicketAndCheckInResult;
@@ -62,6 +64,7 @@ import com.google.zxing.common.HybridBinarizer;
 import com.google.zxing.qrcode.QRCodeReader;
 import com.opencsv.CSVReader;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
@@ -87,6 +90,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 import javax.imageio.ImageIO;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -205,6 +209,16 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
     @Autowired
     private NamedParameterJdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private ExtensionRepository extensionRepository;
+
+    @Autowired
+    private ExtensionLogRepository extensionLogRepository;
+
+    @Autowired
+    private ExtensionService extensionService;
+
+
     private Event event;
     private String user;
 
@@ -292,12 +306,21 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
     @Test
     public void reservationFlowTest() throws Exception {
-
-
+        // as soon as the test starts, insert the extension in the database (prepare the environment)
+        try (var extensionInputStream = getClass().getResourceAsStream("/extension.js")) {
+            List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
+            String concatenation = String.join("\n", extensionStream);
+            extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
+        }
         List<BasicEventInfo> body = eventApiV2Controller.listEvents().getBody();
         assertNotNull(body);
         assertTrue(body.isEmpty());
         ensureConfiguration();
+        // check if EVENT_CREATED was logged
+        List<ExtensionLog> extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
+        assertEquals("Size of log", 2, extLogs.size());
+        assertEquals("EVENT_CREATED", extLogs.get(1).getDescription());
+
 
         {
             Principal p = Mockito.mock(Principal.class);
