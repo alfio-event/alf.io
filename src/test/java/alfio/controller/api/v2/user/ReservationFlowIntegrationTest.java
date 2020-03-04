@@ -311,6 +311,8 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
             String concatenation = String.join("\n", extensionStream);
             extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
+//            extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
+//            System.out.println(extensionRepository.getScript("-", "asyncName"));
         }
         List<BasicEventInfo> body = eventApiV2Controller.listEvents().getBody();
         assertNotNull(body);
@@ -577,6 +579,21 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             configurationRepository.deleteCategoryLevelByKey(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), event.getId(), hiddenCategoryId);
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
+
+            // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
+            // we expect that we have the corresponding event logged which is RESERVATION_CANCELLED
+            List<ExtensionLog> extLogWithOneRecord = extensionLogRepository.getPage(null, null, null, 100, 0);
+//            String specificLog = extLogWithOneRecord.get(1).getDescription();
+//            int logSize = extLogWithOneRecord.size();
+            // there should only be one element in the extLogWithOneRecord
+            assertEquals(6, extLogWithOneRecord.size()); // cannot expect 1, check if one of rows containes reservation cancelled
+//            we have to assert the one entry in the log is RESERVATION_CANCELLED
+            assertEquals("RESERVATION_CANCELLED", extLogWithOneRecord.get(1).getDescription());
+
+            // clear the log table (what is the second parameter here? see docs for options
+            // jdbcTemplate.update() would return the number of rows affected, thus we would currently expect 8 rows to be deleted
+//             assertEquals("number of extension_log rows affected from update()", 8, jdbcTemplate.update("truncate table extension_log", Map.of("reservationId", reservationId)));
+            // int clearTableReturn = jdbcTemplate.update("truncate table extension_log", Map.of("reservationId", reservationId));
 
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
