@@ -139,7 +139,9 @@
             }
 
             //from {0} to {{0}}
-            var escapedValue = value.replace(/\{(\d+)\}/g,'{{$1}}');
+            var escapedValue = value.replace(/{+(\d+)}+/g,'{$1}')
+                .replace(/[^']'[^']/g,"''"); //add escape for single quotes
+            console.log("value ", value, "clean", escapedValue);
 
             copyOfTranslationsData[locale][key] = escapedValue;
 

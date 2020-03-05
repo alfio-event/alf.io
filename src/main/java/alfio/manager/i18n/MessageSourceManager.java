@@ -19,6 +19,7 @@ package alfio.manager.i18n;
 import alfio.model.EventAndOrganizationId;
 import alfio.repository.system.ConfigurationRepository;
 import alfio.util.CustomResourceBundleMessageSource;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.AbstractMessageSource;
@@ -27,9 +28,13 @@ import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
+@Log4j2
 public class MessageSourceManager {
 
+    private static final Pattern ARGUMENT_FINDER = Pattern.compile("\\{+(\\d+)}+");
     private final CustomResourceBundleMessageSource messageSource;
     private final ConfigurationRepository configurationRepository;
 
@@ -78,9 +83,20 @@ public class MessageSourceManager {
         protected MessageFormat resolveCode(String s, Locale locale) {
             var language = locale.getLanguage();
             if (override.containsKey(language) && override.get(language).containsKey(s)) {
-                return new MessageFormat(override.get(language).get(s), locale);
+                var pattern = cleanArguments(override.get(language).get(s), "{$1}");
+                return new MessageFormat(pattern, locale);
             }
             return messageSource.getMessageFormatFor(s, locale);
         }
+    }
+
+    static String cleanArguments(String translation, String replacement) {
+        return ARGUMENT_FINDER.matcher(translation).replaceAll(replacement);
+    }
+
+    public static Map<String, String> cleanTranslationsForFrontend(Map<String, String> translations) {
+        return translations.entrySet().stream()
+            .map(entry -> Pair.of(entry.getKey(), cleanArguments(entry.getValue(), "{{$1}}")))
+            .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     }
 }

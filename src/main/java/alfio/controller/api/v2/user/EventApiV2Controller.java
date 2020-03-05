@@ -120,7 +120,11 @@ public class EventApiV2Controller {
                 //
                 var messageSourceAndOverride = messageSourceManager.getMessageSourceForEventAndOverride(event);
                 var messageSource = messageSourceAndOverride.getLeft();
-                var i18nOverride = messageSourceAndOverride.getRight();
+                var i18nOverride = messageSourceAndOverride.getRight()
+                    .entrySet()
+                    .stream()
+                    .map(entry -> Pair.of(entry.getKey(), MessageSourceManager.cleanTranslationsForFrontend(entry.getValue())))
+                    .collect(toMap(Pair::getKey, Pair::getValue));
 
                 var descriptions = applyCommonMark(eventDescriptionRepository.findDescriptionByEventIdAsMap(event.getId()));
 
