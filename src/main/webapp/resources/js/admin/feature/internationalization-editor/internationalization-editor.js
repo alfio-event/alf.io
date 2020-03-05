@@ -10,6 +10,10 @@
         templateUrl: '../resources/js/admin/feature/internationalization-editor/internationalization-editor.html'
     });
 
+    function hideEscaping(value) {
+        return value.replace(/{+(\d+)}+/g,'{$1}')
+            .replace(/''/g, "'");
+    }
 
 
     function InternationalizationEditorCtrl(ConfigurationService, EventService, $http, $q) {
@@ -100,7 +104,7 @@
                     }
 
                     // from {{0}} to {0}
-                    res.data[keys[i]] = value.replace(/\{\{(\d+)\}\}/g,'{$1}');
+                    res.data[keys[i]] = hideEscaping(value);
                 }
 
                 ctrl.bundle[locale] = res.data;
@@ -112,7 +116,7 @@
         function displayValueWithFallback(locale, key) {
             if(ctrl.translationsData && ctrl.translationsData[locale] && ctrl.translationsData[locale][key]) {
                 // from {{0}} to {0}
-                return ctrl.translationsData[locale][key].replace(/\{\{(\d+)\}\}/g,'{$1}');
+                return hideEscaping(ctrl.translationsData[locale][key]);
             }
             return ctrl.bundle[locale][key];
         }
@@ -138,10 +142,8 @@
                 copyOfTranslationsData[locale] = {};
             }
 
-            //from {0} to {{0}}
             var escapedValue = value.replace(/{+(\d+)}+/g,'{$1}')
-                .replace(/[^']'[^']/g,"''"); //add escape for single quotes
-            console.log("value ", value, "clean", escapedValue);
+                .replace(/([^'])'([^'])/g,"$1''$2"); //add escape for single quotes
 
             copyOfTranslationsData[locale][key] = escapedValue;
 
