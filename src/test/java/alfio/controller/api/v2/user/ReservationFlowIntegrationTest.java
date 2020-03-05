@@ -311,7 +311,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             List<String> extensionStream = IOUtils.readLines(new InputStreamReader(extensionInputStream, StandardCharsets.UTF_8));
             String concatenation = String.join("\n", extensionStream);
             extensionService.createOrUpdate(null, null, new Extension("-", "syncName", concatenation.replace("placeHolder", "false"), true));
-//            extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
+            extensionService.createOrUpdate(null, null, new Extension("-", "asyncName", concatenation.replace("placeHolder", "true"), true));
 //            System.out.println(extensionRepository.getScript("-", "asyncName"));
         }
         List<BasicEventInfo> body = eventApiV2Controller.listEvents().getBody();
@@ -320,8 +320,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         ensureConfiguration();
         // check if EVENT_CREATED was logged
         List<ExtensionLog> extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-        assertEquals("Size of log", 2, extLogs.size());
+        assertEquals("Size of log", 4, extLogs.size());
         assertEquals("EVENT_CREATED", extLogs.get(1).getDescription());
+        assertEquals("EVENT_CREATED", extLogs.get(3).getDescription());
 
 
         {
@@ -578,22 +579,17 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertTrue(activePaymentMethods.isEmpty());
 
             configurationRepository.deleteCategoryLevelByKey(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), event.getId(), hiddenCategoryId);
+            //clear the extension_log table so that we can check the expectation
+             int clearTableReturn = jdbcTemplate.update("delete from extension_log", Map.of());
+            //cannot have just one row in the log, every execution causes at least two logs
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
 
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             // we expect that we have the corresponding event logged which is RESERVATION_CANCELLED
-            List<ExtensionLog> extLogWithOneRecord = extensionLogRepository.getPage(null, null, null, 100, 0);
-//            String specificLog = extLogWithOneRecord.get(1).getDescription();
-//            int logSize = extLogWithOneRecord.size();
-            // there should only be one element in the extLogWithOneRecord
-            assertEquals(6, extLogWithOneRecord.size()); // cannot expect 1, check if one of rows containes reservation cancelled
+            List<ExtensionLog> extLogRecords = extensionLogRepository.getPage(null, null, null, 100, 0);
+            assertEquals(2, extLogRecords.size()); // cannot expect 1, check if one of rows contains reservation cancelled
 //            we have to assert the one entry in the log is RESERVATION_CANCELLED
-            assertEquals("RESERVATION_CANCELLED", extLogWithOneRecord.get(1).getDescription());
-
-            // clear the log table (what is the second parameter here? see docs for options
-            // jdbcTemplate.update() would return the number of rows affected, thus we would currently expect 8 rows to be deleted
-//             assertEquals("number of extension_log rows affected from update()", 8, jdbcTemplate.update("truncate table extension_log", Map.of("reservationId", reservationId)));
-            // int clearTableReturn = jdbcTemplate.update("truncate table extension_log", Map.of("reservationId", reservationId));
+            assertEquals("RESERVATION_CANCELLED", extLogRecords.get(1).getDescription());
 
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
@@ -913,6 +909,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             var handleRes = reservationApiV2Controller.confirmOverview(event.getShortName(), reservationId, "en", paymentForm, new BeanPropertyBindingResult(paymentForm, "paymentForm"),
                 new MockHttpServletRequest());
+
             assertEquals(HttpStatus.OK, handleRes.getStatusCode());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
@@ -929,7 +926,19 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("0.10", orderSummary.getTotalVAT());
             assertEquals("1.00", orderSummary.getVatPercentage());
 
+            //clear the extension_log table so that we can check the expectation
+            jdbcTemplate.update("delete from extension_log", Map.of());
+
             validatePayment(event.getShortName(), reservationId);
+
+
+            extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
+//            System.out.println(extLogs);
+            assertEquals(4, extLogs.size()); // cannot expect 1, check if one of rows contains reservation cancelled
+
+//            we have to assert the one entry in the log is RESERVATION_CANCELLED
+            assertEquals("RESERVATION_CONFIRMED", extLogs.get(1).getDescription());
+            assertEquals("TICKET_ASSIGNED", extLogs.get(3).getDescription());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE);
 
@@ -1049,6 +1058,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
                 //test revert check in
                 assertTrue(checkInApiController.revertCheckIn(event.getId(), ticketIdentifier, principal));
+
                 assertFalse(checkInApiController.revertCheckIn(event.getId(), ticketIdentifier, principal));
                 TicketAndCheckInResult ticketAndCheckInResult2 = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
                 assertEquals(CheckInStatus.OK_READY_TO_BE_CHECKED_IN, ticketAndCheckInResult2.getResult().getStatus());
