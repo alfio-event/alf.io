@@ -26,8 +26,8 @@ class MessageSourceManagerTest {
 
     @Test
     void cleanTranslationsForFrontend() {
-        var input = Map.of("key1", "blabla{{1}}", "key2", "blabla{1}}}");
-        assertEquals(Map.of("key1", "blabla{{1}}", "key2", "blabla{{1}}"), MessageSourceManager.cleanTranslationsForFrontend(input));
+        var input = Map.of("key1", "blabla{{1}}", "key2", "blabla{1}}}", "key3", "don''t stop me{{0}}", "key4", "don't stop me{{0}}");
+        assertEquals(Map.of("key1", "blabla{{1}}", "key2", "blabla{{1}}", "key3", "don't stop me{{0}}", "key4", "don't stop me{{0}}"), MessageSourceManager.cleanTranslationsForFrontend(input));
     }
 
     @Test
