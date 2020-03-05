@@ -96,7 +96,7 @@ public class MessageSourceManager {
 
     public static Map<String, String> cleanTranslationsForFrontend(Map<String, String> translations) {
         return translations.entrySet().stream()
-            .map(entry -> Pair.of(entry.getKey(), cleanArguments(entry.getValue(), "{{$1}}")))
+            .map(entry -> Pair.of(entry.getKey(), cleanArguments(entry.getValue(), "{{$1}}").replaceAll("''", "'")))
             .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     }
 }
