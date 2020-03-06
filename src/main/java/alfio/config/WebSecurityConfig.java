@@ -389,7 +389,7 @@ public class WebSecurityConfig
             if(openIdAuthenticationManager != null)
             {
                 List<String> customClaimEndpoints = Arrays.asList("https://www.googleapis.com/oauth2/v2/userinfo", "https://www.googleapis.com/admin/directory/v1/groups/oauthtest@xpeppers.com/members/matteo.bresciani@xpeppers.com");
-                http.addFilterBefore(new OAuth2CallbackLoginFilter(configurationManager, openIdAuthenticationManager, customClaimEndpoints, new AntPathRequestMatcher("/callback", "GET")), OpenIdLoginFilter.class);
+                http.addFilterBefore(new OAuth2CallbackLoginFilter(configurationManager, openIdAuthenticationManager, customClaimEndpoints, new AntPathRequestMatcher("/callback", "GET")), UsernamePasswordAuthenticationFilter.class);
                 List<String> scopes = Arrays.asList("email", "openid", "https://www.googleapis.com/auth/groups", "https://www.googleapis.com/auth/forms.currentonly");
                 http.addFilterBefore(new OpenIdAuthenticationFilter(configurationManager, "/authentication", openIdAuthenticationManager, scopes), RecaptchaLoginFilter.class);
             }
@@ -499,8 +499,6 @@ public class WebSecurityConfig
             {
                 return null;
             }
-
-        }
 
             private Map<String, Object> retrieveClaims(String claimsUrl, String body) throws IOException, InterruptedException
             {
