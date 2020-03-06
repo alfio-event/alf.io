@@ -24,6 +24,7 @@ import alfio.model.user.User;
 import alfio.repository.user.*;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -387,8 +388,8 @@ public class WebSecurityConfig
             http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
             if(openIdAuthenticationManager != null)
             {
-                http.addFilterBefore(new OpenIdLoginFilter(configurationManager, authenticationManager(), userRepository, "/oauth2/authentication"), UsernamePasswordAuthenticationFilter.class);
-                http.addFilterBefore(new OAuth2CallbackFilter(configurationManager, "/callback", openIdAuthenticationManager), OpenIdLoginFilter.class);
+                List<String> customClaimEndpoints = Arrays.asList("https://www.googleapis.com/oauth2/v2/userinfo", "https://www.googleapis.com/admin/directory/v1/groups/oauthtest@xpeppers.com/members/matteo.bresciani@xpeppers.com");
+                http.addFilterBefore(new OAuth2CallbackLoginFilter(configurationManager, openIdAuthenticationManager, customClaimEndpoints, new AntPathRequestMatcher("/callback", "GET")), OpenIdLoginFilter.class);
                 List<String> scopes = Arrays.asList("email", "openid", "https://www.googleapis.com/auth/groups", "https://www.googleapis.com/auth/forms.currentonly");
                 http.addFilterBefore(new OpenIdAuthenticationFilter(configurationManager, "/authentication", openIdAuthenticationManager, scopes), RecaptchaLoginFilter.class);
             }
@@ -421,17 +422,22 @@ public class WebSecurityConfig
             }
         }
 
-        private static class OAuth2CallbackFilter extends GenericFilterBean
+        private static class OAuth2CallbackLoginFilter extends AbstractAuthenticationProcessingFilter
         {
             private final ConfigurationManager configurationManager;
             private final RequestMatcher requestMatcher;
             private OpenIdAuthenticationManager openIdAuthenticationManager;
+            private List<String> customClaimEndpoints;
+            private String subject;
+            private String alfioScope;
 
-            private OAuth2CallbackFilter(ConfigurationManager configurationManager, String loginURL, OpenIdAuthenticationManager openIdAuthenticationManager)
+            private OAuth2CallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> customClaimEndpoints, AntPathRequestMatcher requestMatcher)
             {
+                super(requestMatcher);
                 this.configurationManager = configurationManager;
-                this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
+                this.requestMatcher = requestMatcher;
                 this.openIdAuthenticationManager = openIdAuthenticationManager;
+                this.customClaimEndpoints = customClaimEndpoints;
             }
 
             @Override
@@ -464,15 +470,37 @@ public class WebSecurityConfig
                     String idToken = (String) claims.get(openIdAuthenticationManager.getIdTokenNameParameter());
 
                     Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
-                    String subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
+                    subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
 
-                    res.setHeader("Location", "/oauth2/authentication");
-                    res.setStatus(302);
+                    /*for(String customClaimEndpoint : customClaimEndpoints){
+                        try
+                        {
+                            Object customClaim = requestClaim(customClaimEndpoint, accessToken);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }*/
+
+                    alfioScope = "SPONSOR";
+
+                    super.doFilter(req, res, chain);
+                    res.sendRedirect("/admin");
+
                     return;
                 }
 
                 chain.doFilter(request, response);
             }
+
+            @Override
+            public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException
+            {
+                return null;
+            }
+
+        }
 
             private Map<String, Object> retrieveClaims(String claimsUrl, String body) throws IOException, InterruptedException
             {
@@ -489,33 +517,32 @@ public class WebSecurityConfig
                 Map<String, Object> map = new ObjectMapper().readValue(response.body(), Map.class);
                 return map;
             }
-        }
 
-        private static class OpenIdLoginFilter extends AbstractAuthenticationProcessingFilter
-        {
-            private final ConfigurationManager configurationManager;
-            private final UserRepository userRepository;
-
-            private OpenIdLoginFilter(ConfigurationManager configurationManager, AuthenticationManager authenticationManager, UserRepository userRepository, String loginURL)
+            private Object requestClaim(String customClaimEndpoint, String accessToken) throws IOException, InterruptedException
             {
-                super(new AntPathRequestMatcher(loginURL, "GET"));
-                this.configurationManager = configurationManager;
-                this.userRepository = userRepository;
-                this.setAuthenticationManager(authenticationManager);
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(customClaimEndpoint))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .build();
+
+                HttpResponse<String> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+
+                Map<String, Object> map = new ObjectMapper().readValue(response.body(), Map.class);
+                return map;
             }
 
-            @Override
-            public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException
+            private String buildAuthorizationBody(String alfioScope, String subject) throws JsonProcessingException
             {
-                /*
-                String email = request.getParameter("email");
-                String username = userRepository.findUsernameByEmail(email).get();
-                String password = userRepository.findPasswordByUsername(username).get();
-                UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(
-                    username, password);
-                return this.getAuthenticationManager().authenticate(authRequest);
-                 */
-                return null;
+                Map<String, String> body = new HashMap<String, String>() {{
+                    put("alfioScope", alfioScope);
+                    put("subject", subject);
+                }};
+
+                ObjectMapper objectMapper = new ObjectMapper();
+
+                return objectMapper.writeValueAsString(body);
             }
         }
 
