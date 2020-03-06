@@ -5,7 +5,9 @@ import org.junit.*;
 
 import java.util.*;
 
-public class Auth0AuthenticationManagerTest
+import static org.junit.jupiter.api.Assertions.*;
+
+public class GoogleAuthenticationManagerTest
 {
     private final String DOMAIN = "domain_test";
     private final String CLIENT_ID = "123";
@@ -13,19 +15,19 @@ public class Auth0AuthenticationManagerTest
     private final String CALLBACK_URI = "callback";
     private final String CLAIMS_URI = "/claims";
 
-    private final Auth0AuthenticationManager authenticationManager = new Auth0AuthenticationManager(DOMAIN, CLIENT_ID, CLIENT_SECRET, CALLBACK_URI, CLAIMS_URI);
+    private final GoogleAuthenticationManager authenticationManager = new GoogleAuthenticationManager(DOMAIN, CLIENT_ID, CLIENT_SECRET, CALLBACK_URI, CLAIMS_URI);
 
     @Test
-    public void auth0_authorize_url_test()
+    public void google_authorize_url_test()
     {
         List<String> scopes = Arrays.asList("scope1", "scope2");
         String redirectURL = authenticationManager.buildAuthorizeUrl(scopes);
-        String expectedURL = "https://domain_test/authorize?redirect_uri=callback&client_id=123&scope=scope1%20scope2&response_type=code";
+        String expectedURL = "https://domain_test/o/oauth2/v2/auth?redirect_uri=callback&client_id=123&scope=scope1%20scope2&response_type=code";
         Assert.assertEquals(expectedURL, redirectURL);
     }
 
     @Test
-    public void auth0_claims_url_test()
+    public void google_claims_url_test()
     {
         String claimsUrl = authenticationManager.buildClaimsRetrieverUrl();
         String expectedURL = "https://domain_test/claims";
@@ -33,7 +35,7 @@ public class Auth0AuthenticationManagerTest
     }
 
     @Test
-    public void auth0_build_body_test() throws JsonProcessingException
+    public void google_build_body_test() throws JsonProcessingException
     {
         String code = "code";
         String body = authenticationManager.buildRetrieveClaimsUrlBody(code);
@@ -42,11 +44,10 @@ public class Auth0AuthenticationManagerTest
     }
 
     @Test
-    public void auth0_parameters_name_test(){
+    public void google_parameters_name_test(){
         Assert.assertEquals("code", authenticationManager.getCodeNameParameter());
         Assert.assertEquals("access_token", authenticationManager.getAccessTokenNameParameter());
         Assert.assertEquals("id_token", authenticationManager.getIdTokenNameParameter());
         Assert.assertEquals("sub", authenticationManager.getSubjectNameParameter());
     }
-
 }
