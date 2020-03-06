@@ -22,6 +22,9 @@ import alfio.manager.user.UserManager;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.user.*;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.Claim;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.*;
@@ -56,6 +59,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -382,7 +387,8 @@ public class WebSecurityConfig
             http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
             if(openIdAuthenticationManager != null)
             {
-                http.addFilterBefore(new OpenIdLoginFilter(configurationManager, authenticationManager(), userRepository, "/authenticationAuth0"), UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(new OpenIdLoginFilter(configurationManager, authenticationManager(), userRepository, "/oauth2/authentication"), UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(new OAuth2CallbackFilter(configurationManager, "/callback", openIdAuthenticationManager), OpenIdLoginFilter.class);
                 List<String> scopes = Arrays.asList("email", "openid", "https://www.googleapis.com/auth/groups", "https://www.googleapis.com/auth/forms.currentonly");
                 http.addFilterBefore(new OpenIdAuthenticationFilter(configurationManager, "/authentication", openIdAuthenticationManager, scopes), RecaptchaLoginFilter.class);
             }
@@ -415,6 +421,76 @@ public class WebSecurityConfig
             }
         }
 
+        private static class OAuth2CallbackFilter extends GenericFilterBean
+        {
+            private final ConfigurationManager configurationManager;
+            private final RequestMatcher requestMatcher;
+            private OpenIdAuthenticationManager openIdAuthenticationManager;
+
+            private OAuth2CallbackFilter(ConfigurationManager configurationManager, String loginURL, OpenIdAuthenticationManager openIdAuthenticationManager)
+            {
+                this.configurationManager = configurationManager;
+                this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
+                this.openIdAuthenticationManager = openIdAuthenticationManager;
+            }
+
+            @Override
+            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
+            {
+                HttpServletRequest req = (HttpServletRequest) request;
+                HttpServletResponse res = (HttpServletResponse) response;
+
+                if (requestMatcher.matches(req))
+                {
+                    String code = req.getParameter("code");
+                    if(code == null){
+                        throw new IllegalArgumentException("authorization code cannot be null");
+                    }
+
+                    String claimsUrl = openIdAuthenticationManager.buildClaimsRetrieverUrl();
+                    String body = openIdAuthenticationManager.buildRetrieveClaimsUrlBody(code);
+                    Map<String, Object> claims = null;
+                    try
+                    {
+                        claims = retrieveClaims(claimsUrl, body);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
+
+                    String accessToken = claims.get("access_token").toString();
+                    String idToken = (String) claims.get("id_token");
+
+                    Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
+                    String subject = idTokenClaims.get("sub").asString();
+
+                    res.setHeader("Location", "/oauth2/authentication");
+                    res.setStatus(302);
+                    return;
+                }
+
+                chain.doFilter(request, response);
+            }
+
+            private Map<String, Object> retrieveClaims(String claimsUrl, String body) throws IOException, InterruptedException
+            {
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(claimsUrl))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+                HttpResponse<String> response = client.send(request,
+                    HttpResponse.BodyHandlers.ofString());
+
+                Map<String, Object> map = new ObjectMapper().readValue(response.body(), Map.class);
+                return map;
+            }
+        }
+
         private static class OpenIdLoginFilter extends AbstractAuthenticationProcessingFilter
         {
             private final ConfigurationManager configurationManager;
@@ -431,12 +507,15 @@ public class WebSecurityConfig
             @Override
             public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException
             {
+                /*
                 String email = request.getParameter("email");
                 String username = userRepository.findUsernameByEmail(email).get();
                 String password = userRepository.findPasswordByUsername(username).get();
                 UsernamePasswordAuthenticationToken authRequest = new UsernamePasswordAuthenticationToken(
                     username, password);
                 return this.getAuthenticationManager().authenticate(authRequest);
+                 */
+                return null;
             }
         }
 
