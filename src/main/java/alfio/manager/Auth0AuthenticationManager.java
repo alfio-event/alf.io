@@ -77,4 +77,28 @@ public class Auth0AuthenticationManager implements OpenIdAuthenticationManager
 
         return objectMapper.writeValueAsString(body);
     }
+
+    @Override
+    public String getCodeNameParameter()
+    {
+        return "code";
+    }
+
+    @Override
+    public String getAccessTokenNameParameter()
+    {
+        return "access_token";
+    }
+
+    @Override
+    public String getIdTokenNameParameter()
+    {
+        return "id_token";
+    }
+
+    @Override
+    public String getSubjectNameParameter()
+    {
+        return "sub";
+    }
 }

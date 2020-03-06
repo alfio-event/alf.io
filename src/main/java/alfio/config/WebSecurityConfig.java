@@ -442,7 +442,7 @@ public class WebSecurityConfig
 
                 if (requestMatcher.matches(req))
                 {
-                    String code = req.getParameter("code");
+                    String code = req.getParameter(openIdAuthenticationManager.getCodeNameParameter());
                     if(code == null){
                         throw new IllegalArgumentException("authorization code cannot be null");
                     }
@@ -460,11 +460,11 @@ public class WebSecurityConfig
                         throw new RuntimeException(e);
                     }
 
-                    String accessToken = claims.get("access_token").toString();
-                    String idToken = (String) claims.get("id_token");
+                    String accessToken = claims.get(openIdAuthenticationManager.getAccessTokenNameParameter()).toString();
+                    String idToken = (String) claims.get(openIdAuthenticationManager.getIdTokenNameParameter());
 
                     Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
-                    String subject = idTokenClaims.get("sub").asString();
+                    String subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
 
                     res.setHeader("Location", "/oauth2/authentication");
                     res.setStatus(302);
