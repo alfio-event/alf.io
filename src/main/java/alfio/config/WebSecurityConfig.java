@@ -230,7 +230,7 @@ public class WebSecurityConfig
                                           CsrfTokenRepository csrfTokenRepository,
                                           DataSource dataSource,
                                           PasswordEncoder passwordEncoder,
-                                          @Qualifier("auth0AuthenticationManager") OpenIdAuthenticationManager openIdAuthenticationManager,
+                                          @Qualifier("googleAuthenticationManager") OpenIdAuthenticationManager openIdAuthenticationManager,
                                           UserRepository userRepository)
         {
             super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository);
