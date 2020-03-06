@@ -245,6 +245,9 @@
                 </div>
                 <setting data-obj="systemConf.paymentOffline.enabled" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
                 <setting data-obj="systemConf.paymentOffline.deferredSetting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
+                <div ng-if="systemConf.paymentOffline.deferredSetting.value == 'true'">
+                    <setting data-obj="deferredSetting" data-ng-repeat="deferredSetting in systemConf.paymentOffline.deferredConfigOptions"></setting>
+                </div>
                 <div data-ng-repeat="setting in systemConf.paymentOffline.generalSettings" ng-if="systemConf.paymentOffline.deferredSetting.value != 'true'">
                     <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="systemConf.delete(config)"></setting>
                 </div>

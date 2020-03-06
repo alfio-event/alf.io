@@ -723,8 +723,10 @@ public class TicketReservationManager {
 
         final TicketReservation finalReservation = ticketReservationRepository.findReservationById(reservationId);
         createBillingDocument(event, finalReservation, username);
-        sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
-
+        var configuration = configurationManager.getFor(EnumSet.of(DEFERRED_BANK_TRANSFER_ENABLED, DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL), ConfigurationLevel.event(event));
+        if(!configuration.get(DEFERRED_BANK_TRANSFER_ENABLED).getValueAsBooleanOrDefault(false) || configuration.get(DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL).getValueAsBooleanOrDefault(true)) {
+            sendConfirmationEmail(event, findById(reservationId).orElseThrow(IllegalArgumentException::new), language);
+        }
         extensionManager.handleReservationConfirmation(finalReservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), event.getId());
     }
 

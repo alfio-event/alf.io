@@ -168,11 +168,14 @@
                     transformed.paymentOffline = {
                         enabled: service.findSingleConfig(offlineCfg, 'BANK_TRANSFER_ENABLED'),
                         generalSettings: offlineCfg.filter(function (s) {
-                            return s !== deferredOfflineConfig
-                                && !s.key.startsWith('REVOLUT')
+                            return !s.key.startsWith('REVOLUT')
+                                && !s.key.startsWith('DEFERRED_BANK_TRANSFER')
                                 && s.key !== 'BANK_TRANSFER_ENABLED';
                         }),
                         deferredSetting: deferredOfflineConfig,
+                        deferredConfigOptions: offlineCfg.filter(function(s) {
+                            return s.key === 'DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL';
+                        }),
                         revolutSettings: offlineCfg.filter(function (s) {
                             return s.key.startsWith('REVOLUT');
                         })
