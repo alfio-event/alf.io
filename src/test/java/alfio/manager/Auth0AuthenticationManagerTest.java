@@ -41,4 +41,12 @@ public class Auth0AuthenticationManagerTest
         Assert.assertEquals(expectedBody, body);
     }
 
+    @Test
+    public void parametersNameTest(){
+        Assert.assertEquals("code", authenticationManager.getCodeNameParameter());
+        Assert.assertEquals("access_token", authenticationManager.getAccessTokenNameParameter());
+        Assert.assertEquals("id_token", authenticationManager.getIdTokenNameParameter());
+        Assert.assertEquals("sub", authenticationManager.getSubjectNameParameter());
+    }
+
 }
