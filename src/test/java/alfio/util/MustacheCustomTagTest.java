@@ -17,6 +17,7 @@
 package alfio.util;
 
 import com.samskivert.mustache.Template;
+import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -74,5 +75,17 @@ public class MustacheCustomTagTest {
         when(fragment.execute()).thenReturn("[prefix!][existing][suffix-]");
         ADDITIONAL_FIELD_VALUE.apply(Collections.singletonMap("existing", "existing value")).execute(fragment, out);
         verify(out).write("prefix! existing value suffix-");
+    }
+
+    @Test
+    public void testHtmlMarkDown() {
+        //by default we escape all html
+        Assert.assertEquals("<p>escape &lt;a href=&quot;http://test&quot;&gt;bla&lt;/a&gt; escape</p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("escape <a href=\"http://test\">bla</a> escape"));
+
+        //for relative link we don't add target="_blank"
+        Assert.assertEquals("<p>link <a href=\"/test\">bla</a> link</p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("link [bla](/test) link"));
+
+        //for absolute link we add target="_blank"
+        Assert.assertEquals("<p>link <a href=\"http://test\" target=\"_blank\" rel=\"nofollow noopener noreferrer\">bla</a> link</p>\n", MustacheCustomTag.renderToHtmlCommonmarkEscaped("link [bla](http://test) link"));
     }
 }
