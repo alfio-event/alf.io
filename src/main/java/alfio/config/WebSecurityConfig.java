@@ -19,6 +19,7 @@ package alfio.config;
 import alfio.manager.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.support.Array;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.user.*;
@@ -389,7 +390,7 @@ public class WebSecurityConfig
             if(openIdAuthenticationManager != null)
             {
                 List<String> customClaimEndpoints = Arrays.asList("https://www.googleapis.com/oauth2/v2/userinfo", "https://www.googleapis.com/admin/directory/v1/groups/oauthtest@xpeppers.com/members/matteo.bresciani@xpeppers.com");
-                http.addFilterBefore(new OAuth2CallbackLoginFilter(configurationManager, openIdAuthenticationManager, customClaimEndpoints, new AntPathRequestMatcher("/callback", "GET")), UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(new OAuth2CallbackLoginFilter(configurationManager, openIdAuthenticationManager, customClaimEndpoints, new AntPathRequestMatcher("/callback", "GET"), authenticationManager()), UsernamePasswordAuthenticationFilter.class);
                 List<String> scopes = Arrays.asList("email", "openid", "https://www.googleapis.com/auth/groups", "https://www.googleapis.com/auth/forms.currentonly");
                 http.addFilterBefore(new OpenIdAuthenticationFilter(configurationManager, "/authentication", openIdAuthenticationManager, scopes), RecaptchaLoginFilter.class);
             }
@@ -428,12 +429,14 @@ public class WebSecurityConfig
             private final RequestMatcher requestMatcher;
             private OpenIdAuthenticationManager openIdAuthenticationManager;
             private List<String> customClaimEndpoints;
+            private String idToken;
             private String subject;
             private String alfioScope;
 
-            private OAuth2CallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> customClaimEndpoints, AntPathRequestMatcher requestMatcher)
+            private OAuth2CallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> customClaimEndpoints, AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager)
             {
                 super(requestMatcher);
+                setAuthenticationManager(authenticationManager);
                 this.configurationManager = configurationManager;
                 this.requestMatcher = requestMatcher;
                 this.openIdAuthenticationManager = openIdAuthenticationManager;
@@ -467,7 +470,7 @@ public class WebSecurityConfig
                     }
 
                     String accessToken = claims.get(openIdAuthenticationManager.getAccessTokenNameParameter()).toString();
-                    String idToken = (String) claims.get(openIdAuthenticationManager.getIdTokenNameParameter());
+                    idToken = (String) claims.get(openIdAuthenticationManager.getIdTokenNameParameter());
 
                     Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
                     subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
@@ -483,7 +486,7 @@ public class WebSecurityConfig
                         }
                     }*/
 
-                    alfioScope = "SPONSOR";
+                    alfioScope = "ADMIN";
 
                     super.doFilter(req, res, chain);
                     res.sendRedirect("/admin");
@@ -497,7 +500,33 @@ public class WebSecurityConfig
             @Override
             public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException
             {
-                return null;
+                OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(Arrays.asList(new SimpleGrantedAuthority(alfioScope)), idToken, subject);
+                return getAuthenticationManager().authenticate(authentication);
+            }
+
+            private static class OAuth2AlfioAuthentication extends AbstractAuthenticationToken
+            {
+                private final String idToken;
+                private final String subject;
+
+                public OAuth2AlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject)
+                {
+                    super(authorities);
+                    this.idToken = idToken;
+                    this.subject = subject;
+                }
+
+                @Override
+                public Object getCredentials()
+                {
+                    return idToken;
+                }
+
+                @Override
+                public Object getPrincipal()
+                {
+                    return subject;
+                }
             }
 
             private Map<String, Object> retrieveClaims(String claimsUrl, String body) throws IOException, InterruptedException
@@ -529,18 +558,6 @@ public class WebSecurityConfig
 
                 Map<String, Object> map = new ObjectMapper().readValue(response.body(), Map.class);
                 return map;
-            }
-
-            private String buildAuthorizationBody(String alfioScope, String subject) throws JsonProcessingException
-            {
-                Map<String, String> body = new HashMap<String, String>() {{
-                    put("alfioScope", alfioScope);
-                    put("subject", subject);
-                }};
-
-                ObjectMapper objectMapper = new ObjectMapper();
-
-                return objectMapper.writeValueAsString(body);
             }
         }
 
