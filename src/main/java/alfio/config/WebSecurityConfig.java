@@ -19,13 +19,11 @@ package alfio.config;
 import alfio.manager.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.support.Array;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.user.*;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -390,7 +388,7 @@ public class WebSecurityConfig
             if(openIdAuthenticationManager != null)
             {
                 List<String> customClaimEndpoints = Arrays.asList("https://www.googleapis.com/oauth2/v2/userinfo", "https://www.googleapis.com/admin/directory/v1/groups/oauthtest@xpeppers.com/members/matteo.bresciani@xpeppers.com");
-                http.addFilterBefore(new OAuth2CallbackLoginFilter(configurationManager, openIdAuthenticationManager, customClaimEndpoints, new AntPathRequestMatcher("/callback", "GET"), authenticationManager()), UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(new OpenIdCallbackLoginFilter(configurationManager, openIdAuthenticationManager, customClaimEndpoints, new AntPathRequestMatcher("/callback", "GET"), authenticationManager()), UsernamePasswordAuthenticationFilter.class);
                 List<String> scopes = Arrays.asList("email", "openid", "https://www.googleapis.com/auth/groups", "https://www.googleapis.com/auth/forms.currentonly");
                 http.addFilterBefore(new OpenIdAuthenticationFilter(configurationManager, "/authentication", openIdAuthenticationManager, scopes), RecaptchaLoginFilter.class);
             }
@@ -423,7 +421,7 @@ public class WebSecurityConfig
             }
         }
 
-        private static class OAuth2CallbackLoginFilter extends AbstractAuthenticationProcessingFilter
+        private static class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingFilter
         {
             private final ConfigurationManager configurationManager;
             private final RequestMatcher requestMatcher;
@@ -433,7 +431,7 @@ public class WebSecurityConfig
             private String subject;
             private String alfioScope;
 
-            private OAuth2CallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> customClaimEndpoints, AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager)
+            private OpenIdCallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> customClaimEndpoints, AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager)
             {
                 super(requestMatcher);
                 setAuthenticationManager(authenticationManager);
