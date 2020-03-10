@@ -112,6 +112,7 @@ public class ExtensionManager {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservation", reservation);
         payload.put("billingDetails", billingDetails);
+        payload.put("additionalInfo", Map.of());
         transactionRepository.loadOptionalByReservationId(reservation.getId())
             .ifPresent(tr -> payload.put("transaction", tr));
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
@@ -132,12 +133,10 @@ public class ExtensionManager {
     }
 
     void handleWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {
-        int organizationId = eventRepository.findOrganizationIdByEventId(waitingQueueSubscription.getEventId());
-
         Event event = eventRepository.findById(waitingQueueSubscription.getEventId());
         asyncCall(ExtensionEvent.WAITING_QUEUE_SUBSCRIBED,
             event,
-            Collections.singletonMap("waitingQueueSubscription", waitingQueueSubscription));
+            Map.of("waitingQueueSubscription", waitingQueueSubscription, "additionalInfo", Map.of()));
     }
 
     void handleReservationsExpiredForEvent(Event event, Collection<String> reservationIdsToRemove) {
