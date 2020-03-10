@@ -33,6 +33,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -41,6 +42,7 @@ import org.springframework.security.config.annotation.web.configurers.CsrfConfig
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.*;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.*;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
@@ -298,6 +300,10 @@ public class WebSecurityConfig
                 .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
                 .authoritiesByUsernameQuery("select username, role from authority where username = ?")
                 .passwordEncoder(passwordEncoder);
+            if(openIdAuthenticationManager != null)
+            {
+                auth.authenticationProvider(new OAuth2AuthenticationProvider());
+            }
         }
 
         @Override
@@ -484,10 +490,9 @@ public class WebSecurityConfig
                         }
                     }*/
 
-                    alfioScope = "ADMIN";
+                    alfioScope = "ROLE_ADMIN";
 
                     super.doFilter(req, res, chain);
-                    res.sendRedirect("/admin");
 
                     return;
                 }
@@ -500,31 +505,6 @@ public class WebSecurityConfig
             {
                 OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(Arrays.asList(new SimpleGrantedAuthority(alfioScope)), idToken, subject);
                 return getAuthenticationManager().authenticate(authentication);
-            }
-
-            private static class OAuth2AlfioAuthentication extends AbstractAuthenticationToken
-            {
-                private final String idToken;
-                private final String subject;
-
-                public OAuth2AlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject)
-                {
-                    super(authorities);
-                    this.idToken = idToken;
-                    this.subject = subject;
-                }
-
-                @Override
-                public Object getCredentials()
-                {
-                    return idToken;
-                }
-
-                @Override
-                public Object getPrincipal()
-                {
-                    return subject;
-                }
             }
 
             private Map<String, Object> retrieveClaims(String claimsUrl, String body) throws IOException, InterruptedException
@@ -556,6 +536,21 @@ public class WebSecurityConfig
 
                 Map<String, Object> map = new ObjectMapper().readValue(response.body(), Map.class);
                 return map;
+            }
+        }
+
+        private static class OAuth2AuthenticationProvider implements AuthenticationProvider{
+            @Override
+            public Authentication authenticate(Authentication authentication) throws AuthenticationException
+            {
+                OAuth2AlfioAuthentication auth = (OAuth2AlfioAuthentication) authentication;
+                return authentication;
+            }
+
+            @Override
+            public boolean supports(Class<?> authentication)
+            {
+                return authentication.equals(OAuth2AlfioAuthentication.class);
             }
         }
 
@@ -661,6 +656,31 @@ public class WebSecurityConfig
 
                 chain.doFilter(request, response);
             }
+        }
+    }
+
+    public static class OAuth2AlfioAuthentication extends AbstractAuthenticationToken
+    {
+        private final String idToken;
+        private final String subject;
+
+        public OAuth2AlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject)
+        {
+            super(authorities);
+            this.idToken = idToken;
+            this.subject = subject;
+        }
+
+        @Override
+        public Object getCredentials()
+        {
+            return idToken;
+        }
+
+        @Override
+        public Object getPrincipal()
+        {
+            return subject;
         }
     }
 }

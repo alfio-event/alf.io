@@ -33,6 +33,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.*;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -331,7 +333,8 @@ public class IndexController {
         model.addAttribute("username", principal.getName());
         model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
         model.addAttribute("isAdmin", principal.getName().equals("admin"));
-        model.addAttribute("isOwner", userManager.isOwner(userManager.findUserByUsername(principal.getName())));
+        if(!(principal instanceof WebSecurityConfig.OAuth2AlfioAuthentication))
+            model.addAttribute("isOwner", userManager.isOwner(userManager.findUserByUsername(principal.getName())));
         //
         model.addAttribute("request", request);
         model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
