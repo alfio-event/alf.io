@@ -333,7 +333,10 @@ public class IndexController {
         model.addAttribute("username", principal.getName());
         model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
         model.addAttribute("isAdmin", principal.getName().equals("admin"));
-        if(!(principal instanceof WebSecurityConfig.OAuth2AlfioAuthentication))
+
+        boolean isDBAuth2 = !(principal instanceof WebSecurityConfig.OAuth2AlfioAuthentication);
+        model.addAttribute("isDBAuth2", isDBAuth2);
+        if(isDBAuth2)
             model.addAttribute("isOwner", userManager.isOwner(userManager.findUserByUsername(principal.getName())));
         //
         model.addAttribute("request", request);
