@@ -1102,7 +1102,10 @@ public class TicketReservationManager {
                 if((paymentProxy != PaymentProxy.ADMIN || sendTickets) && configurationManager.getFor(SEND_TICKETS_AUTOMATICALLY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true)) {
                     sendTicketByEmail(ticket, locale, event, getTicketEmailGenerator(event, reservation, locale));
                 }
-                extensionManager.handleTicketAssignment(ticket);
+                Map<String, List<String>> additionalInfo = ticketFieldRepository.findNameAndValue(ticket.getId())
+                    .stream()
+                    .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
+                extensionManager.handleTicketAssignment(ticket, additionalInfo);
             });
 
     }
@@ -1542,7 +1545,7 @@ public class TicketReservationManager {
             log.warn("Reservation {}: forced assignee replacement old: {} new: {}", reservation.getId(), reservation.getFullName(), username);
             ticketReservationRepository.updateAssignee(reservation.getId(), username);
         }
-        extensionManager.handleTicketAssignment(newTicket);
+        extensionManager.handleTicketAssignment(newTicket, updateTicketOwner.getAdditional());
 
 
 
