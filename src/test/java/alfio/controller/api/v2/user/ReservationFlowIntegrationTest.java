@@ -318,11 +318,11 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertNotNull(body);
         assertTrue(body.isEmpty());
         ensureConfiguration();
+
         // check if EVENT_CREATED was logged
         List<ExtensionLog> extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-        assertEquals("Size of log", 4, extLogs.size());
-        assertEquals("EVENT_CREATED", extLogs.get(1).getDescription());
-        assertEquals("EVENT_CREATED", extLogs.get(3).getDescription());
+        assertEventLogged(extLogs, "EVENT_CREATED", 4, 1);
+        assertEventLogged(extLogs, "EVENT_CREATED", 4, 3);
 
 
         {
@@ -580,15 +580,13 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
             configurationRepository.deleteCategoryLevelByKey(ConfigurationKeys.PAYMENT_METHODS_BLACKLIST.name(), event.getId(), hiddenCategoryId);
 
-            // clear the extension_log table so that we can check the expectation
-            jdbcTemplate.update("delete from extension_log", Map.of());
-            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
-
-            // cannot have just one row in the log, every execution causes EXACTLY two logs
+            // clear the extension_log table so that we can check the very next additions
+            // cannot have just one row in the log, every event adds EXACTLY two logs
             // log expected: RESERVATION_CANCELLED
+            cleanupExtensionLog();
+            reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-            assertEquals(2, extLogs.size());
-            assertEquals("RESERVATION_CANCELLED", extLogs.get(1).getDescription());
+            assertEventLogged(extLogs, "RESERVATION_CANCELLED", 2, 1);
 
             // this is run by a job, but given the fact that it's in another separate transaction, it cannot work in this test (WaitingQueueSubscriptionProcessor.handleWaitingTickets)
             assertEquals(1, ticketReservationManager.revertTicketsToFreeIfAccessRestricted(event.getId()));
@@ -926,15 +924,14 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertEquals("1.00", orderSummary.getVatPercentage());
 
             //clear the extension_log table so that we can check the expectation
-            jdbcTemplate.update("delete from extension_log", Map.of());
+            cleanupExtensionLog();
 
             validatePayment(event.getShortName(), reservationId);
 
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-            assertEquals(4, extLogs.size()); // cannot expect 1, check if one of rows contains reservation cancelled
+            assertEventLogged(extLogs, "RESERVATION_CONFIRMED", 4, 1);
+            assertEventLogged(extLogs, "TICKET_ASSIGNED", 4, 3);
 
-            assertEquals("RESERVATION_CONFIRMED", extLogs.get(1).getDescription());
-            assertEquals("TICKET_ASSIGNED", extLogs.get(3).getDescription());
 
             checkStatus(reservationId, HttpStatus.OK, true, TicketReservation.TicketReservationStatus.COMPLETE);
 
@@ -1024,6 +1021,9 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             //
 
             {
+                //clear the extension_log table so that we can check the expectation
+                cleanupExtensionLog();
+
                 Principal principal = mock(Principal.class);
                 Mockito.when(principal.getName()).thenReturn(user);
                 String ticketIdentifier = fullTicketInfo.getUuid();
@@ -1038,6 +1038,10 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 List<ScanAudit> audits = scanAuditRepository.findAllForEvent(event.getId());
                 assertFalse(audits.isEmpty());
                 assertTrue(audits.stream().anyMatch(sa -> sa.getTicketUuid().equals(ticketIdentifier)));
+
+                extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
+                assertEventLogged(extLogs, "TICKET_CHECKED_IN", 2, 1);
+
 
 
                 TicketAndCheckInResult ticketAndCheckInResultOk = checkInApiController.findTicketWithUUID(event.getId(), ticketIdentifier, ticketCode);
@@ -1079,14 +1083,16 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 assertEquals(0, eventWithAdditionalInfo4.getCheckedInTickets());
 
 
+                cleanupExtensionLog();
+
                 CheckInApiController.TicketCode tc2 = new CheckInApiController.TicketCode();
                 tc2.setCode(ticketCode);
                 TicketAndCheckInResult ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, tc2, new TestingAuthenticationToken("ciccio", "ciccio"));
                 assertEquals(CheckInStatus.SUCCESS, ticketAndcheckInResult.getResult().getStatus());
-                //
 
+                extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
+                assertEventLogged(extLogs, "TICKET_CHECKED_IN", 2, 1);
 
-                //
                 var offlineIdentifiers = checkInApiController.getOfflineIdentifiers(event.getShortName(), 0L, new MockHttpServletResponse(), principal);
                 assertFalse("Alf.io-PI integration must be enabled by default", offlineIdentifiers.isEmpty());
 
@@ -1198,6 +1204,15 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             eventManager.deleteEvent(event.getId(), user);
         }
 
+    }
+
+    private void cleanupExtensionLog() {
+        jdbcTemplate.update("delete from extension_log", Map.of());
+    }
+
+    private void assertEventLogged(List<ExtensionLog> extLog, String event, int logSize, int index){
+        assertEquals(logSize, extLog.size()); // each event logs exactly two logs
+        assertEquals(event, extLog.get(index).getDescription());
     }
 
     private void checkStatus(String reservationId, HttpStatus expectedHttpStatus, Boolean validated, TicketReservation.TicketReservationStatus reservationStatus) {

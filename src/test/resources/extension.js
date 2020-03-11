@@ -14,7 +14,7 @@ function getScriptMetadata() {
             'RESERVATION_EXPIRED', //fired when reservation(s) expired
             'RESERVATION_CANCELLED', //fired when reservation(s) are cancelled
             'TICKET_CANCELLED', //fired when ticket(s) (but not the entire reservation) are cancelled
-            'TICKET_ASSIGNED', //fired on ticket assignment. No results expected.,
+            'TICKET_ASSIGNED', //fired on ticket assignment. No results expected.
             'TICKET_CHECKED_IN', //fired when a ticket has been checked in. No results expected.
             'WAITING_QUEUE_SUBSCRIPTION', //fired on waiting queue subscription. No results expected.
             'EVENT_CREATED', //fired when an event has been created. Return boolean for synchronous variant, no results expected for the asynchronous one.
