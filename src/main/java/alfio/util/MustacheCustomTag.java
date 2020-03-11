@@ -19,14 +19,18 @@ package alfio.util;
 import alfio.controller.api.support.TicketHelper;
 import com.samskivert.mustache.Mustache;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.text.StringEscapeUtils;
 import org.commonmark.Extension;
 import org.commonmark.ext.gfm.tables.TablesExtension;
+import org.commonmark.node.Link;
 import org.commonmark.node.Node;
 import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.AttributeProvider;
 import org.commonmark.renderer.html.HtmlRenderer;
 import org.commonmark.renderer.text.TextContentRenderer;
+import org.springframework.security.web.util.UrlUtils;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -132,8 +136,23 @@ public class MustacheCustomTag {
 
     private static final List<Extension> COMMONMARK_EXTENSIONS = List.of(TablesExtension.create());
     private static final Parser COMMONMARK_PARSER = Parser.builder().extensions(COMMONMARK_EXTENSIONS).build();
-    private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
+    private static final HtmlRenderer COMMONMARK_RENDERER = HtmlRenderer.builder().extensions(COMMONMARK_EXTENSIONS).attributeProviderFactory((ctx) -> new TargetBlankProvider()).build();
     private static final TextContentRenderer COMMONMARK_TEXT_RENDERER = TextContentRenderer.builder().extensions(COMMONMARK_EXTENSIONS).build();
+
+    //Open in a new window if the link contains an absolute url
+    private static class TargetBlankProvider implements AttributeProvider {
+        @Override
+        public void setAttributes(Node node, String tagName, Map<String, String> attributes) {
+            if (node instanceof Link) {
+                Link l = (Link) node;
+                String destination = StringUtils.trimToEmpty(l.getDestination());
+                if (UrlUtils.isAbsoluteUrl(destination)) {
+                    attributes.put("target", "_blank");
+                    attributes.put("rel", "nofollow noopener noreferrer");
+                }
+            }
+        }
+    }
 
     public static String renderToHtmlCommonmarkEscaped(String input) {
         Node document = COMMONMARK_PARSER.parse(StringEscapeUtils.escapeHtml4(input));
