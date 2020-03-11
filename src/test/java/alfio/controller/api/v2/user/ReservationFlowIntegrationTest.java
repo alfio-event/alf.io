@@ -584,7 +584,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             jdbcTemplate.update("delete from extension_log", Map.of());
             reservationApiV2Controller.cancelPendingReservation(event.getShortName(), res.getBody().getValue());
 
-            // cannot have just one row in the log, every execution causes AT LEAST two logs
+            // cannot have just one row in the log, every execution causes EXACTLY two logs
             // log expected: RESERVATION_CANCELLED
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
             assertEquals(2, extLogs.size());
@@ -931,7 +931,6 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             validatePayment(event.getShortName(), reservationId);
 
             extLogs = extensionLogRepository.getPage(null, null, null, 100, 0);
-            System.out.println(extLogs);
             assertEquals(4, extLogs.size()); // cannot expect 1, check if one of rows contains reservation cancelled
 
             assertEquals("RESERVATION_CONFIRMED", extLogs.get(1).getDescription());
