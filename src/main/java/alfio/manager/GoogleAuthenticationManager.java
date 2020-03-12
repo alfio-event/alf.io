@@ -102,4 +102,10 @@ public class GoogleAuthenticationManager implements OpenIdAuthenticationManager
     {
         return "sub";
     }
+
+    @Override
+    public String getEmailNameParameter()
+    {
+        return "email";
+    }
 }

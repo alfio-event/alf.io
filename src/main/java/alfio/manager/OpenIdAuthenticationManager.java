@@ -14,4 +14,5 @@ public interface OpenIdAuthenticationManager
     String getAccessTokenNameParameter();
     String getIdTokenNameParameter();
     String getSubjectNameParameter();
+    String getEmailNameParameter();
 }

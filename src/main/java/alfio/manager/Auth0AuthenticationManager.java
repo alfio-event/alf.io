@@ -101,4 +101,10 @@ public class Auth0AuthenticationManager implements OpenIdAuthenticationManager
     {
         return "sub";
     }
+
+    @Override
+    public String getEmailNameParameter()
+    {
+        return "email";
+    }
 }
