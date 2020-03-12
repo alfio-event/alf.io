@@ -142,7 +142,7 @@ public class UserManager {
     }
 
     public boolean isOwner(User user) {
-        return checkRole(user, EnumSet.of(Role.ADMIN, Role.OWNER));
+        return checkRole(user, EnumSet.of(Role.ADMIN, Role.OWNER, Role.API_CONSUMER));
     }
 
     public boolean isOwnerOfOrganization(User user, int organizationId) {
