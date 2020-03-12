@@ -232,7 +232,7 @@ public class WebSecurityConfig
                                           CsrfTokenRepository csrfTokenRepository,
                                           DataSource dataSource,
                                           PasswordEncoder passwordEncoder,
-                                          @Qualifier("googleAuthenticationManager") OpenIdAuthenticationManager openIdAuthenticationManager,
+                                          @Qualifier("auth0AuthenticationManager") OpenIdAuthenticationManager openIdAuthenticationManager,
                                           UserRepository userRepository)
         {
             super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository);
@@ -436,6 +436,7 @@ public class WebSecurityConfig
             private String idToken;
             private String subject;
             private String alfioScope;
+            private String email;
 
             private OpenIdCallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> customClaimEndpoints, AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager)
             {
@@ -478,6 +479,7 @@ public class WebSecurityConfig
 
                     Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
                     subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
+                    email = idTokenClaims.get(openIdAuthenticationManager.getEmailNameParameter()).asString();
 
                     /*for(String customClaimEndpoint : customClaimEndpoints){
                         try
@@ -503,7 +505,7 @@ public class WebSecurityConfig
             @Override
             public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException
             {
-                OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(Arrays.asList(new SimpleGrantedAuthority(alfioScope)), idToken, subject);
+                OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(Arrays.asList(new SimpleGrantedAuthority(alfioScope)), idToken, subject, email);
                 return getAuthenticationManager().authenticate(authentication);
             }
 
@@ -543,7 +545,6 @@ public class WebSecurityConfig
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException
             {
-                OAuth2AlfioAuthentication auth = (OAuth2AlfioAuthentication) authentication;
                 return authentication;
             }
 
@@ -577,6 +578,10 @@ public class WebSecurityConfig
 
                 if (requestMatcher.matches(req))
                 {
+                    if(SecurityContextHolder.getContext().getAuthentication() != null || req.getParameterMap().containsKey("logout")) {
+                        res.sendRedirect("/admin/");
+                        return;
+                    }
                     res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl(scopes));
                     return;
                 }
@@ -663,12 +668,14 @@ public class WebSecurityConfig
     {
         private final String idToken;
         private final String subject;
+        private final String email;
 
-        public OAuth2AlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject)
+        public OAuth2AlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject, String email)
         {
             super(authorities);
             this.idToken = idToken;
             this.subject = subject;
+            this.email = email;
         }
 
         @Override
@@ -681,6 +688,11 @@ public class WebSecurityConfig
         public Object getPrincipal()
         {
             return subject;
+        }
+
+        @Override
+        public String getName(){
+            return email;
         }
     }
 }
