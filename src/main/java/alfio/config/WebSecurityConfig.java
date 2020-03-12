@@ -232,7 +232,7 @@ public class WebSecurityConfig
                                           CsrfTokenRepository csrfTokenRepository,
                                           DataSource dataSource,
                                           PasswordEncoder passwordEncoder,
-                                          @Qualifier("auth0AuthenticationManager") OpenIdAuthenticationManager openIdAuthenticationManager,
+                                          OpenIdAuthenticationManager openIdAuthenticationManager,
                                           UserRepository userRepository)
         {
             super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository);
@@ -386,7 +386,7 @@ public class WebSecurityConfig
                 .loginPage("/authentication")
                 .loginProcessingUrl("/authenticate")
                 .failureUrl("/authentication?failed")
-                .and().logout().permitAll();
+                .and().logout().deleteCookies("KEYCLOAK_IDENTITY").permitAll();
 
 
             //
@@ -462,11 +462,10 @@ public class WebSecurityConfig
                     }
 
                     String claimsUrl = openIdAuthenticationManager.buildClaimsRetrieverUrl();
-                    String body = openIdAuthenticationManager.buildRetrieveClaimsUrlBody(code);
                     Map<String, Object> claims = null;
                     try
                     {
-                        claims = retrieveClaims(claimsUrl, body);
+                        claims = retrieveClaims(claimsUrl, code);
                     }
                     catch (InterruptedException e)
                     {
@@ -480,6 +479,12 @@ public class WebSecurityConfig
                     Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
                     subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
                     email = idTokenClaims.get(openIdAuthenticationManager.getEmailNameParameter()).asString();
+                    List<String> groups = idTokenClaims.get("groups").asList(String.class);
+
+                    Optional<String> alfioScopeOptional = groups.stream().filter(group -> group.startsWith("ALFIO_")).findFirst();
+                    if(alfioScopeOptional.isEmpty())
+                        throw new RuntimeException("No group starting with ALFIO_ found");
+                    alfioScope = "ROLE_" + alfioScopeOptional.get().substring(6);
 
                     /*for(String customClaimEndpoint : customClaimEndpoints){
                         try
@@ -491,8 +496,6 @@ public class WebSecurityConfig
                             e.printStackTrace();
                         }
                     }*/
-
-                    alfioScope = "ROLE_ADMIN";
 
                     super.doFilter(req, res, chain);
 
@@ -509,13 +512,14 @@ public class WebSecurityConfig
                 return getAuthenticationManager().authenticate(authentication);
             }
 
-            private Map<String, Object> retrieveClaims(String claimsUrl, String body) throws IOException, InterruptedException
+            private Map<String, Object> retrieveClaims(String claimsUrl, String code) throws IOException, InterruptedException
             {
                 HttpClient client = HttpClient.newHttpClient();
+
                 HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(claimsUrl))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .header("Content-Type", openIdAuthenticationManager.getContentType())
+                    .POST(HttpRequest.BodyPublishers.ofString(openIdAuthenticationManager.buildRetrieveClaimsUrlBody(code)))
                     .build();
 
                 HttpResponse<String> response = client.send(request,
