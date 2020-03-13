@@ -483,7 +483,7 @@ public class WebSecurityConfig
                     Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
                     subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
                     email = idTokenClaims.get(openIdAuthenticationManager.getEmailNameParameter()).asString();
-                    List<String> groups = idTokenClaims.get("groups").asList(String.class);
+                    List<String> groups = idTokenClaims.get(openIdAuthenticationManager.getGroupsNameParameter()).asList(String.class);
 
                     alfioScopes = groups.stream().filter(group -> group.startsWith("ALFIO_")).collect(Collectors.toList());
                     if(alfioScopes.isEmpty())

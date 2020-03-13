@@ -6,8 +6,6 @@ package alfio.manager;
     import org.springframework.context.annotation.Profile;
     import org.springframework.stereotype.Component;
 
-    import java.net.URI;
-    import java.net.http.HttpRequest;
     import java.util.*;
 
 @Component
@@ -20,7 +18,8 @@ public class OpenIdAuthenticationManager
     private final String callbackURI;
     private final String authenticationUrl;
     private final String claimsUrl;
-    private String contentType;
+    private final String contentType;
+    private final String groupsNameParameter;
 
     public OpenIdAuthenticationManager(@Value("${oauth2.domain}") String domain,
                                       @Value("${oauth2.clientId}") String clientId,
@@ -28,7 +27,8 @@ public class OpenIdAuthenticationManager
                                       @Value("${oauth2.callbackURI}") String callbackURI,
                                       @Value("${oauth2.authenticationUrl}") String authenticationUrl,
                                       @Value("${oauth2.claimsUrl}") String claimsUrl,
-                                      @Value("${oauth2.contentType}") String contentType){
+                                      @Value("${oauth2.contentType}") String contentType,
+                                      @Value("${oauth2.groupsNameParameter}") String groupsNameParameter){
 
         this.domain = domain;
         this.clientId = clientId;
@@ -37,6 +37,7 @@ public class OpenIdAuthenticationManager
         this.authenticationUrl = authenticationUrl;
         this.claimsUrl = claimsUrl;
         this.contentType = contentType;
+        this.groupsNameParameter = groupsNameParameter;
     }
 
     public String buildAuthorizeUrl(List<String> scopes){
@@ -103,6 +104,11 @@ public class OpenIdAuthenticationManager
         stringBuilder.append("&redirect_uri=" + callbackURI);
 
         return stringBuilder.toString();
+    }
+
+    public String getGroupsNameParameter()
+    {
+        return groupsNameParameter;
     }
 
     public String getCodeNameParameter()
