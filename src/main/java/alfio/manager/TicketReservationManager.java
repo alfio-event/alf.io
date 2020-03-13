@@ -1231,7 +1231,7 @@ public class TicketReservationManager {
                 }
                 var providerAndWebhookResult = paymentResultOptional.get();
                 var paymentWebhookResult = providerAndWebhookResult.getRight();
-                handlePaymentWebhookResult(event, providerAndWebhookResult.getLeft(), paymentWebhookResult, reservation, transaction, paymentContext, "force-check");
+                handlePaymentWebhookResult(event, providerAndWebhookResult.getLeft(), paymentWebhookResult, reservation, transaction, paymentContext, "stuck-check", false);
                 return paymentWebhookResult.getType() == PaymentWebhookResult.Type.NOT_RELEVANT;
             })
             .collect(toList());
@@ -2012,7 +2012,7 @@ public class TicketReservationManager {
                 var paymentWebhookResult = ((WebhookHandler)provider).processWebhook(transactionPayload, transaction, paymentContextReloaded);
                 var event = eventRepository.findByReservationId(reservation.getId());
                 String operationType = transactionPayload.getType();
-                return handlePaymentWebhookResult(event, paymentProvider, paymentWebhookResult, reservation, transaction, paymentContextReloaded, operationType);
+                return handlePaymentWebhookResult(event, paymentProvider, paymentWebhookResult, reservation, transaction, paymentContextReloaded, operationType, true);
             })
             .orElseGet(() -> PaymentWebhookResult.error("payment provider not found"));
     }
@@ -2023,7 +2023,8 @@ public class TicketReservationManager {
                                                             TicketReservation reservation,
                                                             Transaction transaction,
                                                             PaymentContext paymentContext,
-                                                            String operationType) {
+                                                            String operationType,
+                                                            boolean moveToWatingExternalConfirmationAllowed) {
 
         switch(paymentWebhookResult.getType()) {
             case NOT_RELEVANT: {
@@ -2031,7 +2032,7 @@ public class TicketReservationManager {
                 break;
             }
             case TRANSACTION_INITIATED: {
-                if(reservation.getStatus() == EXTERNAL_PROCESSING_PAYMENT) {
+                if(reservation.getStatus() == EXTERNAL_PROCESSING_PAYMENT && moveToWatingExternalConfirmationAllowed) {
                     String status = WAITING_EXTERNAL_CONFIRMATION.name();
                     log.trace("Event {} received. Setting status {} for reservation {}", operationType, status, reservation.getId());
                     ticketReservationRepository.updateReservationStatus(reservation.getId(), status);
@@ -2100,7 +2101,7 @@ public class TicketReservationManager {
         return checkTransactionStatus(event, reservation)
             .map(providerAndWebhookResult -> {
                 var paymentWebhookResult = providerAndWebhookResult.getRight();
-                handlePaymentWebhookResult(event, providerAndWebhookResult.getLeft(), paymentWebhookResult, reservation, transaction, paymentContext, "force-check");
+                handlePaymentWebhookResult(event, providerAndWebhookResult.getLeft(), paymentWebhookResult, reservation, transaction, paymentContext, "force-check", true);
 
                 switch(paymentWebhookResult.getType()) {
                     case FAILED:
