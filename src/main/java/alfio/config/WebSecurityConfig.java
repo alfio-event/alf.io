@@ -41,7 +41,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.*;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.authority.*;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.*;
@@ -434,7 +434,7 @@ public class WebSecurityConfig
             private List<String> customClaimEndpoints;
             private String idToken;
             private String subject;
-            private String alfioScope;
+            private List<String> alfioScopes;
             private String email;
 
             private OpenIdCallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> customClaimEndpoints, AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager)
@@ -480,10 +480,10 @@ public class WebSecurityConfig
                     email = idTokenClaims.get(openIdAuthenticationManager.getEmailNameParameter()).asString();
                     List<String> groups = idTokenClaims.get("groups").asList(String.class);
 
-                    Optional<String> alfioScopeOptional = groups.stream().filter(group -> group.startsWith("ALFIO_")).findFirst();
-                    if(alfioScopeOptional.isEmpty())
+                    alfioScopes = groups.stream().filter(group -> group.startsWith("ALFIO_")).collect(Collectors.toList());
+                    if(alfioScopes.isEmpty())
                         throw new RuntimeException("No group starting with ALFIO_ found");
-                    alfioScope = "ROLE_" + alfioScopeOptional.get().substring(6);
+                    alfioScopes = alfioScopes.stream().map(scope -> "ROLE_" + scope.substring(6)).collect(Collectors.toList());
 
                     /*for(String customClaimEndpoint : customClaimEndpoints){
                         try
@@ -507,7 +507,8 @@ public class WebSecurityConfig
             @Override
             public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException
             {
-                OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(Arrays.asList(new SimpleGrantedAuthority(alfioScope)), idToken, subject, email);
+                List<GrantedAuthority> authorities = alfioScopes.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+                OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(authorities, idToken, subject, email);
                 return getAuthenticationManager().authenticate(authentication);
             }
 
