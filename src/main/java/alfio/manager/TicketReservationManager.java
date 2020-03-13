@@ -1183,24 +1183,58 @@ public class TicketReservationManager {
      * @param expirationDate expiration date
      */
     public void markExpiredInPaymentReservationAsStuck(Date expirationDate) {
-        List<String> stuckReservations = ticketReservationRepository.findStuckReservationsForUpdate(expirationDate);
+        List<Pair<TicketReservation, Event>> stuckReservations = findStuckPaymentsToBeNotified(expirationDate);
         if(!stuckReservations.isEmpty()) {
-            ticketReservationRepository.updateReservationsStatus(stuckReservations, TicketReservationStatus.STUCK.name());
+            List<String> ids = stuckReservations.stream().map(p -> p.getLeft().getId()).collect(toList());
+            ticketReservationRepository.updateReservationsStatus(ids, TicketReservationStatus.STUCK.name());
 
-            Map<Integer, List<ReservationIdAndEventId>> reservationsGroupedByEvent = ticketReservationRepository
-                .getReservationIdAndEventId(stuckReservations)
+
+            Map<Event, List<Pair<TicketReservation, Event>>> reservationsGroupedByEvent = stuckReservations
                 .stream()
-                .collect(Collectors.groupingBy(ReservationIdAndEventId::getEventId));
+                .collect(Collectors.groupingBy(Pair::getRight));
 
-            reservationsGroupedByEvent.forEach((eventId, reservationIds) -> {
-                Event event = eventRepository.findById(eventId);
+            reservationsGroupedByEvent.forEach((event, reservations) -> {
                 Organization organization = organizationRepository.getById(event.getOrganizationId());
                 notificationManager.sendSimpleEmail(event, null, organization.getEmail(),
-                    STUCK_TICKETS_SUBJECT,  () -> String.format(STUCK_TICKETS_MSG, event.getShortName()));
+                    STUCK_TICKETS_SUBJECT,  () -> String.format(STUCK_TICKETS_MSG, event.getDisplayName()));
 
-                extensionManager.handleStuckReservations(event, reservationIds.stream().map(ReservationIdAndEventId::getId).collect(toList()));
+                extensionManager.handleStuckReservations(event, reservations.stream().map(p -> p.getLeft().getId()).collect(toList()));
             });
         }
+    }
+
+    private List<Pair<TicketReservation, Event>> findStuckPaymentsToBeNotified(Date expirationDate) {
+        List<ReservationIdAndEventId> stuckReservations = ticketReservationRepository.findStuckReservationsForUpdate(expirationDate);
+        Map<Integer, Event> events;
+        if(!stuckReservations.isEmpty()){
+            events = eventRepository.findByIds(stuckReservations.stream().map(ReservationIdAndEventId::getEventId).collect(toSet()))
+                .stream()
+                .collect(toMap(Event::getId, Function.identity()));
+        } else {
+            events = Map.of();
+        }
+
+        return stuckReservations.stream()
+            .map(id -> Pair.of(ticketReservationRepository.findReservationById(id.getId()), events.get(id.getEventId())))
+            .filter(reservationAndEvent -> {
+                var event = reservationAndEvent.getRight();
+                var reservation = reservationAndEvent.getLeft();
+                var optionalTransaction = transactionRepository.loadOptionalByReservationIdAndStatusForUpdate(reservation.getId(), Transaction.Status.PENDING);
+                if(optionalTransaction.isEmpty()) {
+                    return true;
+                }
+                var transaction = optionalTransaction.get();
+                PaymentContext paymentContext = new PaymentContext(event, reservation.getId());
+                var paymentResultOptional = checkTransactionStatus(event, reservation);
+                if(paymentResultOptional.isEmpty()) {
+                    return true;
+                }
+                var providerAndWebhookResult = paymentResultOptional.get();
+                var paymentWebhookResult = providerAndWebhookResult.getRight();
+                handlePaymentWebhookResult(event, providerAndWebhookResult.getLeft(), paymentWebhookResult, reservation, transaction, paymentContext, "force-check");
+                return paymentWebhookResult.getType() == PaymentWebhookResult.Type.NOT_RELEVANT;
+            })
+            .collect(toList());
     }
 
     private static Pair<TotalPrice, Optional<PromoCodeDiscount>> totalReservationCostWithVAT(PromoCodeDiscount promoCodeDiscount,
@@ -2063,10 +2097,10 @@ public class TicketReservationManager {
         }
         var transaction = optionalTransaction.get();
         PaymentContext paymentContext = new PaymentContext(event, reservation.getId());
-        return paymentManager.lookupProviderByTransactionAndCapabilities(transaction, List.of(WebhookHandler.class))
-            .map(provider -> {
-                var paymentWebhookResult = ((WebhookHandler)provider).forceTransactionCheck(reservation, transaction, paymentContext);
-                handlePaymentWebhookResult(event, provider, paymentWebhookResult, reservation, transaction, paymentContext, "force-check");
+        return checkTransactionStatus(event, reservation)
+            .map(providerAndWebhookResult -> {
+                var paymentWebhookResult = providerAndWebhookResult.getRight();
+                handlePaymentWebhookResult(event, providerAndWebhookResult.getLeft(), paymentWebhookResult, reservation, transaction, paymentContext, "force-check");
 
                 switch(paymentWebhookResult.getType()) {
                     case FAILED:
@@ -2084,6 +2118,17 @@ public class TicketReservationManager {
                 }
 
             });
+    }
+
+    private Optional<Pair<PaymentProvider, PaymentWebhookResult>> checkTransactionStatus(Event event, TicketReservation reservation) {
+        var optionalTransaction = transactionRepository.loadOptionalByReservationIdAndStatusForUpdate(reservation.getId(), Transaction.Status.PENDING);
+        if(optionalTransaction.isEmpty()) {
+            return Optional.empty();
+        }
+        var transaction = optionalTransaction.get();
+        PaymentContext paymentContext = new PaymentContext(event, reservation.getId());
+        return paymentManager.lookupProviderByTransactionAndCapabilities(transaction, List.of(WebhookHandler.class))
+            .map(provider -> Pair.of(provider, ((WebhookHandler)provider).forceTransactionCheck(reservation, transaction, paymentContext)));
     }
 
     private boolean reservationStatusNotCompatible(TicketReservation reservation) {

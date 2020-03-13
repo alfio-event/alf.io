@@ -71,6 +71,10 @@ public class PaymentWebhookResult {
         return new PaymentWebhookResult(Type.TRANSACTION_INITIATED, paymentToken, null, null);
     }
 
+    public static PaymentWebhookResult pending() {
+        return new PaymentWebhookResult(Type.TRANSACTION_INITIATED, null, null, null);
+    }
+
     public static PaymentWebhookResult redirect(String redirectUrl) {
         return new PaymentWebhookResult(Type.TRANSACTION_INITIATED, null, null, redirectUrl);
     }

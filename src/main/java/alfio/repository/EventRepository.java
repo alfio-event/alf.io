@@ -80,6 +80,9 @@ public interface EventRepository {
     @Query("select * from event order by start_ts asc")
     List<Event> findAll();
 
+    @Query("select * from event where id in(:ids)")
+    List<Event> findByIds(@Bind("ids") Collection<Integer> ids);
+
     @Query("select * from event where org_id in (:organizationIds)")
     List<Event> findByOrganizationIds(@Bind("organizationIds") Collection<Integer> organizationIds);
 
