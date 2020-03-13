@@ -472,7 +472,6 @@ public class WebSecurityConfig
                         throw new RuntimeException(e);
                     }
 
-                    String accessToken = claims.get(openIdAuthenticationManager.getAccessTokenNameParameter()).toString();
                     idToken = (String) claims.get(openIdAuthenticationManager.getIdTokenNameParameter());
 
                     Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
@@ -484,17 +483,6 @@ public class WebSecurityConfig
                     if(alfioScopes.isEmpty())
                         throw new RuntimeException("No group starting with ALFIO_ found");
                     alfioScopes = alfioScopes.stream().map(scope -> "ROLE_" + scope.substring(6)).collect(Collectors.toList());
-
-                    /*for(String customClaimEndpoint : customClaimEndpoints){
-                        try
-                        {
-                            Object customClaim = requestClaim(customClaimEndpoint, accessToken);
-                        }
-                        catch (InterruptedException e)
-                        {
-                            e.printStackTrace();
-                        }
-                    }*/
 
                     super.doFilter(req, res, chain);
 
@@ -520,21 +508,6 @@ public class WebSecurityConfig
                     .uri(URI.create(claimsUrl))
                     .header("Content-Type", openIdAuthenticationManager.getContentType())
                     .POST(HttpRequest.BodyPublishers.ofString(openIdAuthenticationManager.buildRetrieveClaimsUrlBody(code)))
-                    .build();
-
-                HttpResponse<String> response = client.send(request,
-                    HttpResponse.BodyHandlers.ofString());
-
-                Map<String, Object> map = new ObjectMapper().readValue(response.body(), Map.class);
-                return map;
-            }
-
-            private Object requestClaim(String customClaimEndpoint, String accessToken) throws IOException, InterruptedException
-            {
-                HttpClient client = HttpClient.newHttpClient();
-                HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(customClaimEndpoint))
-                    .header("Authorization", "Bearer " + accessToken)
                     .build();
 
                 HttpResponse<String> response = client.send(request,
