@@ -15,7 +15,7 @@ public class OpenIdAuthenticationManagerTest
     private final String CLAIMS_URI = "/claims";
     private final String CONTENT_TYPE = "application/json";
 
-    private final OpenIdAuthenticationManager authenticationManager = new OpenIdAuthenticationManager(DOMAIN, CLIENT_ID, CLIENT_SECRET, CALLBACK_URI, AUTHENTICATION_URL, CLAIMS_URI, "authorization_code", CONTENT_TYPE);
+    private final OpenIdAuthenticationManager authenticationManager = new OpenIdAuthenticationManager(DOMAIN, CLIENT_ID, CLIENT_SECRET, CALLBACK_URI, AUTHENTICATION_URL, CLAIMS_URI, CONTENT_TYPE);
 
     @Test
     public void oauth2_authorize_url_test()
@@ -35,11 +35,22 @@ public class OpenIdAuthenticationManagerTest
     }
 
     @Test
-    public void oauth2_build_body_test() throws JsonProcessingException
+    public void oauth2_json_build_body_test() throws JsonProcessingException
     {
         String code = "code";
-        String body = authenticationManager.buildRetrieveClaimsUrlJsonBody(code);
+        String body = authenticationManager.buildRetrieveClaimsUrlBody(code);
         String expectedBody = "{\"code\":\"code\",\"grant_type\":\"authorization_code\",\"client_secret\":\"1234\",\"redirect_uri\":\"callback\",\"client_id\":\"123\"}";
+        Assert.assertEquals(expectedBody, body);
+    }
+
+    @Test
+    public void oauth2_form_url_encoded_build_body_test() throws JsonProcessingException
+    {
+        String contentType = "application/x-www-form-urlencoded";
+        OpenIdAuthenticationManager authenticationManagerUrlEncoded = new OpenIdAuthenticationManager(DOMAIN, CLIENT_ID, CLIENT_SECRET, CALLBACK_URI, AUTHENTICATION_URL, CLAIMS_URI, contentType);
+        String code = "code";
+        String body = authenticationManagerUrlEncoded.buildRetrieveClaimsUrlBody(code);
+        String expectedBody = "grant_type=authorization_code&code=code&client_id=123&client_secret=1234&redirect_uri=callback";
         Assert.assertEquals(expectedBody, body);
     }
 

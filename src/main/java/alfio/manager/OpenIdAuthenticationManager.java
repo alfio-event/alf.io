@@ -20,7 +20,6 @@ public class OpenIdAuthenticationManager
     private final String callbackURI;
     private final String authenticationUrl;
     private final String claimsUrl;
-    private String grantType;
     private String contentType;
 
     public OpenIdAuthenticationManager(@Value("${oauth2.domain}") String domain,
@@ -29,7 +28,6 @@ public class OpenIdAuthenticationManager
                                       @Value("${oauth2.callbackURI}") String callbackURI,
                                       @Value("${oauth2.authenticationUrl}") String authenticationUrl,
                                       @Value("${oauth2.claimsUrl}") String claimsUrl,
-                                      @Value("${oauth2.grantType}") String grantType,
                                       @Value("${oauth2.contentType}") String contentType){
 
         this.domain = domain;
@@ -38,7 +36,6 @@ public class OpenIdAuthenticationManager
         this.callbackURI = callbackURI;
         this.authenticationUrl = authenticationUrl;
         this.claimsUrl = claimsUrl;
-        this.grantType = grantType;
         this.contentType = contentType;
     }
 
@@ -81,10 +78,10 @@ public class OpenIdAuthenticationManager
         throw new RuntimeException("the Content-Type you specifier is not supported");
     }
 
-    public String buildRetrieveClaimsUrlJsonBody(String code) throws JsonProcessingException
+    private String buildRetrieveClaimsUrlJsonBody(String code) throws JsonProcessingException
     {
         Map<String, String> body = new HashMap<String, String>() {{
-            put("grant_type", grantType);
+            put("grant_type", "authorization_code");
             put("code", code);
             put("client_id", clientId);
             put("client_secret", clientSecret);
@@ -96,10 +93,10 @@ public class OpenIdAuthenticationManager
         return objectMapper.writeValueAsString(body);
     }
 
-    public String buildRetrieveClaimsUrlFormUrlEncodedBody(String code)
+    private String buildRetrieveClaimsUrlFormUrlEncodedBody(String code)
     {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("grant_type=" + grantType);
+        stringBuilder.append("grant_type=authorization_code");
         stringBuilder.append("&code=" + code);
         stringBuilder.append("&client_id=" + clientId);
         stringBuilder.append("&client_secret=" + clientSecret);
