@@ -362,7 +362,6 @@ public class WebSecurityConfig
                 ADMIN_API + "/events/*/sponsor-scan/export",
                 ADMIN_API + "/events/*/invoices/**",
                 ADMIN_API + "/reservation/event/*/*/audit"
-
             };
 
             configurer.csrfTokenRepository(csrfTokenRepository)
@@ -386,7 +385,7 @@ public class WebSecurityConfig
                 .loginPage("/authentication")
                 .loginProcessingUrl("/authenticate")
                 .failureUrl("/authentication?failed")
-                .and().logout().deleteCookies("KEYCLOAK_IDENTITY").permitAll();
+                .and().logout().permitAll();
 
 
             //

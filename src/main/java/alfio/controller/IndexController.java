@@ -23,6 +23,7 @@ import alfio.manager.system.*;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.*;
@@ -34,6 +35,8 @@ import org.springframework.core.env.*;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
@@ -48,6 +51,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.*;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
 
@@ -332,12 +336,16 @@ public class IndexController {
         model.addAttribute("alfioVersion", version);
         model.addAttribute("username", principal.getName());
         model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
-        model.addAttribute("isAdmin", principal.getName().equals("admin"));
 
         boolean isDBAuthentication = !(principal instanceof WebSecurityConfig.OAuth2AlfioAuthentication);
         model.addAttribute("isDBAuthentication", isDBAuthentication);
-        if(isDBAuthentication)
-            model.addAttribute("isOwner", userManager.isOwner(userManager.findUserByUsername(principal.getName())));
+
+        Collection<String> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+            .stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+
+        boolean isAdmin = authorities.contains(Role.ADMIN.getRoleName());
+        model.addAttribute("isOwner", isAdmin || authorities.contains(Role.OWNER.getRoleName()));
+        model.addAttribute("isAdmin", isAdmin);
         //
         model.addAttribute("request", request);
         model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));
