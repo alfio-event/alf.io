@@ -443,7 +443,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                             transactionMetadata.put("paymentMethod", Optional.ofNullable(body.getPaymentMethod()).map(PaymentMethod::name).orElse(null));
                             transactionRepository.update(transaction.getId(), paymentId, paymentId, ZonedDateTime.now(event.getZoneId()),
                                 transaction.getPlatformFee(), transaction.getGatewayFee(), transaction.getStatus(), transactionMetadata);
-                            return PaymentWebhookResult.failed("failed");
+                            return status.equals("failed") ? PaymentWebhookResult.failed("failed") : PaymentWebhookResult.cancelled();
                         case "canceled":
                             transactionRepository.update(transaction.getId(), paymentId, paymentId, ZonedDateTime.now(event.getZoneId()),
                                 0L, 0L, Transaction.Status.CANCELLED, transaction.getMetadata());
@@ -586,7 +586,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         }
 
         String getCheckoutLink() {
-            return body.getAsJsonObject("_links").getAsJsonObject("checkout").get("href").getAsString();
+            return Optional.ofNullable(body.getAsJsonObject("_links").getAsJsonObject("checkout")).map(c -> c.get("href").getAsString()).orElse("");
         }
 
         Optional<ZonedDateTime> getExpiresAt() {
