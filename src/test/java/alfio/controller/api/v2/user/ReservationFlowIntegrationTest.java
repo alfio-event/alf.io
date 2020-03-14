@@ -944,7 +944,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
             assertFalse(orderSummary.isNotYetPaid());
 
 
-            var confRes = reservationApiV2Controller.reSendReservationConfirmationEmail(event.getShortName(), reservationId, "en");
+            var confRes = reservationApiV2Controller.reSendReservationConfirmationEmail(event.getShortName(), reservationId, "en", new TestingAuthenticationToken(null, null));
             assertEquals(HttpStatus.OK, confRes.getStatusCode());
             assertTrue(confRes.getBody());
 
