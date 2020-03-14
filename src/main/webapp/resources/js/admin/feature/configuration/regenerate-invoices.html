@@ -1,0 +1,37 @@
+<div class="panel panel-default">
+    <div class="panel-heading">
+        <div class="panel-title">Regenerate invoices for Event {{$ctrl.event.displayName}}</div>
+    </div>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-xs-12 text-left">
+                Invoices PDF are persisted once generated. If you change some of the above settings and want to have it reflected on invoices already issued, you can regenerate their PDF
+            </div>
+        </div>
+        <hr>
+        <h4>Invoice Generation date</h4>
+        <div class="row">
+            <div class="col-xs-12 col-lg-6">
+                <div class="form-group">
+                    <label for="invoice-date-from">From</label>
+                    <input type="text" autocomplete="off" id="invoice-date-from" ng-model="$ctrl.searchFrom" single-date no-init-date="true" class="form-control" min-date="$ctrl.minDate" max-date="$ctrl.maxDate">
+                </div>
+            </div>
+            <div class="col-xs-12 col-lg-6">
+                <div class="form-group">
+                    <label for="invoice-date-to">To</label>
+                    <input type="text" autocomplete="off" id="invoice-date-to" ng-model="$ctrl.searchTo" single-date no-init-date="true" class="form-control" min-date="$ctrl.minDate" max-date="$ctrl.maxDate">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12 col-lg-10">
+                <strong class="text-info" ng-if="$ctrl.showMatching">{{$ctrl.matchingInvoices.length}} matching invoices found.</strong>
+                <strong class="text-danger" ng-if="$ctrl.showError">{{$ctrl.errorMessage}}</strong>
+            </div>
+            <div class="col-xs-12 col-lg-2 text-right">
+                <button type="button" class="btn btn-warning btn-block" data-ng-disabled="$ctrl.matchingInvoices.length === 0" ng-click="$ctrl.submitRequest()">Regenerate</button>
+            </div>
+        </div>
+    </div>
+</div>
