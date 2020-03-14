@@ -16,6 +16,7 @@
  */
 package alfio.manager.system;
 
+import alfio.manager.BillingDocumentManager;
 import alfio.manager.TicketReservationManager;
 import alfio.model.*;
 import alfio.model.system.ConfigurationKeys;
@@ -74,6 +75,7 @@ public class DataMigrator {
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
+    private final BillingDocumentManager billingDocumentManager;
 
     static {
         PRICE_UPDATE_BY_KEY.put("event", "update event set src_price_cts = :srcPriceCts, vat_status = :vatStatus where id = :eventId");
@@ -96,7 +98,8 @@ public class DataMigrator {
                         TicketSearchRepository ticketSearchRepository,
                         PromoCodeDiscountRepository promoCodeDiscountRepository,
                         AdditionalServiceItemRepository additionalServiceItemRepository,
-                        AdditionalServiceRepository additionalServiceRepository) {
+                        AdditionalServiceRepository additionalServiceRepository,
+                        BillingDocumentManager billingDocumentManager) {
         this.eventMigrationRepository = eventMigrationRepository;
         this.eventRepository = eventRepository;
         this.ticketCategoryRepository = ticketCategoryRepository;
@@ -111,6 +114,7 @@ public class DataMigrator {
         this.promoCodeDiscountRepository = promoCodeDiscountRepository;
         this.additionalServiceItemRepository = additionalServiceItemRepository;
         this.additionalServiceRepository = additionalServiceRepository;
+        this.billingDocumentManager = billingDocumentManager;
     }
 
     public void migrateEventsToCurrentVersion() {
@@ -226,7 +230,7 @@ public class DataMigrator {
             log.info("creating BillingDocument(s) for event {}", event.getDisplayName());
             for (String reservationId : reservations) {
                 TicketReservation reservation = ticketReservationManager.findById(reservationId).orElseThrow(IllegalStateException::new);
-                ticketReservationManager.getOrCreateBillingDocument(event, reservation, null);
+                billingDocumentManager.getOrCreateBillingDocument(event, reservation, null, ticketReservationManager.orderSummaryForReservation(reservation, event));
             }
             log.info("checked {} BillingDocument(s) for event {}", reservations.size(), event.getDisplayName());
         }

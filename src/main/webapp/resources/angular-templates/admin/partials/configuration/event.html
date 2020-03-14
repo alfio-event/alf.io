@@ -110,9 +110,10 @@
             <div class="page-header" id="INVOICE">
                 <h2>Invoice</h2>
             </div>
+
             <div>
                 <div data-ng-repeat="setting in eventConf.settings.INVOICE">
-                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"  ></setting>
+                    <setting data-obj="setting" data-display-delete-if-needed="true" data-delete-handler="eventConf.delete(config)"></setting>
                 </div>
             </div>
             <div class="panel panel-default">
@@ -125,7 +126,40 @@
                     </div>
                 </div>
             </div>
-
+            <regenerate-invoices data-event="eventConf.event"></regenerate-invoices>
+<!--            <div class="panel panel-default">-->
+<!--                <div class="panel-heading">-->
+<!--                    <div class="panel-title">Regenerate invoices for Event {{eventConf.event.displayName}}</div>-->
+<!--                </div>-->
+<!--                <div class="panel-body">-->
+<!--                    <div class="row">-->
+<!--                        <div class="col-xs-12 col-md-10 text-left">-->
+<!--                            Invoices PDF are persisted once generated. If you change some of the above settings and want to have it reflected on invoices already issued, you can regenerate their PDF-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <hr>-->
+<!--                    <h4>Invoice Generation date</h4>-->
+<!--                    <div class="row">-->
+<!--                        <div class="col-xs-12 col-lg-6">-->
+<!--                            <div class="form-group">-->
+<!--                                <label for="invoice-date-from">From</label>-->
+<!--                                <input type="text" autocomplete="off" id="invoice-date-from" ng-model="ctrl.searchFrom" single-date no-init-date="true" class="form-control" min-date="ctrl.minDate" max-date="ctrl.maxDate">-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                        <div class="col-xs-12 col-lg-6">-->
+<!--                            <div class="form-group">-->
+<!--                                <label for="invoice-date-to">To</label>-->
+<!--                                <input type="text" autocomplete="off" id="invoice-date-to" ng-model="ctrl.searchTo" single-date no-init-date="true" class="form-control" min-date="ctrl.minDate" max-date="ctrl.maxDate">-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                    <div class="row">-->
+<!--                        <div class="col-xs-12 text-right">-->
+<!--                            <button type="button" class="btn btn-warning" ng-click="eventConf.openRegenerateDialog()">Regenerate</button>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--            </div>-->
 
             <div class="page-header" id="PAYMENT" data-ng-if="eventConf.payment || eventConf.paymentPaypal || eventConf.paymentStripe || eventConf.paymentMollie || eventConf.paymentOffline">
                 <h2>Payment</h2>

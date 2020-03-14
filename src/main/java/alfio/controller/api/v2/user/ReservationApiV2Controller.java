@@ -59,6 +59,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -94,6 +95,7 @@ public class ReservationApiV2Controller {
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
+    private final BillingDocumentManager billingDocumentManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -477,13 +479,14 @@ public class ReservationApiV2Controller {
     @PostMapping("/event/{eventName}/reservation/{reservationId}/re-send-email")
     public ResponseEntity<Boolean> reSendReservationConfirmationEmail(@PathVariable("eventName") String eventName,
                                                                       @PathVariable("reservationId") String reservationId,
-                                                                      @RequestParam("lang") String lang) {
+                                                                      @RequestParam("lang") String lang,
+                                                                      Principal principal) {
 
 
 
         var res = eventRepository.findOptionalByShortName(eventName).map(event ->
             ticketReservationManager.findById(reservationId).map(ticketReservation -> {
-                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang, event));
+                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang, event), principal.getName());
                 return true;
             }).orElse(false)
         ).orElse(false);
@@ -543,7 +546,7 @@ public class ReservationApiV2Controller {
                 return ResponseEntity.notFound().build();
             }
 
-            BillingDocument billingDocument = ticketReservationManager.getOrCreateBillingDocument(event, reservation, null);
+            BillingDocument billingDocument = billingDocumentManager.getOrCreateBillingDocument(event, reservation, null, ticketReservationManager.orderSummaryForReservation(reservation, event));
 
             try {
                 FileUtil.sendHeaders(response, event.getShortName(), reservation.getId(), billingDocument);

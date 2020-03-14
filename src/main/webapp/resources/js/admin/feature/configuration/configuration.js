@@ -53,6 +53,12 @@
                     return connected ? index > -1 : index === -1;
                 })
             }
+        }).component('regenerateInvoices', {
+            controller: ['$scope', 'ConfigurationService', 'NotificationHandler', RegenerateInvoicesController],
+            templateUrl: '../resources/js/admin/feature/configuration/regenerate-invoices.html',
+            bindings: {
+                event: '<'
+            }
         });
 
     function ConfigurationService($http, HttpErrorHandler, $q, $timeout, $window) {
@@ -206,6 +212,12 @@
                 return _.sortBy(options, function(s) {
                     return s.componentType === 'BOOLEAN' ? 0 : 10;
                 })
+            },
+            findMatchingInvoiceIds: function(event, from, to) {
+                return $http.get('/admin/api/configuration/event/'+event.id+'/matching-invoices?from='+from+'&to='+to).error(HttpErrorHandler.handle);
+            },
+            regenerateInvoices: function(event, ids) {
+                return $http.post('/admin/api/configuration/event/'+event.id+'/regenerate-invoices', ids).error(HttpErrorHandler.handle);
             }
         };
         return service;
@@ -398,7 +410,8 @@
                                           $rootScope,
                                           $stateParams,
                                           GroupService,
-                                          $state) {
+                                          $state,
+                                          $uibModal) {
         var eventConf = this;
         var getData = function() {
             if(angular.isDefined($stateParams.eventName)) {
@@ -507,11 +520,66 @@
                 eventConf.groupMatchTypes = groupMatchTypes;
                 eventConf.removeGroupLink = unlinkGroup(eventConf, GroupService, load);
             });
-
         }
     }
 
-    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams', 'GroupService', '$state'];
+    EventConfigurationController.$inject = ['ConfigurationService', 'EventService', 'ExtensionService', 'NotificationHandler', '$q', '$rootScope', '$stateParams', 'GroupService', '$state', '$uibModal'];
+
+    function RegenerateInvoicesController($scope, ConfigurationService, NotificationHandler) {
+        var ctrl = this;
+
+        var previewSearch = function() {
+            if(moment(ctrl.searchTo).isAfter(moment(ctrl.searchFrom))) {
+                ConfigurationService.findMatchingInvoiceIds(ctrl.event, moment(ctrl.searchFrom).format('x'), moment(ctrl.searchTo).format('x')).then(function(resp) {
+                    ctrl.matchingInvoices = resp.data;
+                    ctrl.showMatching = resp.data.length > 0;
+                    ctrl.showError = resp.data.length === 0;
+                    ctrl.errorMessage = resp.data.length === 0 ? 'No matching invoices found in the given period' : null;
+                });
+            } else {
+                ctrl.showMatching = false;
+                ctrl.showError = true;
+                ctrl.errorMessage = 'Start date cannot be after end date';
+                ctrl.matchingInvoices = [];
+            }
+        };
+        ctrl.submitRequest = function() {
+            ConfigurationService.regenerateInvoices(ctrl.event, ctrl.matchingInvoices)
+                .then(function(result) {
+                    var success = result.data;
+                    if(success) {
+                        NotificationHandler.showSuccess('Request has been scheduled for execution. You will receive an email once the process is complete');
+                    } else {
+                        NotificationHandler.showError('Unable to schedule request for execution. Please try again in a few minutes.');
+                    }
+                }, function() {
+                    NotificationHandler.showError('Unable to schedule request for execution. Please try again in a few minutes.');
+                });
+        };
+
+        ctrl.$onInit = function() {
+            ctrl.minDate = moment(ctrl.event.begin).subtract(1, 'year');
+            ctrl.maxDate = moment().endOf('day');
+            ctrl.searchFrom = null;
+            ctrl.searchTo = null;
+            ctrl.showError = false;
+            ctrl.errorMessage = null;
+            ctrl.showMatching = false;
+            ctrl.loadingMatching = false;
+            ctrl.matchingInvoices = [];
+
+            $scope.$watch('$ctrl.searchFrom', function(newValue) {
+                if(newValue && ctrl.searchTo) {
+                    previewSearch();
+                }
+            });
+            $scope.$watch('$ctrl.searchTo', function(newValue) {
+                if(newValue && ctrl.searchFrom) {
+                    previewSearch();
+                }
+            });
+        };
+    }
 
     function unlinkGroup(conf, GroupService, loadFn) {
         return function(organizationId, groupLink) {

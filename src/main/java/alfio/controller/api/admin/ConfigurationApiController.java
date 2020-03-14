@@ -17,18 +17,26 @@
 package alfio.controller.api.admin;
 
 import alfio.controller.api.support.TicketHelper;
+import alfio.manager.BillingDocumentManager;
+import alfio.manager.EventManager;
+import alfio.manager.system.AdminJobExecutor;
+import alfio.manager.system.AdminJobManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
+import alfio.util.Wrappers;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,13 +44,13 @@ import static alfio.model.system.ConfigurationKeys.*;
 
 @RestController
 @RequestMapping("/admin/api/configuration")
+@AllArgsConstructor
 public class ConfigurationApiController {
 
     private final ConfigurationManager configurationManager;
-
-    public ConfigurationApiController(ConfigurationManager configurationManager) {
-        this.configurationManager = configurationManager;
-    }
+    private final BillingDocumentManager billingDocumentManager;
+    private final AdminJobManager adminJobManager;
+    private final EventManager eventManager;
 
     @GetMapping(value = "/load")
     public Map<ConfigurationKeys.SettingCategory, List<Configuration>> loadConfiguration(Principal principal) {
@@ -161,6 +169,39 @@ public class ConfigurationApiController {
     @GetMapping("/setting-categories")
     public Collection<ConfigurationKeys.SettingCategory> getSettingCategories() {
         return EnumSet.allOf(ConfigurationKeys.SettingCategory.class);
+    }
+
+    @GetMapping(value = "/event/{eventId}/matching-invoices")
+    public ResponseEntity<List<Integer>> getMatchingInvoicesForEvent(@PathVariable("eventId") Integer eventId,
+                                                                     @RequestParam("from") long fromInstant,
+                                                                     @RequestParam("to") long toInstant,
+                                                                     Principal principal) {
+        var eventOptional = Wrappers.optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()));
+        if(eventOptional.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        var zoneId = eventOptional.get().getZoneId();
+        var from = ZonedDateTime.ofInstant(Instant.ofEpochMilli(fromInstant), zoneId);
+        var to = ZonedDateTime.ofInstant(Instant.ofEpochMilli(toInstant), zoneId);
+        if(from.isAfter(to)) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(billingDocumentManager.findMatchingInvoiceIds(eventId, from, to));
+    }
+
+    @PostMapping(value = "/event/{eventId}/regenerate-invoices")
+    public ResponseEntity<Boolean> regenerateInvoices(@PathVariable("eventId") Integer eventId,
+                                                      @RequestBody List<Long> documentIds,
+                                                      Principal principal) {
+        if(!eventManager.eventExistsById(eventId) || documentIds.isEmpty()) {
+            // implicit check done by the Row Level Security
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(adminJobManager.scheduleExecution(AdminJobExecutor.JobName.REGENERATE_INVOICES, Map.of(
+            "username", principal.getName(),
+            "eventId", eventId,
+            "ids", documentIds.stream().map(String::valueOf).collect(Collectors.joining(","))
+        )));
     }
 
     @Data
