@@ -218,6 +218,9 @@
             },
             regenerateInvoices: function(event, ids) {
                 return $http.post('/admin/api/configuration/event/'+event.id+'/regenerate-invoices', ids).error(HttpErrorHandler.handle);
+            },
+            loadFirstInvoiceDate: function(event) {
+                return $http.get('/admin/api/configuration/event/'+event.id+'/invoice-first-date').error(HttpErrorHandler.handle);
             }
         };
         return service;
@@ -558,25 +561,29 @@
         };
 
         ctrl.$onInit = function() {
-            ctrl.minDate = moment(ctrl.event.begin).subtract(1, 'year');
-            ctrl.maxDate = moment().endOf('day');
-            ctrl.searchFrom = null;
-            ctrl.searchTo = null;
-            ctrl.showError = false;
-            ctrl.errorMessage = null;
-            ctrl.showMatching = false;
-            ctrl.loadingMatching = false;
-            ctrl.matchingInvoices = [];
+            ctrl.loading = true;
+            ConfigurationService.loadFirstInvoiceDate(ctrl.event).then(function(res) {
+                ctrl.minDate = moment(res.data).subtract(1, 'day').startOf('day');
+                ctrl.maxDate = moment().endOf('day');
+                ctrl.searchFrom = null;
+                ctrl.searchTo = null;
+                ctrl.showError = false;
+                ctrl.errorMessage = null;
+                ctrl.showMatching = false;
+                ctrl.loadingMatching = false;
+                ctrl.matchingInvoices = [];
+                ctrl.loading = false;
 
-            $scope.$watch('$ctrl.searchFrom', function(newValue) {
-                if(newValue && ctrl.searchTo) {
-                    previewSearch();
-                }
-            });
-            $scope.$watch('$ctrl.searchTo', function(newValue) {
-                if(newValue && ctrl.searchFrom) {
-                    previewSearch();
-                }
+                $scope.$watch('$ctrl.searchFrom', function(newValue) {
+                    if(newValue && ctrl.searchTo) {
+                        previewSearch();
+                    }
+                });
+                $scope.$watch('$ctrl.searchTo', function(newValue) {
+                    if(newValue && ctrl.searchFrom) {
+                        previewSearch();
+                    }
+                });
             });
         };
     }

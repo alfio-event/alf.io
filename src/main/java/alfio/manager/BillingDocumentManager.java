@@ -61,6 +61,10 @@ public class BillingDocumentManager {
     private final TicketReservationRepository ticketReservationRepository;
 
 
+    public Optional<ZonedDateTime> findFirstInvoiceDate(int eventId) {
+        return billingDocumentRepository.findFirstInvoiceGenerationDate(eventId);
+    }
+
     public List<Integer> findMatchingInvoiceIds(Integer eventId, ZonedDateTime from, ZonedDateTime to) {
         return billingDocumentRepository.findMatchingInvoiceIds(eventId, from, to);
     }

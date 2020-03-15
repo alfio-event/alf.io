@@ -68,4 +68,7 @@ public interface BillingDocumentRepository {
         " on a.generation_ts = b.time and a.reservation_id_fk = b.reservation_id_fk "+
         " where a.event_id_fk = :eventId and a.type = 'INVOICE' and b.time between :start and :end")
     List<Integer> findMatchingInvoiceIds(@Bind("eventId") int eventId, @Bind("start") ZonedDateTime start, @Bind("end") ZonedDateTime end);
+
+    @Query("select min(generation_ts) from billing_document where event_id_fk = :eventId and type = 'INVOICE' and status = 'VALID'")
+    Optional<ZonedDateTime> findFirstInvoiceGenerationDate(@Bind("eventId") int eventId);
 }

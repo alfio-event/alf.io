@@ -27,7 +27,6 @@ import alfio.model.modification.ConfigurationModification;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
-import alfio.util.Wrappers;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
@@ -41,6 +40,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
+import static alfio.util.Wrappers.optionally;
 
 @RestController
 @RequestMapping("/admin/api/configuration")
@@ -171,12 +171,18 @@ public class ConfigurationApiController {
         return EnumSet.allOf(ConfigurationKeys.SettingCategory.class);
     }
 
+    @GetMapping(value = "/event/{eventId}/invoice-first-date")
+    public ResponseEntity<ZonedDateTime> getFirstInvoiceDate(@PathVariable("eventId") Integer eventId, Principal principal) {
+        return ResponseEntity.of(optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()))
+            .map(event -> billingDocumentManager.findFirstInvoiceDate(event.getId()).orElseGet(() -> ZonedDateTime.now(event.getZoneId()))));
+    }
+
     @GetMapping(value = "/event/{eventId}/matching-invoices")
     public ResponseEntity<List<Integer>> getMatchingInvoicesForEvent(@PathVariable("eventId") Integer eventId,
                                                                      @RequestParam("from") long fromInstant,
                                                                      @RequestParam("to") long toInstant,
                                                                      Principal principal) {
-        var eventOptional = Wrappers.optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()));
+        var eventOptional = optionally(() -> eventManager.getSingleEventById(eventId, principal.getName()));
         if(eventOptional.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
