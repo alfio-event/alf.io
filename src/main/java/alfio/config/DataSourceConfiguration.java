@@ -45,7 +45,6 @@ import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.EmptySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.datasource.AbstractDataSource;
@@ -141,17 +140,14 @@ public class DataSourceConfiguration {
 
     @Bean
     public Flyway migrator(DataSource dataSource) {
-        var configuration = Flyway.configure();
-        var jdbcTemplate = new JdbcTemplate(dataSource);
-        var matches = jdbcTemplate.queryForObject("select count(*) from information_schema.tables where table_name = 'schema_version'", Integer.class);
-        var tableName = matches != null && matches > 0 ? "schema_version" : configuration.getTable();
-        configuration.table(tableName)
-            .dataSource(dataSource)
-            .validateOnMigrate(false)
-            .target(MigrationVersion.LATEST)
-            .outOfOrder(true)
-            .locations("alfio/db/PGSQL/");
-        Flyway migration = new Flyway(configuration);
+        Flyway migration = new Flyway();
+        migration.setDataSource(dataSource);
+
+        migration.setValidateOnMigrate(false);
+        migration.setTarget(MigrationVersion.LATEST);
+        migration.setOutOfOrder(true);
+
+        migration.setLocations("alfio/db/PGSQL/");
         migration.migrate();
         return migration;
     }
