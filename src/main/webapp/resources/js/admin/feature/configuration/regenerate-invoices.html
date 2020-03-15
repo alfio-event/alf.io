@@ -2,7 +2,7 @@
     <div class="panel-heading">
         <div class="panel-title">Regenerate invoices for Event {{$ctrl.event.displayName}}</div>
     </div>
-    <div class="panel-body">
+    <div class="panel-body" ng-if="!$ctrl.loading">
         <div class="row">
             <div class="col-xs-12 text-left">
                 Invoices PDF are persisted once generated. If you change some of the above settings and want to have it reflected on invoices already issued, you can regenerate their PDF
