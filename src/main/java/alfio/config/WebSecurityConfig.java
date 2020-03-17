@@ -602,12 +602,13 @@ public class WebSecurityConfig
 
                     OAuth2AlfioAuthentication auth = (OAuth2AlfioAuthentication) authentication;
                     String email = auth.getName();
+                    String subject = auth.getPrincipal().toString();
                     Set<Role> roles = auth.getAuthorities().stream().map(authority -> Role.fromRoleName(authority.getAuthority())).collect(Collectors.toSet());
 
                     if (!userManager.usernameExists(email))
                     {
                         int orgId = 1;
-                        userManager.insertUser(orgId, email, email, email, email, roles.iterator().next(), User.Type.INTERNAL, email, null, null);
+                        userManager.insertUser(orgId, email, email, email, email, roles.iterator().next(), User.Type.INTERNAL, subject, null, null);
                     }
                     updateRoles(roles, email);
 
