@@ -112,6 +112,7 @@ public class ExtensionManager {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservation", reservation);
         payload.put("billingDetails", billingDetails);
+        payload.put("additionalInfo", Map.of());
         transactionRepository.loadOptionalByReservationId(reservation.getId())
             .ifPresent(tr -> payload.put("transaction", tr));
         asyncCall(ExtensionEvent.RESERVATION_CONFIRMED,
@@ -119,25 +120,23 @@ public class ExtensionManager {
             payload);
     }
 
-    void handleTicketAssignment(Ticket ticket) {
+    void handleTicketAssignment(Ticket ticket, Map<String, List<String>> additionalInfo) {
         if(!ticket.hasBeenSold()) {
             return; // ignore tickets if the reservation is not yet confirmed
         }
         int eventId = ticket.getEventId();
-        int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
+        //int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
         Event event = eventRepository.findById(eventId);
         asyncCall(ExtensionEvent.TICKET_ASSIGNED,
             event,
-            Collections.singletonMap("ticket", ticket));
+            Map.of("ticket", ticket, "additionalInfo", additionalInfo));
     }
 
     void handleWaitingQueueSubscription(WaitingQueueSubscription waitingQueueSubscription) {
-        int organizationId = eventRepository.findOrganizationIdByEventId(waitingQueueSubscription.getEventId());
-
         Event event = eventRepository.findById(waitingQueueSubscription.getEventId());
         asyncCall(ExtensionEvent.WAITING_QUEUE_SUBSCRIBED,
             event,
-            Collections.singletonMap("waitingQueueSubscription", waitingQueueSubscription));
+            Map.of("waitingQueueSubscription", waitingQueueSubscription, "additionalInfo", Map.of()));
     }
 
     void handleReservationsExpiredForEvent(Event event, Collection<String> reservationIdsToRemove) {

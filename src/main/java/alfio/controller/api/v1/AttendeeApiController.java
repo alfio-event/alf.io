@@ -19,6 +19,7 @@ package alfio.controller.api.v1;
 import alfio.manager.AttendeeManager;
 import alfio.manager.support.SponsorAttendeeData;
 import alfio.manager.support.TicketAndCheckInResult;
+import alfio.model.SponsorScan;
 import alfio.model.result.Result;
 import alfio.model.support.TicketWithAdditionalFields;
 import alfio.repository.SponsorScanRepository;
@@ -42,6 +43,8 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static alfio.util.Wrappers.optionally;
 
 @RestController
 @RequestMapping("/api/attendees")
@@ -70,14 +73,14 @@ public class AttendeeApiController {
 
     @PostMapping("/sponsor-scan")
     public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request, Principal principal) {
-        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, principal.getName()));
+        return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, principal.getName()));
     }
 
     @PostMapping("/sponsor-scan/bulk")
     public ResponseEntity<List<TicketAndCheckInResult>> scanBadges(@RequestBody List<SponsorScanRequest> requests, Principal principal) {
         String username = principal.getName();
         return ResponseEntity.ok(requests.stream()
-            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, username))
+            .map(request -> attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, username))
             .collect(Collectors.toList()));
     }
 
@@ -121,14 +124,19 @@ public class AttendeeApiController {
         private final String eventName;
         private final String ticketIdentifier;
         private final String notes;
+        private final SponsorScan.LeadStatus leadStatus;
 
         @JsonCreator
         public SponsorScanRequest(@JsonProperty("eventName") String eventName,
                                   @JsonProperty("ticketIdentifier") String ticketIdentifier,
-                                  @JsonProperty("notes") String notes) {
+                                  @JsonProperty("notes") String notes,
+                                  @JsonProperty("leadStatus") String leadStatus) {
             this.eventName = eventName;
             this.ticketIdentifier = ticketIdentifier;
             this.notes = notes;
+            this.leadStatus = Optional.ofNullable(leadStatus)
+                .flatMap(l -> optionally(() -> SponsorScan.LeadStatus.valueOf(l)))
+                .orElse(SponsorScan.LeadStatus.WARM);
         }
     }
 

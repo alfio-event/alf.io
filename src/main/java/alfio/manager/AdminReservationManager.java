@@ -109,6 +109,7 @@ public class AdminReservationManager {
     private final FileUploadManager fileUploadManager;
     private final PromoCodeDiscountRepository promoCodeDiscountRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
+    private final BillingDocumentManager billingDocumentManager;
 
     //the following methods have an explicit transaction handling, therefore the @Transactional annotation is not helpful here
     public Result<Triple<TicketReservation, List<Ticket>, Event>> confirmReservation(String eventName, String reservationId, String username, Notification notification) {
@@ -122,7 +123,7 @@ public class AdminReservationManager {
                         return e;
                     })).map(event -> ticketReservationRepository.findOptionalReservationById(reservationId)
                         .filter(r -> r.getStatus() == TicketReservationStatus.PENDING || r.getStatus() == TicketReservationStatus.STUCK)
-                        .map(r -> performConfirmation(reservationId, event, r, notification))
+                        .map(r -> performConfirmation(reservationId, event, r, notification, username))
                         .orElseGet(() -> Result.error(ErrorCode.ReservationError.UPDATE_FAILED))
                     ).orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
                 if(!result.isSuccess()) {
@@ -208,7 +209,7 @@ public class AdminReservationManager {
                 Event event = pair.getLeft();
                 TicketReservation reservation = pair.getRight();
                 if(notification.isCustomer()){
-                    ticketReservationManager.sendConfirmationEmail(event, reservation, LocaleUtil.forLanguageTag(reservation.getUserLanguage()));
+                    ticketReservationManager.sendConfirmationEmail(event, reservation, LocaleUtil.forLanguageTag(reservation.getUserLanguage()), username);
                 }
                 if(notification.isAttendees()) {
                     sendTicketToAttendees(event, reservation, Ticket::getAssigned);
@@ -237,7 +238,7 @@ public class AdminReservationManager {
     }
 
     private Result<Boolean> performUpdate(String reservationId, Event event, TicketReservation r, AdminReservationModification arm, String username) {
-        ticketReservationManager.ensureBillingDocumentIsPresent(event, r, username);
+        billingDocumentManager.ensureBillingDocumentIsPresent(event, r, username, () -> ticketReservationManager.orderSummaryForReservationId(reservationId, event));
         ticketReservationRepository.updateValidity(reservationId, Date.from(arm.getExpiration().toZonedDateTime(event.getZoneId()).toInstant()));
         if(arm.isUpdateContactData()) {
             AdminReservationModification.CustomerData customerData = arm.getCustomerData();
@@ -312,14 +313,14 @@ public class AdminReservationManager {
             .orElseGet(() -> Result.error(ErrorCode.ReservationError.NOT_FOUND));
     }
 
-    private Result<Triple<TicketReservation, List<Ticket>, Event>> performConfirmation(String reservationId, Event event, TicketReservation original, Notification notification) {
+    private Result<Triple<TicketReservation, List<Ticket>, Event>> performConfirmation(String reservationId, Event event, TicketReservation original, Notification notification, String username) {
         try {
             PaymentSpecification spec = new PaymentSpecification(reservationId, null, 0,
                 event, original.getEmail(), new CustomerName(original.getFullName(), original.getFirstName(), original.getLastName(), event.mustUseFirstAndLastName()),
                 original.getBillingAddress(), original.getCustomerReference(), LocaleUtil.forLanguageTag(original.getUserLanguage()),
                 false, false, null, null, null, null, false, false);
 
-            ticketReservationManager.completeReservation(spec, PaymentProxy.ADMIN, notification.isCustomer(), notification.isAttendees());
+            ticketReservationManager.completeReservation(spec, PaymentProxy.ADMIN, notification.isCustomer(), notification.isAttendees(), username);
             return loadReservation(reservationId);
         } catch(Exception e) {
             return Result.error(ErrorCode.ReservationError.UPDATE_FAILED);
@@ -616,7 +617,7 @@ public class AdminReservationManager {
     @Transactional(readOnly = true)
     public Result<Pair<BillingDocument, byte[]>> getSingleBillingDocumentAsPdf(String eventName, String reservationId, long documentId, String username) {
         return loadReservation(eventName, reservationId, username).map(res -> {
-            BillingDocument billingDocument = billingDocumentRepository.findById(documentId, reservationId).orElseThrow(IllegalArgumentException::new);
+            BillingDocument billingDocument = billingDocumentRepository.findByIdAndReservationId(documentId, reservationId).orElseThrow(IllegalArgumentException::new);
             Function<Map<String, Object>, Optional<byte[]>> pdfGenerator = model -> TemplateProcessor.buildBillingDocumentPdf(billingDocument.getType(), res.getRight(), fileUploadManager, LocaleUtil.forLanguageTag(res.getLeft().getUserLanguage()), templateManager, model, extensionManager);
             Map<String, Object> billingModel = billingDocument.getModel();
             return Pair.of(billingDocument, pdfGenerator.apply(billingModel).orElse(null));
@@ -695,7 +696,9 @@ public class AdminReservationManager {
     @Transactional
     public Result<Boolean> regenerateBillingDocument(String eventName, String reservationId, String username) {
         return loadReservation(eventName, reservationId, username).map(res -> {
-            ticketReservationManager.createBillingDocument(res.getRight(), res.getLeft(), username);
+            var event = res.getRight();
+            var reservation = res.getLeft();
+            billingDocumentManager.createBillingDocument(event, reservation, username, ticketReservationManager.orderSummaryForReservation(reservation, event));
             return true;
         });
     }
@@ -717,7 +720,7 @@ public class AdminReservationManager {
             });
         }
 
-        ticketReservationManager.ensureBillingDocumentIsPresent(event, reservation, username);
+        billingDocumentManager.ensureBillingDocumentIsPresent(event, reservation, username, () -> ticketReservationManager.orderSummaryForReservation(reservation, event));
 
         Integer userId = userRepository.findIdByUserName(username).orElse(null);
         Date date = new Date();
@@ -745,7 +748,8 @@ public class AdminReservationManager {
 
     private void internalRegenerateBillingDocument(Event event, String reservationId, String username) {
         ticketReservationRepository.addReservationInvoiceOrReceiptModel(reservationId, null);
-        ticketReservationManager.createBillingDocument(event, ticketReservationRepository.findReservationById(reservationId), username);
+        TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
+        billingDocumentManager.createBillingDocument(event, reservation, username, ticketReservationManager.orderSummaryForReservation(reservation, event));
     }
 
     private void sendTicketHasBeenRemoved(Event event, Organization organization, Ticket ticket) {

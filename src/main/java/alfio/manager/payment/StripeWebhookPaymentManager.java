@@ -413,7 +413,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
                 case "processing":
                 case "requires_action":
                 case "requires_confirmation":
-                    return PaymentWebhookResult.notRelevant("processing");
+                    return PaymentWebhookResult.pending();
                 case "succeeded":
                     return processSuccessfulPaymentIntent(transaction, intent, reservation, event);
                 case "requires_payment_method":

@@ -443,7 +443,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                             transactionMetadata.put("paymentMethod", Optional.ofNullable(body.getPaymentMethod()).map(PaymentMethod::name).orElse(null));
                             transactionRepository.update(transaction.getId(), paymentId, paymentId, ZonedDateTime.now(event.getZoneId()),
                                 transaction.getPlatformFee(), transaction.getGatewayFee(), transaction.getStatus(), transactionMetadata);
-                            return PaymentWebhookResult.failed("failed");
+                            return status.equals("failed") ? PaymentWebhookResult.failed("failed") : PaymentWebhookResult.cancelled();
                         case "canceled":
                             transactionRepository.update(transaction.getId(), paymentId, paymentId, ZonedDateTime.now(event.getZoneId()),
                                 0L, 0L, Transaction.Status.CANCELLED, transaction.getMetadata());
@@ -488,6 +488,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         var amountToRefund = Optional.ofNullable(amount)
             .map(a -> MonetaryUtil.formatCents(a, currencyCode))
             .orElseGet(transaction::getFormattedAmount);
+        log.trace("Attempting to refund {} for reservation {}", amountToRefund, transaction.getReservationId());
         var configurationLevel = ConfigurationLevel.event(event);
         var configuration = getConfiguration(configurationLevel);
         var paymentId = transaction.getPaymentId();
@@ -495,8 +496,10 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         parameters.put("amount[currency]", currencyCode);
         parameters.put("amount[value]", amountToRefund);
         if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false)) {
+            log.trace("Platform mode is active. Setting testmode to {}", !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault(false));
             parameters.put("testmode", !configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault(false));
         }
+
         var request = requestFor(PAYMENTS_ENDPOINT+"/"+ paymentId +"/refunds", configuration, configurationLevel)
             .header("Content-Type", "application/x-www-form-urlencoded")
             .POST(HttpUtils.ofFormUrlEncodedBody(parameters))
@@ -505,6 +508,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         try {
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if(HttpUtils.callSuccessful(response)) {
+                log.trace("Received a successful response from Mollie. Body is {}", response::body);
                 // we ignore the answer, for now
                 return true;
             } else {
@@ -586,7 +590,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         }
 
         String getCheckoutLink() {
-            return body.getAsJsonObject("_links").getAsJsonObject("checkout").get("href").getAsString();
+            return Optional.ofNullable(body.getAsJsonObject("_links").getAsJsonObject("checkout")).map(c -> c.get("href").getAsString()).orElse("");
         }
 
         Optional<ZonedDateTime> getExpiresAt() {

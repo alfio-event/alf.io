@@ -53,8 +53,9 @@ public class DetailedScanData {
                             @Column("s_creation") ZonedDateTime scanTimestamp,
                             @Column("s_event_id") int scanEventId,
                             @Column("s_ticket_id") int scanTicketId,
-                            @Column("s_notes") String notes) {
+                            @Column("s_notes") String notes,
+                            @Column("s_lead_status") SponsorScan.LeadStatus leadStatus) {
         this.ticket = new Ticket(ticketId, ticketUuid, ticketCreation, ticketCategoryId, ticketStatus, ticketEventId, ticketsReservationId, ticketFullName, ticketFirstName, ticketLastName, ticketEmail, ticketLockedAssignment, ticketUserLanguage, ticketSrcPriceCts, ticketFinalPriceCts, ticketVatCts, ticketDiscountCts, extReference, currencyCode);
-        this.sponsorScan = new SponsorScan(scanUserId, scanTimestamp, scanEventId, scanTicketId, notes);
+        this.sponsorScan = new SponsorScan(scanUserId, scanTimestamp, scanEventId, scanTicketId, notes, leadStatus);
     }
 }

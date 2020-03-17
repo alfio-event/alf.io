@@ -30,7 +30,10 @@ public interface BillingDocumentRepository {
     Optional<BillingDocument> findLatestByReservationId(@Bind("reservationId") String reservationId);
 
     @Query("select * from billing_document where reservation_id_fk = :reservationId and id = :id")
-    Optional<BillingDocument> findById(@Bind("id") long documentId, @Bind("reservationId") String reservationId);
+    Optional<BillingDocument> findByIdAndReservationId(@Bind("id") long documentId, @Bind("reservationId") String reservationId);
+
+    @Query("select * from billing_document where id = :id")
+    Optional<BillingDocument> findById(@Bind("id") long documentId);
 
     @Query("update billing_document set status = :status where reservation_id_fk = :reservationId and id = :id")
     int updateStatus(@Bind("id") long documentId, @Bind("status") BillingDocument.Status status, @Bind("reservationId") String reservationId);
@@ -59,4 +62,13 @@ public interface BillingDocumentRepository {
 
     @Query("delete from billing_document where reservation_id_fk in (:reservationIds) and event_id_fk = :eventId")
     int deleteForReservations(@Bind("reservationIds") List<String> reservationIds, @Bind("eventId") int eventId);
+
+    @Query("select id from billing_document a inner join" +
+        "(select max(generation_ts) as time,reservation_id_fk from billing_document where status = 'VALID' and type = 'INVOICE' and event_id_fk = :eventId group by reservation_id_fk) b " +
+        " on a.generation_ts = b.time and a.reservation_id_fk = b.reservation_id_fk "+
+        " where a.event_id_fk = :eventId and a.type = 'INVOICE' and b.time between :start and :end")
+    List<Integer> findMatchingInvoiceIds(@Bind("eventId") int eventId, @Bind("start") ZonedDateTime start, @Bind("end") ZonedDateTime end);
+
+    @Query("select min(generation_ts) from billing_document where event_id_fk = :eventId and type = 'INVOICE' and status = 'VALID'")
+    Optional<ZonedDateTime> findFirstInvoiceGenerationDate(@Bind("eventId") int eventId);
 }

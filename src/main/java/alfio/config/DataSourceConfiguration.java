@@ -20,6 +20,7 @@ import alfio.config.support.ArrayColumnMapper;
 import alfio.config.support.JSONColumnMapper;
 import alfio.config.support.PlatformProvider;
 import alfio.job.Jobs;
+import alfio.job.executor.BillingDocumentJobExecutor;
 import alfio.job.executor.ReservationJobExecutor;
 import alfio.manager.*;
 import alfio.manager.i18n.MessageSourceManager;
@@ -144,7 +145,7 @@ public class DataSourceConfiguration {
     @Bean
     @Profile("!"+Initializer.PROFILE_INTEGRATION_TEST)
     public Supplier<Executor> getNewSingleThreadExecutorSupplier() {
-        return () -> Executors.newSingleThreadExecutor();
+        return Executors::newSingleThreadExecutor;
     }
 
     @Bean
@@ -220,24 +221,43 @@ public class DataSourceConfiguration {
                      WaitingQueueSubscriptionProcessor waitingQueueSubscriptionProcessor,
                      TicketReservationManager ticketReservationManager,
                      AdminJobQueueRepository adminJobQueueRepository,
-                     PlatformTransactionManager platformTransactionManager
+                     PlatformTransactionManager platformTransactionManager,
+                     BillingDocumentManager billingDocumentManager,
+                     EventRepository eventRepository,
+                     OrganizationRepository organizationRepository
                      ) {
         return new Jobs(adminReservationRequestManager, fileUploadManager,
             notificationManager, specialPriceTokenGenerator, ticketReservationManager,
             waitingQueueSubscriptionProcessor,
-            adminJobManager(adminJobQueueRepository, platformTransactionManager, ticketReservationManager));
+            adminJobManager(adminJobQueueRepository, platformTransactionManager, ticketReservationManager, billingDocumentManager, eventRepository, notificationManager, organizationRepository));
     }
 
     @Bean
     AdminJobManager adminJobManager(AdminJobQueueRepository adminJobQueueRepository,
                                     PlatformTransactionManager transactionManager,
-                                    TicketReservationManager ticketReservationManager) {
-        return new AdminJobManager(List.of(reservationJobExecutor(ticketReservationManager)), adminJobQueueRepository, transactionManager);
+                                    TicketReservationManager ticketReservationManager,
+                                    BillingDocumentManager billingDocumentManager,
+                                    EventRepository eventRepository,
+                                    NotificationManager notificationManager,
+                                    OrganizationRepository organizationRepository) {
+        return new AdminJobManager(
+            List.of(reservationJobExecutor(ticketReservationManager), billingDocumentJobExecutor(billingDocumentManager, ticketReservationManager, eventRepository, notificationManager, organizationRepository)),
+            adminJobQueueRepository,
+            transactionManager);
     }
 
     @Bean
     ReservationJobExecutor reservationJobExecutor(TicketReservationManager ticketReservationManager) {
         return new ReservationJobExecutor(ticketReservationManager);
+    }
+
+    @Bean
+    BillingDocumentJobExecutor billingDocumentJobExecutor(BillingDocumentManager billingDocumentManager,
+                                                          TicketReservationManager ticketReservationManager,
+                                                          EventRepository eventRepository,
+                                                          NotificationManager notificationManager,
+                                                          OrganizationRepository organizationRepository) {
+        return new BillingDocumentJobExecutor(billingDocumentManager, ticketReservationManager, eventRepository, notificationManager, organizationRepository);
     }
 
     @Bean
