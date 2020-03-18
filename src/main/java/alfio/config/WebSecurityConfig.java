@@ -22,18 +22,17 @@ import alfio.manager.user.UserManager;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.user.*;
+import alfio.repository.user.join.UserOrganizationRepository;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.*;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -85,6 +84,8 @@ public class WebSecurityConfig
     private static final String SUPERVISOR = "SUPERVISOR";
     public static final String SPONSOR = "SPONSOR";
     private static final String ADMIN = "ADMIN";
+    private static final String ALFIO_ADMIN = "ALFIO_ADMIN";
+    private static final String ALFIO_BACKOFFICE = "ALFIO_BACKOFFICE";
     private static final String OWNER = "OWNER";
     private static final String API_CLIENT = "API_CLIENT";
     private static final String X_REQUESTED_WITH = "X-Requested-With";
@@ -234,9 +235,10 @@ public class WebSecurityConfig
                                           PasswordEncoder passwordEncoder,
                                           OpenIdAuthenticationManager openIdAuthenticationManager,
                                           UserRepository userRepository,
-                                          AuthorityRepository authorityRepository)
+                                          AuthorityRepository authorityRepository,
+                                          UserOrganizationRepository userOrganizationRepository)
         {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository);
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository, userOrganizationRepository);
         }
     }
 
@@ -256,9 +258,10 @@ public class WebSecurityConfig
                                     DataSource dataSource,
                                     PasswordEncoder passwordEncoder,
                                     UserRepository userRepository,
-                                    AuthorityRepository authorityRepository)
+                                    AuthorityRepository authorityRepository,
+                                    UserOrganizationRepository userOrganizationRepository)
         {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, null, userRepository, authorityRepository);
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, null, userRepository, authorityRepository, userOrganizationRepository);
         }
     }
 
@@ -274,6 +277,7 @@ public class WebSecurityConfig
         private final OpenIdAuthenticationManager openIdAuthenticationManager;
         private final UserRepository userRepository;
         private final AuthorityRepository authorityRepository;
+        private UserOrganizationRepository userOrganizationRepository;
 
         public AbstractFormBasedWebSecurity(Environment environment,
                                             UserManager userManager,
@@ -284,7 +288,8 @@ public class WebSecurityConfig
                                             PasswordEncoder passwordEncoder,
                                             OpenIdAuthenticationManager openIdAuthenticationManager,
                                             UserRepository userRepository,
-                                            AuthorityRepository authorityRepository)
+                                            AuthorityRepository authorityRepository,
+                                            UserOrganizationRepository userOrganizationRepository)
         {
             this.environment = environment;
             this.userManager = userManager;
@@ -296,6 +301,7 @@ public class WebSecurityConfig
             this.openIdAuthenticationManager = openIdAuthenticationManager;
             this.userRepository = userRepository;
             this.authorityRepository = authorityRepository;
+            this.userOrganizationRepository = userOrganizationRepository;
         }
 
         @Override
@@ -398,10 +404,8 @@ public class WebSecurityConfig
             if(openIdAuthenticationManager != null)
             {
                 List<String> customClaimEndpoints = Arrays.asList("https://www.googleapis.com/oauth2/v2/userinfo", "https://www.googleapis.com/admin/directory/v1/groups/oauthtest@xpeppers.com/members/matteo.bresciani@xpeppers.com");
-                http.addFilterBefore(new OpenIdCallbackLoginFilter(configurationManager, openIdAuthenticationManager, customClaimEndpoints, new AntPathRequestMatcher("/callback", "GET"), authenticationManager()), UsernamePasswordAuthenticationFilter.class);
-                List<String> scopes = Arrays.asList("email", "openid", "https://www.googleapis.com/auth/groups", "https://www.googleapis.com/auth/forms.currentonly");
-                http.addFilterBefore(new OpenIdAuthenticationFilter(configurationManager, "/authentication", openIdAuthenticationManager, scopes), RecaptchaLoginFilter.class);
-                http.addFilterAfter(new OpenIdDBAuthenticationFilter(configurationManager, "/callback", userManager, authorityRepository), OpenIdCallbackLoginFilter.class);
+                http.addFilterBefore(new OpenIdCallbackLoginFilter(configurationManager, openIdAuthenticationManager, customClaimEndpoints, new AntPathRequestMatcher("/callback", "GET"), authenticationManager(), userRepository, authorityRepository, passwordEncoder, userManager, userOrganizationRepository), UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(new OpenIdAuthenticationFilter(configurationManager, "/authentication", openIdAuthenticationManager), RecaptchaLoginFilter.class);
             }
 
 
@@ -436,21 +440,36 @@ public class WebSecurityConfig
         {
             private final ConfigurationManager configurationManager;
             private final RequestMatcher requestMatcher;
+            private final UserRepository userRepository;
+            private final AuthorityRepository authorityRepository;
+            private final PasswordEncoder passwordEncoder;
+            private final UserManager userManager;
+            private final UserOrganizationRepository userOrganizationRepository;
             private OpenIdAuthenticationManager openIdAuthenticationManager;
             private List<String> customClaimEndpoints;
             private String idToken;
             private String subject;
-            private List<String> alfioScopes;
+            private List<String> alfioGroups;
             private String email;
+            private Map<String, List<String>> alfioOrganizationAuthorizations;
 
-            private OpenIdCallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> customClaimEndpoints, AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager)
+            private OpenIdCallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager,
+                                              List<String> customClaimEndpoints, AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager,
+                                              UserRepository userRepository, AuthorityRepository authorityRepository, PasswordEncoder passwordEncoder,
+                                              UserManager userManager, UserOrganizationRepository userOrganizationRepository)
             {
                 super(requestMatcher);
+                this.userRepository = userRepository;
+                this.authorityRepository = authorityRepository;
+                this.passwordEncoder = passwordEncoder;
+                this.userManager = userManager;
+                this.userOrganizationRepository = userOrganizationRepository;
                 setAuthenticationManager(authenticationManager);
                 this.configurationManager = configurationManager;
                 this.requestMatcher = requestMatcher;
                 this.openIdAuthenticationManager = openIdAuthenticationManager;
                 this.customClaimEndpoints = customClaimEndpoints;
+                this.alfioOrganizationAuthorizations = new HashMap<>();
             }
 
             @Override
@@ -478,17 +497,12 @@ public class WebSecurityConfig
                         throw new RuntimeException(e);
                     }
 
-                    idToken = (String) claims.get(openIdAuthenticationManager.getIdTokenNameParameter());
+                    populateFieldsFrom(claims);
 
-                    Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
-                    subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
-                    email = idTokenClaims.get(openIdAuthenticationManager.getEmailNameParameter()).asString();
-                    List<String> groups = idTokenClaims.get(openIdAuthenticationManager.getGroupsNameParameter()).asList(String.class);
-
-                    alfioScopes = groups.stream().filter(group -> group.startsWith("ALFIO_")).collect(Collectors.toList());
-                    if(alfioScopes.isEmpty())
-                        throw new RuntimeException("No group starting with ALFIO_ found");
-                    alfioScopes = alfioScopes.stream().map(scope -> "ROLE_" + scope.substring(6)).collect(Collectors.toList());
+                    if (!userManager.usernameExists(email))
+                    {
+                        insertUserIntoDatabase();
+                    }
 
                     super.doFilter(req, res, chain);
                 }
@@ -496,10 +510,51 @@ public class WebSecurityConfig
                 chain.doFilter(request, response);
             }
 
+            private void insertUserIntoDatabase()
+            {
+                createUser();
+                Set<Role> roles = alfioGroups.stream().map(group -> group.replace("ALFIO","ROLE_"))
+                    .map(Role::fromRoleName).collect(Collectors.toSet());
+                updateRoles(roles, email);
+            }
+
+            private void createUser()
+            {
+                userRepository.create(email, passwordEncoder.encode(subject), email, email, email, true, User.Type.INTERNAL, null, null);
+            }
+
+            private void populateFieldsFrom(Map<String, Object> claims)
+            {
+                idToken = (String) claims.get(openIdAuthenticationManager.getIdTokenNameParameter());
+
+                Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
+                subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
+                email = idTokenClaims.get(openIdAuthenticationManager.getEmailNameParameter()).asString();
+                List<String> groups = idTokenClaims.get(openIdAuthenticationManager.getGroupsNameParameter()).asList(String.class);
+                alfioGroups = groups.stream().filter(group -> group.startsWith("ALFIO_")).collect(Collectors.toList());
+
+                if(alfioGroups.contains(ALFIO_ADMIN) || alfioGroups.isEmpty()){
+                    return;
+                }
+
+                List<String> alfioRoles = idTokenClaims.get(openIdAuthenticationManager.getAlfioGroupsNameParameter()).asList(String.class);
+                for(String alfioRole : alfioRoles){
+                    String[] orgRole = alfioRole.split("/");
+                    String organization = orgRole[1];
+                    String role = orgRole[2];
+
+                    if(alfioOrganizationAuthorizations.containsKey(organization)){
+                        alfioOrganizationAuthorizations.get(organization).add(role);
+                        continue;
+                    }
+                    alfioOrganizationAuthorizations.put(organization, new ArrayList<>(Arrays.asList(role)));
+                }
+            }
+
             @Override
             public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException
             {
-                List<GrantedAuthority> authorities = alfioScopes.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+                List<GrantedAuthority> authorities = alfioGroups.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
                 OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(authorities, idToken, subject, email);
                 return getAuthenticationManager().authenticate(authentication);
             }
@@ -519,6 +574,11 @@ public class WebSecurityConfig
 
                 Map<String, Object> map = new ObjectMapper().readValue(response.body(), Map.class);
                 return map;
+            }
+
+            private void updateRoles(Set<Role> roles, String username){
+                authorityRepository.revokeAll(username);
+                roles.forEach(role -> authorityRepository.create(username, role.getRoleName()));
             }
         }
 
@@ -541,14 +601,12 @@ public class WebSecurityConfig
             private final ConfigurationManager configurationManager;
             private final RequestMatcher requestMatcher;
             private OpenIdAuthenticationManager openIdAuthenticationManager;
-            private List<String> scopes;
 
-            private OpenIdAuthenticationFilter(ConfigurationManager configurationManager, String loginURL, OpenIdAuthenticationManager openIdAuthenticationManager, List<String> scopes)
+            private OpenIdAuthenticationFilter(ConfigurationManager configurationManager, String loginURL, OpenIdAuthenticationManager openIdAuthenticationManager)
             {
                 this.configurationManager = configurationManager;
                 this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
                 this.openIdAuthenticationManager = openIdAuthenticationManager;
-                this.scopes = scopes;
             }
 
             @Override
@@ -563,67 +621,13 @@ public class WebSecurityConfig
                         res.sendRedirect("/admin/");
                         return;
                     }
-                    res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl(scopes));
+                    res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl(openIdAuthenticationManager.getScopes()));
                     return;
                 }
 
                 chain.doFilter(request, response);
             }
         }
-
-        private static class OpenIdDBAuthenticationFilter extends GenericFilterBean
-        {
-            private final ConfigurationManager configurationManager;
-            private final RequestMatcher requestMatcher;
-            private String callbackUrl;
-            private UserManager userManager;
-            private AuthorityRepository authorityRepository;
-
-            public OpenIdDBAuthenticationFilter(ConfigurationManager configurationManager, String callbackUrl, UserManager userManager, AuthorityRepository authorityRepository) {
-                this.requestMatcher = new AntPathRequestMatcher(callbackUrl, "GET");
-                this.configurationManager = configurationManager;
-                this.callbackUrl = callbackUrl;
-                this.userManager = userManager;
-                this.authorityRepository = authorityRepository;
-            }
-
-            @Override
-            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException
-            {
-                HttpServletRequest req = (HttpServletRequest) request;
-
-                if (requestMatcher.matches(req))
-                {
-                    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-                    if(!(authentication instanceof OAuth2AlfioAuthentication))
-                    {
-                        return;
-                    }
-
-                    OAuth2AlfioAuthentication auth = (OAuth2AlfioAuthentication) authentication;
-                    String email = auth.getName();
-                    String subject = auth.getPrincipal().toString();
-                    Set<Role> roles = auth.getAuthorities().stream().map(authority -> Role.fromRoleName(authority.getAuthority())).collect(Collectors.toSet());
-
-                    if (!userManager.usernameExists(email))
-                    {
-                        int orgId = 1;
-                        userManager.insertUser(orgId, email, email, email, email, roles.iterator().next(), User.Type.INTERNAL, subject, null, null);
-                    }
-                    updateRoles(roles, email);
-
-                    return;
-                }
-
-                chain.doFilter(request, response);
-            }
-
-            private void updateRoles(Set<Role> roles, String username){
-                authorityRepository.revokeAll(username);
-                roles.forEach(role -> authorityRepository.create(username, role.getRoleName()));
-            }
-        }
-
 
         private static class RecaptchaLoginFilter extends GenericFilterBean
         {

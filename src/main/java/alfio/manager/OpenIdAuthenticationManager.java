@@ -20,6 +20,7 @@ public class OpenIdAuthenticationManager
     private final String claimsUrl;
     private final String contentType;
     private final String groupsNameParameter;
+    private final String alfioGroupsNameParameter;
 
     public OpenIdAuthenticationManager(@Value("${oauth2.domain}") String domain,
                                       @Value("${oauth2.clientId}") String clientId,
@@ -28,7 +29,8 @@ public class OpenIdAuthenticationManager
                                       @Value("${oauth2.authenticationUrl}") String authenticationUrl,
                                       @Value("${oauth2.claimsUrl}") String claimsUrl,
                                       @Value("${oauth2.contentType}") String contentType,
-                                      @Value("${oauth2.groupsNameParameter}") String groupsNameParameter){
+                                      @Value("${oauth2.groupsNameParameter}") String groupsNameParameter,
+                                      @Value("${oauth2.alfioGroupsNameParameter}") String alfioGroupsNameParameter){
 
         this.domain = domain;
         this.clientId = clientId;
@@ -38,6 +40,7 @@ public class OpenIdAuthenticationManager
         this.claimsUrl = claimsUrl;
         this.contentType = contentType;
         this.groupsNameParameter = groupsNameParameter;
+        this.alfioGroupsNameParameter = alfioGroupsNameParameter;
     }
 
     public String buildAuthorizeUrl(List<String> scopes){
@@ -111,6 +114,11 @@ public class OpenIdAuthenticationManager
         return groupsNameParameter;
     }
 
+    public String getAlfioGroupsNameParameter()
+    {
+        return alfioGroupsNameParameter;
+    }
+
     public String getCodeNameParameter()
     {
         return "code";
@@ -139,6 +147,11 @@ public class OpenIdAuthenticationManager
     public String getContentType()
     {
         return contentType;
+    }
+
+    public List<String> getScopes()
+    {
+        return Arrays.asList("openid", "email", "profile", groupsNameParameter, alfioGroupsNameParameter);
     }
 }
 
