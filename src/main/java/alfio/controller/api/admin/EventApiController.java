@@ -45,7 +45,6 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
-import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.dao.DataAccessException;
@@ -62,14 +61,16 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.security.Principal;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -636,16 +637,35 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/ticket-sold-statistics")
-    public TicketsStatistics getTicketsStatistics(@PathVariable("eventName") String eventName, @RequestParam(value = "from", required = false) String f, @RequestParam(value = "to", required = false) String t, Principal principal) throws ParseException {
-        EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
-        DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-        //TODO: cleanup
-        Date from = DateUtils.truncate(f == null ? new Date(0) : format.parse(f), Calendar.HOUR);
-        Date to = DateUtils.addMilliseconds(DateUtils.ceiling(t == null ? new Date() : format.parse(t), Calendar.DATE), -1);
-        //
+    public ResponseEntity<TicketsStatistics> getTicketsStatistics(@PathVariable("eventName") String eventName,
+                                                                  @RequestParam(value = "from", required = false) String f,
+                                                                  @RequestParam(value = "to", required = false) String t,
+                                                                  Principal principal) {
 
-        int eventId = event.getId();
-        return new TicketsStatistics(eventStatisticsManager.getTicketSoldStatistics(eventId, from, to), eventStatisticsManager.getTicketReservedStatistics(eventId, from, to));
+        return ResponseEntity.of(eventManager.getOptionalByName(eventName, principal.getName()).map(event -> {
+            var eventId = event.getId();
+            var zoneId = event.getZoneId();
+            var from = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationConfirmedTimestamp(event.getId()), () -> ZonedDateTime.now(zoneId).minusDays(1));
+            var reservedFrom = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationCreatedTimestamp(event.getId()), () -> ZonedDateTime.now(zoneId).minusDays(1));
+            var to = parseDate(t, zoneId, Optional::empty, () -> ZonedDateTime.now(zoneId)).plusDays(1L);
+
+            boolean weeksGranularity = ChronoUnit.MONTHS.between(from, to) > 3;
+            var ticketSoldStatistics = eventStatisticsManager.getTicketSoldStatistics(eventId, from, to, weeksGranularity);
+            var ticketReservedStatistics = eventStatisticsManager.getTicketReservedStatistics(eventId, reservedFrom, to, weeksGranularity);
+            return new TicketsStatistics(weeksGranularity ? "week" : "day", ticketSoldStatistics, ticketReservedStatistics);
+        }));
+    }
+
+    private ZonedDateTime parseDate(String dateToParse,
+                                    ZoneId zoneId,
+                                    Supplier<Optional<ZonedDateTime>> dateLoader,
+                                    Supplier<ZonedDateTime> orElseGet) {
+        var dateFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd");
+        return Optional.ofNullable(dateToParse).map(p -> LocalDate.parse(p, dateFormatter).atTime(23, 59, 59).atZone(zoneId))
+            .or(dateLoader)
+            .map(z -> z.withZoneSameInstant(zoneId))
+            .orElseGet(orElseGet)
+            .truncatedTo(ChronoUnit.DAYS);
     }
 
     @DeleteMapping("/events/{eventName}/reservation/{reservationId}/transaction/{transactionId}/discard")
@@ -668,6 +688,7 @@ public class EventApiController {
 
     @Data
     static class TicketsStatistics {
+        private final String granularity;
         private final List<TicketsByDateStatistic> sold;
         private final List<TicketsByDateStatistic> reserved;
     }
