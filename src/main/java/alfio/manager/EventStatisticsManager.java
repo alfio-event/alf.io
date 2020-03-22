@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -151,12 +152,20 @@ public class EventStatisticsManager {
         };
     }
 
-    public List<TicketsByDateStatistic> getTicketSoldStatistics(int eventId, Date from, Date to) {
-        return ticketReservationRepository.getSoldStatistic(eventId, from, to);
+    public Optional<ZonedDateTime> getFirstReservationConfirmedTimestamp(int eventId) {
+        return ticketReservationRepository.getFirstConfirmationTimestampForEvent(eventId);
     }
 
-    public List<TicketsByDateStatistic> getTicketReservedStatistics(int eventId, Date from, Date to) {
-        return ticketReservationRepository.getReservedStatistic(eventId, from, to);
+    public Optional<ZonedDateTime> getFirstReservationCreatedTimestamp(int eventId) {
+        return ticketReservationRepository.getFirstReservationCreatedTimestampForEvent(eventId);
+    }
+
+    public List<TicketsByDateStatistic> getTicketSoldStatistics(int eventId, ZonedDateTime from, ZonedDateTime to, boolean weeksGranularity) {
+        return ticketReservationRepository.getSoldStatistic(eventId, from, to, weeksGranularity ? "week" : "day");
+    }
+
+    public List<TicketsByDateStatistic> getTicketReservedStatistics(int eventId, ZonedDateTime from, ZonedDateTime to, boolean weeksGranularity) {
+        return ticketReservationRepository.getReservedStatistic(eventId, from, to, weeksGranularity ? "week" : "day");
     }
 
 

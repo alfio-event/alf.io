@@ -141,6 +141,7 @@
                             labels: !mobileView ? _.map(labels, function(l) {return moment(l).format('MMM D')}) : [],
                             series: [reservedSeries, soldSeries]
                         }, {
+                            seriesBarDistance: 10,
                             ignoreEmptyValues:true,
                             showLabels: false,
                             fullWidth: true,
@@ -197,9 +198,7 @@
                             showLabels: false,
                             fullWidth: true,
                             showArea: false,
-                            lineSmooth: Chartist.Interpolation.cardinal({
-                                fillHoles: true
-                            }),
+                            lineSmooth: false,
                             chartPadding: {
                                 right: 10
                             },
@@ -254,12 +253,26 @@
                 split: function(stats) {
                     var soldByDay = stats.sold;
                     var reservedByDay = stats.reserved;
+                    var weeks = stats.granularity === 'week';
                     var labels = _.chain(soldByDay)
                         .concat(reservedByDay)
                         .map('date')
                         .sortBy()
                         .uniq(true)
                         .value();
+
+                    function labelText(date) {
+                        if(weeks) {
+                            // if granularity is "week", date will be the first day of the week.
+                            var end = moment.min(moment(date).add(6, 'days'), moment());
+                            var differentMonth = end.month() !== date.month();
+                            var differentYear = end.year() !== date.year();
+                            var startFormat = 'MMM Do' + (differentYear ? ' YYYY': '');
+                            var endFormat = (differentMonth ? 'MMM ': '') + 'Do YYYY';
+                            return date.format(startFormat) + ' - ' + end.format(endFormat);
+                        }
+                        return date.format('MMM Do YYYY');
+                    }
 
                     function generateSeries(byDay, labels) {
                         return _.map(labels, function(label) {
@@ -271,8 +284,8 @@
                             var mDate = moment.utc(label);
                             return {
                                 value: count,
-                                name: mDate.format('MMM Do YYYY'),
-                                meta: mDate.format('MMM Do YYYY')
+                                name: labelText(mDate),
+                                meta: labelText(mDate)
                             };
                         });
                     }
