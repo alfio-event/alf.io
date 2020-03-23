@@ -160,12 +160,12 @@ public class EventStatisticsManager {
         return ticketReservationRepository.getFirstReservationCreatedTimestampForEvent(eventId);
     }
 
-    public List<TicketsByDateStatistic> getTicketSoldStatistics(int eventId, ZonedDateTime from, ZonedDateTime to, boolean weeksGranularity) {
-        return ticketReservationRepository.getSoldStatistic(eventId, from, to, weeksGranularity ? "week" : "day");
+    public List<TicketsByDateStatistic> getTicketSoldStatistics(int eventId, ZonedDateTime from, ZonedDateTime to, String granularity) {
+        return ticketReservationRepository.getSoldStatistic(eventId, from, to, granularity);
     }
 
-    public List<TicketsByDateStatistic> getTicketReservedStatistics(int eventId, ZonedDateTime from, ZonedDateTime to, boolean weeksGranularity) {
-        return ticketReservationRepository.getReservedStatistic(eventId, from, to, weeksGranularity ? "week" : "day");
+    public List<TicketsByDateStatistic> getTicketReservedStatistics(int eventId, ZonedDateTime from, ZonedDateTime to, String granularity) {
+        return ticketReservationRepository.getReservedStatistic(eventId, from, to, granularity);
     }
 
 

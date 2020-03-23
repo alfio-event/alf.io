@@ -254,6 +254,7 @@
                     var soldByDay = stats.sold;
                     var reservedByDay = stats.reserved;
                     var weeks = stats.granularity === 'week';
+                    var months = stats.granularity === 'month';
                     var labels = _.chain(soldByDay)
                         .concat(reservedByDay)
                         .map('date')
@@ -270,6 +271,8 @@
                             var startFormat = 'MMM Do' + (differentYear ? ' YYYY': '');
                             var endFormat = (differentMonth ? 'MMM ': '') + 'Do YYYY';
                             return date.format(startFormat) + ' - ' + end.format(endFormat);
+                        } else if(months) {
+                            return date.format('MMM YYYY');
                         }
                         return date.format('MMM Do YYYY');
                     }
