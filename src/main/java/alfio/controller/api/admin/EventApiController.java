@@ -660,11 +660,20 @@ public class EventApiController {
             var reservedFrom = parseDate(f, zoneId, () -> eventStatisticsManager.getFirstReservationCreatedTimestamp(event.getId()), () -> ZonedDateTime.now(zoneId).minusDays(1));
             var to = parseDate(t, zoneId, Optional::empty, () -> ZonedDateTime.now(zoneId)).plusDays(1L);
 
-            boolean weeksGranularity = ChronoUnit.MONTHS.between(from, to) > 3;
-            var ticketSoldStatistics = eventStatisticsManager.getTicketSoldStatistics(eventId, from, to, weeksGranularity);
-            var ticketReservedStatistics = eventStatisticsManager.getTicketReservedStatistics(eventId, reservedFrom, to, weeksGranularity);
-            return new TicketsStatistics(weeksGranularity ? "week" : "day", ticketSoldStatistics, ticketReservedStatistics);
+            var granularity = getGranularity(reservedFrom, to);
+            var ticketSoldStatistics = eventStatisticsManager.getTicketSoldStatistics(eventId, from, to, granularity);
+            var ticketReservedStatistics = eventStatisticsManager.getTicketReservedStatistics(eventId, reservedFrom, to, granularity);
+            return new TicketsStatistics(granularity, ticketSoldStatistics, ticketReservedStatistics);
         }));
+    }
+
+    private String getGranularity(ZonedDateTime from, ZonedDateTime to) {
+        if(ChronoUnit.MONTHS.between(from, to) > 12) {
+            return "month";
+        } else if(ChronoUnit.MONTHS.between(from, to) > 3) {
+            return "week";
+        }
+        return "day";
     }
 
     private ZonedDateTime parseDate(String dateToParse,
