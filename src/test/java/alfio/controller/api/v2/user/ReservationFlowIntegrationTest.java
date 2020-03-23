@@ -372,7 +372,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
         assertEquals(1, eventStatistic.size());
         var statisticsFrom = ZonedDateTime.now(event.getZoneId()).minusYears(1);
         var statisticsTo = ZonedDateTime.now(event.getZoneId()).plusDays(1);
-        assertEquals(0L, eventStatisticsManager.getTicketSoldStatistics(event.getId(), statisticsFrom, statisticsTo, false).stream().mapToLong(TicketsByDateStatistic::getCount).sum());
+        assertEquals(0L, eventStatisticsManager.getTicketSoldStatistics(event.getId(), statisticsFrom, statisticsTo, "day").stream().mapToLong(TicketsByDateStatistic::getCount).sum());
         EventWithAdditionalInfo eventWithAdditionalInfo = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
         assertEquals(2, eventWithAdditionalInfo.getNotSoldTickets()); // <- 2 tickets are the bounded category
         assertEquals(0, eventWithAdditionalInfo.getSoldTickets());
@@ -1049,7 +1049,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
 
                 // check stats after check in one ticket
-                assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), statisticsFrom, statisticsTo, false).isEmpty());
+                assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), statisticsFrom, statisticsTo, "day").isEmpty());
                 EventWithAdditionalInfo eventWithAdditionalInfo3 = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
                 assertEquals(2, eventWithAdditionalInfo3.getNotSoldTickets());
                 assertEquals(0, eventWithAdditionalInfo3.getSoldTickets());
@@ -1076,7 +1076,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
                 // check stats after revert check in one ticket
-                assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), statisticsFrom, statisticsTo, false).isEmpty());
+                assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), statisticsFrom, statisticsTo, "day").isEmpty());
                 EventWithAdditionalInfo eventWithAdditionalInfo4 = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
                 assertEquals(2, eventWithAdditionalInfo4.getNotSoldTickets());
                 assertEquals(1, eventWithAdditionalInfo4.getSoldTickets());
