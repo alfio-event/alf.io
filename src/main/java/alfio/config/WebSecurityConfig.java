@@ -27,6 +27,7 @@ import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.*;
 import org.springframework.context.annotation.*;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
@@ -442,6 +443,8 @@ public class WebSecurityConfig
 
         private static class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingFilter
         {
+            private final Logger logger = LoggerFactory.getLogger(OpenIdCallbackLoginFilter.class);
+
             private final ConfigurationManager configurationManager;
             private final RequestMatcher requestMatcher;
             private final UserRepository userRepository;
@@ -525,7 +528,9 @@ public class WebSecurityConfig
             {
                 Optional<Integer> userId = userRepository.findIdByUserName(username);
                 if(userId.isEmpty()){
-                    throw new RuntimeException("user not saved into the database");
+                    String message = "user not saved into the database";
+                    logger.error(message);
+                    throw new RuntimeException(message);
                 }
 
                 Set<Integer> databaseOrganizationIds = organizationRepository.findAllForUser(username).stream()
@@ -548,6 +553,12 @@ public class WebSecurityConfig
                 databaseOrganizationIds.stream()
                     .filter(orgId -> !organizationIds.contains(orgId))
                     .forEach(orgId -> userOrganizationRepository.removeOrganizationUserLink(userId.get(), orgId));
+
+                if(organizationIds.isEmpty()){
+                    String message = "The user needs to be ADMIN or to have at least one organization linked";
+                    logger.error(message);
+                    throw new RuntimeException(message);
+                }
 
                 organizationIds.stream().filter(orgId -> !databaseOrganizationIds.contains(orgId))
                     .forEach(orgId -> userOrganizationRepository.create(userId.get(), orgId));
