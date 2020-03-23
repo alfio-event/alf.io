@@ -19,8 +19,8 @@ package alfio.config;
 import alfio.manager.*;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
+import alfio.model.user.*;
 import alfio.model.user.Role;
-import alfio.model.user.User;
 import alfio.repository.user.*;
 import alfio.repository.user.join.UserOrganizationRepository;
 import com.auth0.jwt.JWT;
@@ -236,9 +236,10 @@ public class WebSecurityConfig
                                           OpenIdAuthenticationManager openIdAuthenticationManager,
                                           UserRepository userRepository,
                                           AuthorityRepository authorityRepository,
-                                          UserOrganizationRepository userOrganizationRepository)
+                                          UserOrganizationRepository userOrganizationRepository,
+                                          OrganizationRepository organizationRepository)
         {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository, userOrganizationRepository);
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
         }
     }
 
@@ -259,9 +260,10 @@ public class WebSecurityConfig
                                     PasswordEncoder passwordEncoder,
                                     UserRepository userRepository,
                                     AuthorityRepository authorityRepository,
-                                    UserOrganizationRepository userOrganizationRepository)
+                                    UserOrganizationRepository userOrganizationRepository,
+                                    OrganizationRepository organizationRepository)
         {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, null, userRepository, authorityRepository, userOrganizationRepository);
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, null, userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
         }
     }
 
@@ -278,6 +280,7 @@ public class WebSecurityConfig
         private final UserRepository userRepository;
         private final AuthorityRepository authorityRepository;
         private UserOrganizationRepository userOrganizationRepository;
+        private OrganizationRepository organizationRepository;
 
         public AbstractFormBasedWebSecurity(Environment environment,
                                             UserManager userManager,
@@ -289,7 +292,8 @@ public class WebSecurityConfig
                                             OpenIdAuthenticationManager openIdAuthenticationManager,
                                             UserRepository userRepository,
                                             AuthorityRepository authorityRepository,
-                                            UserOrganizationRepository userOrganizationRepository)
+                                            UserOrganizationRepository userOrganizationRepository,
+                                            OrganizationRepository organizationRepository)
         {
             this.environment = environment;
             this.userManager = userManager;
@@ -302,6 +306,7 @@ public class WebSecurityConfig
             this.userRepository = userRepository;
             this.authorityRepository = authorityRepository;
             this.userOrganizationRepository = userOrganizationRepository;
+            this.organizationRepository = organizationRepository;
         }
 
         @Override
@@ -403,7 +408,7 @@ public class WebSecurityConfig
             http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
             if(openIdAuthenticationManager != null)
             {
-                http.addFilterBefore(new OpenIdCallbackLoginFilter(configurationManager, openIdAuthenticationManager, new AntPathRequestMatcher("/callback", "GET"), authenticationManager(), userRepository, authorityRepository, passwordEncoder, userManager, userOrganizationRepository), UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(new OpenIdCallbackLoginFilter(configurationManager, openIdAuthenticationManager, new AntPathRequestMatcher("/callback", "GET"), authenticationManager(), userRepository, authorityRepository, passwordEncoder, userManager, userOrganizationRepository, organizationRepository), UsernamePasswordAuthenticationFilter.class);
                 http.addFilterBefore(new OpenIdAuthenticationFilter(configurationManager, "/authentication", openIdAuthenticationManager), RecaptchaLoginFilter.class);
             }
 
@@ -444,6 +449,7 @@ public class WebSecurityConfig
             private final PasswordEncoder passwordEncoder;
             private final UserManager userManager;
             private final UserOrganizationRepository userOrganizationRepository;
+            private final OrganizationRepository organizationRepository;
             private final OpenIdAuthenticationManager openIdAuthenticationManager;
             private String idToken;
             private String subject;
@@ -456,7 +462,8 @@ public class WebSecurityConfig
             private OpenIdCallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager,
                                               AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager,
                                               UserRepository userRepository, AuthorityRepository authorityRepository, PasswordEncoder passwordEncoder,
-                                              UserManager userManager, UserOrganizationRepository userOrganizationRepository)
+                                              UserManager userManager, UserOrganizationRepository userOrganizationRepository,
+                                              OrganizationRepository organizationRepository)
             {
                 super(requestMatcher);
                 this.userRepository = userRepository;
@@ -464,6 +471,7 @@ public class WebSecurityConfig
                 this.passwordEncoder = passwordEncoder;
                 this.userManager = userManager;
                 this.userOrganizationRepository = userOrganizationRepository;
+                this.organizationRepository = organizationRepository;
                 this.setAuthenticationManager(authenticationManager);
                 this.configurationManager = configurationManager;
                 this.requestMatcher = requestMatcher;
@@ -502,14 +510,47 @@ public class WebSecurityConfig
 
                     if (!userManager.usernameExists(email))
                     {
-                        insertUserIntoDatabase();
+                        createUser();
                     }
                     updateRoles(alfioRoles, email);
+                    updateOrganizations(email);
 
                     super.doFilter(req, res, chain);
                 }
 
                 chain.doFilter(request, response);
+            }
+
+            private void updateOrganizations(String username)
+            {
+                Optional<Integer> userId = userRepository.findIdByUserName(username);
+                if(userId.isEmpty()){
+                    throw new RuntimeException("user not saved into the database");
+                }
+
+                Set<Integer> databaseOrganizationIds = organizationRepository.findAllForUser(username).stream()
+                    .map(org -> org.getId()).collect(Collectors.toSet());
+
+                if(isAdmin){
+                    databaseOrganizationIds.forEach(orgId -> userOrganizationRepository.removeOrganizationUserLink(userId.get(), orgId));
+                    return;
+                }
+
+
+                Set<Integer> organizationIds = alfioOrganizationAuthorizations.keySet().stream()
+                    .map(organizationRepository::findByNameOpenId)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .filter(Objects::nonNull)
+                    .map(org -> org.getId())
+                    .collect(Collectors.toSet());
+
+                databaseOrganizationIds.stream()
+                    .filter(orgId -> !organizationIds.contains(orgId))
+                    .forEach(orgId -> userOrganizationRepository.removeOrganizationUserLink(userId.get(), orgId));
+
+                organizationIds.stream().filter(orgId -> !databaseOrganizationIds.contains(orgId))
+                    .forEach(orgId -> userOrganizationRepository.create(userId.get(), orgId));
             }
 
             private void clearClassState()
@@ -535,11 +576,6 @@ public class WebSecurityConfig
                     .forEach(authorizations ->
                         authorizations.stream().map(auth -> Role.fromRoleName("ROLE_" + auth))
                             .forEach(alfioRoles::add));
-            }
-
-            private void insertUserIntoDatabase()
-            {
-                createUser();
             }
 
             private void createUser()
