@@ -151,22 +151,25 @@ public interface TicketReservationRepository {
                           @Bind("reservationId") String reservationId);
     
 
-    @Query("select count(ticket.id) ticket_count, to_char(date_trunc('day', confirmation_ts), 'YYYY-MM-DD') as day from ticket " +
-        "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
-        "ticket.event_id = :eventId and " +
-        "confirmation_ts is not null and " +
-        "confirmation_ts >= :from and " +
-        "confirmation_ts <= :to  group by day order by day asc")
-    List<TicketsByDateStatistic> getSoldStatistic(@Bind("eventId") int eventId, @Bind("from") Date from, @Bind("to") Date to);
+    @Query("select min(confirmation_ts) from tickets_reservation where event_id_fk = :eventId and confirmation_ts is not null")
+    Optional<ZonedDateTime> getFirstConfirmationTimestampForEvent(@Bind("eventId") int eventId);
 
-    @Query("select count(ticket.id) ticket_count, to_char(date_trunc('day', tickets_reservation.creation_ts), 'YYYY-MM-DD') as day from ticket " +
-        "inner join tickets_reservation on tickets_reservation_id = tickets_reservation.id where " +
-        "ticket.event_id = :eventId and " +
-        "tickets_reservation.status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and " +
-        "tickets_reservation.creation_ts >= :from and " +
-        "tickets_reservation.creation_ts <= :to " +
-        "group by day order by day asc")
-    List<TicketsByDateStatistic> getReservedStatistic(@Bind("eventId") int eventId, @Bind("from") Date from, @Bind("to") Date to);
+    @Query("select min(creation_ts) from tickets_reservation where event_id_fk = :eventId")
+    Optional<ZonedDateTime> getFirstReservationCreatedTimestampForEvent(@Bind("eventId") int eventId);
+
+    @Query("select to_char(date_trunc(:granularity, d.day), 'YYYY-MM-DD') as day, count(ticket.id) ticket_count " +
+        " from (select generate_series(lower(r), upper(r), '1 day')::date as day, generate_series(lower(r), upper(r), '1 day')::timestamp as ts from tsrange(:fromDate::timestamp, :toDate::timestamp) r) as d " +
+        " left join (select id, confirmation_ts from tickets_reservation where confirmation_ts is not null and event_id_fk = :eventId) res on date_trunc('day', res.confirmation_ts) = d.day" +
+        " left join ticket on event_id = :eventId and tickets_reservation_id = res.id"+
+        " group by 1 order by 1")
+    List<TicketsByDateStatistic> getSoldStatistic(@Bind("eventId") int eventId, @Bind("fromDate") ZonedDateTime from, @Bind("toDate") ZonedDateTime to, @Bind("granularity") String granularity);
+
+    @Query("select to_char(date_trunc(:granularity, d.day), 'YYYY-MM-DD') as day, count(ticket.id) ticket_count " +
+        " from (select generate_series(lower(r), upper(r), '1 day')::date as day, generate_series(lower(r), upper(r), '1 day')::timestamp as ts from tsrange(:fromDate::timestamp, :toDate::timestamp) r) as d " +
+        " left join (select id, creation_ts from tickets_reservation where event_id_fk = :eventId and status in ('IN_PAYMENT', 'EXTERNAL_PROCESSING_PAYMENT', 'OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT', 'COMPLETE', 'STUCK')) res on date_trunc('day', res.creation_ts) = d.day " +
+        " left join ticket on event_id = :eventId and tickets_reservation_id = res.id"+
+        " group by 1 order by 1")
+    List<TicketsByDateStatistic> getReservedStatistic(@Bind("eventId") int eventId, @Bind("fromDate") ZonedDateTime from, @Bind("toDate") ZonedDateTime to, @Bind("granularity") String granularity);
 
 
 

@@ -139,7 +139,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
     @Override
     public Set<PaymentMethod> getSupportedPaymentMethods(PaymentContext paymentContext, TransactionRequest transactionRequest) {
         var configuration = getConfiguration(paymentContext.getConfigurationLevel());
-        if (checkIfActive(configuration)) {
+        if (checkIfActive(configuration) && isPlatformConfigurationPresent(configuration)) {
             return retrieveAvailablePaymentMethods(transactionRequest, configuration, paymentContext.getConfigurationLevel());
         } else {
             return Set.of();
@@ -158,8 +158,12 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         }
         var configuration = getConfiguration(context.getConfigurationLevel());
         return checkIfActive(configuration)
-            && (!configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false) || (configuration.get(MOLLIE_CONNECT_REFRESH_TOKEN).isPresent() && configuration.get(MOLLIE_CONNECT_PROFILE_ID).isPresent()))
+            && isPlatformConfigurationPresent(configuration)
             && retrieveAvailablePaymentMethods(transactionRequest, configuration, context.getConfigurationLevel()).contains(paymentMethod);
+    }
+
+    private boolean isPlatformConfigurationPresent(Map<ConfigurationKeys, MaybeConfiguration> configuration) {
+        return !configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false) || (configuration.get(MOLLIE_CONNECT_REFRESH_TOKEN).isPresent() && configuration.get(MOLLIE_CONNECT_PROFILE_ID).isPresent());
     }
 
     private Map<ConfigurationKeys, MaybeConfiguration> getConfiguration(ConfigurationLevel configurationLevel) {

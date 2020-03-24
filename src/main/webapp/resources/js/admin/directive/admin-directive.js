@@ -23,6 +23,7 @@
             },
             require: '^ngModel',
             link: function(scope, element, attrs, ctrl) {
+                element.attr('autocomplete', 'off');
                 var dateFormat = 'YYYY-MM-DD HH:mm';
                 var fillDate = function(modelObject) {
                     if(!angular.isDefined(modelObject.date)) {
@@ -131,6 +132,7 @@
             },
             require: '^ngModel',
             link: function(scope, element, attrs, ctrl) {
+                element.attr('autocomplete', 'off');
                 var dateFormat = 'YYYY-MM-DD HH:mm';
                 var fillDate = function(modelObject) {
                     if(!angular.isDefined(modelObject.date)) {

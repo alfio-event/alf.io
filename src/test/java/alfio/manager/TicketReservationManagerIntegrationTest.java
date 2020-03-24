@@ -193,14 +193,17 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         assertEquals(1, ticketReservationManager.getPendingPayments(event.getShortName()).size());
 
-        Date now = new Date();
-        Date from = DateUtils.addDays(now, -1);
-        Date to = DateUtils.addDays(now, 1);
+        var from = ZonedDateTime.now(event.getZoneId()).minusDays(1);
+        var to = ZonedDateTime.now(event.getZoneId()).plusDays(1);
 
-        assertTrue(ticketReservationRepository.getSoldStatistic(event.getId(), from, to).isEmpty()); // -> no reservations
+        assertTrue(ticketReservationRepository.getSoldStatistic(event.getId(), from, to, "day").stream().allMatch(tds -> tds.getCount() == 0L)); // -> no reservations
         ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event, new BigDecimal("190.00"), eventAndUsername.getValue());
 
-        assertEquals(19, ticketReservationRepository.getSoldStatistic(event.getId(), from, to).get(0).getCount()); // -> 19 tickets reserved
+        var soldStatisticsList = ticketReservationRepository.getSoldStatistic(event.getId(), from, to, "day");
+        assertEquals(3, soldStatisticsList.size());
+        assertEquals(LocalDate.now().toString(), soldStatisticsList.get(1).getDate());
+        assertEquals(19L, soldStatisticsList.get(1).getCount()); // -> 19 tickets reserved
+        assertEquals(19L, soldStatisticsList.stream().mapToLong(TicketsByDateStatistic::getCount).sum());
 
         assertEquals(10, eventStatisticsManager.loadModifiedTickets(event.getId(), bounded.getId(), 0, null).size());
         assertEquals(Integer.valueOf(10), eventStatisticsManager.countModifiedTicket(event.getId(), bounded.getId(), null));
