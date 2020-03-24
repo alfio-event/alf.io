@@ -497,7 +497,7 @@ public class WebSecurityConfig
                     }
 
                     String claimsUrl = openIdAuthenticationManager.buildClaimsRetrieverUrl();
-                    Map<String, Object> claims = null;
+                    Map<String, Object> claims;
                     try
                     {
                         claims = retrieveClaims(claimsUrl, code);
@@ -528,7 +528,7 @@ public class WebSecurityConfig
             {
                 Optional<Integer> userId = userRepository.findIdByUserName(username);
                 if(userId.isEmpty()){
-                    String message = "user not saved into the database";
+                    String message = "Error: user not saved into the database";
                     logger.error(message);
                     throw new RuntimeException(message);
                 }
@@ -555,7 +555,7 @@ public class WebSecurityConfig
                     .forEach(orgId -> userOrganizationRepository.removeOrganizationUserLink(userId.get(), orgId));
 
                 if(organizationIds.isEmpty()){
-                    String message = "The user needs to be ADMIN or to have at least one organization linked";
+                    String message = "Error: The user needs to be ADMIN or to have at least one organization linked";
                     logger.error(message);
                     throw new RuntimeException(message);
                 }
