@@ -33,7 +33,7 @@ public class OpenIdAuthenticationManager
                                        @Value("${oauth2.contentType}") String contentType,
                                        @Value("${oauth2.groupsNameParameter}") String groupsNameParameter,
                                        @Value("${oauth2.alfioGroupsNameParameter}") String alfioGroupsNameParameter,
-                                       @Value("${oauth2.oauth2.logoutUrl}") String logoutUrl,
+                                       @Value("${oauth2.logoutUrl}") String logoutUrl,
                                        @Value("${oauth2.logoutRedirectUrl}") String logoutRedirectUrl){
         this.domain = domain;
         this.clientId = clientId;
