@@ -339,6 +339,10 @@ public class IndexController {
 
         boolean isDBAuthentication = !(principal instanceof WebSecurityConfig.OAuth2AlfioAuthentication);
         model.addAttribute("isDBAuthentication", isDBAuthentication);
+        if(!isDBAuthentication){
+            String idpLogoutRedirectionUrl = ((WebSecurityConfig.OAuth2AlfioAuthentication)(SecurityContextHolder.getContext().getAuthentication())).getIdpLogoutRedirectionUrl();
+            model.addAttribute("idpLogoutRedirectionUrl", idpLogoutRedirectionUrl);
+        }
 
         Collection<String> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
             .stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());

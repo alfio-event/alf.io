@@ -433,11 +433,14 @@
 
         $window.addEventListener("beforeunload", deleteCheckInDatabase);
 
-        ctrl.doLogout = function() {
+        ctrl.doLogout = function(idpLogoutRedirectionUrl) {
             UtilsService.logout().then(function() {
                 //delete alf.io IndexedDb
                 deleteCheckInDatabase();
                 $window.location.reload();
+                if(!(idpLogoutRedirectionUrl == undefined)){
+                    $window.location.replace(idpLogoutRedirectionUrl);
+                }
             });
         };
         ctrl.openDeleteWarning = function() {

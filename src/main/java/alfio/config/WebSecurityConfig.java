@@ -631,7 +631,7 @@ public class WebSecurityConfig
             {
                 List<GrantedAuthority> authorities = alfioRoles.stream().map(Role::getRoleName)
                     .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-                OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(authorities, idToken, subject, email);
+                OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(authorities, idToken, subject, email, openIdAuthenticationManager.buildLogoutUrl());
                 return getAuthenticationManager().authenticate(authentication);
             }
 
@@ -742,7 +742,6 @@ public class WebSecurityConfig
             }
         }
 
-
         // generate a user if it does not exists, to be used by the demo profile
         private static class UserCreatorBeforeLoginFilter extends GenericFilterBean
         {
@@ -783,13 +782,15 @@ public class WebSecurityConfig
         private final String idToken;
         private final String subject;
         private final String email;
+        private final String idpLogoutRedirectionUrl;
 
-        public OAuth2AlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject, String email)
+        public OAuth2AlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject, String email, String idpLogoutRedirectionUrl)
         {
             super(authorities);
             this.idToken = idToken;
             this.subject = subject;
             this.email = email;
+            this.idpLogoutRedirectionUrl = idpLogoutRedirectionUrl;
         }
 
         @Override
@@ -807,6 +808,10 @@ public class WebSecurityConfig
         @Override
         public String getName(){
             return email;
+        }
+
+        public String getIdpLogoutRedirectionUrl(){
+            return idpLogoutRedirectionUrl;
         }
     }
 }
