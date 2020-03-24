@@ -166,7 +166,7 @@ public class OpenIdAuthenticationManager
         builder.append(domain);
         builder.append(logoutUrl);
         builder.append("?");
-        builder.append("redirect_uri");
+        builder.append("redirect_uri=");
         builder.append(logoutRedirectUrl);
         return builder.toString();
     }

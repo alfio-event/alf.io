@@ -84,7 +84,7 @@ public class OpenIdAuthenticationManagerTest
     @Test
     public void oauth2_build_logoutUrl(){
         String logoutUrl = authenticationManager.buildLogoutUrl();
-        String expectedURL = "https://domain_test/logoutUrl?redirect_urilogoutRedirectUrl";
+        String expectedURL = "https://domain_test/logoutUrl?redirect_uri=logoutRedirectUrl";
         Assert.assertEquals(expectedURL, logoutUrl);
     }
 
