@@ -1049,7 +1049,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.ALREADY_CHECK_IN, ticketAndCheckInResultOk.getResult().getStatus());
 
                 // check stats after check in one ticket
-                assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), statisticsFrom, statisticsTo, "day").isEmpty());
+                assertTrue(eventStatisticsManager.getTicketSoldStatistics(event.getId(), statisticsFrom, statisticsTo, "day").stream().mapToLong(TicketsByDateStatistic::getCount).sum() > 0);
                 EventWithAdditionalInfo eventWithAdditionalInfo3 = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
                 assertEquals(2, eventWithAdditionalInfo3.getNotSoldTickets());
                 assertEquals(0, eventWithAdditionalInfo3.getSoldTickets());
@@ -1076,7 +1076,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
 
 
                 // check stats after revert check in one ticket
-                assertFalse(eventStatisticsManager.getTicketSoldStatistics(event.getId(), statisticsFrom, statisticsTo, "day").isEmpty());
+                assertTrue(eventStatisticsManager.getTicketSoldStatistics(event.getId(), statisticsFrom, statisticsTo, "day").stream().mapToLong(TicketsByDateStatistic::getCount).sum() > 0);
                 EventWithAdditionalInfo eventWithAdditionalInfo4 = eventStatisticsManager.getEventWithAdditionalInfo(event.getShortName(), user);
                 assertEquals(2, eventWithAdditionalInfo4.getNotSoldTickets());
                 assertEquals(1, eventWithAdditionalInfo4.getSoldTickets());
