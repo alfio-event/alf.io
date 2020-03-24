@@ -72,7 +72,6 @@ public class OpenIdAuthenticationManagerTest
         Assert.assertEquals("sub", authenticationManager.getSubjectNameParameter());
         Assert.assertEquals(GROUPS_NAME, authenticationManager.getGroupsNameParameter());
         Assert.assertEquals(ALFIO_GROUPS_NAME, authenticationManager.getAlfioGroupsNameParameter());
-        Assert.assertEquals(LOGOUT_REDIRECT_URL, authenticationManager.getLogoutRedirectUrl());
     }
 
     @Test
@@ -85,7 +84,7 @@ public class OpenIdAuthenticationManagerTest
     @Test
     public void oauth2_build_logoutUrl(){
         String logoutUrl = authenticationManager.buildLogoutUrl();
-        String expectedURL = "https://domain_test/logoutUrl";
+        String expectedURL = "https://domain_test/logoutUrl?redirect_urilogoutRedirectUrl";
         Assert.assertEquals(expectedURL, logoutUrl);
     }
 

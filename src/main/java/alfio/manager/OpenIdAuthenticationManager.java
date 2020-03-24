@@ -154,11 +154,6 @@ public class OpenIdAuthenticationManager
         return contentType;
     }
 
-    public String getLogoutRedirectUrl()
-    {
-        return logoutRedirectUrl;
-    }
-
     public List<String> getScopes()
     {
         return Arrays.asList("openid", "email", "profile", groupsNameParameter, alfioGroupsNameParameter);
@@ -170,6 +165,9 @@ public class OpenIdAuthenticationManager
         builder.append("https://");
         builder.append(domain);
         builder.append(logoutUrl);
+        builder.append("?");
+        builder.append("redirect_uri");
+        builder.append(logoutRedirectUrl);
         return builder.toString();
     }
 }
