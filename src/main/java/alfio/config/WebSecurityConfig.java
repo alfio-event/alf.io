@@ -39,7 +39,12 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.*;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -64,7 +69,11 @@ import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.GenericFilterBean;
 
-import javax.servlet.*;
+import javax.servlet.FilterChain;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -87,32 +96,19 @@ import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 @EnableWebSecurity
 public class WebSecurityConfig {
 
-    public static final String CSRF_PARAM_NAME = "_csrf";
-    public static final String OPERATOR = "OPERATOR";
-    public static final String SPONSOR = "SPONSOR";
     private static final String ADMIN_API = "/admin/api";
     private static final String ADMIN_PUBLIC_API = "/api/v1/admin";
     private static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
+    public static final String CSRF_PARAM_NAME = "_csrf";
+    public static final String OPERATOR = "OPERATOR";
     private static final String SUPERVISOR = "SUPERVISOR";
+    public static final String SPONSOR = "SPONSOR";
     private static final String ADMIN = "ADMIN";
     private static final String ALFIO_ADMIN = "ALFIO_ADMIN";
     private static final String ALFIO_BACKOFFICE = "ALFIO_BACKOFFICE";
     private static final String OWNER = "OWNER";
     private static final String API_CLIENT = "API_CLIENT";
     private static final String X_REQUESTED_WITH = "X-Requested-With";
-
-    private static boolean isTokenAuthentication(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
-    }
-
-    @Bean
-    public CsrfTokenRepository getCsrfTokenRepository() {
-        HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
-        repository.setSessionAttributeName(CSRF_SESSION_ATTRIBUTE);
-        repository.setParameterName(CSRF_PARAM_NAME);
-        return repository;
-    }
 
     private static class APIKeyAuthFilter extends AbstractPreAuthenticatedProcessingFilter {
 
@@ -127,10 +123,11 @@ public class WebSecurityConfig {
         }
     }
 
+
     public static class APITokenAuthentication extends AbstractAuthenticationToken {
 
-        private final Object principal;
         private Object credentials;
+        private final Object principal;
 
 
         public APITokenAuthentication(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
@@ -158,6 +155,14 @@ public class WebSecurityConfig {
         }
     }
 
+    @Bean
+    public CsrfTokenRepository getCsrfTokenRepository() {
+        HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
+        repository.setSessionAttributeName(CSRF_SESSION_ATTRIBUTE);
+        repository.setParameterName(CSRF_PARAM_NAME);
+        return repository;
+    }
+
     @Configuration
     @Order(0)
     public static class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
@@ -166,7 +171,7 @@ public class WebSecurityConfig {
         private final AuthorityRepository authorityRepository;
 
         public APITokenAuthWebSecurity(UserRepository userRepository,
-                                       AuthorityRepository authorityRepository) {
+                AuthorityRepository authorityRepository) {
             this.userRepository = userRepository;
             this.authorityRepository = authorityRepository;
         }
@@ -214,22 +219,27 @@ public class WebSecurityConfig {
         }
     }
 
+    private static boolean isTokenAuthentication(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
+    }
+
     @Profile("oauth2")
     @Configuration
     @Order(1)
     public static class OpenIdFormBasedWebSecurity extends AbstractFormBasedWebSecurity {
         public OpenIdFormBasedWebSecurity(Environment environment,
-                                          UserManager userManager,
-                                          RecaptchaService recaptchaService,
-                                          ConfigurationManager configurationManager,
-                                          CsrfTokenRepository csrfTokenRepository,
-                                          DataSource dataSource,
-                                          PasswordEncoder passwordEncoder,
-                                          OpenIdAuthenticationManager openIdAuthenticationManager,
-                                          UserRepository userRepository,
-                                          AuthorityRepository authorityRepository,
-                                          UserOrganizationRepository userOrganizationRepository,
-                                          OrganizationRepository organizationRepository) {
+                UserManager userManager,
+                RecaptchaService recaptchaService,
+                ConfigurationManager configurationManager,
+                CsrfTokenRepository csrfTokenRepository,
+                DataSource dataSource,
+                PasswordEncoder passwordEncoder,
+                OpenIdAuthenticationManager openIdAuthenticationManager,
+                UserRepository userRepository,
+                AuthorityRepository authorityRepository,
+                UserOrganizationRepository userOrganizationRepository,
+                OrganizationRepository organizationRepository) {
             super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
         }
     }
@@ -242,16 +252,16 @@ public class WebSecurityConfig {
     @Order(1)
     public static class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
         public FormBasedWebSecurity(Environment environment,
-                                    UserManager userManager,
-                                    RecaptchaService recaptchaService,
-                                    ConfigurationManager configurationManager,
-                                    CsrfTokenRepository csrfTokenRepository,
-                                    DataSource dataSource,
-                                    PasswordEncoder passwordEncoder,
-                                    UserRepository userRepository,
-                                    AuthorityRepository authorityRepository,
-                                    UserOrganizationRepository userOrganizationRepository,
-                                    OrganizationRepository organizationRepository) {
+                UserManager userManager,
+                RecaptchaService recaptchaService,
+                ConfigurationManager configurationManager,
+                CsrfTokenRepository csrfTokenRepository,
+                DataSource dataSource,
+                PasswordEncoder passwordEncoder,
+                UserRepository userRepository,
+                AuthorityRepository authorityRepository,
+                UserOrganizationRepository userOrganizationRepository,
+                OrganizationRepository organizationRepository) {
             super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, null, userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
         }
     }
@@ -271,17 +281,17 @@ public class WebSecurityConfig {
         private OrganizationRepository organizationRepository;
 
         public AbstractFormBasedWebSecurity(Environment environment,
-                                            UserManager userManager,
-                                            RecaptchaService recaptchaService,
-                                            ConfigurationManager configurationManager,
-                                            CsrfTokenRepository csrfTokenRepository,
-                                            DataSource dataSource,
-                                            PasswordEncoder passwordEncoder,
-                                            OpenIdAuthenticationManager openIdAuthenticationManager,
-                                            UserRepository userRepository,
-                                            AuthorityRepository authorityRepository,
-                                            UserOrganizationRepository userOrganizationRepository,
-                                            OrganizationRepository organizationRepository) {
+                UserManager userManager,
+                RecaptchaService recaptchaService,
+                ConfigurationManager configurationManager,
+                CsrfTokenRepository csrfTokenRepository,
+                DataSource dataSource,
+                PasswordEncoder passwordEncoder,
+                OpenIdAuthenticationManager openIdAuthenticationManager,
+                UserRepository userRepository,
+                AuthorityRepository authorityRepository,
+                UserOrganizationRepository userOrganizationRepository,
+                OrganizationRepository organizationRepository) {
             this.environment = environment;
             this.userManager = userManager;
             this.recaptchaService = recaptchaService;
@@ -322,11 +332,12 @@ public class WebSecurityConfig {
                                 if (!response.isCommitted()) {
                                     if ("XMLHttpRequest".equals(request.getHeader(X_REQUESTED_WITH))) {
                                         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                                    } else if (!response.isCommitted()) {
-                                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                                        RequestDispatcher dispatcher = request.getRequestDispatcher("/session-expired");
-                                        dispatcher.forward(request, response);
-                                    }
+                                    } else
+                                        if (!response.isCommitted()) {
+                                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                            RequestDispatcher dispatcher = request.getRequestDispatcher("/session-expired");
+                                            dispatcher.forward(request, response);
+                                        }
                                 }
                             })
                             .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(X_REQUESTED_WITH, "XMLHttpRequest"))
@@ -436,10 +447,10 @@ public class WebSecurityConfig {
             private Map<String, Set<String>> alfioOrganizationAuthorizations;
 
             private OpenIdCallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager,
-                                              AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager,
-                                              UserRepository userRepository, AuthorityRepository authorityRepository, PasswordEncoder passwordEncoder,
-                                              UserManager userManager, UserOrganizationRepository userOrganizationRepository,
-                                              OrganizationRepository organizationRepository) {
+                    AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager,
+                    UserRepository userRepository, AuthorityRepository authorityRepository, PasswordEncoder passwordEncoder,
+                    UserManager userManager, UserOrganizationRepository userOrganizationRepository,
+                    OrganizationRepository organizationRepository) {
                 super(requestMatcher);
                 this.userRepository = userRepository;
                 this.authorityRepository = authorityRepository;
@@ -666,9 +677,9 @@ public class WebSecurityConfig {
 
 
             RecaptchaLoginFilter(RecaptchaService recaptchaService,
-                                 String loginProcessingUrl,
-                                 String recaptchaFailureUrl,
-                                 ConfigurationManager configurationManager) {
+                    String loginProcessingUrl,
+                    String recaptchaFailureUrl,
+                    ConfigurationManager configurationManager) {
                 this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
                 this.recaptchaService = recaptchaService;
                 this.recaptchaFailureUrl = recaptchaFailureUrl;
