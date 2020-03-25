@@ -480,7 +480,7 @@ public class WebSecurityConfig {
                         createUser();
                     }
                     updateRoles(alfioRoles, email);
-                    updateOrganizations(email);
+                    updateOrganizations(email, res);
 
                     super.doFilter(req, res, chain);
                 }
@@ -488,12 +488,12 @@ public class WebSecurityConfig {
                 chain.doFilter(request, response);
             }
 
-            private void updateOrganizations(String username) {
+            private void updateOrganizations(String username, HttpServletResponse response) throws IOException {
                 Optional<Integer> userId = userRepository.findIdByUserName(username);
                 if (userId.isEmpty()) {
                     String message = "Error: user not saved into the database";
                     logger.error(message);
-                    throw new RuntimeException(message);
+                    response.sendRedirect(openIdAuthenticationManager.buildLogoutUrl());
                 }
 
                 Set<Integer> databaseOrganizationIds = organizationRepository.findAllForUser(username).stream()
@@ -520,7 +520,7 @@ public class WebSecurityConfig {
                 if (organizationIds.isEmpty()) {
                     String message = "Error: The user needs to be ADMIN or to have at least one organization linked";
                     logger.error(message);
-                    throw new RuntimeException(message);
+                    response.sendRedirect(openIdAuthenticationManager.buildLogoutUrl());
                 }
 
                 organizationIds.stream().filter(orgId -> !databaseOrganizationIds.contains(orgId))
