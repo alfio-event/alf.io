@@ -39,12 +39,7 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.authentication.AccountStatusException;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.*;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -69,11 +64,7 @@ import org.springframework.security.web.util.matcher.RequestHeaderRequestMatcher
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.GenericFilterBean;
 
-import javax.servlet.FilterChain;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
+import javax.servlet.*;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -96,19 +87,32 @@ import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 @EnableWebSecurity
 public class WebSecurityConfig {
 
+    public static final String CSRF_PARAM_NAME = "_csrf";
+    public static final String OPERATOR = "OPERATOR";
+    public static final String SPONSOR = "SPONSOR";
     private static final String ADMIN_API = "/admin/api";
     private static final String ADMIN_PUBLIC_API = "/api/v1/admin";
     private static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
-    public static final String CSRF_PARAM_NAME = "_csrf";
-    public static final String OPERATOR = "OPERATOR";
     private static final String SUPERVISOR = "SUPERVISOR";
-    public static final String SPONSOR = "SPONSOR";
     private static final String ADMIN = "ADMIN";
     private static final String ALFIO_ADMIN = "ALFIO_ADMIN";
     private static final String ALFIO_BACKOFFICE = "ALFIO_BACKOFFICE";
     private static final String OWNER = "OWNER";
     private static final String API_CLIENT = "API_CLIENT";
     private static final String X_REQUESTED_WITH = "X-Requested-With";
+
+    private static boolean isTokenAuthentication(HttpServletRequest request) {
+        String authorization = request.getHeader("Authorization");
+        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
+    }
+
+    @Bean
+    public CsrfTokenRepository getCsrfTokenRepository() {
+        HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
+        repository.setSessionAttributeName(CSRF_SESSION_ATTRIBUTE);
+        repository.setParameterName(CSRF_PARAM_NAME);
+        return repository;
+    }
 
     private static class APIKeyAuthFilter extends AbstractPreAuthenticatedProcessingFilter {
 
@@ -123,11 +127,10 @@ public class WebSecurityConfig {
         }
     }
 
-
     public static class APITokenAuthentication extends AbstractAuthenticationToken {
 
-        private Object credentials;
         private final Object principal;
+        private Object credentials;
 
 
         public APITokenAuthentication(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
@@ -155,14 +158,6 @@ public class WebSecurityConfig {
         }
     }
 
-    @Bean
-    public CsrfTokenRepository getCsrfTokenRepository() {
-        HttpSessionCsrfTokenRepository repository = new HttpSessionCsrfTokenRepository();
-        repository.setSessionAttributeName(CSRF_SESSION_ATTRIBUTE);
-        repository.setParameterName(CSRF_PARAM_NAME);
-        return repository;
-    }
-
     @Configuration
     @Order(0)
     public static class APITokenAuthWebSecurity extends WebSecurityConfigurerAdapter {
@@ -171,7 +166,7 @@ public class WebSecurityConfig {
         private final AuthorityRepository authorityRepository;
 
         public APITokenAuthWebSecurity(UserRepository userRepository,
-                AuthorityRepository authorityRepository) {
+                                       AuthorityRepository authorityRepository) {
             this.userRepository = userRepository;
             this.authorityRepository = authorityRepository;
         }
@@ -197,31 +192,26 @@ public class WebSecurityConfig {
                 }
 
                 return new APITokenAuthentication(
-                        authentication.getPrincipal(),
-                        authentication.getCredentials(),
-                        authorityRepository.findRoles(apiKey).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
+                    authentication.getPrincipal(),
+                    authentication.getCredentials(),
+                    authorityRepository.findRoles(apiKey).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
             });
 
 
             http.requestMatcher(WebSecurityConfig::isTokenAuthentication)
-                    .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                    .and().csrf().disable()
-                    .authorizeRequests()
-                    .antMatchers(ADMIN_PUBLIC_API + "/**").hasRole(API_CLIENT)
-                    .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
-                    .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
-                    .antMatchers(HttpMethod.GET, ADMIN_API + "/user-type", ADMIN_API + "/user/details").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
-                    .antMatchers(ADMIN_API + "/**").denyAll()
-                    .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
-                    .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR, API_CLIENT)
-                    .antMatchers("/**").authenticated()
-                    .and().addFilter(filter);
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .and().csrf().disable()
+                .authorizeRequests()
+                .antMatchers(ADMIN_PUBLIC_API + "/**").hasRole(API_CLIENT)
+                .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(OPERATOR, SUPERVISOR)
+                .antMatchers(HttpMethod.GET, ADMIN_API + "/events").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
+                .antMatchers(HttpMethod.GET, ADMIN_API + "/user-type", ADMIN_API + "/user/details").hasAnyRole(OPERATOR, SUPERVISOR, SPONSOR)
+                .antMatchers(ADMIN_API + "/**").denyAll()
+                .antMatchers(HttpMethod.POST, "/api/attendees/sponsor-scan").hasRole(SPONSOR)
+                .antMatchers(HttpMethod.GET, "/api/attendees/*/ticket/*").hasAnyRole(OPERATOR, SUPERVISOR, API_CLIENT)
+                .antMatchers("/**").authenticated()
+                .and().addFilter(filter);
         }
-    }
-
-    private static boolean isTokenAuthentication(HttpServletRequest request) {
-        String authorization = request.getHeader("Authorization");
-        return authorization != null && authorization.toLowerCase(Locale.ENGLISH).startsWith("apikey ");
     }
 
     @Profile("oauth2")
@@ -229,17 +219,17 @@ public class WebSecurityConfig {
     @Order(1)
     public static class OpenIdFormBasedWebSecurity extends AbstractFormBasedWebSecurity {
         public OpenIdFormBasedWebSecurity(Environment environment,
-                UserManager userManager,
-                RecaptchaService recaptchaService,
-                ConfigurationManager configurationManager,
-                CsrfTokenRepository csrfTokenRepository,
-                DataSource dataSource,
-                PasswordEncoder passwordEncoder,
-                OpenIdAuthenticationManager openIdAuthenticationManager,
-                UserRepository userRepository,
-                AuthorityRepository authorityRepository,
-                UserOrganizationRepository userOrganizationRepository,
-                OrganizationRepository organizationRepository) {
+                                          UserManager userManager,
+                                          RecaptchaService recaptchaService,
+                                          ConfigurationManager configurationManager,
+                                          CsrfTokenRepository csrfTokenRepository,
+                                          DataSource dataSource,
+                                          PasswordEncoder passwordEncoder,
+                                          OpenIdAuthenticationManager openIdAuthenticationManager,
+                                          UserRepository userRepository,
+                                          AuthorityRepository authorityRepository,
+                                          UserOrganizationRepository userOrganizationRepository,
+                                          OrganizationRepository organizationRepository) {
             super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
         }
     }
@@ -252,16 +242,16 @@ public class WebSecurityConfig {
     @Order(1)
     public static class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
         public FormBasedWebSecurity(Environment environment,
-                UserManager userManager,
-                RecaptchaService recaptchaService,
-                ConfigurationManager configurationManager,
-                CsrfTokenRepository csrfTokenRepository,
-                DataSource dataSource,
-                PasswordEncoder passwordEncoder,
-                UserRepository userRepository,
-                AuthorityRepository authorityRepository,
-                UserOrganizationRepository userOrganizationRepository,
-                OrganizationRepository organizationRepository) {
+                                    UserManager userManager,
+                                    RecaptchaService recaptchaService,
+                                    ConfigurationManager configurationManager,
+                                    CsrfTokenRepository csrfTokenRepository,
+                                    DataSource dataSource,
+                                    PasswordEncoder passwordEncoder,
+                                    UserRepository userRepository,
+                                    AuthorityRepository authorityRepository,
+                                    UserOrganizationRepository userOrganizationRepository,
+                                    OrganizationRepository organizationRepository) {
             super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, null, userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
         }
     }
@@ -281,17 +271,17 @@ public class WebSecurityConfig {
         private OrganizationRepository organizationRepository;
 
         public AbstractFormBasedWebSecurity(Environment environment,
-                UserManager userManager,
-                RecaptchaService recaptchaService,
-                ConfigurationManager configurationManager,
-                CsrfTokenRepository csrfTokenRepository,
-                DataSource dataSource,
-                PasswordEncoder passwordEncoder,
-                OpenIdAuthenticationManager openIdAuthenticationManager,
-                UserRepository userRepository,
-                AuthorityRepository authorityRepository,
-                UserOrganizationRepository userOrganizationRepository,
-                OrganizationRepository organizationRepository) {
+                                            UserManager userManager,
+                                            RecaptchaService recaptchaService,
+                                            ConfigurationManager configurationManager,
+                                            CsrfTokenRepository csrfTokenRepository,
+                                            DataSource dataSource,
+                                            PasswordEncoder passwordEncoder,
+                                            OpenIdAuthenticationManager openIdAuthenticationManager,
+                                            UserRepository userRepository,
+                                            AuthorityRepository authorityRepository,
+                                            UserOrganizationRepository userOrganizationRepository,
+                                            OrganizationRepository organizationRepository) {
             this.environment = environment;
             this.userManager = userManager;
             this.recaptchaService = recaptchaService;
@@ -309,9 +299,9 @@ public class WebSecurityConfig {
         @Override
         public void configure(AuthenticationManagerBuilder auth) throws Exception {
             auth.jdbcAuthentication().dataSource(dataSource)
-                    .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
-                    .authoritiesByUsernameQuery("select username, role from authority where username = ?")
-                    .passwordEncoder(passwordEncoder);
+                .usersByUsernameQuery("select username, password, enabled from ba_user where username = ?")
+                .authoritiesByUsernameQuery("select username, role from authority where username = ?")
+                .passwordEncoder(passwordEncoder);
             if (openIdAuthenticationManager != null) {
                 auth.authenticationProvider(new OAuth2AuthenticationProvider());
             }
@@ -322,76 +312,75 @@ public class WebSecurityConfig {
 
             if (environment.acceptsProfiles(Profiles.of("!" + Initializer.PROFILE_DEV))) {
                 http.requiresChannel().antMatchers("/healthz").requiresInsecure()
-                        .and()
-                        .requiresChannel().mvcMatchers("/**").requiresSecure();
+                    .and()
+                    .requiresChannel().mvcMatchers("/**").requiresSecure();
             }
 
             CsrfConfigurer<HttpSecurity> configurer =
-                    http.exceptionHandling()
-                            .accessDeniedHandler((request, response, accessDeniedException) -> {
-                                if (!response.isCommitted()) {
-                                    if ("XMLHttpRequest".equals(request.getHeader(X_REQUESTED_WITH))) {
-                                        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                                    } else
-                                        if (!response.isCommitted()) {
-                                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                                            RequestDispatcher dispatcher = request.getRequestDispatcher("/session-expired");
-                                            dispatcher.forward(request, response);
-                                        }
-                                }
-                            })
-                            .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(X_REQUESTED_WITH, "XMLHttpRequest"))
-                            .and()
-                            .headers().cacheControl().disable()
-                            .and()
-                            .csrf();
+                http.exceptionHandling()
+                    .accessDeniedHandler((request, response, accessDeniedException) -> {
+                        if (!response.isCommitted()) {
+                            if ("XMLHttpRequest".equals(request.getHeader(X_REQUESTED_WITH))) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            } else if (!response.isCommitted()) {
+                                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                                RequestDispatcher dispatcher = request.getRequestDispatcher("/session-expired");
+                                dispatcher.forward(request, response);
+                            }
+                        }
+                    })
+                    .defaultAuthenticationEntryPointFor((request, response, ex) -> response.sendError(HttpServletResponse.SC_UNAUTHORIZED), new RequestHeaderRequestMatcher(X_REQUESTED_WITH, "XMLHttpRequest"))
+                    .and()
+                    .headers().cacheControl().disable()
+                    .and()
+                    .csrf();
 
             Pattern pattern = Pattern.compile("^(GET|HEAD|TRACE|OPTIONS)$");
             Predicate<HttpServletRequest> csrfWhitelistPredicate = r -> r.getRequestURI().startsWith("/api/webhook/")
-                    || r.getRequestURI().startsWith("/api/payment/webhook/")
-                    || pattern.matcher(r.getMethod()).matches();
+                || r.getRequestURI().startsWith("/api/payment/webhook/")
+                || pattern.matcher(r.getMethod()).matches();
             csrfWhitelistPredicate = csrfWhitelistPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
             configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfWhitelistPredicate::test));
 
             String[] ownershipRequired = new String[]{
-                    ADMIN_API + "/overridable-template",
-                    ADMIN_API + "/additional-services",
-                    ADMIN_API + "/events/*/additional-field",
-                    ADMIN_API + "/event/*/additional-services/",
-                    ADMIN_API + "/overridable-template/",
-                    ADMIN_API + "/events/*/promo-code",
-                    ADMIN_API + "/reservation/event/*/reservations/list",
-                    ADMIN_API + "/events/*/email/",
-                    ADMIN_API + "/event/*/waiting-queue/load",
-                    ADMIN_API + "/events/*/pending-payments",
-                    ADMIN_API + "/events/*/export",
-                    ADMIN_API + "/events/*/sponsor-scan/export",
-                    ADMIN_API + "/events/*/invoices/**",
-                    ADMIN_API + "/reservation/event/*/*/audit"
+                ADMIN_API + "/overridable-template",
+                ADMIN_API + "/additional-services",
+                ADMIN_API + "/events/*/additional-field",
+                ADMIN_API + "/event/*/additional-services/",
+                ADMIN_API + "/overridable-template/",
+                ADMIN_API + "/events/*/promo-code",
+                ADMIN_API + "/reservation/event/*/reservations/list",
+                ADMIN_API + "/events/*/email/",
+                ADMIN_API + "/event/*/waiting-queue/load",
+                ADMIN_API + "/events/*/pending-payments",
+                ADMIN_API + "/events/*/export",
+                ADMIN_API + "/events/*/sponsor-scan/export",
+                ADMIN_API + "/events/*/invoices/**",
+                ADMIN_API + "/reservation/event/*/*/audit"
             };
 
             configurer.csrfTokenRepository(csrfTokenRepository)
-                    .and()
-                    .authorizeRequests()
-                    .antMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
-                    .antMatchers(ADMIN_API + "/organizations/new").hasRole(ADMIN)
-                    .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                    .antMatchers(HttpMethod.GET, ownershipRequired).hasAnyRole(ADMIN, OWNER)
-                    .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                    .antMatchers(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new", ADMIN_API + "/reservation/event/*/*").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                    .antMatchers(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify", ADMIN_API + "/reservation/event/*/*/confirm").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                    .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
-                    .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
-                    .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                    .antMatchers("/api/attendees/**").denyAll()
-                    .antMatchers("/callback").permitAll()
-                    .antMatchers("/**").permitAll()
-                    .and()
-                    .formLogin()
-                    .loginPage("/authentication")
-                    .loginProcessingUrl("/authenticate")
-                    .failureUrl("/authentication?failed")
-                    .and().logout().permitAll();
+                .and()
+                .authorizeRequests()
+                .antMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
+                .antMatchers(ADMIN_API + "/organizations/new").hasRole(ADMIN)
+                .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers(HttpMethod.GET, ownershipRequired).hasAnyRole(ADMIN, OWNER)
+                .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new", ADMIN_API + "/reservation/event/*/*").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify", ADMIN_API + "/reservation/event/*/*/confirm").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
+                .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
+                .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
+                .antMatchers("/api/attendees/**").denyAll()
+                .antMatchers("/callback").permitAll()
+                .antMatchers("/**").permitAll()
+                .and()
+                .formLogin()
+                .loginPage("/authentication")
+                .loginProcessingUrl("/authenticate")
+                .failureUrl("/authentication?failed")
+                .and().logout().permitAll();
 
 
             //
@@ -447,10 +436,10 @@ public class WebSecurityConfig {
             private Map<String, Set<String>> alfioOrganizationAuthorizations;
 
             private OpenIdCallbackLoginFilter(ConfigurationManager configurationManager, OpenIdAuthenticationManager openIdAuthenticationManager,
-                    AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager,
-                    UserRepository userRepository, AuthorityRepository authorityRepository, PasswordEncoder passwordEncoder,
-                    UserManager userManager, UserOrganizationRepository userOrganizationRepository,
-                    OrganizationRepository organizationRepository) {
+                                              AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager,
+                                              UserRepository userRepository, AuthorityRepository authorityRepository, PasswordEncoder passwordEncoder,
+                                              UserManager userManager, UserOrganizationRepository userOrganizationRepository,
+                                              OrganizationRepository organizationRepository) {
                 super(requestMatcher);
                 this.userRepository = userRepository;
                 this.authorityRepository = authorityRepository;
@@ -510,7 +499,7 @@ public class WebSecurityConfig {
                 }
 
                 Set<Integer> databaseOrganizationIds = organizationRepository.findAllForUser(username).stream()
-                        .map(org -> org.getId()).collect(Collectors.toSet());
+                    .map(org -> org.getId()).collect(Collectors.toSet());
 
                 if (isAdmin) {
                     databaseOrganizationIds.forEach(orgId -> userOrganizationRepository.removeOrganizationUserLink(userId.get(), orgId));
@@ -519,16 +508,16 @@ public class WebSecurityConfig {
 
 
                 Set<Integer> organizationIds = alfioOrganizationAuthorizations.keySet().stream()
-                        .map(organizationRepository::findByNameOpenId)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .filter(Objects::nonNull)
-                        .map(org -> org.getId())
-                        .collect(Collectors.toSet());
+                    .map(organizationRepository::findByNameOpenId)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .filter(Objects::nonNull)
+                    .map(org -> org.getId())
+                    .collect(Collectors.toSet());
 
                 databaseOrganizationIds.stream()
-                        .filter(orgId -> !organizationIds.contains(orgId))
-                        .forEach(orgId -> userOrganizationRepository.removeOrganizationUserLink(userId.get(), orgId));
+                    .filter(orgId -> !organizationIds.contains(orgId))
+                    .forEach(orgId -> userOrganizationRepository.removeOrganizationUserLink(userId.get(), orgId));
 
                 if (organizationIds.isEmpty()) {
                     String message = "Error: The user needs to be ADMIN or to have at least one organization linked";
@@ -537,7 +526,7 @@ public class WebSecurityConfig {
                 }
 
                 organizationIds.stream().filter(orgId -> !databaseOrganizationIds.contains(orgId))
-                        .forEach(orgId -> userOrganizationRepository.create(userId.get(), orgId));
+                    .forEach(orgId -> userOrganizationRepository.create(userId.get(), orgId));
             }
 
             private void clearClassState() {
@@ -557,10 +546,10 @@ public class WebSecurityConfig {
                 }
                 //FIXME at the moment, the authorizations are NOT based on the organizations, they are global
                 alfioOrganizationAuthorizations.keySet().stream()
-                        .map(org -> alfioOrganizationAuthorizations.get(org))
-                        .forEach(authorizations ->
-                                authorizations.stream().map(auth -> Role.fromRoleName("ROLE_" + auth))
-                                        .forEach(alfioRoles::add));
+                    .map(org -> alfioOrganizationAuthorizations.get(org))
+                    .forEach(authorizations ->
+                        authorizations.stream().map(auth -> Role.fromRoleName("ROLE_" + auth))
+                            .forEach(alfioRoles::add));
             }
 
             private void createUser() {
@@ -601,7 +590,7 @@ public class WebSecurityConfig {
             @Override
             public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
                 List<GrantedAuthority> authorities = alfioRoles.stream().map(Role::getRoleName)
-                        .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+                    .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
                 OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(authorities, idToken, subject, email, openIdAuthenticationManager.buildLogoutUrl());
                 return getAuthenticationManager().authenticate(authentication);
             }
@@ -610,13 +599,13 @@ public class WebSecurityConfig {
                 HttpClient client = HttpClient.newHttpClient();
 
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(claimsUrl))
-                        .header("Content-Type", openIdAuthenticationManager.getContentType())
-                        .POST(HttpRequest.BodyPublishers.ofString(openIdAuthenticationManager.buildRetrieveClaimsUrlBody(code)))
-                        .build();
+                    .uri(URI.create(claimsUrl))
+                    .header("Content-Type", openIdAuthenticationManager.getContentType())
+                    .POST(HttpRequest.BodyPublishers.ofString(openIdAuthenticationManager.buildRetrieveClaimsUrlBody(code)))
+                    .build();
 
                 HttpResponse<String> response = client.send(request,
-                        HttpResponse.BodyHandlers.ofString());
+                    HttpResponse.BodyHandlers.ofString());
 
                 Map<String, Object> map = new ObjectMapper().readValue(response.body(), Map.class);
                 return map;
@@ -677,9 +666,9 @@ public class WebSecurityConfig {
 
 
             RecaptchaLoginFilter(RecaptchaService recaptchaService,
-                    String loginProcessingUrl,
-                    String recaptchaFailureUrl,
-                    ConfigurationManager configurationManager) {
+                                 String loginProcessingUrl,
+                                 String recaptchaFailureUrl,
+                                 ConfigurationManager configurationManager) {
                 this.requestMatcher = new AntPathRequestMatcher(loginProcessingUrl, "POST");
                 this.recaptchaService = recaptchaService;
                 this.recaptchaFailureUrl = recaptchaFailureUrl;
@@ -692,8 +681,8 @@ public class WebSecurityConfig {
                 HttpServletRequest req = (HttpServletRequest) request;
                 HttpServletResponse res = (HttpServletResponse) response;
                 if (requestMatcher.matches(req) &&
-                        configurationManager.getForSystem(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true) &&
-                        !recaptchaService.checkRecaptcha(null, req)) {
+                    configurationManager.getForSystem(ENABLE_CAPTCHA_FOR_LOGIN).getValueAsBooleanOrDefault(true) &&
+                    !recaptchaService.checkRecaptcha(null, req)) {
                     res.sendRedirect(recaptchaFailureUrl);
                     return;
                 }
