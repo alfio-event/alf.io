@@ -78,6 +78,18 @@ public class OpenIdAuthenticationManager
         return builder.toString();
     }
 
+    public String buildLogoutUrl()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("https://");
+        builder.append(domain);
+        builder.append(logoutUrl);
+        builder.append("?");
+        builder.append("redirect_uri=");
+        builder.append(logoutRedirectUrl);
+        return builder.toString();
+    }
+
     public String buildRetrieveClaimsUrlBody(String code) throws JsonProcessingException
     {
         if(contentType.equals("application/json"))
@@ -112,6 +124,11 @@ public class OpenIdAuthenticationManager
         stringBuilder.append("&redirect_uri=" + callbackURI);
 
         return stringBuilder.toString();
+    }
+
+    public List<String> getScopes()
+    {
+        return Arrays.asList("openid", "email", "profile", groupsNameParameter, alfioGroupsNameParameter);
     }
 
     public String getGroupsNameParameter()
@@ -152,23 +169,6 @@ public class OpenIdAuthenticationManager
     public String getContentType()
     {
         return contentType;
-    }
-
-    public List<String> getScopes()
-    {
-        return Arrays.asList("openid", "email", "profile", groupsNameParameter, alfioGroupsNameParameter);
-    }
-
-    public String buildLogoutUrl()
-    {
-        StringBuilder builder = new StringBuilder();
-        builder.append("https://");
-        builder.append(domain);
-        builder.append(logoutUrl);
-        builder.append("?");
-        builder.append("redirect_uri=");
-        builder.append(logoutRedirectUrl);
-        return builder.toString();
     }
 }
 

@@ -41,6 +41,13 @@ public class OpenIdAuthenticationManagerTest
     }
 
     @Test
+    public void oauth2_build_logoutUrl(){
+        String logoutUrl = authenticationManager.buildLogoutUrl();
+        String expectedURL = "https://domain_test/logoutUrl?redirect_uri=logoutRedirectUrl";
+        Assert.assertEquals(expectedURL, logoutUrl);
+    }
+
+    @Test
     public void oauth2_json_build_body_test() throws JsonProcessingException
     {
         String code = "code";
@@ -63,6 +70,13 @@ public class OpenIdAuthenticationManagerTest
     }
 
     @Test
+    public void oauth2_get_scopes(){
+        List<String> expectedScopes = Arrays.asList("openid", "email", "profile", GROUPS_NAME, ALFIO_GROUPS_NAME);
+        List<String> actualScopes = authenticationManager.getScopes();
+        Assert.assertEquals(expectedScopes, actualScopes);
+    }
+
+    @Test
     public void oauth2_parameters_name_test(){
         Assert.assertEquals("code", authenticationManager.getCodeNameParameter());
         Assert.assertEquals("access_token", authenticationManager.getAccessTokenNameParameter());
@@ -73,19 +87,4 @@ public class OpenIdAuthenticationManagerTest
         Assert.assertEquals(GROUPS_NAME, authenticationManager.getGroupsNameParameter());
         Assert.assertEquals(ALFIO_GROUPS_NAME, authenticationManager.getAlfioGroupsNameParameter());
     }
-
-    @Test
-    public void oauth2_get_scopes(){
-        List<String> expectedScopes = Arrays.asList("openid", "email", "profile", GROUPS_NAME, ALFIO_GROUPS_NAME);
-        List<String> actualScopes = authenticationManager.getScopes();
-        Assert.assertEquals(expectedScopes, actualScopes);
-    }
-
-    @Test
-    public void oauth2_build_logoutUrl(){
-        String logoutUrl = authenticationManager.buildLogoutUrl();
-        String expectedURL = "https://domain_test/logoutUrl?redirect_uri=logoutRedirectUrl";
-        Assert.assertEquals(expectedURL, logoutUrl);
-    }
-
 }
