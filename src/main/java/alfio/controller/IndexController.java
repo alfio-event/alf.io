@@ -1,16 +1,16 @@
 /**
  * This file is part of alf.io.
- * <p>
+ *
  * alf.io is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * <p>
+ *
  * alf.io is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * <p>
+ *
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -29,10 +29,7 @@ import alfio.model.FileBlobMetadata;
 import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
-import alfio.repository.EventDescriptionRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.FileUploadRepository;
-import alfio.repository.TicketReservationRepository;
+import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MustacheCustomTag;
@@ -109,57 +106,6 @@ public class IndexController {
     private final TicketReservationRepository ticketReservationRepository;
     private final EventLoader eventLoader;
 
-    private static Element buildScripTag(String content, String type, String id, String param) {
-        var e = new Element("script");
-        e.appendChild(new Text(content));
-        e.setAttribute("type", type);
-        e.setAttribute("id", id);
-        if (param != null) {
-            e.setAttribute("data-param", param);
-        }
-        return e;
-    }
-
-    private static String reservationStatusToUrlMapping(TicketReservationStatusAndValidation status) {
-        switch (status.getStatus()) {
-            case PENDING:
-                return Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
-            case COMPLETE:
-                return "success";
-            case OFFLINE_PAYMENT:
-                return "waiting-payment";
-            case DEFERRED_OFFLINE_PAYMENT:
-                return "deferred-payment";
-            case EXTERNAL_PROCESSING_PAYMENT:
-            case WAITING_EXTERNAL_CONFIRMATION:
-                return "processing-payment";
-            case IN_PAYMENT:
-            case STUCK:
-                return "error";
-            default:
-                return "not-found"; // <- this may be a little bit aggressive
-        }
-    }
-
-
-    //url defined in the angular app in app-routing.module.ts
-
-    private static Element buildMetaTag(String propertyValue, String contentValue) {
-        var meta = new Element("meta");
-        meta.setAttribute("property", propertyValue);
-        meta.setAttribute("content", contentValue);
-        return meta;
-    }
-
-    private static Element getMetaElement(Document document, String attrName, String propertyValue) {
-        return (Element) document.getAllNodesMatching(Selector.select().element("meta").attrValEq(attrName, propertyValue).toMatcher(), true).get(0);
-    }
-
-    private static String getNonce() {
-        var nonce = new byte[16]; //128 bit = 16 bytes
-        SECURE_RANDOM.nextBytes(nonce);
-        return Hex.encodeHexString(nonce);
-    }
 
     @RequestMapping(value = "/", method = RequestMethod.HEAD)
     public ResponseEntity<String> replyToProxy() {
@@ -171,22 +117,25 @@ public class IndexController {
         return ResponseEntity.ok("Up and running!");
     }
 
+
+    //url defined in the angular app in app-routing.module.ts
     /**
-     * <pre>
-     * { path: '', component: EventListComponent, canActivate: [LanguageGuard] },
-     * { path: 'event/:eventShortName', component: EventDisplayComponent, canActivate: [EventGuard, LanguageGuard] },
-     * { path: 'event/:eventShortName/reservation/:reservationId', children: [
-     * { path: 'book', component: BookingComponent, canActivate: reservationsGuard },
-     * { path: 'overview', component: OverviewComponent, canActivate: reservationsGuard },
-     * { path: 'waitingPayment', redirectTo: 'waiting-payment'},
-     * { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: reservationsGuard },
-     * { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: reservationsGuard },
-     * { path: 'success', component: SuccessComponent, canActivate: reservationsGuard },
-     * { path: 'not-found', component: NotFoundComponent, canActivate: reservationsGuard },
-     * { path: 'error', component: ErrorComponent, canActivate: reservationsGuard }
-     * ]},
-     * { path: 'event/:eventShortName/ticket/:ticketId/view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] }
-     * </pre>
+     <pre>
+     { path: '', component: EventListComponent, canActivate: [LanguageGuard] },
+     { path: 'event/:eventShortName', component: EventDisplayComponent, canActivate: [EventGuard, LanguageGuard] },
+     { path: 'event/:eventShortName/reservation/:reservationId', children: [
+     { path: 'book', component: BookingComponent, canActivate: reservationsGuard },
+     { path: 'overview', component: OverviewComponent, canActivate: reservationsGuard },
+     { path: 'waitingPayment', redirectTo: 'waiting-payment'},
+     { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: reservationsGuard },
+     { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: reservationsGuard },
+     { path: 'success', component: SuccessComponent, canActivate: reservationsGuard },
+     { path: 'not-found', component: NotFoundComponent, canActivate: reservationsGuard },
+     { path: 'error', component: ErrorComponent, canActivate: reservationsGuard }
+     ]},
+     { path: 'event/:eventShortName/ticket/:ticketId/view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] }
+     </pre>
+
      */
     @GetMapping({
         "/",
@@ -243,10 +192,35 @@ public class IndexController {
                 .map(IndexController::reservationStatusToUrlMapping).orElse("not-found");
 
             return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
-                .buildAndExpand(Map.of("eventShortName", eventShortName, "reservationId", reservationId, "status", reservationStatusUrlSegment))
+                .buildAndExpand(Map.of("eventShortName", eventShortName, "reservationId", reservationId, "status",reservationStatusUrlSegment))
                 .toUriString();
         } else {
             return "redirect:/";
+        }
+    }
+
+    private static Element buildScripTag(String content, String type, String id, String param) {
+        var e = new Element("script");
+        e.appendChild(new Text(content));
+        e.setAttribute("type", type);
+        e.setAttribute("id", id);
+        if (param != null) {
+            e.setAttribute("data-param", param);
+        }
+        return e;
+    }
+
+    private static String reservationStatusToUrlMapping(TicketReservationStatusAndValidation status) {
+        switch (status.getStatus()) {
+            case PENDING: return Boolean.TRUE.equals(status.getValidated()) ? "overview" : "book";
+            case COMPLETE: return "success";
+            case OFFLINE_PAYMENT: return "waiting-payment";
+            case DEFERRED_OFFLINE_PAYMENT: return "deferred-payment";
+            case EXTERNAL_PROCESSING_PAYMENT:
+            case WAITING_EXTERNAL_CONFIRMATION: return "processing-payment";
+            case IN_PAYMENT:
+            case STUCK: return "error";
+            default: return "not-found"; // <- this may be a little bit aggressive
         }
     }
 
@@ -261,7 +235,7 @@ public class IndexController {
 
         var baseUrl = configurationManager.getForSystem(ConfigurationKeys.BASE_URL).getRequiredValue();
 
-        var title = messageSourceManager.getMessageSourceForEvent(event).getMessage("event.get-your-ticket-for", new String[]{event.getDisplayName()}, locale);
+        var title = messageSourceManager.getMessageSourceForEvent(event).getMessage("event.get-your-ticket-for", new String[] {event.getDisplayName()}, locale);
 
         var head = eventOpenGraph.getElementsByTagName("head").get(0);
 
@@ -274,11 +248,11 @@ public class IndexController {
 
         eventOpenGraph.getElementsByTagName("title").get(0).appendChild(new Text(title));
         getMetaElement(eventOpenGraph, "property", "og:title").setAttribute("content", title);
-        getMetaElement(eventOpenGraph, "property", "og:image").setAttribute("content", baseUrl + "/file/" + event.getFileBlobId());
+        getMetaElement(eventOpenGraph, "property","og:image").setAttribute("content", baseUrl + "/file/" + event.getFileBlobId());
 
         var eventDesc = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.toLanguageTag()).orElse("").trim();
         var firstLine = Pattern.compile("\n").splitAsStream(MustacheCustomTag.renderToTextCommonmark(eventDesc)).findFirst().orElse("");
-        getMetaElement(eventOpenGraph, "property", "og:description").setAttribute("content", firstLine);
+        getMetaElement(eventOpenGraph, "property","og:description").setAttribute("content", firstLine);
 
 
         var org = organizationRepository.getById(event.getOrganizationId());
@@ -294,6 +268,17 @@ public class IndexController {
         });
 
         return eventOpenGraph;
+    }
+
+    private static Element buildMetaTag(String propertyValue, String contentValue) {
+        var meta = new Element("meta");
+        meta.setAttribute("property", propertyValue);
+        meta.setAttribute("content", contentValue);
+        return meta;
+    }
+
+    private static Element getMetaElement(Document document, String attrName, String propertyValue) {
+        return (Element) document.getAllNodesMatching(Selector.select().element("meta").attrValEq(attrName, propertyValue).toMatcher(), true).get(0);
     }
 
     @GetMapping(value = {
@@ -313,12 +298,12 @@ public class IndexController {
 
     // login related
     @GetMapping("/authentication")
-    public void getLoginPage(@RequestParam(value = "failed", required = false) String failed, @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed,
+    public void getLoginPage(@RequestParam(value="failed", required = false) String failed, @RequestParam(value = "recaptchaFailed", required = false) String recaptchaFailed,
                              Model model,
                              Principal principal,
                              HttpServletRequest request,
                              HttpServletResponse response) throws IOException {
-        if (principal != null) {
+        if(principal != null) {
             response.sendRedirect("/admin/");
             return;
         }
@@ -350,12 +335,13 @@ public class IndexController {
             templateManager.renderHtml(new ClassPathResource("alfio/web-templates/login.ms"), model.asMap(), os);
         }
     }
-    //
 
     @PostMapping("/authenticate")
     public String doLogin() {
         return REDIRECT_ADMIN;
     }
+    //
+
 
     // admin index
     @GetMapping("/admin")
@@ -396,6 +382,13 @@ public class IndexController {
         }
     }
 
+
+    private static String getNonce() {
+        var nonce = new byte[16]; //128 bit = 16 bytes
+        SECURE_RANDOM.nextBytes(nonce);
+        return Hex.encodeHexString(nonce);
+    }
+
     public String addCspHeader(HttpServletResponse response) {
 
         String nonce = getNonce();
@@ -412,7 +405,7 @@ public class IndexController {
         // https://csp.withgoogle.com/docs/strict-csp.html
         // with base-uri set to 'self'
 
-        response.addHeader("Content-Security-Policy", "object-src 'none'; " +
+        response.addHeader("Content-Security-Policy", "object-src 'none'; "+
             "script-src 'nonce-" + nonce + "' 'unsafe-inline' 'unsafe-eval' 'strict-dynamic' https: http:; " +
             "base-uri 'self'; "
             + reportUri);
