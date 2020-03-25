@@ -87,7 +87,7 @@ ext {
     datasourceValidationQuery = 'SELECT 1'
     //springProfilesActive = 'dev
     //springProfilesActive = 'dev,demo'
-    springProfilesActive = 'dev'
+    springProfilesActive = 'dev,oauth2'
     port = "8080"
 
 
