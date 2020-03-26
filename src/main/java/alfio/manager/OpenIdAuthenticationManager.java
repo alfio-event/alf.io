@@ -90,7 +90,7 @@ public class OpenIdAuthenticationManager
             return buildRetrieveClaimsUrlJsonBody(code);
         if(contentType.equals("application/x-www-form-urlencoded"))
             return buildRetrieveClaimsUrlFormUrlEncodedBody(code);
-        throw new RuntimeException("the Content-Type you specifier is not supported");
+        throw new RuntimeException("the Content-Type specified is not supported");
     }
 
     private String buildRetrieveClaimsUrlJsonBody(String code) throws JsonProcessingException
