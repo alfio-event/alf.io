@@ -1,12 +1,14 @@
 package alfio.manager;
 
-    import com.fasterxml.jackson.core.JsonProcessingException;
-    import com.fasterxml.jackson.databind.ObjectMapper;
-    import org.springframework.beans.factory.annotation.*;
-    import org.springframework.context.annotation.Profile;
-    import org.springframework.stereotype.Component;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.client.utils.URIBuilder;
+import org.springframework.beans.factory.annotation.*;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
-    import java.util.*;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @Profile("oauth2")
@@ -49,44 +51,36 @@ public class OpenIdAuthenticationManager
     }
 
     public String buildAuthorizeUrl(List<String> scopes){
-        StringBuilder builder = new StringBuilder();
-        builder.append("https://");
-        builder.append(domain);
-        builder.append(authenticationUrl);
-        builder.append("?redirect_uri=");
-        builder.append(callbackURI);
-        builder.append("&client_id=");
-        builder.append(clientId);
-        builder.append("&scope=");
+        String scopeParameter = scopes.stream().collect(Collectors.joining(" "));
+        System.out.println(scopeParameter);
 
-        for(int i = 0; i < scopes.size(); i++){
-            if(i != 0)
-                builder.append("%20");
-            builder.append(scopes.get(i));
-        }
-
-        builder.append("&response_type=code");
+        URIBuilder builder = new URIBuilder()
+            .setScheme("https")
+            .setHost(domain)
+            .setPath(authenticationUrl)
+            .addParameter("redirect_uri", callbackURI)
+            .addParameter("client_id", clientId)
+            .addParameter("scope", scopeParameter)
+            .addParameter("response_type", "code");
         return builder.toString();
     }
 
     public String buildClaimsRetrieverUrl()
     {
-        StringBuilder builder = new StringBuilder();
-        builder.append("https://");
-        builder.append(domain);
-        builder.append(claimsUrl);
+        URIBuilder builder = new URIBuilder()
+            .setScheme("https")
+            .setHost(domain)
+            .setPath(claimsUrl);
         return builder.toString();
     }
 
     public String buildLogoutUrl()
     {
-        StringBuilder builder = new StringBuilder();
-        builder.append("https://");
-        builder.append(domain);
-        builder.append(logoutUrl);
-        builder.append("?");
-        builder.append("redirect_uri=");
-        builder.append(logoutRedirectUrl);
+        URIBuilder builder = new URIBuilder()
+            .setScheme("https")
+            .setHost(domain)
+            .setPath(logoutUrl)
+            .addParameter("redirect_uri", logoutRedirectUrl);
         return builder.toString();
     }
 

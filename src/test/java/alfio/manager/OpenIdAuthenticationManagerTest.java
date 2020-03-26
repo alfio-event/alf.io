@@ -1,9 +1,9 @@
 package alfio.manager;
 
-    import com.fasterxml.jackson.core.JsonProcessingException;
-    import org.junit.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.junit.*;
 
-    import java.util.*;
+import java.util.*;
 
 public class OpenIdAuthenticationManagerTest
 {
@@ -28,7 +28,7 @@ public class OpenIdAuthenticationManagerTest
     {
         List<String> scopes = Arrays.asList("scope1", "scope2");
         String redirectURL = authenticationManager.buildAuthorizeUrl(scopes);
-        String expectedURL = "https://domain_test/auth?redirect_uri=callback&client_id=123&scope=scope1%20scope2&response_type=code";
+        String expectedURL = "https://domain_test/auth?redirect_uri=callback&client_id=123&scope=scope1+scope2&response_type=code";
         Assert.assertEquals(expectedURL, redirectURL);
     }
 
