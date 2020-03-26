@@ -2,23 +2,23 @@ package alfio.manager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Map;
 
 import static alfio.util.HttpUtils.APPLICATION_FORM_URLENCODED;
 import static alfio.util.HttpUtils.APPLICATION_JSON;
 
 @Component
 @Profile("openid")
-public class OpenIdAuthenticationManager
-{
+public class OpenIdAuthenticationManager {
     private final Logger logger = LoggerFactory.getLogger(OpenIdAuthenticationManager.class);
 
     private final String domain;
@@ -43,7 +43,7 @@ public class OpenIdAuthenticationManager
                                        @Value("${openid.groupsNameParameter}") String groupsNameParameter,
                                        @Value("${openid.alfioGroupsNameParameter}") String alfioGroupsNameParameter,
                                        @Value("${openid.logoutUrl}") String logoutUrl,
-                                       @Value("${openid.logoutRedirectUrl}") String logoutRedirectUrl){
+                                       @Value("${openid.logoutRedirectUrl}") String logoutRedirectUrl) {
         this.domain = domain;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
@@ -57,45 +57,44 @@ public class OpenIdAuthenticationManager
         this.logoutRedirectUrl = logoutRedirectUrl;
     }
 
-    public String buildAuthorizeUrl(List<String> scopes){
-        String scopeParameter = scopes.stream().collect(Collectors.joining(" "));
-        System.out.println(scopeParameter);
+    public String buildAuthorizeUrl(List<String> scopes) {
+        String scopeParameter = String.join("+", scopes);
 
-        URIBuilder builder = new URIBuilder()
-            .setScheme("https")
-            .setHost(domain)
-            .setPath(authenticationUrl)
-            .addParameter("redirect_uri", callbackURI)
-            .addParameter("client_id", clientId)
-            .addParameter("scope", scopeParameter)
-            .addParameter("response_type", "code");
-        return builder.toString();
+        UriComponents uri = UriComponentsBuilder.newInstance()
+                .scheme("https")
+                .host(domain)
+                .path(authenticationUrl)
+                .queryParam("redirect_uri", callbackURI)
+                .queryParam("client_id", clientId)
+                .queryParam("scope", scopeParameter)
+                .queryParam("response_type", "code")
+                .build();
+        return uri.toUriString();
     }
 
-    public String buildClaimsRetrieverUrl()
-    {
-        URIBuilder builder = new URIBuilder()
-            .setScheme("https")
-            .setHost(domain)
-            .setPath(claimsUrl);
-        return builder.toString();
+    public String buildClaimsRetrieverUrl() {
+        UriComponents uri = UriComponentsBuilder.newInstance()
+                .scheme("https")
+                .host(domain)
+                .path(claimsUrl)
+                .build();
+        return uri.toUriString();
     }
 
-    public String buildLogoutUrl()
-    {
-        URIBuilder builder = new URIBuilder()
-            .setScheme("https")
-            .setHost(domain)
-            .setPath(logoutUrl)
-            .addParameter("redirect_uri", logoutRedirectUrl);
-        return builder.toString();
+    public String buildLogoutUrl() {
+        UriComponents uri = UriComponentsBuilder.newInstance()
+                .scheme("https")
+                .host(domain)
+                .path(logoutUrl)
+                .queryParam("redirect_uri", logoutRedirectUrl)
+                .build();
+        return uri.toString();
     }
 
-    public String buildRetrieveClaimsUrlBody(String code) throws JsonProcessingException
-    {
-        if(contentType.equals(APPLICATION_JSON))
+    public String buildRetrieveClaimsUrlBody(String code) throws JsonProcessingException {
+        if (contentType.equals(APPLICATION_JSON))
             return buildRetrieveClaimsUrlJsonBody(code);
-        if(contentType.equals(APPLICATION_FORM_URLENCODED))
+        if (contentType.equals(APPLICATION_FORM_URLENCODED))
             return buildRetrieveClaimsUrlFormUrlEncodedBody(code);
 
         String message = "the Content-Type specified is not supported";
@@ -103,14 +102,13 @@ public class OpenIdAuthenticationManager
         throw new RuntimeException(message);
     }
 
-    private String buildRetrieveClaimsUrlJsonBody(String code) throws JsonProcessingException
-    {
+    private String buildRetrieveClaimsUrlJsonBody(String code) throws JsonProcessingException {
         Map<String, String> body = Map.of(
-            "grant_type", "authorization_code",
-            "code", code,
-            "client_id", clientId,
-            "client_secret", clientSecret,
-            "redirect_uri", callbackURI
+                "grant_type", "authorization_code",
+                "code", code,
+                "client_id", clientId,
+                "client_secret", clientSecret,
+                "redirect_uri", callbackURI
         );
 
         ObjectMapper objectMapper = new ObjectMapper();
@@ -118,8 +116,7 @@ public class OpenIdAuthenticationManager
         return objectMapper.writeValueAsString(body);
     }
 
-    private String buildRetrieveClaimsUrlFormUrlEncodedBody(String code)
-    {
+    private String buildRetrieveClaimsUrlFormUrlEncodedBody(String code) {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("grant_type=authorization_code");
         stringBuilder.append("&code=" + code);
@@ -130,48 +127,39 @@ public class OpenIdAuthenticationManager
         return stringBuilder.toString();
     }
 
-    public List<String> getScopes()
-    {
+    public List<String> getScopes() {
         return List.of("openid", "email", "profile", groupsNameParameter, alfioGroupsNameParameter);
     }
 
-    public String getGroupsNameParameter()
-    {
+    public String getGroupsNameParameter() {
         return groupsNameParameter;
     }
 
-    public String getAlfioGroupsNameParameter()
-    {
+    public String getAlfioGroupsNameParameter() {
         return alfioGroupsNameParameter;
     }
 
-    public String getCodeNameParameter()
-    {
+    public String getCodeNameParameter() {
         return "code";
     }
 
-    public String getAccessTokenNameParameter()
-    {
+    public String getAccessTokenNameParameter() {
         return "access_token";
     }
 
-    public String getIdTokenNameParameter()
-    {
+    public String getIdTokenNameParameter() {
         return "id_token";
     }
 
-    public String getSubjectNameParameter()
-    {
+    public String getSubjectNameParameter() {
         return "sub";
     }
 
-    public String getEmailNameParameter()
-    {
+    public String getEmailNameParameter() {
         return "email";
     }
 
-    public String getContentType()
-    {
+    public String getContentType() {
         return contentType;
     }
 }
