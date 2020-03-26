@@ -105,13 +105,13 @@ public class OpenIdAuthenticationManager
 
     private String buildRetrieveClaimsUrlJsonBody(String code) throws JsonProcessingException
     {
-        Map<String, String> body = new HashMap<String, String>() {{
-            put("grant_type", "authorization_code");
-            put("code", code);
-            put("client_id", clientId);
-            put("client_secret", clientSecret);
-            put("redirect_uri", callbackURI);
-        }};
+        Map<String, String> body = Map.of(
+            "grant_type", "authorization_code",
+            "code", code,
+            "client_id", clientId,
+            "client_secret", clientSecret,
+            "redirect_uri", callbackURI
+        );
 
         ObjectMapper objectMapper = new ObjectMapper();
 
@@ -132,7 +132,7 @@ public class OpenIdAuthenticationManager
 
     public List<String> getScopes()
     {
-        return Arrays.asList("openid", "email", "profile", groupsNameParameter, alfioGroupsNameParameter);
+        return List.of("openid", "email", "profile", groupsNameParameter, alfioGroupsNameParameter);
     }
 
     public String getGroupsNameParameter()
