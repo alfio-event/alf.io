@@ -29,6 +29,7 @@ import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.Claim;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -550,19 +551,29 @@ public class WebSecurityConfig {
                 return new OpenIdAlfioUser(idToken, subject, email, false, alfioRoles, alfioOrganizationAuthorizations);
             }
 
-            private Map<String, Object> retrieveClaims(String claimsUrl, String code) throws IOException, InterruptedException {
+            private Map<String, Object> retrieveClaims(String claimsUrl, String code){
                 HttpClient client = HttpClient.newHttpClient();
 
-                HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(claimsUrl))
-                    .header("Content-Type", openIdAuthenticationManager.getContentType())
-                    .POST(HttpRequest.BodyPublishers.ofString(openIdAuthenticationManager.buildRetrieveClaimsUrlBody(code)))
-                    .build();
+                HttpRequest request = null;
+                HttpResponse<String> response;
+                Map<String, Object> map;
 
-                HttpResponse<String> response = client.send(request,
-                    HttpResponse.BodyHandlers.ofString());
+                try {
+                    request = HttpRequest.newBuilder()
+                        .uri(URI.create(claimsUrl))
+                        .header("Content-Type", openIdAuthenticationManager.getContentType())
+                        .POST(HttpRequest.BodyPublishers.ofString(openIdAuthenticationManager.buildRetrieveClaimsUrlBody(code)))
+                        .build();
 
-                Map<String, Object> map = new ObjectMapper().readValue(response.body(), Map.class);
+                    response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                    map = new ObjectMapper().readValue(response.body(), Map.class);
+
+                } catch (Exception e) {
+                    String message = "There has been an error retrieving the claims from the idp using the authorization code";
+                    logger.error(message);
+                    throw new RuntimeException(message);
+                }
+
                 return map;
             }
 
@@ -579,13 +590,7 @@ public class WebSecurityConfig {
                 }
 
                 String claimsUrl = openIdAuthenticationManager.buildClaimsRetrieverUrl();
-                Map<String, Object> claims;
-                try {
-                    claims = retrieveClaims(claimsUrl, code);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    throw new RuntimeException(e);
-                }
+                Map<String, Object> claims = retrieveClaims(claimsUrl, code);
 
                 OpenIdAlfioUser alfioUser = extractUserInfoFrom(claims);
 

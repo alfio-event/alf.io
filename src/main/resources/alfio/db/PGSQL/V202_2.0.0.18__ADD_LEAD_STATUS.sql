@@ -14,4 +14,5 @@
 -- You should have received a copy of the GNU General Public License
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
+
 alter table sponsor_scan add column lead_status varchar(255) not null default 'WARM';

@@ -14,4 +14,5 @@
 -- You should have received a copy of the GNU General Public License
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
+
 alter table organization add column name_openid varchar(255);
