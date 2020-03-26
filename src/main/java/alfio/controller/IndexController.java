@@ -356,7 +356,7 @@ public class IndexController {
             String idpLogoutRedirectionUrl = ((WebSecurityConfig.OpenIdAlfioAuthentication) (SecurityContextHolder.getContext().getAuthentication())).getIdpLogoutRedirectionUrl();
             model.addAttribute("idpLogoutRedirectionUrl", idpLogoutRedirectionUrl);
         } else {
-            model.addAttribute("idpLogoutRedirectionUrl", "none");
+            model.addAttribute("idpLogoutRedirectionUrl", null);
         }
 
         Collection<String> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()

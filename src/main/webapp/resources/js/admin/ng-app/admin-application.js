@@ -438,7 +438,7 @@
                 //delete alf.io IndexedDb
                 deleteCheckInDatabase();
                 $window.location.reload();
-                if(!(idpLogoutRedirectionUrl === "none")){
+                if(!(idpLogoutRedirectionUrl === '')){
                     $window.location.replace(idpLogoutRedirectionUrl);
                 }
             });
