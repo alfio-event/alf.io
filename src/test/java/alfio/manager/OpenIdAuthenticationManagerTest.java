@@ -1,6 +1,7 @@
 package alfio.manager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.*;
 
 import java.util.*;
@@ -52,8 +53,10 @@ public class OpenIdAuthenticationManagerTest
     {
         String code = "code";
         String body = authenticationManager.buildRetrieveClaimsUrlBody(code);
-        String expectedBody = "{\"code\":\"code\",\"grant_type\":\"authorization_code\",\"client_secret\":\"1234\",\"redirect_uri\":\"callback\",\"client_id\":\"123\"}";
-        Assert.assertEquals(expectedBody, body);
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, String> expectedBody = mapper.readValue(
+            "{\"code\":\"code\",\"redirect_uri\":\"callback\",\"grant_type\":\"authorization_code\",\"client_secret\":\"1234\",\"client_id\":\"123\"}", Map.class);
+        Assert.assertEquals(expectedBody, mapper.readValue(body, Map.class));
     }
 
     @Test
