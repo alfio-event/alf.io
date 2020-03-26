@@ -457,30 +457,6 @@ public class WebSecurityConfig {
                 HttpServletResponse res = (HttpServletResponse) response;
 
                 if (requestMatcher.matches(req)) {
-                    clearClassState();
-
-                    String code = req.getParameter(openIdAuthenticationManager.getCodeNameParameter());
-                    if (code == null) {
-                        throw new IllegalArgumentException("authorization code cannot be null");
-                    }
-
-                    String claimsUrl = openIdAuthenticationManager.buildClaimsRetrieverUrl();
-                    Map<String, Object> claims;
-                    try {
-                        claims = retrieveClaims(claimsUrl, code);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        throw new RuntimeException(e);
-                    }
-
-                    populateFieldsFrom(claims);
-
-                    if (!userManager.usernameExists(email)) {
-                        createUser();
-                    }
-                    updateRoles(alfioRoles, email);
-                    updateOrganizations(email, res);
-
                     super.doFilter(req, res, chain);
                 }
 
@@ -608,6 +584,30 @@ public class WebSecurityConfig {
 
             @Override
             public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
+                clearClassState();
+                
+                String code = request.getParameter(openIdAuthenticationManager.getCodeNameParameter());
+                if (code == null) {
+                    throw new IllegalArgumentException("authorization code cannot be null");
+                }
+
+                String claimsUrl = openIdAuthenticationManager.buildClaimsRetrieverUrl();
+                Map<String, Object> claims;
+                try {
+                    claims = retrieveClaims(claimsUrl, code);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                }
+
+                populateFieldsFrom(claims);
+
+                if (!userManager.usernameExists(email)) {
+                    createUser();
+                }
+                updateRoles(alfioRoles, email);
+                updateOrganizations(email, response);
+
                 List<GrantedAuthority> authorities = alfioRoles.stream().map(Role::getRoleName)
                     .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
                 OpenIdAlfioAuthentication authentication = new OpenIdAlfioAuthentication(authorities, idToken, subject, email, openIdAuthenticationManager.buildLogoutUrl());
