@@ -350,10 +350,10 @@ public class IndexController {
         model.addAttribute("username", principal.getName());
         model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
 
-        boolean isDBAuthentication = !(principal instanceof WebSecurityConfig.OAuth2AlfioAuthentication);
+        boolean isDBAuthentication = !(principal instanceof WebSecurityConfig.OpenIdAlfioAuthentication);
         model.addAttribute("isDBAuthentication", isDBAuthentication);
         if (!isDBAuthentication) {
-            String idpLogoutRedirectionUrl = ((WebSecurityConfig.OAuth2AlfioAuthentication) (SecurityContextHolder.getContext().getAuthentication())).getIdpLogoutRedirectionUrl();
+            String idpLogoutRedirectionUrl = ((WebSecurityConfig.OpenIdAlfioAuthentication) (SecurityContextHolder.getContext().getAuthentication())).getIdpLogoutRedirectionUrl();
             model.addAttribute("idpLogoutRedirectionUrl", idpLogoutRedirectionUrl);
         } else {
             model.addAttribute("idpLogoutRedirectionUrl", "none");

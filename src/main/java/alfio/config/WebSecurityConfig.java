@@ -214,7 +214,7 @@ public class WebSecurityConfig {
         }
     }
 
-    @Profile("oauth2")
+    @Profile("openid")
     @Configuration
     @Order(1)
     public static class OpenIdFormBasedWebSecurity extends AbstractFormBasedWebSecurity {
@@ -237,7 +237,7 @@ public class WebSecurityConfig {
     /**
      * Default form based configuration.
      */
-    @Profile("!oauth2")
+    @Profile("!openid")
     @Configuration
     @Order(1)
     public static class FormBasedWebSecurity extends AbstractFormBasedWebSecurity {
@@ -303,7 +303,7 @@ public class WebSecurityConfig {
                 .authoritiesByUsernameQuery("select username, role from authority where username = ?")
                 .passwordEncoder(passwordEncoder);
             if (openIdAuthenticationManager != null) {
-                auth.authenticationProvider(new OAuth2AuthenticationProvider());
+                auth.authenticationProvider(new OpenIdAuthenticationProvider());
             }
         }
 
@@ -610,12 +610,12 @@ public class WebSecurityConfig {
             public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
                 List<GrantedAuthority> authorities = alfioRoles.stream().map(Role::getRoleName)
                     .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-                OAuth2AlfioAuthentication authentication = new OAuth2AlfioAuthentication(authorities, idToken, subject, email, openIdAuthenticationManager.buildLogoutUrl());
+                OpenIdAlfioAuthentication authentication = new OpenIdAlfioAuthentication(authorities, idToken, subject, email, openIdAuthenticationManager.buildLogoutUrl());
                 return getAuthenticationManager().authenticate(authentication);
             }
         }
 
-        private static class OAuth2AuthenticationProvider implements AuthenticationProvider {
+        private static class OpenIdAuthenticationProvider implements AuthenticationProvider {
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
                 return authentication;
@@ -623,7 +623,7 @@ public class WebSecurityConfig {
 
             @Override
             public boolean supports(Class<?> authentication) {
-                return authentication.equals(OAuth2AlfioAuthentication.class);
+                return authentication.equals(OpenIdAlfioAuthentication.class);
             }
         }
 
@@ -717,13 +717,13 @@ public class WebSecurityConfig {
         }
     }
 
-    public static class OAuth2AlfioAuthentication extends AbstractAuthenticationToken {
+    public static class OpenIdAlfioAuthentication extends AbstractAuthenticationToken {
         private final String idToken;
         private final String subject;
         private final String email;
         private final String idpLogoutRedirectionUrl;
 
-        public OAuth2AlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject, String email, String idpLogoutRedirectionUrl) {
+        public OpenIdAlfioAuthentication(Collection<? extends GrantedAuthority> authorities, String idToken, String subject, String email, String idpLogoutRedirectionUrl) {
             super(authorities);
             this.idToken = idToken;
             this.subject = subject;

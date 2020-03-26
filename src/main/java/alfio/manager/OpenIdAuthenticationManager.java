@@ -16,7 +16,7 @@ import static alfio.util.HttpUtils.APPLICATION_FORM_URLENCODED;
 import static alfio.util.HttpUtils.APPLICATION_JSON;
 
 @Component
-@Profile("oauth2")
+@Profile("openid")
 public class OpenIdAuthenticationManager
 {
     private final Logger logger = LoggerFactory.getLogger(OpenIdAuthenticationManager.class);
@@ -33,17 +33,17 @@ public class OpenIdAuthenticationManager
     private final String logoutUrl;
     private final String logoutRedirectUrl;
 
-    public OpenIdAuthenticationManager(@Value("${oauth2.domain}") String domain,
-                                       @Value("${oauth2.clientId}") String clientId,
-                                       @Value("${oauth2.clientSecret}") String clientSecret,
-                                       @Value("${oauth2.callbackURI}") String callbackURI,
-                                       @Value("${oauth2.authenticationUrl}") String authenticationUrl,
-                                       @Value("${oauth2.claimsUrl}") String claimsUrl,
-                                       @Value("${oauth2.contentType}") String contentType,
-                                       @Value("${oauth2.groupsNameParameter}") String groupsNameParameter,
-                                       @Value("${oauth2.alfioGroupsNameParameter}") String alfioGroupsNameParameter,
-                                       @Value("${oauth2.logoutUrl}") String logoutUrl,
-                                       @Value("${oauth2.logoutRedirectUrl}") String logoutRedirectUrl){
+    public OpenIdAuthenticationManager(@Value("${openid.domain}") String domain,
+                                       @Value("${openid.clientId}") String clientId,
+                                       @Value("${openid.clientSecret}") String clientSecret,
+                                       @Value("${openid.callbackURI}") String callbackURI,
+                                       @Value("${openid.authenticationUrl}") String authenticationUrl,
+                                       @Value("${openid.claimsUrl}") String claimsUrl,
+                                       @Value("${openid.contentType}") String contentType,
+                                       @Value("${openid.groupsNameParameter}") String groupsNameParameter,
+                                       @Value("${openid.alfioGroupsNameParameter}") String alfioGroupsNameParameter,
+                                       @Value("${openid.logoutUrl}") String logoutUrl,
+                                       @Value("${openid.logoutRedirectUrl}") String logoutRedirectUrl){
         this.domain = domain;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
