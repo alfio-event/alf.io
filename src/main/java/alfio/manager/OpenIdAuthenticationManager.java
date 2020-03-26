@@ -3,6 +3,8 @@ package alfio.manager;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.client.utils.URIBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.*;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -17,6 +19,8 @@ import static alfio.util.HttpUtils.APPLICATION_JSON;
 @Profile("oauth2")
 public class OpenIdAuthenticationManager
 {
+    private final Logger logger = LoggerFactory.getLogger(OpenIdAuthenticationManager.class);
+
     private final String domain;
     private final String clientId;
     private final String clientSecret;
@@ -93,7 +97,10 @@ public class OpenIdAuthenticationManager
             return buildRetrieveClaimsUrlJsonBody(code);
         if(contentType.equals(APPLICATION_FORM_URLENCODED))
             return buildRetrieveClaimsUrlFormUrlEncodedBody(code);
-        throw new RuntimeException("the Content-Type specified is not supported");
+
+        String message = "the Content-Type specified is not supported";
+        logger.error(message);
+        throw new RuntimeException(message);
     }
 
     private String buildRetrieveClaimsUrlJsonBody(String code) throws JsonProcessingException
