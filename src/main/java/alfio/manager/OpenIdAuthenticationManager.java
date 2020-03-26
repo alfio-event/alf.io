@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static alfio.util.HttpUtils.APPLICATION_FORM_URLENCODED;
+import static alfio.util.HttpUtils.APPLICATION_JSON;
+
 @Component
 @Profile("oauth2")
 public class OpenIdAuthenticationManager
@@ -86,9 +89,9 @@ public class OpenIdAuthenticationManager
 
     public String buildRetrieveClaimsUrlBody(String code) throws JsonProcessingException
     {
-        if(contentType.equals("application/json"))
+        if(contentType.equals(APPLICATION_JSON))
             return buildRetrieveClaimsUrlJsonBody(code);
-        if(contentType.equals("application/x-www-form-urlencoded"))
+        if(contentType.equals(APPLICATION_FORM_URLENCODED))
             return buildRetrieveClaimsUrlFormUrlEncodedBody(code);
         throw new RuntimeException("the Content-Type specified is not supported");
     }
