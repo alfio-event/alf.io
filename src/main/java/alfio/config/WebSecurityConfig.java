@@ -474,7 +474,6 @@ public class WebSecurityConfig {
                     }
 
                     populateFieldsFrom(claims);
-                    extractAlfioRoles();
 
                     if (!userManager.usernameExists(email)) {
                         createUser();
@@ -538,10 +537,6 @@ public class WebSecurityConfig {
             }
 
             private void extractAlfioRoles() {
-                if (isAdmin) {
-                    alfioRoles.add(Role.ADMIN);
-                    return;
-                }
                 //FIXME at the moment, the authorizations are NOT based on the organizations, they are global
                 alfioOrganizationAuthorizations.keySet().stream()
                     .map(org -> alfioOrganizationAuthorizations.get(org))
@@ -565,10 +560,14 @@ public class WebSecurityConfig {
 
                 if (groups.contains(ALFIO_ADMIN)) {
                     isAdmin = true;
+                    alfioRoles.add(Role.ADMIN);
+                    return;
                 }
 
-                if (isAdmin || groups.isEmpty()) {
-                    return;
+                if(groups.isEmpty()){
+                    String message = "Users must have at least a group called ALFIO_ADMIN or ALFIO_BACKOFFICE";
+                    logger.error(message);
+                    throw new RuntimeException(message);
                 }
 
                 List<String> alfioRoles = idTokenClaims.get(openIdAuthenticationManager.getAlfioGroupsNameParameter()).asList(String.class);
@@ -583,6 +582,7 @@ public class WebSecurityConfig {
                     }
                     alfioOrganizationAuthorizations.put(organization, new HashSet<>(Arrays.asList(role)));
                 }
+                extractAlfioRoles();
             }
 
             private Map<String, Object> retrieveClaims(String claimsUrl, String code) throws IOException, InterruptedException {
