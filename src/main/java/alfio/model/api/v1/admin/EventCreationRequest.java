@@ -18,6 +18,7 @@ package alfio.model.api.v1.admin;
 
 import alfio.model.*;
 import alfio.model.group.LinkedGroup;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -72,7 +73,7 @@ public class EventCreationRequest{
 
         return new EventModification(
             null,
-            Event.EventType.INTERNAL,
+            Event.EventFormat.IN_PERSON,
             websiteUrl,
             null,
             termsAndConditionsUrl,
@@ -100,7 +101,8 @@ public class EventCreationRequest{
             new LocationDescriptor(timezone, location.getCoordinate().getLatitude(), location.getCoordinate().getLongitude(), null),
             locales,
             toAdditionalFields(orEmpty(additionalInfo)),
-            emptyList()  // TODO improve API
+            emptyList(),  // TODO improve API,
+            AlfioMetadata.empty()
         );
     }
 
@@ -123,7 +125,7 @@ public class EventCreationRequest{
 
         return new EventModification(
             original.getId(),
-            Event.EventType.INTERNAL,
+            Event.EventFormat.IN_PERSON,
             first(websiteUrl,original.getWebsiteUrl()),
             null,
             first(termsAndConditionsUrl,original.getWebsiteUrl()),
@@ -151,7 +153,8 @@ public class EventCreationRequest{
             null,
             locales,
             toAdditionalFields(orEmpty(additionalInfo)),
-            emptyList()  // TODO improve API
+            emptyList(),  // TODO improve API
+            AlfioMetadata.empty()
         );
     }
 
@@ -239,7 +242,8 @@ public class EventCreationRequest{
                 customValidityOpt.flatMap(x -> Optional.ofNullable(x.validityEnd)).map(x -> new DateTimeModification(x.toLocalDate(),x.toLocalTime())).orElse(null),
                 0,
                 null,
-                null);
+                null,
+                AlfioMetadata.empty());
         }
     }
 

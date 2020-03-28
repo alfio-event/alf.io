@@ -24,6 +24,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
 import alfio.model.TicketCategory;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.ConfigurationModification;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
@@ -105,13 +106,13 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 Collections.singletonMap("en", "desc"), BigDecimal.TEN, false, "", false, null, null,
-                null, null, null, 0, null, null));
-        EventModification em = new EventModification(null, Event.EventType.INTERNAL, "url", "url", "url", null, null, null,
+                null, null, null, 0, null, null, AlfioMetadata.empty()));
+        EventModification em = new EventModification(null, Event.EventFormat.IN_PERSON, "url", "url", "url", null, null, null,
             "eventShortName", "displayName", organization.getId(),
             "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
-            BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7, null, null);
+            BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7, null, null, AlfioMetadata.empty());
         eventManager.createEvent(em);
 
         event = eventManager.getSingleEvent("eventShortName", "test");

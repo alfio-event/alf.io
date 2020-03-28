@@ -195,7 +195,7 @@ public class EventApiController {
         ValidationResult base = validateEventHeader(Optional.empty(), eventModification, errors)
             .or(validateEventDates(eventModification, errors))
             .or(validateTicketCategories(eventModification, errors))
-            .or(validateEventPrices(Optional.empty(), eventModification, errors))
+            .or(validateEventPrices(eventModification, errors))
             .or(eventModification.getAdditionalServices().stream().map(as -> validateAdditionalService(as, eventModification, errors)).reduce(ValidationResult::or).orElse(ValidationResult.success()));
         AtomicInteger counter = new AtomicInteger();
         return base.or(eventModification.getTicketCategories().stream()
@@ -252,7 +252,7 @@ public class EventApiController {
     @PostMapping("/events/{id}/prices/update")
     public ValidationResult updatePrices(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         Event event = eventManager.getSingleEventById(id, principal.getName());
-        return validateEventPrices(Optional.of(event), eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(event, eventModification, principal.getName()));
+        return validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(event, eventModification, principal.getName()));
     }
 
     @PostMapping("/events/{eventId}/categories/{categoryId}/update")

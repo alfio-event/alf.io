@@ -23,6 +23,7 @@ import alfio.config.Initializer;
 import alfio.manager.EventManager;
 import alfio.manager.user.UserManager;
 import alfio.model.Event;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.repository.EventRepository;
@@ -91,7 +92,7 @@ public class MessageSourceManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
-                Map.of("en", "desc"), BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null)
+                Map.of("en", "desc"), BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
 

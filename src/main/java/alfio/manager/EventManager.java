@@ -587,7 +587,8 @@ public class EventManager {
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
                 toZonedDateTime(tc.getValidCheckInFrom(), zoneId), toZonedDateTime(tc.getValidCheckInTo(), zoneId),
-                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
+                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT),
+                tc.getMetadata());
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
@@ -608,7 +609,7 @@ public class EventManager {
             toZonedDateTime(tc.getValidCheckInTo(), zoneId),
             toZonedDateTime(tc.getTicketValidityStart(), zoneId),
             toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(),
-            Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
+            Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT), tc.getMetadata());
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
@@ -812,14 +813,14 @@ public class EventManager {
         Validate.notNull(em.getAvailableSeats());
         validatePaymentProxies(em.getAllowedPaymentProxies(), em.getOrganizationId());
         String paymentProxies = collectPaymentProxies(em);
-        BigDecimal vat = !em.isInternal() || em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
+        BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
         String privateKey = UUID.randomUUID().toString();
         ZoneId zoneId = ZoneId.of(em.getZoneId());
         String currentVersion = flyway.info().current().getVersion().getVersion();
-        return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.isInternal() ? em.getTermsAndConditionsUrl() : "",
+        return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.getTermsAndConditionsUrl(),
             em.getPrivacyPolicyUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(), em.getBegin().toZonedDateTime(zoneId),
-            em.getEnd().toZonedDateTime(zoneId), em.getZoneId(), em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
-            vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion, Event.Status.DRAFT).getKey();
+            em.getEnd().toZonedDateTime(zoneId), em.getZoneId(), em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(),
+            vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion, Event.Status.DRAFT, em.getMetadata()).getKey();
     }
 
     private String collectPaymentProxies(EventModification em) {

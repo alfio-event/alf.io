@@ -48,10 +48,11 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         DRAFT, PUBLIC, DISABLED
     }
 
-    public enum EventType {
-        INTERNAL, EXTERNAL
+    public enum EventFormat {
+        IN_PERSON, ONLINE
     }
-    private final EventType type;
+
+    private final EventFormat format;
     private final String shortName;
     private final String displayName;
     private final String websiteUrl;
@@ -83,7 +84,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
 
 
     public Event(@Column("id") int id,
-                 @Column("type") EventType type,
+                 @Column("format") EventFormat format,
                  @Column("short_name") String shortName,
                  @Column("display_name") String displayName,
                  @Column("location") String location,
@@ -110,7 +111,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
                  @Column("status") Status status) {
 
         super(id, organizationId);
-        this.type = type;
+        this.format = format;
         this.displayName = displayName;
         this.websiteUrl = websiteUrl;
         this.externalUrl = externalUrl;
@@ -227,8 +228,8 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         return ContentLanguage.findAllFor(getLocales());
     }
 
-    public boolean isInternal() {
-        return type == EventType.INTERNAL;
+    public boolean isOnline() {
+        return format == EventFormat.ONLINE;
     }
 
     public boolean getUseFirstAndLastName() {

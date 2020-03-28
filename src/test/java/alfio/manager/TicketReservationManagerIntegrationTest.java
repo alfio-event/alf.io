@@ -23,6 +23,7 @@ import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -46,9 +47,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -114,7 +117,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null,
-                    null, null, null, null, 0, null, null));
+                    null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketReservationModification tr = new TicketReservationModification();
@@ -137,11 +140,11 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
                 new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null),
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
                         new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 
@@ -193,8 +196,8 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
 
         assertEquals(1, ticketReservationManager.getPendingPayments(event.getShortName()).size());
 
-        var from = ZonedDateTime.now(event.getZoneId()).minusDays(1);
-        var to = ZonedDateTime.now(event.getZoneId()).plusDays(1);
+        var from = ZonedDateTime.now(Clock.systemUTC()).minusDays(1).with(d -> d.with(ChronoField.HOUR_OF_DAY, 0));
+        var to = ZonedDateTime.now(Clock.systemUTC()).plusDays(1).with(ChronoField.HOUR_OF_DAY, 23);
 
         assertTrue(ticketReservationRepository.getSoldStatistic(event.getId(), from, to, "day").stream().allMatch(tds -> tds.getCount() == 0L)); // -> no reservations
         ticketReservationManager.validateAndConfirmOfflinePayment(reservationId, event, new BigDecimal("190.00"), eventAndUsername.getValue());
@@ -242,7 +245,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 
@@ -298,7 +301,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
@@ -377,7 +380,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         var firstAsKey = additionalServiceRepository.insert(event.getId(), 1000, true, 1, 100, 1, ZonedDateTime.now().minusHours(1), ZonedDateTime.now().plusHours(1), BigDecimal.TEN, AdditionalService.VatType.INHERITED, AdditionalService.AdditionalServiceType.SUPPLEMENT, AdditionalService.SupplementPolicy.OPTIONAL_UNLIMITED_AMOUNT);
@@ -426,7 +429,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, true, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory category = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(TicketCategory::isAccessRestricted).findFirst().orElseThrow();
@@ -500,7 +503,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
 
         List<EventModification.AdditionalService> additionalServices = Collections.singletonList(new EventModification.AdditionalService(null, BigDecimal.TEN, true, 1, 100, 5,
             DateTimeModification.fromZonedDateTime(ZonedDateTime.now().minusDays(1L)), DateTimeModification.fromZonedDateTime(ZonedDateTime.now().plusDays(1L)),
@@ -548,7 +551,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).stream().filter(t -> !t.isBounded()).findFirst().orElseThrow(IllegalStateException::new);
@@ -567,7 +570,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Event event = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository).getKey();
 
         TicketCategory unbounded = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);
@@ -608,7 +611,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 
@@ -646,7 +649,7 @@ public class TicketReservationManagerIntegrationTest extends BaseIntegrationTest
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventAndUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventAndUsername.getKey();
 

@@ -20,6 +20,7 @@ import alfio.TestConfiguration;
 import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.user.UserManager;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.repository.EventRepository;
@@ -93,7 +94,7 @@ class DemoModeDataManagerIntegrationTest extends BaseIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 Map.of("en", "desc"), BigDecimal.TEN, false, "", false, null,
-                null, null, null, null, 0, null, null));
+                null, null, null, null, 0, null, null, AlfioMetadata.empty()));
 
         var eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         var event = eventAndUser.getLeft();
@@ -112,7 +113,7 @@ class DemoModeDataManagerIntegrationTest extends BaseIntegrationTest {
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 Map.of("en", "desc"), BigDecimal.TEN, false, "", false, null,
-                null, null, null, null, 0, null, null));
+                null, null, null, null, 0, null, null, AlfioMetadata.empty()));
 
         var eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         var event = eventAndUser.getLeft();
