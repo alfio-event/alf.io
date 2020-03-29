@@ -14,7 +14,11 @@
                 <select data-ng-model="obj.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.organizationId" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
-            <div class="form-group" bs-form-error="editEventHeader.location">
+            <div class="form-group">
+                <label for="format">Event will be held</label>
+                <select data-ng-model="obj.format" name="format" id="format" class="form-control" required data-ng-options="format.id as format.description for format in formats"></select>
+            </div>
+            <div class="form-group" bs-form-error="editEventHeader.location" data-ng-if="obj.format !== 'ONLINE'">
                 <label for="location">Event Location</label>
                 <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-ng-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}" placeholder="Please enter the address of the Location. This will be used for displaying the map on the event page."></textarea>
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
@@ -34,7 +38,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-4 col-md-4 map-container">
+        <div class="col-sm-4 col-md-4 map-container" data-ng-if="obj.format !== 'ONLINE'">
             <i class="fa fa-cog fa-spin fa-3x map-loading text-muted" data-ng-if="loadingMap"></i>
             <span class="text-danger" data-ng-if="mapError && !loadingMap">{{mapError}}</span>
             <img data-ng-if="obj.geolocation && obj.geolocation.mapUrl && !loadingMap" data-ng-src="{{obj.geolocation.mapUrl}}" alt="{{obj.location}}" class="img-responsive map-image img-center"/>
@@ -108,7 +112,7 @@
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.termsAndConditionsUrl" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
         </div>
-        <div class="col-xs-12 col-md-6" data-ng-if="obj.type === 'INTERNAL'">
+        <div class="col-xs-12 col-md-6">
             <div class="form-group" bs-form-error="editEventHeader.privacyPolicyUrl">
                 <label for="privacyPolicyUrl">Privacy policy URL</label>
                 <input type="url" url-text-field="" data-ng-model="obj.privacyPolicyUrl" name="privacyPolicyUrl" id="privacyPolicyUrl" class="form-control" aria-describedby="privacyHelp"/>

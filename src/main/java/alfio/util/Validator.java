@@ -61,7 +61,11 @@ public final class Validator {
         if(ev.getOrganizationId() < 0) {
             errors.rejectValue("organizationId", "error.organizationId");
         }
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "location", "error.location");
+
+        if(isFormatInPerson(event, ev)) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "location", "error.location");
+        }
+
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "websiteUrl", "error.websiteurl");
 
         if(isFormatInPerson(event, ev) && isLocationMissing(ev)) {
@@ -311,7 +315,7 @@ public final class Validator {
     }
 
     private static boolean isFormatInPerson(Optional<Event> event, EventModification ev) {
-        return event.map(Event::getFormat).orElse(ev.getEventType()) == Event.EventFormat.IN_PERSON;
+        return event.map(Event::getFormat).orElse(ev.getFormat()) == Event.EventFormat.IN_PERSON;
     }
 
     public static boolean isEmailValid(String email) {

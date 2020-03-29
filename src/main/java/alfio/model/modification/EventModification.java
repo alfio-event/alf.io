@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 public class EventModification {
 
     private final Integer id;
-    private final Event.EventFormat eventType;
+    private final Event.EventFormat format;
     private final String websiteUrl;
     private final String externalUrl;
     private final String termsAndConditionsUrl;
@@ -72,7 +72,7 @@ public class EventModification {
 
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
-                             @JsonProperty("type") Event.EventFormat eventType,
+                             @JsonProperty("format") Event.EventFormat format,
                              @JsonProperty("websiteUrl") String websiteUrl,
                              @JsonProperty("external") String externalUrl,
                              @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
@@ -103,7 +103,7 @@ public class EventModification {
                              @JsonProperty("additionalServices") List<AdditionalService> additionalServices,
                              @JsonProperty("metadata") AlfioMetadata metadata) {
         this.id = id;
-        this.eventType = eventType;
+        this.format = format;
         this.websiteUrl = websiteUrl;
         this.externalUrl = externalUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
@@ -151,7 +151,7 @@ public class EventModification {
     }
 
     public boolean isOnline() {
-        return eventType == Event.EventFormat.ONLINE;
+        return format == Event.EventFormat.ONLINE;
     }
 
     public interface WithType {

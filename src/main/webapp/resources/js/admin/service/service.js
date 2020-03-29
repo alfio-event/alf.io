@@ -74,17 +74,23 @@
                 return $http['put']('/admin/api/events/'+id+'/status?active='+active).error(HttpErrorHandler.handle);
             },
             updateEventHeader: function(eventHeader) {
+                var update = function() {
+                    return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
+                };
+                if(eventHeader.format === 'ONLINE') {
+                    return update();
+                }
                 //
                 if(eventHeader.geolocation && eventHeader.geolocation.latitude) {
                     copyGeoLocation(eventHeader);
                     //
-                    return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
+                    return update();
                 } else {
                     return LocationService.clientGeolocate(eventHeader.location).then(function(geo) {
                         eventHeader.latitude = geo.latitude;
                         eventHeader.longitude = geo.longitude;
                         eventHeader.zoneId = geo.timeZone;
-                        return $http['post']('/admin/api/events/'+eventHeader.id+'/header/update', eventHeader).error(HttpErrorHandler.handle);
+                        return update();
                     })
                 }
 
@@ -438,6 +444,13 @@
 
             createAdditionalService: function(eventId, additionalService) {
                 return $http.post('/admin/api/event/'+eventId+'/additional-services/', additionalService).error(HttpErrorHandler.handle);
+            },
+
+            updateEventMetadata: function(eventName, metadata) {
+                return $http.put('/admin/api/events/'+eventName+'/metadata', metadata).error(HttpErrorHandler.handle);
+            },
+            retrieveMetadata: function(eventName) {
+                return $http.get('/admin/api/events/'+eventName+'/metadata').error(HttpErrorHandler.handle);
             }
         };
         return service;

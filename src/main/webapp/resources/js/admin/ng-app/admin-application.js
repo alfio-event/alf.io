@@ -478,7 +478,7 @@
         $scope.organizations = {};
 
         $scope.isInternal = function(event) {
-            return event.type === 'INTERNAL';
+            return true;
         };
 
         EventService.getSupportedLanguages().success(function(result) {
@@ -628,10 +628,10 @@
             //
         } else {
             $scope.event = {
-                    type: eventType,
                     freeOfCharge: false,
                     begin: {},
-                    end: {}
+                    end: {},
+                    metadata: {}
                 };
                 initTicketCategoriesAndAdditionalServices();
         }
@@ -2222,6 +2222,6 @@
             })
         }],
         template: '<span>{{$ctrl.countryName}}</span>'
-    })
+    });
 
 })();

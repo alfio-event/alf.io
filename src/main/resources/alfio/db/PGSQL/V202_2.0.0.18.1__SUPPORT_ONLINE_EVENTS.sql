@@ -16,5 +16,7 @@
 --
 
 alter table event add column format varchar(255) not null default 'IN_PERSON';
+alter table event alter column location drop not null;
+alter table event add constraint "check_location_if_in_person" check (format = 'ONLINE' OR location is not null);
 alter table event add column metadata jsonb not null default '{}';
 alter table ticket_category add column metadata jsonb not null default '{}';

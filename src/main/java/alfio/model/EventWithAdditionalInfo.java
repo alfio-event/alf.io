@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.StatisticsContainer;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
@@ -44,6 +45,7 @@ public class EventWithAdditionalInfo implements StatisticsContainer, PriceContai
     private final Map<String, String> description;
 
     private final BigDecimal grossIncome;
+    private final AlfioMetadata metadata;
 
     @JsonIgnore
     public Event getEvent() {

@@ -14,7 +14,7 @@
     <form role="form" name="editEvent" data-ng-submit="save(editEvent, event)" data-error-sensitive="editEventHeader,editPrices" novalidate>
         <edit-event-header data-target-obj="event" data-organizations="organizations" data-full-edit-mode="true" data-show-existing-errors="showExistingErrors" data-all-languages="allLanguages" data-all-languages-mapping="allLanguagesMapping"></edit-event-header>
 
-        <div data-ng-if="isInternal(event)">
+        <div>
             <div class="page-header">
                 <h3>Seats and payment info</h3>
             </div>

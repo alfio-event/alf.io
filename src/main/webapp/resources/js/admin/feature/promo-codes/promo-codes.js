@@ -84,7 +84,7 @@
         }
 
         function isInternal(event) {
-            return event.type === 'INTERNAL';
+            return true;
         }
 
         function errorHandler(error) {

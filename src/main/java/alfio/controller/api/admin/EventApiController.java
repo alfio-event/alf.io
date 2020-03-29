@@ -26,6 +26,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.transaction.Transaction;
@@ -698,6 +699,24 @@ public class EventApiController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PutMapping("/events/{eventName}/metadata")
+    public ResponseEntity<Boolean> updateMetadata(@PathVariable("eventName") String eventName,
+                                                 @RequestBody MetadataModification metadataModification,
+                                                 Principal principal) {
+        if(!metadataModification.isValid()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(event -> eventManager.updateMetadata(event, metadataModification.toMetadataObj())));
+    }
+
+    @GetMapping("/events/{eventName}/metadata")
+    public ResponseEntity<AlfioMetadata> loadMetadata(@PathVariable("eventName") String eventName,
+                                                      Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(eventManager::getMetadataForEvent));
     }
 
     private Event loadEvent(String eventName, Principal principal) {

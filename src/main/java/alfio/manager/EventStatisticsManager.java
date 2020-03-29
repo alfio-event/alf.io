@@ -108,7 +108,7 @@ public class EventStatisticsManager {
             .map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()), specialPrices.get(t.getId())))
             .collect(Collectors.toList());
 
-        return new EventWithAdditionalInfo(event, tWithInfo, eventStatistic, description, grossIncome);
+        return new EventWithAdditionalInfo(event, tWithInfo, eventStatistic, description, grossIncome, eventRepository.getMetadataForEvent(event.getId()));
     }
 
     private List<TicketCategory> loadTicketCategories(EventAndOrganizationId event) {

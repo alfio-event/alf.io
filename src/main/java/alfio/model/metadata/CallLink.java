@@ -24,15 +24,15 @@ import java.time.LocalDateTime;
 
 @Getter
 public class CallLink {
-    private final String callURL;
+    private final String link;
     private final LocalDateTime validFrom;
     private final LocalDateTime validTo;
 
     @JsonCreator
-    public CallLink(@JsonProperty("callURL") String callURL,
+    public CallLink(@JsonProperty("link") String link,
                     @JsonProperty("validFrom") LocalDateTime validFrom,
                     @JsonProperty("onlineConfiguration") LocalDateTime validTo) {
-        this.callURL = callURL;
+        this.link = link;
         this.validFrom = validFrom;
         this.validTo = validTo;
     }

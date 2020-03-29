@@ -3,15 +3,15 @@
 <div data-ng-if="event">
 
     <event-header data-ng-if="!editEventHeader">
-        <button class="btn btn-sm btn-default" data-ng-click="editHeader()"><i class="fa fa-edit"></i> edit</button>
+        <button type="button" class="btn btn-warning btn-block" data-ng-click="editHeader()">Edit</button>
     </event-header>
     <prices>
-        <button class="btn btn-sm btn-default" data-ng-click="editPrices()"><i class="fa fa-edit"></i> edit</button>
+        <button type="button" class="btn btn-warning btn-block" data-ng-click="editPrices()">Edit</button>
     </prices>
 
     <waiting-queue-status event-name="event.shortName"></waiting-queue-status>
 
-    <div class="page-header visible-sm visible-xs" data-ng-if="isInternal(event) && pendingReservations.length > 0">
+    <div class="page-header visible-sm visible-xs" data-ng-if="pendingReservations.length > 0">
         <h3>Payments to be confirmed</h3>
         <h5>There are reservations for which a payment has not yet confirmed.</h5>
         <a class="btn btn-warning" data-ui-sref="events.single.pending-payments({eventName: event.shortName})">
@@ -23,7 +23,7 @@
         <span><i class="fa fa-user-secret"></i> Access to this event has been limited to Group <a ui-sref="groups.edit({orgId: event.organizationId, groupId: event.attendeesList.groupId})" target="_blank">{{event.attendeesList.groupName}}</a> <a class="btn btn-sm btn-default" ui-sref="configuration.event({organizationId: event.organizationId, eventId: event.id})" target="_blank"><i class="fa fa-wrench"></i> configure</a></span>
     </div>
 
-    <div data-ng-if="isInternal(event)">
+    <div>
 
         <div class="page-header">
             <h3><i class="fa fa-paperclip"></i> Categories</h3>
@@ -73,7 +73,6 @@
                                 </div>
                                 <div class="col-xs-12 col-md-5">
                                     <div class="pull-right">
-                                        <a class="btn btn-sm btn-default" data-ng-click="editCategory(ticketCategory, event)"><i class="fa fa-edit"></i> edit</a>
                                         <a class="btn btn-sm btn-default" ui-sref="events.single.ticketsList({eventName: event.shortName, categoryId: ticketCategory.id})">
                                             <i class="fa fa-ticket"></i> tickets
                                         </a>
@@ -133,6 +132,12 @@
                                     <div class="col-xs-1"><i class="fa fa-info-circle fa-3x"></i></div>
                                     <div class="col-xs-11">Token generation in progress. Please wait 30s and then reload the page.</div>
                                 </div>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-2 col-md-push-10 col-xs-12">
+                                <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit</button>
                             </div>
                         </div>
                     </div>

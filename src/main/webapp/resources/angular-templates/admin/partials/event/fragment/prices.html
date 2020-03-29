@@ -1,10 +1,7 @@
 <div class="panel panel-default">
     <div class="panel-heading">
         <div class="panel-title">
-            <div class="row">
-                <div class="col-xs-9"><strong>Seats and payment info</strong></div>
-                <div class="col-xs-3"><div class="pull-right"><div data-ng-transclude=""></div></div></div>
-            </div>
+            <strong>Seats and payment info</strong>
         </div>
     </div>
     <div class="panel-body">
@@ -20,5 +17,11 @@
             <dt data-ng-if="!event.freeOfCharge">Final Price</dt>
             <dd data-ng-if="!event.freeOfCharge">{{event.finalPrice | money : (event.currency || "")}}</dd>
         </dl>
+        <hr>
+        <div class="row">
+            <div class="col-md-2 col-md-push-10 col-xs-12">
+                <div data-ng-transclude=""></div>
+            </div>
+        </div>
     </div>
 </div>
