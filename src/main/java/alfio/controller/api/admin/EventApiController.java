@@ -719,6 +719,27 @@ public class EventApiController {
             .map(eventManager::getMetadataForEvent));
     }
 
+    @PutMapping("/events/{eventName}/category/{categoryId}/metadata")
+    public ResponseEntity<Boolean> updateCategoryMetadata(@PathVariable("eventName") String eventName,
+                                                  @PathVariable("categoryId") int categoryId,
+                                                  @RequestBody MetadataModification metadataModification,
+                                                  Principal principal) {
+        if(!metadataModification.isValid()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(event -> eventManager.updateCategoryMetadata(event, categoryId, metadataModification.toMetadataObj())));
+    }
+
+
+    @GetMapping("/events/{eventName}/category/{categoryId}/metadata")
+    public ResponseEntity<AlfioMetadata> loadCategoryMetadata(@PathVariable("eventName") String eventName,
+                                                              @PathVariable("categoryId") int categoryId,
+                                                              Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(event -> eventManager.getMetadataForCategory(event, categoryId)));
+    }
+
     private Event loadEvent(String eventName, Principal principal) {
         Optional<Event> singleEvent = eventManager.getOptionalByName(eventName, principal.getName());
         Validate.isTrue(singleEvent.isPresent(), "event not found");

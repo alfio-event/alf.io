@@ -16,6 +16,7 @@
  */
 package alfio.repository;
 
+import alfio.model.EntityIdAndMetadata;
 import alfio.model.TicketCategory;
 import alfio.model.TicketCategoryStatisticView;
 import alfio.model.metadata.AlfioMetadata;
@@ -83,6 +84,15 @@ public interface TicketCategoryRepository {
     default Map<Integer, TicketCategory> findByEventIdAsMap(int eventId) {
         return findAllTicketCategories(eventId).stream().collect(Collectors.toMap(TicketCategory::getId, Function.identity()));
     }
+
+    @Query("select id, metadata from ticket_category where event_id = :eventId and tc_status = 'ACTIVE' order by ordinal asc, inception asc, expiration asc, id asc")
+    List<EntityIdAndMetadata> findMetadataForCategoriesInEvent(@Bind("eventId") int eventId);
+
+    default Map<Integer, AlfioMetadata> findCategoryMetadataForEventGroupByCategoryId(int eventId) {
+        return findMetadataForCategoriesInEvent(eventId).stream()
+            .filter(ei -> ei.getMetadata() != null)
+            .collect(Collectors.toMap(EntityIdAndMetadata::getId, EntityIdAndMetadata::getMetadata));
+    }
     
     @Query("select count(*) from ticket_category_with_currency where event_id = :eventId and access_restricted = true")
     Integer countAccessRestrictedRepositoryByEventId(@Bind("eventId") int eventId);
@@ -147,9 +157,9 @@ public interface TicketCategoryRepository {
     Integer countPaidCategoriesInReservation(@Bind("categoryIds") Collection<Integer> categoryIds);
 
     @JSONData
-    @Query("select metadata from ticket_category where id = :id")
-    AlfioMetadata getMetadata(@Bind("id") int categoryId);
+    @Query("select metadata from ticket_category where id = :id and event_id = :eventId")
+    AlfioMetadata getMetadata(@Bind("eventId") int eventId, @Bind("id") int categoryId);
 
-    @Query("update ticket_category set metadata = :metadata::jsonb where id = :id")
-    int updateMetadata(@Bind("metadata") @JSONData AlfioMetadata metadata, @Bind("id") int eventId);
+    @Query("update ticket_category set metadata = :metadata::jsonb where id = :id and event_id = :eventId")
+    int updateMetadata(@Bind("metadata") @JSONData AlfioMetadata metadata, @Bind("eventId") int eventId, @Bind("id") int categoryId);
 }

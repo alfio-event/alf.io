@@ -134,11 +134,16 @@
                                 </div>
                             </div>
                         </div>
-                        <hr>
-                        <div class="row">
+                        <hr data-ng-if="event.format !== 'ONLINE' || !ticketCategory.metadata">
+                        <div class="row" data-ng-if="event.format !== 'ONLINE' || !ticketCategory.metadata">
                             <div class="col-md-2 col-md-push-10 col-xs-12">
-                                <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit</button>
+                                <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit category</button>
                             </div>
+                        </div>
+                        <div data-ng-if="event.format === 'ONLINE' && ticketCategory.metadata">
+                            <metadata-viewer event="event" parent-id="ticketCategory.id" metadata="ticketCategory.metadata" available-languages="event.contentLanguages" level="'category'">
+                                <button type="button" class="btn btn-warning btn-block" data-ng-click="editCategory(ticketCategory, event)">Edit category</button>
+                            </metadata-viewer>
                         </div>
                     </div>
                 </div>

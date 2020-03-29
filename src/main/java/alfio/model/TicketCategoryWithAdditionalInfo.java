@@ -16,6 +16,7 @@
  */
 package alfio.model;
 
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.StatisticsContainer;
 import alfio.model.modification.TicketWithStatistic;
 import alfio.util.MonetaryUtil;
@@ -49,6 +50,8 @@ public class TicketCategoryWithAdditionalInfo implements StatisticsContainer, Pr
     private final Map<String, String> description;
 
     private final List<SpecialPrice> tokenStatus;
+
+    private final AlfioMetadata metadata;
 
     //TODO: to remove it
     @Deprecated

@@ -589,7 +589,7 @@ public class EventManager {
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
                 toZonedDateTime(tc.getValidCheckInFrom(), zoneId), toZonedDateTime(tc.getValidCheckInTo(), zoneId),
                 toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT),
-                tc.getMetadata());
+                Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty));
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
@@ -610,7 +610,8 @@ public class EventManager {
             toZonedDateTime(tc.getValidCheckInTo(), zoneId),
             toZonedDateTime(tc.getTicketValidityStart(), zoneId),
             toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(),
-            Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT), tc.getMetadata());
+            Objects.requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT),
+            Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty));
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
@@ -1066,7 +1067,15 @@ public class EventManager {
         return true;
     }
 
+    public boolean updateCategoryMetadata(EventAndOrganizationId event, int categoryId, AlfioMetadata metadata) {
+        return ticketCategoryRepository.updateMetadata(metadata, event.getId(), categoryId) == 1;
+    }
+
     public AlfioMetadata getMetadataForEvent(EventAndOrganizationId event) {
         return eventRepository.getMetadataForEvent(event.getId());
+    }
+
+    public AlfioMetadata getMetadataForCategory(EventAndOrganizationId event, int categoryId) {
+        return ticketCategoryRepository.getMetadata(event.getId(), categoryId);
     }
 }

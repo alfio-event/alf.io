@@ -451,6 +451,13 @@
             },
             retrieveMetadata: function(eventName) {
                 return $http.get('/admin/api/events/'+eventName+'/metadata').error(HttpErrorHandler.handle);
+            },
+
+            updateCategoryMetadata: function(eventName, categoryId, metadata) {
+                return $http.put('/admin/api/events/'+eventName+'/category/'+categoryId+'/metadata', metadata).error(HttpErrorHandler.handle);
+            },
+            retrieveCategoryMetadata: function(eventName, categoryId) {
+                return $http.get('/admin/api/events/'+eventName+'/category/'+categoryId+'/metadata').error(HttpErrorHandler.handle);
             }
         };
         return service;

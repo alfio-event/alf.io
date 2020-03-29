@@ -2,11 +2,13 @@
     'use strict';
 
     angular.module('adminApplication').component('metadataViewer', {
+        transclude: true,
         bindings: {
             event: '<',
             metadata: '<',
             availableLanguages: '<',
-            level: '<'
+            level: '<',
+            parentId: '<'
         },
         controller: MetadataViewerCtrl,
         templateUrl: '../resources/js/admin/feature/metadata-editor/metadata-viewer.html'
@@ -17,7 +19,8 @@
             availableLanguages: '<',
             level: '<',
             ok: '<',
-            cancel: '<'
+            cancel: '<',
+            parentId: '<'
         },
         controller: MetadataEditorCtrl,
         templateUrl: '../resources/js/admin/feature/metadata-editor/metadata-editor-modal.html'
@@ -43,7 +46,7 @@
         ctrl.edit = function() {
             $uibModal.open({
                 size:'lg',
-                template:'<metadata-editor event="$ctrl.event" metadata="$ctrl.metadata" available-languages="$ctrl.availableLanguages" level="$ctrl.level" cancel="$ctrl.cancel" ok="$ctrl.ok"></metadata-editor>',
+                template:'<metadata-editor event="$ctrl.event" metadata="$ctrl.metadata" available-languages="$ctrl.availableLanguages" level="$ctrl.level" parent-id="$ctrl.parentId" cancel="$ctrl.cancel" ok="$ctrl.ok"></metadata-editor>',
                 backdrop: 'static',
                 controllerAs: '$ctrl',
                 controller: function($scope) {
@@ -51,6 +54,7 @@
                     this.metadata = ctrl.metadata;
                     this.availableLanguages = ctrl.availableLanguages;
                     this.level = ctrl.level;
+                    this.parentId = ctrl.parentId;
                     this.ok = function() {
                         $scope.$close('OK');
                     };
@@ -59,7 +63,7 @@
                     };
                 }
             }).result.then(function() {
-                EventService.retrieveMetadata(ctrl.event.shortName).then(function (result) {
+                retrieveMetadata(ctrl.event, ctrl.parentId, ctrl.categoryLevel, EventService).then(function (result) {
                     ctrl.metadata = result.data;
                 })
             });
@@ -97,6 +101,7 @@
             ctrl.prerequisites = ctrl.metadata.requirementsDescriptions || {};
             syncSelectedLanguages();
             ctrl.languageDescription = languageDescription(ctrl.availableLanguages);
+            ctrl.categoryLevel = ctrl.level === 'category';
         };
 
         ctrl.buttonClick = function(index) {
@@ -134,7 +139,7 @@
                 callLinks: ctrl.callLinks,
                 requirementsDescriptions: ctrl.prerequisites
             };
-            EventService.updateEventMetadata(ctrl.event.shortName, metadata).then(function() {
+            saveMetadata(ctrl.event, ctrl.parentId, ctrl.categoryLevel, EventService, metadata).then(function() {
                 ctrl.ok();
             });
         };
@@ -161,6 +166,26 @@
             });
             return element ? element.displayLanguage : lang;
         };
+    }
+
+    function retrieveMetadata(event, parentId, categoryLevel, EventService) {
+        var getter;
+        if(categoryLevel) {
+            getter = EventService.retrieveCategoryMetadata(event.shortName, parentId);
+        } else {
+            getter = EventService.retrieveMetadata(event.shortName);
+        }
+        return getter;
+    }
+
+    function saveMetadata(event, parentId, categoryLevel, EventService, metadata) {
+        var publisher;
+        if(categoryLevel) {
+            publisher = EventService.updateCategoryMetadata(event.shortName, parentId, metadata);
+        } else {
+            publisher = EventService.updateEventMetadata(event.shortName, metadata);
+        }
+        return publisher;
     }
 
 })();
