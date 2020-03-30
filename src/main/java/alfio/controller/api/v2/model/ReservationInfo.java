@@ -94,6 +94,8 @@ public class ReservationInfo {
         private final boolean acquired;
         private final boolean cancellationEnabled;
         private final List<AdditionalField> ticketFieldConfiguration;
+        private final Map<String, String> formattedOnlineCheckInDate;
+        private final boolean onlineEventStarted;
 
         public String getEmail() {
             return email;
@@ -139,6 +141,14 @@ public class ReservationInfo {
 
         public List<AdditionalField> getTicketFieldConfigurationAfterStandard() {
             return ticketFieldConfiguration.stream().filter(tv -> !tv.isBeforeStandardFields()).collect(Collectors.toList());
+        }
+
+        public Map<String, String> getFormattedOnlineCheckInDate() {
+            return formattedOnlineCheckInDate;
+        }
+
+        public boolean isOnlineEventStarted() {
+            return onlineEventStarted;
         }
     }
 

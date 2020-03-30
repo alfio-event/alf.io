@@ -18,9 +18,6 @@ package alfio.controller;
 
 import alfio.manager.CheckInManager;
 import alfio.manager.TicketReservationManager;
-import alfio.model.Event;
-import alfio.model.metadata.CallLink;
-import alfio.model.metadata.OnlineConfiguration;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketCategoryRepository;
 import lombok.AllArgsConstructor;
@@ -32,10 +29,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Comparator;
 import java.util.Optional;
+
+import static alfio.util.EventUtil.findMatchingLink;
 
 @Controller
 @AllArgsConstructor
@@ -64,7 +60,7 @@ public class OnlineCheckInController {
                     var categoryConfiguration = ticketCategoryRepository.getMetadata(event.getId(), ticket.getCategoryId()).getOnlineConfiguration();
                     var eventConfiguration = eventRepository.getMetadataForEvent(event.getId()).getOnlineConfiguration();
 
-                    var match = findBestMatch(event, categoryConfiguration, eventConfiguration);
+                    var match = findMatchingLink(event, categoryConfiguration, eventConfiguration);
                     if(match.isPresent()) {
                         var status = checkInManager.checkIn(event.getId(), ticketUUID, Optional.of(ticketCode), ticketUUID);
                         log.info("check-in status {} for ticket {}", status.getResult().getStatus(), ticketUUID);
@@ -78,22 +74,6 @@ public class OnlineCheckInController {
             })
             .map(link -> "redirect:"+link)
             .orElse("redirect:/");
-    }
-
-    private static Optional<String> findBestMatch(Event event, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
-        var zoneId = event.getZoneId();
-        var now = ZonedDateTime.now(zoneId);
-        return firstMatch(categoryConfiguration, zoneId, now)
-            .or(() -> firstMatch(eventConfiguration, zoneId, now))
-            .map(CallLink::getLink);
-    }
-
-    private static Optional<CallLink> firstMatch(OnlineConfiguration onlineConfiguration, ZoneId zoneId, ZonedDateTime now) {
-        return Optional.ofNullable(onlineConfiguration).stream()
-            .flatMap(configuration -> configuration.getCallLinks().stream())
-            .sorted(Comparator.comparing(CallLink::getValidFrom).reversed())
-            .filter(callLink -> now.isBefore(callLink.getValidTo().atZone(zoneId)) && now.plusSeconds(1).isAfter(callLink.getValidFrom().atZone(zoneId)))
-            .findFirst();
     }
 
 }
