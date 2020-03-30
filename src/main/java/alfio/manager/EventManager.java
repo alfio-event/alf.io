@@ -1047,20 +1047,6 @@ public class EventManager {
         }
     }
 
-    public Map<Integer, String> getEventNamesByIds(List<Integer> eventIds, Principal principal) {
-        if (!UserManager.isAdmin(principal)) {
-            throw new IllegalStateException("User must be admin");
-        }
-        return eventRepository.getEventNamesByIds(eventIds).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));
-    }
-
-    public Map<Integer, String> getEventsNameInOrganization(int orgId, Principal principal) {
-        if (!UserManager.isAdmin(principal)) {
-            throw new IllegalStateException("User must be admin");
-        }
-        return eventRepository.getEventsNameInOrganization(orgId).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));
-    }
-
     public boolean updateMetadata(EventAndOrganizationId event, AlfioMetadata metadata) {
         eventRepository.updateMetadata(metadata, event.getId());
         return true;

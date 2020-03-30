@@ -26,6 +26,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
 import alfio.model.TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.transaction.Transaction;
@@ -194,7 +195,7 @@ public class EventApiController {
         ValidationResult base = validateEventHeader(Optional.empty(), eventModification, errors)
             .or(validateEventDates(eventModification, errors))
             .or(validateTicketCategories(eventModification, errors))
-            .or(validateEventPrices(Optional.empty(), eventModification, errors))
+            .or(validateEventPrices(eventModification, errors))
             .or(eventModification.getAdditionalServices().stream().map(as -> validateAdditionalService(as, eventModification, errors)).reduce(ValidationResult::or).orElse(ValidationResult.success()));
         AtomicInteger counter = new AtomicInteger();
         return base.or(eventModification.getTicketCategories().stream()
@@ -241,7 +242,7 @@ public class EventApiController {
     @PostMapping("/events/{id}/prices/update")
     public ValidationResult updatePrices(@PathVariable("id") int id, @RequestBody EventModification eventModification, Errors errors,  Principal principal) {
         Event event = eventManager.getSingleEventById(id, principal.getName());
-        return validateEventPrices(Optional.of(event), eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(event, eventModification, principal.getName()));
+        return validateEventPrices(eventModification, errors).ifSuccess(() -> eventManager.updateEventPrices(event, eventModification, principal.getName()));
     }
 
     @PostMapping("/events/{eventId}/categories/{categoryId}/update")
@@ -687,6 +688,45 @@ public class EventApiController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PutMapping("/events/{eventName}/metadata")
+    public ResponseEntity<Boolean> updateMetadata(@PathVariable("eventName") String eventName,
+                                                 @RequestBody MetadataModification metadataModification,
+                                                 Principal principal) {
+        if(!metadataModification.isValid()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(event -> eventManager.updateMetadata(event, metadataModification.toMetadataObj())));
+    }
+
+    @GetMapping("/events/{eventName}/metadata")
+    public ResponseEntity<AlfioMetadata> loadMetadata(@PathVariable("eventName") String eventName,
+                                                      Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(eventManager::getMetadataForEvent));
+    }
+
+    @PutMapping("/events/{eventName}/category/{categoryId}/metadata")
+    public ResponseEntity<Boolean> updateCategoryMetadata(@PathVariable("eventName") String eventName,
+                                                  @PathVariable("categoryId") int categoryId,
+                                                  @RequestBody MetadataModification metadataModification,
+                                                  Principal principal) {
+        if(!metadataModification.isValid()) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(event -> eventManager.updateCategoryMetadata(event, categoryId, metadataModification.toMetadataObj())));
+    }
+
+
+    @GetMapping("/events/{eventName}/category/{categoryId}/metadata")
+    public ResponseEntity<AlfioMetadata> loadCategoryMetadata(@PathVariable("eventName") String eventName,
+                                                              @PathVariable("categoryId") int categoryId,
+                                                              Principal principal) {
+        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+            .map(event -> eventManager.getMetadataForCategory(event, categoryId)));
     }
 
     private Event loadEvent(String eventName, Principal principal) {

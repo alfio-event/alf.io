@@ -192,10 +192,6 @@ public interface EventRepository {
     @Query("select count(*) as total_attendees, COALESCE(SUM(CASE WHEN status = 'CHECKED_IN' THEN 1 ELSE 0 END), 0) as checked_in, CURRENT_TIMESTAMP as last_update from ticket where event_id = :eventId and status in("+TicketRepository.CONFIRMED+")")
     CheckInStatistics retrieveCheckInStatisticsForEvent(@Bind("eventId") int eventId);
 
-
-    @Query("select id, short_name from event where org_id = :orgId order by short_name")
-    List<EventIdShortName> getEventsNameInOrganization(@Bind("orgId") int orgId);
-
     @JSONData
     @Query("select metadata from event where id = :eventId")
     AlfioMetadata getMetadataForEvent(@Bind("eventId") int eventId);
