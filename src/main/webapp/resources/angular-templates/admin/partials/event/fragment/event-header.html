@@ -15,13 +15,21 @@
 </div>
 <event-overview data-event="event" ng-if="event.displayStatistics"></event-overview>
 
+<div class="panel panel-default" data-ng-if="event.format === 'ONLINE'">
+    <div class="panel-heading">
+        <div class="panel-title">
+            <strong>Online event settings</strong>
+        </div>
+    </div>
+    <div class="panel-body">
+        <metadata-viewer parent-id="event.id" event="event" metadata="event.metadata" available-languages="event.contentLanguages" level="'event'"></metadata-viewer>
+    </div>
+</div>
+
 <div class="panel panel-default">
     <div class="panel-heading">
         <div class="panel-title">
-            <div class="row">
-                <div class="col-xs-9"><strong>Logistic info and description</strong></div>
-                <div class="col-xs-3"><div class="pull-right"><div data-ng-transclude=""></div></div></div>
-            </div>
+            <strong>Logistic info and description</strong>
         </div>
     </div>
     <div class="panel-body">
@@ -38,16 +46,14 @@
                     <dd>{{organization.name}} &lt;{{organization.email}}&gt;</dd>
                     <dt>Website URL</dt>
                     <dd><a href="{{event.websiteUrl}}" target="_blank">{{event.websiteUrl}}</a></dd>
-                    <dt data-ng-if="!isInternal(event)">External URL</dt>
-                    <dd data-ng-if="!isInternal(event)"><a href="{{event.externalUrl}}" target="_blank">{{event.externalUrl}}</a></dd>
-                    <dt data-ng-if="isInternal(event)">T&C URL</dt>
-                    <dd data-ng-if="isInternal(event)"><a href="{{event.termsAndConditionsUrl}}" target="_blank">{{event.termsAndConditionsUrl}}</a></dd>
-                    <dt data-ng-if="isInternal(event) && event.privacyPolicyUrl">Privacy Policy URL</dt>
-                    <dd data-ng-if="isInternal(event) && event.privacyPolicyUrl"><a href="{{event.privacyPolicyUrl}}" target="_blank">{{event.privacyPolicyUrl}}</a></dd>
-                    <dt>Location</dt>
-                    <dd><a ng-href="{{event.geolocation.mapUrl}}" target="_blank">{{event.location}}</a></dd>
-                    <dt data-ng-if="isInternal(event)">Languages</dt>
-                    <dd data-ng-if="isInternal(event)">
+                    <dt>T&C URL</dt>
+                    <dd><a href="{{event.termsAndConditionsUrl}}" target="_blank">{{event.termsAndConditionsUrl}}</a></dd>
+                    <dt data-ng-if="event.privacyPolicyUrl">Privacy Policy URL</dt>
+                    <dd data-ng-if="event.privacyPolicyUrl"><a href="{{event.privacyPolicyUrl}}" target="_blank">{{event.privacyPolicyUrl}}</a></dd>
+                    <dt data-ng-if="event.format === 'IN_PERSON'">Location</dt>
+                    <dd data-ng-if="event.format === 'IN_PERSON'"><a ng-href="{{event.geolocation.mapUrl}}" target="_blank">{{event.location}}</a></dd>
+                    <dt>Languages</dt>
+                    <dd>
                         <ol class="breadcrumb language-breadcrumb"><li data-ng-repeat="cl in event.contentLanguages">{{cl.displayLanguage}}</li></ol>
                     </dd>
                     <dt>Start Date/Time</dt>
@@ -67,5 +73,12 @@
                 </uib-tabset>
             </div>
         </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-2 col-md-push-10 col-xs-12">
+                <div data-ng-transclude=""></div>
+            </div>
+        </div>
+
     </div>
 </div>

@@ -21,6 +21,7 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.modification.AdminReservationModification.*;
 import alfio.model.result.Result;
@@ -93,7 +94,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         performExistingCategoryTest(categories, false, Collections.singletonList(1), false, true, 0, AVAILABLE_SEATS);
     }
 
@@ -103,11 +104,11 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null),
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()),
             new TicketCategoryModification(null, "2nd", 10,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         performExistingCategoryTest(categories, false, Arrays.asList(10,10), false, true, 0, AVAILABLE_SEATS);
     }
 
@@ -117,7 +118,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         performExistingCategoryTest(categories, false, Collections.singletonList(1), false, true, 0, AVAILABLE_SEATS);
     }
 
@@ -127,7 +128,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         performExistingCategoryTest(categories, false, Collections.singletonList(1), true, true, AVAILABLE_SEATS, AVAILABLE_SEATS+1);
     }
 
@@ -137,7 +138,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
     }
 
@@ -147,7 +148,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         performExistingCategoryTest(categories, true, Collections.singletonList(AVAILABLE_SEATS + 1), false, false, 0, AVAILABLE_SEATS);
     }
 
@@ -157,7 +158,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", AVAILABLE_SEATS,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         performExistingCategoryTest(categories, true, Collections.singletonList(AVAILABLE_SEATS + 1), false, false, 0, AVAILABLE_SEATS);
     }
 
@@ -167,7 +168,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
@@ -201,7 +202,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> eventWithUsername = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = eventWithUsername.getKey();
         String username = eventWithUsername.getValue();
@@ -247,7 +248,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(2), false, true, 0, AVAILABLE_SEATS);
         assertNotNull(testResult);
         Result<Triple<TicketReservation, List<Ticket>, Event>> result = adminReservationManager.confirmReservation(testResult.getLeft().getShortName(), testResult.getRight().getId(), testResult.getMiddle(), EMPTY);
@@ -266,7 +267,7 @@ public class AdminReservationManagerIntegrationTest extends BaseIntegrationTest 
             new TicketCategoryModification(null, "default", 1,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         int attendees = 2;
         Triple<Event, String, TicketReservation> testResult = performExistingCategoryTest(categories, true, Collections.singletonList(attendees), false, true, 0, AVAILABLE_SEATS);
         assertNotNull(testResult);

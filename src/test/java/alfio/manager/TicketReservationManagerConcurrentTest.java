@@ -21,6 +21,7 @@ import alfio.config.DataSourceConfiguration;
 import alfio.config.Initializer;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.modification.TicketReservationModification;
@@ -104,7 +105,7 @@ public class TicketReservationManagerConcurrentTest {
                     new DateTimeModification(LocalDate.now(), LocalTime.now()),
                     new DateTimeModification(LocalDate.now(), LocalTime.now()),
                     DESCRIPTION, BigDecimal.TEN, true, "", true, null,
-                    null, null, null, null, null, TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT, null));
+                    null, null, null, null, null, TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT, null, AlfioMetadata.empty()));
 
             Pair<Event, String> eventStringPair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
             event = eventStringPair.getLeft();

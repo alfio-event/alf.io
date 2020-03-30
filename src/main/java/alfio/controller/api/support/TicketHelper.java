@@ -22,7 +22,6 @@ import alfio.manager.*;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
-import alfio.model.extension.CustomEmailText;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
 import alfio.repository.*;
@@ -63,6 +62,7 @@ public class TicketHelper {
     private final ConfigurationManager configurationManager;
     private final ExtensionManager extensionManager;
     private final TicketReservationRepository ticketReservationRepository;
+    private final EventManager eventManager;
 
 
     public Function<Ticket, List<TicketFieldConfigurationDescriptionAndValue>> buildRetrieveFieldValuesFunction() {
@@ -220,13 +220,7 @@ public class TicketHelper {
     }
 
     public PartialTicketTextGenerator getConfirmationTextBuilder(Locale ticketLanguage, Event event, TicketReservation ticketReservation, Ticket ticket, TicketCategory ticketCategory) {
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
-        String ticketUrl = ticketReservationManager.ticketUpdateUrl(event, ticket.getUuid());
-
-        var initialOptions = extensionManager.handleTicketEmailCustomText(event, ticketReservation, ticketReservationRepository.getAdditionalInfo(ticketReservation.getId()), ticketFieldRepository.findAllByTicketId(ticket.getId()))
-            .map(CustomEmailText::toMap)
-            .orElse(Map.of());
-        return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, ticketCategory, templateManager, ticketUrl, ticketLanguage, initialOptions);
+        return ticketReservationManager.getTicketEmailGenerator(event, ticketReservation, ticketLanguage);
     }
 
 }

@@ -1012,7 +1012,7 @@ class TicketReservationManagerTest {
     private static Event copy(Event event) {
         return new Event(
             EVENT_ID,
-            event.getType(),
+            event.getFormat(),
             event.getShortName(),
             event.getDisplayName(),
             event.getLocation(),

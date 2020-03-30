@@ -25,6 +25,7 @@ import alfio.manager.EventStatisticsManager;
 import alfio.manager.support.CheckInStatistics;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.result.Result;
@@ -95,9 +96,9 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
         int orgId = organizationRepository.getIdByName(ORG_NAME);
 
 
-        AffectedRowCountAndKey<Integer> pair = eventRepository.insert("unittest", Event.EventType.INTERNAL, "display Name", "http://localhost:8080/", "http://localhost:8080",
+        AffectedRowCountAndKey<Integer> pair = eventRepository.insert("unittest", Event.EventFormat.IN_PERSON, "display Name", "http://localhost:8080/", "http://localhost:8080",
             "http://localhost:8080", null,null, null, "Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, "CHF", 4, true,
-            new BigDecimal(1), "", "", orgId, 7, PriceContainer.VatStatus.INCLUDED, 0, null, Event.Status.PUBLIC);
+            new BigDecimal(1), "", "", orgId, 7, PriceContainer.VatStatus.INCLUDED, 0, null, Event.Status.PUBLIC, AlfioMetadata.empty());
         Event e = eventRepository.findById(pair.getKey());
         assertNotNull("Event not found in DB", e);
 
@@ -115,13 +116,13 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", 0,
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
                 new DateTimeModification(LocalDate.now(), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
-            DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null);
+            DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
         Result<Integer> result = eventManager.insertCategory(event, tcm, pair.getValue());
         assertTrue(result.isSuccess());
 

@@ -329,7 +329,7 @@
 
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
-                        'description', 'websiteUrl', 'externalUrl', 'termsAndConditionsUrl', 'privacyPolicyUrl', 'imageUrl', 'fileBlobId', 'formattedBegin','type',
+                        'description', 'websiteUrl', 'externalUrl', 'termsAndConditionsUrl', 'privacyPolicyUrl', 'imageUrl', 'fileBlobId', 'formattedBegin','format',
                         'formattedEnd', 'geolocation', 'locales']);
                     angular.extend($scope.obj, source);
                     var beginDateTime = moment(source['formattedBegin']);
@@ -348,8 +348,31 @@
                     }
                 }
 
+                $scope.formats = [
+                    {
+                        id: 'IN_PERSON',
+                        description: 'in person'
+                    },{
+                        id: 'ONLINE',
+                        description: 'online'
+                    }
+                ];
+
+                if(!$scope.obj.format) {
+                    $scope.obj.format = 'IN_PERSON';
+                }
+
                 LocationService.getTimezones().then(function(res) {
                     $scope.timezones = res.data;
+                    if(!$scope.obj.geolocation) {
+                        try {
+                            $scope.obj.geolocation = {
+                                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                            }
+                        } catch(e) {
+                            //necessary, as IE11 does not support Internationalization Apis
+                        }
+                    }
                 });
 
                 $scope.selectedLanguages = {
@@ -1093,7 +1116,7 @@
                                     ctrl.promoCodeDescription = (result.data === 'true') ? 'Partner' : 'Promo';
                                 });
                             ctrl.event = event.event;
-                            ctrl.internal = (ctrl.event.type === 'INTERNAL');
+                            ctrl.internal = true;
                             ctrl.owner = ctrl.event.visibleForCurrentUser;
                             ctrl.openDeleteWarning = function() {
                                 EventService.deleteEvent(ctrl.event).then(function(result) {

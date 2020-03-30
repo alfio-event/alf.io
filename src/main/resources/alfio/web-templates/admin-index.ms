@@ -96,6 +96,7 @@
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/util/reservation-identifier.js"></script>
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/internationalization-editor/internationalization-editor.js"></script>
     <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/copy-event/copy-event.js"></script>
+    <script nonce="{{nonce}}" src="{{request.contextPath}}/resources/js/admin/feature/metadata-editor/metadata-editor.js"></script>
 
 
     <link rel="stylesheet" href="{{request.contextPath}}/resources/js/admin/feature/reservation/create/reservation-create.css" />

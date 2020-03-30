@@ -22,6 +22,7 @@ import alfio.config.Initializer;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.EventModification;
 import alfio.model.modification.TicketCategoryModification;
@@ -109,7 +110,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                         new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                         new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                        DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event.mustUseFirstAndLastName()), "peppino@garibaldi.com", null, Locale.ENGLISH);
@@ -122,7 +123,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null);
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
         eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -153,11 +154,11 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
     public void testAddSeatsAfterSoldOut() throws InterruptedException {
         Pair<String, Event> pair = initSoldOutEvent(true);
         Event event = pair.getRight();
-        EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
+        EventModification eventModification = new EventModification(event.getId(), event.getFormat(), event.getWebsiteUrl(),
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
             event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
-            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
+            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList(), AlfioMetadata.empty());
         eventManager.updateEventPrices(event, eventModification, "admin");
         //that should create an additional "RELEASED" ticket
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -172,11 +173,11 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
     public void testAddSeatsAfterSoldOutWithoutUnbounded() throws InterruptedException {
         Pair<String, Event> pair = initSoldOutEvent(false);
         Event event = pair.getRight();
-        EventModification eventModification = new EventModification(event.getId(), event.getType(), event.getWebsiteUrl(),
+        EventModification eventModification = new EventModification(event.getId(), event.getFormat(), event.getWebsiteUrl(),
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
             event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
-            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList());
+            Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList(), AlfioMetadata.empty());
         eventManager.updateEventPrices(event, eventModification, "admin");
         //that should create an additional "RELEASED" ticket, but it won't be linked to any category, so the following call won't have any effect
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -187,7 +188,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         TicketCategory category = eventManager.loadTicketCategories(event).get(0);
         eventManager.updateCategory(category.getId(), event.getId(), new TicketCategoryModification(category.getId(), category.getName(), category.getMaxTickets() + 1,
             fromZonedDateTime(category.getInception(event.getZoneId())), fromZonedDateTime(category.getExpiration(event.getZoneId())), emptyMap(), category.getPrice(),
-            category.isAccessRestricted(), "", category.isBounded(), null, null, null, null, null, 0, null, null), "admin");
+            category.isAccessRestricted(), "", category.isBounded(), null, null, null, null, null, 0, null, null, AlfioMetadata.empty()), "admin");
 
         //now the waiting queue processor should create the reservation for the first in line
         waitingQueueSubscriptionProcessor.distributeAvailableSeats(event);
@@ -205,13 +206,13 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", boundedCategorySize,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.ZERO, false, "", true, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.ZERO, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
 
         if(withUnboundedCategory) {
              categories.add(new TicketCategoryModification(null, "unbounded", 0,
                  new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                  new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                 DESCRIPTION, BigDecimal.ZERO, false, "", false, null, null, null, null, null, 0, null, null));
+                 DESCRIPTION, BigDecimal.ZERO, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         }
 
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);

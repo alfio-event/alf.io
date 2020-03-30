@@ -16,13 +16,13 @@
  */
 package alfio.controller.api.support;
 
-import java.time.Clock;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import alfio.model.Event;
 import alfio.model.EventDescription;
 import alfio.util.EventUtil;
+
+import java.time.Clock;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class EventListItem {
 
@@ -41,11 +41,7 @@ public class EventListItem {
     }
 
     public String getUrl() {
-        return event.isInternal() ? requestContextPath + "/event/" + event.getShortName() : event.getExternalUrl();
-    }
-
-    public boolean isExternal() {
-        return !event.isInternal();
+        return requestContextPath + "/event/" + event.getShortName();
     }
 
     public String getName() {

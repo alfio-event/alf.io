@@ -303,7 +303,7 @@ public class DataMigrator {
     private void migratePrices(final int eventId) {
         final Map<String, Integer> eventIdParam = Collections.singletonMap("eventId", eventId);
         final String srcPriceCtsParam = "srcPriceCts";
-        Map<String, List<MapSqlParameterSource>> migrationData = jdbc.queryForList("select * from event where type = :type and id = :eventId and regular_price_cts > 0", new MapSqlParameterSource("type", Event.EventType.INTERNAL.name()).addValue("eventId", eventId))
+        Map<String, List<MapSqlParameterSource>> migrationData = jdbc.queryForList("select * from event where type = :type and id = :eventId and regular_price_cts > 0", new MapSqlParameterSource("type", "INTERNAL").addValue("eventId", eventId))
             .stream()
             .flatMap(event -> {
                 //fill the event prices

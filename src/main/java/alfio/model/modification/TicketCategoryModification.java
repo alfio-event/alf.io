@@ -17,6 +17,7 @@
 package alfio.model.modification;
 
 import alfio.model.TicketCategory.TicketCheckInStrategy;
+import alfio.model.metadata.AlfioMetadata;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -47,6 +48,7 @@ public class TicketCategoryModification {
     private final int ordinal;
     private final TicketCheckInStrategy ticketCheckInStrategy;
     private final String badgeColor;
+    private final AlfioMetadata metadata;
 
     @JsonCreator
     public TicketCategoryModification(@JsonProperty("id") Integer id,
@@ -66,7 +68,8 @@ public class TicketCategoryModification {
                                       @JsonProperty("ticketValidityEnd") DateTimeModification ticketValidityEnd,
                                       @JsonProperty("ordinal") Integer ordinal,
                                       @JsonProperty("ticketCheckInStrategy") TicketCheckInStrategy ticketCheckInStrategy,
-                                      @JsonProperty("badgeColor") String badgeColor) {
+                                      @JsonProperty("badgeColor") String badgeColor,
+                                      @JsonProperty("metadata") AlfioMetadata metadata) {
         this.id = id;
         this.name = name;
         this.maxTickets = maxTickets;
@@ -85,6 +88,7 @@ public class TicketCategoryModification {
         this.ordinal = ordinal != null ? ordinal : 0;
         this.ticketCheckInStrategy = ticketCheckInStrategy;
         this.badgeColor = badgeColor;
+        this.metadata = metadata;
     }
 
 }

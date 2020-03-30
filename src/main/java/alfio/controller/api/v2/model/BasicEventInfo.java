@@ -16,6 +16,7 @@
  */
 package alfio.controller.api.v2.model;
 
+import alfio.model.Event.EventFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -28,6 +29,7 @@ public class BasicEventInfo implements DateValidity {
     private final String shortName;
     private final String fileBlobId;
     private final String displayName;
+    private final EventFormat eventFormat;
     private final String location;
 
     private final String timeZone;
