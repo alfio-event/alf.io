@@ -20,6 +20,8 @@ import alfio.controller.decorator.SaleableTicketCategory;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
+import alfio.model.metadata.CallLink;
+import alfio.model.metadata.OnlineConfiguration;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.TicketFieldRepository;
@@ -39,6 +41,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -212,5 +215,25 @@ public class EventUtil {
                 })
                 .collect(Collectors.toList());
         };
+    }
+
+    public static Optional<String> findMatchingLink(Event event, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
+        return firstMatchingCallLink(event, categoryConfiguration, eventConfiguration)
+            .map(CallLink::getLink);
+    }
+
+    public static Optional<CallLink> firstMatchingCallLink(Event event, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
+        var zoneId = event.getZoneId();
+        var now = ZonedDateTime.now(zoneId);
+        return firstMatchingCallLink(categoryConfiguration, zoneId, now)
+            .or(() -> firstMatchingCallLink(eventConfiguration, zoneId, now));
+    }
+
+    private static Optional<CallLink> firstMatchingCallLink(OnlineConfiguration onlineConfiguration, ZoneId zoneId, ZonedDateTime now) {
+        return Optional.ofNullable(onlineConfiguration).stream()
+            .flatMap(configuration -> configuration.getCallLinks().stream())
+            .sorted(Comparator.comparing(CallLink::getValidFrom).reversed())
+            .filter(callLink -> now.isBefore(callLink.getValidTo().atZone(zoneId)) && now.plusSeconds(1).isAfter(callLink.getValidFrom().atZone(zoneId)))
+            .findFirst();
     }
 }

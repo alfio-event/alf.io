@@ -18,17 +18,21 @@ package alfio.controller.api.v2.user.support;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.ReservationInfo;
+import alfio.controller.support.Formatters;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.AdditionalServiceItemRepository;
 import alfio.repository.TicketFieldRepository;
+import alfio.util.EventUtil;
 import alfio.util.Validator;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -45,6 +49,7 @@ public class BookingInfoTicketLoader {
     private final TicketHelper ticketHelper;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final TicketReservationManager ticketReservationManager;
+    private final MessageSourceManager messageSourceManager;
 
 
     public ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event) {
@@ -57,13 +62,27 @@ public class BookingInfoTicketLoader {
             .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
 
         boolean hasPaidSupplement = ticketReservationManager.hasPaidSupplements(ticket.getTicketsReservationId());
+        Map<String, String> formattedDates = Map.of();
+        boolean onlineEventStarted = false;
+        if(event.isOnline()) {
+            var eventConfiguration = eventManager.getMetadataForEvent(event).getOnlineConfiguration();
+            var ticketCategoryConfiguration = eventManager.getMetadataForCategory(event, ticket.getCategoryId()).getOnlineConfiguration();
+            var checkInDate = EventUtil.firstMatchingCallLink(event, ticketCategoryConfiguration, eventConfiguration)
+                .map(link -> link.getValidFrom().atZone(event.getZoneId()))
+                .orElse(event.getBegin());
+            formattedDates = Formatters.getFormattedDate(event, checkInDate, "common.ticket-category.date-format",
+                messageSourceManager.getMessageSourceForEvent(event));
+            onlineEventStarted = ZonedDateTime.now(event.getZoneId()).isAfter(checkInDate);
+        }
 
         return toBookingInfoTicket(ticket,
             hasPaidSupplement,
             event,
             getTicketFieldsFilterer(ticket.getTicketsReservationId(), event),
             descriptionsByTicketFieldId,
-            valuesByTicketIds);
+            valuesByTicketIds,
+            formattedDates,
+            onlineEventStarted);
     }
 
     public ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket t,
@@ -71,13 +90,21 @@ public class BookingInfoTicketLoader {
                                                                  Event event,
                                                                  Validator.TicketFieldsFilterer ticketFieldsFilterer,
                                                                  Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
-                                                                 Map<Integer, List<TicketFieldValue>> valuesByTicketIds) {
+                                                                 Map<Integer, List<TicketFieldValue>> valuesByTicketIds,
+                                                                 Map<String, String> formattedOnlineCheckInDate,
+                                                                 boolean onlineEventStarted) {
         // TODO: n+1, should be cleaned up! see TicketDecorator.getCancellationEnabled
         boolean cancellationEnabled = t.getFinalPriceCts() == 0 &&
             (!hasPaidSupplement && configurationManager.getFor(ALLOW_FREE_TICKETS_CANCELLATION, ConfigurationLevel.ticketCategory(event, t.getCategoryId())).getValueAsBooleanOrDefault(false)) && // freeCancellationEnabled
             eventManager.checkTicketCancellationPrerequisites().apply(t); // cancellationPrerequisitesMet
         //
-        return toBookingInfoTicket(t, cancellationEnabled, ticketFieldsFilterer.getFieldsForTicket(t.getUuid()), descriptionsByTicketFieldId, valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()));
+        return toBookingInfoTicket(t,
+            cancellationEnabled,
+            ticketFieldsFilterer.getFieldsForTicket(t.getUuid()),
+            descriptionsByTicketFieldId,
+            valuesByTicketIds.getOrDefault(t.getId(), Collections.emptyList()),
+            formattedOnlineCheckInDate,
+            onlineEventStarted);
     }
 
     public Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, EventAndOrganizationId event) {
@@ -91,13 +118,15 @@ public class BookingInfoTicketLoader {
                                                                          boolean cancellationEnabled,
                                                                          List<TicketFieldConfiguration> ticketFields,
                                                                          Map<Integer, List<TicketFieldDescription>> descriptionsByTicketFieldId,
-                                                                         List<TicketFieldValue> ticketFieldValues) {
+                                                                         List<TicketFieldValue> ticketFieldValues,
+                                                                         Map<String, String> formattedOnlineCheckInDate,
+                                                                         boolean onlineEventStarted) {
 
 
         var valueById = ticketFieldValues.stream().collect(Collectors.toMap(TicketFieldValue::getTicketFieldConfigurationId, Function.identity()));
 
 
-        var tfcdav = ticketFields.stream()
+        var ticketFieldsAdditional = ticketFields.stream()
             .sorted(Comparator.comparing(TicketFieldConfiguration::getOrder))
             .map(tfc -> {
                 var tfd = descriptionsByTicketFieldId.get(tfc.getId()).get(0);//take first, temporary!
@@ -111,7 +140,13 @@ public class BookingInfoTicketLoader {
             ticket.getFirstName(), ticket.getLastName(),
             ticket.getEmail(), ticket.getFullName(),
             ticket.getUserLanguage(),
-            ticket.getAssigned(), ticket.getLockedAssignment(), ticket.getStatus() == Ticket.TicketStatus.ACQUIRED, cancellationEnabled, tfcdav);
+            ticket.getAssigned(),
+            ticket.getLockedAssignment(),
+            ticket.getStatus() == Ticket.TicketStatus.ACQUIRED,
+            cancellationEnabled,
+            ticketFieldsAdditional,
+            formattedOnlineCheckInDate,
+            onlineEventStarted);
     }
 
     private static ReservationInfo.AdditionalField toAdditionalField(TicketFieldConfigurationDescriptionAndValue t, Map<String, ReservationInfo.Description> description) {
