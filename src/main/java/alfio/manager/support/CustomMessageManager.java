@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import static alfio.manager.system.Mailer.AttachmentIdentifier.CALENDAR_ICS;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Component
@@ -142,12 +143,29 @@ public class CustomMessageManager {
     }
 
     public static Mailer.Attachment generateTicketAttachment(Ticket ticket, TicketReservation reservation, TicketCategory ticketCategory, Organization organization) {
+        Map<String, String> model = getModelForTicket(ticket, reservation, ticketCategory, organization);
+        return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
+    }
+
+    private static Map<String, String> getModelForTicket(Ticket ticket, TicketReservation reservation, TicketCategory ticketCategory, Organization organization) {
         Map<String, String> model = new HashMap<>();
         model.put("ticket", Json.toJson(ticket));
         model.put("ticketCategory", Json.toJson(ticketCategory));
         model.put("reservationId", reservation.getId());
         model.put("organizationId", Integer.toString(organization.getId()));
-        return new Mailer.Attachment("ticket-" + ticket.getUuid() + ".pdf", null, "application/pdf", model, Mailer.AttachmentIdentifier.TICKET_PDF);
+        return model;
+    }
+
+    public static Mailer.Attachment generateCalendarAttachmentForOnlineEvent(Ticket ticket,
+                                                                             TicketReservation reservation,
+                                                                             TicketCategory ticketCategory,
+                                                                             Organization organization,
+                                                                             String checkInUrl,
+                                                                             String prerequisites) {
+        var model = getModelForTicket(ticket, reservation, ticketCategory, organization);
+        model.put("onlineCheckInUrl", checkInUrl);
+        model.put("prerequisites", prerequisites);
+        return new Mailer.Attachment(CALENDAR_ICS.fileName(""), null, CALENDAR_ICS.contentType(""), model, CALENDAR_ICS);
     }
 
     private static String renderResource(String template, EventAndOrganizationId event, Model model, Locale locale, TemplateManager templateManager) {

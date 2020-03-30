@@ -103,7 +103,7 @@ public class EventApiV2Controller {
             .map(e -> {
                 var messageSource = messageSourceManager.getMessageSourceForEvent(e);
                 var formattedDates = Formatters.getFormattedDates(e, messageSource, contentLanguages);
-                return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getLocation(),
+                return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getFormat(), e.getLocation(),
                     e.getTimeZone(), DatesWithTimeZoneOffset.fromEvent(e), e.getSameDay(), formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime);
             })
@@ -115,18 +115,6 @@ public class EventApiV2Controller {
     public ResponseEntity<EventWithAdditionalInfo> getEvent(@PathVariable("eventName") String eventName, HttpSession session) {
         return eventLoader.loadEventInfo(eventName, session).map(eventWithAdditionalInfo -> new ResponseEntity<>(eventWithAdditionalInfo, getCorsHeaders(), HttpStatus.OK))
             .orElseGet(() -> ResponseEntity.notFound().headers(getCorsHeaders()).build());
-    }
-
-    private static Map<String, String> applyCommonMark(Map<String, String> in) {
-        if (in == null) {
-            return Collections.emptyMap();
-        }
-
-        var res = new HashMap<String, String>();
-        in.forEach((k, v) -> {
-            res.put(k, MustacheCustomTag.renderToHtmlCommonmarkEscaped(v));
-        });
-        return res;
     }
 
     @PostMapping("event/{eventName}/waiting-list/subscribe")

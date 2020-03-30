@@ -265,4 +265,8 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     public int getEndTimeZoneOffset() {
         return getEnd().getOffset().get(OFFSET_SECONDS);
     }
+
+    public boolean getIsOnline() {
+        return format == EventFormat.ONLINE;
+    }
 }

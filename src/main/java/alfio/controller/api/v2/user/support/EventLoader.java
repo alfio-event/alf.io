@@ -95,7 +95,7 @@ public class EventLoader {
                     DISPLAY_TICKETS_LEFT_INDICATOR
                 ), ConfigurationLevel.event(event));
 
-                var locationDescriptor = LocationDescriptor.fromGeoData(event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
+                var locationDescriptor = LocationDescriptor.fromGeoData(event.getFormat(), event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
 
                 //
                 boolean captchaForTicketSelection = isRecaptchaForTicketSelectionEnabled(configurationsValues);
