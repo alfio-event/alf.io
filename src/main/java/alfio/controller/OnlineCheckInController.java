@@ -58,7 +58,7 @@ public class OnlineCheckInController {
                 var ticket = triple.getRight();
                 var event = triple.getLeft();
                 String ticketCode = ticket.ticketCode(event.getPrivateKey());
-                if(MessageDigest.isEqual(DigestUtils.sha256(ticketCode.getBytes(StandardCharsets.UTF_8)), ticketCodeHash.getBytes(StandardCharsets.UTF_8))) {
+                if(MessageDigest.isEqual(DigestUtils.sha256Hex(ticketCode).getBytes(StandardCharsets.UTF_8), ticketCodeHash.getBytes(StandardCharsets.UTF_8))) {
                     log.debug("code successfully validated for ticket {}", ticketUUID);
                     // check-in can be done. Let's check if there is a redirection URL
                     var categoryConfiguration = ticketCategoryRepository.getMetadata(event.getId(), ticket.getCategoryId()).getOnlineConfiguration();
