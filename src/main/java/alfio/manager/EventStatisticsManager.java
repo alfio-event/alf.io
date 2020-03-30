@@ -97,22 +97,20 @@ public class EventStatisticsManager {
         EventStatistic eventStatistic = new EventStatistic(event, statistics, displayStatisticsForEvent(event));
         BigDecimal grossIncome = owner ? MonetaryUtil.centsToUnit(eventRepository.getGrossIncome(event.getId()), event.getCurrency()) : BigDecimal.ZERO;
 
-        List<TicketCategory> ticketCategories = loadTicketCategories(event);
+        List<TicketCategory> ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
         List<Integer> ticketCategoriesIds = ticketCategories.stream().map(TicketCategory::getId).collect(Collectors.toList());
 
         Map<Integer, Map<String, String>> descriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoriesIds);
         Map<Integer, TicketCategoryStatisticView> ticketCategoriesStatistics = owner ? ticketCategoryRepository.findStatisticsForEventIdByCategoryId(event.getId()) : ticketCategoriesIds.stream().collect(toMap(Function.identity(), id -> TicketCategoryStatisticView.empty(id, event.getId())));
         Map<Integer, List<SpecialPrice>> specialPrices = ticketCategoriesIds.isEmpty() ? Collections.emptyMap() : specialPriceRepository.findAllByCategoriesIdsMapped(ticketCategoriesIds);
 
+        var metadata = ticketCategoryRepository.findCategoryMetadataForEventGroupByCategoryId(event.getId());
+
         List<TicketCategoryWithAdditionalInfo> tWithInfo = ticketCategories.stream()
-            .map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()), specialPrices.get(t.getId())))
+            .map(t -> new TicketCategoryWithAdditionalInfo(event, t, ticketCategoriesStatistics.get(t.getId()), descriptions.get(t.getId()), specialPrices.get(t.getId()), metadata.get(t.getId())))
             .collect(Collectors.toList());
 
-        return new EventWithAdditionalInfo(event, tWithInfo, eventStatistic, description, grossIncome);
-    }
-
-    private List<TicketCategory> loadTicketCategories(EventAndOrganizationId event) {
-        return ticketCategoryRepository.findAllTicketCategories(event.getId());
+        return new EventWithAdditionalInfo(event, tWithInfo, eventStatistic, description, grossIncome, eventRepository.getMetadataForEvent(event.getId()));
     }
 
     private Event getEventAndCheckOwnership(String eventName, String username) {

@@ -61,19 +61,20 @@ public final class Validator {
         if(ev.getOrganizationId() < 0) {
             errors.rejectValue("organizationId", "error.organizationId");
         }
-        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "location", "error.location");
+
+        if(isFormatInPerson(event, ev)) {
+            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "location", "error.location");
+        }
+
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "websiteUrl", "error.websiteurl");
 
-        if(isInternal(event, ev) && isLocationMissing(ev)) {
+        if(isFormatInPerson(event, ev) && isLocationMissing(ev)) {
             errors.rejectValue("locationDescriptor", "error.coordinates");
         }
 
-        if(isInternal(event, ev)) {
-            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "error.description");
-            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "termsAndConditionsUrl", "error.termsandconditionsurl");
-        } else {
-            ValidationUtils.rejectIfEmptyOrWhitespace(errors, "externalUrl", "error.externalurl");
-        }
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "description", "error.description");
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "termsAndConditionsUrl", "error.termsandconditionsurl");
+
 
         if(ev.getFileBlobId() == null) {
             ValidationUtils.rejectIfEmptyOrWhitespace(errors, "imageUrl", "error.imageurl");
@@ -111,15 +112,7 @@ public final class Validator {
         return evaluateValidationResult(errors);
     }
 
-    private static boolean isInternal(Optional<Event> event, EventModification ev) {
-        return event.map(Event::getType).orElse(ev.getEventType()) == Event.EventType.INTERNAL;
-    }
-
-    public static ValidationResult validateEventPrices(Optional<Event> event, EventModification ev, Errors errors) {
-
-        if(!isInternal(event, ev)) {
-            return ValidationResult.success();
-        }
+    public static ValidationResult validateEventPrices(EventModification ev, Errors errors) {
 
         if(!ev.isFreeOfCharge()) {
             if(isCollectionEmpty(ev.getAllowedPaymentProxies())) {
@@ -319,6 +312,10 @@ public final class Validator {
         if(StringUtils.isNotBlank(value) && !restrictedValues.contains(value)) {
             errors.rejectValue(fieldName, errorCode);
         }
+    }
+
+    private static boolean isFormatInPerson(Optional<Event> event, EventModification ev) {
+        return event.map(Event::getFormat).orElse(ev.getFormat()) == Event.EventFormat.IN_PERSON;
     }
 
     public static boolean isEmailValid(String email) {

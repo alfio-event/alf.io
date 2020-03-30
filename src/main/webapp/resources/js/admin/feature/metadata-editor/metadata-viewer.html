@@ -1,0 +1,42 @@
+<h4 class="text-center text-danger" data-ng-if="$ctrl.showMetadataWarning()"><i class="fa fa-warning"></i> Configuration for online meeting URLs is missing. Please add it before <strong>{{$ctrl.event.formattedBegin | formatDate}}</strong>.</h4>
+<div data-ng-if="$ctrl.metadataPresent()">
+    <div data-ng-class="{'h3': !$ctrl.categoryLevel, 'h4': $ctrl.categoryLevel}">Meeting Links</div>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Link</th>
+            <th>Active from</th>
+            <th>to</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr data-ng-repeat="callLink in $ctrl.metadata.onlineConfiguration.callLinks">
+            <td><a ng-href="{{callLink.link}}" target="_blank">{{callLink.link}}</a></td>
+            <td data-ng-bind="callLink.validFrom | formatDate"></td>
+            <td data-ng-bind="callLink.validTo | formatDate"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <div data-ng-if="$ctrl.showRequirements()">
+        <div data-ng-class="{'h3': !$ctrl.categoryLevel, 'h4': $ctrl.categoryLevel}">Prerequisites for attending</div>
+
+        <uib-tabset>
+            <uib-tab heading="{{$ctrl.languageDescription(lang)}}" data-ng-repeat="(lang, value) in $ctrl.metadata.requirementsDescriptions">
+                <div style="padding-top:2px; text-align:right"><display-commonmark-preview text="value"></display-commonmark-preview></div>
+                <pre class="white text-muted">{{value}}</pre>
+            </uib-tab>
+        </uib-tabset>
+    </div>
+</div>
+<hr>
+
+<div class="row">
+    <div class="col-md-2 col-xs-12" data-ng-class="{'col-md-offset-10': !$ctrl.categoryLevel, 'col-md-offset-8': $ctrl.categoryLevel}">
+        <button type="button" class="btn btn-block" data-ng-click="$ctrl.edit()" data-ng-class="{'btn-warning': !$ctrl.categoryLevel, 'btn-default': $ctrl.categoryLevel}">Edit<span data-ng-if="$ctrl.categoryLevel"> Online settings</span></button>
+    </div>
+    <div class="col-md-2 col-xs-12" data-ng-if="$ctrl.categoryLevel">
+        <div data-ng-transclude=""></div>
+    </div>
+</div>
+

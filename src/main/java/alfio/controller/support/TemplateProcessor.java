@@ -67,11 +67,12 @@ public final class TemplateProcessor {
                                                                TicketCategory category,
                                                                TemplateManager templateManager,
                                                                String ticketURL,
+                                                               String calendarURL,
                                                                Locale language,
                                                                Map<String, Object> additionalOptions) {
         return ticket -> {
-            Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, ticket, category, additionalOptions);
-            return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, language);
+            Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, calendarURL, ticket, category, additionalOptions);
+            return templateManager.renderTemplate(event, event.getIsOnline() ? TemplateResource.TICKET_EMAIL_FOR_ONLINE_EVENT : TemplateResource.TICKET_EMAIL, model, language);
         };
     }
 

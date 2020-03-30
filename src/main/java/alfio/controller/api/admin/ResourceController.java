@@ -139,7 +139,7 @@ public class ResourceController {
                 event =  eventRepository.findById(eventId);
             } else {
                 checkAccess(organizationId, principal);
-                event = new Event(-1, Event.EventType.INTERNAL, "TEST", "TEST", "TEST", "0", "0", ZonedDateTime.now(),
+                event = new Event(-1, Event.EventFormat.IN_PERSON, "TEST", "TEST", "TEST", "0", "0", ZonedDateTime.now(),
                     ZonedDateTime.now(), "Europe/Zurich", "http://localhost", "http://localhost", null,
                     "http://localhost", null, null, "CHF", BigDecimal.TEN, null, "42", organizationId,
                     ContentLanguage.ALL_LANGUAGES_IDENTIFIER, 0, PriceContainer.VatStatus.NONE, "1", Event.Status.PUBLIC);

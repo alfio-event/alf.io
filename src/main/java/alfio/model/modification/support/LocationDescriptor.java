@@ -17,6 +17,7 @@
 package alfio.model.modification.support;
 
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.Event.EventFormat;
 import alfio.model.system.ConfigurationKeys;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,7 +29,6 @@ import org.apache.commons.text.StringSubstitutor;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TimeZone;
 
 @Getter
@@ -56,7 +56,10 @@ public class LocationDescriptor {
         return StringUtils.isNotBlank(mapUrl);
     }
 
-    public static LocationDescriptor fromGeoData(Pair<String, String> coordinates, TimeZone timeZone, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> geoConf) {
+    public static LocationDescriptor fromGeoData(EventFormat format, Pair<String, String> coordinates, TimeZone timeZone, Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> geoConf) {
+        if(format == EventFormat.ONLINE) {
+            return new LocationDescriptor(timeZone.getID(), null, null, null);
+        }
         String lat = coordinates.getLeft();
         String lng = coordinates.getRight();
         return new LocationDescriptor(timeZone.getID(), coordinates.getLeft(), coordinates.getRight(), getMapUrl(lat, lng, geoConf));

@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.controller.support.TemplateProcessor;
 import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.payment.BankTransferManager;
@@ -57,6 +58,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -73,6 +75,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -1068,20 +1071,32 @@ public class TicketReservationManager {
 
     }
 
-    PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation reservation, Locale locale) {
-        return t -> {
-            Map<String, Object> model = new HashMap<>();
-            model.put("organization", organizationRepository.getById(event.getOrganizationId()));
-            model.put("event", event);
-            model.put("ticketReservation", reservation);
-            model.put("ticketUrl", ticketUpdateUrl(event, t.getUuid()));
-            model.put("ticket", t);
-            TicketCategory category = ticketCategoryRepository.getById(t.getCategoryId());
-            TemplateResource.fillTicketValidity(event, category, model);
-            model.put("googleCalendarUrl", EventUtil.getGoogleCalendarURL(event, category, null));
-            return templateManager.renderTemplate(event, TemplateResource.TICKET_EMAIL, model, locale);
+    public PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation ticketReservation, Locale ticketLanguage) {
+        return ticket -> {
+            Organization organization = organizationRepository.getById(event.getOrganizationId());
+            String ticketUrl = ticketUpdateUrl(event, ticket.getUuid());
+            var ticketCategory = ticketCategoryRepository.getById(ticket.getCategoryId());
+
+            var initialOptions = extensionManager.handleTicketEmailCustomText(event, ticketReservation, ticketReservationRepository.getAdditionalInfo(ticketReservation.getId()), ticketFieldRepository.findAllByTicketId(ticket.getId()))
+                .map(CustomEmailText::toMap)
+                .orElse(Map.of());
+            if(event.getFormat() == Event.EventFormat.ONLINE) {
+                initialOptions = new HashMap<>(initialOptions);
+                var eventMetadata = Optional.ofNullable(eventRepository.getMetadataForEvent(event.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
+                var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(ticketLanguage.getLanguage())));
+                initialOptions.put("onlineCheckInUrl", ticketOnlineCheckIn(event, ticket.getUuid()));
+                initialOptions.put("prerequisites", categoryMetadata.or(() -> eventMetadata).orElse(""));
+            }
+            var baseUrl = StringUtils.removeEnd(configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue(), "/");
+            var calendarUrl = UriComponentsBuilder.fromUriString(baseUrl + "/api/v2/public/event/{eventShortName}/calendar/{currentLang}")
+                .queryParam("type", "google")
+                .build(Map.of("eventShortName", event.getShortName(), "currentLang", ticketLanguage.getLanguage()))
+                .toString();
+            return TemplateProcessor.buildPartialEmail(event, organization, ticketReservation, ticketCategory, templateManager, ticketUrl, calendarUrl, ticketLanguage, initialOptions).generate(ticket);
         };
     }
+
+
 
     @Transactional
     public void cleanupExpiredReservations(Date expirationDate) {
@@ -1381,6 +1396,18 @@ public class TicketReservationManager {
             + "/event/" + event.getShortName() + "/ticket/" + ticketId + "/update?lang="+ticket.getUserLanguage();
     }
 
+    public String ticketOnlineCheckIn(Event event, String ticketId) {
+        Ticket ticket = ticketRepository.findByUUID(ticketId);
+        var baseUrl = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
+        return ticketOnlineCheckInUrl(event, ticket, baseUrl);
+    }
+
+    public static String ticketOnlineCheckInUrl(Event event, Ticket ticket, String baseUrl) {
+        var ticketCode = DigestUtils.sha256Hex(ticket.ticketCode(event.getPrivateKey()));
+        return StringUtils.removeEnd(baseUrl, "/")
+            + "/event/" + event.getShortName() + "/ticket/" + ticket.getUuid() + "/check-in/"+ticketCode;
+    }
+
     public int maxAmountOfTicketsForCategory(EventAndOrganizationId eventAndOrganizationId, int ticketCategoryId, String promoCode) {
         // verify if the promo code is present and if it's actually an access code
         if(StringUtils.isNotBlank(promoCode)) {
@@ -1577,7 +1604,7 @@ public class TicketReservationManager {
         return userDetails.flatMap(u -> u.getAuthorities().stream().map(a -> Role.fromRoleName(a.getAuthority())).filter(Role.ADMIN::equals).findFirst()).isPresent();
     }
 
-    void sendTicketByEmail(Ticket ticket, Locale locale, EventAndOrganizationId event, PartialTicketTextGenerator confirmationTextBuilder) {
+    void sendTicketByEmail(Ticket ticket, Locale locale, Event event, PartialTicketTextGenerator confirmationTextBuilder) {
         TicketReservation reservation = ticketReservationRepository.findReservationById(ticket.getTicketsReservationId());
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
         notificationManager.sendTicketByEmail(ticket, event, locale, confirmationTextBuilder, reservation, ticketCategory);

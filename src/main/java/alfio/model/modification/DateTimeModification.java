@@ -44,7 +44,7 @@ public class DateTimeModification {
         return toLocalDateTime().isAfter(other.toLocalDateTime());
     }
 
-    private LocalDateTime toLocalDateTime() {
+    public LocalDateTime toLocalDateTime() {
         return LocalDateTime.of(date, time);
     }
 

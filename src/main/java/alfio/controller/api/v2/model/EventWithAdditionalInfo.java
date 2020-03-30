@@ -18,6 +18,7 @@ package alfio.controller.api.v2.model;
 
 import alfio.controller.api.support.CurrencyDescriptor;
 import alfio.model.Event;
+import alfio.model.Event.EventFormat;
 import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -211,6 +212,10 @@ public class EventWithAdditionalInfo implements DateValidity {
 
     public Map<String, Map<String, String>> getI18nOverride() {
         return i18nOverride;
+    }
+
+    public EventFormat getFormat() {
+        return event.getFormat();
     }
 
 

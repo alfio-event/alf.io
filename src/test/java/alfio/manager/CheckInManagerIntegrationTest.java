@@ -23,6 +23,7 @@ import alfio.manager.payment.PaymentSpecification;
 import alfio.manager.support.PaymentResult;
 import alfio.manager.user.UserManager;
 import alfio.model.*;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -88,7 +89,7 @@ public class CheckInManagerIntegrationTest {
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 DESCRIPTION, BigDecimal.TEN, false,
-                "", false, null, null, null, null, null, 0, null, null)
+                "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty())
         );
         Pair<Event, String> eventAndUser = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         var event = eventAndUser.getLeft();

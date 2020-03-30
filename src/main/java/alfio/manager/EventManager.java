@@ -26,6 +26,7 @@ import alfio.model.PromoCodeDiscount.DiscountType;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.TicketFieldConfiguration.Context;
 import alfio.model.api.v1.admin.EventCreationRequest;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.modification.EventModification.AdditionalField;
 import alfio.model.result.ErrorCode;
@@ -586,7 +587,8 @@ public class EventManager {
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
                 toZonedDateTime(tc.getValidCheckInFrom(), zoneId), toZonedDateTime(tc.getValidCheckInTo(), zoneId),
-                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
+                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT),
+                Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty));
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
 
@@ -607,7 +609,8 @@ public class EventManager {
             toZonedDateTime(tc.getValidCheckInTo(), zoneId),
             toZonedDateTime(tc.getTicketValidityStart(), zoneId),
             toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(),
-            Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
+            Objects.requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT),
+            Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty));
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
         if(tc.isBounded()) {
             List<Integer> lockedTickets = ticketRepository.selectNotAllocatedTicketsForUpdate(eventId, ticketCategory.getMaxTickets(), asList(TicketStatus.FREE.name(), TicketStatus.RELEASED.name()));
@@ -811,14 +814,14 @@ public class EventManager {
         Validate.notNull(em.getAvailableSeats());
         validatePaymentProxies(em.getAllowedPaymentProxies(), em.getOrganizationId());
         String paymentProxies = collectPaymentProxies(em);
-        BigDecimal vat = !em.isInternal() || em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
+        BigDecimal vat = em.isFreeOfCharge() ? BigDecimal.ZERO : em.getVatPercentage();
         String privateKey = UUID.randomUUID().toString();
         ZoneId zoneId = ZoneId.of(em.getZoneId());
         String currentVersion = flyway.info().current().getVersion().getVersion();
-        return eventRepository.insert(em.getShortName(), em.getEventType(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.isInternal() ? em.getTermsAndConditionsUrl() : "",
+        return eventRepository.insert(em.getShortName(), em.getFormat(), em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.getTermsAndConditionsUrl(),
             em.getPrivacyPolicyUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(), em.getLatitude(), em.getLongitude(), em.getBegin().toZonedDateTime(zoneId),
-            em.getEnd().toZonedDateTime(zoneId), em.getZoneId(), em.getCurrency(), em.getAvailableSeats(), em.isInternal() && em.isVatIncluded(),
-            vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion, Event.Status.DRAFT).getKey();
+            em.getEnd().toZonedDateTime(zoneId), em.getZoneId(), em.getCurrency(), em.getAvailableSeats(), em.isVatIncluded(),
+            vat, paymentProxies, privateKey, em.getOrganizationId(), em.getLocales(), em.getVatStatus(), em.getPriceInCents(), currentVersion, Event.Status.DRAFT, em.getMetadata()).getKey();
     }
 
     private String collectPaymentProxies(EventModification em) {
@@ -1042,5 +1045,36 @@ public class EventManager {
         } else {
             log.warn("unauthorized access to event {}", eventName);
         }
+    }
+
+    public Map<Integer, String> getEventNamesByIds(List<Integer> eventIds, Principal principal) {
+        if (!UserManager.isAdmin(principal)) {
+            throw new IllegalStateException("User must be admin");
+        }
+        return eventRepository.getEventNamesByIds(eventIds).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));
+    }
+
+    public Map<Integer, String> getEventsNameInOrganization(int orgId, Principal principal) {
+        if (!UserManager.isAdmin(principal)) {
+            throw new IllegalStateException("User must be admin");
+        }
+        return eventRepository.getEventsNameInOrganization(orgId).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));
+    }
+
+    public boolean updateMetadata(EventAndOrganizationId event, AlfioMetadata metadata) {
+        eventRepository.updateMetadata(metadata, event.getId());
+        return true;
+    }
+
+    public boolean updateCategoryMetadata(EventAndOrganizationId event, int categoryId, AlfioMetadata metadata) {
+        return ticketCategoryRepository.updateMetadata(metadata, event.getId(), categoryId) == 1;
+    }
+
+    public AlfioMetadata getMetadataForEvent(EventAndOrganizationId event) {
+        return eventRepository.getMetadataForEvent(event.getId());
+    }
+
+    public AlfioMetadata getMetadataForCategory(EventAndOrganizationId event, int categoryId) {
+        return ticketCategoryRepository.getMetadata(event.getId(), categoryId);
     }
 }

@@ -128,7 +128,15 @@ public enum TemplateResource {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
-            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", sampleTicket(), ticketCategory, Map.of());
+            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(), ticketCategory, Map.of());
+        }
+    },
+
+    TICKET_EMAIL_FOR_ONLINE_EVENT("/alfio/templates/ticket-email-online-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
+            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(), ticketCategory, Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event"));
         }
     },
     TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
@@ -409,6 +417,7 @@ public enum TemplateResource {
                                                                Event event,
                                                                TicketReservation ticketReservation,
                                                                String ticketURL,
+                                                               String calendarURL,
                                                                Ticket ticket,
                                                                TicketCategory ticketCategory,
                                                                Map<String, Object> additionalOptions) {
@@ -418,7 +427,7 @@ public enum TemplateResource {
         model.put("ticketReservation", ticketReservation);
         model.put("ticketUrl", ticketURL);
         model.put("ticket", ticket);
-        model.put("googleCalendarUrl", EventUtil.getGoogleCalendarURL(event, ticketCategory, null));
+        model.put("googleCalendarUrl", calendarURL);
         fillTicketValidity(event, ticketCategory, model);
         return model;
     }

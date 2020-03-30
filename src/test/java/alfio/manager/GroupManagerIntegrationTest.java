@@ -25,6 +25,7 @@ import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.group.Group;
 import alfio.model.group.LinkedGroup;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.*;
 import alfio.model.result.Result;
 import alfio.repository.EventRepository;
@@ -97,7 +98,7 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         Group group = groupManager.createNew("test", "This is a test", event.getOrganizationId());
@@ -145,7 +146,7 @@ public class GroupManagerIntegrationTest extends BaseIntegrationTest {
             new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
         Group group = groupManager.createNew("test", "This is a test", event.getOrganizationId());

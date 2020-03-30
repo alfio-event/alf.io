@@ -18,6 +18,7 @@ package alfio.model.modification;
 
 import alfio.model.Event;
 import alfio.model.PriceContainer;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.transaction.PaymentProxy;
 import alfio.util.MonetaryUtil;
@@ -36,7 +37,7 @@ import java.util.stream.Collectors;
 public class EventModification {
 
     private final Integer id;
-    private final Event.EventType eventType;
+    private final Event.EventFormat format;
     private final String websiteUrl;
     private final String externalUrl;
     private final String termsAndConditionsUrl;
@@ -67,9 +68,11 @@ public class EventModification {
     private final List<AdditionalField> ticketFields;
     private final List<AdditionalService> additionalServices;
 
+    private final AlfioMetadata metadata;
+
     @JsonCreator
     public EventModification(@JsonProperty("id") Integer id,
-                             @JsonProperty("type") Event.EventType eventType,
+                             @JsonProperty("format") Event.EventFormat format,
                              @JsonProperty("websiteUrl") String websiteUrl,
                              @JsonProperty("external") String externalUrl,
                              @JsonProperty("termsAndConditionsUrl") String termsAndConditionsUrl,
@@ -97,9 +100,10 @@ public class EventModification {
                              @JsonProperty("geolocation") LocationDescriptor locationDescriptor,
                              @JsonProperty("locales") int locales,
                              @JsonProperty("ticketFields") List<AdditionalField> ticketFields,
-                             @JsonProperty("additionalServices") List<AdditionalService> additionalServices) {
+                             @JsonProperty("additionalServices") List<AdditionalService> additionalServices,
+                             @JsonProperty("metadata") AlfioMetadata metadata) {
         this.id = id;
-        this.eventType = eventType;
+        this.format = format;
         this.websiteUrl = websiteUrl;
         this.externalUrl = externalUrl;
         this.termsAndConditionsUrl = termsAndConditionsUrl;
@@ -128,6 +132,7 @@ public class EventModification {
         this.freeOfCharge = freeOfCharge;
         this.locales = locales;
         this.ticketFields = ticketFields;
+        this.metadata = metadata;
     }
 
     public int getPriceInCents() {
@@ -145,8 +150,8 @@ public class EventModification {
         return locationDescriptor;
     }
 
-    public boolean isInternal() {
-        return eventType == Event.EventType.INTERNAL;
+    public boolean isOnline() {
+        return format == Event.EventFormat.ONLINE;
     }
 
     public interface WithType {

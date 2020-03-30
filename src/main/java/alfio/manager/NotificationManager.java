@@ -29,10 +29,7 @@ import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Organization;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
-import alfio.util.EventUtil;
-import alfio.util.Json;
-import alfio.util.LocaleUtil;
-import alfio.util.TemplateManager;
+import alfio.util.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.google.gson.*;
 import lombok.extern.log4j.Log4j2;
@@ -64,6 +61,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static alfio.model.EmailMessage.Status.*;
+import static alfio.model.system.ConfigurationKeys.BASE_URL;
 
 @Component
 @Log4j2
@@ -78,6 +76,7 @@ public class NotificationManager {
     private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
     private final Gson gson;
+    private final TicketCategoryRepository ticketCategoryRepository;
 
     private final EnumMap<Mailer.AttachmentIdentifier, Function<Map<String, String>, byte[]>> attachmentTransformer;
 
@@ -104,6 +103,7 @@ public class NotificationManager {
         this.emailMessageRepository = emailMessageRepository;
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
+        this.ticketCategoryRepository = ticketCategoryRepository;
         DefaultTransactionDefinition definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED);
         this.tx = new TransactionTemplate(transactionManager, definition);
         this.configurationManager = configurationManager;
@@ -111,7 +111,7 @@ public class NotificationManager {
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());
         this.gson = builder.create();
         attachmentTransformer = new EnumMap<>(Mailer.AttachmentIdentifier.class);
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, generateICS(eventRepository, eventDescriptionRepository, ticketCategoryRepository));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, generateICS(eventRepository, eventDescriptionRepository, ticketCategoryRepository, messageSourceManager));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(eventRepository,
             payload -> TemplateProcessor.buildReceiptPdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.INVOICE_PDF, receiptOrInvoiceFactory(eventRepository,
@@ -149,7 +149,7 @@ public class NotificationManager {
         };
     }
 
-    private static Function<Map<String, String>, byte[]> generateICS(EventRepository eventRepository, EventDescriptionRepository eventDescriptionRepository, TicketCategoryRepository ticketCategoryRepository) {
+    private static Function<Map<String, String>, byte[]> generateICS(EventRepository eventRepository, EventDescriptionRepository eventDescriptionRepository, TicketCategoryRepository ticketCategoryRepository, MessageSourceManager messageSourceManager) {
         return model -> {
             Event event;
             Locale locale;
@@ -167,6 +167,16 @@ public class NotificationManager {
             }
             TicketCategory category = Optional.ofNullable(categoryId).map(ticketCategoryRepository::getById).orElse(null);
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
+            if(model.containsKey("onlineCheckInUrl")) { // special case: online event
+                var messageSource = messageSourceManager.getMessageSourceForEvent(event);
+                description = description + "\n\n" +
+                    "******************************************\n" +
+                    messageSource.getMessage("email.event.online.important-information", null, locale) + "\n\n" +
+                    messageSource.getMessage("event.location.online", null, locale) + "\n" +
+                    messageSource.getMessage("email.event.online.check-in", null, locale) + "\n" +
+                    model.get("onlineCheckInUrl") + "\n\n" +
+                    MustacheCustomTag.renderToTextCommonmark(model.get("prerequisites"));
+            }
             return EventUtil.getIcalForEvent(event, category, description).orElse(null);
         };
     }
@@ -190,14 +200,28 @@ public class NotificationManager {
         };
     }
 
-    public void sendTicketByEmail(Ticket ticket, EventAndOrganizationId event, Locale locale, PartialTicketTextGenerator textBuilder, TicketReservation reservation, TicketCategory ticketCategory) {
+    public void sendTicketByEmail(Ticket ticket,
+                                  Event event,
+                                  Locale locale,
+                                  PartialTicketTextGenerator textBuilder,
+                                  TicketReservation reservation,
+                                  TicketCategory ticketCategory) {
 
         Organization organization = organizationRepository.getById(event.getOrganizationId());
 
         List<Mailer.Attachment> attachments = new ArrayList<>();
-        attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
+        if(event.getFormat() == Event.EventFormat.ONLINE) { // generate only calendar invitation
+            var baseUrl = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
+            var eventMetadata = Optional.ofNullable(eventRepository.getMetadataForEvent(event.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(locale.getLanguage())));
+            var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(locale.getLanguage())));
+            attachments.add(CustomMessageManager.generateCalendarAttachmentForOnlineEvent(ticket,
+                reservation, ticketCategory, organization, TicketReservationManager.ticketOnlineCheckInUrl(event, ticket, baseUrl),
+                categoryMetadata.or(() -> eventMetadata).orElse("")));
+        } else {
+            attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
+        }
 
-        String displayName = eventRepository.getDisplayNameById(event.getId());
+        String displayName = event.getDisplayName();
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-email-subject", new Object[]{displayName}, locale);

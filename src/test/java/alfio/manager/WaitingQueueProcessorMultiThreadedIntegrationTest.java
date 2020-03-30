@@ -24,6 +24,7 @@ import alfio.manager.user.UserManager;
 import alfio.model.CustomerName;
 import alfio.model.Event;
 import alfio.model.WaitingQueueSubscription;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.DateTimeModification;
 import alfio.model.modification.TicketCategoryModification;
 import alfio.model.system.ConfigurationKeys;
@@ -105,7 +106,7 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
                 new TicketCategoryModification(null, "default", 10,
                     new DateTimeModification(LocalDate.now().plusDays(1), LocalTime.now()),
                     new DateTimeModification(LocalDate.now().plusDays(2), LocalTime.now()),
-                    DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null));
+                    DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
             Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
             event = pair.getKey();
             waitingQueueManager.subscribe(event, new CustomerName("Giuseppe Garibaldi", "Giuseppe", "Garibaldi", event.mustUseFirstAndLastName()), "peppino@garibaldi.com", null, Locale.ENGLISH);
@@ -133,7 +134,7 @@ public class WaitingQueueProcessorMultiThreadedIntegrationTest {
             TicketCategoryModification tcm = new TicketCategoryModification(null, "default", 10,
                 new DateTimeModification(LocalDate.now().minusDays(1), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
-                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null);
+                DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty());
             eventManager.insertCategory(event.getId(), tcm, pair.getValue());
 
 
