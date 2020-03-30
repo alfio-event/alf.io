@@ -31,7 +31,7 @@ public class CallLink {
     @JsonCreator
     public CallLink(@JsonProperty("link") String link,
                     @JsonProperty("validFrom") LocalDateTime validFrom,
-                    @JsonProperty("onlineConfiguration") LocalDateTime validTo) {
+                    @JsonProperty("validTo") LocalDateTime validTo) {
         this.link = link;
         this.validFrom = validFrom;
         this.validTo = validTo;

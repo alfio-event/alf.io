@@ -30,6 +30,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Comparator;
@@ -56,8 +58,7 @@ public class OnlineCheckInController {
                 var ticket = triple.getRight();
                 var event = triple.getLeft();
                 String ticketCode = ticket.ticketCode(event.getPrivateKey());
-                var expectedHash = DigestUtils.sha256Hex(ticketCode);
-                if(expectedHash.equals(ticketCodeHash)) {
+                if(MessageDigest.isEqual(DigestUtils.sha256(ticketCode.getBytes(StandardCharsets.UTF_8)), ticketCodeHash.getBytes(StandardCharsets.UTF_8))) {
                     log.debug("code successfully validated for ticket {}", ticketUUID);
                     // check-in can be done. Let's check if there is a redirection URL
                     var categoryConfiguration = ticketCategoryRepository.getMetadata(event.getId(), ticket.getCategoryId()).getOnlineConfiguration();
