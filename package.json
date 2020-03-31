@@ -1,0 +1,8 @@
+{
+  "name": "mjml-to-html",
+  "version": "1.0.0",
+  "dependencies": {
+    "glob": "^7.1.6",
+    "mjml": "^4.6.2"
+  }
+}
