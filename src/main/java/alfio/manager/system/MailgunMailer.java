@@ -43,12 +43,13 @@ class MailgunMailer implements Mailer {
 
 
     private static Map<String, String> getEmailData(String from, String to, String replyTo, List<String> cc, String subject, String text, Optional<String> html) {
-        Map<String, String> emailData = Map.of(
+        Map<String, String> emailData = new HashMap<>(Map.of(
             "from", from,
             "to", to,
             "subject", subject,
             "text", text
-        );
+        ));
+        
         if(cc != null && !cc.isEmpty()) {
             emailData.put("cc", StringUtils.join(cc, ','));
         }
