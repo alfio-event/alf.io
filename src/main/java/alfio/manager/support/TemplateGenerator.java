@@ -16,7 +16,6 @@
  */
 package alfio.manager.support;
 
-@FunctionalInterface
-public interface TextTemplateGenerator extends TemplateGenerator {
-    String generate();
+public interface TemplateGenerator {
+
 }

@@ -19,6 +19,7 @@ package alfio.job.executor;
 import alfio.manager.BillingDocumentManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.support.TextTemplateGenerator;
 import alfio.manager.system.AdminJobExecutor;
 import alfio.model.system.AdminJobSchedule;
 import alfio.repository.EventRepository;
@@ -67,7 +68,7 @@ public class BillingDocumentJobExecutor implements AdminJobExecutor {
         if(counter.get() > 0) {
             var organization = organizationRepository.getById(event.getOrganizationId());
             notificationManager.sendSimpleEmail(event, null, organization.getEmail(), "Invoice Regeneration complete",
-                () -> "Invoice regeneration for event "+event.getDisplayName()+ " is now complete. "+counter.get()+" invoices generated.");
+                (TextTemplateGenerator)() -> "Invoice regeneration for event "+event.getDisplayName()+ " is now complete. "+counter.get()+" invoices generated.");
         }
         return "generated";
     }

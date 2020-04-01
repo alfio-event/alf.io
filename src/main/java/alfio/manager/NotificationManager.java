@@ -16,23 +16,37 @@
  */
 package alfio.manager;
 
-import alfio.controller.support.TemplateProcessor;
-import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.support.CustomMessageManager;
-import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.manager.support.TextTemplateGenerator;
-import alfio.manager.system.ConfigurationLevel;
-import alfio.manager.system.ConfigurationManager;
-import alfio.manager.system.Mailer;
-import alfio.model.*;
-import alfio.model.system.ConfigurationKeys;
-import alfio.model.user.Organization;
-import alfio.repository.*;
-import alfio.repository.user.OrganizationRepository;
-import alfio.util.*;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.google.gson.*;
-import lombok.extern.log4j.Log4j2;
+import static alfio.model.EmailMessage.Status.ERROR;
+import static alfio.model.EmailMessage.Status.IN_PROCESS;
+import static alfio.model.EmailMessage.Status.RETRY;
+import static alfio.model.EmailMessage.Status.WAITING;
+import static alfio.model.system.ConfigurationKeys.BASE_URL;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -46,22 +60,52 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.time.Clock;
-import java.time.ZonedDateTime;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
-import static alfio.model.EmailMessage.Status.*;
-import static alfio.model.system.ConfigurationKeys.BASE_URL;
+import alfio.controller.support.TemplateProcessor;
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.support.CustomMessageManager;
+import alfio.manager.support.MultipartTemplateGenerator;
+import alfio.manager.support.PartialTicketTextGenerator;
+import alfio.manager.support.TemplateGenerator;
+import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationLevel;
+import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.Mailer;
+import alfio.model.EmailMessage;
+import alfio.model.Event;
+import alfio.model.EventAndOrganizationId;
+import alfio.model.EventDescription;
+import alfio.model.LightweightMailMessage;
+import alfio.model.Ticket;
+import alfio.model.TicketCategory;
+import alfio.model.TicketFieldConfigurationDescriptionAndValue;
+import alfio.model.TicketReservation;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.user.Organization;
+import alfio.repository.AdditionalServiceItemRepository;
+import alfio.repository.EmailMessageRepository;
+import alfio.repository.EventDescriptionRepository;
+import alfio.repository.EventRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketFieldRepository;
+import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
+import alfio.repository.user.OrganizationRepository;
+import alfio.util.EventUtil;
+import alfio.util.Json;
+import alfio.util.LocaleUtil;
+import alfio.util.MustacheCustomTag;
+import alfio.util.TemplateManager;
+import lombok.extern.log4j.Log4j2;
 
 @Component
 @Log4j2
@@ -232,13 +276,13 @@ public class NotificationManager {
         tx.execute(status -> {
             emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum).ifPresentOrElse(
                 id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
-                () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC))
+                () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, text, null, encodedAttachments, checksum, ZonedDateTime.now(UTC))
             );
             return null;
         });
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TemplateGenerator textBuilder) {
         sendSimpleEmail(event, reservationId, recipient, cc, subject, textBuilder, Collections.emptyList());
     }
 
@@ -251,26 +295,38 @@ public class NotificationManager {
             .collect(Collectors.toList());
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, String subject, TextTemplateGenerator textBuilder) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, String subject, TemplateGenerator textBuilder) {
         sendSimpleEmail(event, reservationId, recipient, Collections.emptyList(), subject, textBuilder);
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, String subject, TemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
         sendSimpleEmail(event, reservationId, recipient, Collections.emptyList(), subject, textBuilder, attachments);
     }
 
-    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TextTemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
+    public void sendSimpleEmail(EventAndOrganizationId event, String reservationId, String recipient, List<String> cc, String subject, TemplateGenerator textBuilder, List<Mailer.Attachment> attachments) {
 
         String encodedAttachments = attachments.isEmpty() ? null : encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String encodedCC = Json.toJson(cc);
 
-        String text = textBuilder.generate();
-        String checksum = calculateChecksum(recipient, encodedAttachments, subject, text);
+        
+        final String textRender;
+        final String htmlRender;
+        
+        if(textBuilder instanceof MultipartTemplateGenerator) {
+        	var renderedTemplate = ((MultipartTemplateGenerator) textBuilder).generate();
+            textRender = renderedTemplate.getLeft();
+            htmlRender = renderedTemplate.getRight();
+    	} else {
+    		textRender = ((TextTemplateGenerator) textBuilder).generate();
+    		htmlRender = null;
+    	}
+        
+        String checksum = calculateChecksum(recipient, encodedAttachments, subject, textRender);
         //in order to minimize the database size, it is worth checking if there is already another message in the table
         Optional<Integer> existing = emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum);
 
         existing.ifPresentOrElse(id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
-            () -> emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, text, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
+            () -> emailMessageRepository.insert(event.getId(), reservationId, recipient, encodedCC, subject, textRender, htmlRender, encodedAttachments, checksum, ZonedDateTime.now(UTC)));
     }
 
     public Pair<Integer, List<LightweightMailMessage>> loadAllMessagesForEvent(int eventId, Integer page, String search) {
@@ -334,7 +390,7 @@ public class NotificationManager {
 
     private void sendMessage(EventAndOrganizationId event, EmailMessage message) {
         String displayName = eventRepository.getDisplayNameById(message.getEventId());
-        mailer.send(event, displayName, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.empty(), decodeAttachments(message.getAttachments()));
+        mailer.send(event, displayName, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.ofNullable(message.getHtmlMessage()), decodeAttachments(message.getAttachments()));
         emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
 

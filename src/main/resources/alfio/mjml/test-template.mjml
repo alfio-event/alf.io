@@ -1,9 +1,0 @@
-<mjml>
-  <mj-body>
-    <mj-section>
-      <mj-column>
-        <mj-text font-size="20px" color="#FF8812" font-family="helvetica">Welcome to Alf.io</mj-text>
-      </mj-column>
-    </mj-section>
-  </mj-body>
-</mjml>

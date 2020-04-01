@@ -32,6 +32,6 @@ public class LightweightMailMessage extends EmailMessage {
                         @Column("sent_ts") ZonedDateTime sentTimestamp,
                         @Column("attempts") int attempts,
                         @Column("email_cc") String cc) {
-        super(id, eventId, status, recipient, subject, message, null, checksum, requestTimestamp, sentTimestamp, attempts, cc);
+        super(id, eventId, status, recipient, subject, message, null, null, checksum, requestTimestamp, sentTimestamp, attempts, cc);
     }
 }

@@ -16,7 +16,9 @@
  */
 package alfio.manager.support;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 @FunctionalInterface
-public interface TextTemplateGenerator extends TemplateGenerator {
-    String generate();
+public interface MultipartTemplateGenerator extends TemplateGenerator {
+	Pair<String, String> generate();
 }

@@ -18,6 +18,7 @@ package alfio.manager;
 
 import alfio.manager.i18n.I18nManager;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.support.MultipartTemplateGenerator;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
@@ -119,7 +120,7 @@ public class SpecialPriceManager {
                 null,
                 m.getEmail(),
                 messageSource.getMessage("email-code.subject", new Object[] {event.getDisplayName(), promoCodeDescription}, locale),
-                () -> templateManager.renderTemplate(event, TemplateResource.SEND_RESERVED_CODE, model, locale));
+                (MultipartTemplateGenerator)() -> templateManager.renderTemplate(event, TemplateResource.SEND_RESERVED_CODE, model, locale));
             int marked = specialPriceRepository.markAsSent(ZonedDateTime.now(event.getZoneId()), m.getAssignee().trim(), m.getEmail().trim(), m.getCode().trim());
             Validate.isTrue(marked == 1, "Expected exactly one row updated, got "+marked);
         });
