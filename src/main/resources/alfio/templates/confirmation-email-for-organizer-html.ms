@@ -92,8 +92,8 @@
   </style>
 </head>
 
-<body style="background-color:snow;">
-  <div style="background-color:snow;">
+<body style="background-color:#e5e5e5;">
+  <div style="background-color:#e5e5e5;">
     <!--[if mso | IE]>
       <table
          align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600"
@@ -263,7 +263,7 @@
                           </tr>
                         {{/orderSummary.summary}}
                         <tr>
-                          <td colspan="4">&nbsp; </td>
+                          <td colspan="4">&nbsp;</td>
                         </tr>
                         {{^orderSummary.free}}{{^ticketReservation.vatIncluded}}
                             <tr style="border-top:1px solid #ecedee;text-align:right;padding: 0 15px;">
@@ -311,8 +311,8 @@
                     <td align="center" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
                       <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
                         <tr>
-                          <td align="center" bgcolor="#ff8812" role="presentation" style="border:none;border-radius:3px;cursor:auto;mso-padding-alt:10px 25px;background:#ff8812;" valign="middle">
-                            <a href="{{reservationUrl}}" style="display:inline-block;background:#ff8812;color:#ffffff;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank"> View reservation </a>
+                          <td align="center" bgcolor="#28a745" role="presentation" style="border:none;border-radius:3px;cursor:auto;mso-padding-alt:10px 25px;background:#28a745;" valign="middle">
+                            <a href="{{reservationUrl}}" style="display:inline-block;background:#28a745;color:#ffffff;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank"> View reservation </a>
                           </td>
                         </tr>
                       </table>
@@ -365,7 +365,7 @@
                         <tbody>
                           <tr>
                             <td style="width:80px;">
-                              <img height="auto" src="{{baseUrl}}/resources/images/email/icon_ticket.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="80" />
+                              <img alt="Tickets" height="auto" src="{{baseUrl}}/resources/images/email/icon_ticket.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="80" />
                             </td>
                           </tr>
                         </tbody>
@@ -385,7 +385,7 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:helvetica;font-size:20px;line-height:1;text-align:center;color:#ff8812;">Tickets in reservation</div>
+                      <div style="font-family:helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">Tickets in reservation</div>
                     </td>
                   </tr>
                   <tr>

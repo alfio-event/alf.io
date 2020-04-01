@@ -1,5 +1,5 @@
 <mjml>
-	<mj-body background-color="snow">
+	<mj-body background-color="#e5e5e5">
 		<mj-section padding-bottom="0px" background-color="white">
 			<mj-column width="100%">
 				<mj-divider
@@ -40,8 +40,7 @@
 					</tr>
 					{{/orderSummary.summary}}
 					<tr>
-						<td colspan="4">&nbsp;
-						</td>
+						<td colspan="4">&nbsp;</td>
 					</tr>
 					{{^orderSummary.free}}{{^ticketReservation.vatIncluded}}
 					<tr style="border-top:1px solid #ecedee;text-align:right;padding: 0 15px;">
@@ -82,7 +81,7 @@
 					{{/italianEInvoicing}}
 					{{/ticketReservation.invoicingAdditionalInfo}}
 				</mj-text>
-				<mj-button background-color="#ff8812" href="{{reservationUrl}}" align="center">
+				<mj-button background-color="#28a745" href="{{reservationUrl}}" align="center">
 					View reservation
 				</mj-button>
 			</mj-column>
@@ -90,11 +89,11 @@
 
 		<mj-section background-color="white">
 			<mj-column width="130px">
-				<mj-image src="{{baseUrl}}/resources/images/email/icon_ticket.png" />
+				<mj-image src="{{baseUrl}}/resources/images/email/icon_ticket.png" alt="Tickets">
 			</mj-image>
 			</mj-column>
 			<mj-column width="350px">
-				<mj-text font-size="20px" align="center" font-family="helvetica" color="#ff8812">
+				<mj-text font-size="20px" align="center" font-family="helvetica" color="#212529">
 					Tickets in reservation
 				</mj-text>
 				<mj-text align="center" font-family="helvetica">
