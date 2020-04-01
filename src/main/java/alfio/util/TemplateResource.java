@@ -63,57 +63,57 @@ import lombok.experimental.Delegate;
 public enum TemplateResource {
 
     @Deprecated
-    GOOGLE_ANALYTICS("", false, "", TemplateManager.TemplateOutput.TEXT),
+    GOOGLE_ANALYTICS("", "", TemplateManager.TemplateOutput.TEXT),
 
-    CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer", true, TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.HTML) {
+    CONFIRMATION_EMAIL_FOR_ORGANIZER("/alfio/templates/confirmation-email-for-organizer", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
-    SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    SEND_RESERVED_CODE("/alfio/templates/send-reserved-code-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareModelForSendReservedCode(organization, event, new SendCodeModification("CODE", "Firstname Lastname", "email@email.tld", "en"), "http://your-domain.tld/event-page", "Promotional");
         }
     },
-    CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
-    OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    OFFLINE_RESERVATION_EXPIRED_EMAIL("/alfio/templates/offline-reservation-expired-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
-    CHARGE_ATTEMPT_FAILED_EMAIL("/alfio/templates/charge-failed-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    CHARGE_ATTEMPT_FAILED_EMAIL("/alfio/templates/charge-failed-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleDataForChargeFailed(organization, event);
         }
     },
-    CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER("/alfio/templates/charge-failed-organizer-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    CHARGE_ATTEMPT_FAILED_EMAIL_FOR_ORGANIZER("/alfio/templates/charge-failed-organizer-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleDataForChargeFailed(organization, event);
         }
     },
-    CREDIT_NOTE_ISSUED_EMAIL("/alfio/templates/credit-note-issued-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    CREDIT_NOTE_ISSUED_EMAIL("/alfio/templates/credit-note-issued-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
-    OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER("/alfio/templates/offline-reservation-expiring-email-for-organizer-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER("/alfio/templates/offline-reservation-expiring-email-for-organizer-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleModelForOfflineReservationExpiringEmailForOrganizer(event);
         }
     },
-    OFFLINE_PAYMENT_MATCHES_FOUND("/alfio/templates/offline-payment-matches-found-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    OFFLINE_PAYMENT_MATCHES_FOUND("/alfio/templates/offline-payment-matches-found-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return Map.of(
@@ -128,19 +128,19 @@ public enum TemplateResource {
             );
         }
     },
-    REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    REMINDER_EMAIL("/alfio/templates/reminder-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
-    REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareModelForReminderTicketAdditionalInfo(organization, event, sampleTicket(), "http://your-domain.tld/ticket-url");
         }
     },
-    REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleDataForConfirmationEmail(organization, event);
@@ -148,7 +148,7 @@ public enum TemplateResource {
     },
 
 
-    TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
@@ -156,28 +156,28 @@ public enum TemplateResource {
         }
     },
 
-    TICKET_EMAIL_FOR_ONLINE_EVENT("/alfio/templates/ticket-email-online-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    TICKET_EMAIL_FOR_ONLINE_EVENT("/alfio/templates/ticket-email-online-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
             return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(), ticketCategory, Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event"));
         }
     },
-    TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return buildModelForTicketHasChangedOwner(organization, event, sampleTicket(), sampleTicket("NewFirstname", "NewLastname", "newemail@email.tld"), "http://your-domain.tld/ticket-url");
         }
     },
 
-    TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return buildModelForTicketHasBeenCancelled(organization, event, sampleTicket());
         }
     },
 
-    TICKET_HAS_BEEN_CANCELLED_ADMIN("/alfio/templates/ticket-has-been-cancelled-admin-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    TICKET_HAS_BEEN_CANCELLED_ADMIN("/alfio/templates/ticket-has-been-cancelled-admin-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return buildModelForTicketHasBeenCancelledAdmin(organization, event, sampleTicket(), "Category", Collections.emptyList(), asi -> Optional.empty());
@@ -185,41 +185,41 @@ public enum TemplateResource {
     },
 
 
-    TICKET_PDF("/alfio/templates/ticket.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+    TICKET_PDF("/alfio/templates/ticket.ms", "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
             return buildModelForTicketPDF(organization, event, sampleTicketReservation(), ticketCategory, sampleTicket(), imageData, "ABCD", Collections.emptyMap());
         }
     },
-    RECEIPT_PDF("/alfio/templates/receipt.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+    RECEIPT_PDF("/alfio/templates/receipt.ms", "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return sampleBillingDocument(imageData, organization, event);
         }
     },
 
-    INVOICE_PDF("/alfio/templates/invoice.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+    INVOICE_PDF("/alfio/templates/invoice.ms", "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return sampleBillingDocument(imageData, organization, event);
         }
     },
 
-    CREDIT_NOTE_PDF("/alfio/templates/credit-note.ms", true, "application/pdf", TemplateManager.TemplateOutput.HTML) {
+    CREDIT_NOTE_PDF("/alfio/templates/credit-note.ms", "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return sampleBillingDocument(imageData, organization, event);
         }
     },
 
-    WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    WAITING_QUEUE_JOINED("/alfio/templates/waiting-queue-joined.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return buildModelForWaitingQueueJoined(organization, event, new CustomerName("Firstname Lastname", "Firstname", "Lastname", event.mustUseFirstAndLastName()));
         }
     },
-    WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             WaitingQueueSubscription subscription = new WaitingQueueSubscription(0, ZonedDateTime.now(), event.getId(), "ACQUIRED", "Firstname Lastname", "Firstname", "Lastname",
@@ -236,13 +236,14 @@ public enum TemplateResource {
     
     
     private final String classPathUrl;
-    private final boolean overridable;
+    // currently not used, might be removed in the future
+    private final boolean overridable; 
     private final String renderedContentType;
     private final TemplateManager.TemplateOutput templateOutput;
 
-    TemplateResource(String classPathUrl, boolean overridable, String renderedContentType, TemplateManager.TemplateOutput templateOutput) {
+    TemplateResource(String classPathUrl, String renderedContentType, TemplateManager.TemplateOutput templateOutput) {
         this.classPathUrl = classPathUrl;
-        this.overridable = overridable;
+        this.overridable = true;
         this.renderedContentType = renderedContentType;
         this.templateOutput = templateOutput;
     }
