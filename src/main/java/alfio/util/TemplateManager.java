@@ -50,7 +50,10 @@ import com.samskivert.mustache.Template;
 
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.EventAndOrganizationId;
+import alfio.model.system.ConfigurationKeys;
 
 /**
  * For hiding the ugliness :)
@@ -69,13 +72,17 @@ public class TemplateManager {
     private final Map<TemplateOutput, Compiler> compilers;
 
     private final UploadedResourceManager uploadedResourceManager;
+    
+    private final ConfigurationManager configurationManager;
 
     private static final Formatter DATE_FORMATTER = o -> (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o) : String.valueOf(o);
 
     public TemplateManager(MessageSourceManager messageSourceManager,
-                           UploadedResourceManager uploadedResourceManager) {
+                           UploadedResourceManager uploadedResourceManager,
+                           ConfigurationManager configurationManager) {
         this.messageSourceManager = messageSourceManager;
         this.uploadedResourceManager = uploadedResourceManager;
+        this.configurationManager = configurationManager;
 
         this.compilers = new EnumMap<>(TemplateOutput.class);
         this.compilers.put(TemplateOutput.TEXT, Mustache.compiler()
@@ -99,9 +106,11 @@ public class TemplateManager {
     	
         var textRender = render(new ClassPathResource(templateResource.classPath()), enrichedModel, locale, event.orElse(null), isMultipart ? TemplateOutput.TEXT : templateResource.getTemplateOutput());
         
-        var htmlRender = templateResource.isMultipart() ? 
+        boolean htmlEnabled = configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, ConfigurationLevel.event(event.orElse(null))).getValueAsBooleanOrDefault(true);
+        
+        var htmlRender = isMultipart && htmlEnabled ? 
         		render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, event.orElse(null), TemplateOutput.HTML) :
-        		(String) null;
+        		null;
         		
     	return Pair.of(textRender, htmlRender);
     }
