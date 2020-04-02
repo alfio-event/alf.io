@@ -119,11 +119,11 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td style="font-size:0px;padding:10px 25px;padding-top:20px;padding-right:0px;padding-bottom:0px;padding-left:0px;word-break:break-word;">
-                      <p style="border-top:solid 1px #f8f8f8;font-size:1px;margin:0px auto;width:100%;">
+                      <p style="border-top:solid 1px #f4f4f4;font-size:1px;margin:0px auto;width:100%;">
                       </p>
                       <!--[if mso | IE]>
         <table
-           align="center" border="0" cellpadding="0" cellspacing="0" style="border-top:solid 1px #f8f8f8;font-size:1px;margin:0px auto;width:600px;" role="presentation" width="600px"
+           align="center" border="0" cellpadding="0" cellspacing="0" style="border-top:solid 1px #f4f4f4;font-size:1px;margin:0px auto;width:600px;" role="presentation" width="600px"
         >
           <tr>
             <td style="height:0;line-height:0;">
@@ -159,8 +159,8 @@
         <tr>
           <td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;">
       <![endif]-->
-    <div style="background:#fcfcfc;background-color:#fcfcfc;margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#fcfcfc;background-color:#fcfcfc;width:100%;">
+    <div style="background:#f8f8f8;background-color:#f8f8f8;margin:0px auto;max-width:600px;">
+      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#f8f8f8;background-color:#f8f8f8;width:100%;">
         <tbody>
           <tr>
             <td style="direction:ltr;font-size:0px;padding:20px 0;padding-bottom:0px;text-align:center;">
@@ -182,11 +182,11 @@
                   </tr>
                   <tr>
                     <td style="font-size:0px;padding:10px 25px;padding-top:20px;padding-right:0px;padding-bottom:0px;padding-left:0px;word-break:break-word;">
-                      <p style="border-top:solid 1px #f8f8f8;font-size:1px;margin:0px auto;width:100%;">
+                      <p style="border-top:solid 1px #f4f4f4;font-size:1px;margin:0px auto;width:100%;">
                       </p>
                       <!--[if mso | IE]>
         <table
-           align="center" border="0" cellpadding="0" cellspacing="0" style="border-top:solid 1px #f8f8f8;font-size:1px;margin:0px auto;width:600px;" role="presentation" width="600px"
+           align="center" border="0" cellpadding="0" cellspacing="0" style="border-top:solid 1px #f4f4f4;font-size:1px;margin:0px auto;width:600px;" role="presentation" width="600px"
         >
           <tr>
             <td style="height:0;line-height:0;">
