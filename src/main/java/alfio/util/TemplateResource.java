@@ -107,7 +107,7 @@ public enum TemplateResource {
             return prepareSampleDataForConfirmationEmail(organization, event);
         }
     },
-    OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER("/alfio/templates/offline-reservation-expiring-email-for-organizer-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    OFFLINE_RESERVATION_EXPIRING_EMAIL_FOR_ORGANIZER("/alfio/templates/offline-reservation-expiring-email-for-organizer", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleModelForOfflineReservationExpiringEmailForOrganizer(event);
@@ -419,7 +419,7 @@ public enum TemplateResource {
     private static Map<String, Object> prepareSampleModelForOfflineReservationExpiringEmailForOrganizer(Event event) {
         Map<String, Object> model = new HashMap<>();
         model.put("eventName", event.getDisplayName());
-        model.put("ticketReservations", Collections.singletonList(new TicketReservationInfo("id", null, "Firstname", "Lastname", "email@email.email", 42, new Date())));
+        model.put("ticketReservations", Collections.singletonList(new TicketReservationInfo("id", null, "Firstname", "Lastname", "email@email.email", 1000, "EUR", 42, new Date())));
         model.put("baseUrl", "http://base-url/");
         model.put("eventShortName", event.getShortName());
         return model;
