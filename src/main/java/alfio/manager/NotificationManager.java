@@ -270,7 +270,7 @@ public class NotificationManager {
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-email-subject", new Object[]{displayName}, locale);
         String text = textBuilder.generate(ticket);
-        String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text);
+        String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text, null);
         String recipient = ticket.getEmail();
         //TODO handle HTML
         tx.execute(status -> {
@@ -321,7 +321,7 @@ public class NotificationManager {
     		htmlRender = null;
     	}
         
-        String checksum = calculateChecksum(recipient, encodedAttachments, subject, textRender);
+        String checksum = calculateChecksum(recipient, encodedAttachments, subject, textRender, htmlRender);
         //in order to minimize the database size, it is worth checking if there is already another message in the table
         Optional<Integer> existing = emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum);
 
@@ -436,13 +436,14 @@ public class NotificationManager {
         }
     }
 
-    private static String calculateChecksum(String recipient, String attachments, String subject, String text)  {
+    private static String calculateChecksum(String recipient, String attachments, String subject, String text, String htmlRender)  {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             digest.update(recipient.getBytes(StandardCharsets.UTF_8));
             digest.update(subject.getBytes(StandardCharsets.UTF_8));
             Optional.ofNullable(attachments).ifPresent(v -> digest.update(v.getBytes(StandardCharsets.UTF_8)));
             digest.update(text.getBytes(StandardCharsets.UTF_8));
+            if(htmlRender != null) digest.update(htmlRender.getBytes(StandardCharsets.UTF_8));
             return new String(Hex.encode(digest.digest()));
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
