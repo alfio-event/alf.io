@@ -5,7 +5,7 @@
 # - https://august.nagro.us/small-java.html
 #
 
-FROM azul/zulu-openjdk-alpine:11.0.5 as zulu
+FROM azul/zulu-openjdk-alpine:11.0.6 as zulu
 
 RUN $JAVA_HOME/bin/jlink --compress=1 --strip-debug --no-header-files --no-man-pages \
     --module-path $JAVA_HOME/jmods \
@@ -15,7 +15,7 @@ RUN $JAVA_HOME/bin/jlink --compress=1 --strip-debug --no-header-files --no-man-p
     --include-locales en,it,es,nl,fr,de,ro,pt,tr,pl \
     --output /jlinked
 
-FROM alpine:3.11.3
+FROM alpine:3.11.5
 
 COPY --from=zulu /jlinked /opt/jdk/
 
