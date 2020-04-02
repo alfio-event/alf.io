@@ -175,6 +175,7 @@ A big "Thank you" goes also to our translators, who help us on [POEditor](https:
 | Dutch (nl)      | Matthjis      |    | |
 | Turkish (tr)    | Dilek         |      | |
 | Spanish (es)    | Mario Varona  |    [@mvarona](https://www.github.com/mvarona)   | [@MarioVarona](https://www.twitter.com/MarioVarona) |
+| Spanish (es)    | Sergi Almar   |    [@salmar](https://www.github.com/salmar)   | [@sergialmar](https://www.twitter.com/sergialmar) |
 | Spanish (es)    | Jeremias      |    | |
 | Bulgarian (bg)  | Martin Zhekov |  [@Martin03](https://www.github.com/Martin03)  | [@MartensZone](https://www.twitter.com/MartensZone) |
 | Portuguese (pt) | Hugo          |    | |
