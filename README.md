@@ -164,6 +164,50 @@ It will expire the 02/07/23 (as https://www.apple.com/certificateauthority/).
 This project exists thanks to all the people who contribute.
 <a href="https://github.com/alfio-event/alf.io/graphs/contributors"><img src="https://opencollective.com/alfio/contributors.svg?width=890&button=false" /></a>
 
+### Translation Contributors (POEditor)
+
+A big "Thank you" goes also to our translators, who help us on [POEditor](https://poeditor.com/join/project/ttBYTmPYdr):
+
+(we show the complete name/profile only if we have received explicit consent to do so)
+
+| Language        | Name          | Github  | Twitter |
+| -------------   |:--------------| -----:  |---|
+| Dutch (nl)      | Matthjis      |    | |
+| Turkish (tr)    | Dilek         |      | |
+| Spanish (es)    | Mario Varona  |    [@mvarona](https://www.github.com/mvarona)   | [@MarioVarona](https://www.twitter.com/MarioVarona) |
+| Spanish (es)    | Sergi Almar   |    [@salmar](https://www.github.com/salmar)   | [@sergialmar](https://www.twitter.com/sergialmar) |
+| Spanish (es)    | Jeremias      |    | |
+| Bulgarian (bg)  | Martin Zhekov |  [@Martin03](https://www.github.com/Martin03)  | [@MartensZone](https://www.twitter.com/MartensZone) |
+| Portuguese (pt) | Hugo          |    | |
+| Swedish (sv)    | Johan         |    | |
+| Romanian (ro)   | Daniel        |    | |
+| Polish (pl)     | Pawel        |    | |
+| Danish (da)     | Sune        |    | |
+
+translations completed but not yet integrated (WIP)
+
+| Language        | Name          | Github  | Twitter |
+| -------------   |:--------------| -----:  |---|
+| Japanese (jp) | Martin      |    | |
+| Chinese (Taiwan) (cn_TW) | Yu-cheng, Lin      |    | |
+
+### Sponsors
+
+This project is sponsored by:
+
+<a href="https://swicket.io" target="_blank">
+  <img alt="Swicket" src="https://swicket.io/logo-web.png" width="200">
+</a>
+<br><br>
+<img alt="Exteso" src="https://alf.io/img/logos/exteso_logo.jpg" width="150"> &nbsp; 
+<a href="https://www.amicidelticino.ch/" target="_blank">
+  <img alt="Amici del Ticino" src="https://alf.io/img/logos/amicidelticino-logo.png" width="120">
+</a>&nbsp;
+<a href="https://www.netlify.com/" target="_blank">
+  <img alt="Netlify" src="https://www.netlify.com/img/global/badges/netlify-color-accent.svg" width="120">
+</a>
+
+
 ### Financial Contributors
 
 Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/alfio/contribute)]
@@ -176,7 +220,7 @@ Become a financial contributor and help us sustain our community. [[Contribute](
 
 Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/alfio/contribute)]
 
-<a href="https://opencollective.com/alfio/organization/0/website"><img src="https://opencollective.com/alfio/organization/0/avatar.svg"></a>
-<a href="https://opencollective.com/alfio/organization/0/website"><img src="https://opencollective.com/alfio/organization/1/avatar.svg"></a>
+<a href="https://opencollective.com/alfio/organization/0/website"><img src="https://images.opencollective.com/spring_io/01a0fe1/logo.png" height="100"></a> &nbsp;
+<a href="https://opencollective.com/alfio/organization/1/website"><img src="https://images.opencollective.com/salesforce/ca8f997/logo/256.png" height="100"></a> &nbsp;
 <a href="https://opencollective.com/alfio/organization/2/website"><img src="https://opencollective.com/alfio/organization/2/avatar.svg"></a>
 
