@@ -1,0 +1,179 @@
+<mjml>
+  <mj-head>
+	    <mj-font name="Raleway" href="https://fonts.googleapis.com/css?family=Raleway" />
+	    <mj-style>
+	      a {
+	      	color: #0056b3;
+	      	text-decoration: none;
+	      }
+	      a:hover {
+	      	color: #0056b3;
+	      	text-decoration: underline;
+	      }
+	      tr {
+	      	line-height:2;
+	      	text-align:center;
+	      }
+
+	      tr .bottom-border {
+	      	border-bottom:2px solid #ecedee;
+	      }
+	    </mj-style>
+	  </mj-head>
+	<mj-body background-color="#e5e5e5">
+		<mj-section padding-bottom="0px" background-color="white">
+			<mj-column width="100%">
+				<mj-divider
+					padding-top="20px" padding-bottom="0px" padding-left="0px"
+					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+			</mj-column>
+		</mj-section>
+		<mj-section padding-bottom="0px" background-color="#f8f8f8">
+			<mj-column width="100%">
+				<mj-text align="center" font-size="20px" color="grey"
+					font-family="Helvetica Neue" font-weight="200">
+					{{event.displayName}}
+				</mj-text>
+				<mj-divider
+					padding-top="20px" padding-bottom="0px" padding-left="0px"
+					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+			</mj-column>
+		</mj-section>
+
+		<mj-section background-color="white">
+			<mj-column width="100%">
+        <mj-text font-family="Raleway, Helvetica Neue" align="left" font-size="14px">
+        	{{#i18n}}email.hello [{{ticketReservation.fullName}}]{{/i18n}}<br/>{{custom-header-text}}
+        </mj-text>
+        
+				<mj-text font-family="Raleway, Helvetica Neue" align="left" font-size="14px">
+	            {{^orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.completed [{{event.displayName}}] [<a href="{{reservationUrl}}">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}
+	            {{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.waiting-for-payment [{{event.displayName}}] [<a href="{{reservationUrl}}">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}
+				</mj-text>
+		    <mj-button background-color="#28a745" href="{{reservationUrl}}">
+		        View reservation
+		    </mj-button>
+			</mj-column>
+		</mj-section>
+    
+    <mj-section background-color="#f8f8ff">
+		<mj-column width="130px">
+			<mj-image src="{{baseUrl}}/resources/images/email/icon_calendar.png"></mj-image>
+		</mj-column>
+		<mj-column width="350px">
+			<mj-text font-size="20px" align="center" font-family="Raleway, helvetica" color="#212529">
+				{{#i18n}}email-confirmation.reservation-summary{{/i18n}}
+			</mj-text>
+
+			
+			<mj-table font-family="Raleway, helvetica" padding="0 15px">
+			
+				{{#orderSummary.summary}}
+				<tr class="bottom-border">
+					<th class="header">{{#i18n}}email-confirmation.summary.category{{/i18n}}</th>
+					<td>{{name}}</td>
+				</tr>
+				<tr class="bottom-border">
+					<th class="header">{{#i18n}}email-confirmation.summary.quantity{{/i18n}}</th>
+					<td>{{amount}}</td>
+				</tr>
+				{{^orderSummary.free}}
+				<tr class="bottom-border">
+					<th>{{#i18n}}email-confirmation.summary.subtotal{{/i18n}}</th>
+					<td>{{subTotal}} {{event.currency}}</td>
+				</tr>
+				{{/orderSummary.free}}
+				{{/orderSummary.summary}}
+				
+				{{^orderSummary.free}}{{^ticketReservation.vatIncluded}}
+				<tr class="bottom-border">
+					<th>{{#i18n}}reservation-page.vat [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</th>
+					<td>{{orderSummary.totalVAT}} {{event.currency}}</td>
+				</tr>
+      			{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
+      			
+				<tr class="bottom-border">
+					<th>{{#i18n}}reservation-page.total{{/i18n}}</th>
+					<td>{{orderSummary.totalPrice}} {{event.currency}}</td>
+				</tr>
+				
+				{{^orderSummary.free}}{{#ticketReservation.vatIncluded}}
+				<tr class="bottom-border">
+					<th>{{#i18n}}reservation-page.vat-included [{{ticketReservation.usedVatPercent}}] [{{vatTranslation}}]{{/i18n}}</th>
+					<td>{{orderSummary.totalVAT}} {{event.currency}}</td>
+				</tr>
+				{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
+				
+				{{^orderSummary.free}}{{#hasVat}}
+				<tr class="bottom-border">
+					<th>{{#i18n}}email-confirmation.vatNr [{{vatTranslation}}]{{/i18n}}</th>
+					<td>{{vatNr}}</td>
+				</tr>
+				{{/hasVat}}{{/orderSummary.free}}
+				
+				<tr class="bottom-border">
+					<th>{{#i18n}}email-confirmation.order-information{{/i18n}}</th>
+					<td>{{ticketReservation.id}}</td>
+				</tr>
+			</mj-table>
+			
+			<mj-text align="center" font-family="Raleway, helvetica">
+      			{{#orderSummary.notYetPaid}}{{#i18n}}reservation.not-yet-paid [{{orderSummary.totalPrice}} {{event.currency}}]{{/i18n}}{{/orderSummary.notYetPaid}}
+				<br/>
+     			{{custom-body-text}}
+    		</mj-text>
+		</mj-column>
+	</mj-section>
+    
+    <mj-section background-color="white">
+		<mj-column width="130px">
+   			<mj-image src="{{baseUrl}}/resources/images/email/icon_map.png"></mj-image>
+		</mj-column>
+		<mj-column width="350px">
+			<mj-text font-size="20px" align="center" font-family="helvetica" color="#212529">
+				{{#i18n}}email.event-info{{/i18n}} {{#custom-footer-text?}}Hola{{/custom-footer-text?}}
+			</mj-text>
+			
+			<mj-raw>{{^event.online}}</mj-raw>
+			<mj-text align="center" font-family="Raleway, helvetica">{{#i18n}}email.event-reminder-location{{/i18n}}</mj-text>
+			
+			<mj-text align="center" font-family="Raleway, helvetica" font-weight="bold" font-size="16px">{{event.location}}</mj-text>
+			
+			<mj-text align="center" font-family="Raleway, helvetica">{{#i18n}}email.event-reminder-date{{/i18n}}</mj-text>
+			<mj-raw>{{/event.online}}</mj-raw>
+			
+    	
+    		<mj-raw>{{#event.online}}</mj-raw>
+			<mj-text align="center" font-family="Raleway, helvetica" font-size="14px">{{#i18n}}event.location.online{{/i18n}}</mj-text>
+			<mj-raw>{{/event.online}}</mj-raw>
+    	
+    		<mj-raw>{{#event.sameDay}}</mj-raw>
+    		<mj-text align="center" font-family="Raleway, helvetica" font-size="16px" font-weight="bold">
+				{{#i18n}}event-days.same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}] {{/i18n}}
+    		</mj-text>
+    		<mj-raw>{{/event.sameDay}}</mj-raw>
+    		
+    		<mj-raw>{{^event.sameDay}}</mj-raw>
+			<mj-table font-size="16px" font-weight="bold" >
+				<tr class="bottom-border">
+					<td>{{#i18n}}event-days.not-same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]{{/i18n}}</td>
+				</tr>
+				<tr>
+					<td>{{#i18n}}event-days.not-same-day [{{#format-date}}{{event.end}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}]{{/i18n}}</td>
+				</tr>
+			</mj-table>
+			<mj-raw>{{/event.sameDay}}</mj-raw>
+		</mj-column>
+	</mj-section>
+	
+	<mj-raw>{{#custom-footer-text?}}</mj-raw>
+    <mj-section background-color="white">
+      <mj-column width="100%">
+    	<mj-text align="center" font-family="Raleway, helvetica">
+        	{{custom-footer-text}}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+    <mj-raw>{{/custom-footer-text?}}</mj-raw>
+	</mj-body>
+</mjml>

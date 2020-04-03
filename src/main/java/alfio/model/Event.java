@@ -231,6 +231,11 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     public boolean isOnline() {
         return format == EventFormat.ONLINE;
     }
+    
+    // mustache
+    public boolean getOnline() {
+    	return isOnline();
+    }
 
     public boolean getUseFirstAndLastName() {
         return mustUseFirstAndLastName();

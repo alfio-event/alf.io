@@ -77,7 +77,7 @@ public enum TemplateResource {
             return prepareModelForSendReservedCode(organization, event, new SendCodeModification("CODE", "Firstname Lastname", "email@email.tld", "en"), "http://your-domain.tld/event-page", "Promotional");
         }
     },
-    CONFIRMATION_EMAIL("/alfio/templates/confirmation-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    CONFIRMATION_EMAIL("/alfio/templates/confirmation-email", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             return prepareSampleDataForConfirmationEmail(organization, event);
