@@ -654,9 +654,12 @@ public class AdminReservationManager {
     }
 
     @Transactional
-    public void removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username) {
-        removeReservation(eventName, reservationId, refund, notify, username, true)
-            .ifSuccess(pair -> markAsCancelled(pair.getRight(), username, pair.getLeft().getId()));
+    public Result<Boolean> removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username) {
+        return removeReservation(eventName, reservationId, refund, notify, username, true)
+            .map(pair -> {
+                markAsCancelled(pair.getRight(), username, pair.getLeft().getId());
+                return true;
+            });
     }
 
     @Transactional
@@ -666,10 +669,18 @@ public class AdminReservationManager {
     }
 
     private Result<Pair<Event, TicketReservation>> removeReservation(String eventName, String reservationId, boolean refund, boolean notify, String username, boolean removeReservation) {
-        return loadReservation(eventName, reservationId, username).map(res -> {
+        return loadReservation(eventName, reservationId, username).flatMap(res -> {
             Event e = res.getRight();
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
+
+            if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
+                //fully refund
+                boolean refundResult = paymentManager.refund(reservation, e, null, username);
+                if(!refundResult) {
+                    return Result.error(ErrorCode.custom("refund.failed", "Cannot perform refund"));
+                }
+            }
 
             specialPriceRepository.resetToFreeAndCleanupForReservation(List.of(reservationId));
 
@@ -677,11 +688,7 @@ public class AdminReservationManager {
 
             additionalServiceItemRepository.updateItemsStatusWithReservationUUID(reservation.getId(), AdditionalServiceItem.AdditionalServiceItemStatus.CANCELLED);
 
-            if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
-                //fully refund
-                paymentManager.refund(reservation, e, null, username);
-            }
-            return Pair.of(e, reservation);
+            return Result.success(Pair.of(e, reservation));
         });
     }
 

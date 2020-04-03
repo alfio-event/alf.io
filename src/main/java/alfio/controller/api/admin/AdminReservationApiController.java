@@ -194,8 +194,7 @@ public class AdminReservationApiController {
     public Result<Boolean> removeReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, @RequestParam("refund") boolean refund,
                                              @RequestParam(value = "notify", defaultValue = "false") boolean notify,
                                              Principal principal) {
-        adminReservationManager.removeReservation(eventName, reservationId, refund, notify, principal.getName());
-        return Result.success(true);
+        return adminReservationManager.removeReservation(eventName, reservationId, refund, notify, principal.getName());
     }
 
     @PostMapping("/event/{eventName}/{reservationId}/credit")

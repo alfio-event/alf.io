@@ -45,6 +45,7 @@ public class Audit {
         PAYMENT_CONFIRMED,
         PAYMENT_ALREADY_CONFIRMED,
         REFUND,
+        REFUND_ATTEMPT_FAILED,
         CHECK_IN,
         MANUAL_CHECK_IN,
         REVERT_CHECK_IN,
@@ -71,6 +72,7 @@ public class Audit {
         AUTOMATIC_PAYMENT_CONFIRMATION,
         AUTOMATIC_PAYMENT_CONFIRMATION_FAILED,
         DYNAMIC_DISCOUNT_CODE_CREATED
+
     }
 
     private final String reservationId;
