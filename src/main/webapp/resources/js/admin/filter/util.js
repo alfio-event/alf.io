@@ -152,6 +152,14 @@
             }
             return formatted;
         }
+    });
+
+    filters.filter('removeIncompatiblePaymentMethods', function() {
+        return function(methods, event) {
+            return _.filter(methods, function(method) {
+                return method.proxy.id !== 'ON_SITE' || event.format !== 'ONLINE';
+            });
+        }
     })
 
 })();

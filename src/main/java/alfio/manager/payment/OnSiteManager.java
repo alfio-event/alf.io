@@ -18,6 +18,7 @@ package alfio.manager.payment;
 
 import alfio.manager.support.PaymentResult;
 import alfio.manager.system.ConfigurationManager;
+import alfio.model.system.ConfigurationPathLevel;
 import alfio.model.transaction.*;
 import alfio.repository.TransactionRepository;
 import lombok.AllArgsConstructor;
@@ -70,8 +71,8 @@ public class OnSiteManager implements PaymentProvider {
 
     @Override
     public boolean isActive(PaymentContext paymentContext) {
-        return configurationManager.getFor(ON_SITE_ENABLED, paymentContext.getConfigurationLevel())
-            .getValueAsBooleanOrDefault(false);
+        return configurationManager.getFor(ON_SITE_ENABLED, paymentContext.getConfigurationLevel()).getValueAsBooleanOrDefault(false)
+            && (paymentContext.getConfigurationLevel().getPathLevel() != ConfigurationPathLevel.EVENT || !paymentContext.getEvent().isOnline());
     }
 
     @Override
