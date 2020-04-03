@@ -58,6 +58,7 @@ class BaseStripeManager {
 
     static final String STRIPE_MANAGER_TYPE_KEY = "stripeManagerType";
     static final String SUCCEEDED = "succeeded";
+    static final String PENDING = "pending";
     private final ConfigurationManager configurationManager;
     private final ConfigurationRepository configurationRepository;
     private final TicketRepository ticketRepository;
@@ -260,8 +261,9 @@ class BaseStripeManager {
             if(requestOptionsOptional.isPresent()) {
                 RequestOptions options = requestOptionsOptional.get();
                 Refund r = Refund.create(params, options);
-                if(SUCCEEDED.equals(r.getStatus())) {
-                    log.info("Stripe: refund for payment {} executed with success for amount: {}", chargeId, amountOrFull);
+                boolean pending = PENDING.equals(r.getStatus());
+                if(SUCCEEDED.equals(r.getStatus()) || pending) {
+                    log.info("Stripe: refund for payment {} {} for amount: {}", chargeId, pending ? "registered": "executed with success", amountOrFull);
                     return true;
                 } else {
                     log.warn("Stripe: was not able to refund payment with id {}, returned status is not 'succeded' but {}", chargeId, r.getStatus());

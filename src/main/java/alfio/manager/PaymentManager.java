@@ -144,15 +144,21 @@ public class PaymentManager {
             .map(paymentProvider -> ((RefundRequest)paymentProvider).refund(transaction, event, amount))
             .orElse(false);
 
+        Map<String, Object> changes = Map.of(
+            "refund", amount != null ? amount.toString() : "full",
+            "paymentMethod", reservation.getPaymentMethod().toString()
+        );
         if(res) {
-            Map<String, Object> changes = new HashMap<>();
-            changes.put("refund", amount != null ? amount.toString() : "full");
-            changes.put("paymentMethod", reservation.getPaymentMethod().toString());
             auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
                 event.getId(),
                 Audit.EventType.REFUND, new Date(), Audit.EntityType.RESERVATION, reservation.getId(),
                 Collections.singletonList(changes));
             extensionManager.handleRefund(event, reservation, getInfo(reservation, event));
+        } else {
+            auditingRepository.insert(reservation.getId(), userRepository.findIdByUserName(username).orElse(null),
+                event.getId(),
+                Audit.EventType.REFUND_ATTEMPT_FAILED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(),
+                Collections.singletonList(changes));
         }
 
         return res;
