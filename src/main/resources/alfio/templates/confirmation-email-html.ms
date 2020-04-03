@@ -268,7 +268,7 @@
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
                       <div style="font-family:Raleway, Helvetica Neue;font-size:14px;line-height:1;text-align:left;color:#000000;">{{^orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.completed [{{event.displayName}}] [<a href="{{reservationUrl}}">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}
-                        {{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.waiting-for-payment [{{event.displayName}}] [<a href="{{reservationUrl}}">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}</div>
+                        {{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.waiting-for-payment [{{event.displayName}}] [<a href="{{reservationUrl}}" rel="notrack">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}</div>
                     </td>
                   </tr>
                   <tr>

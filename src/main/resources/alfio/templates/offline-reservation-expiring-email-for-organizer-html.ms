@@ -252,10 +252,10 @@
                         {{#ticketReservations}}
                           <tr style="border-bottom:1px solid #ecedee">
                             <td>{{#format-date}}{{zonedExpiration}} yyyy-MM-dd HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</td>
-                            <td>{{fullName}}<br /><a href="mailto:{{email}}">{{email}}</a></td>
+                            <td>{{fullName}}<br /><a href="mailto:{{email}}" rel="notrack">{{email}}</a></td>
                             <td>{{totalAmount}} {{currencyCode}}</td>
                             <td>
-                              <a href="{{baseUrl}}/admin/#/events/{{eventShortName}}/reservation/{{id}}" align="center"> View reservation </a>
+                              <a href="{{baseUrl}}/admin/#/events/{{eventShortName}}/reservation/{{id}}" rel="notrack" align="center"> View reservation </a>
                             </td>
                           </tr>
                         {{/ticketReservations}}

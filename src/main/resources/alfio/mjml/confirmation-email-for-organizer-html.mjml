@@ -81,7 +81,7 @@
 					{{/italianEInvoicing}}
 					{{/ticketReservation.invoicingAdditionalInfo}}
 				</mj-text>
-				<mj-button background-color="#28a745" href="{{reservationUrl}}" align="center">
+				<mj-button background-color="#28a745" href="{{reservationUrl}}" rel="notrack" align="center">
 					View reservation
 				</mj-button>
 			</mj-column>
