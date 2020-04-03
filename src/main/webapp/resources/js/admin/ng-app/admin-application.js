@@ -1212,7 +1212,9 @@
                     $scope.eventPrices = parentScope.eventPrices;
                     $scope.event = parentScope.event;
                     var seats = $scope.event.availableSeats;
-                    $scope.allowedPaymentProxies = parentScope.allowedPaymentProxies;
+                    $scope.allowedPaymentProxies = _.filter(parentScope.allowedPaymentProxies, function(pp) {
+                        return pp.id !== 'ON_SITE' || !parentScope.event.online;
+                    });
 
                     $scope.cancel = function() {
                         $scope.$dismiss('canceled');

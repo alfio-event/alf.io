@@ -57,7 +57,7 @@
     </div>
     <div data-ng-if="!obj.freeOfCharge">
         <label>Accepted payment methods</label>
-        <div class="checkbox" ng-repeat="p in paymentProxies">
+        <div class="checkbox" ng-repeat="p in paymentProxies | removeIncompatiblePaymentMethods:obj">
             <label><input type="checkbox" ng-model="p.selected" ng-click="updatePaymentProxies()"> {{p.proxy.description}}</label>
         </div>
         <span class="help-block" data-ng-if="(allowedPaymentProxies | paymentMethodFilter:true: obj.currency).length > 0"><i class="fa fa-info-circle"></i> The following Methods are not available: <span data-ng-repeat="p in allowedPaymentProxies | paymentMethodFilter:true: obj.currency">{{p.id}}<span data-ng-if="!$last">, </span></span>. Please check that the provider support the selected currency or the <a data-ui-sref="configuration.organization({organizationId: obj.organizationId})">configuration</a>.</span>
