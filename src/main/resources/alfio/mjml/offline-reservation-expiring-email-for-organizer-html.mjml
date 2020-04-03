@@ -1,0 +1,71 @@
+<mjml>
+	<mj-head>
+	    <mj-font name="Source Sans Pro" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" />
+	    <mj-attributes>
+	    	<mj-all font-family="Source Sans Pro, Helvetica" />
+	    </mj-attributes>
+	    <mj-style>
+	      a {
+	      	color: #0056b3;
+	      	text-decoration: none;
+	      }
+	      a:hover {
+	      	color: #0056b3;
+	      	text-decoration: underline;
+	      }
+	      tr {
+	      	line-height:2;
+	      	text-align:center;
+	      }
+	    </mj-style>
+	  </mj-head>
+	<mj-body background-color="#e5e5e5">
+		<mj-section padding-bottom="0px" background-color="white">
+			<mj-column width="100%">
+				<mj-divider
+					padding-top="20px" padding-bottom="0px" padding-left="0px"
+					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+			</mj-column>
+		</mj-section>
+		<mj-section padding-bottom="0px" background-color="#f8f8f8">
+			<mj-column width="100%">
+				<mj-text align="center" font-family="Helvetica Neue" font-size="20px" color="grey" font-weight="200">
+					Pending Reservations
+				</mj-text>
+				<mj-divider
+					padding-top="20px" padding-bottom="0px" padding-left="0px"
+					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+			</mj-column>
+		</mj-section>
+
+		<mj-section background-color="white">
+			<mj-column width="100%">
+				<mj-text align="center" font-size="15px" color="#000" padding="30px">
+					For event {{eventName}} the following offline reservation are going to expire soon:
+				</mj-text>
+				<mj-table padding="0 15px">
+					<tr style="border-bottom:2px solid #ecedee">
+						<th>Expiration Date</th>
+						<th>Name</th>
+           	 			<th>Total Amount</th>
+						<th style="text-align:right"></th>
+					</tr>
+					{{#ticketReservations}}
+					<tr style="border-bottom:1px solid #ecedee">
+						<td>{{#format-date}}{{zonedExpiration}} yyyy-MM-dd HH:mm locale:{{#i18n}}locale{{/i18n}}{{/format-date}}</td>
+						<td>{{fullName}}<br/><a href="mailto:{{email}}" rel="notrack">{{email}}</a></td>
+            			<td>{{totalAmount}} {{currencyCode}}</td>
+						<td>
+							<a href="{{baseUrl}}/admin/#/events/{{eventShortName}}/reservation/{{id}}" rel="notrack" align="center">
+								View reservation
+							</a>
+			            </td>
+					</tr>
+					 {{/ticketReservations}}
+					
+				</mj-table>
+				
+			</mj-column>
+		</mj-section>
+	</mj-body>
+</mjml>

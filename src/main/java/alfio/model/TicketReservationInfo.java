@@ -16,10 +16,11 @@
  */
 package alfio.model;
 
+import java.util.Date;
+
+import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
 import lombok.Getter;
-
-import java.util.Date;
 
 @Getter
 public class TicketReservationInfo {
@@ -29,6 +30,8 @@ public class TicketReservationInfo {
     private final String firstName;
     private final String lastName;
     private final String email;
+    private final Integer finalPriceCts;
+    private final String currencyCode;
     private final int eventId;
     private final Date validity;
 
@@ -37,6 +40,8 @@ public class TicketReservationInfo {
                                  @Column("first_name") String firstName,
                                  @Column("last_name") String lastName,
                                  @Column("email_address") String email,
+                                 @Column("final_price_cts") Integer finalPriceCts,
+                                 @Column("currency_code") String currencyCode,
                                  @Column("event_id_fk") int eventId,
                                  @Column("validity") Date validity) {
         this.id = id;
@@ -44,6 +49,8 @@ public class TicketReservationInfo {
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.finalPriceCts = finalPriceCts;
+        this.currencyCode = currencyCode;
         this.eventId = eventId;
         this.validity = validity;
     }
@@ -52,4 +59,10 @@ public class TicketReservationInfo {
         return (firstName != null && lastName != null) ? (firstName + " " + lastName) : fullName;
     }
 
+    public String getTotalAmount() {
+        if(finalPriceCts > 0) {
+            return MonetaryUtil.formatCents(finalPriceCts, currencyCode);
+        }
+        return null;
+    }
 }

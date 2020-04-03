@@ -16,18 +16,20 @@
  */
 package alfio.model;
 
-import alfio.util.Json;
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import com.google.gson.reflect.TypeToken;
-import lombok.Getter;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import com.google.gson.reflect.TypeToken;
+
+import alfio.util.Json;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import lombok.Getter;
 
 @Getter
 public class EmailMessage implements Comparable<EmailMessage> {
@@ -35,7 +37,7 @@ public class EmailMessage implements Comparable<EmailMessage> {
     public enum Status {
         WAITING, RETRY, IN_PROCESS, SENT, ERROR
     }
-
+    
     private final int id;
     private final int eventId;
     private final Status status;
@@ -43,6 +45,7 @@ public class EmailMessage implements Comparable<EmailMessage> {
     private final List<String> cc;
     private final String subject;
     private final String message;
+    private final String htmlMessage;
     private final String attachments;
     private final String checksum;
     private final ZonedDateTime requestTimestamp;
@@ -55,6 +58,7 @@ public class EmailMessage implements Comparable<EmailMessage> {
                         @Column("recipient") String recipient,
                         @Column("subject") String subject,
                         @Column("message") String message,
+                        @Column("html_message") String htmlMessage,
                         @Column("attachments") String attachments,
                         @Column("checksum") String checksum,
                         @Column("request_ts") ZonedDateTime requestTimestamp,
@@ -69,6 +73,7 @@ public class EmailMessage implements Comparable<EmailMessage> {
         this.recipient = recipient;
         this.subject = subject;
         this.message = message;
+        this.htmlMessage = htmlMessage;
         this.attachments = attachments;
         this.checksum = checksum;
         this.attempts = attempts;

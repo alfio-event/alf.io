@@ -16,19 +16,8 @@
  */
 package alfio.util;
 
-import alfio.manager.UploadedResourceManager;
-import alfio.manager.i18n.MessageSourceManager;
-import alfio.model.EventAndOrganizationId;
-import com.samskivert.mustache.Mustache;
-import com.samskivert.mustache.Mustache.Compiler;
-import com.samskivert.mustache.Mustache.Formatter;
-import com.samskivert.mustache.Template;
-import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.context.MessageSource;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.web.servlet.ModelAndView;
+import static alfio.util.MustacheCustomTag.ADDITIONAL_FIELD_VALUE;
+import static alfio.util.MustacheCustomTag.COUNTRY_NAME;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -37,12 +26,34 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static alfio.util.MustacheCustomTag.ADDITIONAL_FIELD_VALUE;
-import static alfio.util.MustacheCustomTag.COUNTRY_NAME;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.context.MessageSource;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.web.servlet.ModelAndView;
+
+import com.samskivert.mustache.Mustache;
+import com.samskivert.mustache.Mustache.Compiler;
+import com.samskivert.mustache.Mustache.Formatter;
+import com.samskivert.mustache.Template;
+
+import alfio.manager.UploadedResourceManager;
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.EventAndOrganizationId;
+import alfio.model.system.ConfigurationKeys;
 
 /**
  * For hiding the ugliness :)
@@ -61,13 +72,17 @@ public class TemplateManager {
     private final Map<TemplateOutput, Compiler> compilers;
 
     private final UploadedResourceManager uploadedResourceManager;
+    
+    private final ConfigurationManager configurationManager;
 
     private static final Formatter DATE_FORMATTER = o -> (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o) : String.valueOf(o);
 
     public TemplateManager(MessageSourceManager messageSourceManager,
-                           UploadedResourceManager uploadedResourceManager) {
+                           UploadedResourceManager uploadedResourceManager,
+                           ConfigurationManager configurationManager) {
         this.messageSourceManager = messageSourceManager;
         this.uploadedResourceManager = uploadedResourceManager;
+        this.configurationManager = configurationManager;
 
         this.compilers = new EnumMap<>(TemplateOutput.class);
         this.compilers.put(TemplateOutput.TEXT, Mustache.compiler()
@@ -84,14 +99,26 @@ public class TemplateManager {
             .withFormatter(DATE_FORMATTER));
     }
 
-    private String renderTemplate(Optional<? extends EventAndOrganizationId> event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
-        return render(new ClassPathResource(templateResource.classPath()), modelEnricher(model, event, locale), locale, event.orElse(null), templateResource.getTemplateOutput());
+    
+    private Pair<String, String> renderTemplate(Optional<? extends EventAndOrganizationId> event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+    	var enrichedModel = modelEnricher(model, event, locale);
+    	var isMultipart = templateResource.isMultipart();
+    	
+        var textRender = render(new ClassPathResource(templateResource.classPath()), enrichedModel, locale, event.orElse(null), isMultipart ? TemplateOutput.TEXT : templateResource.getTemplateOutput());
+        
+        boolean htmlEnabled = configurationManager.getFor(ConfigurationKeys.ENABLE_HTML_EMAILS, ConfigurationLevel.event(event.orElse(null))).getValueAsBooleanOrDefault(true);
+        
+        var htmlRender = isMultipart && htmlEnabled ? 
+        		render(new ClassPathResource(templateResource.htmlClassPath()), enrichedModel, locale, event.orElse(null), TemplateOutput.HTML) :
+        		null;
+        		
+    	return Pair.of(textRender, htmlRender);
     }
 
-    public String renderTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
+    public Pair<String, String> renderTemplate(EventAndOrganizationId event, TemplateResource templateResource, Map<String, Object> model, Locale locale) {
         Map<String, Object> updatedModel = modelEnricher(model, Optional.of(event), locale);
         return uploadedResourceManager.findCascading(event.getOrganizationId(), event.getId(), templateResource.getSavedName(locale))
-            .map(resource -> render(new ByteArrayResource(resource), updatedModel, locale, event, templateResource.getTemplateOutput()))
+            .map(resource -> Pair.of(render(new ByteArrayResource(resource), updatedModel, locale, event, templateResource.getTemplateOutput()), (String) null))
             .orElseGet(() -> renderTemplate(Optional.of(event), templateResource, updatedModel, locale));
     }
 

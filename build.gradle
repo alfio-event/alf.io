@@ -57,6 +57,7 @@ plugins {
     id 'org.springframework.boot' version '2.2.2.RELEASE'
     id 'org.sonarqube' version '2.8'
     id 'net.ltgt.errorprone' version '1.1.1'
+	id 'com.github.node-gradle.node' version '2.2.3'
 }
 
 apply plugin: 'java'
@@ -475,3 +476,14 @@ release {
 // see https://github.com/freefair/gradle-plugins/issues/31#issuecomment-475355674
 // since we have a custom lombok.config configuration file, we disable automatic override
 generateLombokConfig.enabled = false
+
+// MJML email templates translations to HTML
+node {
+    download = true
+}
+
+task mjmlToHtml( type: NodeTask, dependsOn: 'npmInstall' ) {
+    script = file( 'src/main/node/mjmlToHtml.js' )
+}
+
+build.dependsOn mjmlToHtml

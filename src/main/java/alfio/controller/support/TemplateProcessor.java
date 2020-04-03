@@ -72,7 +72,7 @@ public final class TemplateProcessor {
                                                                Map<String, Object> additionalOptions) {
         return ticket -> {
             Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, calendarURL, ticket, category, additionalOptions);
-            return templateManager.renderTemplate(event, event.getIsOnline() ? TemplateResource.TICKET_EMAIL_FOR_ONLINE_EVENT : TemplateResource.TICKET_EMAIL, model, language);
+            return templateManager.renderTemplate(event, event.getIsOnline() ? TemplateResource.TICKET_EMAIL_FOR_ONLINE_EVENT : TemplateResource.TICKET_EMAIL, model, language).getLeft();
         };
     }
 
@@ -84,7 +84,7 @@ public final class TemplateProcessor {
                                                                       Locale language) {
         return newTicket -> {
             Map<String, Object> emailModel = TemplateResource.buildModelForTicketHasChangedOwner(organization, e, oldTicket, newTicket, ticketUrl);
-            return templateManager.renderTemplate(e, TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language);
+            return templateManager.renderTemplate(e, TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language).getLeft();
         };
     }
 
@@ -105,7 +105,7 @@ public final class TemplateProcessor {
         Map<String, Object> model = TemplateResource.buildModelForTicketPDF(organization, event, ticketReservation, ticketCategory, ticket, imageData, reservationID,
             fields.stream().collect(Collectors.toMap(TicketFieldConfigurationDescriptionAndValue::getName, TicketFieldConfigurationDescriptionAndValue::getValueDescription)));
 
-        String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language);
+        String page = templateManager.renderTemplate(event, TemplateResource.TICKET_PDF, model, language).getLeft();
         renderToPdf(page, os, extensionManager, event);
     }
 
@@ -227,7 +227,7 @@ public final class TemplateProcessor {
             model.put("imageWidth", imageData.getImageWidth());
             model.put("imageHeight", imageData.getImageHeight());
         });
-        return templateManager.renderTemplate(event, templateResource, model, language);
+        return templateManager.renderTemplate(event, templateResource, model, language).getLeft();
     }
 
     public static Optional<byte[]> buildBillingDocumentPdf(BillingDocument.Type documentType, Event event, FileUploadManager fileUploadManager, Locale language, TemplateManager templateManager, Map<String, Object> model, ExtensionManager extensionManager) {

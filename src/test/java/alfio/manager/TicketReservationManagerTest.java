@@ -16,38 +16,71 @@
  */
 package alfio.manager;
 
-import alfio.controller.form.UpdateTicketOwnerForm;
-import alfio.manager.PaymentManager.PaymentMethodDTO;
-import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
-import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.payment.BankTransferManager;
-import alfio.manager.payment.OnSiteManager;
-import alfio.manager.payment.PaymentSpecification;
-import alfio.manager.payment.StripeCreditCardManager;
-import alfio.manager.support.PartialTicketTextGenerator;
-import alfio.manager.support.PaymentResult;
-import alfio.manager.support.TextTemplateGenerator;
-import alfio.manager.system.ConfigurationManager;
-import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
-import alfio.model.*;
-import alfio.model.Ticket.TicketStatus;
-import alfio.model.TicketReservation.TicketReservationStatus;
-import alfio.model.modification.TicketReservationWithOptionalCodeModification;
-import alfio.model.system.ConfigurationKeyValuePathLevel;
-import alfio.model.system.ConfigurationKeys;
-import alfio.model.transaction.PaymentContext;
-import alfio.model.transaction.PaymentMethod;
-import alfio.model.transaction.PaymentProxy;
-import alfio.model.transaction.token.StripeCreditCardToken;
-import alfio.model.user.Organization;
-import alfio.model.user.Role;
-import alfio.repository.*;
-import alfio.repository.user.OrganizationRepository;
-import alfio.repository.user.UserRepository;
-import alfio.util.Json;
-import alfio.util.TemplateManager;
-import alfio.util.WorkingDaysAdjusters;
-import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import static alfio.manager.TicketReservationManager.buildCompleteBillingAddress;
+import static alfio.model.Audit.EventType.PAYMENT_CONFIRMED;
+import static alfio.model.TicketReservation.TicketReservationStatus.COMPLETE;
+import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
+import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
+import static alfio.model.TicketReservation.TicketReservationStatus.PENDING;
+import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
+import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL;
+import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
+import static alfio.model.system.ConfigurationKeys.DEFERRED_BANK_TRANSFER_ENABLED;
+import static alfio.model.system.ConfigurationKeys.DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL;
+import static alfio.model.system.ConfigurationKeys.ENABLE_TICKET_TRANSFER;
+import static alfio.model.system.ConfigurationKeys.INVOICE_ADDRESS;
+import static alfio.model.system.ConfigurationKeys.OFFLINE_PAYMENT_DAYS;
+import static alfio.model.system.ConfigurationKeys.OPTIONAL_DATA_REMINDER_ENABLED;
+import static alfio.model.system.ConfigurationKeys.PLATFORM_MODE_ENABLED;
+import static alfio.model.system.ConfigurationKeys.RESERVATION_TIMEOUT;
+import static alfio.model.system.ConfigurationKeys.SEND_TICKETS_AUTOMATICALLY;
+import static alfio.model.system.ConfigurationKeys.VAT_NR;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
@@ -58,26 +91,66 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import java.io.IOException;
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static alfio.manager.TicketReservationManager.buildCompleteBillingAddress;
-import static alfio.model.Audit.EventType.PAYMENT_CONFIRMED;
-import static alfio.model.TicketReservation.TicketReservationStatus.*;
-import static alfio.model.system.ConfigurationKeys.*;
-import static java.util.Arrays.asList;
-import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
-import static org.junit.Assert.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
+import alfio.controller.form.UpdateTicketOwnerForm;
+import alfio.manager.PaymentManager.PaymentMethodDTO;
+import alfio.manager.PaymentManager.PaymentMethodDTO.PaymentMethodStatus;
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.payment.BankTransferManager;
+import alfio.manager.payment.OnSiteManager;
+import alfio.manager.payment.PaymentSpecification;
+import alfio.manager.payment.StripeCreditCardManager;
+import alfio.manager.support.PartialTicketTextGenerator;
+import alfio.manager.support.PaymentResult;
+import alfio.manager.support.TemplateGenerator;
+import alfio.manager.support.TextTemplateGenerator;
+import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
+import alfio.model.BillingDocument;
+import alfio.model.CustomerName;
+import alfio.model.Event;
+import alfio.model.OrderSummary;
+import alfio.model.PriceContainer;
+import alfio.model.PromoCodeDiscount;
+import alfio.model.SpecialPrice;
+import alfio.model.Ticket;
+import alfio.model.Ticket.TicketStatus;
+import alfio.model.TicketCategory;
+import alfio.model.TicketReservation;
+import alfio.model.TicketReservation.TicketReservationStatus;
+import alfio.model.TicketReservationAdditionalInfo;
+import alfio.model.TicketReservationStatusAndValidation;
+import alfio.model.TotalPrice;
+import alfio.model.modification.TicketReservationWithOptionalCodeModification;
+import alfio.model.system.ConfigurationKeyValuePathLevel;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.transaction.PaymentContext;
+import alfio.model.transaction.PaymentMethod;
+import alfio.model.transaction.PaymentProxy;
+import alfio.model.transaction.token.StripeCreditCardToken;
+import alfio.model.user.Organization;
+import alfio.model.user.Role;
+import alfio.repository.AdditionalServiceItemRepository;
+import alfio.repository.AdditionalServiceRepository;
+import alfio.repository.AdditionalServiceTextRepository;
+import alfio.repository.AuditingRepository;
+import alfio.repository.BillingDocumentRepository;
+import alfio.repository.EventRepository;
+import alfio.repository.InvoiceSequencesRepository;
+import alfio.repository.PromoCodeDiscountRepository;
+import alfio.repository.SpecialPriceRepository;
+import alfio.repository.TicketCategoryDescriptionRepository;
+import alfio.repository.TicketCategoryRepository;
+import alfio.repository.TicketFieldRepository;
+import alfio.repository.TicketRepository;
+import alfio.repository.TicketReservationRepository;
+import alfio.repository.TicketSearchRepository;
+import alfio.repository.TransactionRepository;
+import alfio.repository.user.OrganizationRepository;
+import alfio.repository.user.UserRepository;
+import alfio.util.Json;
+import alfio.util.TemplateManager;
+import alfio.util.WorkingDaysAdjusters;
+import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 
 class TicketReservationManagerTest {
 
@@ -401,7 +474,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         trm.sendReminderForTicketAssignment();
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq("abcd"), eq("ciccio"), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq("abcd"), eq("ciccio"), anyString(), any(TemplateGenerator.class));
     }
 
     @Test
@@ -442,7 +515,7 @@ class TicketReservationManagerTest {
         when(ticketRepository.findAllReservationsConfirmedButNotAssignedForUpdate(anyInt())).thenReturn(singleton("abcd"));
         when(reservation.getEmail()).thenReturn("ciccio");
         trm.sendReminderForTicketAssignment();
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq("abcd"), anyString(), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq("abcd"), anyString(), anyString(), any(TemplateGenerator.class));
     }
 
     @Test
@@ -692,8 +765,8 @@ class TicketReservationManagerTest {
         when(transactionRepository.loadOptionalByReservationId(anyString())).thenReturn(Optional.empty());
         trm.releaseTicket(event, ticketReservation, ticket);
         verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
-        verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(RESERVATION_EMAIL), any(), any(TextTemplateGenerator.class));
-        verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq(ORG_EMAIL), any(), any(TextTemplateGenerator.class));
+        verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(RESERVATION_EMAIL), any(), any(TemplateGenerator.class));
+        verify(notificationManager).sendSimpleEmail(eq(event), isNull(), eq(ORG_EMAIL), any(), any(TemplateGenerator.class));
         verify(organizationRepository).getById(eq(ORGANIZATION_ID));
         verify(ticketReservationRepository).remove(eq(expectedReservations));
     }
@@ -722,7 +795,7 @@ class TicketReservationManagerTest {
         trm.releaseTicket(event, ticketReservation, ticket);
         verify(ticketRepository).releaseTicket(eq(RESERVATION_ID), anyString(), eq(EVENT_ID), eq(TICKET_ID));
         verify(ticketRepository).unbindTicketsFromCategory(eq(EVENT_ID), eq(TICKET_CATEGORY_ID), eq(singletonList(TICKET_ID)));
-        verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(RESERVATION_EMAIL), any(), any(TextTemplateGenerator.class));
+        verify(notificationManager).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq(RESERVATION_EMAIL), any(), any(TemplateGenerator.class));
         verify(organizationRepository).getById(eq(ORGANIZATION_ID));
         verify(ticketReservationRepository).remove(eq(expectedReservations));
     }
@@ -1132,7 +1205,7 @@ class TicketReservationManagerTest {
             new MaybeConfiguration(OPTIONAL_DATA_REMINDER_ENABLED)
         );
         trm.sendReminderForOptionalData();
-        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq("ciccio"), eq("subject"), any(TextTemplateGenerator.class));
+        verify(notificationManager, times(1)).sendSimpleEmail(eq(event), eq(RESERVATION_ID), eq("ciccio"), eq("subject"), any(TemplateGenerator.class));
     }
 
     @Test
@@ -1159,7 +1232,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(1);
         trm.sendReminderForOptionalData();
-        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TemplateGenerator.class));
     }
 
     @Test
@@ -1186,7 +1259,7 @@ class TicketReservationManagerTest {
         when(eventRepository.findAll()).thenReturn(singletonList(event));
         when(ticketRepository.flagTicketAsReminderSent(ticketId)).thenReturn(0);
         trm.sendReminderForOptionalData();
-        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TextTemplateGenerator.class));
+        verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), anyString(), any(TemplateGenerator.class));
     }
 
     @Test

@@ -151,7 +151,7 @@ public class BillingDocumentManager {
         } else {
             ticketsWithCategory = Collections.emptyList();
         }
-        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, ticketsWithCategory, summary, "", "", invoiceAddress, bankAccountNr, bankAccountOwner, Map.of());
+        Map<String, Object> model = TemplateResource.prepareModelForConfirmationEmail(organization, event, reservation, vat, ticketsWithCategory, summary, "", "", "", invoiceAddress, bankAccountNr, bankAccountOwner, Map.of());
         boolean euBusiness = StringUtils.isNotBlank(reservation.getVatCountryCode()) && StringUtils.isNotBlank(reservation.getVatNr())
             && configurationManager.getForSystem(ConfigurationKeys.EU_COUNTRIES_LIST).getRequiredValue().contains(reservation.getVatCountryCode())
             && PriceContainer.VatStatus.isVatExempt(reservation.getVatStatus());

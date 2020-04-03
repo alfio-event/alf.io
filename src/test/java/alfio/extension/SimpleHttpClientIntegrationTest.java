@@ -196,14 +196,14 @@ public class SimpleHttpClientIntegrationTest {
             .respond(HttpResponse.response().withStatusCode(200).withBody("Hello World!").withHeader("Content-Type", "text/plain"));
 
         File tmp = File.createTempFile("test", "test");
-        FileUtils.write(tmp, "content", StandardCharsets.UTF_8);
+        FileUtils.write(tmp, "content", StandardCharsets.UTF_8.toString());
 
         var res = simpleHttpClient.postFileAndSaveResponse("http://localhost:4243/simple-post-file", Map.of(), tmp.getAbsolutePath(), tmp.getName(), "text/plain");
         Assert.assertTrue(res.isSuccessful());
         Assert.assertEquals(200, res.getCode());
         Assert.assertNotNull(res.getTempFilePath());
         var saved = new File(res.getTempFilePath());
-        Assert.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8));
+        Assert.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8.toString()));
 
         tmp.delete();
         saved.delete();
@@ -221,7 +221,7 @@ public class SimpleHttpClientIntegrationTest {
         Assert.assertEquals(200, res.getCode());
         Assert.assertNotNull(res.getTempFilePath());
         var saved = new File(res.getTempFilePath());
-        Assert.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8));
+        Assert.assertEquals("Hello World!", FileUtils.readFileToString(saved, StandardCharsets.UTF_8.toString()));
         saved.delete();
     }
 }

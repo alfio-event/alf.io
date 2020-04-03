@@ -1,0 +1,113 @@
+<mjml>
+    <mj-head>
+	    <mj-font name="Source Sans Pro" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" />
+	    <mj-attributes>
+	    	<mj-all font-family="Source Sans Pro, Helvetica" />
+	    </mj-attributes>
+    </mj-head>
+	<mj-body background-color="#e5e5e5">
+		<mj-section padding-bottom="0px" background-color="white">
+			<mj-column width="100%">
+				<mj-divider
+					padding-top="20px" padding-bottom="0px" padding-left="0px"
+					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+			</mj-column>
+		</mj-section>
+		<mj-section padding-bottom="0px" background-color="#f8f8f8">
+			<mj-column width="100%">
+				<mj-text align="center" font-family="Helvetica Neue" font-size="20px" color="grey" font-weight="200">
+					Good news!
+				</mj-text>
+				<mj-divider
+					padding-top="20px" padding-bottom="0px" padding-left="0px"
+					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+			</mj-column>
+		</mj-section>
+
+		<mj-section background-color="white">
+			<mj-column width="100%">
+				<mj-text align="center" font-size="15px" color="#000" padding="30px">
+					{{ticketReservation.fullName}}<{{ticketReservation.email}}> has completed the reservation {{reservationShortID}} for event {{event.displayName}}
+				</mj-text>
+				<mj-table padding="0 15px">
+					<tr style="border-bottom:1px solid #ecedee;text-align:center;">
+						<th>Category</th>
+						<th>Quantity</th>
+						<th>Payment Method</th>
+						<th style="text-align:right">Subtotal</th>
+					</tr>
+					{{#orderSummary.summary}}
+					<tr style="text-align:center; ">
+						<td>{{name}}</td>
+						<td>{{amount}}</td>
+						<td>{{ticketReservation.paymentMethod}}</td>
+						<td style="text-align:right">{{subTotal}} {{event.currency}}</td>
+					</tr>
+					{{/orderSummary.summary}}
+					<tr>
+						<td colspan="4">&nbsp;</td>
+					</tr>
+					{{^orderSummary.free}}{{^ticketReservation.vatIncluded}}
+					<tr style="border-top:1px solid #ecedee;text-align:right;padding: 0 15px;">
+						<td style="font-weight: bold" colspan="3">VAT
+							{{ticketReservation.usedVatPercent}}%</td>
+						<td>{{orderSummary.totalVAT}} {{event.currency}}</td>
+					</tr>
+					{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
+					<tr style="border-top:1px solid #ecedee;text-align:right;padding: 0 15px;">
+						<td style="font-weight: bold;text-align:right;" colspan="3">Total
+						</td>
+						<td>{{orderSummary.totalPrice}} {{event.currency}}
+							{{^orderSummary.displayVat}}(Vat
+							Exempt){{/orderSummary.displayVat}}</td>
+					</tr>
+					{{^orderSummary.free}}{{#ticketReservation.vatIncluded}}
+					<tr style="border-top:1px solid #ecedee;text-align:right">
+						<td style="font-weight: bold" colspan="3">VAT INCL
+							{{ticketReservation.usedVatPercent}}%</td>
+						<td>{{orderSummary.totalVAT}} {{event.currency}}</td>
+					</tr>
+					{{/ticketReservation.vatIncluded}}{{/orderSummary.free}}
+				</mj-table>
+				
+				<mj-text align="center">Reservation id: {{publicId}}.</mj-text>
+				<mj-text>
+					{{#ticketReservation.invoicingAdditionalInfo}}
+					{{#italianEInvoicing}}
+					<strong>VAT Nr.:</strong> {{ticketReservation.vatNr}}
+					<br />
+					<strong>Fiscal Code:</strong> {{fiscalCode}}
+					<br />
+					<strong>Reference Type:</strong> {{referenceType}}
+					<br />
+					<strong>Addressee Code:</strong> {{addresseeCode}}
+					<br />
+					<strong>PEC:</strong> {{pec}}
+					{{/italianEInvoicing}}
+					{{/ticketReservation.invoicingAdditionalInfo}}
+				</mj-text>
+				<mj-button background-color="#28a745" href="{{reservationUrl}}" rel="notrack" align="center">
+					View reservation
+				</mj-button>
+			</mj-column>
+		</mj-section>
+
+		<mj-section background-color="white">
+			<mj-column width="130px">
+				<mj-image src="{{baseUrl}}/resources/images/email/icon_ticket.png" alt="Tickets">
+			</mj-image>
+			</mj-column>
+			<mj-column width="350px">
+				<mj-text font-size="20px" align="center" color="#212529">
+					Tickets in reservation
+				</mj-text>
+				<mj-text align="center">
+					{{#tickets}}
+					- {{uuid}}
+					<br />
+					{{/tickets}}
+				</mj-text>
+			</mj-column>
+		</mj-section>
+	</mj-body>
+</mjml>
