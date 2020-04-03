@@ -56,9 +56,9 @@
         </style>
         <![endif]-->
   <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet" type="text/css">
   <style type="text/css">
-    @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700);
+    @import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro);
   </style>
   <!--<![endif]-->
   <style type="text/css">
@@ -240,14 +240,14 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:30px;word-break:break-word;">
-                      <div style="font-family:helvetica;font-size:15px;line-height:1;text-align:center;color:#000000;">{{ticketReservation.fullName}}
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:15px;line-height:1;text-align:center;color:#000000;">{{ticketReservation.fullName}}
                         <{{ticketReservation.email}}> has completed the reservation {{reservationShortID}} for event {{event.displayName}}
                       </div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:0 15px;word-break:break-word;">
-                      <table cellpadding="0" cellspacing="0" width="100%" border="0" style="color:#000000;font-family:helvetica;font-size:13px;line-height:22px;table-layout:auto;width:100%;border:none;">
+                      <table cellpadding="0" cellspacing="0" width="100%" border="0" style="color:#000000;font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:22px;table-layout:auto;width:100%;border:none;">
                         <tr style="border-bottom:1px solid #ecedee;text-align:center;">
                           <th>Category</th>
                           <th>Quantity</th>
@@ -287,12 +287,12 @@
                   </tr>
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;line-height:1;text-align:center;color:#000000;">Reservation id: {{publicId}}.</div>
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">Reservation id: {{publicId}}.</div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;line-height:1;text-align:left;color:#000000;">{{#ticketReservation.invoicingAdditionalInfo}}
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:1;text-align:left;color:#000000;">{{#ticketReservation.invoicingAdditionalInfo}}
                           {{#italianEInvoicing}}
                             <strong>VAT Nr.:</strong> {{ticketReservation.vatNr}}
                             <br />
@@ -312,7 +312,7 @@
                       <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
                         <tr>
                           <td align="center" bgcolor="#28a745" role="presentation" style="border:none;border-radius:3px;cursor:auto;mso-padding-alt:10px 25px;background:#28a745;" valign="middle">
-                            <a href="{{reservationUrl}}" rel="notrack" style="display:inline-block;background:#28a745;color:#ffffff;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank"> View reservation </a>
+                            <a href="{{reservationUrl}}" rel="notrack" style="display:inline-block;background:#28a745;color:#ffffff;font-family:Source Sans Pro, Helvetica;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank"> View reservation </a>
                           </td>
                         </tr>
                       </table>
@@ -385,12 +385,12 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">Tickets in reservation</div>
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">Tickets in reservation</div>
                     </td>
                   </tr>
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">{{#tickets}} - {{uuid}}
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">{{#tickets}} - {{uuid}}
                           <br />
                         {{/tickets}}</div>
                     </td>

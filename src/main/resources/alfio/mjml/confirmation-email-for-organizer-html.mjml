@@ -1,4 +1,10 @@
 <mjml>
+    <mj-head>
+	    <mj-font name="Source Sans Pro" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" />
+	    <mj-attributes>
+	    	<mj-all font-family="Source Sans Pro, Helvetica" />
+	    </mj-attributes>
+    </mj-head>
 	<mj-body background-color="#e5e5e5">
 		<mj-section padding-bottom="0px" background-color="white">
 			<mj-column width="100%">
@@ -9,8 +15,7 @@
 		</mj-section>
 		<mj-section padding-bottom="0px" background-color="#f8f8f8">
 			<mj-column width="100%">
-				<mj-text align="center" font-size="20px" color="grey"
-					font-family="Helvetica Neue" font-weight="200">
+				<mj-text align="center" font-family="Helvetica Neue" font-size="20px" color="grey" font-weight="200">
 					Good news!
 				</mj-text>
 				<mj-divider
@@ -21,10 +26,10 @@
 
 		<mj-section background-color="white">
 			<mj-column width="100%">
-				<mj-text align="center" font-size="15px" color="#000" font-family="helvetica" padding="30px">
+				<mj-text align="center" font-size="15px" color="#000" padding="30px">
 					{{ticketReservation.fullName}}<{{ticketReservation.email}}> has completed the reservation {{reservationShortID}} for event {{event.displayName}}
 				</mj-text>
-				<mj-table font-family="helvetica" padding="0 15px">
+				<mj-table padding="0 15px">
 					<tr style="border-bottom:1px solid #ecedee;text-align:center;">
 						<th>Category</th>
 						<th>Quantity</th>
@@ -93,10 +98,10 @@
 			</mj-image>
 			</mj-column>
 			<mj-column width="350px">
-				<mj-text font-size="20px" align="center" font-family="helvetica" color="#212529">
+				<mj-text font-size="20px" align="center" color="#212529">
 					Tickets in reservation
 				</mj-text>
-				<mj-text align="center" font-family="helvetica">
+				<mj-text align="center">
 					{{#tickets}}
 					- {{uuid}}
 					<br />

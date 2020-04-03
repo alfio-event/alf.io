@@ -56,9 +56,9 @@
         </style>
         <![endif]-->
   <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet" type="text/css">
   <style type="text/css">
-    @import url(https://fonts.googleapis.com/css?family=Raleway);
+    @import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro);
   </style>
   <!--<![endif]-->
   <style type="text/css">
@@ -174,7 +174,7 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Raleway, Helvetica Neue;font-size:20px;font-weight:200;line-height:1;text-align:center;color:grey;">Pending Reservations</div>
+                      <div style="font-family:Helvetica Neue;font-size:20px;font-weight:200;line-height:1;text-align:center;color:grey;">Pending Reservations</div>
                     </td>
                   </tr>
                   <tr>
@@ -237,12 +237,12 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:30px;word-break:break-word;">
-                      <div style="font-family:Raleway, helvetica;font-size:15px;line-height:1;text-align:center;color:#000000;">For event {{eventName}} the following offline reservation are going to expire soon:</div>
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:15px;line-height:1;text-align:center;color:#000000;">For event {{eventName}} the following offline reservation are going to expire soon:</div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:0 15px;word-break:break-word;">
-                      <table cellpadding="0" cellspacing="0" width="100%" border="0" style="color:#000000;font-family:Raleway, helvetica;font-size:13px;line-height:22px;table-layout:auto;width:100%;border:none;">
+                      <table cellpadding="0" cellspacing="0" width="100%" border="0" style="color:#000000;font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:22px;table-layout:auto;width:100%;border:none;">
                         <tr style="border-bottom:2px solid #ecedee">
                           <th>Expiration Date</th>
                           <th>Name</th>

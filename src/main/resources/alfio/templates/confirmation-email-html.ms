@@ -56,11 +56,9 @@
         </style>
         <![endif]-->
   <!--[if !mso]><!-->
-  <link href="https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700" rel="stylesheet" type="text/css">
-  <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet" type="text/css">
   <style type="text/css">
-    @import url(https://fonts.googleapis.com/css?family=Ubuntu:300,400,500,700);
-    @import url(https://fonts.googleapis.com/css?family=Raleway);
+    @import url(https://fonts.googleapis.com/css?family=Source+Sans+Pro);
   </style>
   <!--<![endif]-->
   <style type="text/css">
@@ -262,12 +260,12 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Raleway, Helvetica Neue;font-size:14px;line-height:1;text-align:left;color:#000000;">{{#i18n}}email.hello [{{ticketReservation.fullName}}]{{/i18n}}<br />{{custom-header-text}}</div>
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:14px;line-height:1;text-align:left;color:#000000;">{{#i18n}}email.hello [{{ticketReservation.fullName}}]{{/i18n}}<br />{{custom-header-text}}</div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Raleway, Helvetica Neue;font-size:14px;line-height:1;text-align:left;color:#000000;">{{^orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.completed [{{event.displayName}}] [<a href="{{reservationUrl}}">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:14px;line-height:1;text-align:left;color:#000000;">{{^orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.completed [{{event.displayName}}] [<a href="{{reservationUrl}}">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}
                         {{#orderSummary.waitingForPayment}}{{#i18n}}email-confirmation.waiting-for-payment [{{event.displayName}}] [<a href="{{reservationUrl}}" rel="notrack">{{reservationUrl}}</a>]{{/i18n}}{{/orderSummary.waitingForPayment}}</div>
                     </td>
                   </tr>
@@ -276,7 +274,7 @@
                       <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
                         <tr>
                           <td align="center" bgcolor="#28a745" role="presentation" style="border:none;border-radius:3px;cursor:auto;mso-padding-alt:10px 25px;background:#28a745;" valign="middle">
-                            <a href="{{reservationUrl}}" style="display:inline-block;background:#28a745;color:#ffffff;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank"> View reservation </a>
+                            <a href="{{reservationUrl}}" style="display:inline-block;background:#28a745;color:#ffffff;font-family:Source Sans Pro, Helvetica;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank"> View reservation </a>
                           </td>
                         </tr>
                       </table>
@@ -349,12 +347,12 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Raleway, helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">{{#i18n}}email-confirmation.reservation-summary{{/i18n}}</div>
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">{{#i18n}}email-confirmation.reservation-summary{{/i18n}}</div>
                     </td>
                   </tr>
                   <tr>
                     <td align="left" style="font-size:0px;padding:0 15px;word-break:break-word;">
-                      <table cellpadding="0" cellspacing="0" width="100%" border="0" style="color:#000000;font-family:Raleway, helvetica;font-size:13px;line-height:22px;table-layout:auto;width:100%;border:none;">
+                      <table cellpadding="0" cellspacing="0" width="100%" border="0" style="color:#000000;font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:22px;table-layout:auto;width:100%;border:none;">
                         {{#orderSummary.summary}}
                           <tr class="bottom-border">
                             <th class="header">{{#i18n}}email-confirmation.summary.category{{/i18n}}</th>
@@ -402,7 +400,7 @@
                   </tr>
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Raleway, helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">{{#orderSummary.notYetPaid}}{{#i18n}}reservation.not-yet-paid [{{orderSummary.totalPrice}} {{event.currency}}]{{/i18n}}{{/orderSummary.notYetPaid}}
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">{{#orderSummary.notYetPaid}}{{#i18n}}reservation.not-yet-paid [{{orderSummary.totalPrice}} {{event.currency}}]{{/i18n}}{{/orderSummary.notYetPaid}}
                         <br />
                         {{custom-body-text}}</div>
                     </td>
@@ -474,41 +472,41 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">{{#i18n}}email.event-info{{/i18n}} {{#custom-footer-text?}}Hola{{/custom-footer-text?}}</div>
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">{{#i18n}}email.event-info{{/i18n}} {{#custom-footer-text?}}Hola{{/custom-footer-text?}}</div>
                     </td>
                   </tr>
                   {{^event.online}}
                     <tr>
                       <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:Raleway, helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email.event-reminder-location{{/i18n}}</div>
+                        <div style="font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email.event-reminder-location{{/i18n}}</div>
                       </td>
                     </tr>
                     <tr>
                       <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:Raleway, helvetica;font-size:16px;font-weight:bold;line-height:1;text-align:center;color:#000000;">{{event.location}}</div>
+                        <div style="font-family:Source Sans Pro, Helvetica;font-size:16px;font-weight:bold;line-height:1;text-align:center;color:#000000;">{{event.location}}</div>
                       </td>
                     </tr>
                     <tr>
                       <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:Raleway, helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email.event-reminder-date{{/i18n}}</div>
+                        <div style="font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email.event-reminder-date{{/i18n}}</div>
                       </td>
                     </tr>
                   {{/event.online}}{{#event.online}}
                     <tr>
                       <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:Raleway, helvetica;font-size:14px;line-height:1;text-align:center;color:#000000;">{{#i18n}}event.location.online{{/i18n}}</div>
+                        <div style="font-family:Source Sans Pro, Helvetica;font-size:14px;line-height:1;text-align:center;color:#000000;">{{#i18n}}event.location.online{{/i18n}}</div>
                       </td>
                     </tr>
                   {{/event.online}}{{#event.sameDay}}
                     <tr>
                       <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:Raleway, helvetica;font-size:16px;font-weight:bold;line-height:1;text-align:center;color:#000000;">{{#i18n}}event-days.same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}] {{/i18n}}</div>
+                        <div style="font-family:Source Sans Pro, Helvetica;font-size:16px;font-weight:bold;line-height:1;text-align:center;color:#000000;">{{#i18n}}event-days.same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}] [{{#format-date}}{{event.end}} HH:mm (z){{/format-date}}] {{/i18n}}</div>
                       </td>
                     </tr>
                   {{/event.sameDay}}{{^event.sameDay}}
                     <tr>
                       <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <table cellpadding="0" cellspacing="0" width="100%" border="0" style="color:#000000;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;line-height:22px;table-layout:auto;width:100%;border:none;">
+                        <table cellpadding="0" cellspacing="0" width="100%" border="0" style="color:#000000;font-family:Source Sans Pro, Helvetica;font-size:16px;line-height:22px;table-layout:auto;width:100%;border:none;">
                           <tr class="bottom-border">
                             <td>{{#i18n}}event-days.not-same-day [{{#format-date}}{{event.begin}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{event.begin}} HH:mm{{/format-date}}]{{/i18n}}</td>
                           </tr>
@@ -564,7 +562,7 @@
                   <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                     <tr>
                       <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family:Raleway, helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">{{custom-footer-text}}</div>
+                        <div style="font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:1;text-align:center;color:#000000;">{{custom-footer-text}}</div>
                       </td>
                     </tr>
                   </table>

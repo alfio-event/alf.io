@@ -1,6 +1,9 @@
 <mjml>
 	<mj-head>
-	    <mj-font name="Raleway" href="https://fonts.googleapis.com/css?family=Raleway" />
+	    <mj-font name="Source Sans Pro" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" />
+	    <mj-attributes>
+	    	<mj-all font-family="Source Sans Pro, Helvetica" />
+	    </mj-attributes>
 	    <mj-style>
 	      a {
 	      	color: #0056b3;
@@ -26,8 +29,7 @@
 		</mj-section>
 		<mj-section padding-bottom="0px" background-color="#f8f8f8">
 			<mj-column width="100%">
-				<mj-text align="center" font-size="20px" color="grey"
-					font-family="Raleway, Helvetica Neue" font-weight="200">
+				<mj-text align="center" font-family="Helvetica Neue" font-size="20px" color="grey" font-weight="200">
 					Pending Reservations
 				</mj-text>
 				<mj-divider
@@ -38,10 +40,10 @@
 
 		<mj-section background-color="white">
 			<mj-column width="100%">
-				<mj-text align="center" font-size="15px" color="#000" font-family="Raleway, helvetica" padding="30px">
+				<mj-text align="center" font-size="15px" color="#000" padding="30px">
 					For event {{eventName}} the following offline reservation are going to expire soon:
 				</mj-text>
-				<mj-table font-family="Raleway, helvetica" padding="0 15px">
+				<mj-table padding="0 15px">
 					<tr style="border-bottom:2px solid #ecedee">
 						<th>Expiration Date</th>
 						<th>Name</th>
