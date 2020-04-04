@@ -29,10 +29,10 @@
                 return $http.get('/admin/api/users/'+userId+'.json').error(HttpErrorHandler.handle);
             },
             loadCurrentUser: function() {
-                return $http.get('/admin/api/users/current.json').error(HttpErrorHandler.handle);
+                return $http.get('/admin/api/users/current').error(HttpErrorHandler.handle);
             },
             updatePassword: function(passwordContainer) {
-                return $http.post('/admin/api/users/update-password.json', passwordContainer).error(HttpErrorHandler.handle);
+                return $http.post('/admin/api/users/update-password', passwordContainer).error(HttpErrorHandler.handle);
             },
             deleteUser: function(user) {
                 return $http['delete']('/admin/api/users/'+user.id).error(HttpErrorHandler.handle);

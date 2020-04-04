@@ -192,7 +192,7 @@ public class UserManager {
         }
         int userResult = userRepository.update(id, username, firstName, lastName, emailAddress, description);
         Assert.isTrue(userResult == 1, "unexpected error during user update");
-        if(!admin) {
+        if(!admin && !username.equals(currentUsername)) {
             Assert.isTrue(getAvailableRoles(currentUsername).contains(role), "cannot assign role "+role);
             authorityRepository.revokeAll(username);
             authorityRepository.create(username, role.getRoleName());
