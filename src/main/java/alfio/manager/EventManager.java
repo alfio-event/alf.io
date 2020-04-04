@@ -316,7 +316,7 @@ public class EventManager {
         final ZonedDateTime end = em.getEnd().toZonedDateTime(zoneId);
         eventRepository.updateHeader(eventId, em.getDisplayName(), em.getWebsiteUrl(), em.getExternalUrl(), em.getTermsAndConditionsUrl(),
             em.getPrivacyPolicyUrl(), em.getImageUrl(), em.getFileBlobId(), em.getLocation(), latitude, longitude,
-            begin, end, timeZone, em.getOrganizationId(), em.getLocales());
+            begin, end, timeZone, em.getOrganizationId(), em.getLocales(), em.getFormat());
 
         createOrUpdateEventDescription(eventId, em);
 
