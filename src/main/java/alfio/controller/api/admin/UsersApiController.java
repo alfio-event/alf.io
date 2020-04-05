@@ -257,6 +257,14 @@ public class UsersApiController {
             user.getEmailAddress(), user.getType(), user.getValidToEpochSecond(), user.getDescription());
     }
 
+    @PostMapping("/users/current/update-password")
+    public void updateCurrentUserPassword() {
+    }
+
+    @PostMapping("/users/current/edit")
+    public void updateCurrentUser() {
+    }
+
     @PutMapping("/users/{id}/reset-password")
     public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam("baseUrl") String baseUrl) {
         UserWithPassword userWithPassword = userManager.resetPassword(userId);
