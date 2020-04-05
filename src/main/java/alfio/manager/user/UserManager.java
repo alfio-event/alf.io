@@ -199,6 +199,10 @@ public class UserManager {
         }
     }
 
+    public void updateUserContactInfo(int id, String firstName, String lastName, String emailAddress) {
+        userRepository.updateContactInfo(id, firstName, lastName, emailAddress);
+    }
+
 
     public UserWithPassword insertUser(int organizationId, String username, String firstName, String lastName, String emailAddress, Role role, User.Type userType) {
         return insertUser(organizationId, username, firstName, lastName, emailAddress, role, userType, null, null);
@@ -302,6 +306,4 @@ public class UserManager {
         }
         return false;
     }
-
-
 }

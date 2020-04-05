@@ -16,6 +16,9 @@
                 var url = angular.isDefined(user.id) ? '/admin/api/users/edit' : ('/admin/api/users/new?baseUrl='+window.encodeURIComponent($window.location.origin));
                 return $http['post'](url, user).error(HttpErrorHandler.handle);
             },
+            updateCurrentUserContactInfo: function(user) {
+                return $http['post']('/admin/api/users/current/edit', user).error(HttpErrorHandler.handle);
+            },
             bulkImportApiKeys: function(apiKeys) {
                 return $http['post']('/admin/api/api-keys/bulk', apiKeys).error(HttpErrorHandler.handle);
             },
@@ -32,7 +35,7 @@
                 return $http.get('/admin/api/users/current').error(HttpErrorHandler.handle);
             },
             updatePassword: function(passwordContainer) {
-                return $http.post('/admin/api/users/update-password', passwordContainer).error(HttpErrorHandler.handle);
+                return $http.post('/admin/api/users/current/update-password', passwordContainer).error(HttpErrorHandler.handle);
             },
             deleteUser: function(user) {
                 return $http['delete']('/admin/api/users/'+user.id).error(HttpErrorHandler.handle);

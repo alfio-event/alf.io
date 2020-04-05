@@ -171,12 +171,6 @@ public class UsersApiController {
         return OK;
     }
 
-    @PostMapping("/users/update-password")
-    public ValidationResult updatePassword(@RequestBody PasswordModification passwordModification, Principal principal) {
-        return userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
-            .ifSuccess(() -> userManager.updatePassword(principal.getName(), passwordModification.newPassword));
-    }
-
     @PostMapping("/users/new")
     public UserWithPasswordAndQRCode insertUser(@RequestBody UserModification userModification, @RequestParam("baseUrl") String baseUrl, Principal principal) {
         Role requested = Role.valueOf(userModification.getRole());
@@ -255,6 +249,19 @@ public class UsersApiController {
         return new UserModification(user.getId(), userOrganization.map(Organization::getId).orElse(-1),
             userManager.getUserRole(user).name(), user.getUsername(), user.getFirstName(), user.getLastName(),
             user.getEmailAddress(), user.getType(), user.getValidToEpochSecond(), user.getDescription());
+    }
+
+    @PostMapping("/users/current/update-password")
+    public ValidationResult updateCurrentUserPassword(@RequestBody PasswordModification passwordModification, Principal principal) {
+        return userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
+            .ifSuccess(() -> userManager.updatePassword(principal.getName(), passwordModification.newPassword));
+    }
+
+    @PostMapping("/users/current/edit")
+    public void updateCurrentUser(@RequestBody UserModification userModification, Principal principal) {
+        User user = userManager.findUserByUsername(principal.getName());
+        userManager.updateUserContactInfo(user.getId(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
+
     }
 
     @PutMapping("/users/{id}/reset-password")

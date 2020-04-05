@@ -75,6 +75,9 @@ public interface UserRepository {
     int update(@Bind("id") int id, @Bind("username") String username, @Bind("firstName") String firstName, @Bind("lastName") String lastName,
                @Bind("emailAddress") String emailAddress, @Bind("description") String description);
 
+    @Query("update ba_user set first_name = :firstName, last_name = :lastName, email_address = :emailAddress where id = :id")
+    int updateContactInfo(@Bind("id") int id, @Bind("firstName") String firstName, @Bind("lastName") String lastName, @Bind("emailAddress") String emailAddress);
+
     @Query("update ba_user set enabled = :enabled where id = :id")
     int toggleEnabled(@Bind("id") int id, @Bind("enabled") boolean enabled);
 

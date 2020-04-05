@@ -28,7 +28,7 @@
             if(ctrl.editUser.$valid) {
                 ctrl.loading = true;
                 var promise = UserService.checkUser(ctrl.user).then(function() {
-                    return UserService.editUser(ctrl.user).then(function() {
+                    return UserService.updateCurrentUserContactInfo(ctrl.user).then(function() {
                         ctrl.original = angular.copy(ctrl.user);
                         ctrl.loading = false;
                         ctrl.showMessage = true;
