@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 @Log4j2
 public class UtilsApiController {
 
-    private static final List<String> CURRENCIES_BLACKLIST = Arrays.asList("USN", "USS");
+    private static final List<String> CURRENCIES_BLACKLIST = Arrays.asList("USN", "USS", "CHE", "CHW");
     private final EventNameManager eventNameManager;
     private final String version;
     private final Environment environment;
