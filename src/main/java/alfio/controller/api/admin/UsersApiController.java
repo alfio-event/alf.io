@@ -171,12 +171,6 @@ public class UsersApiController {
         return OK;
     }
 
-    @PostMapping("/users/update-password")
-    public ValidationResult updatePassword(@RequestBody PasswordModification passwordModification, Principal principal) {
-        return userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
-            .ifSuccess(() -> userManager.updatePassword(principal.getName(), passwordModification.newPassword));
-    }
-
     @PostMapping("/users/new")
     public UserWithPasswordAndQRCode insertUser(@RequestBody UserModification userModification, @RequestParam("baseUrl") String baseUrl, Principal principal) {
         Role requested = Role.valueOf(userModification.getRole());
@@ -258,11 +252,13 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/current/update-password")
-    public void updateCurrentUserPassword() {
+    public ValidationResult updateCurrentUserPassword(@RequestBody PasswordModification passwordModification, Principal principal) {
+        return userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
+            .ifSuccess(() -> userManager.updatePassword(principal.getName(), passwordModification.newPassword));
     }
 
     @PostMapping("/users/current/edit")
-    public void updateCurrentUser() {
+    public void updateCurrentUser(Principal principal) {
     }
 
     @PutMapping("/users/{id}/reset-password")

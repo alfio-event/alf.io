@@ -32,7 +32,7 @@
                 return $http.get('/admin/api/users/current').error(HttpErrorHandler.handle);
             },
             updatePassword: function(passwordContainer) {
-                return $http.post('/admin/api/users/update-password', passwordContainer).error(HttpErrorHandler.handle);
+                return $http.post('/admin/api/users/current/update-password', passwordContainer).error(HttpErrorHandler.handle);
             },
             deleteUser: function(user) {
                 return $http['delete']('/admin/api/users/'+user.id).error(HttpErrorHandler.handle);
