@@ -258,7 +258,10 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/current/edit")
-    public void updateCurrentUser(Principal principal) {
+    public void updateCurrentUser(@RequestBody UserModification userModification, Principal principal) {
+        User user = userManager.findUserByUsername(principal.getName());
+        userManager.updateUserContactInfo(user.getId(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
+
     }
 
     @PutMapping("/users/{id}/reset-password")
