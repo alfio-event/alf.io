@@ -31,7 +31,9 @@ import biweekly.ICalVersion;
 import biweekly.ICalendar;
 import biweekly.component.VEvent;
 import biweekly.io.text.ICalWriter;
+import biweekly.property.Method;
 import biweekly.property.Organizer;
+import biweekly.property.Status;
 import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
@@ -160,6 +162,9 @@ public class EventUtil {
 
     public static Optional<byte[]> getIcalForEvent(Event event, TicketCategory ticketCategory, String description, Organization organization) {
     	 ICalendar ical = new ICalendar();
+    	 ical.setProductId("-//Alf.io//Alf.io v2.0//EN");
+    	 ical.setMethod(Method.PUBLISH);
+    	 
          VEvent vEvent = new VEvent();
          vEvent.setSummary(event.getDisplayName());
          vEvent.setDescription(description);
@@ -169,6 +174,7 @@ public class EventUtil {
          vEvent.setDateStart(Date.from(begin.toInstant()));
          vEvent.setDateEnd(Date.from(end.toInstant()));
          vEvent.setUrl(event.getWebsiteUrl());
+         vEvent.setStatus(Status.confirmed());
          
          if(organization != null) {
         	 vEvent.setOrganizer(new Organizer(organization.getName(), organization.getEmail()));
