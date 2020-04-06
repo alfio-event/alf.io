@@ -28,6 +28,7 @@ import alfio.model.EventDescription;
 import alfio.model.FileBlobMetadata;
 import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeys;
+import alfio.model.user.Role;
 import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
@@ -42,6 +43,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -60,6 +63,7 @@ import java.security.Principal;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
@@ -116,21 +120,21 @@ public class IndexController {
 
     //url defined in the angular app in app-routing.module.ts
     /**
-    <pre>
+     <pre>
      { path: '', component: EventListComponent, canActivate: [LanguageGuard] },
      { path: 'event/:eventShortName', component: EventDisplayComponent, canActivate: [EventGuard, LanguageGuard] },
      { path: 'event/:eventShortName/reservation/:reservationId', children: [
-        { path: 'book', component: BookingComponent, canActivate: reservationsGuard },
-        { path: 'overview', component: OverviewComponent, canActivate: reservationsGuard },
-        { path: 'waitingPayment', redirectTo: 'waiting-payment'},
-        { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: reservationsGuard },
-        { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: reservationsGuard },
-        { path: 'success', component: SuccessComponent, canActivate: reservationsGuard },
-        { path: 'not-found', component: NotFoundComponent, canActivate: reservationsGuard },
-        { path: 'error', component: ErrorComponent, canActivate: reservationsGuard }
+     { path: 'book', component: BookingComponent, canActivate: reservationsGuard },
+     { path: 'overview', component: OverviewComponent, canActivate: reservationsGuard },
+     { path: 'waitingPayment', redirectTo: 'waiting-payment'},
+     { path: 'waiting-payment', component: OfflinePaymentComponent, canActivate: reservationsGuard },
+     { path: 'processing-payment', component: ProcessingPaymentComponent, canActivate: reservationsGuard },
+     { path: 'success', component: SuccessComponent, canActivate: reservationsGuard },
+     { path: 'not-found', component: NotFoundComponent, canActivate: reservationsGuard },
+     { path: 'error', component: ErrorComponent, canActivate: reservationsGuard }
      ]},
      { path: 'event/:eventShortName/ticket/:ticketId/view', component: ViewTicketComponent, canActivate: [EventGuard, LanguageGuard] }
-    </pre>
+     </pre>
 
      */
     @GetMapping({
@@ -281,7 +285,7 @@ public class IndexController {
         "/event/{eventShortName}/code/{code}",
         "/e/{eventShortName}/c/{code}"})
     public String redirectCode(@PathVariable("eventShortName") String eventName,
-                             @PathVariable("code") String code) {
+                               @PathVariable("code") String code) {
         return "redirect:" + UriComponentsBuilder.fromPath("/api/v2/public/event/{eventShortName}/code/{code}")
             .build(Map.of("eventShortName", eventName, "code", code))
             .toString();
@@ -345,8 +349,22 @@ public class IndexController {
         model.addAttribute("alfioVersion", version);
         model.addAttribute("username", principal.getName());
         model.addAttribute("basicConfigurationNeeded", configurationManager.isBasicConfigurationNeeded());
-        model.addAttribute("isAdmin", principal.getName().equals("admin"));
-        model.addAttribute("isOwner", userManager.isOwner(userManager.findUserByUsername(principal.getName())));
+
+        boolean isDBAuthentication = !(principal instanceof WebSecurityConfig.OpenIdAlfioAuthentication);
+        model.addAttribute("isDBAuthentication", isDBAuthentication);
+        if (!isDBAuthentication) {
+            String idpLogoutRedirectionUrl = ((WebSecurityConfig.OpenIdAlfioAuthentication) (SecurityContextHolder.getContext().getAuthentication())).getIdpLogoutRedirectionUrl();
+            model.addAttribute("idpLogoutRedirectionUrl", idpLogoutRedirectionUrl);
+        } else {
+            model.addAttribute("idpLogoutRedirectionUrl", null);
+        }
+
+        Collection<String> authorities = SecurityContextHolder.getContext().getAuthentication().getAuthorities()
+            .stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+
+        boolean isAdmin = authorities.contains(Role.ADMIN.getRoleName());
+        model.addAttribute("isOwner", isAdmin || authorities.contains(Role.OWNER.getRoleName()));
+        model.addAttribute("isAdmin", isAdmin);
         //
         model.addAttribute("request", request);
         model.addAttribute("demoModeEnabled", environment.acceptsProfiles(Profiles.of(Initializer.PROFILE_DEMO)));

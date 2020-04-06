@@ -129,8 +129,10 @@
                                 <li data-ui-sref-active="active"><a data-ui-sref="index" ng-click="ctrl.menuCollapsed = true">Dashboard</a></li>
                                 {{#isOwner}}
                                 <li data-ui-sref-active="active"><a data-ui-sref="organizations" ng-click="ctrl.menuCollapsed = true">Organizations</a></li>
+                                {{#isDBAuthentication}}
                                 <li data-ui-sref-active="active"><a data-ui-sref="users" ng-click="ctrl.menuCollapsed = true">Users</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="apikey" ng-click="ctrl.menuCollapsed = true">Api Keys</a></li>
+                                {{/isDBAuthentication}}
                                 <li data-ui-sref-active="active"><a data-ui-sref="groups" ui-sref-opts="{reload: true, notify: true}" ng-click="ctrl.menuCollapsed = true">Groups</a></li>
                                 <li data-ui-sref-active="active"><a data-ui-sref="configuration.system" ng-click="ctrl.menuCollapsed = true">Configuration</a></li>
                                 {{#isAdmin}}<li data-ui-sref-active="active"><a data-ui-sref="extension.list" ng-click="ctrl.menuCollapsed = true">Extension</a></li>{{/isAdmin}}
@@ -183,7 +185,7 @@
                                 <li class="nav-divider"></li>
                                 <li class="visible-xs visible-sm">
                                     <div class="pull-left"><a href="#" class="navbar-link" ng-click="ctrl.menuCollapsed = true" data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-user"></i> {{username}}</a></div>
-                                    <div class="pull-right"><a href="" class="navbar-link" data-ng-click="ctrl.doLogout()"><i class="fa fa-sign-out"></i> Log out</a></div>
+                                    <div class="pull-right"><a href="" class="navbar-link" data-ng-click="ctrl.doLogout('{{idpLogoutRedirectionUrl}}')"><i class="fa fa-sign-out"></i> Log out</a></div>
                                 </li>
                             </ul>
                         </div>
@@ -191,8 +193,10 @@
                     <div class="navbar-right hidden-sm hidden-xs">
                         <ul class="nav navbar-nav">
                             <li role="presentation" class="navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>
+                            {{#isDBAuthentication}}
                             <li role="presentation" data-ui-sref-active="active"> <a data-ui-sref="edit-current-user" title="click to update account details"><i class="fa fa-edit"></i> edit account</a></li>
-                            <li role="presentation"><a href="" data-ng-click="ctrl.doLogout()"><i class="fa fa-sign-out"></i> Log out</a></li>
+                            {{/isDBAuthentication}}
+                            <li role="presentation"><a href="" data-ng-click="ctrl.doLogout('{{idpLogoutRedirectionUrl}}')"><i class="fa fa-sign-out"></i> Log out</a></li>
                         </ul>
                     </div>
                 </div>

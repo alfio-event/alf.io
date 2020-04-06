@@ -44,4 +44,7 @@ public interface UserOrganizationRepository {
     @Query("select distinct(org_id) from j_user_organization where user_id in(:users)")
     List<Integer> findOrganizationsForUsers(@Bind("users") List<Integer> users);
 
+    @Query("delete from j_user_organization where user_id = :userId and org_id = :organizationId")
+    int removeOrganizationUserLink(@Bind("userId") int userId, @Bind("organizationId") int organizationId);
+
 }

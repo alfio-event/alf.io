@@ -42,4 +42,9 @@ public enum Role {
     public static Role fromRoleName(String roleName) {
         return Arrays.stream(values()).filter(r -> r.getRoleName().equals(roleName)).findFirst().orElse(OPERATOR);
     }
+
+    public String getRoleName()
+    {
+        return roleName;
+    }
 }

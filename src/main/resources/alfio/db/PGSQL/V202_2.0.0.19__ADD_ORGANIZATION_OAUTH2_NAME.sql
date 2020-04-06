@@ -15,4 +15,4 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table sponsor_scan add column lead_status varchar(255) not null default 'WARM';
+alter table organization add column name_openid varchar(255);

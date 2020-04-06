@@ -36,6 +36,9 @@ public interface OrganizationRepository {
     @Query("SELECT * FROM organization where name = :name")
     Optional<Organization> findByName(@Bind("name") String name);
 
+    @Query("SELECT * FROM organization where name_openid = :name_openid")
+    Optional<Organization> findByNameOpenId(@Bind("name_openid") String nameOpenId);
+
     @Query("SELECT id FROM organization where name = :name")
     int getIdByName(@Bind("name") String name);
 
