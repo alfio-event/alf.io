@@ -52,7 +52,7 @@ linkTitle = "Alf.io"
 						<p><span class="text-muted mr-2">GPLv3</span> <i class="fab fa-github"></i> <a href="https://github.com/alfio-event/alf.io">GitHub repository</a></p>
 					</div>
 					<p><strong>Public</strong>, the ticket shop, where people can reserve/buy their tickets
-					<p>Alf.io supports payments through Stripe, Revolut, Paypal, Bank Transfer, as well as on-site payments. It is possible to integrate it with 3rd party tools (eg. a CRM system) through Extensions.</p>
+					<p>Alf.io supports payments through Stripe (Credit Cards), Mollie (Credit Cards, iDEAL, Bancontact, ING Home Pay, Belfius, KBC/CBC, Przelewy24), Revolut, Paypal, Bank Transfer, as well as on-site payments. It is possible to integrate it with 3rd party tools (eg. a CRM system) through Extensions.</p>
 					<p><strong>Backoffice</strong>, the admin area for the event organizers</p>
 
 				</li>
@@ -124,7 +124,7 @@ The GUI is currently available in Italian, English, Spanish, German, Dutch, Fren
 {{% /blocks/feature %}}
 
 {{% blocks/feature icon="far fa-credit-card" title="PCI-Compliant" url="https://en.wikipedia.org/wiki/Payment_Card_Industry_Data_Security_Standard" %}}
-Alf.io uses [Stripe](https://stripe.com/) as gateway for payments done by credit card. This means that no sensitive data will be stored on your server and you’ll be automatically compliant with the strictest PCI requirements.
+Alf.io supports [Stripe](https://stripe.com/) and [Mollie](https://mollie) as gateways for payments done by credit card. This means that no sensitive data will be stored on your server and you’ll be automatically compliant with the strictest PCI requirements.
 {{% /blocks/feature %}}
 
 {{< /blocks/section >}}
@@ -135,7 +135,7 @@ Alf.io uses [Stripe](https://stripe.com/) as gateway for payments done by credit
 You can define free-of-charge as well as paid events. 
 You can allow your users either to pre-pay the ticket by credit cardⁱ or PayPal, post-pay it by bank transfer, or even pay it at the entrance desk.
 
-ⁱ _The event organizer needs a Stripe account in order to get paid. No registration is required for the attendees_
+ⁱ _The event organizer needs a Stripe or Mollie account in order to get paid. No registration is required for the attendees_
 
 {{% /blocks/feature %}}
 
