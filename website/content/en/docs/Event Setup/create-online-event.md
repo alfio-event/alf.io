@@ -21,7 +21,7 @@ Follow the guide on [how to create an in-person event](../create-in-person-event
 
 ![create event: specify that the event will be held online](/img/event-setup/online/001.png) 
 
-this will remove the location options, and will disable well as the "On-site" payment method.
+this will remove the location options, and will disable the "On-site" payment method.
 
 Go ahead in the creation of the event by filling in pricing options and ticket categories, and finalize the creation by clicking on the "Save" button at the end of the page.
 
