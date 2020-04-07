@@ -155,7 +155,7 @@ public class NotificationManager {
         builder.registerTypeAdapter(Mailer.Attachment.class, new AttachmentConverter());
         this.gson = builder.create();
         attachmentTransformer = new EnumMap<>(Mailer.AttachmentIdentifier.class);
-        attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, generateICS(eventRepository, eventDescriptionRepository, ticketCategoryRepository, messageSourceManager));
+        attachmentTransformer.put(Mailer.AttachmentIdentifier.CALENDAR_ICS, generateICS(eventRepository, eventDescriptionRepository, ticketCategoryRepository, organizationRepository, messageSourceManager));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.RECEIPT_PDF, receiptOrInvoiceFactory(eventRepository,
             payload -> TemplateProcessor.buildReceiptPdf(payload.getLeft(), fileUploadManager, payload.getMiddle(), templateManager, payload.getRight(), extensionManager)));
         attachmentTransformer.put(Mailer.AttachmentIdentifier.INVOICE_PDF, receiptOrInvoiceFactory(eventRepository,
@@ -193,7 +193,9 @@ public class NotificationManager {
         };
     }
 
-    private static Function<Map<String, String>, byte[]> generateICS(EventRepository eventRepository, EventDescriptionRepository eventDescriptionRepository, TicketCategoryRepository ticketCategoryRepository, MessageSourceManager messageSourceManager) {
+    private static Function<Map<String, String>, byte[]> generateICS(EventRepository eventRepository, EventDescriptionRepository eventDescriptionRepository, 
+    		TicketCategoryRepository ticketCategoryRepository, OrganizationRepository organizationRepository, MessageSourceManager messageSourceManager) {
+    	
         return model -> {
             Event event;
             Locale locale;
@@ -209,6 +211,7 @@ public class NotificationManager {
                 locale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
                 categoryId = ticket.getCategoryId();
             }
+            Organization organization = organizationRepository.getById(event.getOrganizationId());
             TicketCategory category = Optional.ofNullable(categoryId).map(ticketCategoryRepository::getById).orElse(null);
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
             if(model.containsKey("onlineCheckInUrl")) { // special case: online event
@@ -221,7 +224,7 @@ public class NotificationManager {
                     model.get("onlineCheckInUrl") + "\n\n" +
                     MustacheCustomTag.renderToTextCommonmark(model.get("prerequisites"));
             }
-            return EventUtil.getIcalForEvent(event, category, description).orElse(null);
+            return EventUtil.getIcalForEvent(event, category, description, organization).orElse(null);
         };
     }
 
