@@ -964,7 +964,8 @@
            restrict: 'E',
            scope: {
                editMode: '=',
-               messages: '='
+               messages: '=',
+               online: '='
            },
            templateUrl: '/resources/angular-templates/admin/partials/custom-message/edit-messages.html',
            controller: ['$scope', function($scope) {
@@ -974,6 +975,7 @@
                        m.attachTicket = !m.attachTicket;
                    });
                };
+               $scope.sendAttachmentMessage = $scope.online ? 'Append access information at the end of the email' : 'Send attendee\'s ticket along with this message';
            }]
        };
     });

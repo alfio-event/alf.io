@@ -4,7 +4,7 @@
 <form name="previewForm" data-ng-submit="sendMessage(previewForm, eventName, categoryId, messages, affectedUsers)" novalidate data-error-sensitive>
     <div class="modal-body">
         <h3>Potentially affected users: {{affectedUsers}} <span data-ng-if="categoryName"> of category "{{categoryName}}"</span></h3>
-        <edit-messages data-edit-mode="false" data-messages="messages"></edit-messages>
+        <edit-messages data-edit-mode="false" data-messages="messages" data-online="online"></edit-messages>
     </div>
 
     <div class="modal-footer">

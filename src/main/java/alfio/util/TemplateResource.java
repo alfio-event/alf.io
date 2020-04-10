@@ -139,6 +139,14 @@ public enum TemplateResource {
             return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(), ticketCategory, Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event"));
         }
     },
+
+    ONLINE_CHECK_IN_DETAILS("/alfio/templates/online-check-in-instructions-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event");
+        }
+    },
+
     TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", true, "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {

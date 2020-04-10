@@ -19,6 +19,8 @@ package alfio.manager.support;
 import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.system.ConfigurationLevel;
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.modification.MessageModification;
@@ -27,9 +29,10 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
+import alfio.util.TemplateResource;
+import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Triple;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
@@ -37,13 +40,14 @@ import org.springframework.ui.Model;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static alfio.manager.system.Mailer.AttachmentIdentifier.CALENDAR_ICS;
+import static alfio.model.system.ConfigurationKeys.BASE_URL;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 @Component
+@AllArgsConstructor
 @Log4j2
 public class CustomMessageManager {
 
@@ -54,21 +58,7 @@ public class CustomMessageManager {
     private final NotificationManager notificationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final Executor sendMessagesExecutor = Executors.newSingleThreadExecutor();
-
-    @Autowired
-    public CustomMessageManager(TemplateManager templateManager,
-                                EventManager eventManager,
-                                TicketRepository ticketRepository,
-                                TicketReservationManager ticketReservationManager,
-                                NotificationManager notificationManager,
-                                TicketCategoryRepository ticketCategoryRepository) {
-        this.templateManager = templateManager;
-        this.eventManager = eventManager;
-        this.ticketRepository = ticketRepository;
-        this.ticketReservationManager = ticketReservationManager;
-        this.notificationManager = notificationManager;
-        this.ticketCategoryRepository = ticketCategoryRepository;
-    }
+    private final ConfigurationManager configurationManager;
 
     public Map<String, Object> generatePreview(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
         Map<String, Object> result = new HashMap<>();
@@ -83,8 +73,9 @@ public class CustomMessageManager {
         Event event = eventManager.getSingleEvent(eventName, username);
         preview(event, input, username);//dry run for checking the syntax
         Organization organization = eventManager.loadOrganizer(event, username);
-        AtomicInteger counter = new AtomicInteger();
         Map<String, List<MessageModification>> byLanguage = input.stream().collect(Collectors.groupingBy(m -> m.getLocale().getLanguage()));
+        var baseUrl = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
+        var eventMetadata = Optional.ofNullable(eventManager.getMetadataForEvent(event).getRequirementsDescriptions());
 
         sendMessagesExecutor.execute(() -> {
             categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(event.getId(), id))
@@ -109,17 +100,34 @@ public class CustomMessageManager {
                     MessageModification m = Optional.ofNullable(byLanguage.get(ticket.getUserLanguage())).orElseGet(() -> byLanguage.get(byLanguage.keySet().stream().findFirst().orElseThrow(IllegalStateException::new))).get(0);
                     Model model = triple.getRight();
                     String subject = renderResource(m.getSubject(), event, model, m.getLocale(), templateManager);
-                    String text = renderResource(m.getText(), event, model, m.getLocale(), templateManager);
+                    StringBuilder text = new StringBuilder(renderResource(m.getText(), event, model, m.getLocale(), templateManager));
                     List<Mailer.Attachment> attachments = new ArrayList<>();
                     if(m.isAttachTicket()) {
-                        ticketReservationManager.findById(ticket.getTicketsReservationId()).ifPresent(reservation -> {
-                            ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId()).ifPresent(ticketCategory -> {
-                                attachments.add(generateTicketAttachment(ticket, reservation, ticketCategory, organization));
-                            });
-                        });
+                        boolean onlineEvent = event.isOnline();
+                        var optionalReservation = ticketReservationManager.findById(ticket.getTicketsReservationId());
+                        var optionalTicketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId());
+
+                        if(optionalReservation.isPresent() && optionalTicketCategory.isPresent() && onlineEvent) {
+                            var checkInUrl = TicketReservationManager.ticketOnlineCheckInUrl(event, ticket, baseUrl);
+                            var instructions = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), optionalTicketCategory.get().getId()).getRequirementsDescriptions())
+                                .flatMap(metadata -> Optional.ofNullable(metadata.get(ticket.getUserLanguage())))
+                                .or(() -> eventMetadata.flatMap(metadata -> Optional.ofNullable(metadata.get(ticket.getUserLanguage()))))
+                                .orElse("");
+                            // generate only calendar invitation, as Ticket PDF would not make sense in this case.
+                            attachments.add(generateCalendarAttachmentForOnlineEvent(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization, checkInUrl, instructions));
+                            // add check-in URL and prerequisites, if any
+                            var onlineCheckInModel = new ExtendedModelMap();
+                            onlineCheckInModel.addAttribute("onlineCheckInUrl", checkInUrl).addAttribute("prerequisites", instructions);
+                            var additionalText = templateManager.renderTemplate(event,
+                                TemplateResource.ONLINE_CHECK_IN_DETAILS,
+                                onlineCheckInModel,
+                                Locale.forLanguageTag(ticket.getUserLanguage()));
+                            text.append("\n\n").append(additionalText);
+                        } else if(optionalReservation.isPresent() && optionalTicketCategory.isPresent()) {
+                            attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
+                        }
                     }
-                    counter.incrementAndGet();
-                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject, () -> text, attachments);
+                    notificationManager.sendSimpleEmail(event, ticket.getTicketsReservationId(), triple.getMiddle(), subject, text::toString, attachments);
                 });
         });
 
