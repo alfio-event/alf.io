@@ -65,7 +65,7 @@ import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.PAYPAL_ENABLED;
+import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.HttpUtils.statusCodeIsSuccessful;
 import static alfio.util.MonetaryUtil.*;
 import static java.util.Objects.requireNonNull;
@@ -314,14 +314,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
-
-        var paypalConf = configurationManager.getFor(Set.of(PAYPAL_ENABLED, ConfigurationKeys.PAYPAL_CLIENT_ID, ConfigurationKeys.PAYPAL_CLIENT_SECRET),
-            context.getConfigurationLevel());
-
-        return paymentMethod == PaymentMethod.PAYPAL &&
-            paypalConf.get(PAYPAL_ENABLED).getValueAsBooleanOrDefault(false)
-            && paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_ID).isPresent()
-            && paypalConf.get(ConfigurationKeys.PAYPAL_CLIENT_SECRET).isPresent();
+        return paymentMethod == PaymentMethod.PAYPAL && isActive(context);
     }
 
     @Override
@@ -336,7 +329,10 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
 
     @Override
     public boolean isActive(PaymentContext paymentContext) {
-        return false;
+        var configuration = configurationManager.getFor(EnumSet.of(PAYPAL_ENABLED, PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET), paymentContext.getConfigurationLevel());
+        return configuration.get(PAYPAL_ENABLED).getValueAsBooleanOrDefault(false)
+            && !configuration.get(PAYPAL_CLIENT_ID).getValueOrDefault("").isBlank()
+            && !configuration.get(PAYPAL_CLIENT_SECRET).getValueOrDefault("").isBlank();
     }
 
     @Override
