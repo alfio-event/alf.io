@@ -16,41 +16,7 @@
  */
 package alfio.util;
 
-import static alfio.util.ImageUtil.createQRCode;
-
-import java.math.BigDecimal;
-import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import alfio.model.AdditionalServiceItem;
-import alfio.model.AdditionalServiceText;
-import alfio.model.CustomerName;
-import alfio.model.Event;
-import alfio.model.FileBlobMetadata;
-import alfio.model.OrderSummary;
-import alfio.model.PriceContainer;
-import alfio.model.SummaryRow;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
-import alfio.model.TicketReservationInfo;
-import alfio.model.TicketWithCategory;
-import alfio.model.TotalPrice;
-import alfio.model.WaitingQueueSubscription;
+import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -58,6 +24,16 @@ import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import java.math.BigDecimal;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static alfio.util.ImageUtil.createQRCode;
 
 
 public enum TemplateResource {
@@ -163,6 +139,14 @@ public enum TemplateResource {
             return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(), ticketCategory, Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event"));
         }
     },
+
+    ONLINE_CHECK_IN_DETAILS("/alfio/templates/online-check-in-instructions-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event");
+        }
+    },
+
     TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
@@ -227,17 +211,17 @@ public enum TemplateResource {
             return buildModelForWaitingQueueReservationEmail(organization, event, subscription, "http://your-domain.tld/reservation-url", ZonedDateTime.now());
         }
     };
- 
+
     public static final String MULTIPART_ALTERNATIVE_MIMETYPE = "multipart/alternative";
-    
+
     private static final String PLAIN_TEMPLATE_SUFFIX = "-txt.ms";
-    
+
     private static final String HTML_TEMPLATE_SUFFIX = "-html.ms";
-    
-    
+
+
     private final String classPathUrl;
     // currently not used, might be removed in the future
-    private final boolean overridable; 
+    private final boolean overridable;
     private final String renderedContentType;
     private final TemplateManager.TemplateOutput templateOutput;
 
@@ -264,11 +248,11 @@ public enum TemplateResource {
     public String htmlClassPath() {
     	return isMultipart() ? classPathUrl + HTML_TEMPLATE_SUFFIX : null;
     }
-    
+
     public boolean isMultipart() {
     	return MULTIPART_ALTERNATIVE_MIMETYPE.equals(renderedContentType);
     }
-    
+
     public String getRenderedContentType() {
         return renderedContentType;
     }

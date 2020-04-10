@@ -2075,6 +2075,7 @@
                 var eventDescriptor = results[1].data;
                 $scope.organization = eventDescriptor.organization;
                 $scope.eventName = eventDescriptor.event.shortName;
+                $scope.onlineEvent = eventDescriptor.event.online;
         });
 
         $scope.cancel = function() {
@@ -2082,7 +2083,7 @@
         };
 
 
-        $scope.showPreview = function(frm, eventName, categoryId, messages, categories) {
+        $scope.showPreview = function(frm, eventName, categoryId, messages, categories, online) {
             if(!frm.$valid) {
                 return;
             }
@@ -2107,6 +2108,7 @@
                         $scope.affectedUsers = result.affectedUsers;
                         $scope.eventName = eventName;
                         $scope.categoryId = categoryId;
+                        $scope.online = online;
                         $scope.cancel = function() {
                             $scope.$dismiss('canceled');
                         };
