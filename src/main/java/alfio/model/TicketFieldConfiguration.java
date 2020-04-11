@@ -24,9 +24,12 @@ import org.apache.commons.collections.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Getter
 public class TicketFieldConfiguration {
+
+    private static final Pattern COLON_SPLITTER = Pattern.compile(":");
 
     public enum Context {
         ATTENDEE, ADDITIONAL_SERVICE
@@ -107,8 +110,8 @@ public class TicketFieldConfiguration {
     }
 
     public String getInputType() {
-        String[] splitted = type.split(":");
-        return splitted.length == 2 ? splitted[1] : "text";
+        String[] split = COLON_SPLITTER.split(type);
+        return split.length == 2 ? split[1] : "text";
     }
 
     public boolean isMaxLengthDefined() {

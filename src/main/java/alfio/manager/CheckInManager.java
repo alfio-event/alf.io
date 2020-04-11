@@ -49,6 +49,7 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -71,6 +72,7 @@ import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 @AllArgsConstructor
 public class CheckInManager {
 
+    private static final Pattern CYPHER_SPLITTER = Pattern.compile("\\|");
     private final TicketRepository ticketRepository;
     private final EventRepository eventRepository;
     private final TicketReservationRepository ticketReservationRepository;
@@ -142,13 +144,13 @@ public class CheckInManager {
         if(checkInStatus == OK_READY_TO_BE_CHECKED_IN) {
             checkIn(ticketIdentifier);
             TicketWithCategory ticket = descriptor.getTicket();
-            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, SUCCESS, ScanAudit.Operation.SCAN);
+            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(Clock.systemUTC()), user, SUCCESS, ScanAudit.Operation.SCAN);
             auditingRepository.insert(ticket.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
             // return also additional items, if any
             return new SuccessfulCheckIn(ticket, getAdditionalServicesForTicket(ticket), loadBoxColor(ticket));
         } else if(checkInStatus == BADGE_SCAN_ALREADY_DONE || checkInStatus == OK_READY_FOR_BADGE_SCAN) {
             var auditingStatus = checkInStatus == OK_READY_FOR_BADGE_SCAN ? BADGE_SCAN_SUCCESS : checkInStatus;
-            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, auditingStatus, ScanAudit.Operation.SCAN);
+            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(Clock.systemUTC()), user, auditingStatus, ScanAudit.Operation.SCAN);
             auditingRepository.insert(descriptor.getTicket().getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, BADGE_SCAN, new Date(), Audit.EntityType.TICKET, Integer.toString(descriptor.getTicket().getId()));
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(auditingStatus, checkInStatus == OK_READY_FOR_BADGE_SCAN ? "scan successful" : "already scanned"));
         }
@@ -164,7 +166,7 @@ public class CheckInManager {
             }
 
             checkIn(ticketIdentifier);
-            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, SUCCESS, ScanAudit.Operation.SCAN);
+            scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(Clock.systemUTC()), user, SUCCESS, ScanAudit.Operation.SCAN);
             auditingRepository.insert(t.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.MANUAL_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
             return true;
         }).orElse(false);
@@ -176,7 +178,7 @@ public class CheckInManager {
                 TicketReservation reservation = ticketReservationRepository.findReservationById(t.getTicketsReservationId());
                 TicketStatus revertedStatus = reservation.getPaymentMethod() == PaymentProxy.ON_SITE ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
                 ticketRepository.updateTicketStatusWithUUID(ticketIdentifier, revertedStatus.toString());
-                scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(), user, OK_READY_TO_BE_CHECKED_IN, ScanAudit.Operation.REVERT);
+                scanAuditRepository.insert(ticketIdentifier, eventId, ZonedDateTime.now(Clock.systemUTC()), user, OK_READY_TO_BE_CHECKED_IN, ScanAudit.Operation.REVERT);
                 auditingRepository.insert(t.getTicketsReservationId(), userRepository.findIdByUserName(user).orElse(null), eventId, Audit.EventType.REVERT_CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(t.getId()));
                 extensionManager.handleTicketRevertCheckedIn(ticketRepository.findByUUID(ticketIdentifier));
                 return true;
@@ -313,7 +315,7 @@ public class CheckInManager {
         try {
             Pair<Cipher, SecretKeySpec> cipherAndSecret = getCypher(key);
             Cipher cipher = cipherAndSecret.getKey();
-            String[] split = payload.split(Pattern.quote("|"));
+            String[] split = CYPHER_SPLITTER.split(payload);
             byte[] iv = Base64.decodeBase64(split[0]);
             byte[] body = Base64.decodeBase64(split[1]);
             cipher.init(Cipher.DECRYPT_MODE, cipherAndSecret.getRight(), new IvParameterSpec(iv));

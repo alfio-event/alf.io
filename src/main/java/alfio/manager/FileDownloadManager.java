@@ -27,6 +27,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 
 @Log4j2
@@ -52,7 +53,7 @@ public class FileDownloadManager {
             return null;
         }
         if(callSuccessful(response)) {
-            String[] parts = url.split("/");
+            String[] parts = Pattern.compile("/").split(url);
             String name = parts[parts.length - 1];
             if(Objects.nonNull(response.body()) && response.body().length <= FileUploadManager.MAXIMUM_ALLOWED_SIZE) {
                 return new DownloadedFile(

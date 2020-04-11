@@ -284,7 +284,7 @@ compileJava {
     options.errorprone.disable('UnusedVariable')
     options.errorprone.disable('MixedMutabilityReturnType')
     options.errorprone.disable('MissingOverride')
-    options.errorprone.disable('JavaTimeDefaultTimeZone') // a little bit too noisy
+    options.errorprone.disable('ImmutableEnumChecker') // not too useful, as it does not take into account the actual value of the field
 }
 
 compileJava.dependsOn(processResources)

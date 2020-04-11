@@ -52,7 +52,7 @@ public class DateTimeModification {
         return zonedDateTime == null ? null : new DateTimeModification(zonedDateTime.toLocalDate(), zonedDateTime.toLocalTime());
     }
 
-    public static ZonedDateTime toZonedDateTime(DateTimeModification t, ZoneId zoneId) {
+    public static ZonedDateTime atZone(DateTimeModification t, ZoneId zoneId) {
         return t == null ? null : t.toZonedDateTime(zoneId);
     }
 

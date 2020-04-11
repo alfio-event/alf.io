@@ -70,7 +70,7 @@ public class Configuration implements Comparable<Configuration> {
         if (obj == this) {
             return true;
         }
-        if (obj.getClass() != getClass()) {
+        if (!(obj instanceof  Configuration)) {
             return false;
         }
         Configuration o = (Configuration) obj;

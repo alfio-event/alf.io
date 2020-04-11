@@ -26,13 +26,12 @@ import org.springframework.stereotype.Service;
 
 import javax.script.*;
 import java.net.http.HttpClient;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 
@@ -57,12 +56,12 @@ public class ScriptingExecutionService {
 
     private static final Compilable engine = (Compilable) new ScriptEngineManager().getEngineByName("nashorn");
     private final Cache<String, CompiledScript> compiledScriptCache = Caffeine.newBuilder()
-        .expireAfterAccess(12, TimeUnit.HOURS)
+        .expireAfterAccess(Duration.ofHours(12))
         .build();
     private final Cache<String, Executor> asyncExecutors = Caffeine.newBuilder()
-        .expireAfterAccess(12, TimeUnit.HOURS)
+        .expireAfterAccess(Duration.ofHours(12))
         .removalListener((String key, Executor value, RemovalCause cause) -> {
-            if (value != null && value instanceof ExecutorService) {
+            if (value instanceof ExecutorService) {
                 ((ExecutorService) value).shutdown();
             }
         })

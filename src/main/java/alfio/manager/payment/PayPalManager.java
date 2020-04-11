@@ -367,7 +367,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
             } else {
                 PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
                 transactionRepository.insert(chargeDetails.captureId, chargeDetails.orderId, spec.getReservationId(),
-                    ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
+                    ZonedDateTime.now(spec.getEvent().getZoneId()), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), "Paypal confirmation", PaymentProxy.PAYPAL.name(),
                     applicationFee, chargeDetails.payPalFee, alfio.model.transaction.Transaction.Status.COMPLETE, Map.of());
             }
             return PaymentResult.successful(chargeDetails.captureId);
@@ -385,7 +385,7 @@ public class PayPalManager implements PaymentProvider, RefundRequest, PaymentInf
     public void saveToken(String reservationId, Event event, PayPalToken token) {
         PaymentManagerUtils.invalidateExistingTransactions(reservationId, transactionRepository);
         transactionRepository.insert(reservationId, token.getPaymentId(), reservationId,
-            ZonedDateTime.now(), 0, event.getCurrency(), "Paypal token", PaymentProxy.PAYPAL.name(), 0, 0,
+            ZonedDateTime.now(event.getZoneId()), 0, event.getCurrency(), "Paypal token", PaymentProxy.PAYPAL.name(), 0, 0,
             alfio.model.transaction.Transaction.Status.PENDING, Map.of(PaymentManager.PAYMENT_TOKEN, json.asJsonString(token)));
     }
 

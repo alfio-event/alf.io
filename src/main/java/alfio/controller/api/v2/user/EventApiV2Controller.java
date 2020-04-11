@@ -250,7 +250,7 @@ public class EventApiV2Controller {
                             @RequestParam(value = "ticketId", required = false) String ticketId,
                             HttpServletResponse response) {
 
-        eventRepository.findOptionalByShortName(eventName).ifPresentOrElse((ev -> {
+        eventRepository.findOptionalByShortName(eventName).ifPresentOrElse(ev -> {
             var description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(ev.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale).orElse("");
             var category = ticketRepository.findOptionalByUUID(ticketId).map(t -> ticketCategoryRepository.getById(t.getCategoryId())).orElse(null);
             if ("google".equals(calendarType)) {
@@ -272,7 +272,7 @@ public class EventApiV2Controller {
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 });
             }
-        }), () -> response.setStatus(HttpServletResponse.SC_NOT_FOUND));
+        }, () -> response.setStatus(HttpServletResponse.SC_NOT_FOUND));
     }
 
     /**

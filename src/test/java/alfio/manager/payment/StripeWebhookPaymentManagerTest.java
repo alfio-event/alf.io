@@ -36,6 +36,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
 
+import java.time.ZoneId;
 import java.util.*;
 
 import static alfio.manager.testSupport.StripeUtils.completeStripeConfiguration;
@@ -75,6 +76,7 @@ class StripeWebhookPaymentManagerTest {
         transactionRepository = mock(TransactionRepository.class);
         event = mock(Event.class);
         when(event.getId()).thenReturn(EVENT_ID);
+        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         transaction = mock(Transaction.class);
         when(transaction.getId()).thenReturn(TRANSACTION_ID);
         when(transaction.getPaymentId()).thenReturn(PAYMENT_ID);

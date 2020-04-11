@@ -30,12 +30,12 @@ public class TotalPrice {
 
     @JsonCreator
     public TotalPrice(@JsonProperty("priceWithVAT") int priceWithVAT,
-                      @JsonProperty("vat") int vat,
+                      @JsonProperty("vat") int VAT,
                       @JsonProperty("discount") int discount,
                       @JsonProperty("discountAppliedCount") int discountAppliedCount,
                       @JsonProperty("currencyCode") String currencyCode) {
         this.priceWithVAT = priceWithVAT;
-        this.VAT = vat;
+        this.VAT = VAT;
         this.discount = discount;
         this.discountAppliedCount = discountAppliedCount;
         this.currencyCode = currencyCode;

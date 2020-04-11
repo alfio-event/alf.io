@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -62,6 +63,7 @@ public class StripeManagerTest {
         configurationManager = mock(ConfigurationManager.class);
         ticketRepository = mock(TicketRepository.class);
         event = mock(Event.class);
+        when(event.getZoneId()).thenReturn(ZoneId.systemDefault());
         customerName = mock(CustomerName.class);
         configurationRepository = mock(ConfigurationRepository.class);
         when(customerName.getFullName()).thenReturn("ciccio");

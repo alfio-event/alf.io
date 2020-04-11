@@ -22,7 +22,10 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.IntConsumer;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -37,7 +40,7 @@ public final class PasswordGenerator {
     private static final Pattern VALIDATION_PATTERN;
 
     static {
-        List<Character> chars = new LinkedList<>();
+        List<Character> chars = new ArrayList<>();
         IntConsumer addToList = c -> chars.add((char) c);
         IntStream.rangeClosed('a', 'z').forEach(addToList);
         IntStream.rangeClosed('A', 'Z').forEach(addToList);

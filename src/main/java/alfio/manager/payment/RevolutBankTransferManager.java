@@ -46,10 +46,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -69,7 +69,7 @@ public class RevolutBankTransferManager implements PaymentProvider, OfflineProce
     private final TransactionRepository transactionRepository;
     private final HttpClient client;
     private static final Cache<String, List<String>> accountsCache = Caffeine.newBuilder()
-        .expireAfterWrite(1, TimeUnit.HOURS)
+        .expireAfterWrite(Duration.ofHours(1))
         .build();
 
     @Override

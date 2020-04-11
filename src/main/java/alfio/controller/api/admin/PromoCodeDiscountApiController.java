@@ -25,6 +25,7 @@ import alfio.repository.PromoCodeDiscountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -89,7 +90,7 @@ public class PromoCodeDiscountApiController {
     
     @PostMapping("/promo-code/{promoCodeId}/disable")
     public void disablePromoCode(@PathVariable("promoCodeId") int promoCodeId) {
-        promoCodeRepository.updateEventPromoCodeEnd(promoCodeId, ZonedDateTime.now());
+        promoCodeRepository.updateEventPromoCodeEnd(promoCodeId, ZonedDateTime.now(Clock.systemUTC()));
     }
     
     @GetMapping("/promo-code/{promoCodeId}/count-use")

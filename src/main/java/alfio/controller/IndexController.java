@@ -29,7 +29,10 @@ import alfio.model.FileBlobMetadata;
 import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
-import alfio.repository.*;
+import alfio.repository.EventDescriptionRepository;
+import alfio.repository.EventRepository;
+import alfio.repository.FileUploadRepository;
+import alfio.repository.TicketReservationRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MustacheCustomTag;
@@ -353,7 +356,7 @@ public class IndexController {
         boolean isDBAuthentication = !(principal instanceof WebSecurityConfig.OpenIdAlfioAuthentication);
         model.addAttribute("isDBAuthentication", isDBAuthentication);
         if (!isDBAuthentication) {
-            String idpLogoutRedirectionUrl = ((WebSecurityConfig.OpenIdAlfioAuthentication) (SecurityContextHolder.getContext().getAuthentication())).getIdpLogoutRedirectionUrl();
+            String idpLogoutRedirectionUrl = ((WebSecurityConfig.OpenIdAlfioAuthentication) SecurityContextHolder.getContext().getAuthentication()).getIdpLogoutRedirectionUrl();
             model.addAttribute("idpLogoutRedirectionUrl", idpLogoutRedirectionUrl);
         } else {
             model.addAttribute("idpLogoutRedirectionUrl", null);

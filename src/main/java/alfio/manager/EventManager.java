@@ -74,7 +74,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static alfio.model.TicketCategory.TicketCheckInStrategy.ONCE_PER_EVENT;
-import static alfio.model.modification.DateTimeModification.toZonedDateTime;
+import static alfio.model.modification.DateTimeModification.atZone;
 import static alfio.model.system.ConfigurationKeys.CHECK_IN_COLOR_CONFIGURATION;
 import static alfio.util.EventUtil.*;
 import static alfio.util.Wrappers.optionally;
@@ -587,8 +587,8 @@ public class EventManager {
             final int maxTickets = tc.isBounded() ? tc.getMaxTickets() : 0;
             final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), maxTickets, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
-                toZonedDateTime(tc.getValidCheckInFrom(), zoneId), toZonedDateTime(tc.getValidCheckInTo(), zoneId),
-                toZonedDateTime(tc.getTicketValidityStart(), zoneId), toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT),
+                atZone(tc.getValidCheckInFrom(), zoneId), atZone(tc.getValidCheckInTo(), zoneId),
+                atZone(tc.getTicketValidityStart(), zoneId), atZone(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(), Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT),
                 Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty));
 
             insertOrUpdateTicketCategoryDescription(category.getKey(), tc, event);
@@ -606,10 +606,10 @@ public class EventManager {
         final int price = evaluatePrice(tc.getPrice(), event.isFreeOfCharge(), event.getCurrency());
         final AffectedRowCountAndKey<Integer> category = ticketCategoryRepository.insert(tc.getInception().toZonedDateTime(zoneId),
             tc.getExpiration().toZonedDateTime(zoneId), tc.getName(), tc.isBounded() ? tc.getMaxTickets() : 0, tc.isTokenGenerationRequested(), eventId, tc.isBounded(), price, StringUtils.trimToNull(tc.getCode()),
-            toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
-            toZonedDateTime(tc.getValidCheckInTo(), zoneId),
-            toZonedDateTime(tc.getTicketValidityStart(), zoneId),
-            toZonedDateTime(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(),
+            atZone(tc.getValidCheckInFrom(), zoneId),
+            atZone(tc.getValidCheckInTo(), zoneId),
+            atZone(tc.getTicketValidityStart(), zoneId),
+            atZone(tc.getTicketValidityEnd(), zoneId), tc.getOrdinal(),
             Objects.requireNonNullElse(tc.getTicketCheckInStrategy(), ONCE_PER_EVENT),
             Objects.requireNonNullElseGet(tc.getMetadata(), AlfioMetadata::empty));
         TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(category.getKey(), eventId);
@@ -697,10 +697,10 @@ public class EventManager {
         TicketCategory original = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         ticketCategoryRepository.update(tc.getId(), tc.getName(), tc.getInception().toZonedDateTime(zoneId),
                 tc.getExpiration().toZonedDateTime(zoneId), tc.getMaxTickets(), tc.isTokenGenerationRequested(), price, StringUtils.trimToNull(tc.getCode()),
-                toZonedDateTime(tc.getValidCheckInFrom(), zoneId),
-                toZonedDateTime(tc.getValidCheckInTo(), (zoneId)),
-                toZonedDateTime(tc.getTicketValidityStart(), zoneId),
-                toZonedDateTime(tc.getTicketValidityEnd(), zoneId),
+                atZone(tc.getValidCheckInFrom(), zoneId),
+                atZone(tc.getValidCheckInTo(), zoneId),
+                atZone(tc.getTicketValidityStart(), zoneId),
+                atZone(tc.getTicketValidityEnd(), zoneId),
                 Optional.ofNullable(tc.getTicketCheckInStrategy()).orElse(ONCE_PER_EVENT));
         TicketCategory updated = ticketCategoryRepository.getByIdAndActive(tc.getId(), eventId);
         int addedTickets = 0;

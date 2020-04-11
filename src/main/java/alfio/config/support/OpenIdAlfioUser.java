@@ -14,30 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
-package alfio.model.metadata;
+package alfio.config.support;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import alfio.model.user.Role;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.util.Map;
+import java.util.Set;
 
 @Getter
-public class ConditionsLink {
-    enum Type {
-        TERMS_OF_PARTICIPATION, PRIVACY_POLICY, CUSTOM;
-    }
-
-    private final Type type;
-    private final Map<String, String> description; // needed only for CUSTOM
-    private final String url;
-
-    @JsonCreator
-    public ConditionsLink(@JsonProperty("type") Type type,
-                          @JsonProperty("description") Map<String, String> description,
-                          @JsonProperty("url") String url) {
-        this.type = type;
-        this.description = description;
-        this.url = url;
-    }
+@AllArgsConstructor
+public class OpenIdAlfioUser {
+    private final String idToken;
+    private final String subject;
+    private final String email;
+    private final boolean isAdmin;
+    private final Set<Role> alfioRoles;
+    private final Map<String, Set<String>> alfioOrganizationAuthorizations;
 }

@@ -52,7 +52,7 @@ public class FeeCalculator {
 
     private long calculate(long price) {
         long percentage = MonetaryUtil.calcPercentage(price, percentageFee, BigDecimal::longValueExact);
-        long fixed = MonetaryUtil.unitToCents(fee, currencyCode) * numTickets;
+        long fixed = (long) MonetaryUtil.unitToCents(fee, currencyCode) * numTickets;
         long minFee = MonetaryUtil.unitToCents(minimumFee, currencyCode, BigDecimal::longValueExact) * numTickets;
         long maxFee = maxFeeDefined ? MonetaryUtil.unitToCents(maximumFee, currencyCode, BigDecimal::longValueExact) * numTickets : Long.MAX_VALUE;
         return min(maxFee, max(percentage + fixed, minFee));

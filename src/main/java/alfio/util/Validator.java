@@ -206,7 +206,7 @@ public final class Validator {
                                                                        boolean isFirstTicket) {
         return additionalFieldsForEvent.stream()
             .filter(field -> field.rulesApply(ticketCategoryId))
-            .filter(f -> f.getContext() == TicketFieldConfiguration.Context.ATTENDEE || isFirstTicket && Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent())
+            .filter(f -> f.getContext() == TicketFieldConfiguration.Context.ATTENDEE || (isFirstTicket && Optional.ofNullable(f.getAdditionalServiceId()).filter(additionalServiceIds::contains).isPresent()))
             .collect(Collectors.toList());
     }
 

@@ -44,10 +44,10 @@ import org.springframework.stereotype.Component;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static alfio.model.system.ConfigurationKeys.*;
@@ -60,7 +60,7 @@ public class PassKitManager {
     private static final String APPLE_PASS = "ApplePass";
     private final Cache<String, Optional<byte[]>> passKitLogoCache = Caffeine.newBuilder()
         .maximumSize(20)
-        .expireAfterWrite(20, TimeUnit.MINUTES)
+        .expireAfterWrite(Duration.ofMinutes(20))
         .build();
     private final EventRepository eventRepository;
     private final OrganizationRepository organizationRepository;

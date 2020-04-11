@@ -33,8 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 @Component
 @Transactional
@@ -49,7 +49,7 @@ public class FileUploadManager {
     private final FileUploadRepository repository;
     private final Cache<String, File> cache = Caffeine.newBuilder()
         .maximumSize(20)
-        .expireAfterWrite(20, TimeUnit.MINUTES)
+        .expireAfterWrite(Duration.ofMinutes(20))
         .removalListener((String key, File value, RemovalCause cause) -> {
             if(value != null) {
                 boolean result = value.delete();

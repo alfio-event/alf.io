@@ -80,6 +80,7 @@ import java.util.zip.ZipOutputStream;
 
 import static alfio.util.Validator.*;
 import static alfio.util.Wrappers.optionally;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.StringUtils.defaultString;
 
@@ -568,7 +569,7 @@ public class EventApiController {
                                                                   Principal principal,
                                                                   @RequestBody UploadBase64FileModification file) throws IOException, CsvException {
 
-        try(InputStreamReader isr = new InputStreamReader(file.getInputStream()); CSVReader reader = new CSVReader(isr)) {
+        try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8); CSVReader reader = new CSVReader(isr)) {
             Event event = loadEvent(eventName, principal);
             return reader.readAll().stream()
                     .map(line -> {
