@@ -111,7 +111,7 @@ public class CustomMessageManager {
                             var checkInUrl = TicketReservationManager.ticketOnlineCheckInUrl(event, ticket, baseUrl);
                             var instructions = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), optionalTicketCategory.get().getId()).getRequirementsDescriptions())
                                 .flatMap(metadata -> Optional.ofNullable(metadata.get(ticket.getUserLanguage())))
-                                .or(() -> eventMetadata.flatMap(metadata -> Optional.ofNullable(metadata.get(ticket.getUserLanguage()))))
+                                .or(() -> eventMetadata.flatMap(metadata -> Optional.ofNullable(metadata.get(m.getLocale().getLanguage()))))
                                 .orElse("");
                             // generate only calendar invitation, as Ticket PDF would not make sense in this case.
                             attachments.add(generateCalendarAttachmentForOnlineEvent(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization, checkInUrl, instructions));
@@ -121,7 +121,7 @@ public class CustomMessageManager {
                             var additionalText = templateManager.renderTemplate(event,
                                 TemplateResource.ONLINE_CHECK_IN_DETAILS,
                                 onlineCheckInModel,
-                                Locale.forLanguageTag(ticket.getUserLanguage()));
+                                m.getLocale());
                             text.append("\n\n").append(additionalText);
                         } else if(optionalReservation.isPresent() && optionalTicketCategory.isPresent()) {
                             attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
