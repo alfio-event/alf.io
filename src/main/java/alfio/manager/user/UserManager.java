@@ -284,7 +284,7 @@ public class UserManager {
             .map(u -> {
                 List<ValidationResult.ErrorDescriptor> errors = new ArrayList<>();
                 Optional<String> password = userRepository.findPasswordByUsername(username);
-                if(password.filter(p -> passwordEncoder.matches(oldPassword, p)).isEmpty()) {
+                if(password.filter(p -> oldPassword == null || passwordEncoder.matches(oldPassword, p)).isEmpty()) {
                     errors.add(new ValidationResult.ErrorDescriptor("alfio.old-password-invalid", "wrong password"));
                 }
                 if(!PasswordGenerator.isValid(newPassword)) {
