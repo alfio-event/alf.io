@@ -674,6 +674,11 @@ public class AdminReservationManager {
             TicketReservation reservation = res.getLeft();
             List<Ticket> tickets = res.getMiddle();
 
+            var checkedInTicketsCount = tickets.stream().filter(c -> c.getStatus() == Ticket.TicketStatus.CHECKED_IN).count();
+            if ( checkedInTicketsCount > 0) {
+                return Result.error(ErrorCode.custom("remove-reservation.failed", checkedInTicketsCount +" tickets are already checked-in for this reservation!! Unable to cancel the reservation."));
+            }
+
             if(refund && reservation.getPaymentMethod() != null && reservation.getPaymentMethod().isSupportRefund()) {
                 //fully refund
                 boolean refundResult = paymentManager.refund(reservation, e, null, username);
