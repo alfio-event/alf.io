@@ -16,7 +16,11 @@
  */
 package alfio.manager;
 
+import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.OpenIdAuthenticationManager;
+import alfio.model.system.ConfigurationKeyValuePathLevel;
+import alfio.model.system.ConfigurationKeys;
+import alfio.model.system.ConfigurationPathLevel;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Assert;
@@ -28,6 +32,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -50,18 +55,21 @@ public class OpenIdAuthenticationManagerTest {
     @BeforeEach
     void setUp() {
         environment = mock(Environment.class);
-        when(environment.getProperty("openid.domain")).thenReturn(DOMAIN);
-        when(environment.getProperty("openid.clientId")).thenReturn(CLIENT_ID);
-        when(environment.getProperty("openid.clientSecret")).thenReturn(CLIENT_SECRET);
-        when(environment.getProperty("openid.callbackURI")).thenReturn(CALLBACK_URI);
-        when(environment.getProperty("openid.authenticationUrl")).thenReturn(AUTHENTICATION_URL);
-        when(environment.getProperty("openid.tokenEndpoint")).thenReturn(CLAIMS_URI);
-        when(environment.getProperty("openid.contentType")).thenReturn(CONTENT_TYPE);
-        when(environment.getProperty("openid.rolesParameter")).thenReturn(GROUPS_NAME);
-        when(environment.getProperty("openid.alfioGroupsParameter")).thenReturn(ALFIO_GROUPS_NAME);
-        when(environment.getProperty("openid.logoutUrl")).thenReturn(LOGOUT_URL);
-        when(environment.getProperty("openid.logoutRedirectUrl")).thenReturn(LOGOUT_REDIRECT_URL);
-        authenticationManager = new OpenIdAuthenticationManager(environment, null, null);
+        when(environment.getProperty(eq("openid.domain"))).thenReturn(DOMAIN);
+        when(environment.getProperty(eq("openid.clientId"))).thenReturn(CLIENT_ID);
+        when(environment.getProperty(eq("openid.clientSecret"))).thenReturn(CLIENT_SECRET);
+        when(environment.getProperty(eq("openid.callbackURI"), anyString())).thenReturn(CALLBACK_URI);
+        when(environment.getProperty(eq("openid.authenticationUrl"))).thenReturn(AUTHENTICATION_URL);
+        when(environment.getProperty(eq("openid.tokenEndpoint"), anyString())).thenReturn(CLAIMS_URI);
+        when(environment.getProperty(eq("openid.contentType"), anyString())).thenReturn(CONTENT_TYPE);
+        when(environment.getProperty(eq("openid.rolesParameter"))).thenReturn(GROUPS_NAME);
+        when(environment.getProperty(eq("openid.alfioGroupsParameter"))).thenReturn(ALFIO_GROUPS_NAME);
+        when(environment.getProperty(eq("openid.logoutUrl"))).thenReturn(LOGOUT_URL);
+        when(environment.getProperty(eq("openid.logoutRedirectUrl"), anyString())).thenReturn(LOGOUT_REDIRECT_URL);
+        var configurationManager = mock(ConfigurationManager.class);
+        when(configurationManager.getFor(eq(ConfigurationKeys.BASE_URL), any()))
+            .thenReturn(new ConfigurationManager.MaybeConfiguration(ConfigurationKeys.BASE_URL, new ConfigurationKeyValuePathLevel("", "blabla", ConfigurationPathLevel.SYSTEM)));
+        authenticationManager = new OpenIdAuthenticationManager(environment, null, null, configurationManager);
     }
 
     @Test
@@ -98,7 +106,7 @@ public class OpenIdAuthenticationManagerTest {
     @Test
     public void oauth2_form_url_encoded_build_body_test() throws JsonProcessingException {
         String contentType = "application/x-www-form-urlencoded";
-        when(environment.getProperty("openid.contentType")).thenReturn(contentType);
+        when(environment.getProperty(eq("openid.contentType"), anyString())).thenReturn(contentType);
         String code = "code";
         String body = authenticationManager.buildRetrieveClaimsUrlBody(code);
         String expectedBody = "grant_type=authorization_code&code=code&client_id=123&client_secret=1234&redirect_uri=callback";
