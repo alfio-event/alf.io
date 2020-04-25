@@ -17,9 +17,9 @@
 package alfio.config;
 
 import alfio.config.support.OpenIdCallbackLoginFilter;
-import alfio.manager.OpenIdAuthenticationManager;
 import alfio.manager.RecaptchaService;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.OpenIdAuthenticationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.Role;
 import alfio.model.user.User;
@@ -27,6 +27,8 @@ import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
+import lombok.AllArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -77,6 +79,7 @@ import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 
 @Configuration
 @EnableWebSecurity
+@Log4j2
 public class WebSecurityConfig {
 
     public static final String CSRF_PARAM_NAME = "_csrf";
@@ -120,7 +123,7 @@ public class WebSecurityConfig {
     public static class APITokenAuthentication extends AbstractAuthenticationToken {
 
         private final Object principal;
-        private Object credentials;
+        private final Object credentials;
 
 
         public APITokenAuthentication(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
@@ -220,7 +223,9 @@ public class WebSecurityConfig {
                                           AuthorityRepository authorityRepository,
                                           UserOrganizationRepository userOrganizationRepository,
                                           OrganizationRepository organizationRepository) {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository,
+                dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository,
+                userOrganizationRepository, organizationRepository);
         }
     }
 
@@ -242,10 +247,13 @@ public class WebSecurityConfig {
                                     AuthorityRepository authorityRepository,
                                     UserOrganizationRepository userOrganizationRepository,
                                     OrganizationRepository organizationRepository) {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, null, userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
+            super(environment, userManager, recaptchaService, configurationManager,
+                csrfTokenRepository, dataSource, passwordEncoder, null,
+                userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
         }
     }
 
+    @AllArgsConstructor
     static abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter {
         private final Environment environment;
         private final UserManager userManager;
@@ -259,32 +267,6 @@ public class WebSecurityConfig {
         private final AuthorityRepository authorityRepository;
         private final UserOrganizationRepository userOrganizationRepository;
         private final OrganizationRepository organizationRepository;
-
-        public AbstractFormBasedWebSecurity(Environment environment,
-                                            UserManager userManager,
-                                            RecaptchaService recaptchaService,
-                                            ConfigurationManager configurationManager,
-                                            CsrfTokenRepository csrfTokenRepository,
-                                            DataSource dataSource,
-                                            PasswordEncoder passwordEncoder,
-                                            OpenIdAuthenticationManager openIdAuthenticationManager,
-                                            UserRepository userRepository,
-                                            AuthorityRepository authorityRepository,
-                                            UserOrganizationRepository userOrganizationRepository,
-                                            OrganizationRepository organizationRepository) {
-            this.environment = environment;
-            this.userManager = userManager;
-            this.recaptchaService = recaptchaService;
-            this.configurationManager = configurationManager;
-            this.csrfTokenRepository = csrfTokenRepository;
-            this.dataSource = dataSource;
-            this.passwordEncoder = passwordEncoder;
-            this.openIdAuthenticationManager = openIdAuthenticationManager;
-            this.userRepository = userRepository;
-            this.authorityRepository = authorityRepository;
-            this.userOrganizationRepository = userOrganizationRepository;
-            this.organizationRepository = organizationRepository;
-        }
 
         @Override
         public void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -381,6 +363,7 @@ public class WebSecurityConfig {
                 http.addFilterBefore(new OpenIdCallbackLoginFilter(openIdAuthenticationManager, new AntPathRequestMatcher("/callback", "GET"),
                     authenticationManager(), userRepository, authorityRepository, passwordEncoder, userManager, userOrganizationRepository,
                     organizationRepository), UsernamePasswordAuthenticationFilter.class);
+                log.warn("adding openid filter");
                 http.addFilterBefore(new OpenIdAuthenticationFilter("/authentication", openIdAuthenticationManager), RecaptchaLoginFilter.class);
             }
 
@@ -423,7 +406,7 @@ public class WebSecurityConfig {
 
         private static class OpenIdAuthenticationFilter extends GenericFilterBean {
             private final RequestMatcher requestMatcher;
-            private OpenIdAuthenticationManager openIdAuthenticationManager;
+            private final OpenIdAuthenticationManager openIdAuthenticationManager;
 
             private OpenIdAuthenticationFilter(String loginURL, OpenIdAuthenticationManager openIdAuthenticationManager) {
                 this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
@@ -440,7 +423,8 @@ public class WebSecurityConfig {
                         res.sendRedirect("/admin/");
                         return;
                     }
-                    res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl(openIdAuthenticationManager.getScopes()));
+                    log.warn("calling buildAuthorizeUrl {}", openIdAuthenticationManager);
+                    res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl());
                     return;
                 }
 

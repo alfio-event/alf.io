@@ -17,7 +17,7 @@
 package alfio.config.support;
 
 import alfio.config.WebSecurityConfig;
-import alfio.manager.OpenIdAuthenticationManager;
+import alfio.manager.system.OpenIdAuthenticationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
@@ -26,10 +26,6 @@ import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.interfaces.Claim;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -47,17 +43,15 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.*;
-import java.util.regex.Pattern;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import static alfio.manager.system.OpenIdAuthenticationManager.CODE;
+
 public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingFilter {
-    private static final String ALFIO_ADMIN = "ALFIO_ADMIN";
-    private static final String ALFIO_BACKOFFICE = "ALFIO_BACKOFFICE";
 
     private final RequestMatcher requestMatcher;
     private final UserRepository userRepository;
@@ -67,7 +61,6 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
     private final UserOrganizationRepository userOrganizationRepository;
     private final OrganizationRepository organizationRepository;
     private final OpenIdAuthenticationManager openIdAuthenticationManager;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public OpenIdCallbackLoginFilter(OpenIdAuthenticationManager openIdAuthenticationManager,
                                      AntPathRequestMatcher requestMatcher,
@@ -100,6 +93,27 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
         }
 
         chain.doFilter(request, response);
+    }
+
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException {
+        String code = request.getParameter(CODE);
+        if (code == null) {
+            throw new IllegalArgumentException("authorization code cannot be null");
+        }
+
+        OpenIdAlfioUser alfioUser = openIdAuthenticationManager.retrieveUserInfo(code);
+
+        if (!userManager.usernameExists(alfioUser.getEmail())) {
+            createUser(alfioUser);
+        }
+        updateRoles(alfioUser.getAlfioRoles(), alfioUser.getEmail());
+        updateOrganizations(alfioUser, response);
+
+        List<GrantedAuthority> authorities = alfioUser.getAlfioRoles().stream().map(Role::getRoleName)
+            .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+        WebSecurityConfig.OpenIdAlfioAuthentication authentication = new WebSecurityConfig.OpenIdAlfioAuthentication(authorities, alfioUser.getIdToken(), alfioUser.getSubject(), alfioUser.getEmail(), openIdAuthenticationManager.buildLogoutUrl());
+        return getAuthenticationManager().authenticate(authentication);
     }
 
     private void updateOrganizations(OpenIdAlfioUser alfioUser, HttpServletResponse response) throws IOException {
@@ -141,83 +155,8 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
             .forEach(orgId -> userOrganizationRepository.create(userId.get(), orgId));
     }
 
-    private Set<Role> extractAlfioRoles(Map<String, Set<String>> alfioOrganizationAuthorizations) {
-        Set<Role> alfioRoles = new HashSet<>();
-        //FIXME at the moment, the authorizations are NOT based on the organizations, they are global
-        alfioOrganizationAuthorizations.keySet().stream()
-            .map(alfioOrganizationAuthorizations::get)
-            .forEach(authorizations ->
-                authorizations.stream().map(auth -> Role.fromRoleName("ROLE_" + auth))
-                    .forEach(alfioRoles::add));
-        return alfioRoles;
-    }
-
     private void createUser(OpenIdAlfioUser user) {
         userRepository.create(user.getEmail(), passwordEncoder.encode(user.getSubject()), user.getEmail(), user.getEmail(), user.getEmail(), true, User.Type.INTERNAL, null, null);
-    }
-
-    private OpenIdAlfioUser extractUserInfoFrom(Map<String, Object> claims) {
-        String idToken = (String) claims.get(openIdAuthenticationManager.getIdTokenNameParameter());
-
-        Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
-        String subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
-        String email = idTokenClaims.get(openIdAuthenticationManager.getEmailNameParameter()).asString();
-        List<String> groupsList = idTokenClaims.get(openIdAuthenticationManager.getGroupsNameParameter()).asList(String.class);
-        List<String> groups = groupsList.stream().filter(group -> group.startsWith("ALFIO_")).collect(Collectors.toList());
-        boolean isAdmin = groups.contains(ALFIO_ADMIN);
-
-        if (isAdmin) {
-            return new OpenIdAlfioUser(idToken, subject, email, true, Set.of(Role.ADMIN), null);
-        }
-
-        if(groups.isEmpty()){
-            String message = "Users must have at least a group called ALFIO_ADMIN or ALFIO_BACKOFFICE";
-            logger.error(message);
-            throw new RuntimeException(message);
-        }
-
-        List<String> alfioOrganizationAuthorizationsRaw = idTokenClaims.get(openIdAuthenticationManager.getAlfioGroupsNameParameter()).asList(String.class);
-        Map<String, Set<String>> alfioOrganizationAuthorizations = new HashMap<>();
-
-        for (String alfioOrgAuth : alfioOrganizationAuthorizationsRaw) {
-            String[] orgRole = Pattern.compile("/").split(alfioOrgAuth);
-            String organization = orgRole[1];
-            String role = orgRole[2];
-
-            if (alfioOrganizationAuthorizations.containsKey(organization)) {
-                alfioOrganizationAuthorizations.get(organization).add(role);
-                continue;
-            }
-            alfioOrganizationAuthorizations.put(organization, Set.of(role));
-        }
-        Set<Role> alfioRoles = extractAlfioRoles(alfioOrganizationAuthorizations);
-        return new OpenIdAlfioUser(idToken, subject, email, false, alfioRoles, alfioOrganizationAuthorizations);
-    }
-
-    private Map<String, Object> retrieveClaims(String claimsUrl, String code){
-        HttpClient client = HttpClient.newHttpClient();
-
-        HttpRequest request;
-        HttpResponse<String> response;
-        Map<String, Object> map;
-
-        try {
-            request = HttpRequest.newBuilder()
-                .uri(URI.create(claimsUrl))
-                .header("Content-Type", openIdAuthenticationManager.getContentType())
-                .POST(HttpRequest.BodyPublishers.ofString(openIdAuthenticationManager.buildRetrieveClaimsUrlBody(code)))
-                .build();
-
-            response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            map = objectMapper.readValue(response.body(), new TypeReference<>() {});
-
-        } catch (Exception e) {
-            String message = "There has been an error retrieving the claims from the idp using the authorization code";
-            logger.error(message);
-            throw new RuntimeException(message);
-        }
-
-        return map;
     }
 
     private void updateRoles(Set<Role> roles, String username) {
@@ -225,27 +164,4 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
         roles.forEach(role -> authorityRepository.create(username, role.getRoleName()));
     }
 
-    @Override
-    public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
-        String code = request.getParameter(openIdAuthenticationManager.getCodeNameParameter());
-        if (code == null) {
-            throw new IllegalArgumentException("authorization code cannot be null");
-        }
-
-        String claimsUrl = openIdAuthenticationManager.buildClaimsRetrieverUrl();
-        Map<String, Object> claims = retrieveClaims(claimsUrl, code);
-
-        OpenIdAlfioUser alfioUser = extractUserInfoFrom(claims);
-
-        if (!userManager.usernameExists(alfioUser.getEmail())) {
-            createUser(alfioUser);
-        }
-        updateRoles(alfioUser.getAlfioRoles(), alfioUser.getEmail());
-        updateOrganizations(alfioUser, response);
-
-        List<GrantedAuthority> authorities = alfioUser.getAlfioRoles().stream().map(Role::getRoleName)
-            .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-        WebSecurityConfig.OpenIdAlfioAuthentication authentication = new WebSecurityConfig.OpenIdAlfioAuthentication(authorities, alfioUser.getIdToken(), alfioUser.getSubject(), alfioUser.getEmail(), openIdAuthenticationManager.buildLogoutUrl());
-        return getAuthenticationManager().authenticate(authentication);
-    }
 }
