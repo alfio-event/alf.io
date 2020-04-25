@@ -16,10 +16,13 @@
  */
 package alfio.manager.system;
 
+import alfio.model.system.ConfigurationKeys;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.core.env.Environment;
+
+import static org.apache.commons.lang3.StringUtils.removeEnd;
 
 @Getter
 @Setter
@@ -37,19 +40,20 @@ public class OpenIdConfiguration {
     private final String logoutUrl;
     private final String logoutRedirectUrl;
 
-    public static OpenIdConfiguration from(Environment environment) {
+    public static OpenIdConfiguration from(Environment environment, ConfigurationManager configurationManager) {
+        var baseUrl = removeEnd(configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.system()).getRequiredValue(), "/");
         return new OpenIdConfiguration(
             environment.getProperty("openid.domain"),
             environment.getProperty("openid.clientId"),
             environment.getProperty("openid.clientSecret"),
-            environment.getProperty("openid.callbackURI"),
+            environment.getProperty("openid.callbackURI",baseUrl + "/callback"),
             environment.getProperty("openid.authenticationUrl"),
-            environment.getProperty("openid.tokenEndpoint"),
-            environment.getProperty("openid.contentType"),
+            environment.getProperty("openid.tokenEndpoint", "/authorize"),
+            environment.getProperty("openid.contentType", "application/x-www-form-urlencoded"),
             environment.getProperty("openid.rolesParameter"),
             environment.getProperty("openid.alfioGroupsParameter"),
             environment.getProperty("openid.logoutUrl"),
-            environment.getProperty("openid.logoutRedirectUrl")
+            environment.getProperty("openid.logoutRedirectUrl", baseUrl + "/admin")
         );
     }
 }

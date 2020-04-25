@@ -60,13 +60,16 @@ public class OpenIdAuthenticationManager {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final LazyConfigurationContainer configurationContainer;
+    private final ConfigurationManager configurationManager;
 
     public OpenIdAuthenticationManager(Environment environment,
                                        HttpClient httpClient,
-                                       ObjectMapper objectMapper) {
-        this.configurationContainer = new LazyConfigurationContainer(environment);
+                                       ObjectMapper objectMapper,
+                                       ConfigurationManager configurationManager) {
+        this.configurationContainer = new LazyConfigurationContainer(environment, configurationManager);
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
+        this.configurationManager = configurationManager;
     }
 
     public OpenIdAlfioUser retrieveUserInfo(String code) {
@@ -227,14 +230,16 @@ public class OpenIdAuthenticationManager {
     private static class LazyConfigurationContainer extends LazyInitializer<OpenIdConfiguration> {
 
         private final Environment environment;
+        private final ConfigurationManager configurationManager;
 
-        private LazyConfigurationContainer(Environment environment) {
+        private LazyConfigurationContainer(Environment environment, ConfigurationManager configurationManager) {
             this.environment = environment;
+            this.configurationManager = configurationManager;
         }
 
         @Override
         protected OpenIdConfiguration initialize() {
-            return OpenIdConfiguration.from(environment);
+            return OpenIdConfiguration.from(environment, configurationManager);
         }
     }
 
