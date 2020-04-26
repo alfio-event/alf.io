@@ -119,8 +119,7 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
     private void updateOrganizations(OpenIdAlfioUser alfioUser, HttpServletResponse response) throws IOException {
         Optional<Integer> userId = userRepository.findIdByUserName(alfioUser.getEmail());
         if (userId.isEmpty()) {
-            String message = "Error: user not saved into the database";
-            logger.error(message);
+            logger.error("Error: user not saved into the database");
             response.sendRedirect(openIdAuthenticationManager.buildLogoutUrl());
             return;
         }

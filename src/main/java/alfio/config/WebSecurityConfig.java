@@ -363,7 +363,7 @@ public class WebSecurityConfig {
                 http.addFilterBefore(new OpenIdCallbackLoginFilter(openIdAuthenticationManager, new AntPathRequestMatcher("/callback", "GET"),
                     authenticationManager(), userRepository, authorityRepository, passwordEncoder, userManager, userOrganizationRepository,
                     organizationRepository), UsernamePasswordAuthenticationFilter.class);
-                log.warn("adding openid filter");
+                log.trace("adding openid filter");
                 http.addFilterBefore(new OpenIdAuthenticationFilter("/authentication", openIdAuthenticationManager), RecaptchaLoginFilter.class);
             }
 
@@ -423,7 +423,7 @@ public class WebSecurityConfig {
                         res.sendRedirect("/admin/");
                         return;
                     }
-                    log.warn("calling buildAuthorizeUrl {}", openIdAuthenticationManager);
+                    log.trace("calling buildAuthorizeUrl");
                     res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl());
                     return;
                 }

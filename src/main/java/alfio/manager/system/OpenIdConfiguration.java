@@ -22,6 +22,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.core.env.Environment;
 
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.apache.commons.lang3.StringUtils.removeEnd;
 
 @Getter
@@ -55,5 +56,19 @@ public class OpenIdConfiguration {
             environment.getProperty("openid.logoutUrl"),
             environment.getProperty("openid.logoutRedirectUrl", baseUrl + "/admin")
         );
+    }
+
+    public String toString() {
+        return "OpenIdConfiguration(domain=" + this.getDomain()
+            + ", clientId=" + (isNotBlank(this.getClientId()) ? "<redacted>" : "missing")
+            + ", clientSecret=" + (isNotBlank(this.getClientSecret()) ? "<redacted>" : "missing")
+            + ", callbackURI=" + this.getCallbackURI()
+            + ", authenticationUrl=" + this.getAuthenticationUrl()
+            + ", tokenEndpoint=" + this.getTokenEndpoint()
+            + ", contentType=" + this.getContentType()
+            + ", rolesParameter=" + this.getRolesParameter()
+            + ", alfioGroupsParameter=" + this.getAlfioGroupsParameter()
+            + ", logoutUrl=" + this.getLogoutUrl()
+            + ", logoutRedirectUrl=" + this.getLogoutRedirectUrl() + ")";
     }
 }

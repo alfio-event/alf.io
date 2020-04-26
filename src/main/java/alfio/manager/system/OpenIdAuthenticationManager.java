@@ -60,7 +60,6 @@ public class OpenIdAuthenticationManager {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     private final LazyConfigurationContainer configurationContainer;
-    private final ConfigurationManager configurationManager;
 
     public OpenIdAuthenticationManager(Environment environment,
                                        HttpClient httpClient,
@@ -69,7 +68,6 @@ public class OpenIdAuthenticationManager {
         this.configurationContainer = new LazyConfigurationContainer(environment, configurationManager);
         this.httpClient = httpClient;
         this.objectMapper = objectMapper;
-        this.configurationManager = configurationManager;
     }
 
     public OpenIdAlfioUser retrieveUserInfo(String code) {
@@ -137,6 +135,7 @@ public class OpenIdAuthenticationManager {
     }
 
     public String buildAuthorizeUrl() {
+        log.trace("buildAuthorizeUrl, configuration: {}", this::openIdConfiguration);
         String scopeParameter = String.join("+", getScopes());
 
         UriComponents uri = UriComponentsBuilder.newInstance()
