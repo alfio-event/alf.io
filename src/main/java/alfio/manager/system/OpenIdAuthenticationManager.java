@@ -71,6 +71,7 @@ public class OpenIdAuthenticationManager {
     }
 
     public OpenIdAlfioUser retrieveUserInfo(String code) {
+        log.trace("Attempting to retrieve Access Token");
         var accessTokenResponse = retrieveAccessToken(code);
         String idToken = (String) accessTokenResponse.get(ID_TOKEN);
 
@@ -78,12 +79,16 @@ public class OpenIdAuthenticationManager {
         String subject = idTokenClaims.get(SUBJECT).asString();
         String email = idTokenClaims.get(EMAIL).asString();
         List<String> groupsList = idTokenClaims.get(openIdConfiguration().getRolesParameter()).asList(String.class);
+        log.trace("IdToken contains the following groups: {}", groupsList);
         List<String> groups = groupsList.stream().filter(group -> group.startsWith("ALFIO_")).collect(Collectors.toList());
         boolean isAdmin = groups.contains(ALFIO_ADMIN);
 
         if (isAdmin) {
+            log.trace("User is admin");
             return new OpenIdAlfioUser(idToken, subject, email, true, Set.of(Role.ADMIN), null);
         }
+
+        log.trace("User is NOT admin");
 
         if(groups.isEmpty()){
             String message = "Users must have at least a group called ALFIO_ADMIN or ALFIO_BACKOFFICE";
@@ -92,6 +97,7 @@ public class OpenIdAuthenticationManager {
         }
 
         List<String> alfioOrganizationAuthorizationsRaw = idTokenClaims.get(openIdConfiguration().getAlfioGroupsParameter()).asList(String.class);
+        log.trace("IdToken contains the following alfioGroups: {}", alfioOrganizationAuthorizationsRaw);
         Map<String, Set<String>> alfioOrganizationAuthorizations = extractOrganizationRoles(alfioOrganizationAuthorizationsRaw);
         Set<Role> alfioRoles = extractAlfioRoles(alfioOrganizationAuthorizations);
         return new OpenIdAlfioUser(idToken, subject, email, false, alfioRoles, alfioOrganizationAuthorizations);
@@ -112,6 +118,7 @@ public class OpenIdAuthenticationManager {
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if(HttpUtils.callSuccessful(response)) {
+                logger.trace("Access Token successfully retrieved");
                 return objectMapper.readValue(response.body(), new TypeReference<>() {});
             } else {
                 logger.warn("cannot retrieve access token");

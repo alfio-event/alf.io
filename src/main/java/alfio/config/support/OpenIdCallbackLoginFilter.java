@@ -99,11 +99,13 @@ public class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingF
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException {
         String code = request.getParameter(CODE);
         if (code == null) {
+            logger.warn("Error: authorization code is null");
             throw new IllegalArgumentException("authorization code cannot be null");
         }
-
+        logger.trace("Received code. Attempting to exchange it with an access Token");
         OpenIdAlfioUser alfioUser = openIdAuthenticationManager.retrieveUserInfo(code);
 
+        logger.trace("Got user info: "+alfioUser);
         if (!userManager.usernameExists(alfioUser.getEmail())) {
             createUser(alfioUser);
         }
