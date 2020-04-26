@@ -138,6 +138,8 @@ dependencies {
     compile "com.openhtmltopdf:openhtmltopdf-core:1.0.2"
     compile "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.2"
     compile "ch.digitalfondue.jfiveparse:jfiveparse:0.7.1"
+    compile "org.apache.xmlgraphics:batik-transcoder:1.12"
+    compile "org.apache.xmlgraphics:batik-codec:1.12"
     /**/
     compile "com.google.zxing:core:3.4.0"
     compile "com.google.zxing:javase:3.4.0"

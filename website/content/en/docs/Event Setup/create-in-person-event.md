@@ -105,7 +105,7 @@ Alf.io currently supports the following formats:
 
 - PNG
 - JPG
-
+- SVG
 
 ## Seats and payment info
 
