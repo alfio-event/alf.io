@@ -272,14 +272,16 @@ public class NotificationManager {
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-email-subject", new Object[]{displayName}, locale);
-        String text = textBuilder.generate(ticket);
-        String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, text, null);
+        var renderedTemplate = textBuilder.generate(ticket);
+        String textRender = renderedTemplate.getLeft();
+        String htmlRender = renderedTemplate.getRight(); 
+        String checksum = calculateChecksum(ticket.getEmail(), encodedAttachments, subject, textRender, htmlRender);
         String recipient = ticket.getEmail();
-        //TODO handle HTML
+        
         tx.execute(status -> {
             emailMessageRepository.findIdByEventIdAndChecksum(event.getId(), checksum).ifPresentOrElse(
                 id -> emailMessageRepository.updateStatus(event.getId(), WAITING.name(), id),
-                () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, text, null, encodedAttachments, checksum, ZonedDateTime.now(UTC))
+                () -> emailMessageRepository.insert(event.getId(), reservation.getId(), recipient, null, subject, textRender, htmlRender, encodedAttachments, checksum, ZonedDateTime.now(UTC))
             );
             return null;
         });

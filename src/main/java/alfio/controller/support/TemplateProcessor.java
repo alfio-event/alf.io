@@ -66,13 +66,14 @@ public final class TemplateProcessor {
                                                                TicketReservation ticketReservation,
                                                                TicketCategory category,
                                                                TemplateManager templateManager,
+                                                               String baseUrl,
                                                                String ticketURL,
                                                                String calendarURL,
                                                                Locale language,
                                                                Map<String, Object> additionalOptions) {
         return ticket -> {
-            Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, ticketURL, calendarURL, ticket, category, additionalOptions);
-            return templateManager.renderTemplate(event, event.getIsOnline() ? TemplateResource.TICKET_EMAIL_FOR_ONLINE_EVENT : TemplateResource.TICKET_EMAIL, model, language).getLeft();
+            Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, baseUrl, ticketURL, calendarURL, ticket, category, additionalOptions);
+            return templateManager.renderTemplate(event, event.getIsOnline() ? TemplateResource.TICKET_EMAIL_FOR_ONLINE_EVENT : TemplateResource.TICKET_EMAIL, model, language);
         };
     }
 
@@ -84,7 +85,7 @@ public final class TemplateProcessor {
                                                                       Locale language) {
         return newTicket -> {
             Map<String, Object> emailModel = TemplateResource.buildModelForTicketHasChangedOwner(organization, e, oldTicket, newTicket, ticketUrl);
-            return templateManager.renderTemplate(e, TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language).getLeft();
+            return templateManager.renderTemplate(e, TemplateResource.TICKET_HAS_CHANGED_OWNER, emailModel, language);
         };
     }
 
