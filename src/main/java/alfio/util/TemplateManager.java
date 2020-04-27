@@ -16,8 +16,21 @@
  */
 package alfio.util;
 
-import static alfio.util.MustacheCustomTag.ADDITIONAL_FIELD_VALUE;
-import static alfio.util.MustacheCustomTag.COUNTRY_NAME;
+import alfio.manager.UploadedResourceManager;
+import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.system.ConfigurationLevel;
+import alfio.manager.system.ConfigurationManager;
+import alfio.model.EventAndOrganizationId;
+import alfio.model.system.ConfigurationKeys;
+import com.samskivert.mustache.Mustache;
+import com.samskivert.mustache.Mustache.Compiler;
+import com.samskivert.mustache.Template;
+import org.apache.commons.lang3.tuple.Pair;
+import org.springframework.context.MessageSource;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -26,34 +39,12 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.tuple.Pair;
-import org.springframework.context.MessageSource;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.web.servlet.ModelAndView;
-
-import com.samskivert.mustache.Mustache;
-import com.samskivert.mustache.Mustache.Compiler;
-import com.samskivert.mustache.Mustache.Formatter;
-import com.samskivert.mustache.Template;
-
-import alfio.manager.UploadedResourceManager;
-import alfio.manager.i18n.MessageSourceManager;
-import alfio.manager.system.ConfigurationLevel;
-import alfio.manager.system.ConfigurationManager;
-import alfio.model.EventAndOrganizationId;
-import alfio.model.system.ConfigurationKeys;
+import static alfio.util.MustacheCustomTag.ADDITIONAL_FIELD_VALUE;
+import static alfio.util.MustacheCustomTag.COUNTRY_NAME;
 
 /**
  * For hiding the ugliness :)
@@ -75,7 +66,6 @@ public class TemplateManager {
     
     private final ConfigurationManager configurationManager;
 
-    private static final Formatter DATE_FORMATTER = o -> (o instanceof ZonedDateTime) ? DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o) : String.valueOf(o);
 
     public TemplateManager(MessageSourceManager messageSourceManager,
                            UploadedResourceManager uploadedResourceManager,
@@ -90,13 +80,20 @@ public class TemplateManager {
             .standardsMode(false)
             .defaultValue("")
             .nullValue("")
-            .withFormatter(DATE_FORMATTER));
+            .withFormatter(TemplateManager::dateFormatter));
         this.compilers.put(TemplateOutput.HTML, Mustache.compiler()
             .escapeHTML(true)
             .standardsMode(false)
             .defaultValue("")
             .nullValue("")
-            .withFormatter(DATE_FORMATTER));
+            .withFormatter(TemplateManager::dateFormatter));
+    }
+
+    private static String dateFormatter(Object o) {
+        if(o instanceof ZonedDateTime) {
+            return DateTimeFormatter.ISO_ZONED_DATE_TIME.format((ZonedDateTime) o);
+        }
+        return String.valueOf(o);
     }
 
     

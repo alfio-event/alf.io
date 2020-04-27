@@ -16,20 +16,18 @@
  */
 package alfio.model;
 
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
+import alfio.util.Json;
+import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
+import com.google.gson.reflect.TypeToken;
+import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import com.google.gson.reflect.TypeToken;
-
-import alfio.util.Json;
-import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
-import lombok.Getter;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 public class EmailMessage implements Comparable<EmailMessage> {
@@ -92,7 +90,7 @@ public class EmailMessage implements Comparable<EmailMessage> {
 
     @Override
     public boolean equals(Object obj) {
-        if(obj == null || obj.getClass() != getClass()) {
+        if(!(obj instanceof EmailMessage)) {
             return false;
         }
         if(obj == this) {

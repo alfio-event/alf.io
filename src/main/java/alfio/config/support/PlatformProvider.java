@@ -21,6 +21,7 @@ import org.springframework.core.env.Environment;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import static java.util.Optional.ofNullable;
 
@@ -54,13 +55,13 @@ public enum PlatformProvider {
 
         @Override
         public String getUsername(Environment env) {
-            return isCloudFoundry(env) ? "" : resolveURI(env, "ELEPHANTSQL_URI").getUserInfo().split(":")[0];
+            return isCloudFoundry(env) ? "" : Pattern.compile(":").split(resolveURI(env, "ELEPHANTSQL_URI").getUserInfo())[0];
         }
 
 
         @Override
         public String getPassword(Environment env) {
-            return isCloudFoundry(env) ? "" : resolveURI(env, "ELEPHANTSQL_URI").getUserInfo().split(":")[1];
+            return isCloudFoundry(env) ? "" : Pattern.compile(":").split(resolveURI(env, "ELEPHANTSQL_URI").getUserInfo())[1];
         }
 
         @Override
@@ -152,13 +153,13 @@ public enum PlatformProvider {
 
         @Override
         public String getUsername(Environment env) {
-            return resolveURI(env).getUserInfo().split(":")[0];
+            return Pattern.compile(":").split(resolveURI(env).getUserInfo())[0];
         }
 
 
         @Override
         public String getPassword(Environment env) {
-            return resolveURI(env).getUserInfo().split(":")[1];
+            return Pattern.compile(":").split(resolveURI(env).getUserInfo())[1];
         }
 
         @Override

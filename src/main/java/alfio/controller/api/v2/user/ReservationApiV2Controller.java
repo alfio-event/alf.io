@@ -542,7 +542,7 @@ public class ReservationApiV2Controller {
 
     private BiFunction<Event, TicketReservation, ResponseEntity<Void>> generatePdfFunction(boolean forInvoice, HttpServletResponse response) {
         return (event, reservation) -> {
-            if(forInvoice ^ reservation.getInvoiceNumber() != null || reservation.isCancelled()) {
+            if((forInvoice ^ reservation.getInvoiceNumber() != null) || reservation.isCancelled()) {
                 return ResponseEntity.notFound().build();
             }
 

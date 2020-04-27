@@ -16,41 +16,7 @@
  */
 package alfio.util;
 
-import static alfio.util.ImageUtil.createQRCode;
-
-import java.math.BigDecimal;
-import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-
-import alfio.model.AdditionalServiceItem;
-import alfio.model.AdditionalServiceText;
-import alfio.model.CustomerName;
-import alfio.model.Event;
-import alfio.model.FileBlobMetadata;
-import alfio.model.OrderSummary;
-import alfio.model.PriceContainer;
-import alfio.model.SummaryRow;
-import alfio.model.Ticket;
-import alfio.model.TicketCategory;
-import alfio.model.TicketReservation;
-import alfio.model.TicketReservationInfo;
-import alfio.model.TicketWithCategory;
-import alfio.model.TotalPrice;
-import alfio.model.WaitingQueueSubscription;
+import alfio.model.*;
 import alfio.model.modification.SendCodeModification;
 import alfio.model.transaction.PaymentMethod;
 import alfio.model.transaction.PaymentProxy;
@@ -58,6 +24,17 @@ import alfio.model.user.Organization;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.experimental.Delegate;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import java.math.BigDecimal;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static alfio.util.ImageUtil.createQRCode;
 
 
 public enum TemplateResource {
@@ -137,7 +114,7 @@ public enum TemplateResource {
     REMINDER_TICKET_ADDITIONAL_INFO("/alfio/templates/reminder-ticket-additional-info.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            return prepareModelForReminderTicketAdditionalInfo(organization, event, sampleTicket(), "http://your-domain.tld/ticket-url");
+            return prepareModelForReminderTicketAdditionalInfo(organization, event, sampleTicket(event.getZoneId()), "http://your-domain.tld/ticket-url");
         }
     },
     REMINDER_TICKETS_ASSIGNMENT_EMAIL("/alfio/templates/reminder-tickets-assignment-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
@@ -151,36 +128,46 @@ public enum TemplateResource {
     TICKET_EMAIL("/alfio/templates/ticket-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
-            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld", "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(), ticketCategory, Map.of());
+            var now = ZonedDateTime.now(event.getZoneId());
+            TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
+            return buildModelForTicketEmail(organization, event, sampleTicketReservation(event.getZoneId()), "http://your-domain.tld", "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(event.getZoneId()), ticketCategory, Map.of());
         }
     },
 
     TICKET_EMAIL_FOR_ONLINE_EVENT("/alfio/templates/ticket-email-online", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
-            return buildModelForTicketEmail(organization, event, sampleTicketReservation(), "http://your-domain.tld", "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(), ticketCategory, Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event"));
+            var now = ZonedDateTime.now(event.getZoneId());
+            TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
+            return buildModelForTicketEmail(organization, event, sampleTicketReservation(event.getZoneId()), "http://your-domain.tld", "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(event.getZoneId()), ticketCategory, Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event"));
         }
     },
+
+    ONLINE_CHECK_IN_DETAILS("/alfio/templates/online-check-in-instructions-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            return Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event");
+        }
+    },
+
     TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            return buildModelForTicketHasChangedOwner(organization, event, sampleTicket(), sampleTicket("NewFirstname", "NewLastname", "newemail@email.tld"), "http://your-domain.tld/ticket-url");
+            return buildModelForTicketHasChangedOwner(organization, event, sampleTicket(event.getZoneId()), sampleTicket("NewFirstname", "NewLastname", "newemail@email.tld", event.getZoneId()), "http://your-domain.tld/ticket-url");
         }
     },
 
     TICKET_HAS_BEEN_CANCELLED("/alfio/templates/ticket-has-been-cancelled-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            return buildModelForTicketHasBeenCancelled(organization, event, sampleTicket());
+            return buildModelForTicketHasBeenCancelled(organization, event, sampleTicket(event.getZoneId()));
         }
     },
 
     TICKET_HAS_BEEN_CANCELLED_ADMIN("/alfio/templates/ticket-has-been-cancelled-admin-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            return buildModelForTicketHasBeenCancelledAdmin(organization, event, sampleTicket(), "Category", Collections.emptyList(), asi -> Optional.empty());
+            return buildModelForTicketHasBeenCancelledAdmin(organization, event, sampleTicket(event.getZoneId()), "Category", Collections.emptyList(), asi -> Optional.empty());
         }
     },
 
@@ -188,8 +175,9 @@ public enum TemplateResource {
     TICKET_PDF("/alfio/templates/ticket.ms", "application/pdf", TemplateManager.TemplateOutput.HTML) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            TicketCategory ticketCategory = new TicketCategory(0, ZonedDateTime.now(), ZonedDateTime.now(), 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
-            return buildModelForTicketPDF(organization, event, sampleTicketReservation(), ticketCategory, sampleTicket(), imageData, "ABCD", Collections.emptyMap());
+            var now = ZonedDateTime.now(event.getZoneId());
+            TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
+            return buildModelForTicketPDF(organization, event, sampleTicketReservation(event.getZoneId()), ticketCategory, sampleTicket(event.getZoneId()), imageData, "ABCD", Collections.emptyMap());
         }
     },
     RECEIPT_PDF("/alfio/templates/receipt.ms", "application/pdf", TemplateManager.TemplateOutput.HTML) {
@@ -222,22 +210,22 @@ public enum TemplateResource {
     WAITING_QUEUE_RESERVATION_EMAIL("/alfio/templates/waiting-queue-reservation-email-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            WaitingQueueSubscription subscription = new WaitingQueueSubscription(0, ZonedDateTime.now(), event.getId(), "ACQUIRED", "Firstname Lastname", "Firstname", "Lastname",
+            WaitingQueueSubscription subscription = new WaitingQueueSubscription(0, ZonedDateTime.now(event.getZoneId()), event.getId(), "ACQUIRED", "Firstname Lastname", "Firstname", "Lastname",
                 "email@email.tld", "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", "en", null, WaitingQueueSubscription.Type.PRE_SALES);
-            return buildModelForWaitingQueueReservationEmail(organization, event, subscription, "http://your-domain.tld/reservation-url", ZonedDateTime.now());
+            return buildModelForWaitingQueueReservationEmail(organization, event, subscription, "http://your-domain.tld/reservation-url", ZonedDateTime.now(event.getZoneId()));
         }
     };
- 
+
     public static final String MULTIPART_ALTERNATIVE_MIMETYPE = "multipart/alternative";
-    
+
     private static final String PLAIN_TEMPLATE_SUFFIX = "-txt.ms";
-    
+
     private static final String HTML_TEMPLATE_SUFFIX = "-html.ms";
-    
-    
+
+
     private final String classPathUrl;
     // currently not used, might be removed in the future
-    private final boolean overridable; 
+    private final boolean overridable;
     private final String renderedContentType;
     private final TemplateManager.TemplateOutput templateOutput;
 
@@ -264,11 +252,11 @@ public enum TemplateResource {
     public String htmlClassPath() {
     	return isMultipart() ? classPathUrl + HTML_TEMPLATE_SUFFIX : null;
     }
-    
+
     public boolean isMultipart() {
     	return MULTIPART_ALTERNATIVE_MIMETYPE.equals(renderedContentType);
     }
-    
+
     public String getRenderedContentType() {
         return renderedContentType;
     }
@@ -281,8 +269,8 @@ public enum TemplateResource {
         return Collections.emptyMap();
     }
 
-    private static Ticket sampleTicket() {
-        return sampleTicket("Firstname", "Lastname", "email@email.tld");
+    private static Ticket sampleTicket(ZoneId zoneId) {
+        return sampleTicket("Firstname", "Lastname", "email@email.tld", zoneId);
     }
 
     private static Map<String, Object> sampleBillingDocument(Optional<ImageData> imageData, Organization organization, Event event) {
@@ -295,29 +283,29 @@ public enum TemplateResource {
         return model;
     }
 
-    private static TicketCategory sampleCategory() {
-        return new TicketCategory(0, ZonedDateTime.now().minusDays(1), ZonedDateTime.now().plusDays(1), 100, "test category", false, TicketCategory.Status.ACTIVE,
+    private static TicketCategory sampleCategory(ZoneId zoneId) {
+        return new TicketCategory(0, ZonedDateTime.now(zoneId).minusDays(1), ZonedDateTime.now(zoneId).plusDays(1), 100, "test category", false, TicketCategory.Status.ACTIVE,
             0, true, 100, null, null, null, null, null, "CHF", 0, null);
     }
 
-    private static Ticket sampleTicket(String firstName, String lastName, String email) {
-        return new Ticket(0, "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", ZonedDateTime.now(), 0, "ACQUIRED", 0,
+    private static Ticket sampleTicket(String firstName, String lastName, String email, ZoneId zoneId) {
+        return new Ticket(0, "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", ZonedDateTime.now(zoneId), 0, "ACQUIRED", 0,
             "597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", firstName + " " + lastName, firstName, lastName, email, false, "en",
             1000, 1000, 80, 0, null, "CHF");
     }
 
-    private static TicketReservation sampleTicketReservation() {
+    private static TicketReservation sampleTicketReservation(ZoneId zoneId) {
         return new TicketReservation("597e7e7b-c514-4dcb-be8c-46cf7fe2c36e", new Date(), TicketReservation.TicketReservationStatus.COMPLETE,
-            "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(), ZonedDateTime.now(),
+            "Firstname Lastname", "FirstName", "Lastname", "email@email.tld", "billing address", ZonedDateTime.now(zoneId), ZonedDateTime.now(zoneId),
             PaymentProxy.STRIPE, true, null, false, "en", false, null, null, null, "123456",
             "CH", false, new BigDecimal("8.00"), true,
-            ZonedDateTime.now().minusMinutes(1), "PO-1234", ZonedDateTime.now(), 10000, 10800, 800, 0, "CHF");
+            ZonedDateTime.now(zoneId).minusMinutes(1), "PO-1234", ZonedDateTime.now(zoneId), 10000, 10800, 800, 0, "CHF");
     }
 
     private static Map<String, Object> prepareSampleDataForConfirmationEmail(Organization organization, Event event) {
-        TicketReservation reservation = sampleTicketReservation();
+        TicketReservation reservation = sampleTicketReservation(event.getZoneId());
         Optional<String> vat = Optional.of("VAT-NR");
-        List<TicketWithCategory> tickets = Collections.singletonList(new TicketWithCategory(sampleTicket(), sampleCategory()));
+        List<TicketWithCategory> tickets = Collections.singletonList(new TicketWithCategory(sampleTicket(event.getZoneId()), sampleCategory(event.getZoneId())));
         OrderSummary orderSummary = new OrderSummary(new TotalPrice(1000, 80, 0, 0, "CHF"),
             Collections.singletonList(new SummaryRow("Ticket", "10.00", "9.20", 1, "9.20", "9.20", 1000, SummaryRow.SummaryType.TICKET)), false, "10.00", "0.80", false, false, false, "8", PriceContainer.VatStatus.INCLUDED, "1.00");
         String baseUrl = "http://your-domain.tld";
@@ -327,7 +315,7 @@ public enum TemplateResource {
     }
 
     private static Map<String, Object> prepareSampleDataForChargeFailed(Organization organization, Event event) {
-        TicketReservation reservation = sampleTicketReservation();
+        TicketReservation reservation = sampleTicketReservation(event.getZoneId());
         return Map.of(
             "reservationId", reservation.getId().substring(0, 8),
             "reservationCancelled", true,
@@ -375,7 +363,7 @@ public enum TemplateResource {
 
         model.put("hasRefund", StringUtils.isNotEmpty(orderSummary.getRefundedAmount()));
 
-        ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getRegistrationTimestamp(), reservation.getConfirmationTimestamp(), reservation.getCreationTimestamp(), ZonedDateTime.now());
+        ZonedDateTime creationTimestamp = ObjectUtils.firstNonNull(reservation.getRegistrationTimestamp(), reservation.getConfirmationTimestamp(), reservation.getCreationTimestamp(), ZonedDateTime.now(event.getZoneId()));
         model.put("confirmationDate", creationTimestamp.withZoneSameInstant(event.getZoneId()));
         model.put("now", ZonedDateTime.now(event.getZoneId()));
 

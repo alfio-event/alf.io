@@ -69,6 +69,7 @@ import static alfio.model.TicketReservation.TicketReservationStatus.EXTERNAL_PRO
 import static alfio.model.TicketReservation.TicketReservationStatus.WAITING_EXTERNAL_CONFIRMATION;
 import static alfio.model.system.ConfigurationKeys.*;
 import static alfio.util.MonetaryUtil.formatCents;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Component
 @Log4j2
@@ -206,7 +207,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             if(!HttpUtils.callSuccessful(response)) {
                 throw new IllegalStateException("fetch was unsuccessful (HTTP "+response.statusCode()+")");
             }
-            try (var reader = new InputStreamReader(response.body())) {
+            try (var reader = new InputStreamReader(response.body(), UTF_8)) {
                 var body = JsonParser.parseReader(reader).getAsJsonObject();
                 int count = body.get("count").getAsInt();
                 if(count == 0) {
@@ -275,7 +276,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
                                                         Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> configuration) throws IOException, InterruptedException {
         var getPaymentResponse = callGetPayment(transaction.getPaymentId(), configuration, ConfigurationLevel.event(spec.getEvent()));
         if(HttpUtils.callSuccessful(getPaymentResponse)) {
-            try (var responseReader = new InputStreamReader(getPaymentResponse.body())) {
+            try (var responseReader = new InputStreamReader(getPaymentResponse.body(), UTF_8)) {
                 var body = new MolliePaymentDetails(JsonParser.parseReader(responseReader).getAsJsonObject());
                 var status = body.getStatus();
                 if(status.equals("open")) {
@@ -323,7 +324,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             .build();
         HttpResponse<InputStream> response = client.send(request, HttpResponse.BodyHandlers.ofInputStream());
         if(HttpUtils.callSuccessful(response)) {
-            try (var responseReader = new InputStreamReader(response.body())) {
+            try (var responseReader = new InputStreamReader(response.body(), UTF_8)) {
                 var body = new MolliePaymentDetails(JsonParser.parseReader(responseReader).getAsJsonObject());
                 var paymentId = body.getPaymentId();
                 var checkoutLink = body.getCheckoutLink();
@@ -416,7 +417,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
             var configuration = getConfiguration(ConfigurationLevel.event(event));
             HttpResponse<InputStream> response = callGetPayment(paymentId, configuration, paymentContext.getConfigurationLevel());
             if(HttpUtils.callSuccessful(response)) {
-                try (var reader = new InputStreamReader(response.body())) {
+                try (var reader = new InputStreamReader(response.body(), UTF_8)) {
                     var body = new MolliePaymentDetails(JsonParser.parseReader(reader).getAsJsonObject());
                     if(configuration.get(PLATFORM_MODE_ENABLED).getValueAsBooleanOrDefault(false)
                         && configuration.get(MOLLIE_CONNECT_LIVE_MODE).getValueAsBooleanOrDefault(false) != body.isLiveMode()) {
@@ -533,7 +534,7 @@ public class MollieWebhookPaymentManager implements PaymentProvider, WebhookHand
         try {
             var getPaymentResponse = callGetPayment(transaction.getPaymentId(), configuration, configurationLevel);
             if(HttpUtils.callSuccessful(getPaymentResponse)) {
-                try (var responseReader = new InputStreamReader(getPaymentResponse.body())) {
+                try (var responseReader = new InputStreamReader(getPaymentResponse.body(), UTF_8)) {
                     var body = new MolliePaymentDetails(JsonParser.parseReader(responseReader).getAsJsonObject());
                     var paidAmount = body.getPaidAmount();
                     var refundAmount = body.getRefundAmount().map(PaymentAmount::getValue).orElse(null);

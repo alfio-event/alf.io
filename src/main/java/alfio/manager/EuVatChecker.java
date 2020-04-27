@@ -34,8 +34,8 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 
@@ -54,7 +54,7 @@ public class EuVatChecker {
     private final ExtensionManager extensionManager;
 
     private static final Cache<Pair<String, String>, EUVatCheckResponse> validationCache = Caffeine.newBuilder()
-        .expireAfterWrite(15, TimeUnit.MINUTES)
+        .expireAfterWrite(Duration.ofMinutes(15))
         .build();
 
     public boolean isReverseChargeEnabledFor(EventAndOrganizationId eventAndOrganizationId) {

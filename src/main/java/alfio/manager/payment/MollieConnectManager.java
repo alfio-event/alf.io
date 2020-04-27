@@ -22,7 +22,6 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ConfigurationManager.MaybeConfiguration;
 import alfio.model.system.Configuration;
 import alfio.model.system.ConfigurationKeys;
-import alfio.util.HttpUtils;
 import alfio.util.oauth2.AccessTokenResponseDetails;
 import alfio.util.oauth2.AuthorizationRequestDetails;
 import com.github.scribejava.core.builder.ServiceBuilder;
@@ -30,16 +29,11 @@ import com.github.scribejava.core.builder.api.DefaultApi20;
 import com.github.scribejava.core.model.OAuth2AccessToken;
 import com.github.scribejava.core.model.OAuthConfig;
 import com.github.scribejava.core.oauth.OAuth20Service;
-import com.google.gson.JsonParser;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -87,18 +81,6 @@ public class MollieConnectManager implements OAuthPaymentProviderConnector {
             log.warn("Got exception while retrieving access token", e);
             return new AccessTokenResponseDetails(null, null, e.getMessage(), false);
         }
-    }
-
-    private String retrieveProfileId(String accessToken) throws IOException, InterruptedException {
-        var request = HttpRequest.newBuilder().uri(URI.create("https://api.mollie.com/v2/profiles/me"))
-            .header("Authorization", "Bearer "+accessToken)
-            .GET()
-            .build();
-        var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if(HttpUtils.statusCodeIsSuccessful(response.statusCode())) {
-            return JsonParser.parseString(response.body()).getAsJsonObject().get("id").getAsString();
-        }
-        throw new IllegalStateException("cannot retrieve profile details "+response.body());
     }
 
     public AccessTokenResponseDetails refreshAccessToken(Map<ConfigurationKeys, MaybeConfiguration> options) {

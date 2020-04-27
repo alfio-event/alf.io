@@ -70,8 +70,6 @@ public class ConfigurationManager {
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> EVENT_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.EVENT);
     private static final Map<ConfigurationKeys.SettingCategory, List<Configuration>> CATEGORY_CONFIGURATION = collectConfigurationKeysByCategory(ConfigurationPathLevel.TICKET_CATEGORY);
 
-    private static final Predicate<ConfigurationModification> TO_BE_SAVED = c -> Optional.ofNullable(c.getId()).orElse(-1) > -1 || !StringUtils.isBlank(c.getValue());
-
     private final ConfigurationRepository configurationRepository;
     private final UserManager userManager;
     private final EventRepository eventRepository;
@@ -87,24 +85,25 @@ public class ConfigurationManager {
                 configList.addAll(configurationRepository.findByKeyAtSystemLevel(keyAsString));
                 return selectPath(configList);
             case ORGANIZATION: {
-                OrganizationConfigurationPath o = from(path);
+                OrganizationConfigurationPath o = (OrganizationConfigurationPath) path;
                 configList.addAll(configurationRepository.findByOrganizationAndKey(o.getId(), key.getValue()));
                 return selectPath(configList);
             }
             case EVENT: {
-                EventConfigurationPath o = from(path);
+                EventConfigurationPath o = (EventConfigurationPath) path;
                 configList.addAll(configurationRepository.findByEventAndKey(o.getOrganizationId(),
                     o.getId(), keyAsString));
                 return selectPath(configList);
             }
             case TICKET_CATEGORY: {
-                TicketCategoryConfigurationPath o = from(path);
+                TicketCategoryConfigurationPath o = (TicketCategoryConfigurationPath) path;
                 configList.addAll(configurationRepository.findByTicketCategoryAndKey(o.getOrganizationId(),
                     o.getEventId(), o.getId(), keyAsString));
                 return selectPath(configList);
             }
+            default:
+                throw new IllegalStateException("Can't reach here");
         }
-        throw new IllegalStateException("Can't reach here");
     }
 
     /**
@@ -115,12 +114,6 @@ public class ConfigurationManager {
      */
     private Optional<Configuration> selectPath(List<Configuration> conf) {
         return conf.size() == 1 ? Optional.of(conf.get(0)) : conf.stream().max(Comparator.comparing(Configuration::getConfigurationPathLevel));
-    }
-
-    //meh
-    @SuppressWarnings("unchecked")
-    private static <T> T from(ConfigurationPath c) {
-        return (T) c;
     }
 
     // begin SYSTEM related configuration methods
@@ -139,6 +132,8 @@ public class ConfigurationManager {
                 EventConfigurationPath eventPath = (EventConfigurationPath) path;
                 saveEventConfiguration(eventPath.getId(), eventPath.getOrganizationId(), pathKey.getKey().name(), value);
                 break;
+            default:
+                throw new IllegalStateException("can't reach here");
         }
     }
 
@@ -161,7 +156,7 @@ public class ConfigurationManager {
     public void saveAllOrganizationConfiguration(int organizationId, List<ConfigurationModification> list, String username) {
         Validate.isTrue(userManager.isOwnerOfOrganization(userManager.findUserByUsername(username), organizationId), "Cannot update settings, user is not owner");
         list.stream()
-            .filter(TO_BE_SAVED)
+            .filter(ConfigurationManager::toBeSaved)
             .forEach(c -> saveOrganizationConfiguration(organizationId, c.getKey(), c.getValue()));
     }
 
@@ -186,7 +181,7 @@ public class ConfigurationManager {
             Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
         }
         list.stream()
-            .filter(TO_BE_SAVED)
+            .filter(ConfigurationManager::toBeSaved)
             .forEach(c -> saveEventConfiguration(eventId, organizationId, c.getKey(), c.getValue()));
     }
 
@@ -196,7 +191,7 @@ public class ConfigurationManager {
         Validate.notNull(event, "event does not exist");
         Validate.isTrue(userManager.isOwnerOfOrganization(user, event.getOrganizationId()), "Cannot update settings, user is not owner of event");
         list.stream()
-            .filter(TO_BE_SAVED)
+            .filter(ConfigurationManager::toBeSaved)
             .forEach(c -> {
                 Optional<Configuration> existing = configurationRepository.findByKeyAtCategoryLevel(eventId, event.getOrganizationId(), categoryId, c.getKey());
                 Optional<String> value = evaluateValue(c.getKey(), c.getValue());
@@ -339,7 +334,7 @@ public class ConfigurationManager {
             .sorted(ConfigurationPathLevel.COMPARATOR.reversed())
             .flatMap(l -> ConfigurationKeys.byPathLevel(l).stream().map(mapEmptyKeys(l)))
             .sorted((c1, c2) -> new CompareToBuilder().append(c2.getConfigurationPathLevel(), c1.getConfigurationPathLevel()).append(c1.getConfigurationKey(), c2.getConfigurationKey()).toComparison())
-            .collect(LinkedList::new, (List<Configuration> list, Configuration conf) -> {
+            .collect(ArrayList::new, (List<Configuration> list, Configuration conf) -> {
                 int existing = (int) list.stream().filter(c -> c.getConfigurationKey() == conf.getConfigurationKey()).count();
                 if (existing == 0) {
                     list.add(conf);
@@ -387,7 +382,7 @@ public class ConfigurationManager {
                 .filter(k -> existing.stream().noneMatch(c -> c.getKey().equals(k.getValue())))
                 .map(mapEmptyKeys(ConfigurationPathLevel.SYSTEM))
                 .collect(toList());
-        List<Configuration> result = new LinkedList<>(existing);
+        List<Configuration> result = new ArrayList<>(existing);
         result.addAll(missing);
         return result.stream().sorted().collect(groupByCategory());
     }
@@ -571,6 +566,10 @@ public class ConfigurationManager {
                 .orElse(List.of());
         }
         return List.of();
+    }
+
+    private static boolean toBeSaved(ConfigurationModification c) {
+        return Optional.ofNullable(c.getId()).orElse(-1) > -1 || !StringUtils.isBlank(c.getValue());
     }
 
     public static class MaybeConfiguration {

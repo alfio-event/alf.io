@@ -41,11 +41,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.function.Predicate;
 
 import static alfio.manager.payment.BaseStripeManager.STRIPE_MANAGER_TYPE_KEY;
 import static alfio.model.system.ConfigurationKeys.*;
-import static alfio.model.system.ConfigurationKeys.STRIPE_ENABLE_SCA;
 
 @Component
 @Log4j2
@@ -118,13 +116,11 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
     @Override
     public boolean accept(PaymentMethod paymentMethod, PaymentContext context, TransactionRequest transactionRequest) {
-        return baseStripeManager.accept(paymentMethod, context, OPTIONS_TO_LOAD,
-            checkConfiguration()
-        );
+        return baseStripeManager.accept(paymentMethod, context, OPTIONS_TO_LOAD, this::checkConfiguration);
     }
 
-    private Predicate<Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration>> checkConfiguration() {
-        return config -> !config.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false)
+    private boolean checkConfiguration(Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> config) {
+        return !config.get(STRIPE_ENABLE_SCA).getValueAsBooleanOrDefault(false)
             && config.get(STRIPE_SECRET_KEY).isPresent() && config.get(STRIPE_PUBLIC_KEY).isPresent();
     }
 
@@ -143,7 +139,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
     @Override
     public boolean isActive(PaymentContext paymentContext) {
-        return baseStripeManager.isActive(paymentContext, OPTIONS_TO_LOAD, checkConfiguration());
+        return baseStripeManager.isActive(paymentContext, OPTIONS_TO_LOAD, this::checkConfiguration);
     }
 
     @Override
@@ -160,7 +156,7 @@ public class StripeCreditCardManager implements PaymentProvider, ClientServerTok
 
                 PaymentManagerUtils.invalidateExistingTransactions(spec.getReservationId(), transactionRepository);
                 transactionRepository.insert(charge.getId(), null, spec.getReservationId(),
-                    ZonedDateTime.now(), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
+                    ZonedDateTime.now(spec.getEvent().getZoneId()), spec.getPriceWithVAT(), spec.getEvent().getCurrency(), charge.getDescription(), PaymentProxy.STRIPE.name(),
                     fees != null ? fees.getLeft() : 0L, fees != null ? fees.getRight() : 0L, Transaction.Status.COMPLETE, Map.of(STRIPE_MANAGER_TYPE_KEY, STRIPE_MANAGER));
                 return PaymentResult.successful(charge.getId());
             }).orElseGet(() -> PaymentResult.failed("error.STEP2_UNABLE_TO_TRANSITION"));

@@ -115,7 +115,7 @@ public class BillingDocumentManager {
     BillingDocument createBillingDocument(Event event, TicketReservation reservation, String username, BillingDocument.Type type, OrderSummary orderSummary) {
         Map<String, Object> model = prepareModelForBillingDocument(event, reservation, orderSummary);
         String number = reservation.getHasInvoiceNumber() ? reservation.getInvoiceNumber() : UUID.randomUUID().toString();
-        AffectedRowCountAndKey<Long> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, type, json.asJsonString(model), ZonedDateTime.now(), event.getOrganizationId());
+        AffectedRowCountAndKey<Long> doc = billingDocumentRepository.insert(event.getId(), reservation.getId(), number, type, json.asJsonString(model), ZonedDateTime.now(event.getZoneId()), event.getOrganizationId());
         auditingRepository.insert(reservation.getId(), userRepository.nullSafeFindIdByUserName(username).orElse(null), event.getId(), Audit.EventType.BILLING_DOCUMENT_GENERATED, new Date(), Audit.EntityType.RESERVATION, reservation.getId(), singletonList(singletonMap("documentId", doc.getKey())));
         return billingDocumentRepository.findByIdAndReservationId(doc.getKey(), reservation.getId()).orElseThrow(IllegalStateException::new);
     }

@@ -31,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -57,7 +58,7 @@ public class AdminJobManager {
             .flatMap(je -> je.getJobNames().stream().map(n -> Pair.of(n, je)))
             .collect(groupingBy(Pair::getLeft, () -> new EnumMap<>(JobName.class), mapping(Pair::getValue, toList())));
         this.adminJobQueueRepository = adminJobQueueRepository;
-        this.nestedTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition((TransactionDefinition.PROPAGATION_NESTED)));
+        this.nestedTransactionTemplate = new TransactionTemplate(transactionManager, new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_NESTED));
         var executed = EnumSet.of(EXECUTED);
         this.executedStatuses = executed.stream().map(Enum::name).collect(toSet());
         this.notExecutedStatuses = EnumSet.complementOf(executed).stream().map(Enum::name).collect(toSet());
@@ -75,14 +76,14 @@ public class AdminJobManager {
                 var partitionedResults = scheduleWithResults.getRight().stream().collect(Collectors.partitioningBy(Result::isSuccess));
                 if(!partitionedResults.get(false).isEmpty()) {
                     partitionedResults.get(false).forEach(r -> log.warn("Processing failed for {}: {}", schedule.getJobName(), r.getErrors()));
-                    adminJobQueueRepository.updateSchedule(schedule.getId(), AdminJobSchedule.Status.FAILED, ZonedDateTime.now(), Map.of());
+                    adminJobQueueRepository.updateSchedule(schedule.getId(), AdminJobSchedule.Status.FAILED, ZonedDateTime.now(Clock.systemUTC()), Map.of());
                 } else {
                     partitionedResults.get(true).forEach(result -> {
                         if(result.getData() != null) {
                             log.trace("Message from {}: {}", schedule.getJobName(), result.getData());
                         }
                     });
-                    adminJobQueueRepository.updateSchedule(schedule.getId(), EXECUTED, ZonedDateTime.now(), Map.of());
+                    adminJobQueueRepository.updateSchedule(schedule.getId(), EXECUTED, ZonedDateTime.now(Clock.systemUTC()), Map.of());
                 }
             });
         log.trace("done processing pending requests");
@@ -91,11 +92,12 @@ public class AdminJobManager {
     @Scheduled(cron = "#{environment.acceptsProfiles('dev') ? '0 * * * * *' : '0 0 0 * * *'}")
     void cleanupExpiredRequests() {
         log.trace("Cleanup expired requests");
-        int deleted = adminJobQueueRepository.removePastSchedules(ZonedDateTime.now().minusDays(1), executedStatuses);
+        ZonedDateTime now = ZonedDateTime.now(Clock.systemUTC());
+        int deleted = adminJobQueueRepository.removePastSchedules(now.minusDays(1), executedStatuses);
         if(deleted > 0) {
             log.trace("Deleted {} executed jobs", deleted);
         }
-        deleted = adminJobQueueRepository.removePastSchedules(ZonedDateTime.now().minusWeeks(1), notExecutedStatuses);
+        deleted = adminJobQueueRepository.removePastSchedules(now.minusWeeks(1), notExecutedStatuses);
         if(deleted > 0) {
             log.warn("Deleted {} NOT executed jobs", deleted);
         }
@@ -103,7 +105,7 @@ public class AdminJobManager {
 
     public boolean scheduleExecution(JobName jobName, Map<String, Object> metadata) {
         try {
-            adminJobQueueRepository.schedule(jobName, ZonedDateTime.now().truncatedTo(ChronoUnit.MINUTES), metadata);
+            adminJobQueueRepository.schedule(jobName, ZonedDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MINUTES), metadata);
             return true;
         } catch (DataIntegrityViolationException ex) {
             log.trace("Integrity violation", ex);

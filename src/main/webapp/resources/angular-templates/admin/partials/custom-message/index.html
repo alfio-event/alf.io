@@ -37,14 +37,14 @@
             </dl>
         </div>
         <div class="col-xs-12 col-md-9 col-md-pull-3">
-            <form name="sendMessage" role="form" data-ng-submit="showPreview(sendMessage, eventName, categoryId, messages, categories)">
+            <form name="sendMessage" role="form" data-ng-submit="showPreview(sendMessage, eventName, categoryId, messages, categories, onlineEvent)">
                 <div class="form-group wMarginBottom">
                     <label for="availableCategories">Send it to a specific category:</label>
                     <select id="availableCategories" data-ng-options="category.id as category.name for category in categories" data-ng-model="categoryId" class="form-control">
                         <option value="">All</option>
                     </select>
                 </div>
-                <edit-messages data-edit-mode="true" data-messages="messages"></edit-messages>
+                <edit-messages data-edit-mode="true" data-messages="messages" data-online="onlineEvent"></edit-messages>
                 <control-buttons data-form-obj="sendMessage" data-success-text="Preview" data-cancel-handler="cancel"></control-buttons>
             </form>
         </div>

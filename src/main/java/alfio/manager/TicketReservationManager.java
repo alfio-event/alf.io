@@ -1343,7 +1343,7 @@ public class TicketReservationManager {
         var reservationPriceCalculator = ReservationPriceCalculator.from(reservation, promoCodeDiscount, tickets, event, additionalServiceItems);
         var price = new TotalPrice(unitToCents(reservationPriceCalculator.getFinalPrice(), currencyCode),
             unitToCents(reservationPriceCalculator.getVAT(), currencyCode),
-            -(MonetaryUtil.unitToCents(reservationPriceCalculator.getAppliedDiscount(), currencyCode)),
+            -MonetaryUtil.unitToCents(reservationPriceCalculator.getAppliedDiscount(), currencyCode),
             discountAppliedCount,
             currencyCode);
         return Pair.of(price, Optional.ofNullable(promoCodeDiscount));

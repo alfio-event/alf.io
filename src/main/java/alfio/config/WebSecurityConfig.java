@@ -16,26 +16,20 @@
  */
 package alfio.config;
 
-import alfio.manager.OpenIdAuthenticationManager;
+import alfio.config.support.OpenIdCallbackLoginFilter;
 import alfio.manager.RecaptchaService;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.system.OpenIdAuthenticationManager;
 import alfio.manager.user.UserManager;
-import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
 import alfio.repository.user.AuthorityRepository;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.repository.user.join.UserOrganizationRepository;
-import com.auth0.jwt.JWT;
-import com.auth0.jwt.interfaces.Claim;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -56,7 +50,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -74,13 +67,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.sql.DataSource;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Collection;
+import java.util.Locale;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -89,6 +79,7 @@ import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
 
 @Configuration
 @EnableWebSecurity
+@Log4j2
 public class WebSecurityConfig {
 
     public static final String CSRF_PARAM_NAME = "_csrf";
@@ -99,8 +90,6 @@ public class WebSecurityConfig {
     private static final String CSRF_SESSION_ATTRIBUTE = "CSRF_SESSION_ATTRIBUTE";
     private static final String SUPERVISOR = "SUPERVISOR";
     private static final String ADMIN = "ADMIN";
-    private static final String ALFIO_ADMIN = "ALFIO_ADMIN";
-    private static final String ALFIO_BACKOFFICE = "ALFIO_BACKOFFICE";
     private static final String OWNER = "OWNER";
     private static final String API_CLIENT = "API_CLIENT";
     private static final String X_REQUESTED_WITH = "X-Requested-With";
@@ -134,7 +123,7 @@ public class WebSecurityConfig {
     public static class APITokenAuthentication extends AbstractAuthenticationToken {
 
         private final Object principal;
-        private Object credentials;
+        private final Object credentials;
 
 
         public APITokenAuthentication(Object principal, Object credentials, Collection<? extends GrantedAuthority> authorities) {
@@ -234,7 +223,9 @@ public class WebSecurityConfig {
                                           AuthorityRepository authorityRepository,
                                           UserOrganizationRepository userOrganizationRepository,
                                           OrganizationRepository organizationRepository) {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
+            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository,
+                dataSource, passwordEncoder, openIdAuthenticationManager, userRepository, authorityRepository,
+                userOrganizationRepository, organizationRepository);
         }
     }
 
@@ -256,10 +247,13 @@ public class WebSecurityConfig {
                                     AuthorityRepository authorityRepository,
                                     UserOrganizationRepository userOrganizationRepository,
                                     OrganizationRepository organizationRepository) {
-            super(environment, userManager, recaptchaService, configurationManager, csrfTokenRepository, dataSource, passwordEncoder, null, userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
+            super(environment, userManager, recaptchaService, configurationManager,
+                csrfTokenRepository, dataSource, passwordEncoder, null,
+                userRepository, authorityRepository, userOrganizationRepository, organizationRepository);
         }
     }
 
+    @AllArgsConstructor
     static abstract class AbstractFormBasedWebSecurity extends WebSecurityConfigurerAdapter {
         private final Environment environment;
         private final UserManager userManager;
@@ -271,34 +265,8 @@ public class WebSecurityConfig {
         private final OpenIdAuthenticationManager openIdAuthenticationManager;
         private final UserRepository userRepository;
         private final AuthorityRepository authorityRepository;
-        private UserOrganizationRepository userOrganizationRepository;
-        private OrganizationRepository organizationRepository;
-
-        public AbstractFormBasedWebSecurity(Environment environment,
-                                            UserManager userManager,
-                                            RecaptchaService recaptchaService,
-                                            ConfigurationManager configurationManager,
-                                            CsrfTokenRepository csrfTokenRepository,
-                                            DataSource dataSource,
-                                            PasswordEncoder passwordEncoder,
-                                            OpenIdAuthenticationManager openIdAuthenticationManager,
-                                            UserRepository userRepository,
-                                            AuthorityRepository authorityRepository,
-                                            UserOrganizationRepository userOrganizationRepository,
-                                            OrganizationRepository organizationRepository) {
-            this.environment = environment;
-            this.userManager = userManager;
-            this.recaptchaService = recaptchaService;
-            this.configurationManager = configurationManager;
-            this.csrfTokenRepository = csrfTokenRepository;
-            this.dataSource = dataSource;
-            this.passwordEncoder = passwordEncoder;
-            this.openIdAuthenticationManager = openIdAuthenticationManager;
-            this.userRepository = userRepository;
-            this.authorityRepository = authorityRepository;
-            this.userOrganizationRepository = userOrganizationRepository;
-            this.organizationRepository = organizationRepository;
-        }
+        private final UserOrganizationRepository userOrganizationRepository;
+        private final OrganizationRepository organizationRepository;
 
         @Override
         public void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -392,7 +360,10 @@ public class WebSecurityConfig {
             //
             http.addFilterBefore(new RecaptchaLoginFilter(recaptchaService, "/authenticate", "/authentication?recaptchaFailed", configurationManager), UsernamePasswordAuthenticationFilter.class);
             if (openIdAuthenticationManager != null) {
-                http.addFilterBefore(new OpenIdCallbackLoginFilter(openIdAuthenticationManager, new AntPathRequestMatcher("/callback", "GET"), authenticationManager(), userRepository, authorityRepository, passwordEncoder, userManager, userOrganizationRepository, organizationRepository), UsernamePasswordAuthenticationFilter.class);
+                http.addFilterBefore(new OpenIdCallbackLoginFilter(openIdAuthenticationManager, new AntPathRequestMatcher("/callback", "GET"),
+                    authenticationManager(), userRepository, authorityRepository, passwordEncoder, userManager, userOrganizationRepository,
+                    organizationRepository), UsernamePasswordAuthenticationFilter.class);
+                log.trace("adding openid filter");
                 http.addFilterBefore(new OpenIdAuthenticationFilter("/authentication", openIdAuthenticationManager), RecaptchaLoginFilter.class);
             }
 
@@ -421,205 +392,6 @@ public class WebSecurityConfig {
             }
         }
 
-        private static class OpenIdCallbackLoginFilter extends AbstractAuthenticationProcessingFilter {
-            private final Logger logger = LoggerFactory.getLogger(OpenIdCallbackLoginFilter.class);
-
-            private final RequestMatcher requestMatcher;
-            private final UserRepository userRepository;
-            private final AuthorityRepository authorityRepository;
-            private final PasswordEncoder passwordEncoder;
-            private final UserManager userManager;
-            private final UserOrganizationRepository userOrganizationRepository;
-            private final OrganizationRepository organizationRepository;
-            private final OpenIdAuthenticationManager openIdAuthenticationManager;
-
-            private OpenIdCallbackLoginFilter(OpenIdAuthenticationManager openIdAuthenticationManager,
-                                              AntPathRequestMatcher requestMatcher, AuthenticationManager authenticationManager,
-                                              UserRepository userRepository, AuthorityRepository authorityRepository, PasswordEncoder passwordEncoder,
-                                              UserManager userManager, UserOrganizationRepository userOrganizationRepository,
-                                              OrganizationRepository organizationRepository) {
-                super(requestMatcher);
-                this.setAuthenticationManager(authenticationManager);
-                this.userRepository = userRepository;
-                this.authorityRepository = authorityRepository;
-                this.passwordEncoder = passwordEncoder;
-                this.userManager = userManager;
-                this.userOrganizationRepository = userOrganizationRepository;
-                this.organizationRepository = organizationRepository;
-                this.requestMatcher = requestMatcher;
-                this.openIdAuthenticationManager = openIdAuthenticationManager;
-            }
-
-            @Override
-            public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-                HttpServletRequest req = (HttpServletRequest) request;
-                HttpServletResponse res = (HttpServletResponse) response;
-
-                if (requestMatcher.matches(req)) {
-                    super.doFilter(req, res, chain);
-                }
-
-                chain.doFilter(request, response);
-            }
-
-            private void updateOrganizations(OpenIdAlfioUser alfioUser, HttpServletResponse response) throws IOException {
-                Optional<Integer> userId = userRepository.findIdByUserName(alfioUser.getEmail());
-                if (userId.isEmpty()) {
-                    String message = "Error: user not saved into the database";
-                    logger.error(message);
-                    response.sendRedirect(openIdAuthenticationManager.buildLogoutUrl());
-                }
-
-                Set<Integer> databaseOrganizationIds = organizationRepository.findAllForUser(alfioUser.getEmail()).stream()
-                    .map(org -> org.getId()).collect(Collectors.toSet());
-
-                if (alfioUser.isAdmin()) {
-                    databaseOrganizationIds.forEach(orgId -> userOrganizationRepository.removeOrganizationUserLink(userId.get(), orgId));
-                    return;
-                }
-
-                Set<Integer> organizationIds = alfioUser.getAlfioOrganizationAuthorizations().keySet().stream()
-                    .map(organizationRepository::findByNameOpenId)
-                    .filter(Optional::isPresent)
-                    .map(Optional::get)
-                    .filter(Objects::nonNull)
-                    .map(Organization::getId)
-                    .collect(Collectors.toSet());
-
-                databaseOrganizationIds.stream()
-                    .filter(orgId -> !organizationIds.contains(orgId))
-                    .forEach(orgId -> userOrganizationRepository.removeOrganizationUserLink(userId.get(), orgId));
-
-                if (organizationIds.isEmpty()) {
-                    String message = "Error: The user needs to be ADMIN or to have at least one organization linked";
-                    logger.error(message);
-                    response.sendRedirect(openIdAuthenticationManager.buildLogoutUrl());
-                }
-
-                organizationIds.stream().filter(orgId -> !databaseOrganizationIds.contains(orgId))
-                    .forEach(orgId -> userOrganizationRepository.create(userId.get(), orgId));
-            }
-
-            private Set<Role> extractAlfioRoles(Map<String, Set<String>> alfioOrganizationAuthorizations) {
-                Set<Role> alfioRoles = new HashSet<>();
-                //FIXME at the moment, the authorizations are NOT based on the organizations, they are global
-                alfioOrganizationAuthorizations.keySet().stream()
-                    .map(alfioOrganizationAuthorizations::get)
-                    .forEach(authorizations ->
-                        authorizations.stream().map(auth -> Role.fromRoleName("ROLE_" + auth))
-                            .forEach(alfioRoles::add));
-                return alfioRoles;
-            }
-
-            private void createUser(OpenIdAlfioUser user) {
-                userRepository.create(user.getEmail(), passwordEncoder.encode(user.getSubject()), user.getEmail(), user.getEmail(), user.getEmail(), true, User.Type.INTERNAL, null, null);
-            }
-
-            private OpenIdAlfioUser extractUserInfoFrom(Map<String, Object> claims) {
-                String idToken = (String) claims.get(openIdAuthenticationManager.getIdTokenNameParameter());
-
-                Map<String, Claim> idTokenClaims = JWT.decode(idToken).getClaims();
-                String subject = idTokenClaims.get(openIdAuthenticationManager.getSubjectNameParameter()).asString();
-                String email = idTokenClaims.get(openIdAuthenticationManager.getEmailNameParameter()).asString();
-                List<String> groupsList = idTokenClaims.get(openIdAuthenticationManager.getGroupsNameParameter()).asList(String.class);
-                List<String> groups = groupsList.stream().filter(group -> group.startsWith("ALFIO_")).collect(Collectors.toList());
-                boolean isAdmin = groups.contains(ALFIO_ADMIN);
-
-                if (isAdmin) {
-                    return new OpenIdAlfioUser(idToken, subject, email, true, Set.of(Role.ADMIN), null);
-                }
-
-                if(groups.isEmpty()){
-                    String message = "Users must have at least a group called ALFIO_ADMIN or ALFIO_BACKOFFICE";
-                    logger.error(message);
-                    throw new RuntimeException(message);
-                }
-
-                List<String> alfioOrganizationAuthorizationsRaw = idTokenClaims.get(openIdAuthenticationManager.getAlfioGroupsNameParameter()).asList(String.class);
-                Map<String, Set<String>> alfioOrganizationAuthorizations = new HashMap<>();
-
-                for (String alfioOrgAuth : alfioOrganizationAuthorizationsRaw) {
-                    String[] orgRole = alfioOrgAuth.split("/");
-                    String organization = orgRole[1];
-                    String role = orgRole[2];
-
-                    if (alfioOrganizationAuthorizations.containsKey(organization)) {
-                        alfioOrganizationAuthorizations.get(organization).add(role);
-                        continue;
-                    }
-                    alfioOrganizationAuthorizations.put(organization, Set.of(role));
-                }
-                Set<Role> alfioRoles = extractAlfioRoles(alfioOrganizationAuthorizations);
-                return new OpenIdAlfioUser(idToken, subject, email, false, alfioRoles, alfioOrganizationAuthorizations);
-            }
-
-            private Map<String, Object> retrieveClaims(String claimsUrl, String code){
-                HttpClient client = HttpClient.newHttpClient();
-
-                HttpRequest request = null;
-                HttpResponse<String> response;
-                Map<String, Object> map;
-
-                try {
-                    request = HttpRequest.newBuilder()
-                        .uri(URI.create(claimsUrl))
-                        .header("Content-Type", openIdAuthenticationManager.getContentType())
-                        .POST(HttpRequest.BodyPublishers.ofString(openIdAuthenticationManager.buildRetrieveClaimsUrlBody(code)))
-                        .build();
-
-                    response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                    map = new ObjectMapper().readValue(response.body(), Map.class);
-
-                } catch (Exception e) {
-                    String message = "There has been an error retrieving the claims from the idp using the authorization code";
-                    logger.error(message);
-                    throw new RuntimeException(message);
-                }
-
-                return map;
-            }
-
-            private void updateRoles(Set<Role> roles, String username) {
-                authorityRepository.revokeAll(username);
-                roles.forEach(role -> authorityRepository.create(username, role.getRoleName()));
-            }
-
-            @Override
-            public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException, IOException, ServletException {
-                String code = request.getParameter(openIdAuthenticationManager.getCodeNameParameter());
-                if (code == null) {
-                    throw new IllegalArgumentException("authorization code cannot be null");
-                }
-
-                String claimsUrl = openIdAuthenticationManager.buildClaimsRetrieverUrl();
-                Map<String, Object> claims = retrieveClaims(claimsUrl, code);
-
-                OpenIdAlfioUser alfioUser = extractUserInfoFrom(claims);
-
-                if (!userManager.usernameExists(alfioUser.getEmail())) {
-                    createUser(alfioUser);
-                }
-                updateRoles(alfioUser.getAlfioRoles(), alfioUser.getEmail());
-                updateOrganizations(alfioUser, response);
-
-                List<GrantedAuthority> authorities = alfioUser.getAlfioRoles().stream().map(Role::getRoleName)
-                    .map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-                OpenIdAlfioAuthentication authentication = new OpenIdAlfioAuthentication(authorities, alfioUser.getIdToken(), alfioUser.getSubject(), alfioUser.getEmail(), openIdAuthenticationManager.buildLogoutUrl());
-                return getAuthenticationManager().authenticate(authentication);
-            }
-        }
-
-        @Getter
-        @AllArgsConstructor
-        private static class OpenIdAlfioUser {
-            private final String idToken;
-            private final String subject;
-            private final String email;
-            private final boolean isAdmin;
-            private final Set<Role> alfioRoles;
-            private final Map<String, Set<String>> alfioOrganizationAuthorizations;
-        }
-
         private static class OpenIdAuthenticationProvider implements AuthenticationProvider {
             @Override
             public Authentication authenticate(Authentication authentication) throws AuthenticationException {
@@ -634,7 +406,7 @@ public class WebSecurityConfig {
 
         private static class OpenIdAuthenticationFilter extends GenericFilterBean {
             private final RequestMatcher requestMatcher;
-            private OpenIdAuthenticationManager openIdAuthenticationManager;
+            private final OpenIdAuthenticationManager openIdAuthenticationManager;
 
             private OpenIdAuthenticationFilter(String loginURL, OpenIdAuthenticationManager openIdAuthenticationManager) {
                 this.requestMatcher = new AntPathRequestMatcher(loginURL, "GET");
@@ -651,7 +423,8 @@ public class WebSecurityConfig {
                         res.sendRedirect("/admin/");
                         return;
                     }
-                    res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl(openIdAuthenticationManager.getScopes()));
+                    log.trace("calling buildAuthorizeUrl");
+                    res.sendRedirect(openIdAuthenticationManager.buildAuthorizeUrl());
                     return;
                 }
 
@@ -755,4 +528,5 @@ public class WebSecurityConfig {
             return idpLogoutRedirectionUrl;
         }
     }
+
 }

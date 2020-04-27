@@ -127,10 +127,10 @@ public final class TemplateProcessor {
 
         builder.withW3cDocument(W3CDom.toW3CDocument(parser.parse(page)), "");
         try (PdfBoxRenderer renderer = builder.buildPdfRenderer()) {
-            File defaultFont = FONT_CACHE.get(DEJA_VU_SANS, LOAD_DEJA_VU_SANS_FONT);
-            if (!defaultFont.exists()) { // fallback, the cached font will not be shared though
+            File defaultFont = FONT_CACHE.get(DEJA_VU_SANS, TemplateProcessor::loadDejaVuFont);
+            if (defaultFont != null && !defaultFont.exists()) { // fallback, the cached font will not be shared though
                 FONT_CACHE.invalidate(DEJA_VU_SANS);
-                defaultFont = LOAD_DEJA_VU_SANS_FONT.apply(DEJA_VU_SANS);
+                defaultFont = loadDejaVuFont(DEJA_VU_SANS);
             }
             if (defaultFont != null) {
                 renderer.getFontResolver().addFont(defaultFont, "DejaVu Sans Mono", null, null, false);
@@ -142,7 +142,7 @@ public final class TemplateProcessor {
 
     private static final String DEJA_VU_SANS = "/alfio/font/DejaVuSansMono.ttf";
 
-    private static final Function<String, File> LOAD_DEJA_VU_SANS_FONT = classPathResource -> {
+    private static File loadDejaVuFont(String classPathResource) {
         try {
             File cachedFile = File.createTempFile("font-cache", ".tmp");
             cachedFile.deleteOnExit();
@@ -154,7 +154,7 @@ public final class TemplateProcessor {
             log.warn("error while loading DejaVuSansMono.ttf font", e);
             return null;
         }
-    };
+    }
 
     private static class AlfioInternalFSStreamFactory implements FSStreamFactory {
 

@@ -309,7 +309,7 @@ public class StripeWebhookPaymentManager implements PaymentProvider, RefundReque
         long gtwFee = Optional.ofNullable(charge.getBalanceTransactionObject()).map(BalanceTransaction::getFee).orElse(0L);
         transactionRepository.lockByIdForUpdate(transaction.getId());// this serializes
         int affectedRows = transactionRepository.updateIfStatus(transaction.getId(), chargeId,
-            transaction.getPaymentId(), ZonedDateTime.now(), transaction.getPlatformFee(), gtwFee,
+            transaction.getPaymentId(), ZonedDateTime.now(event.getZoneId()), transaction.getPlatformFee(), gtwFee,
             Transaction.Status.COMPLETE, Map.of(), Transaction.Status.PENDING);
         List<Map<String, Object>> modifications = List.of(Map.of("paymentId", chargeId, "paymentMethod", "stripe"));
         if(affectedRows == 0) {

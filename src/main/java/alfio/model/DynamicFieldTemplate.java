@@ -25,7 +25,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 
 @Getter
 public class DynamicFieldTemplate {
@@ -48,13 +47,13 @@ public class DynamicFieldTemplate {
         this.id = id;
         this.name = name;
         this.type = type;
-        this.restrictedValues = Optional.ofNullable(restrictedValuesJson).map(parseRestrictedValues()).orElse(Collections.emptyList());
+        this.restrictedValues = Optional.ofNullable(restrictedValuesJson).map(DynamicFieldTemplate::parseRestrictedValues).orElse(Collections.emptyList());
         this.description = Json.GSON.fromJson(descriptionJson, new TypeToken<Map<String, Object>>(){}.getType());
         this.maxLength = maxLength;
         this.minLength = minLength;
     }
 
-    private static Function<String, List<String>> parseRestrictedValues() {
-        return v -> Json.GSON.fromJson(v, new TypeToken<List<String>>(){}.getType());
+    private static List<String> parseRestrictedValues(String v) {
+        return Json.GSON.fromJson(v, new TypeToken<List<String>>(){}.getType());
     }
 }

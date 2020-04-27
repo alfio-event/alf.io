@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.lang3.StringUtils.trim;
 
 @RestController
@@ -68,7 +69,7 @@ public class SpecialPriceApiController {
                                                                          Principal principal) throws IOException, CsvException {
 
         Validate.isTrue(StringUtils.isNotEmpty(eventName));
-        try(InputStreamReader isr = new InputStreamReader(file.getInputStream()); CSVReader reader = new CSVReader(isr)) {
+        try(InputStreamReader isr = new InputStreamReader(file.getInputStream(), UTF_8); CSVReader reader = new CSVReader(isr)) {
             List<SendCodeModification> content = reader.readAll().stream()
                     .map(line -> {
                         Validate.isTrue(line.length >= 4);

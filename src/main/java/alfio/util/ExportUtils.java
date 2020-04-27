@@ -28,6 +28,8 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class ExportUtils {
 
     private static final int[] BOM_MARKERS = new int[] {0xEF, 0xBB, 0xBF};
@@ -56,7 +58,7 @@ public class ExportUtils {
         response.setContentType("text/csv;charset=UTF-8");
         response.setHeader("Content-Disposition", "attachment; filename=" + fileName);
 
-        try (ServletOutputStream out = response.getOutputStream(); CSVWriter writer = new CSVWriter(new OutputStreamWriter(out))) {
+        try (ServletOutputStream out = response.getOutputStream(); CSVWriter writer = new CSVWriter(new OutputStreamWriter(out, UTF_8))) {
             for (int marker : ExportUtils.BOM_MARKERS) {
                 out.write(marker);
             }
