@@ -26,6 +26,7 @@ import java.util.Map;
 @Getter
 public class AlfioMetadata {
     private final List<String> tags;
+    private final List<AlfioAttribute> attributes;
     private final OnlineConfiguration onlineConfiguration;
     // list of requirements for participants, e.g. software
     private final Map<String, String> requirementsDescriptions;
@@ -35,14 +36,16 @@ public class AlfioMetadata {
     public AlfioMetadata(@JsonProperty("tags") List<String> tags,
                          @JsonProperty("onlineConfiguration") OnlineConfiguration onlineConfiguration,
                          @JsonProperty("requirementsDescriptions") Map<String, String> requirementsDescriptions,
-                         @JsonProperty("conditionsToBeAccepted") List<ConditionsLink> conditionsToBeAccepted) {
+                         @JsonProperty("conditionsToBeAccepted") List<ConditionsLink> conditionsToBeAccepted,
+                         @JsonProperty("attributes") List<AlfioAttribute> attributes) {
         this.tags = tags;
+        this.attributes = attributes;
         this.onlineConfiguration = onlineConfiguration;
         this.requirementsDescriptions = requirementsDescriptions;
         this.conditionsToBeAccepted = conditionsToBeAccepted;
     }
 
     public static AlfioMetadata empty() {
-        return new AlfioMetadata(List.of(), null, Map.of(), List.of());
+        return new AlfioMetadata(List.of(), null, Map.of(), List.of(), List.of());
     }
 }

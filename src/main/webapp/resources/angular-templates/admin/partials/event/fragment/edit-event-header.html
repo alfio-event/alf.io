@@ -9,6 +9,15 @@
                 <input type="text" data-ng-model="obj.displayName" name="displayName" data-grab-focus id="displayName" class="form-control" required data-ng-change="updateURL(obj.displayName)" data-ng-model-options="{ updateOn: 'default blur', debounce: 500}"/>
                 <field-error data-form-obj="editEventHeader" data-min-char="1" data-field-obj="editEventHeader.displayName" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
+            <div class="form-group">
+                <label for="displayName">TAG (Event Type) <span class="tag-chip" data-ng-repeat="tag in obj.metadata.tags">{{tag}} <i style="cursor: pointer;" class="fa fa-times-circle" ng-click="removeTag(tag)"></i></span> </label>
+                <div class="input-group">
+                    <input type="text" data-ng-model="obj.tag" name="tag" id="tag" class="form-control" data-ng-change="addTag(obj.tag)" data-ng-model-options="{ updateOn: 'blur', debounce: 500}"/>
+                    <span class="input-group-btn">
+                         <button class="btn btn-success" type="button" ng-click="addTag(obj.tag)">Add tag</button>
+                    </span>
+                </div><!-- /input-group -->
+            </div>
             <div class="form-group" bs-form-error="editEventHeader.organizationId">
                 <label for="organizationId">Event Organizer</label>
                 <select data-ng-model="obj.organizationId" name="organizationId" id="organizationId" class="form-control" required data-ng-options="organization.id as organization.name for organization in organizations"></select>
@@ -17,6 +26,14 @@
             <div class="form-group">
                 <label for="format">Event will be held</label>
                 <select data-ng-model="obj.format" name="format" id="format" class="form-control" required data-ng-options="format.id as format.description for format in formats"></select>
+            </div>
+            <div class="form-group" ng-if="obj.format == 'ONLINE'">
+                <label for="format">Event occurrence</label>
+                <select data-ng-model="obj.onlineOccurrence" name="onlineOccurrence" id="onlineOccurrence" class="form-control" required data-ng-options="onlineOccurrence.id as onlineOccurrence.description for onlineOccurrence in onlineOccurrences"></select>
+            </div>
+            <div class="form-group" ng-if="obj.onlineOccurrence == 'CARNET'">
+                <label for="carnetAmount">Carnet amount</label>
+                <input type="number" min="1" data-ng-model="obj.carnetAmount" name="carnetAmount" id="carnetAmount" class="form-control" required data-ng-change="updateURL(obj.carnetAmount)" data-ng-model-options="{ updateOn: 'default blur', debounce: 500}"/>
             </div>
             <div class="form-group" bs-form-error="editEventHeader.location" data-ng-if="obj.format !== 'ONLINE'">
                 <label for="location">Event Location</label>

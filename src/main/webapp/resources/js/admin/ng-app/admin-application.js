@@ -1159,6 +1159,8 @@
                 templateUrl:BASE_STATIC_URL + '/event/fragment/edit-event-header-modal.html',
                 backdrop: 'static',
                 controller: function($scope) {
+                    console.log('EDIT HEADER CALL', parentScope.event);
+
                     $scope.eventHeader = parentScope.eventHeader;
                     $scope.event = parentScope.event;
                     $scope.organizations = parentScope.organizations;
@@ -1172,6 +1174,35 @@
                         if(!form.$valid) {
                             return;
                         }
+                        //check for carnet event type
+                        if (eventHeader.format == 'ONLINE'){
+                           if ( eventHeader.onlineOccurrence == 'CARNET'){
+                                // adding carnet attribute
+                               var exist = false;
+                               for (var i = 0; i < eventHeader.metadata.attributes.length; i++) {
+                                    if (eventHeader.metadata.attributes[i].key == 'CARNET'){
+                                        eventHeader.metadata.attributes[i].value = eventHeader.carnetAmount;
+                                        exist = true;
+                                    }
+                               }
+                               if (!exist){
+                                    var attr = {'key':'CARNET', 'value': eventHeader.carnetAmount};
+                                    eventHeader.metadata.attributes.push(attr);
+                               }
+                           } else {
+                            //removing carnet attribute
+                               var idx = -1;
+                               for (var i = 0; i < eventHeader.metadata.attributes.length; i++) {
+                                    if (eventHeader.metadata.attributes[i].key == 'CARNET'){
+                                        idx = i;
+                                    }
+                               }
+                               if (idx != -1){
+                                eventHeader.metadata.attributes.splice(idx,1);
+                               }
+                           }
+                        }
+
                         EventService.updateEventHeader(eventHeader).then(function(result) {
                             validationErrorHandler(result, form, form.editEventHeader).then(function(result) {
                                 $scope.$close(eventHeader);

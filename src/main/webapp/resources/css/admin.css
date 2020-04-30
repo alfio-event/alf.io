@@ -826,3 +826,9 @@ div.preformatted {
     background-color: white !important;
     margin-bottom: 0 !important;
 }
+.tag-chip {
+    background-color: #bbffb2;
+    border-radius: 50px;
+    padding: 1px 8px 4px 8px;
+    margin-right: 1rem;
+}

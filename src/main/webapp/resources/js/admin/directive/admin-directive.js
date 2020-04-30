@@ -324,13 +324,12 @@
             restrict: 'E',
             templateUrl: '/resources/angular-templates/admin/partials/event/fragment/edit-event-header.html',
             controller: function EditEventHeaderController($scope, $stateParams, LocationService, FileUploadService, UtilsService, EventService, ConfigurationService) {
-
                 $scope.baseUrl = ConfigurationService.getBaseUrl();
 
                 if(!angular.isDefined($scope.fullEditMode)) {
                     var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
                         'description', 'websiteUrl', 'externalUrl', 'termsAndConditionsUrl', 'privacyPolicyUrl', 'imageUrl', 'fileBlobId', 'formattedBegin','format',
-                        'formattedEnd', 'geolocation', 'locales']);
+                        'formattedEnd', 'geolocation', 'locales', 'metadata']);
                     angular.extend($scope.obj, source);
                     var beginDateTime = moment(source['formattedBegin']);
                     var endDateTime = moment(source['formattedEnd']);
@@ -358,8 +357,49 @@
                     }
                 ];
 
+                $scope.onlineOccurrences = [
+                    {
+                        id: 'SINGLE',
+                        description: 'Single event'
+                    },{
+                        id: 'CARNET',
+                        description: 'Carnet'
+                    }
+                ];
+
                 if(!$scope.obj.format) {
                     $scope.obj.format = 'IN_PERSON';
+                }
+
+                if(!$scope.obj.metadata) {
+                    $scope.obj.metadata = {};
+                }
+
+                if(!$scope.obj.metadata.attributes) {
+                    $scope.obj.metadata.attributes = [];
+                } else {
+                    for (var i = 0; i < $scope.obj.metadata.attributes.length; i++) {
+                        if ($scope.obj.metadata.attributes[i].key == 'CARNET'){
+                            $scope.obj.carnetAmount = $scope.obj.metadata.attributes[i].value;
+                            $scope.obj.onlineOccurrence = 'CARNET';
+                        }
+                   }
+                }
+
+                if(!$scope.obj.onlineOccurrence) {
+                    $scope.obj.onlineOccurrence = 'SINGLE';
+                }
+
+                if(!$scope.obj.carnetAmount) {
+                    $scope.obj.carnetAmount = 10; //default is 10 for now...
+                }
+
+                if(!$scope.obj.metadata.tags) {
+                    $scope.obj.metadata.tags = [];
+                }
+
+                if(!$scope.obj.tag) {
+                    $scope.obj.tag = '';
                 }
 
                 LocationService.getTimezones().then(function(res) {
@@ -410,6 +450,22 @@
                 $scope.$watch('obj.locales', function(newValue) {
                     handleLocales();
                 });
+
+                $scope.addTag = function(tag) {
+                    if (!tag || tag.trim() === '')
+                        return;
+                    var idx = $scope.obj.metadata.tags.indexOf(tag.trim().toLowerCase());
+                    if (idx < 0)
+                        $scope.obj.metadata.tags.push(tag.trim().toLowerCase());
+                    $scope.obj.tag = '';
+                };
+
+                $scope.removeTag = function(tag) {
+                    var idx =  $scope.obj.metadata.tags.indexOf(tag);
+                    if (idx != -1) {
+                        $scope.obj.metadata.tags.splice(idx,1);
+                    }
+                };
 
                 $scope.addDescription = function(language) {
                     $scope.toggleLanguageSelection(language);
