@@ -197,7 +197,7 @@
                 return $http['post']('/admin/api/events/'+eventName+'/messages/preview'+queryString, messages).error(HttpErrorHandler.handle);
             },
             sendMessages: function(eventName, categoryId, messages) {
-                var queryString = angular.isDefined(categoryId) && categoryId !== "" ? '?categoryId='+categoryId : '';
+                var queryString = angular.isDefined(categoryId) && categoryId !== "" && categoryId !== null ? '?categoryId='+categoryId : '';
                 return $http['post']('/admin/api/events/'+eventName+'/messages/send'+queryString, messages).error(HttpErrorHandler.handle);
             },
             getFields : function(eventName) {
