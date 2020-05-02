@@ -138,6 +138,7 @@ dependencies {
     compile "com.openhtmltopdf:openhtmltopdf-core:1.0.2"
     compile "com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.2"
     compile "ch.digitalfondue.jfiveparse:jfiveparse:0.7.1"
+    compile "guru.nidi.com.kitfox:svgSalamander:1.1.3"
     /**/
     compile "com.google.zxing:core:3.4.0"
     compile "com.google.zxing:javase:3.4.0"

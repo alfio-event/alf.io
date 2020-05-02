@@ -534,8 +534,8 @@
                     };
                     if (files.length <= 0) {
                 		alert('Your image not uploaded correctly.Please upload the image again');
-	                } else if (!((files[0].type === 'image/png') || (files[0].type === 'image/jpeg'))) {
-	                	alert('only png or jpeg files are accepted');
+	                } else if (!((files[0].type === 'image/png') || (files[0].type === 'image/jpeg') || (files[0].type === 'image/gif') || (files[0].type === 'image/svg+xml'))) {
+	                	alert('Only PNG, JPG, GIF or SVG image files are accepted');
 	                } else if (files[0].size > (1024 * 200)) {
 	                	alert('Image size exceeds the allowable limit 200KB');
 	                } else {
