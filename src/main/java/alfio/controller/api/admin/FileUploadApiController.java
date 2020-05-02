@@ -96,7 +96,7 @@ public class FileUploadApiController {
 
         final SVGUniverse uni = new SVGUniverse();
         final URI uri = uni.loadSVG(upload.getInputStream(), "_");
-        // use apply 10% margin to prevent final image size to exceed max allowed size
+        //apply 10% margin to prevent final image size to exceed max allowed size
         final int maxWidthWithMargin  = (int) (IMAGE_THUMB_MAX_WIDTH_PX  * 0.9);
         final int maxHeightWithMargin = (int) (IMAGE_THUMB_MAX_HEIGHT_PX * 0.9);
 
@@ -104,7 +104,7 @@ public class FileUploadApiController {
         icon.setSvgUniverse(uni);
         icon.setSvgURI(uri);
         icon.setAntiAlias(true);
-        if(icon.getIconWidth() > maxHeightWithMargin || icon.getIconHeight() > maxHeightWithMargin) {
+        if(icon.getIconWidth() > maxWidthWithMargin || icon.getIconHeight() > maxHeightWithMargin) {
             icon.setAutosize(SVGIcon.AUTOSIZE_STRETCH);
             icon.setPreferredSize(new Dimension(Math.min(maxWidthWithMargin, icon.getIconWidth()), Math.min(maxHeightWithMargin, icon.getIconHeight())));
         }
