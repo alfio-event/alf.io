@@ -376,14 +376,22 @@
                 }
 
                 if(!$scope.obj.metadata.attributes) {
-                    $scope.obj.metadata.attributes = [];
+                    $scope.obj.metadata.attributes = new Object();
                 } else {
-                    for (var i = 0; i < $scope.obj.metadata.attributes.length; i++) {
-                        if ($scope.obj.metadata.attributes[i].key == 'CARNET'){
-                            $scope.obj.carnetAmount = $scope.obj.metadata.attributes[i].value;
-                            $scope.obj.onlineOccurrence = 'CARNET';
-                        }
-                   }
+                    Object.keys($scope.obj.metadata.attributes).forEach(function (key) {
+                     if(key == 'CARNET')
+                     {
+                        $scope.obj.carnetAmount = $scope.obj.metadata.attributes['CARNET'];
+                        $scope.obj.onlineOccurrence = 'CARNET';
+                     }
+                    });
+
+//                    for (var i = 0; i < $scope.obj.metadata.attributes.length; i++) {
+//                        if ($scope.obj.metadata.attributes[i].key == 'CARNET'){
+//                            $scope.obj.carnetAmount = $scope.obj.metadata.attributes[i].value;
+//                            $scope.obj.onlineOccurrence = 'CARNET';
+//                        }
+//                   }
                 }
 
                 if(!$scope.obj.onlineOccurrence) {

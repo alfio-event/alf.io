@@ -701,6 +701,11 @@
 
         $scope.save = function(form, event) {
             validationPerformer($q, EventService.checkEvent, event, form, $scope, NotificationHandler).then(function() {
+                //check for carnet event type
+                if (event.format == 'ONLINE' && event.onlineOccurrence == 'CARNET'){
+                    // adding carnet attribute
+                    event.metadata.attributes['CARNET'] = event.carnetAmount;
+                }
                 EventService.createEvent(event).success(function() {
                     $scope.additionalFieldsToBeCreated = $scope.additionalFieldsToBeCreated || [];
                     $scope.additionalServicesToBeCreated = $scope.additionalServicesToBeCreated || [];
@@ -779,9 +784,6 @@
             }
             return _.map(dynamic, 'name').join(', ');
         };
-
-
-
 
         $scope.openCopyEvent = function(eventNameToPreselect) {
             var currentEventInScope = angular.copy($scope.event);
@@ -1178,28 +1180,12 @@
                         if (eventHeader.format == 'ONLINE'){
                            if ( eventHeader.onlineOccurrence == 'CARNET'){
                                 // adding carnet attribute
-                               var exist = false;
-                               for (var i = 0; i < eventHeader.metadata.attributes.length; i++) {
-                                    if (eventHeader.metadata.attributes[i].key == 'CARNET'){
-                                        eventHeader.metadata.attributes[i].value = eventHeader.carnetAmount;
-                                        exist = true;
-                                    }
-                               }
-                               if (!exist){
-                                    var attr = {'key':'CARNET', 'value': eventHeader.carnetAmount};
-                                    eventHeader.metadata.attributes.push(attr);
-                               }
+                                eventHeader.metadata.attributes['CARNET'] = eventHeader.carnetAmount;
                            } else {
-                            //removing carnet attribute
-                               var idx = -1;
-                               for (var i = 0; i < eventHeader.metadata.attributes.length; i++) {
-                                    if (eventHeader.metadata.attributes[i].key == 'CARNET'){
-                                        idx = i;
-                                    }
-                               }
-                               if (idx != -1){
-                                eventHeader.metadata.attributes.splice(idx,1);
-                               }
+                                //removing carnet attribute
+                                Object.keys(eventHeader.metadata.attributes).forEach(function (key) {
+                                 if(key == 'CARNET') delete eventHeader.metadata.attributes[key];
+                                });
                            }
                         }
 

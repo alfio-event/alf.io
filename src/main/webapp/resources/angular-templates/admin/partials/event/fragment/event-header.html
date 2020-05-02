@@ -42,10 +42,10 @@
                 <dl class="dl-horizontal">
                     <dt ng-if="event.metadata.tags && event.metadata.tags.length > 0">TAGS</dt>
                     <dd><div ng-if="event.metadata.tags && event.metadata.tags.length > 0"><span class="tag-chip" data-ng-repeat="tag in event.metadata.tags">{{tag}}</span></div></dd>
-                    <dt ng-if="event.metadata.attributes && event.metadata.attributes.length > 0">Attributes</dt>
-                    <dd ng-if="event.metadata.attributes && event.metadata.attributes.length > 0">
-                        <div data-ng-repeat="attr in event.metadata.attributes">
-                            <span>{{attr.key}} ({{attr.value}}) </span>
+                    <dt ng-if="event.metadata.attributes">Attributes</dt>
+                    <dd ng-if="event.metadata.attributes">
+                        <div data-ng-repeat="(key, value) in event.metadata.attributes">
+                            <span>{{key}} ({{value}}) </span>
                         </div>
                     </dd>
                    <dt>Public URL</dt>
