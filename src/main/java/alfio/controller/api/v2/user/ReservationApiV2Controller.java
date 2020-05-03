@@ -36,10 +36,13 @@ import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.ReservationPriceCalculator;
 import alfio.model.*;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.transaction.*;
 import alfio.repository.*;
 import alfio.util.*;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
@@ -96,6 +99,7 @@ public class ReservationApiV2Controller {
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
     private final AdditionalServiceRepository additionalServiceRepository;
     private final BillingDocumentManager billingDocumentManager;
+    private final PromoCodeRequestManager promoCodeRequestManager;
 
     /**
      * Note: now it will return for any states of the reservation.
@@ -253,9 +257,9 @@ public class ReservationApiV2Controller {
 
         return getReservation(eventName, reservationId).map(er -> {
 
-           var event = er.getLeft();
-           var ticketReservation = er.getRight();
-           var locale = LocaleUtil.forLanguageTag(lang, event);
+            var event = er.getLeft();
+            var ticketReservation = er.getRight();
+            var locale = LocaleUtil.forLanguageTag(lang, event);
 
             if (!ticketReservation.getValidity().after(new Date())) {
                 bindingResult.reject(ErrorsCode.STEP_2_ORDER_EXPIRED);
@@ -269,12 +273,12 @@ public class ReservationApiV2Controller {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-            if(isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentProxy(), paymentForm.getCaptcha(), request, event)) {
+            if (isCaptchaInvalid(reservationCost.getPriceWithVAT(), paymentForm.getPaymentProxy(), paymentForm.getCaptcha(), request, event)) {
                 log.debug("captcha validation failed.");
                 bindingResult.reject(ErrorsCode.STEP_2_CAPTCHA_VALIDATION_FAILED);
             }
 
-            if(!bindingResult.hasErrors()) {
+            if (!bindingResult.hasErrors()) {
                 extensionManager.handleReservationValidation(event, ticketReservation, paymentForm, bindingResult);
             }
 
@@ -287,7 +291,7 @@ public class ReservationApiV2Controller {
             OrderSummary orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
             PaymentToken paymentToken = paymentManager.getPaymentToken(reservationId).orElse(null);
-            if(paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {
+            if (paymentToken == null && StringUtils.isNotEmpty(paymentForm.getGatewayToken())) {
                 paymentToken = paymentManager.buildPaymentToken(paymentForm.getGatewayToken(), paymentForm.getPaymentProxy(),
                     new PaymentContext(event, reservationId));
             }
@@ -312,7 +316,10 @@ public class ReservationApiV2Controller {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-
+            //let's check if the event is a carnet
+            if (event.isOnline()) {
+                promoCodeRequestManager.managePromoCodeForCarnetEvent(event, ticketReservation);
+            }
             return buildReservationPaymentStatus(bindingResult);
 
         }).orElseGet(() -> ResponseEntity.notFound().build());

@@ -26,8 +26,7 @@ import java.util.Map;
 @Getter
 public class AlfioMetadata {
     private final List<String> tags;
-//    private final List<AlfioAttribute> attributes;
-    private final Map<String, Object> attributes;
+    private final Map<String, Object> attributes; //for supporting nested attribute? bah..
     private final OnlineConfiguration onlineConfiguration;
     // list of requirements for participants, e.g. software
     private final Map<String, String> requirementsDescriptions;
@@ -39,7 +38,6 @@ public class AlfioMetadata {
                          @JsonProperty("requirementsDescriptions") Map<String, String> requirementsDescriptions,
                          @JsonProperty("conditionsToBeAccepted") List<ConditionsLink> conditionsToBeAccepted,
                          @JsonProperty("attributes") Map<String, Object> attributes
-//                         @JsonProperty("attributes") List<AlfioAttribute> attributes
         ) {
         this.tags = tags;
         this.attributes = attributes;

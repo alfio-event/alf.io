@@ -17,6 +17,8 @@
 package alfio.repository;
 
 import alfio.model.PromoCodeDiscount;
+import alfio.model.metadata.AlfioMetadata;
+import alfio.model.support.JSONData;
 import ch.digitalfondue.npjt.Bind;
 import ch.digitalfondue.npjt.Query;
 import ch.digitalfondue.npjt.QueryRepository;
@@ -59,6 +61,23 @@ public interface PromoCodeDiscountRepository {
                      @Bind("emailReference") String emailReference,
                      @Bind("codeType") PromoCodeDiscount.CodeType codeType,
                      @Bind("hiddenCategoryId") Integer hiddenCategoryId);
+
+    @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage, description, email_reference, code_type, hidden_category_id, metadata) "
+        + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage, :description, :emailReference, :codeType, :hiddenCategoryId, :metadata::jsonb)")
+    int addTaggedPromoCode(@Bind("promoCode") String promoCode,
+                     @Bind("eventId") Integer eventId,
+                     @Bind("organizationId") int organizationId,
+                     @Bind("start") ZonedDateTime start,
+                     @Bind("end") ZonedDateTime end,
+                     @Bind("discountAmount") int discountAmount,
+                     @Bind("discountType") PromoCodeDiscount.DiscountType discountType,
+                     @Bind("categories") String categories,
+                     @Bind("maxUsage") Integer maxUsage,
+                     @Bind("description") String description,
+                     @Bind("emailReference") String emailReference,
+                     @Bind("codeType") PromoCodeDiscount.CodeType codeType,
+                     @Bind("hiddenCategoryId") Integer hiddenCategoryId,
+                     @Bind("metadata") @JSONData AlfioMetadata metadata);
 
     @Query("insert into promo_code(promo_code, event_id_fk, organization_id_fk, valid_from, valid_to, discount_amount, discount_type, categories, max_usage, description, email_reference, code_type, hidden_category_id) "
         + " values (:promoCode, :eventId, :organizationId, :start, :end, :discountAmount, :discountType, :categories, :maxUsage, :description, :emailReference, :codeType, :hiddenCategoryId) "

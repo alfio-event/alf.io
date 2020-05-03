@@ -18,17 +18,17 @@ package alfio.manager;
 
 import alfio.controller.form.ReservationForm;
 import alfio.manager.support.response.ValidatedResponse;
-import alfio.model.Event;
-import alfio.model.PromoCodeDiscount;
-import alfio.model.SpecialPrice;
+import alfio.model.*;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.result.ValidationResult;
-import alfio.repository.EventRepository;
-import alfio.repository.PromoCodeDiscountRepository;
-import alfio.repository.SpecialPriceRepository;
-import alfio.repository.TicketCategoryRepository;
+import alfio.repository.*;
 import alfio.util.ErrorsCode;
+import alfio.util.PasswordGenerator;
 import alfio.util.RequestUtils;
+import alfio.util.VoucherGenerator;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -40,9 +40,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Collections;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -58,6 +56,7 @@ public class PromoCodeRequestManager {
     private EventManager eventManager;
     private EventRepository eventRepository;
     private TicketReservationManager ticketReservationManager;
+    private TicketRepository ticketRepository;
 
     enum PromoCodeType {
         SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
@@ -158,6 +157,62 @@ public class PromoCodeRequestManager {
 
 
         return new ValidatedResponse<>(ValidationResult.success(), result);
+    }
+
+    public void managePromoCodeForCarnetEvent(Event event, TicketReservation ticketReservation) {
+        var evCheck = eventManager.getEventTagAndAttribute(event.getId(), "CARNET");
+        evCheck.ifPresent(eventTagAndAttribute -> {
+            //I have to add the promo code
+            if (eventTagAndAttribute.getAttributeValue() != null) {
+                int discount = -1;
+                try {
+                    discount = Integer.parseInt(eventTagAndAttribute.getAttributeValue().toString());
+                } catch (ClassCastException e) {
+                    discount = -1;
+                }
+
+                var tagList = new ArrayList<String>();
+                if (eventTagAndAttribute.getTags() != null && !eventTagAndAttribute.getTags().equals("") && !eventTagAndAttribute.getTags().equals("[]")) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    try {
+                        tagList.addAll(Arrays.asList(mapper.readValue(eventTagAndAttribute.getTags(), String[].class)));
+                    } catch (JsonProcessingException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                for (Integer ticketId : ticketRepository.findTicketIdsInReservation(ticketReservation.getId())){
+                    //generating 1 vuocher for ticket
+                    var attributeList = new HashMap<String, Object>();
+                    attributeList.put("ID_TICKET", ticketId); //TODO: maybe the ticketID should be more usefull...
+                    var metadata = new AlfioMetadata(
+                        tagList,
+                        null,
+                        Map.of(),
+                        List.of(),
+                        attributeList);
+
+                    var promoCode = VoucherGenerator.generateRandomVoucher();
+                    // the promo code will be binded to the event for a better management in admin console
+                    if (discount != -1) {
+                        eventManager.addPromoCode(
+                            promoCode,
+                            event.getId(),
+                            null,
+                            event.getBegin(),
+                            event.getEnd(),
+                            100,
+                            PromoCodeDiscount.DiscountType.PERCENTAGE,
+                            null, discount,
+                            event.getDisplayName(),
+                            ticketReservation.getEmail(),
+                            PromoCodeDiscount.CodeType.DISCOUNT,
+                            null,
+                            metadata);
+                    }
+                }
+            }
+        });
     }
 
     private PromoCodeType checkPromoCodeType(int eventId, String trimmedCode) {

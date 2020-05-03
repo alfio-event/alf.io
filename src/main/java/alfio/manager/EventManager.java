@@ -42,6 +42,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
@@ -120,6 +121,10 @@ public class EventManager {
 
     public EventAndOrganizationId getEventAndOrganizationId(String eventName, String username) {
         return getOptionalEventAndOrganizationIdByName(eventName, username).orElseThrow(IllegalStateException::new);
+    }
+
+    public Optional<EventTagAndAttribute> getEventTagAndAttribute(int eventId, String attributeMatch) {
+        return eventRepository.findEventTagAndAttributeById(eventId, attributeMatch);
     }
 
     public Optional<Event> getOptionalByName(String eventName, String username) {
@@ -869,7 +874,24 @@ public class EventManager {
                              String description,
                              String emailReference,
                              PromoCodeDiscount.CodeType codeType,
-                             Integer hiddenCategoryId) {
+                             Integer hiddenCategoryId ) {
+        addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType, categoriesId, maxUsage, description,emailReference, codeType, hiddenCategoryId, null);
+    }
+
+    public void addPromoCode(String promoCode,
+                             Integer eventId,
+                             Integer organizationId,
+                             ZonedDateTime start,
+                             ZonedDateTime end,
+                             int discountAmount,
+                             DiscountType discountType,
+                             List<Integer> categoriesId,
+                             Integer maxUsage,
+                             String description,
+                             String emailReference,
+                             PromoCodeDiscount.CodeType codeType,
+                             Integer hiddenCategoryId,
+                             AlfioMetadata metadata) {
 
         Validate.isTrue(promoCode.length() >= 7, "min length is 7 chars");
         Validate.isTrue((eventId != null && organizationId == null) || (eventId == null && organizationId != null), "eventId or organizationId must be not null");
@@ -902,7 +924,11 @@ public class EventManager {
             discountType = DiscountType.NONE;
         }
 
-        promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType, Json.GSON.toJson(categoriesId), maxUsage, description, emailReference, codeType, hiddenCategoryId);
+        if (metadata != null) {
+            promoCodeRepository.addTaggedPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType, Json.GSON.toJson(categoriesId), maxUsage, description, emailReference, codeType, hiddenCategoryId, metadata);
+        } else {
+            promoCodeRepository.addPromoCode(promoCode, eventId, organizationId, start, end, discountAmount, discountType, Json.GSON.toJson(categoriesId), maxUsage, description, emailReference, codeType, hiddenCategoryId);
+        }
     }
     
     public void deletePromoCode(int promoCodeId) {

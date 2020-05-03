@@ -54,6 +54,12 @@ public interface EventRepository {
     @Query("select org_id from event where id = :eventId")
     int findOrganizationIdByEventId(@Bind("eventId") int eventId);
 
+    @Query("SELECT id, metadata->>'tags' as tags, metadata->'attributes'->> :attributeToMatch as attributeValue" +
+        " FROM event" +
+        " WHERE id = :eventId AND metadata->'attributes'->> :attributeToMatch IS NOT NULL")
+    Optional<EventTagAndAttribute> findEventTagAndAttributeById(@Bind("eventId") int eventId,
+                                                                @Bind("attributeToMatch") String attributeToMatch);
+
     default ZoneId getZoneIdByEventId(int eventId) {
         return TimeZone.getTimeZone(getTimeZoneByEventId(eventId)).toZoneId();
     }
