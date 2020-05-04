@@ -122,7 +122,7 @@ public class PromoCodeRequestManager {
             var value = response.getValue();
             return new ValidatedResponse<>(ValidationResult.success(), Triple.of(value.getLeft(), event, value.getRight()));
         } else {
-            return new ValidatedResponse<>(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", "PromoCode was not found.")), null);
+            return new ValidatedResponse<>(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND)), null);
         }
     }
 
