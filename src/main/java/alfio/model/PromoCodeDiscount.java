@@ -16,6 +16,8 @@
  */
 package alfio.model;
 
+import alfio.model.metadata.AlfioMetadata;
+import alfio.model.support.JSONData;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.ConstructorAnnotationRowMapper.Column;
@@ -61,6 +63,7 @@ public class PromoCodeDiscount {
     private final String emailReference;
     private final CodeType codeType;
     private final Integer hiddenCategoryId;
+    private final AlfioMetadata alfioMetadata;
     
     public PromoCodeDiscount(@Column("id")int id, 
                              @Column("promo_code") String promoCode,
@@ -75,7 +78,8 @@ public class PromoCodeDiscount {
                              @Column("description") String description,
                              @Column("email_reference") String emailReference,
                              @Column("code_type") CodeType codeType,
-                             @Column("hidden_category_id") Integer hiddenCategoryId) {
+                             @Column("hidden_category_id") Integer hiddenCategoryId,
+                             @Column("metadata") @JSONData AlfioMetadata alfioMetadata) {
 
         this.id = id;
         this.promoCode = promoCode;
@@ -96,6 +100,7 @@ public class PromoCodeDiscount {
         this.emailReference = emailReference;
         this.codeType = codeType;
         this.hiddenCategoryId = hiddenCategoryId;
+        this.alfioMetadata = alfioMetadata;
     }
     
     public boolean isCurrentlyValid(ZoneId eventZoneId, ZonedDateTime now) {

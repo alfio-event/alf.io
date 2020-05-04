@@ -24,11 +24,8 @@ import alfio.model.modification.TicketReservationModification;
 import alfio.model.result.ValidationResult;
 import alfio.repository.*;
 import alfio.util.ErrorsCode;
-import alfio.util.PasswordGenerator;
 import alfio.util.RequestUtils;
 import alfio.util.VoucherGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -132,6 +129,28 @@ public class PromoCodeRequestManager {
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
         Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPublicPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
 
+        if (event.isOnline() && promotionCodeDiscount.isEmpty()) {
+            //maybe carnet?
+            var eventMetadata = eventManager.getEventMetaDataById(event.getId());
+            var tmpPromocode = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.getPromoCodeRaw(trimmedCode));
+            boolean codeIsValid = false;
+            if (tmpPromocode.isPresent()
+                && tmpPromocode.get().getAlfioMetadata().getTags() != null
+                && tmpPromocode.get().getAlfioMetadata().getTags().size() > 0
+                && eventMetadata.isPresent()
+                && eventMetadata.get().getTags() != null
+                && eventMetadata.get().getTags().size() > 0) {
+                for (String tag : tmpPromocode.get().getAlfioMetadata().getTags()) {
+                    if (eventMetadata.get().getTags().contains(tag)){
+                        codeIsValid = true;
+                        break;
+                    }
+                }
+            }
+            if (codeIsValid){
+                promotionCodeDiscount = tmpPromocode;
+            }
+        }
         var result = Pair.of(specialCode, promotionCodeDiscount);
 
         var errorResponse = new ValidatedResponse<>(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND)), result);
@@ -160,25 +179,15 @@ public class PromoCodeRequestManager {
     }
 
     public void managePromoCodeForCarnetEvent(Event event, TicketReservation ticketReservation) {
-        var evCheck = eventManager.getEventTagAndAttribute(event.getId(), "CARNET");
-        evCheck.ifPresent(eventTagAndAttribute -> {
+        var mDataSrc = eventManager.getEventMetaDataByIdMatchAttribute(event.getId(), "CARNET");
+        mDataSrc.ifPresent(alfioMetadata -> {
             //I have to add the promo code
-            if (eventTagAndAttribute.getAttributeValue() != null) {
+            if (alfioMetadata.getAttributes() != null && alfioMetadata.getAttributes().get("CARNET")!=null) {
                 int discount = -1;
                 try {
-                    discount = Integer.parseInt(eventTagAndAttribute.getAttributeValue().toString());
+                    discount = Integer.parseInt(alfioMetadata.getAttributes().get("CARNET").toString());
                 } catch (ClassCastException e) {
                     discount = -1;
-                }
-
-                var tagList = new ArrayList<String>();
-                if (eventTagAndAttribute.getTags() != null && !eventTagAndAttribute.getTags().equals("") && !eventTagAndAttribute.getTags().equals("[]")) {
-                    ObjectMapper mapper = new ObjectMapper();
-                    try {
-                        tagList.addAll(Arrays.asList(mapper.readValue(eventTagAndAttribute.getTags(), String[].class)));
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
-                    }
                 }
 
                 for (Integer ticketId : ticketRepository.findTicketIdsInReservation(ticketReservation.getId())){
@@ -186,7 +195,7 @@ public class PromoCodeRequestManager {
                     var attributeList = new HashMap<String, Object>();
                     attributeList.put("ID_TICKET", ticketId); //TODO: maybe the ticketID should be more usefull...
                     var metadata = new AlfioMetadata(
-                        tagList,
+                        alfioMetadata.getTags(),
                         null,
                         Map.of(),
                         List.of(),

@@ -42,7 +42,6 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
@@ -123,8 +122,12 @@ public class EventManager {
         return getOptionalEventAndOrganizationIdByName(eventName, username).orElseThrow(IllegalStateException::new);
     }
 
-    public Optional<EventTagAndAttribute> getEventTagAndAttribute(int eventId, String attributeMatch) {
-        return eventRepository.findEventTagAndAttributeById(eventId, attributeMatch);
+    public Optional<AlfioMetadata> getEventMetaDataByIdMatchAttribute(int eventId, String attributeMatch) {
+        return eventRepository.findEventMetadataByIdMatchAttribute(eventId, attributeMatch);
+    }
+
+    public Optional<AlfioMetadata> getEventMetaDataById(int eventId) {
+        return eventRepository.findEventMetadataById(eventId);
     }
 
     public Optional<Event> getOptionalByName(String eventName, String username) {
