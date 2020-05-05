@@ -131,25 +131,7 @@ public class PromoCodeRequestManager {
 
         if (event.isOnline() && promotionCodeDiscount.isEmpty()) {
             //maybe carnet?
-            var eventMetadata = eventManager.getEventMetaDataById(event.getId());
-            var tmpPromocode = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.getPromoCodeRaw(trimmedCode));
-            boolean codeIsValid = false;
-            if (tmpPromocode.isPresent()
-                && tmpPromocode.get().getAlfioMetadata().getTags() != null
-                && tmpPromocode.get().getAlfioMetadata().getTags().size() > 0
-                && eventMetadata.isPresent()
-                && eventMetadata.get().getTags() != null
-                && eventMetadata.get().getTags().size() > 0) {
-                for (String tag : tmpPromocode.get().getAlfioMetadata().getTags()) {
-                    if (eventMetadata.get().getTags().contains(tag)){
-                        codeIsValid = true;
-                        break;
-                    }
-                }
-            }
-            if (codeIsValid){
-                promotionCodeDiscount = tmpPromocode;
-            }
+            promotionCodeDiscount = ticketReservationManager.getPromoForOnlineCarnet(event, maybeSpecialCode);
         }
         var result = Pair.of(specialCode, promotionCodeDiscount);
 

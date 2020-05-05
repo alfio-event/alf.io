@@ -257,11 +257,18 @@ public class TicketReservationManager {
                                           Locale locale,
                                           boolean forWaitingQueue) throws NotEnoughTicketsException, MissingSpecialPriceTokenException, InvalidSpecialPriceTokenException {
         String reservationId = UUID.randomUUID().toString();
-        
-        Optional<PromoCodeDiscount> discount = promotionCodeDiscount
+
+        Optional<PromoCodeDiscount> tmpDiscount = promotionCodeDiscount
             .flatMap(promoCodeDiscount -> promoCodeDiscountRepository.findPromoCodeInEventOrOrganization(event.getId(), promoCodeDiscount));
 
-        Optional<PromoCodeDiscount> dynamicDiscount = createDynamicPromoCode(discount, event, list, reservationId);
+        Optional<PromoCodeDiscount> dynamicDiscount = createDynamicPromoCode(tmpDiscount, event, list, reservationId);
+
+        if (tmpDiscount.isEmpty() && event.isOnline()){
+            //check for carnet event
+            tmpDiscount = getPromoForOnlineCarnet(event, promotionCodeDiscount);
+        }
+
+        Optional<PromoCodeDiscount> discount = tmpDiscount;
 
         ticketReservationRepository.createNewReservation(reservationId,
             ZonedDateTime.now(event.getZoneId()),
@@ -2259,6 +2266,33 @@ public class TicketReservationManager {
                     return Result.success(true);
                 })
             ).orElse(Result.error(ErrorCode.EventError.NOT_FOUND));
+    }
+
+    public Optional<PromoCodeDiscount> getPromoForOnlineCarnet(Event event, Optional<String> maybeSpecialCode){
+        Optional<PromoCodeDiscount> promotionCodeDiscount = Optional.empty();
+        var eventMetadata = eventRepository.findEventMetadataById(event.getId());
+        if (eventMetadata.isPresent()
+            && (eventMetadata.get().getAttributes() == null || !eventMetadata.get().getAttributes().containsKey("CARNET"))
+            && eventMetadata.get().getTags() != null
+            && eventMetadata.get().getTags().size() > 0) {
+            var tmpPromocode = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.getPromoCodeRaw(trimmedCode));
+            boolean codeIsValid = false;
+            if (tmpPromocode.isPresent()
+                && tmpPromocode.get().getAlfioMetadata().getTags() != null
+                && tmpPromocode.get().getAlfioMetadata().getTags().size() > 0
+            ) {
+                for (String tag : tmpPromocode.get().getAlfioMetadata().getTags()) {
+                    if (eventMetadata.get().getTags().contains(tag)) {
+                        codeIsValid = true;
+                        break;
+                    }
+                }
+            }
+            if (codeIsValid) {
+                promotionCodeDiscount = tmpPromocode;
+            }
+        } //end-eventmetadata
+        return promotionCodeDiscount;
     }
 
     private void checkOfflinePaymentsForEvent(Event event) {
