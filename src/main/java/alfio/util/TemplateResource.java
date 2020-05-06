@@ -143,6 +143,15 @@ public enum TemplateResource {
         }
     },
 
+    TICKET_EMAIL_FOR_ONLINE_CARNET_EVENT("/alfio/templates/ticket-email-online-carnet-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
+        @Override
+        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
+            var now = ZonedDateTime.now(event.getZoneId());
+            TicketCategory ticketCategory = new TicketCategory(0, now, now, 42, "Ticket", false, TicketCategory.Status.ACTIVE, event.getId(), false, 1000, null, null, null, null, null, "CHF", 0, null);
+            return buildModelForTicketEmail(organization, event, sampleTicketReservation(event.getZoneId()), "http://your-domain.tld/ticket-url", "http://your-domain.tld/ticket-url", "http://your-domain.tld/calendar-url", sampleTicket(event.getZoneId()), ticketCategory, Map.of("promoCode", "123456789ABCD"));
+        }
+    },
+
     ONLINE_CHECK_IN_DETAILS("/alfio/templates/online-check-in-instructions-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {

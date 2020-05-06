@@ -79,6 +79,7 @@ public class EventLoader {
                     USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL,
                     GOOGLE_ANALYTICS_KEY,
                     GOOGLE_ANALYTICS_ANONYMOUS_MODE,
+                    ENABLE_TAGS_IN_PROMO_CODES,
                     // captcha
                     ENABLE_CAPTCHA_FOR_TICKET_SELECTION,
                     RECAPTCHA_API_KEY,
@@ -136,12 +137,53 @@ public class EventLoader {
                 var assignmentConf = new EventWithAdditionalInfo.AssignmentConfiguration(forceAssignment, enableAttendeeAutocomplete, enableTicketTransfer);
                 //
 
+                //promoCodes
+                boolean hasAccessPromotions = false;
+                if (configurationsValues.get(ENABLE_TAGS_IN_PROMO_CODES).getValueAsBooleanOrDefault(false)) {
+                    //new code for carnet management
+                    hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBooleanOrDefault(true) &&
+                        (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 );
+                    if (!hasAccessPromotions){
+                        //let's try witth event and organizations (checking tags)
+                        var promoDiscounts = promoCodeRepository.getByEventTagsAndOrganizationId(event.getId(), event.getOrganizationId());
 
-                //promotion codes
-                boolean hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBooleanOrDefault(true) &&
-                    (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
-                        promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
+                        if (promoDiscounts!= null && promoDiscounts.size() > 0) {
+                            var eventMetadata = eventRepository.getMetadataForEvent(event.getId());
 
+                            if (eventMetadata.getTags() != null
+                                && eventMetadata.getTags().size() > 0) {
+                                for (var promoDiscount : promoDiscounts) {
+                                    if (promoDiscount.getAlfioMetadata().getTags() == null || promoDiscount.getAlfioMetadata().getTags().size() == 0) {
+                                        //effective discount found, no more check needed
+                                        hasAccessPromotions = true;
+                                        break;
+                                    } else if ((eventMetadata.getAttributes() == null
+                                                || eventMetadata.getAttributes().size() == 0)
+                                                || !eventMetadata.getAttributes().containsKey("CARNET")) {
+                                        //I have to check if any event tag match the promo tags
+                                        //If event is a carnet cannot be bought with another carnet
+                                        for (var tag : eventMetadata.getTags()){
+                                            if (promoDiscount.getAlfioMetadata().getTags().contains(tag)){
+                                                hasAccessPromotions = true;
+                                                break;
+                                            }
+                                        }
+                                        if (hasAccessPromotions) {
+                                            break; //force exit, one code found is enought
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+//                            promoCodeRepository.countByEventTagsAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
+                } else {
+                    //old way for promo codes (the classic one)
+                    hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBooleanOrDefault(true) &&
+                        (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
+                            promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
+                }
                 boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).getValueAsBooleanOrDefault(false);
                 var promoConf = new EventWithAdditionalInfo.PromotionsConfiguration(hasAccessPromotions, usePartnerCode);
                 //

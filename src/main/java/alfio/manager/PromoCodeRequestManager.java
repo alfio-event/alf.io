@@ -128,11 +128,8 @@ public class PromoCodeRequestManager {
         Optional<String> maybeSpecialCode = Optional.ofNullable(StringUtils.trimToNull(promoCode));
         Optional<SpecialPrice> specialCode = maybeSpecialCode.flatMap(specialPriceRepository::getByCode);
         Optional<PromoCodeDiscount> promotionCodeDiscount = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.findPublicPromoCodeInEventOrOrganization(event.getId(), trimmedCode));
+        promotionCodeDiscount = ticketReservationManager.checkPromoCodeIsValid(promotionCodeDiscount, event);
 
-        if (event.isOnline() && promotionCodeDiscount.isEmpty()) {
-            //maybe carnet?
-            promotionCodeDiscount = ticketReservationManager.getPromoForOnlineCarnet(event, maybeSpecialCode);
-        }
         var result = Pair.of(specialCode, promotionCodeDiscount);
 
         var errorResponse = new ValidatedResponse<>(ValidationResult.failed(new ValidationResult.ErrorDescriptor("promoCode", ErrorsCode.STEP_1_CODE_NOT_FOUND, ErrorsCode.STEP_1_CODE_NOT_FOUND)), result);
@@ -175,7 +172,12 @@ public class PromoCodeRequestManager {
                 for (Integer ticketId : ticketRepository.findTicketIdsInReservation(ticketReservation.getId())){
                     //generating 1 vuocher for ticket
                     var attributeList = new HashMap<String, Object>();
-                    attributeList.put("ID_TICKET", ticketId); //TODO: maybe the ticketID should be more usefull...
+                    attributeList.put("idTicket", ticketId);
+                    attributeList.put("idEvent", event.getId());
+                    attributeList.put("eventShortName", event.getShortName());
+                    attributeList.put("eventDisplayName", event.getDisplayName());
+                    attributeList.put("promoCodeType", "CARNET");
+                    attributeList.put("buyerName", ticketReservation.getFullName());
                     var metadata = new AlfioMetadata(
                         alfioMetadata.getTags(),
                         null,
@@ -188,8 +190,8 @@ public class PromoCodeRequestManager {
                     if (discount != -1) {
                         eventManager.addPromoCode(
                             promoCode,
-                            event.getId(),
                             null,
+                            event.getOrganizationId(),
                             event.getBegin(),
                             event.getEnd(),
                             100,

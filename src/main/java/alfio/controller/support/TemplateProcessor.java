@@ -73,7 +73,11 @@ public final class TemplateProcessor {
                                                                Map<String, Object> additionalOptions) {
         return ticket -> {
             Map<String, Object> model = TemplateResource.buildModelForTicketEmail(organization, event, ticketReservation, baseUrl, ticketURL, calendarURL, ticket, category, additionalOptions);
-            return templateManager.renderTemplate(event, event.getIsOnline() ? TemplateResource.TICKET_EMAIL_FOR_ONLINE_EVENT : TemplateResource.TICKET_EMAIL, model, language);
+            var template = TemplateResource.TICKET_EMAIL;
+            if (event.getIsOnline()){
+                template = additionalOptions.containsKey("promoCode") ? TemplateResource.TICKET_EMAIL_FOR_ONLINE_CARNET_EVENT : TemplateResource.TICKET_EMAIL_FOR_ONLINE_EVENT;
+            }
+            return templateManager.renderTemplate(event,template , model, language);
         };
     }
 

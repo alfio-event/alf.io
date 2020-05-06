@@ -113,9 +113,19 @@ public interface PromoCodeDiscountRepository {
         "where promo_code = :promoCode ")
     Optional<PromoCodeDiscount> getPromoCodeRaw(@Bind("promoCode") String promoCode);
 
+    @Query("select promo_code from promo_code " +
+        "where metadata->'attributes'->>'idTicket' = :idTicket ")
+    String getPromoCodeByIdTicket(@Bind("idTicket") String idTicket );
 
     @Query("select count(*) from promo_code where event_id_fk = :eventId or (event_id_fk is null and organization_id_fk = :organizationId)")
     Integer countByEventAndOrganizationId(@Bind("eventId") int eventId, @Bind("organizationId") int organizationId);
+
+    @Query("select * " +
+        "from promo_code where event_id_fk = :eventId " +
+        "or (event_id_fk is null and organization_id_fk = :organizationId) ")
+    List<PromoCodeDiscount> getByEventTagsAndOrganizationId(@Bind("eventId") int eventId,
+                                              @Bind("organizationId") int organizationId);
+
 
     @Query("select count(b.id) from tickets_reservation a, ticket b" +
         " where (:currentId is null or a.id <> :currentId) and a.status in ('OFFLINE_PAYMENT', 'DEFERRED_OFFLINE_PAYMENT', 'COMPLETE', 'STUCK') and a.promo_code_id_fk = :id" +
