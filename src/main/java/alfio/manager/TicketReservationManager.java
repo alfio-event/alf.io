@@ -1097,6 +1097,7 @@ public class TicketReservationManager {
                     // multiple event
                     var promoCode = promoCodeRepository.getPromoCodeByIdTicket(((Integer)ticket.getId()).toString());
                     initialOptions.put("promoCode", promoCode);
+                    initialOptions.put("promoCodeAmount", allMetadata.getAttributes().get("CARNET"));
                 } else {
                     //single event
                     initialOptions.put("onlineCheckInUrl", ticketOnlineCheckIn(event, ticket.getUuid()));

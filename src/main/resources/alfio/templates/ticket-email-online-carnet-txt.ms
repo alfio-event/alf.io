@@ -1,25 +1,18 @@
 {{#i18n}}email.hello [{{ticket.fullName}}]{{/i18n}}
 {{custom-header-text}}
-{{#i18n}}email-ticket.attached [{{event.displayName}}]{{/i18n}}
 
-{{custom-body-text}}
-#### {{#i18n}}email.event-info{{/i18n}} ####
-
-{{#i18n}}event.location.online{{/i18n}}
-
-{{#i18n}}email.event-reminder-date{{/i18n}}
-{{#event.sameDay}}{{#i18n}}event-days.same-day [{{#format-date}}{{validityStart}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{validityStart}} HH:mm{{/format-date}}] [{{#format-date}}{{validityEnd}} HH:mm (z){{/format-date}}] {{/i18n}}{{/event.sameDay}}
-{{^event.sameDay}}{{#i18n}}event-days.not-same-day [{{#format-date}}{{validityStart}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{validityStart}} HH:mm{{/format-date}}]{{/i18n}} - {{#i18n}}event-days.not-same-day [{{#format-date}}{{validityEnd}} EEEE dd MMMM yyyy locale:{{#i18n}}locale{{/i18n}}{{/format-date}}] [{{#format-date}}{{validityEnd}} HH:mm (z){{/format-date}}]{{/i18n}} {{/event.sameDay}}
+This email contains the "carnet code" to use for purchasing alfio events
 
 *********************************************
 {{#i18n}}email.event.online.important-information{{/i18n}}
 
-Utilizza il seguente codice per comprare gli eventi
+Your carnet code is:
 {{promoCode}}
 
 *********************************************
 
-{{#i18n}}email-ticket.add-to-calendar [{{googleCalendarUrl}}]{{/i18n}}
+You can use this code {{promoCodeAmount}} times
+
 {{custom-footer-text}}
 {{#i18n}}email.kind-regards{{/i18n}}
 
