@@ -52,6 +52,10 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         IN_PERSON, ONLINE
     }
 
+    public enum EventOccurrence {
+        SINGLE, CARNET
+    }
+
     private final EventFormat format;
     private final String shortName;
     private final String displayName;

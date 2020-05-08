@@ -1092,12 +1092,12 @@ public class TicketReservationManager {
                 //check carnet event
                 if (allMetadata.getAttributes() != null
                     && allMetadata.getAttributes().size() > 0
-                    && allMetadata.getAttributes().containsKey("CARNET")
+                    && allMetadata.getAttributes().containsKey(Event.EventOccurrence.CARNET.toString())
                     ){
                     // multiple event
                     var promoCode = promoCodeRepository.getPromoCodeByIdTicket(((Integer)ticket.getId()).toString());
                     initialOptions.put("promoCode", promoCode);
-                    initialOptions.put("promoCodeAmount", allMetadata.getAttributes().get("CARNET"));
+                    initialOptions.put("promoCodeAmount", allMetadata.getAttributes().get(Event.EventOccurrence.CARNET.toString()));
                 } else {
                     //single event
                     initialOptions.put("onlineCheckInUrl", ticketOnlineCheckIn(event, ticket.getUuid()));
@@ -2284,7 +2284,7 @@ public class TicketReservationManager {
             var eventMetadata = eventRepository.getMetadataForEvent(event.getId());
             if (eventMetadata.getAttributes()!=null
                 && eventMetadata.getAttributes().size() > 0
-                && eventMetadata.getAttributes().containsKey("CARNET")){
+                && eventMetadata.getAttributes().containsKey(Event.EventOccurrence.CARNET.toString())){
                 //cannot use this promoCode: current event is a carnet too...
                 promotionCodeDiscount = Optional.empty();
             } else if (eventMetadata.getTags() == null
@@ -2307,33 +2307,6 @@ public class TicketReservationManager {
         }
         return promotionCodeDiscount;
     }
-
-//    public Optional<PromoCodeDiscount> getPromoForOnlineCarnet(Event event, Optional<String> maybeSpecialCode){
-//        Optional<PromoCodeDiscount> promotionCodeDiscount = Optional.empty();
-//        var eventMetadata = eventRepository.findEventMetadataById(event.getId());
-//        if (eventMetadata.isPresent()
-//            && (eventMetadata.get().getAttributes() == null || !eventMetadata.get().getAttributes().containsKey("CARNET"))
-//            && eventMetadata.get().getTags() != null
-//            && eventMetadata.get().getTags().size() > 0) {
-//            var tmpPromocode = maybeSpecialCode.flatMap((trimmedCode) -> promoCodeRepository.getPromoCodeRaw(trimmedCode));
-//            boolean codeIsValid = false;
-//            if (tmpPromocode.isPresent()
-//                && tmpPromocode.get().getAlfioMetadata().getTags() != null
-//                && tmpPromocode.get().getAlfioMetadata().getTags().size() > 0
-//            ) {
-//                for (String tag : tmpPromocode.get().getAlfioMetadata().getTags()) {
-//                    if (eventMetadata.get().getTags().contains(tag)) {
-//                        codeIsValid = true;
-//                        break;
-//                    }
-//                }
-//            }
-//            if (codeIsValid) {
-//                promotionCodeDiscount = tmpPromocode;
-//            }
-//        } //end-eventmetadata
-//        return promotionCodeDiscount;
-//    }
 
     private void checkOfflinePaymentsForEvent(Event event) {
         log.trace("check offline payments for event {}", event.getShortName());

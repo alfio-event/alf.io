@@ -159,7 +159,7 @@ public class EventLoader {
                                         break;
                                     } else if ((eventMetadata.getAttributes() == null
                                                 || eventMetadata.getAttributes().size() == 0)
-                                                || !eventMetadata.getAttributes().containsKey("CARNET")) {
+                                                || !eventMetadata.getAttributes().containsKey(Event.EventOccurrence.CARNET.toString())) {
                                         //I have to check if any event tag match the promo tags
                                         //If event is a carnet cannot be bought with another carnet
                                         for (var tag : eventMetadata.getTags()){

@@ -158,13 +158,13 @@ public class PromoCodeRequestManager {
     }
 
     public void managePromoCodeForCarnetEvent(Event event, TicketReservation ticketReservation) {
-        var mDataSrc = eventManager.getEventMetaDataByIdMatchAttribute(event.getId(), "CARNET");
+        var mDataSrc = eventManager.getEventMetaDataByIdMatchAttribute(event.getId(), Event.EventOccurrence.CARNET.toString());
         mDataSrc.ifPresent(alfioMetadata -> {
             //I have to add the promo code
-            if (alfioMetadata.getAttributes() != null && alfioMetadata.getAttributes().get("CARNET")!=null) {
+            if (alfioMetadata.getAttributes() != null && alfioMetadata.getAttributes().get(Event.EventOccurrence.CARNET.toString())!=null) {
                 int discount = -1;
                 try {
-                    discount = Integer.parseInt(alfioMetadata.getAttributes().get("CARNET").toString());
+                    discount = Integer.parseInt(alfioMetadata.getAttributes().get(Event.EventOccurrence.CARNET.toString()).toString());
                 } catch (ClassCastException e) {
                     discount = -1;
                 }
@@ -176,7 +176,7 @@ public class PromoCodeRequestManager {
                     attributeList.put("idEvent", event.getId());
                     attributeList.put("eventShortName", event.getShortName());
                     attributeList.put("eventDisplayName", event.getDisplayName());
-                    attributeList.put("promoCodeType", "CARNET");
+                    attributeList.put("promoCodeType", Event.EventOccurrence.CARNET.toString());
                     attributeList.put("buyerName", ticketReservation.getFullName());
                     var metadata = new AlfioMetadata(
                         alfioMetadata.getTags(),
