@@ -57,7 +57,7 @@ public class OnlineCheckInController {
                     var eventConfiguration = event.getMetadata().getOnlineConfiguration();
                     var match = findMatchingLink(event.getZoneId(), categoryConfiguration, eventConfiguration);
                     if(match.isPresent()) {
-                        var checkInStatus = checkInManager.performCheckinForOnlineEvent(ticket, event);
+                        var checkInStatus = checkInManager.performCheckinForOnlineEvent(ticket, event, info.getTicketCategory());
                         log.info("check-in status {} for ticket {}", checkInStatus, ticketUUID);
                         if(checkInStatus == SUCCESS) {
                             return match;

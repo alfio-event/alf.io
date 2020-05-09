@@ -110,11 +110,14 @@ public class CheckInManager {
      * @param event
      * @return
      */
-    public CheckInStatus performCheckinForOnlineEvent(Ticket ticket, EventCheckInInfo event) {
+    public CheckInStatus performCheckinForOnlineEvent(Ticket ticket, EventCheckInInfo event, TicketCategory tc) {
         Validate.isTrue(event.getFormat() == Event.EventFormat.ONLINE);
         if(ticket.isCheckedIn()) {
             //ticket is already checked in, there's no reason to attempt an update of the record.
             return ALREADY_CHECK_IN;
+        }
+        if(!tc.hasValidCheckIn(ZonedDateTime.now(event.getZoneId()), event.getZoneId())) {
+            return INVALID_TICKET_CATEGORY_CHECK_IN_DATE;
         }
         int affectedCount = ticketRepository.performCheckIn(ticket.getUuid(), event.getId());
         if(affectedCount == 1) {
