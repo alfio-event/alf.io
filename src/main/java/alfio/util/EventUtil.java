@@ -34,7 +34,6 @@ import biweekly.io.text.ICalWriter;
 import biweekly.property.Method;
 import biweekly.property.Organizer;
 import biweekly.property.Status;
-import lombok.experimental.UtilityClass;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.RegExUtils;
@@ -59,9 +58,10 @@ import static alfio.model.TicketFieldConfiguration.Context.ATTENDEE;
 import static alfio.model.system.ConfigurationKeys.*;
 import static java.time.temporal.ChronoField.*;
 
-@UtilityClass
 @Log4j2
-public class EventUtil {
+public final class EventUtil {
+
+    private EventUtil() {}
 
     private static final DateTimeFormatter JSON_TIME_FORMATTER = new DateTimeFormatterBuilder()
         .appendValue(HOUR_OF_DAY, 2)
@@ -234,16 +234,15 @@ public class EventUtil {
         };
     }
 
-    public static Optional<String> findMatchingLink(Event event, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
-        return firstMatchingCallLink(event, categoryConfiguration, eventConfiguration)
+    public static Optional<String> findMatchingLink(ZoneId eventZoneId, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
+        return firstMatchingCallLink(eventZoneId, categoryConfiguration, eventConfiguration)
             .map(CallLink::getLink);
     }
 
-    public static Optional<CallLink> firstMatchingCallLink(Event event, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
-        var zoneId = event.getZoneId();
-        var now = ZonedDateTime.now(zoneId);
-        return firstMatchingCallLink(categoryConfiguration, zoneId, now)
-            .or(() -> firstMatchingCallLink(eventConfiguration, zoneId, now));
+    public static Optional<CallLink> firstMatchingCallLink(ZoneId eventZoneId, OnlineConfiguration categoryConfiguration, OnlineConfiguration eventConfiguration) {
+        var now = ZonedDateTime.now(eventZoneId);
+        return firstMatchingCallLink(categoryConfiguration, eventZoneId, now)
+            .or(() -> firstMatchingCallLink(eventConfiguration, eventZoneId, now));
     }
 
     private static Optional<CallLink> firstMatchingCallLink(OnlineConfiguration onlineConfiguration, ZoneId zoneId, ZonedDateTime now) {

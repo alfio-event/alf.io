@@ -18,8 +18,6 @@ package alfio.controller;
 
 import alfio.manager.CheckInManager;
 import alfio.manager.TicketReservationManager;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketCategoryRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -31,6 +29,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Optional;
 
+import static alfio.manager.support.CheckInStatus.SUCCESS;
 import static alfio.util.EventUtil.findMatchingLink;
 
 @Controller
@@ -38,8 +37,6 @@ import static alfio.util.EventUtil.findMatchingLink;
 @Log4j2
 public class OnlineCheckInController {
 
-    private final EventRepository eventRepository;
-    private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketReservationManager ticketReservationManager;
     private final CheckInManager checkInManager;
 
@@ -48,23 +45,25 @@ public class OnlineCheckInController {
                                  @PathVariable("ticketUUID") String ticketUUID,
                                  @PathVariable("ticketCodeHash") String ticketCodeHash) {
 
-        return ticketReservationManager.fetchCompleteAndAssigned(eventShortName, ticketUUID)
-            .filter(triple -> triple.getLeft().getIsOnline()) // this check-in is allowed only for online events
-            .flatMap(triple -> {
-                var ticket = triple.getRight();
-                var event = triple.getLeft();
+        return ticketReservationManager.fetchCompleteAndAssignedForOnlineCheckIn(eventShortName, ticketUUID)
+            .flatMap(info -> {
+                var ticket = info.getTicket();
+                var event = info.getEventWithCheckInInfo();
                 String ticketCode = ticket.ticketCode(event.getPrivateKey());
                 if(MessageDigest.isEqual(DigestUtils.sha256Hex(ticketCode).getBytes(StandardCharsets.UTF_8), ticketCodeHash.getBytes(StandardCharsets.UTF_8))) {
                     log.debug("code successfully validated for ticket {}", ticketUUID);
                     // check-in can be done. Let's check if there is a redirection URL
-                    var categoryConfiguration = ticketCategoryRepository.getMetadata(event.getId(), ticket.getCategoryId()).getOnlineConfiguration();
-                    var eventConfiguration = eventRepository.getMetadataForEvent(event.getId()).getOnlineConfiguration();
-
-                    var match = findMatchingLink(event, categoryConfiguration, eventConfiguration);
+                    var categoryConfiguration = info.getCategoryMetadata().getOnlineConfiguration();
+                    var eventConfiguration = event.getMetadata().getOnlineConfiguration();
+                    var match = findMatchingLink(event.getZoneId(), categoryConfiguration, eventConfiguration);
                     if(match.isPresent()) {
-                        var status = checkInManager.checkIn(event.getId(), ticketUUID, Optional.of(ticketCode), ticketUUID);
-                        log.info("check-in status {} for ticket {}", status.getResult().getStatus(), ticketUUID);
-                        return match;
+                        var checkInStatus = checkInManager.performCheckinForOnlineEvent(ticket, event);
+                        log.info("check-in status {} for ticket {}", checkInStatus, ticketUUID);
+                        if(checkInStatus == SUCCESS) {
+                            return match;
+                        }
+                        log.info("denying check-in for ticket {} because check-in status was {}", ticketUUID, checkInStatus);
+                        return Optional.of("/event/"+event.getShortName()+"/ticket/"+ticketUUID+"/update");
                     }
                     log.info("validation was successful, but cannot find a valid link for {}", ticketUUID);
                     return Optional.of("/event/"+event.getShortName()+"/ticket/"+ticketUUID+"/update");
