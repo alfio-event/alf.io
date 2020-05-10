@@ -17,7 +17,10 @@
 package alfio.controller;
 
 import alfio.manager.CheckInManager;
+import alfio.manager.ExtensionManager;
 import alfio.manager.TicketReservationManager;
+import alfio.repository.EventRepository;
+import alfio.repository.TicketRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -25,10 +28,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Optional;
 
+import static alfio.manager.support.CheckInStatus.ALREADY_CHECK_IN;
 import static alfio.manager.support.CheckInStatus.SUCCESS;
 import static alfio.util.EventUtil.findMatchingLink;
 
@@ -39,6 +45,9 @@ public class OnlineCheckInController {
 
     private final TicketReservationManager ticketReservationManager;
     private final CheckInManager checkInManager;
+    private final ExtensionManager extensionManager;
+    private final EventRepository eventRepository;
+    private final TicketRepository ticketRepository;
 
     @GetMapping("/event/{shortName}/ticket/{ticketUUID}/check-in/{ticketCodeHash}")
     public String performCheckIn(@PathVariable("shortName") String eventShortName,
@@ -59,8 +68,12 @@ public class OnlineCheckInController {
                     if(match.isPresent()) {
                         var checkInStatus = checkInManager.performCheckinForOnlineEvent(ticket, event, info.getTicketCategory());
                         log.info("check-in status {} for ticket {}", checkInStatus, ticketUUID);
-                        if(checkInStatus == SUCCESS) {
-                            return match;
+                        if(checkInStatus == SUCCESS || (checkInStatus == ALREADY_CHECK_IN && ticket.isCheckedIn())) {
+                            // invoke the extension for customizing the URL, if any
+                            // we call the extension from here because it will have a smaller impact on the throughput compared to
+                            // calling it from the checkInManager
+                            var customUrlOptional = extensionManager.handleOnlineCheckInLink(match.get(), ticket, event);
+                            return customUrlOptional.or(() -> match);
                         }
                         log.info("denying check-in for ticket {} because check-in status was {}", ticketUUID, checkInStatus);
                         return Optional.of("/event/"+event.getShortName()+"/ticket/"+ticketUUID+"/update");
@@ -73,6 +86,18 @@ public class OnlineCheckInController {
             })
             .map(link -> "redirect:"+link)
             .orElse("redirect:/");
+    }
+
+    @GetMapping("/event/{shortName}/ticket/all-check-in-links")
+    public void getAllLinks(@PathVariable("shortName") String eventShortName, HttpServletResponse response) throws IOException {
+        var event = eventRepository.findByShortName(eventShortName);
+        response.setContentType("text/plain");
+        try(var writer = response.getWriter()) {
+            ticketRepository.findAllConfirmed(event.getId()).forEach(t -> {
+                writer.write(TicketReservationManager.ticketOnlineCheckInUrl(event, t, "http://localhost:8080")+"\n");
+            });
+            writer.flush();
+        }
     }
 
 }

@@ -122,6 +122,7 @@ public class CheckInManager {
         int affectedCount = ticketRepository.performCheckIn(ticket.getUuid(), event.getId());
         if(affectedCount == 1) {
             auditingRepository.insert(ticket.getTicketsReservationId(), null, event.getId(), CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
+            extensionManager.handleTicketCheckedIn(ticket);
             return SUCCESS;
         }
         // if affected count is not "1" we return a failure
