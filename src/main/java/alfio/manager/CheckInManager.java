@@ -101,6 +101,32 @@ public class CheckInManager {
         ticketReservationManager.registerAlfioTransaction(eventRepository.findById(ticket.getEventId()), ticket.getTicketsReservationId(), PaymentProxy.ON_SITE);
     }
 
+    /**
+     * Simplified and more performant procedure for online events' check-in
+     *
+     * @param ticket
+     * @param event
+     * @return
+     */
+    public CheckInStatus performCheckinForOnlineEvent(Ticket ticket, EventCheckInInfo event, TicketCategory tc) {
+        Validate.isTrue(event.getFormat() == Event.EventFormat.ONLINE);
+        if(ticket.isCheckedIn()) {
+            //ticket is already checked in, there's no reason to attempt an update of the record.
+            return ALREADY_CHECK_IN;
+        }
+        if(!tc.hasValidCheckIn(ZonedDateTime.now(event.getZoneId()), event.getZoneId())) {
+            return INVALID_TICKET_CATEGORY_CHECK_IN_DATE;
+        }
+        int affectedCount = ticketRepository.performCheckIn(ticket.getUuid(), event.getId());
+        if(affectedCount == 1) {
+            auditingRepository.insert(ticket.getTicketsReservationId(), null, event.getId(), CHECK_IN, new Date(), Audit.EntityType.TICKET, Integer.toString(ticket.getId()));
+            extensionManager.handleTicketCheckedIn(ticket);
+            return SUCCESS;
+        }
+        // if affected count is not "1" we return a failure
+        return ERROR;
+    }
+
     public TicketAndCheckInResult confirmOnSitePayment(String eventName, String ticketIdentifier, Optional<String> ticketCode, String username, String auditUser) {
         return eventRepository.findOptionalByShortName(eventName)
             .filter(EventManager.checkOwnership(username, organizationRepository))
@@ -201,7 +227,7 @@ public class CheckInManager {
         return extractStatus(eventRepository.findOptionalById(eventId), maybeTicket, ticketIdentifier, ticketCode);
     }
 
-    private TicketAndCheckInResult extractStatus(Optional<Event> maybeEvent, Optional<Ticket> maybeTicket, String ticketIdentifier, Optional<String> ticketCode) {
+    private TicketAndCheckInResult extractStatus(Optional<? extends EventCheckInInfo> maybeEvent, Optional<Ticket> maybeTicket, String ticketIdentifier, Optional<String> ticketCode) {
 
         if (maybeEvent.isEmpty()) {
             return new TicketAndCheckInResult(null, new DefaultCheckInResult(EVENT_NOT_FOUND, "Event not found"));
@@ -218,7 +244,7 @@ public class CheckInManager {
 
         TicketCategory tc = ticketCategoryRepository.getById(ticket.getCategoryId());
 
-        Event event = maybeEvent.get();
+        EventCheckInInfo event = maybeEvent.get();
         if(ticketCode.filter(StringUtils::isNotBlank).isEmpty()) {
             if(ticket.isCheckedIn() && tc.getTicketCheckInStrategy() == TicketCategory.TicketCheckInStrategy.ONCE_PER_DAY) {
                 if(!isBadgeValidNow(tc, event)) {
@@ -269,7 +295,7 @@ public class CheckInManager {
         return new TicketAndCheckInResult(new TicketWithCategory(ticket, tc), new DefaultCheckInResult(OK_READY_TO_BE_CHECKED_IN, "Ready to be checked in"));
     }
 
-    private static boolean isBadgeValidNow(TicketCategory tc, Event event) {
+    private static boolean isBadgeValidNow(TicketCategory tc, EventCheckInInfo event) {
         var zoneId = event.getZoneId();
         var now = ZonedDateTime.now(zoneId);
         return now.isAfter(toZoneIdIfNotNull(tc.getValidCheckInFrom(), zoneId).orElse(event.getBegin()))
