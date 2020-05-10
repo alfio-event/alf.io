@@ -19,8 +19,6 @@ package alfio.controller;
 import alfio.manager.CheckInManager;
 import alfio.manager.ExtensionManager;
 import alfio.manager.TicketReservationManager;
-import alfio.repository.EventRepository;
-import alfio.repository.TicketRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -28,8 +26,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Optional;
@@ -46,8 +42,6 @@ public class OnlineCheckInController {
     private final TicketReservationManager ticketReservationManager;
     private final CheckInManager checkInManager;
     private final ExtensionManager extensionManager;
-    private final EventRepository eventRepository;
-    private final TicketRepository ticketRepository;
 
     @GetMapping("/event/{shortName}/ticket/{ticketUUID}/check-in/{ticketCodeHash}")
     public String performCheckIn(@PathVariable("shortName") String eventShortName,
@@ -87,17 +81,4 @@ public class OnlineCheckInController {
             .map(link -> "redirect:"+link)
             .orElse("redirect:/");
     }
-
-    @GetMapping("/event/{shortName}/ticket/all-check-in-links")
-    public void getAllLinks(@PathVariable("shortName") String eventShortName, HttpServletResponse response) throws IOException {
-        var event = eventRepository.findByShortName(eventShortName);
-        response.setContentType("text/plain");
-        try(var writer = response.getWriter()) {
-            ticketRepository.findAllConfirmed(event.getId()).forEach(t -> {
-                writer.write(TicketReservationManager.ticketOnlineCheckInUrl(event, t, "http://localhost:8080")+"\n");
-            });
-            writer.flush();
-        }
-    }
-
 }
