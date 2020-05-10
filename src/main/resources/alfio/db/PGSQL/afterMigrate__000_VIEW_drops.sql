@@ -24,3 +24,4 @@ drop view if exists latest_ticket_update;
 drop view if exists reservation_and_ticket_and_tx;
 drop view if exists ticket_category_with_currency;
 drop view if exists additional_service_with_currency;
+drop view if exists checkin_ticket_event_and_category_info;

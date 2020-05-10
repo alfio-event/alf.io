@@ -23,6 +23,7 @@ import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.PromoCodeDiscount.CodeType;
+import alfio.model.checkin.EventWithCheckInInfo;
 import alfio.model.extension.CustomEmailText;
 import alfio.model.extension.DynamicDiscount;
 import alfio.model.extension.InvoiceGeneration;
@@ -48,6 +49,7 @@ import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
 
+import static alfio.manager.ExtensionManager.ExtensionEvent.ONLINE_CHECK_IN_REDIRECT;
 import static alfio.model.PromoCodeDiscount.DiscountType.PERCENTAGE;
 
 @Component
@@ -89,7 +91,9 @@ public class ExtensionManager {
         TICKET_MAIL_CUSTOM_TEXT,
         REFUND_ISSUED,
 
-        DYNAMIC_DISCOUNT_APPLICATION
+        DYNAMIC_DISCOUNT_APPLICATION,
+
+        ONLINE_CHECK_IN_REDIRECT
     }
 
     void handleEventCreation(Event event) {
@@ -106,7 +110,6 @@ public class ExtensionManager {
     }
 
     void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, int eventId) {
-        int organizationId = eventRepository.findOrganizationIdByEventId(eventId);
         Event event = eventRepository.findById(eventId);
 
         Map<String, Object> payload = new HashMap<>();
@@ -148,8 +151,6 @@ public class ExtensionManager {
     }
 
     void handleTicketCancelledForEvent(Event event, Collection<String> ticketUUIDs) {
-        int organizationId = event.getOrganizationId();
-
         Map<String, Object> payload = new HashMap<>();
         payload.put("ticketUUIDs", ticketUUIDs);
 
@@ -157,14 +158,12 @@ public class ExtensionManager {
     }
 
     void handleOfflineReservationsWillExpire(Event event, List<TicketReservationInfo> reservations) {
-        int organizationId = eventRepository.findOrganizationIdByEventId(event.getOrganizationId());
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservations", reservations);
         asyncCall(ExtensionEvent.OFFLINE_RESERVATIONS_WILL_EXPIRE, event, payload);
     }
 
     void handleStuckReservations(Event event, List<String> stuckReservationsId) {
-        int organizationId = event.getOrganizationId();
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservationIds", stuckReservationsId);
         asyncCall(ExtensionEvent.STUCK_RESERVATIONS, event, payload);
@@ -223,6 +222,20 @@ public class ExtensionManager {
         payload.put("vatStatus", spec.getVatStatus());
 
         return Optional.ofNullable(syncCall(ExtensionEvent.INVOICE_GENERATION, spec.getEvent(), payload, InvoiceGeneration.class));
+    }
+
+    public Optional<String> handleOnlineCheckInLink(String originalUrl, Ticket ticket, EventWithCheckInInfo event) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("event", event);
+        payload.put("eventId", event.getId());
+        payload.put("organizationId", event.getOrganizationId());
+        payload.put("ticket", ticket);
+        payload.put("originalURL", originalUrl);
+
+        return Optional.ofNullable(extensionService.executeScriptsForEvent(ONLINE_CHECK_IN_REDIRECT.name(),
+            toPath(event.getOrganizationId(), event.getId()),
+            payload,
+            String.class));
     }
 
     boolean handleTaxIdValidation(int eventId, String taxIdNumber, String countryCode) {
