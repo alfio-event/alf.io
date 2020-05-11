@@ -1,5 +1,5 @@
 <!doctype html>
-<html xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<html xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
   <title>
@@ -474,7 +474,7 @@
                       <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
                         <tr>
                           <td align="center" bgcolor="#7C8B95" role="presentation" style="border:none;border-radius:3px;cursor:auto;mso-padding-alt:10px 25px;background:#7C8B95;" valign="middle">
-                            <a href="{{ticketUrl}}" style="display:inline-block;background:#7C8B95;color:#ffffff;font-family:Source Sans Pro, Helvetica;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank">
+                            <a href="{{onlineCheckInUrl}}" style="display:inline-block;background:#7C8B95;color:#ffffff;font-family:Source Sans Pro, Helvetica;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank">
                               {{#i18n}}email-ticket.online.join-event{{/i18n}}
                             </a>
                           </td>

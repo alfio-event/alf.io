@@ -122,7 +122,7 @@ public class CustomMessageManager {
                                 TemplateResource.ONLINE_CHECK_IN_DETAILS,
                                 onlineCheckInModel,
                                 Locale.forLanguageTag(ticket.getUserLanguage()));
-                            text.append("\n\n").append(additionalText);
+                            text.append("\n\n").append(additionalText.getLeft());
                         } else if(optionalReservation.isPresent() && optionalTicketCategory.isPresent()) {
                             attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
                         }

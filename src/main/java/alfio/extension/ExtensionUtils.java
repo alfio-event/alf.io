@@ -17,10 +17,15 @@
 package alfio.extension;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.HmacAlgorithms;
+import org.apache.commons.codec.digest.HmacUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class ExtensionUtils {
 
@@ -34,5 +39,13 @@ public class ExtensionUtils {
         } catch (NoSuchAlgorithmException nae) {
             throw new IllegalStateException(nae);
         }
+    }
+
+    public static String computeHMAC(String secret, String... parts) {
+        if(parts == null || parts.length == 0) {
+            return "";
+        }
+        var text = Arrays.stream(parts).map(StringUtils::trimToEmpty).collect(Collectors.joining(""));
+        return new HmacUtils(HmacAlgorithms.HMAC_SHA_256, secret).hmacHex(text);
     }
 }
