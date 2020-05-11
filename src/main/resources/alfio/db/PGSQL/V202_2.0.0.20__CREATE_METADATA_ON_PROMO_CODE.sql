@@ -15,4 +15,4 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-ALTER TABLE promo_code ADD COLUMN IF NOT EXISTS metadata2 jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE promo_code ADD COLUMN IF NOT EXISTS metadata jsonb NOT NULL DEFAULT '{}'::jsonb;
