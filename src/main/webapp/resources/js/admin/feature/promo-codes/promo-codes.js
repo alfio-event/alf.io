@@ -127,7 +127,7 @@
                         codeType: promocode.codeType,
                         hiddenCategoryId: promocode.hiddenCategoryId
                     };
-                    $scope.validCategories = _.map(ctrl.event.ticketCategories, function(c) {
+                    $scope.validCategories = _.map(ctrl.event?.ticketCategories, function(c) {
                         var c1 = angular.copy(c, {});
                         var promoCodeIdx = _.indexOf(promocode.categories, c.id);
                         c1.selected = promoCodeIdx > -1;

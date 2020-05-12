@@ -22,6 +22,7 @@ import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.model.Ticket.TicketStatus;
 import alfio.model.audit.ScanAudit;
+import alfio.model.checkin.EventWithCheckInInfo;
 import alfio.model.support.CheckInOutputColorConfiguration;
 import alfio.model.transaction.PaymentProxy;
 import alfio.repository.*;
@@ -162,6 +163,21 @@ public class CheckInManager {
 
     public TicketAndCheckInResult checkIn(String shortName, String ticketIdentifier, Optional<String> ticketCode, String username, String auditUser) {
         return checkIn(shortName, ticketIdentifier, ticketCode, username, auditUser, false);
+    }
+
+    public String getProxyRedirectParameter(EventWithCheckInInfo event, Ticket ticket) {
+        var result = "";
+        var configurationsValues = configurationManager.getFor(List.of(
+          ENABLE_PROXY_QUERY_STRING_ON_REDIRECT_ONLINE_EVENTS
+        ), ConfigurationLevel.event(event));
+
+        if (configurationsValues.get(ENABLE_PROXY_QUERY_STRING_ON_REDIRECT_ONLINE_EVENTS).getValueAsBooleanOrDefault(false)) {
+            result = "?ticket_id=" + ticket.getUuid() + "" +
+                "&event_id="+ event.getId() + "" +
+                "&event_name=" + event.getShortName() + "" +
+                "&email" + ticket.getEmail();
+        }
+        return result;
     }
 
     public TicketAndCheckInResult checkIn(int eventId, String ticketIdentifier, Optional<String> ticketCode, String user) {

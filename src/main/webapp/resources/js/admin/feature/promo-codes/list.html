@@ -16,8 +16,23 @@
         </thead>
         <tbody>
         <tr data-ng-repeat="promocode in $ctrl.promocodes" data-ng-class="{'text-muted': promocode.expired}">
-            <td ng-if="promocode.useCount > 0"><a data-ui-sref="events.single.reservationsList({eventName: $ctrl.event.shortName, search: promocode.promoCode})" title="Find all reservations">{{::promocode.promoCode}}</a> <span data-ng-if="promocode.expired">(Expired)</span></td>
-            <td ng-if="!promocode.useCount || promocode.useCount === 0">{{::promocode.promoCode}} <span data-ng-if="promocode.expired">(Expired)</span><span data-ng-if="!promocode.expired && promocode.codeType === 'DYNAMIC'">(auto)</span></td>
+            <td ng-if="promocode.useCount > 0">
+                <div>
+                    <a data-ui-sref="events.single.reservationsList({eventName: $ctrl.event.shortName, search: promocode.promoCode})" title="Find all reservations">{{::promocode.promoCode}}</a>
+                    <span data-ng-if="promocode.expired">(Expired)</span>
+                </div>
+                <div ng-if="promocode.alfioMetadata && promocode.alfioMetadata.tags && promocode.alfioMetadata.tags.length > 0">
+                    <span class="tag-chip" ng-repeat="tag in promocode.alfioMetadata.tags">{{tag}}</span>
+                </div>
+            </td>
+            <td ng-if="!promocode.useCount || promocode.useCount === 0">{{::promocode.promoCode}}
+                <div>
+                    <span data-ng-if="promocode.expired">(Expired)</span><span data-ng-if="!promocode.expired && promocode.codeType === 'DYNAMIC'">(auto)</span>
+                </div>
+                <div ng-if="promocode.alfioMetadata && promocode.alfioMetadata.tags && promocode.alfioMetadata.tags.length > 0">
+                    <span class="tag-chip" ng-repeat="tag in promocode.alfioMetadata.tags">{{tag}}</span>
+                </div>
+            </td>
             <td class="text-right">{{promocode.useCount}}</td>
             <td class="text-right">{{promocode.maxUsage}}</td>
             <td>{{::promocode.formattedStart | formatDate}}</td>
