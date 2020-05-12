@@ -28,6 +28,7 @@ import alfio.model.extension.CustomEmailText;
 import alfio.model.extension.DynamicDiscount;
 import alfio.model.extension.InvoiceGeneration;
 import alfio.model.extension.PdfGenerationResult;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
 import alfio.repository.TicketReservationRepository;
@@ -76,6 +77,7 @@ public class ExtensionManager {
         INVOICE_GENERATION,
         TAX_ID_NUMBER_VALIDATION,
         RESERVATION_VALIDATION,
+        EVENT_METADATA_UPDATE,
         //
         STUCK_RESERVATIONS,
         OFFLINE_RESERVATIONS_WILL_EXPIRE,
@@ -107,6 +109,12 @@ public class ExtensionManager {
         payload.put("status", status.name());
         syncCall(ExtensionEvent.EVENT_STATUS_CHANGE, event, payload, Boolean.class);
         asyncCall(ExtensionEvent.EVENT_STATUS_CHANGE, event, payload);
+    }
+
+    AlfioMetadata handleMetadataUpdate(Event event, AlfioMetadata metadata) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("metadata", metadata);
+        return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class);
     }
 
     void handleReservationConfirmation(TicketReservation reservation, BillingDetails billingDetails, int eventId) {

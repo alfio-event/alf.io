@@ -189,6 +189,10 @@ public class EventManager {
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(event, em);
         extensionManager.handleEventCreation(event);
+        var eventMetadata = extensionManager.handleMetadataUpdate(event, AlfioMetadata.empty());
+        if(eventMetadata != null) {
+            eventRepository.updateMetadata(eventMetadata, eventId);
+        }
     }
 
     public void toggleActiveFlag(int id, String username, boolean activate) {
@@ -1062,7 +1066,11 @@ public class EventManager {
         return eventRepository.getEventsNameInOrganization(orgId).stream().collect(Collectors.toMap(EventIdShortName::getId, EventIdShortName::getShortName));
     }
 
-    public boolean updateMetadata(EventAndOrganizationId event, AlfioMetadata metadata) {
+    public boolean updateMetadata(Event event, AlfioMetadata metadata) {
+        var updatedMetadata = extensionManager.handleMetadataUpdate(event, metadata);
+        if(updatedMetadata != null) {
+            eventRepository.updateMetadata(updatedMetadata, event.getId());
+        }
         eventRepository.updateMetadata(metadata, event.getId());
         return true;
     }

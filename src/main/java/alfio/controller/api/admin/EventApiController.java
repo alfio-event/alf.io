@@ -709,7 +709,7 @@ public class EventApiController {
         if(!metadataModification.isValid()) {
             return ResponseEntity.badRequest().build();
         }
-        return ResponseEntity.of(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
+        return ResponseEntity.of(eventManager.getOptionalByName(eventName, principal.getName())
             .map(event -> eventManager.updateMetadata(event, metadataModification.toMetadataObj())));
     }
 
