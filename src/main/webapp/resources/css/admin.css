@@ -831,4 +831,5 @@ div.preformatted {
     border-radius: 50px;
     padding: 1px 8px 4px 8px;
     margin-right: 1rem;
+    white-space: nowrap;
 }

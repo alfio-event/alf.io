@@ -205,6 +205,7 @@ class TicketReservationManagerTest {
     private UserRepository userRepository;
     private AuditingRepository auditingRepository;
     private TotalPrice totalPrice;
+    private EventManager eventManager;
 
     private Set<ConfigurationKeys> BANKING_KEY = Set.of(INVOICE_ADDRESS, BANK_ACCOUNT_NR, BANK_ACCOUNT_OWNER);
     private Map<ConfigurationKeys, MaybeConfiguration> BANKING_INFO = Map.of(
@@ -245,6 +246,7 @@ class TicketReservationManagerTest {
         when(ticket.getCurrencyCode()).thenReturn("CHF");
         jdbcTemplate = mock(NamedParameterJdbcTemplate.class);
         json = mock(Json.class);
+        eventManager = mock(EventManager.class);
 
         reservationModification = mock(TicketReservationWithOptionalCodeModification.class);
         ticketReservation = mock(TicketReservation.class);
@@ -309,6 +311,7 @@ class TicketReservationManagerTest {
             promoCodeDiscountRepository,
             mock(BillingDocumentManager.class),
             mock(EventManager.class));
+
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);

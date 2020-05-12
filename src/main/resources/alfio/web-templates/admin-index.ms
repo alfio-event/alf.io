@@ -221,10 +221,12 @@
             </div>
             <footer class="text-center" ng-if="!ctrl.displaySidebar">
                 <h5 class="text-muted">Powered by <a href="https://alf.io" target="_blank">Alf.io</a> v.{{alfioVersion}}</h5>
+                <!--
                 <small><a href="https://github.com/alfio-event/alf.io/issues" target="_blank">report an issue</a> or <a href="https://groups.google.com/d/forum/alfio" target="_blank">ask for help</a></small>
                 <div class="wMarginTop10px">
                     <a class="btn btn-xs btn-success" href="https://alfio-event.typeform.com/to/frPgBy" target="_blank">Tell us about you!</a>
                 </div>
+                -->
             </footer>
         </div>
     </div>

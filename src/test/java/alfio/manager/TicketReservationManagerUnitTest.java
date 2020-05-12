@@ -78,6 +78,7 @@ public class TicketReservationManagerUnitTest {
     private ExtensionManager extensionManager;
     private GroupManager groupManager;
     private Json json;
+    private EventManager eventManager;
 
     @BeforeEach
     public void setUp() {
@@ -115,6 +116,7 @@ public class TicketReservationManagerUnitTest {
         groupManager = mock(GroupManager.class);
         BillingDocumentRepository billingDocumentRepository = mock(BillingDocumentRepository.class);
         json = mock(Json.class);
+        eventManager = mock(EventManager.class);
 
         when(messageSourceManager.getMessageSourceForEvent(any())).thenReturn(messageSource);
         when(messageSourceManager.getRootMessageSource()).thenReturn(messageSource);
@@ -151,7 +153,6 @@ public class TicketReservationManagerUnitTest {
             promoCodeDiscountRepository,
             mock(BillingDocumentManager.class),
             mock(EventManager.class));
-
     }
 
     @Test
