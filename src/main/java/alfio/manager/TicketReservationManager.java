@@ -15,7 +15,113 @@
  * along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
  */
 package alfio.manager;
+import static alfio.model.Audit.EntityType.RESERVATION;
+import static alfio.model.Audit.EventType.EXTERNAL_INVOICE_NUMBER;
+import static alfio.model.Audit.EventType.INIT_PAYMENT;
+import static alfio.model.Audit.EventType.MATCHING_PAYMENT_FOUND;
+import static alfio.model.Audit.EventType.PAYMENT_CONFIRMED;
+import static alfio.model.Audit.EventType.RESET_PAYMENT;
+import static alfio.model.BillingDocument.Type.CREDIT_NOTE;
+import static alfio.model.BillingDocument.Type.INVOICE;
+import static alfio.model.BillingDocument.Type.RECEIPT;
+import static alfio.model.PromoCodeDiscount.categoriesOrNull;
+import static alfio.model.TicketReservation.TicketReservationStatus.COMPLETE;
+import static alfio.model.TicketReservation.TicketReservationStatus.DEFERRED_OFFLINE_PAYMENT;
+import static alfio.model.TicketReservation.TicketReservationStatus.EXTERNAL_PROCESSING_PAYMENT;
+import static alfio.model.TicketReservation.TicketReservationStatus.IN_PAYMENT;
+import static alfio.model.TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT;
+import static alfio.model.TicketReservation.TicketReservationStatus.PENDING;
+import static alfio.model.TicketReservation.TicketReservationStatus.WAITING_EXTERNAL_CONFIRMATION;
+import static alfio.model.system.ConfigurationKeys.ALLOW_FREE_TICKETS_CANCELLATION;
+import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_INTERVAL;
+import static alfio.model.system.ConfigurationKeys.ASSIGNMENT_REMINDER_START;
+import static alfio.model.system.ConfigurationKeys.AUTOMATIC_REMOVAL_EXPIRED_OFFLINE_PAYMENT;
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_NR;
+import static alfio.model.system.ConfigurationKeys.BANK_ACCOUNT_OWNER;
+import static alfio.model.system.ConfigurationKeys.BASE_URL;
+import static alfio.model.system.ConfigurationKeys.DEFERRED_BANK_TRANSFER_ENABLED;
+import static alfio.model.system.ConfigurationKeys.DEFERRED_BANK_TRANSFER_SEND_CONFIRMATION_EMAIL;
+import static alfio.model.system.ConfigurationKeys.ENABLE_TICKET_TRANSFER;
+import static alfio.model.system.ConfigurationKeys.INVOICE_ADDRESS;
+import static alfio.model.system.ConfigurationKeys.MAX_AMOUNT_OF_TICKETS_BY_RESERVATION;
+import static alfio.model.system.ConfigurationKeys.NOTIFY_ALL_FAILED_PAYMENT_ATTEMPTS;
+import static alfio.model.system.ConfigurationKeys.OFFLINE_REMINDER_HOURS;
+import static alfio.model.system.ConfigurationKeys.OPTIONAL_DATA_REMINDER_ENABLED;
+import static alfio.model.system.ConfigurationKeys.RESERVATION_MIN_TIMEOUT_AFTER_FAILED_PAYMENT;
+import static alfio.model.system.ConfigurationKeys.RESERVATION_TIMEOUT;
+import static alfio.model.system.ConfigurationKeys.SEND_TICKETS_AUTOMATICALLY;
+import static alfio.model.system.ConfigurationKeys.VAT_NR;
+import static alfio.util.MonetaryUtil.formatCents;
+import static alfio.util.MonetaryUtil.unitToCents;
+import static alfio.util.Wrappers.optionally;
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.summingLong;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+import static org.apache.commons.lang3.StringUtils.defaultString;
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.stripAll;
+import static org.apache.commons.lang3.StringUtils.stripToEmpty;
+import static org.apache.commons.lang3.StringUtils.stripToNull;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
+import static org.apache.commons.lang3.StringUtils.trimToNull;
+import static org.apache.commons.lang3.time.DateUtils.addHours;
+import static org.apache.commons.lang3.time.DateUtils.truncate;
 
+import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import alfio.model.metadata.AlfioMetadata;
+import alfio.util.*;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.time.DateUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.util.UriComponentsBuilder;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.form.UpdateTicketOwnerForm;
 import alfio.controller.support.TemplateProcessor;
@@ -151,6 +257,7 @@ public class TicketReservationManager {
     private final Json json;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final BillingDocumentManager billingDocumentManager;
+    private final EventManager eventManager;
 
     public static class NotEnoughTicketsException extends RuntimeException {
 
@@ -201,7 +308,8 @@ public class TicketReservationManager {
                                     NamedParameterJdbcTemplate jdbcTemplate,
                                     Json json,
                                     PromoCodeDiscountRepository promoCodeRepository,
-                                    BillingDocumentManager billingDocumentManager) {
+                                    BillingDocumentManager billingDocumentManager,
+                                    EventManager eventManager) {
         this.eventRepository = eventRepository;
         this.organizationRepository = organizationRepository;
         this.ticketRepository = ticketRepository;
@@ -237,6 +345,7 @@ public class TicketReservationManager {
         this.json = json;
         this.promoCodeRepository = promoCodeRepository;
         this.billingDocumentManager = billingDocumentManager;
+        this.eventManager = eventManager;
     }
 
     /**
@@ -559,7 +668,12 @@ public class TicketReservationManager {
             }
 
             if (paymentResult.isSuccessful()) {
+
                 reservation = ticketReservationRepository.findReservationById(spec.getReservationId());
+                // check for carnet
+                if (spec.getEvent().isOnline()) {
+                    managePromoCodeForCarnetEvent(spec.getEvent(), reservation);
+                }
                 transitionToComplete(spec, reservationCost, paymentProxy, null);
             } else if(paymentResult.isFailed()) {
                 reTransitionToPending(spec.getReservationId());
@@ -575,6 +689,57 @@ public class TicketReservationManager {
             return PaymentResult.failed("error.STEP2_STRIPE_unexpected");
         }
 
+    }
+
+    public void managePromoCodeForCarnetEvent(Event event, TicketReservation ticketReservation) {
+        var mDataSrc = eventRepository.findEventMetadataByIdMatchAttribute(event.getId(), Event.EventOccurrence.CARNET.toString());
+        mDataSrc.ifPresent(alfioMetadata -> {
+            //I have to add the promo code
+            if (alfioMetadata.getAttributes() != null && alfioMetadata.getAttributes().get(Event.EventOccurrence.CARNET.toString())!=null) {
+                int discount = -1;
+                try {
+                    discount = Integer.parseInt(alfioMetadata.getAttributes().get(Event.EventOccurrence.CARNET.toString()).toString());
+                } catch (ClassCastException e) {
+                    discount = -1;
+                }
+
+                for (Integer ticketId : ticketRepository.findTicketIdsInReservation(ticketReservation.getId())){
+                    //generating 1 vuocher for ticket
+                    var attributeList = new HashMap<String, Object>();
+                    attributeList.put("idTicket", ticketId);
+                    attributeList.put("idEvent", event.getId());
+                    attributeList.put("eventShortName", event.getShortName());
+                    attributeList.put("eventDisplayName", event.getDisplayName());
+                    attributeList.put("promoCodeType", Event.EventOccurrence.CARNET.toString());
+                    attributeList.put("buyerName", ticketReservation.getFullName());
+                    var metadata = new AlfioMetadata(
+                        alfioMetadata.getTags(),
+                        null,
+                        Map.of(),
+                        List.of(),
+                        attributeList);
+
+                    var promoCode = VoucherGenerator.generateRandomVoucher();
+                    // the promo code will be binded to the event for a better management in admin console
+                    if (discount != -1) {
+                        eventManager.addPromoCode(
+                            promoCode,
+                            null,
+                            event.getOrganizationId(),
+                            event.getBegin(),
+                            event.getEnd(),
+                            100,
+                            PromoCodeDiscount.DiscountType.PERCENTAGE,
+                            null, discount,
+                            event.getDisplayName(),
+                            ticketReservation.getEmail(),
+                            PromoCodeDiscount.CodeType.DISCOUNT,
+                            null,
+                            metadata);
+                    }
+                }
+            }
+        });
     }
 
     private boolean paymentMethodIsBlacklisted(PaymentMethod paymentMethod, PaymentSpecification spec) {
@@ -995,6 +1160,7 @@ public class TicketReservationManager {
     void completeReservation(PaymentSpecification spec, PaymentProxy paymentProxy, boolean sendReservationConfirmationEmail, boolean sendTickets, String username) {
         String reservationId = spec.getReservationId();
         int eventId = spec.getEvent().getId();
+
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
         if(paymentProxy != PaymentProxy.OFFLINE) {

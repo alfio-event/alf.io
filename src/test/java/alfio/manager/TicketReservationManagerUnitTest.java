@@ -149,7 +149,8 @@ public class TicketReservationManagerUnitTest {
             mock(NamedParameterJdbcTemplate.class),
             json,
             promoCodeDiscountRepository,
-            mock(BillingDocumentManager.class));
+            mock(BillingDocumentManager.class),
+            mock(EventManager.class));
 
     }
 

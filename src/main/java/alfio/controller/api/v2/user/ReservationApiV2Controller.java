@@ -316,10 +316,6 @@ public class ReservationApiV2Controller {
                 return buildReservationPaymentStatus(bindingResult);
             }
 
-            //let's check if the event is a carnet
-            if (event.isOnline()) {
-                promoCodeRequestManager.managePromoCodeForCarnetEvent(event, ticketReservation);
-            }
             return buildReservationPaymentStatus(bindingResult);
 
         }).orElseGet(() -> ResponseEntity.notFound().build());

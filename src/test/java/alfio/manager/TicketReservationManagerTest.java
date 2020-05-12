@@ -307,7 +307,8 @@ class TicketReservationManagerTest {
             jdbcTemplate,
             json,
             promoCodeDiscountRepository,
-            mock(BillingDocumentManager.class));
+            mock(BillingDocumentManager.class),
+            mock(EventManager.class));
 
         when(event.getId()).thenReturn(EVENT_ID);
         when(event.getOrganizationId()).thenReturn(ORGANIZATION_ID);

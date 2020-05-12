@@ -157,57 +157,6 @@ public class PromoCodeRequestManager {
         return new ValidatedResponse<>(ValidationResult.success(), result);
     }
 
-    public void managePromoCodeForCarnetEvent(Event event, TicketReservation ticketReservation) {
-        var mDataSrc = eventManager.getEventMetaDataByIdMatchAttribute(event.getId(), Event.EventOccurrence.CARNET.toString());
-        mDataSrc.ifPresent(alfioMetadata -> {
-            //I have to add the promo code
-            if (alfioMetadata.getAttributes() != null && alfioMetadata.getAttributes().get(Event.EventOccurrence.CARNET.toString())!=null) {
-                int discount = -1;
-                try {
-                    discount = Integer.parseInt(alfioMetadata.getAttributes().get(Event.EventOccurrence.CARNET.toString()).toString());
-                } catch (ClassCastException e) {
-                    discount = -1;
-                }
-
-                for (Integer ticketId : ticketRepository.findTicketIdsInReservation(ticketReservation.getId())){
-                    //generating 1 vuocher for ticket
-                    var attributeList = new HashMap<String, Object>();
-                    attributeList.put("idTicket", ticketId);
-                    attributeList.put("idEvent", event.getId());
-                    attributeList.put("eventShortName", event.getShortName());
-                    attributeList.put("eventDisplayName", event.getDisplayName());
-                    attributeList.put("promoCodeType", Event.EventOccurrence.CARNET.toString());
-                    attributeList.put("buyerName", ticketReservation.getFullName());
-                    var metadata = new AlfioMetadata(
-                        alfioMetadata.getTags(),
-                        null,
-                        Map.of(),
-                        List.of(),
-                        attributeList);
-
-                    var promoCode = VoucherGenerator.generateRandomVoucher();
-                    // the promo code will be binded to the event for a better management in admin console
-                    if (discount != -1) {
-                        eventManager.addPromoCode(
-                            promoCode,
-                            null,
-                            event.getOrganizationId(),
-                            event.getBegin(),
-                            event.getEnd(),
-                            100,
-                            PromoCodeDiscount.DiscountType.PERCENTAGE,
-                            null, discount,
-                            event.getDisplayName(),
-                            ticketReservation.getEmail(),
-                            PromoCodeDiscount.CodeType.DISCOUNT,
-                            null,
-                            metadata);
-                    }
-                }
-            }
-        });
-    }
-
     private PromoCodeType checkPromoCodeType(int eventId, String trimmedCode) {
         if(trimmedCode == null) {
             return PromoCodeType.NOT_FOUND;
