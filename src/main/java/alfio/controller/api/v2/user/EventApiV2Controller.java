@@ -103,7 +103,7 @@ public class EventApiV2Controller {
             .map(e -> {
                 var messageSource = messageSourceManager.getMessageSourceForEvent(e);
                 var formattedDates = Formatters.getFormattedDates(e, messageSource, contentLanguages);
-                return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getFormat(), e.getLocation(),
+                return new BasicEventInfo(e.getShortName(), e.getFileBlobId(), e.getDisplayName(), e.getFormat(), e.getAddress()+e.getVenue(),
                     e.getTimeZone(), DatesWithTimeZoneOffset.fromEvent(e), e.getSameDay(), formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime);
             })

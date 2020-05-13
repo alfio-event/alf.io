@@ -29,6 +29,8 @@ public class EventCode {
     private final PromoCodeDiscount.DiscountType discountType;
     private final String discountAmount;
 
+
+
     public enum EventCodeType {
         @Deprecated SPECIAL_PRICE, DISCOUNT, ACCESS
     }

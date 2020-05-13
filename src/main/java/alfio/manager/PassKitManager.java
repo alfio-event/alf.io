@@ -179,7 +179,7 @@ public class PassKitManager {
                         new TextField("categoryId", event.getDisplayName(), category.getName())
                     ))
                     .secondaryFields(
-                        new TextField("location", "Venue", event.getLocation())
+                        new TextField("location", "Venue", event.getAddress()+event.getVenue())
                     )
                     .auxiliaryFields(
                         getAuxiliaryFields(ticket)

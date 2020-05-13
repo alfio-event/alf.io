@@ -117,7 +117,7 @@ public class EventWithAdditionalInfo implements DateValidity {
     }
 
     public String getLocation() {
-        return event.getLocation();
+        return event.getAddress()+event.getVenue();
     }
 
     public Map<String, String> getDescription() {

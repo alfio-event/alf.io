@@ -141,7 +141,7 @@ public class ResourceController {
             } else {
                 checkAccess(organizationId, principal);
                 var zoneId = ZoneId.of("Europe/Zurich");
-                event = new Event(-1, Event.EventFormat.IN_PERSON, "TEST", "TEST", "TEST", "0", "0", ZonedDateTime.now(zoneId),
+                event = new Event(-1, Event.EventFormat.IN_PERSON, "TEST", "TEST", "TEST", "TEST","0", "0", ZonedDateTime.now(zoneId),
                     ZonedDateTime.now(zoneId), "Europe/Zurich", "http://localhost", "http://localhost", null,
                     "http://localhost", null, null, "CHF", BigDecimal.TEN, null, "42", organizationId,
                     ContentLanguage.ALL_LANGUAGES_IDENTIFIER, 0, PriceContainer.VatStatus.NONE, "1", Event.Status.PUBLIC);

@@ -61,7 +61,8 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     private final String privacyPolicyUrl;
     private final String imageUrl;
     private final String fileBlobId;
-    private final String location;
+    private final String venue;
+    private final String address;
     private final String latitude;
     private final String longitude;
     private final ZonedDateTime begin;
@@ -87,7 +88,8 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
                  @Column("format") EventFormat format,
                  @Column("short_name") String shortName,
                  @Column("display_name") String displayName,
-                 @Column("location") String location,
+                 @Column("venue")String venue,
+                 @Column("address")String address,
                  @Column("latitude") String latitude,
                  @Column("longitude") String longitude,
                  @Column("start_ts") ZonedDateTime begin,
@@ -123,7 +125,8 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         final ZoneId zoneId = TimeZone.getTimeZone(timeZone).toZoneId();
 
         this.shortName = shortName;
-        this.location = location;
+        this.venue=venue;
+        this.address=address;
         this.latitude = latitude;
         this.longitude = longitude;
         this.timeZone = zoneId;
@@ -273,5 +276,13 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
 
     public boolean getIsOnline() {
         return format == EventFormat.ONLINE;
+    }
+
+    public String getVenue() {
+        return venue;
+    }
+
+    public String getAddress() {
+        return address;
     }
 }

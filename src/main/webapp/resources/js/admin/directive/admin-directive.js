@@ -328,7 +328,7 @@
                 $scope.baseUrl = ConfigurationService.getBaseUrl();
 
                 if(!angular.isDefined($scope.fullEditMode)) {
-                    var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'location',
+                    var source = _.pick($scope.eventObj, ['id','shortName', 'displayName', 'organizationId', 'venue','address',
                         'description', 'websiteUrl', 'externalUrl', 'termsAndConditionsUrl', 'privacyPolicyUrl', 'imageUrl', 'fileBlobId', 'formattedBegin','format',
                         'formattedEnd', 'geolocation', 'locales']);
                     angular.extend($scope.obj, source);
@@ -476,6 +476,11 @@
                 $scope.$watch('obj.location', function(newValue, oldValue) {
                     if ($scope.obj && $scope.obj.location && !$scope.loadingMap && newValue != oldValue) {
                         $scope.updateLocation($scope.obj.location);
+                    }
+                });
+                $scope.$watch('obj.address', function(newValue, oldValue) {
+                    if ($scope.obj && $scope.obj.address && !$scope.loadingMap && newValue != oldValue) {
+                        $scope.updateLocation($scope.obj.address);
                     }
                 });
 

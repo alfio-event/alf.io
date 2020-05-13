@@ -77,6 +77,7 @@ public class PaymentApiController {
             .flatMap(pair -> paymentManager.getTransactionStatus(pair.getRight(), paymentMethod))
             .map(ResponseEntity::ok)
             .orElseGet(() -> ResponseEntity.notFound().build());
+
     }
 
     @GetMapping("/api/v2/public/event/{eventName}/reservation/{reservationId}/transaction/force-check")

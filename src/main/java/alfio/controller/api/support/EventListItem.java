@@ -69,7 +69,7 @@ public class EventListItem {
     }
 
     public String getLocation() {
-        return event.getLocation();
+        return event.getAddress()+event.getVenue();
     }
 
     public String getLatitude() {

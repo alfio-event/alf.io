@@ -135,7 +135,7 @@ public class EventCreationRequest{
             original.getShortName(),
             first(title,original.getDisplayName()),
             organization.getId(),
-            location != null ? first(location.getFullAddress(),original.getLocation()) : original.getLocation(),
+            location != null ? first(location.getFullAddress(),original.getEvent().getAddress()+original.getEvent().getAddress()) : original.getEvent().getAddress()+original.getEvent().getAddress(),
             location != null && location.getCoordinate() != null ? location.getCoordinate().getLatitude() : original.getLatitude(),
             location != null && location.getCoordinate() != null ? location.getCoordinate().getLongitude() : original.getLongitude(),
             first(timezone,original.getTimeZone()),
