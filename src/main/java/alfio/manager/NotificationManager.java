@@ -36,6 +36,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -54,6 +55,7 @@ import java.time.Clock;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -170,16 +172,23 @@ public class NotificationManager {
             String description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.getLanguage()).orElse("");
             if(model.containsKey("onlineCheckInUrl")) { // special case: online event
                 var messageSource = messageSourceManager.getMessageSourceForEvent(event);
-                description = description + "\n\n" +
-                    "******************************************\n" +
-                    messageSource.getMessage("email.event.online.important-information", null, locale) + "\n\n" +
-                    messageSource.getMessage("event.location.online", null, locale) + "\n" +
-                    messageSource.getMessage("email.event.online.check-in", null, locale) + "\n" +
-                    model.get("onlineCheckInUrl") + "\n\n" +
-                    MustacheCustomTag.renderToTextCommonmark(model.getOrDefault("prerequisites", ""));
+                description = description + buildOnlineCheckInInformation(messageSource).apply(model, locale);
             }
             return EventUtil.getIcalForEvent(event, category, description, organization).orElse(null);
         };
+    }
+
+    private static BiFunction<Map<String,String>, Locale, String> buildOnlineCheckInInformation(MessageSource messageSource) {
+        return (model, locale) -> "\n\n******************************************\n" +
+            messageSource.getMessage("email.event.online.important-information", null, locale) + "\n\n" +
+            messageSource.getMessage("event.location.online", null, locale) + "\n" +
+            messageSource.getMessage("email.event.online.check-in", null, locale) + "\n" +
+            model.get("onlineCheckInUrl") + "\n\n" +
+            MustacheCustomTag.renderToTextCommonmark(model.getOrDefault("prerequisites", ""));
+    }
+
+    public String buildOnlineCheckInText(Map<String, String> model, Locale locale, MessageSource messageSource) {
+        return buildOnlineCheckInInformation(messageSource).apply(model, locale);
     }
 
     private static Function<Map<String, String>, byte[]> receiptOrInvoiceFactory(EventRepository eventRepository, Function<Triple<Event, Locale, Map<String, Object>>, Optional<byte[]>> pdfGenerator) {

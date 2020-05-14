@@ -19,6 +19,7 @@ package alfio.manager.support;
 import alfio.manager.EventManager;
 import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
+import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.system.Mailer;
@@ -29,7 +30,6 @@ import alfio.repository.TicketCategoryRepository;
 import alfio.repository.TicketRepository;
 import alfio.util.Json;
 import alfio.util.TemplateManager;
-import alfio.util.TemplateResource;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.tuple.Triple;
@@ -59,6 +59,7 @@ public class CustomMessageManager {
     private final TicketCategoryRepository ticketCategoryRepository;
     private final Executor sendMessagesExecutor = Executors.newSingleThreadExecutor();
     private final ConfigurationManager configurationManager;
+    private final MessageSourceManager messageSourceManager;
 
     public Map<String, Object> generatePreview(String eventName, Optional<Integer> categoryId, List<MessageModification> input, String username) {
         Map<String, Object> result = new HashMap<>();
@@ -78,6 +79,7 @@ public class CustomMessageManager {
         var eventMetadata = Optional.ofNullable(eventManager.getMetadataForEvent(event).getRequirementsDescriptions());
 
         sendMessagesExecutor.execute(() -> {
+            var messageSource = messageSourceManager.getMessageSourceForEvent(event);
             categoryId.map(id -> ticketRepository.findConfirmedByCategoryId(event.getId(), id))
                 .orElseGet(() -> ticketRepository.findAllConfirmed(event.getId()))
                 .stream()
@@ -116,13 +118,8 @@ public class CustomMessageManager {
                             // generate only calendar invitation, as Ticket PDF would not make sense in this case.
                             attachments.add(generateCalendarAttachmentForOnlineEvent(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization, checkInUrl, instructions));
                             // add check-in URL and prerequisites, if any
-                            var onlineCheckInModel = new ExtendedModelMap();
-                            onlineCheckInModel.addAttribute("onlineCheckInUrl", checkInUrl).addAttribute("prerequisites", instructions);
-                            var additionalText = templateManager.renderTemplate(event,
-                                TemplateResource.ONLINE_CHECK_IN_DETAILS,
-                                onlineCheckInModel,
-                                Locale.forLanguageTag(ticket.getUserLanguage()));
-                            text.append("\n\n").append(additionalText.getLeft());
+                            Map<String, String> onlineCheckInModel = Map.of("onlineCheckInUrl", checkInUrl, "prerequisites", instructions);
+                            text.append(notificationManager.buildOnlineCheckInText(onlineCheckInModel, Locale.forLanguageTag(ticket.getUserLanguage()), messageSource));
                         } else if(optionalReservation.isPresent() && optionalTicketCategory.isPresent()) {
                             attachments.add(generateTicketAttachment(ticket, optionalReservation.get(), optionalTicketCategory.get(), organization));
                         }
