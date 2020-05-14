@@ -486,7 +486,7 @@ public class ReservationApiV2Controller {
 
         var res = eventRepository.findOptionalByShortName(eventName).map(event ->
             ticketReservationManager.findById(reservationId).map(ticketReservation -> {
-                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang, event), principal.getName());
+                ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang, event), principal != null ? principal.getName() : null);
                 return true;
             }).orElse(false)
         ).orElse(false);
