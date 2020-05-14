@@ -412,7 +412,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
             event.getShortName(),
             "new display name",
             event.getOrganizationId(),
-            event.getLocation(),
+            event.getAddress()+event.getVenue(),
             "0.0",
             "0.0",
             ZoneId.systemDefault().getId(),

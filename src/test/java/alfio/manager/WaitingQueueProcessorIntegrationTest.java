@@ -156,7 +156,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getRight();
         EventModification eventModification = new EventModification(event.getId(), event.getFormat(), event.getWebsiteUrl(),
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
-            event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
+            event.getOrganizationId(), event.getAddress()+event.getVenue(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
             Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList(), AlfioMetadata.empty());
         eventManager.updateEventPrices(event, eventModification, "admin");
@@ -175,7 +175,7 @@ public class WaitingQueueProcessorIntegrationTest extends BaseIntegrationTest {
         Event event = pair.getRight();
         EventModification eventModification = new EventModification(event.getId(), event.getFormat(), event.getWebsiteUrl(),
             event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(), event.getFileBlobId(), event.getShortName(), event.getDisplayName(),
-            event.getOrganizationId(), event.getLocation(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
+            event.getOrganizationId(), event.getAddress()+event.getVenue(), event.getLatitude(), event.getLongitude(), event.getZoneId().getId(), emptyMap(), fromZonedDateTime(event.getBegin()), fromZonedDateTime(event.getEnd()),
             event.getRegularPrice(), event.getCurrency(), eventRepository.countExistingTickets(event.getId()) + 1, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(),
             Collections.emptyList(), event.isFreeOfCharge(), null, event.getLocales(), Collections.emptyList(), Collections.emptyList(), AlfioMetadata.empty());
         eventManager.updateEventPrices(event, eventModification, "admin");

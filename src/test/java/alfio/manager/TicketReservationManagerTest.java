@@ -1090,7 +1090,7 @@ class TicketReservationManagerTest {
             event.getFormat(),
             event.getShortName(),
             event.getDisplayName(),
-            event.getLocation(),
+            event.getAddress()+event.getVenue(),
             event.getLatitude(),
             event.getLongitude(),
             Optional.ofNullable(event.getBegin()).orElse(ZonedDateTime.now().plusDays(2).minusHours(2)),

@@ -1183,7 +1183,7 @@ public class ReservationFlowIntegrationTest extends BaseIntegrationTest {
                 assertEquals(CheckInStatus.INVALID_TICKET_CATEGORY_CHECK_IN_DATE, ticketAndcheckInResult.getResult().getStatus());
 
                 eventRepository.updateHeader(event.getId(), event.getDisplayName(), event.getWebsiteUrl(), event.getExternalUrl(), event.getTermsAndConditionsUrl(), event.getPrivacyPolicyUrl(), event.getImageUrl(),
-                    event.getFileBlobId(), event.getLocation(), event.getLatitude(), event.getLongitude(), ZonedDateTime.now(event.getZoneId()).minusSeconds(1), event.getEnd(), event.getTimeZone(),
+                    event.getFileBlobId(), event.getAddress()+event.getVenue(), event.getLatitude(), event.getLongitude(), ZonedDateTime.now(event.getZoneId()).minusSeconds(1), event.getEnd(), event.getTimeZone(),
                     event.getOrganizationId(), event.getLocales(), event.getFormat());
 
                 ticketAndcheckInResult = checkInApiController.checkIn(event.getId(), ticketIdentifier, badgeScan, new TestingAuthenticationToken("ciccio", "ciccio"));
