@@ -1,17 +1,15 @@
 {{#i18n}}email.hello [{{ticket.fullName}}]{{/i18n}}
 {{custom-header-text}}
+{{#i18n}}email.ticket.promocode.maintitle{{/i18n}}
 
-This email contains the "carnet code" to use for purchasing alfio events
-
-*********************************************
+********************************
 {{#i18n}}email.event.online.important-information{{/i18n}}
 
-Your carnet code is:
+{{#i18n}}email.ticket.promocode.carnetcode{{/i18n}}
 {{promoCode}}
 
-*********************************************
-
-You can use this code {{promoCodeAmount}} times
+{{#i18n}}email.ticket.promocode.amount [{{promoCodeAmount}}]{{/i18n}}
+********************************
 
 {{custom-footer-text}}
 {{#i18n}}email.kind-regards{{/i18n}}

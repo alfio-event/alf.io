@@ -222,11 +222,17 @@ public class NotificationManager {
         List<Mailer.Attachment> attachments = new ArrayList<>();
         if(event.getFormat() == Event.EventFormat.ONLINE) { // generate only calendar invitation
             var baseUrl = configurationManager.getFor(BASE_URL, ConfigurationLevel.event(event)).getRequiredValue();
-            var eventMetadata = Optional.ofNullable(eventRepository.getMetadataForEvent(event.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(locale.getLanguage())));
+            var alfioMetadata = eventRepository.getMetadataForEvent(event.getId());
+            var eventMetadata = Optional.ofNullable(alfioMetadata.getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(locale.getLanguage())));
             var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(locale.getLanguage())));
-            attachments.add(CustomMessageManager.generateCalendarAttachmentForOnlineEvent(ticket,
-                reservation, ticketCategory, organization, TicketReservationManager.ticketOnlineCheckInUrl(event, ticket, baseUrl),
-                categoryMetadata.or(() -> eventMetadata).orElse("")));
+            if (alfioMetadata == null
+                || alfioMetadata.getAttributes() == null
+                || alfioMetadata.getAttributes().containsKey(Event.EventOccurrence.CARNET.toString())) {
+                //attachment not needed for CARNET events
+                attachments.add(CustomMessageManager.generateCalendarAttachmentForOnlineEvent(ticket,
+                    reservation, ticketCategory, organization, TicketReservationManager.ticketOnlineCheckInUrl(event, ticket, baseUrl),
+                    categoryMetadata.or(() -> eventMetadata).orElse("")));
+            }
         } else {
             attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
         }

@@ -143,7 +143,7 @@ public enum TemplateResource {
         }
     },
 
-    TICKET_EMAIL_FOR_ONLINE_CARNET_EVENT("/alfio/templates/ticket-email-online-carnet-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
+    TICKET_EMAIL_FOR_ONLINE_CARNET_EVENT("/alfio/templates/ticket-email-online-carnet", TemplateResource.MULTIPART_ALTERNATIVE_MIMETYPE, TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
             var now = ZonedDateTime.now(event.getZoneId());
