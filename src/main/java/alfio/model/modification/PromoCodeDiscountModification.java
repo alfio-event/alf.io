@@ -18,6 +18,7 @@ package alfio.model.modification;
 
 import alfio.model.PromoCodeDiscount;
 import alfio.model.PromoCodeDiscount.DiscountType;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.util.MonetaryUtil;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -47,6 +48,7 @@ public class PromoCodeDiscountModification {
     private final String emailReference;
     private final PromoCodeDiscount.CodeType codeType;
     private final Integer hiddenCategoryId;
+    private final AlfioMetadata alfioMetadata;
 
 
     @JsonCreator
@@ -64,7 +66,8 @@ public class PromoCodeDiscountModification {
         @JsonProperty("description") String description,
         @JsonProperty("emailReference") String emailReference,
         @JsonProperty("codeType") PromoCodeDiscount.CodeType codeType,
-        @JsonProperty("hiddenCategoryId") Integer hiddenCategoryId) {
+        @JsonProperty("hiddenCategoryId") Integer hiddenCategoryId,
+        @JsonProperty("alfioMetadata") AlfioMetadata alfioMetadata) {
 
         this.organizationId = organizationId;
         this.eventId = eventId;
@@ -80,6 +83,7 @@ public class PromoCodeDiscountModification {
         this.emailReference = emailReference;
         this.codeType = Optional.ofNullable(codeType).orElse(PromoCodeDiscount.CodeType.DISCOUNT);
         this.hiddenCategoryId = hiddenCategoryId;
+        this.alfioMetadata = alfioMetadata;
     }
     
     private int getDiscountAsPercent() {

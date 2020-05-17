@@ -945,6 +945,14 @@ public class EventManager {
 
         promoCodeRepository.updateEventPromoCode(promoCodeId, start, end, maxUsage, categoriesJson, description, emailReference, hiddenCategoryId);
     }
+
+    public void updatePromoCodeWithMetaData(int promoCodeId, ZonedDateTime start, ZonedDateTime end, Integer maxUsage, List<Integer> categories, String description, String emailReference, Integer hiddenCategoryId, AlfioMetadata alfioMetadata) {
+        Validate.isTrue(StringUtils.length(description) < 1025, "Description can be maximum 1024 chars");
+        Validate.isTrue(StringUtils.length(emailReference) < 257, "Description can be maximum 256 chars");
+        String categoriesJson = CollectionUtils.isEmpty(categories) ? null : Json.toJson(categories);
+
+        promoCodeRepository.updateEventPromoCodeWithMetadata(promoCodeId, start, end, maxUsage, categoriesJson, description, emailReference, hiddenCategoryId, alfioMetadata);
+    }
     
     public List<PromoCodeDiscountWithFormattedTimeAndAmount> findPromoCodesInEvent(int eventId) {
         var event = eventRepository.findById(eventId);

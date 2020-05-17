@@ -18,6 +18,7 @@ package alfio.controller.api.admin;
 
 import alfio.manager.EventManager;
 import alfio.model.PromoCodeDiscount;
+import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.PromoCodeDiscountModification;
 import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
 import alfio.repository.EventRepository;
@@ -30,6 +31,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static alfio.model.PromoCodeDiscount.categoriesOrNull;
@@ -49,20 +51,28 @@ public class PromoCodeDiscountApiController {
         Integer organizationId = promoCode.getOrganizationId();
         ZoneId zoneId = zoneIdFromEventId(eventId, promoCode.getUtcOffset());
         
-        int discount = promoCode.getDiscountValue(eventRepository.getEventCurrencyCode(eventId));
+        int discount = eventId != null ? promoCode.getDiscountValue(eventRepository.getEventCurrencyCode(eventId)) : promoCode.getDiscountAmount().intValue();
+
+        var mData = AlfioMetadata.empty();
+        if (promoCode.getAlfioMetadata() != null
+            && promoCode.getAlfioMetadata().getTags() != null
+            && promoCode.getAlfioMetadata().getTags().size() > 0
+        ) {
+            mData = new AlfioMetadata(promoCode.getAlfioMetadata().getTags(), null, Map.of(), List.of(), Map.of());
+        }
 
         eventManager.addPromoCode(promoCode.getPromoCode(), eventId, organizationId, promoCode.getStart().toZonedDateTime(zoneId),
             promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories(), promoCode.getMaxUsage(),
-            promoCode.getDescription(), promoCode.getEmailReference(), promoCode.getCodeType(), promoCode.getHiddenCategoryId());
+            promoCode.getDescription(), promoCode.getEmailReference(), promoCode.getCodeType(), promoCode.getHiddenCategoryId(), mData);
     }
 
     @PostMapping("/promo-code/{promoCodeId}")
     public void updatePromoCode(@PathVariable("promoCodeId") int promoCodeId, @RequestBody PromoCodeDiscountModification promoCode) {
         PromoCodeDiscount pcd = promoCodeRepository.findById(promoCodeId);
         ZoneId zoneId = zoneIdFromEventId(pcd.getEventId(), promoCode.getUtcOffset());
-        eventManager.updatePromoCode(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId),
+        eventManager.updatePromoCodeWithMetaData(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId),
             promoCode.getEnd().toZonedDateTime(zoneId), promoCode.getMaxUsage(), promoCode.getCategories(),
-            promoCode.getDescription(), promoCode.getEmailReference(), promoCode.getHiddenCategoryId());
+            promoCode.getDescription(), promoCode.getEmailReference(), promoCode.getHiddenCategoryId(), promoCode.getAlfioMetadata());
     }
 
     private ZoneId zoneIdFromEventId(Integer eventId, Integer utcOffset) {

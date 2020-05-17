@@ -105,7 +105,7 @@
         }
 
         function changeDate(promocode) {
-
+            console.log("EditPromoCode", promocode);
             //TODO: transform component style
             $uibModal.open({
                 size: 'lg',
@@ -115,6 +115,7 @@
                     $scope.cancel = function() {$scope.$dismiss('canceled');};
                     $scope.forEvent = ctrl.forEvent;
                     $scope.event = ctrl.event;
+                    $scope.tmpTag = '';
                     var start = moment(promocode.formattedStart);
                     var end = moment(promocode.formattedEnd);
                     $scope.promoCodeDescription = ctrl.promoCodeDescription;
@@ -125,7 +126,8 @@
                         description: promocode.description,
                         emailReference: promocode.emailReference,
                         codeType: promocode.codeType,
-                        hiddenCategoryId: promocode.hiddenCategoryId
+                        hiddenCategoryId: promocode.hiddenCategoryId,
+                        alfioMetadata: promocode.alfioMetadata
                     };
                     $scope.validCategories = _.map(ctrl.event?.ticketCategories, function(c) {
                         var c1 = angular.copy(c, {});
@@ -147,6 +149,20 @@
                             $scope.promocode.categories.push(id);
                         }
                     }
+                    $scope.addTag = function(tag) {
+                        if (!tag || tag.trim() === '')
+                            return;
+                        var idx = $scope.promocode.alfioMetadata.tags.indexOf(tag.trim().toLowerCase());
+                        if (idx < 0)
+                            $scope.promocode.alfioMetadata.tags.push(tag.trim().toLowerCase());
+                        $scope.tmpTag = '';
+                    };
+                    $scope.removeTag = function(tag) {
+                        var idx =  $scope.promocode.alfioMetadata.tags.indexOf(tag);
+                        if (idx != -1) {
+                            $scope.promocode.alfioMetadata.tags.splice(idx,1);
+                        }
+                    };
                 }
             });
         }
@@ -188,6 +204,7 @@
                     $scope.event = event;
                     $scope.forEvent = forEvent;
                     $scope.promoCodeDescription = ctrl.promoCodeDescription;
+                    $scope.tmpTag = '';
 
                     var now = moment();
                     var eventBegin = forEvent ? moment(event.formattedBegin) : moment().add(1,'d').endOf('d');
@@ -214,7 +231,8 @@
                         end: {date: eventBegin.format('YYYY-MM-DD'), time: eventBegin.format('HH:mm')},
                         categories:[],
                         codeType: codeType,
-                        hiddenCategoryId: null
+                        hiddenCategoryId: null,
+                        alfioMetadata: { 'tags' : []}
                     };
 
                     $scope.addCategory = function addCategory(index, value) {
@@ -248,6 +266,21 @@
                                 $scope.$close(true);
                             });
                         }, errorHandler).then(loadData);
+                    };
+
+                    $scope.addTag = function(tag) {
+                        if (!tag || tag.trim() === '')
+                            return;
+                        var idx = $scope.promocode.alfioMetadata.tags.indexOf(tag.trim().toLowerCase());
+                        if (idx < 0)
+                            $scope.promocode.alfioMetadata.tags.push(tag.trim().toLowerCase());
+                        $scope.tmpTag = '';
+                    };
+                    $scope.removeTag = function(tag) {
+                        var idx =  $scope.promocode.alfioMetadata.tags.indexOf(tag);
+                        if (idx != -1) {
+                            $scope.promocode.alfioMetadata.tags.splice(idx,1);
+                        }
                     };
                 }
             });

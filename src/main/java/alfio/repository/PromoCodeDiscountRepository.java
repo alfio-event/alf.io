@@ -145,6 +145,17 @@ public interface PromoCodeDiscountRepository {
                              @Bind("emailReference") String emailReference,
                              @Bind("hiddenCategoryId") Integer hiddenCategoryId);
 
+    @Query("update promo_code set valid_from = :start, valid_to = :end, max_usage = :maxUsage, categories = :categories, description = :description, email_reference = :emailReference, hidden_category_id = :hiddenCategoryId, metadata = :metadata::jsonb where id = :id")
+    int updateEventPromoCodeWithMetadata(@Bind("id") int id,
+                             @Bind("start") ZonedDateTime start,
+                             @Bind("end") ZonedDateTime end,
+                             @Bind("maxUsage") Integer maxUsage,
+                             @Bind("categories") String categories,
+                             @Bind("description") String description,
+                             @Bind("emailReference") String emailReference,
+                             @Bind("hiddenCategoryId") Integer hiddenCategoryId,
+                             @Bind("metadata") @JSONData AlfioMetadata metadata);
+
     @Query("select id from promo_code where code_type = 'ACCESS' and id = :id for update")
     Integer lockAccessCodeForUpdate(@Bind("id") int id);
 }

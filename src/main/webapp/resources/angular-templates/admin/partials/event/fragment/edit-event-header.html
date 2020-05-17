@@ -10,7 +10,7 @@
                 <field-error data-form-obj="editEventHeader" data-min-char="1" data-field-obj="editEventHeader.displayName" data-show-existing-errors="showExistingErrors"></field-error>
             </div>
             <div class="form-group">
-                <label for="displayName">TAG (Event Type) <span class="tag-chip" data-ng-repeat="tag in obj.metadata.tags">{{tag}} <i style="cursor: pointer;" class="fa fa-times-circle" ng-click="removeTag(tag)"></i></span> </label>
+                <label for="tag">TAG (Event Type) <span class="tag-chip" data-ng-repeat="tag in obj.metadata.tags">{{tag}} <i style="cursor: pointer;" class="fa fa-times-circle" ng-click="removeTag(tag)"></i></span> </label>
                 <div class="input-group">
                     <input type="text" data-ng-model="obj.tag" name="tag" id="tag" class="form-control" data-ng-change="addTag(obj.tag)" data-ng-model-options="{ updateOn: 'blur', debounce: 500}"/>
                     <span class="input-group-btn">
