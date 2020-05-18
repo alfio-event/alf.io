@@ -67,8 +67,8 @@ public class OnlineCheckInController {
                             // we call the extension from here because it will have a smaller impact on the throughput compared to
                             // calling it from the checkInManager
                             var customUrlOptional = extensionManager.handleOnlineCheckInLink(match.get(), ticket, event);
-                            var queryString = checkInManager.getProxyRedirectParameter(event, ticket);
-                            return customUrlOptional.or(() -> match.map(link -> link + queryString));
+//                            var queryString = checkInManager.getProxyRedirectParameter(event, ticket);
+                            return customUrlOptional.or(() -> match);
                         }
                         log.info("denying check-in for ticket {} because check-in status was {}", ticketUUID, checkInStatus);
                         return Optional.of("/event/"+event.getShortName()+"/ticket/"+ticketUUID+"/update");
