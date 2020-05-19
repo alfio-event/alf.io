@@ -298,12 +298,7 @@
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tr>
                     <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">{{#i18n}}email.event.online.important-information{{/i18n}}</div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Source Sans Pro, Helvetica;font-size:14px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email.ticket.promocode.carnetcode{{/i18n}}</div>
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">{{#i18n}}email.ticket.promocode.carnetcode{{/i18n}}</div>
                     </td>
                   </tr>
                   <tr>
