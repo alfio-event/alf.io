@@ -58,11 +58,9 @@
 
 	    	<mj-column width="480px">
 	    		<mj-text font-size="20px" align="center" color="#212529">
-					{{#i18n}}email.event.online.important-information{{/i18n}}
+					{{#i18n}}email.ticket.promocode.carnetcode{{/i18n}}
 				</mj-text>
-				
-				<mj-text align="center" font-size="14px">{{#i18n}}email.ticket.promocode.carnetcode{{/i18n}}</mj-text>
-				
+                
 				<mj-text align="center" font-size="22px" background-color="#7C8B95">
                     {{promoCode}}
 			    </mj-text>
