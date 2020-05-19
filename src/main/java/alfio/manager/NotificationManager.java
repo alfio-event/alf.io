@@ -227,7 +227,7 @@ public class NotificationManager {
             var categoryMetadata = Optional.ofNullable(ticketCategoryRepository.getMetadata(event.getId(), ticketCategory.getId()).getRequirementsDescriptions()).flatMap(m -> Optional.ofNullable(m.get(locale.getLanguage())));
             if (alfioMetadata == null
                 || alfioMetadata.getAttributes() == null
-                || alfioMetadata.getAttributes().containsKey(Event.EventOccurrence.CARNET.toString())) {
+                || !alfioMetadata.getAttributes().containsKey(Event.EventOccurrence.CARNET.toString())) {
                 //attachment not needed for CARNET events
                 attachments.add(CustomMessageManager.generateCalendarAttachmentForOnlineEvent(ticket,
                     reservation, ticketCategory, organization, TicketReservationManager.ticketOnlineCheckInUrl(event, ticket, baseUrl),

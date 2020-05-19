@@ -63,7 +63,7 @@
 				
 				<mj-text align="center" font-size="14px">{{#i18n}}email.ticket.promocode.carnetcode{{/i18n}}</mj-text>
 				
-				<mj-text ont-size="22px" background-color="#7C8B95">
+				<mj-text align="center" font-size="22px" background-color="#7C8B95">
                     {{promoCode}}
 			    </mj-text>
 			    

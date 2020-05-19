@@ -108,7 +108,7 @@
 				</mj-text>
 				
 				<mj-text align="center" font-size="14px">{{#i18n}}email.event.online.check-in{{/i18n}}</mj-text>
-				
+				<mj-link align="center" href="{{onlineCheckInUrl}}" color="#7C8B95">{{onlineCheckInUrl}}</mj-link>
 				<mj-button background-color="#7C8B95" href="{{onlineCheckInUrl}}">
 			        {{#i18n}}email-ticket.online.join-event{{/i18n}}
 			    </mj-button>

@@ -307,8 +307,8 @@
                     </td>
                   </tr>
                   <tr>
-                    <td align="left" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Source Sans Pro, Helvetica;font-size:13px;line-height:1;text-align:left;color:#000000;">{{promoCode}}</div>
+                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:22px;line-height:1;text-align:center;color:#000000;">{{promoCode}}</div>
                     </td>
                   </tr>
                   <tr>
