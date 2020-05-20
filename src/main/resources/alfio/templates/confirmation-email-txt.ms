@@ -22,9 +22,9 @@
 {{custom-body-text}}
 #### {{#i18n}}email.event-info{{/i18n}} ####
 
-{{#i18n}}email.event-reminder-location{{/i18n}}
+{{#event.isOnline}}{{#i18n}}event.location.online{{/i18n}}{{/event.isOnline}}{{^event.isOnline}}{{#i18n}}email.event-reminder-location{{/i18n}}
 
- {{event.location}} 
+{{event.location}}{{/event.isOnline}}
 
 {{#i18n}}email.event-reminder-date{{/i18n}}
 
