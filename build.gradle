@@ -194,6 +194,7 @@ dependencies {
         exclude module : 'spring-boot-starter-logging'
     }
     compile "org.springframework.boot:spring-boot-starter-log4j2"
+    compile ("org.hibernate:hibernate-c3p0:5.2.12.Final")
     compile "org.springframework.boot:spring-boot-starter-jetty", {
         exclude group: "org.eclipse.jetty.websocket", module: "websocket-server"
         exclude group: "org.eclipse.jetty.websocket", module:"javax-websocket-server-impl"
