@@ -165,7 +165,8 @@ public class ExtensionManager {
         syncCall(ExtensionEvent.TICKET_CANCELLED, event, payload, Boolean.class);
     }
 
-    void handleOfflineReservationsWillExpire(Event event, List<TicketReservationInfo> reservations) {
+    void
+    handleOfflineReservationsWillExpire(Event event, List<TicketReservationInfo> reservations) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("reservations", reservations);
         asyncCall(ExtensionEvent.OFFLINE_RESERVATIONS_WILL_EXPIRE, event, payload);

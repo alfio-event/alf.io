@@ -131,4 +131,56 @@ public class PromoCodeDiscount {
         }
         return MonetaryUtil.formatCents(discount.getDiscountAmount(), eventCurrencyCode);
     }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getPromoCode() {
+        return promoCode;
+    }
+
+    public Integer getEventId() {
+        return eventId;
+    }
+
+    public Integer getOrganizationId() {
+        return organizationId;
+    }
+
+    public ZonedDateTime getUtcStart() {
+        return utcStart;
+    }
+
+    public ZonedDateTime getUtcEnd() {
+        return utcEnd;
+    }
+
+    public int getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public DiscountType getDiscountType() {
+        return discountType;
+    }
+
+    public Set<Integer> getCategories() {
+        return categories;
+    }
+
+    public Integer getMaxUsage() {
+        return maxUsage;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public CodeType getCodeType() {
+        return codeType;
+    }
+
+    public Integer getHiddenCategoryId() {
+        return hiddenCategoryId;
+    }
 }
