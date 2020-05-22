@@ -113,7 +113,7 @@
     <div class="navbar navbar-default navbar-fixed-top" role="navigation" data-ng-controller="MenuController as ctrl">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-xs-12 col-lg-11">
+                <div class= "col-xs-12 col-lg-12">
                     <div class="navbar-header">
                         <button type="button" class="navbar-toggle" data-ng-click="ctrl.toggleCollapse(ctrl.menuCollapsed)">
                             <span class="sr-only">Toggle navigation</span>
@@ -123,7 +123,7 @@
                         </button>
                         <a data-ui-sref="index" style="margin-right: 10px;"><img alt="Alf.io" src="{{request.contextPath}}/resources/images/alfio-logo.svg" width="100" height="50"></a>
                     </div>
-                    <div class="navbar-left">
+                    <div class="navbar-left ">
                         <div class="collapse navbar-collapse" data-uib-collapse="ctrl.menuCollapsed">
                             <ul class="nav navbar-nav">
                                 <li data-ui-sref-active="active"><a data-ui-sref="index" ng-click="ctrl.menuCollapsed = true">Dashboard</a></li>
@@ -190,7 +190,7 @@
                             </ul>
                         </div>
                     </div>
-                    <div class="navbar-right hidden-sm hidden-xs">
+                    <div class=" navbar-right hidden-sm hidden-xs">
                         <ul class="nav navbar-nav">
                             <li role="presentation" class="navbar-text"><i class="fa fa-user"></i> Logged in as {{username}}</li>
                             {{#isDBAuthentication}}
