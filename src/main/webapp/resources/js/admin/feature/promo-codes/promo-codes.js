@@ -125,6 +125,8 @@
                         description: promocode.description,
                         emailReference: promocode.emailReference,
                         codeType: promocode.codeType,
+                        discountType: promocode.discountType,
+                        discountAmount: promocode.discountAmount,
                         hiddenCategoryId: promocode.hiddenCategoryId
                     };
                     $scope.validCategories = _.map(ctrl.event.ticketCategories, function(c) {

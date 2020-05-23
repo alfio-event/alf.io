@@ -12,7 +12,6 @@
                 <span id="helpBlock" class="help-block">Allowed characters: Letters, numbers, and <code>-:_@!$*,;</code></span>
             </div>
 
-
             <div class="form-group" bs-form-error="promocode.dateString">
                 <label for="date">Validity range <span ng-if="!forEvent">(Note: these dates are in your current timezone)</span></label>
                 <div class="input-group">
@@ -26,7 +25,8 @@
 
             <div class="form-group" ng-if="promocode.codeType == 'DISCOUNT'">
                 <label class="control-label" for="discountType">Discount type</label>
-                <select class="form-control" id="discountType" ng-options="key as value for (key , value) in discountTypes" ng-model="promocode.discountType"></select>
+                <select class="form-control" id="discountType"
+                        ng-options="key as value for (key , value) in discountTypes" ng-model="promocode.discountType"></select>
             </div>
 
             <div class="form-group" bs-form-error="promocode.discountAmount" ng-if="promocode.codeType == 'DISCOUNT'">

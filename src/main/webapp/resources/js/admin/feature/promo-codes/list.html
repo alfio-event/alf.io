@@ -10,6 +10,8 @@
             <th width="10%" ng-if="!$ctrl.isAccess">Amount</th>
             <th ng-if="$ctrl.forEvent">Categories</th>
             <th width="12%">Description</th>
+            <th>Discount Type</th>
+            <th>Discount Amount</th>
             <th>Contact</th>
             <th>Actions</th>
         </tr>
@@ -32,6 +34,8 @@
                 <div class="text-muted" ng-if="promocode.codeType !== 'ACCESS' && (promocode.categories == null || promocode.categories.length == 0)">Apply to all</div>
             </td>
             <td ng-bind="promocode.description"></td>
+            <td>{{::promocode.discountType}}</td>
+            <td>{{::promocode.discountAmount}}</td>
             <td ng-bind="promocode.emailReference"></td>
             <td>
                 <button class="btn btn-xs btn-default" ng-click="$ctrl.changeDate(promocode)"><i class="fa fa-edit"></i> Edit Settings</button>
