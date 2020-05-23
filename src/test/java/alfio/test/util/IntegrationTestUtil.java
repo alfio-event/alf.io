@@ -116,7 +116,7 @@ public class IntegrationTestUtil {
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, additionalServices, AlfioMetadata.empty());
-        eventManager.createEvent(em);
+        eventManager.createEvent(em, username);
         Event event = eventManager.getSingleEvent(eventName, username);
         Assert.assertEquals(AVAILABLE_SEATS, eventRepository.countExistingTickets(event.getId()).intValue());
         return Pair.of(event, username);

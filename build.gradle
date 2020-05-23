@@ -149,6 +149,9 @@ dependencies {
     compile "com.stripe:stripe-java:15.4.0"
     implementation 'com.paypal.sdk:checkout-sdk:1.0.2'
     implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.fatboyindustrial.gson-javatime-serialisers:gson-javatime-serialisers:1.1.1', {
+        exclude module: 'gson'
+    }
     compile "org.apache.commons:commons-lang3:3.10"
     compile "org.apache.commons:commons-text:1.8"
     compile "com.opencsv:opencsv:5.1"

@@ -191,7 +191,7 @@ public class EventApiV1Controller {
     private Optional<Event> insertEvent(EventCreationRequest request, Principal user, String imageRef) {
         Organization organization = userManager.findUserOrganizations(user.getName()).get(0);
         EventModification em = request.toEventModification(organization,eventNameManager::generateShortName,imageRef);
-        eventManager.createEvent(em);
+        eventManager.createEvent(em, user.getName());
         Optional<Event> event = eventManager.getOptionalByName(em.getShortName(),user.getName());
 
         event.ifPresent(e -> {
