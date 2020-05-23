@@ -143,13 +143,6 @@ public enum TemplateResource {
         }
     },
 
-    ONLINE_CHECK_IN_DETAILS("/alfio/templates/online-check-in-instructions-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
-        @Override
-        public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
-            return Map.of("onlineCheckInUrl", "https://your-domain.tld/check-in", "prerequisites", "An internet connection is required to join the event");
-        }
-    },
-
     TICKET_HAS_CHANGED_OWNER("/alfio/templates/ticket-has-changed-owner-txt.ms", "text/plain", TemplateManager.TemplateOutput.TEXT) {
         @Override
         public Map<String, Object> prepareSampleModel(Organization organization, Event event, Optional<ImageData> imageData) {
