@@ -17,6 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.manager.EventManager;
+import alfio.manager.PromoCodeRequestManager;
 import alfio.model.PromoCodeDiscount;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.PromoCodeDiscountModification;
@@ -44,6 +45,7 @@ public class PromoCodeDiscountApiController {
     private final EventRepository eventRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final EventManager eventManager;
+    private final PromoCodeRequestManager promoCodeRequestManager;
 
     @PostMapping("/promo-code")
     public void addPromoCode(@RequestBody PromoCodeDiscountModification promoCode) {
@@ -101,6 +103,11 @@ public class PromoCodeDiscountApiController {
     @PostMapping("/promo-code/{promoCodeId}/disable")
     public void disablePromoCode(@PathVariable("promoCodeId") int promoCodeId) {
         promoCodeRepository.updateEventPromoCodeEnd(promoCodeId, ZonedDateTime.now(Clock.systemUTC()));
+    }
+
+    @PostMapping("/promo-code/{promoCodeId}/send-email")
+    public boolean sendEmailPromoCode(@PathVariable("promoCodeId") int promoCodeId) {
+        return promoCodeRequestManager.sendEMail(promoCodeId);
     }
     
     @GetMapping("/promo-code/{promoCodeId}/count-use")

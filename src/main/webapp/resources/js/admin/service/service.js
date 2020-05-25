@@ -732,7 +732,10 @@
                 update: function(promoCodeId, toUpdate) {
                     addUtfOffsetIfNecessary(toUpdate);
                     return $http.post('/admin/api/promo-code/' + promoCodeId, toUpdate);
-                }
+                },
+                sendEmail: function(promoCodeId) {
+                    return $http['post']('/admin/api/promo-code/' + promoCodeId + '/send-email');
+                },
         };
     });
 

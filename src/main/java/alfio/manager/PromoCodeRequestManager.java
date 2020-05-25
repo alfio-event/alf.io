@@ -54,6 +54,7 @@ public class PromoCodeRequestManager {
     private EventRepository eventRepository;
     private TicketReservationManager ticketReservationManager;
     private TicketRepository ticketRepository;
+    private NotificationManager notificationManager;
 
     enum PromoCodeType {
         SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
@@ -199,6 +200,15 @@ public class PromoCodeRequestManager {
                                                      Optional<String> promoCodeDiscount) {
         return reservation.validate(bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
             .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult));
+    }
+
+    public boolean sendEMail(int promoCodeId) {
+        var pCode = promoCodeRepository.findOptionalById(promoCodeId);
+        if (pCode.isEmpty() || pCode.get().getEmailReference().isEmpty()){
+            return false;
+        }
+        //TODO ADD-SEND EMAIL LOGIC
+        return true;
     }
 
 }

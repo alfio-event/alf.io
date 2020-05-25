@@ -22,6 +22,7 @@
                 promocodes: '<',
                 ticketCategoriesById: '<',
                 changeDate: '<',
+                sendEmail: '<',
                 disablePromocode: '<',
                 deletePromocode: '<',
                 isAccess: '<'
@@ -32,10 +33,10 @@
 
     function PromoCodeCtrl($window, $uibModal, $q, PromoCodeService, ConfigurationService) {
         var ctrl = this;
-
         ctrl.isInternal = isInternal;
         ctrl.deletePromocode = deletePromocode;
         ctrl.disablePromocode = disablePromocode;
+        ctrl.sendEmail = sendEmail;
         ctrl.changeDate = changeDate;
         ctrl.addPromoCode = addPromoCode;
 
@@ -99,9 +100,20 @@
         }
 
         function disablePromocode(promocode) {
+            console.log("Porca madonna", promocode);
             if($window.confirm('Disable ' +ctrl.promoCodeDescription+ ' code ' + promocode.promoCode + '?')) {
                 PromoCodeService.disable(promocode.id).then(loadData, errorHandler);
             }
+        }
+
+        function sendEmail(promocode) {
+            if($window.confirm('Send ' +promocode.promoCode+ ' code to ' + promocode.emailReference + '?')) {
+                PromoCodeService.sendEmail(promocode.id).then(loadData, errorHandler);
+            }
+        }
+
+        function emailSent(promocode){
+            console.log('Email sent ',promocode);
         }
 
         function changeDate(promocode) {
