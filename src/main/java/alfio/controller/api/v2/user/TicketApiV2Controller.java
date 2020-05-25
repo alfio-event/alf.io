@@ -30,14 +30,13 @@ import alfio.manager.NotificationManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.support.response.ValidatedResponse;
+import alfio.manager.user.OrganizationManager;
 import alfio.model.Event;
 import alfio.model.Ticket;
 import alfio.model.TicketCategory;
 import alfio.model.TicketReservation;
 import alfio.model.transaction.PaymentProxy;
 import alfio.model.user.Organization;
-import alfio.repository.TicketCategoryRepository;
-import alfio.repository.user.OrganizationRepository;
 import alfio.util.ImageUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
@@ -63,11 +62,10 @@ public class TicketApiV2Controller {
 
     private final TicketHelper ticketHelper;
     private final TicketReservationManager ticketReservationManager;
-    private final TicketCategoryRepository ticketCategoryRepository;
     private final MessageSourceManager messageSourceManager;
     private final ExtensionManager extensionManager;
     private final FileUploadManager fileUploadManager;
-    private final OrganizationRepository organizationRepository;
+    private final OrganizationManager organizationManager;
     private final TemplateManager templateManager;
     private final NotificationManager notificationManager;
     private final BookingInfoTicketLoader bookingInfoTicketLoader;
@@ -111,8 +109,8 @@ public class TicketApiV2Controller {
             response.setContentType("application/pdf");
             response.addHeader("Content-Disposition", "attachment; filename=ticket-" + ticketIdentifier + ".pdf");
             try (OutputStream os = response.getOutputStream()) {
-                TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
-                Organization organization = organizationRepository.getById(event.getOrganizationId());
+                TicketCategory ticketCategory = ticketReservationManager.getByIdAndActive(ticket.getCategoryId(), event.getId());
+                Organization organization = organizationManager.getById(event.getOrganizationId());
                 String reservationID = ticketReservationManager.getShortReservationID(event, ticketReservation);
                 TemplateProcessor.renderPDFTicket(LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(ticketReservation.getUserLanguage(), event)), event, ticketReservation,
                     ticket, ticketCategory, organization,
@@ -140,10 +138,10 @@ public class TicketApiV2Controller {
             Ticket ticket = data.getRight();
 
             Locale locale = LocaleUtil.getTicketLanguage(ticket, LocaleUtil.forLanguageTag(reservation.getUserLanguage(), event));
-            TicketCategory category = ticketCategoryRepository.getById(ticket.getCategoryId());
+            TicketCategory category = ticketReservationManager.getByCategoryId(ticket.getCategoryId());
             notificationManager.sendTicketByEmail(ticket,
                 event, locale, ticketHelper.getConfirmationTextBuilder(locale, event, reservation, ticket, category),
-                reservation, ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()));
+                reservation, ticketReservationManager.getByIdAndActive(ticket.getCategoryId(), event.getId()));
             return ResponseEntity.ok(true);
 
         }).orElseGet(() -> ResponseEntity.notFound().build());
@@ -170,7 +168,7 @@ public class TicketApiV2Controller {
                 var ticket = complete.getRight();
                 var event = complete.getLeft();
 
-                var categoryName = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId()).getName();
+                var categoryName = ticketReservationManager.getByIdAndActive(ticket.getCategoryId(), event.getId()).getName();
                 return new ReservationInfo.TicketsByTicketCategory(categoryName, List.of(bookingInfoTicketLoader.toBookingInfoTicket(ticket, event)));
             });
         return ResponseEntity.of(optionalTicket);
@@ -193,7 +191,7 @@ public class TicketApiV2Controller {
         Ticket ticket = data.getRight();
         Event event = data.getLeft();
 
-        TicketCategory ticketCategory = ticketCategoryRepository.getByIdAndActive(ticket.getCategoryId(), event.getId());
+        TicketCategory ticketCategory = ticketReservationManager.getByIdAndActive(ticket.getCategoryId(), event.getId());
 
         boolean deskPaymentRequired = Optional.ofNullable(ticketReservation.getPaymentMethod()).orElse(PaymentProxy.STRIPE).isDeskPaymentRequired();
 

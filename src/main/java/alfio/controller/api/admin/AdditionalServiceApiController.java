@@ -16,15 +16,14 @@
  */
 package alfio.controller.api.admin;
 
+import alfio.manager.AdditionalServiceManager;
+import alfio.manager.AdditionalServiceTextManager;
 import alfio.manager.EventManager;
 import alfio.model.AdditionalService;
 import alfio.model.Event;
 import alfio.model.PriceContainer;
 import alfio.model.modification.EventModification;
 import alfio.model.result.ValidationResult;
-import alfio.repository.AdditionalServiceRepository;
-import alfio.repository.AdditionalServiceTextRepository;
-import alfio.repository.EventRepository;
 import alfio.util.MonetaryUtil;
 import alfio.util.Validator;
 import lombok.RequiredArgsConstructor;
@@ -51,10 +50,9 @@ import java.util.stream.Stream;
 @Log4j2
 public class AdditionalServiceApiController {
 
-    private final EventRepository eventRepository;
-    private final AdditionalServiceRepository additionalServiceRepository;
-    private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final EventManager eventManager;
+    private final AdditionalServiceTextManager additionalServiceTextManager;
+    private final AdditionalServiceManager additionalServiceManager;
 
 
     @ExceptionHandler({IllegalArgumentException.class})
@@ -71,11 +69,12 @@ public class AdditionalServiceApiController {
 
     @GetMapping("/event/{eventId}/additional-services")
     public List<EventModification.AdditionalService> loadAll(@PathVariable("eventId") int eventId) {
-        return eventRepository.findOptionalById(eventId)
-            .map(event -> additionalServiceRepository.loadAllForEvent(eventId)
+        return eventManager.getOptionalById(eventId)
+            .map(event -> additionalServiceManager.getLoadAllForEvent(eventId)
+
                             .stream()
                             .map(as -> EventModification.AdditionalService.from(as)//.withAdditionalFields() TODO to be implemented
-                                            .withText(additionalServiceTextRepository.findAllByAdditionalServiceId(as.getId()))
+                                            .withText(additionalServiceTextManager.getAllByAdditionalServiceId(as.getId()))
                                             .withZoneId(event.getZoneId())
                                             .withPriceContainer(buildPriceContainer(event, as)).build())
                             .collect(Collectors.toList()))
@@ -84,7 +83,7 @@ public class AdditionalServiceApiController {
 
     @GetMapping("/event/{eventId}/additional-services/count")
     public Map<Integer, Integer> countUse(@PathVariable("eventId") int eventId) {
-        return additionalServiceRepository.getCount(eventId);
+        return additionalServiceManager.getCount(eventId);
     }
 
     @PutMapping("/event/{eventId}/additional-services/{additionalServiceId}")
@@ -93,18 +92,18 @@ public class AdditionalServiceApiController {
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
         Validate.isTrue(additionalServiceId == additionalService.getId(), "wrong input");
-        return eventRepository.findOptionalById(eventId)
+        return eventManager.getOptionalById(eventId)
             .map(event -> {
-                int result = additionalServiceRepository.update(additionalServiceId, additionalService.isFixPrice(),
+                int result = additionalServiceManager.getUpdate(additionalServiceId, additionalService.isFixPrice(),
                     additionalService.getOrdinal(), additionalService.getAvailableQuantity(), additionalService.getMaxQtyPerOrder(), additionalService.getInception().toZonedDateTime(event.getZoneId()),
                     additionalService.getExpiration().toZonedDateTime(event.getZoneId()), additionalService.getVat(), additionalService.getVatType(), Optional.ofNullable(additionalService.getPrice()).map(p -> MonetaryUtil.unitToCents(p, event.getCurrency())).orElse(0));
                 Validate.isTrue(result <= 1, "too many records updated");
                 Stream.concat(additionalService.getTitle().stream(), additionalService.getDescription().stream()).
                     forEach(t -> {
                         if(t.getId() != null) {
-                            additionalServiceTextRepository.update(t.getId(), t.getLocale(), t.getType(), t.getValue());
+                            additionalServiceTextManager.getUpdate(t.getId(), t.getLocale(), t.getType(), t.getValue());
                         } else {
-                            additionalServiceTextRepository.insert(additionalService.getId(), t.getLocale(), t.getType(), t.getValue());
+                            additionalServiceTextManager.getInsert(additionalService.getId(), t.getLocale(), t.getType(), t.getValue());
                         }
                     });
                 return ResponseEntity.ok(additionalService);
@@ -116,7 +115,7 @@ public class AdditionalServiceApiController {
     public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable("eventId") int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
-        return eventRepository.findOptionalById(eventId)
+        return eventManager.getOptionalById(eventId)
             .map(event -> ResponseEntity.ok(eventManager.insertAdditionalService(event, additionalService)))
             .orElseThrow(IllegalArgumentException::new);
     }
@@ -124,14 +123,14 @@ public class AdditionalServiceApiController {
     @DeleteMapping("/event/{eventId}/additional-services/{additionalServiceId}")
     @Transactional
     public ResponseEntity<String> remove(@PathVariable("eventId") int eventId, @PathVariable("additionalServiceId") int additionalServiceId, Principal principal) {
-        return eventRepository.findOptionalById(eventId)
-            .map(event -> additionalServiceRepository.getOptionalById(additionalServiceId, eventId)
+        return eventManager.getOptionalById(eventId)
+            .map(event -> additionalServiceManager.getOptionalById(additionalServiceId, eventId)
                 .map(as -> {
                     log.debug("{} is deleting additional service #{}", principal.getName(), additionalServiceId);
-                    int deletedTexts = additionalServiceTextRepository.deleteAdditionalServiceTexts(additionalServiceId);
+                    int deletedTexts = additionalServiceTextManager.getDeleteAdditionalServiceTexts(additionalServiceId);
                     log.debug("deleted {} texts", deletedTexts);
                     //TODO add configuration fields and values
-                    additionalServiceRepository.delete(additionalServiceId, eventId);
+                    additionalServiceManager.getDelete(additionalServiceId, eventId);
                     log.debug("additional service #{} successfully deleted", additionalServiceId);
                     return ResponseEntity.ok("OK");
                 })

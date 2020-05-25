@@ -33,10 +33,6 @@ import alfio.model.transaction.Transaction;
 import alfio.model.user.Organization;
 import alfio.model.user.Role;
 import alfio.model.user.User;
-import alfio.repository.DynamicFieldTemplateRepository;
-import alfio.repository.EventDescriptionRepository;
-import alfio.repository.SponsorScanRepository;
-import alfio.repository.TicketFieldRepository;
 import alfio.util.*;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
@@ -96,12 +92,10 @@ public class EventApiController {
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
     private final TicketReservationManager ticketReservationManager;
-    private final TicketFieldRepository ticketFieldRepository;
-    private final EventDescriptionRepository eventDescriptionRepository;
     private final TicketHelper ticketHelper;
-    private final DynamicFieldTemplateRepository dynamicFieldTemplateRepository;
+    private final DynamicFieldTemplateManager dynamicFieldTemplateManager;
     private final UserManager userManager;
-    private final SponsorScanRepository sponsorScanRepository;
+    private final SponserScanManager sponserScanManager;
     private final PaymentManager paymentManager;
     private final TemplateManager templateManager;
     private final FileUploadManager fileUploadManager;
@@ -140,7 +134,7 @@ public class EventApiController {
         return eventManager.getActiveEvents().stream()
             .filter(e -> userOrganizations.contains(e.getOrganizationId()))
             .sorted(Comparator.comparing(e -> e.getBegin().withZoneSameInstant(ZoneId.systemDefault())))
-            .map(s -> new EventListItem(s, request.getContextPath(), eventDescriptionRepository.findByEventId(s.getId())))
+            .map(s -> new EventListItem(s, request.getContextPath(), eventManager.getFindByEventId(s.getId())))
             .collect(toList());
     }
 
@@ -381,7 +375,7 @@ public class EventApiController {
             }
 
             //obviously not optimized
-            Map<String, String> additionalValues = ticketFieldRepository.findAllValuesForTicketId(t.getId());
+            Map<String, String> additionalValues = ticketReservationManager.getFindAllValuesForTicketId(t.getId());
 
             Predicate<String> contains = FIXED_FIELDS::contains;
 
@@ -397,8 +391,7 @@ public class EventApiController {
     @GetMapping("/events/{eventName}/sponsor-scan/export")
     public void downloadSponsorScanExport(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
         var event = eventManager.getSingleEvent(eventName, principal.getName());
-        List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
-
+        List<TicketFieldConfiguration> fields = ticketReservationManager.getFindAdditionalFieldsForEvent(event.getId());
         List<String> header = new ArrayList<>();
         header.add("Username/Api Key");
         header.add("Description");
@@ -412,9 +405,9 @@ public class EventApiController {
         Stream<String[]> sponsorScans = userManager.findAllEnabledUsers(principal.getName()).stream()
             .map(u -> Pair.of(u, userManager.getUserRole(u)))
             .filter(p -> p.getRight() == Role.SPONSOR)
-            .flatMap(p -> sponsorScanRepository.loadSponsorData(event.getId(), p.getKey().getId(), SponsorScanRepository.DEFAULT_TIMESTAMP)
+            .flatMap(p -> sponserScanManager.getAllLoadSponsorData(event.getId(), p.getKey().getId(), sponserScanManager.getDEFAULT_TIMESTAMP())
                 .stream()
-                .map(v -> Pair.of(v, ticketFieldRepository.findAllValuesForTicketId(v.getTicket().getId()))))
+                .map(v -> Pair.of(v, ticketReservationManager.getFindAllValuesForTicketId(v.getTicket().getId()))))
             .map(p -> {
                 DetailedScanData data = p.getLeft();
                 Map<String, String> descriptions = p.getRight();
@@ -464,29 +457,29 @@ public class EventApiController {
         if(configurationManager.isItalianEInvoicingEnabled(eventAndOrganizationId)) {
             fields.addAll(ITALIAN_E_INVOICING_FIELDS.stream().map(f -> SerializablePair.of(f, f)).collect(toList()));
         }
-        fields.addAll(ticketFieldRepository.findFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).collect(toList()));
+        fields.addAll(ticketReservationManager.getFindFieldsForEvent(eventName).stream().map(f -> SerializablePair.of(CUSTOM_FIELDS_PREFIX + f, f)).collect(toList()));
         return fields;
     }
 
     @GetMapping("/events/{eventName}/additional-field")
     public List<TicketFieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("eventName") String eventName) {
-        final Map<Integer, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
-        return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
+        final Map<Integer, List<TicketFieldDescription>> descById = ticketReservationManager.getFindDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
+        return ticketReservationManager.getFindAdditionalFieldsForEvent(eventName).stream()
             .map(field -> new TicketFieldConfigurationAndAllDescriptions(field, descById.getOrDefault(field.getId(), Collections.emptyList())))
             .collect(toList());
     }
 
     @GetMapping("/events/{eventName}/additional-field/{id}/stats")
     public List<RestrictedValueStats> getStats(@PathVariable("eventName") String eventName, @PathVariable("id") Integer id, Principal principal) {
-        if(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName()).filter(event -> ticketFieldRepository.findById(id).getEventId() == event.getId()).isEmpty()) {
+        if(eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName()).filter(event -> ticketReservationManager.getFindById(id).getEventId() == event.getId()).isEmpty()) {
             return Collections.emptyList();
         }
-        return ticketFieldRepository.retrieveStats(id);
+        return ticketReservationManager.getRetrieveStats(id);
     }
 
     @GetMapping("/event/additional-field/templates")
     public List<DynamicFieldTemplate> loadTemplates() {
-        return dynamicFieldTemplateRepository.loadAll();
+        return dynamicFieldTemplateManager.getAll();
     }
 
     @PostMapping("/events/{eventName}/additional-field/descriptions")
@@ -497,7 +490,7 @@ public class EventApiController {
     @PostMapping("/events/{eventName}/additional-field/new")
     public ValidationResult addAdditionalField(@PathVariable("eventName") String eventName, @RequestBody EventModification.AdditionalField field, Principal principal, Errors errors) {
         EventAndOrganizationId event = eventManager.getEventAndOrganizationId(eventName, principal.getName());
-        List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        List<TicketFieldConfiguration> fields = ticketReservationManager.getFindAdditionalFieldsForEvent(event.getId());
         return validateAdditionalFields(fields, field, errors).ifSuccess(() -> eventManager.addAdditionalField(event, field));
     }
     

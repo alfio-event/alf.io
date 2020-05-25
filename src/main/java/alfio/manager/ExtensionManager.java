@@ -31,9 +31,11 @@ import alfio.model.extension.PdfGenerationResult;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.system.ConfigurationKeys;
 import alfio.repository.EventRepository;
+import alfio.repository.ExtensionRepository;
 import alfio.repository.TicketReservationRepository;
 import alfio.repository.TransactionRepository;
 import alfio.util.MonetaryUtil;
+import ch.digitalfondue.npjt.Bind;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -64,6 +66,7 @@ public class ExtensionManager {
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ConfigurationManager configurationManager;
     private final TransactionRepository transactionRepository;
+    private final ExtensionRepository extensionRepository;
 
 
     public enum ExtensionEvent {
@@ -374,5 +377,10 @@ public class ExtensionManager {
     public static String toPath(int organizationId, int eventId) {
         return "-" + organizationId + "-" + eventId;
     }
+
+    public List<ExtensionSupport.ExtensionMetadata> getFindAllParametersForExtension(int extensionId){
+        return extensionRepository.findAllParametersForExtension(extensionId);
+    }
+
 
 }

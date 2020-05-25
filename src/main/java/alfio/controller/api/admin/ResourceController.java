@@ -37,6 +37,7 @@ import alfio.manager.ExtensionManager;
 import alfio.manager.FileUploadManager;
 import alfio.manager.UploadedResourceManager;
 import alfio.manager.i18n.MessageSourceManager;
+import alfio.manager.user.OrganizationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.ContentLanguage;
 import alfio.model.Event;
@@ -45,7 +46,6 @@ import alfio.model.UploadedResource;
 import alfio.model.modification.UploadBase64FileModification;
 import alfio.model.user.Organization;
 import alfio.repository.EventRepository;
-import alfio.repository.user.OrganizationRepository;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
 import alfio.util.TemplateResource;
@@ -89,7 +89,7 @@ public class ResourceController {
     private final EventRepository eventRepository;
     private final MessageSourceManager messageSourceManager;
     private final TemplateManager templateManager;
-    private final OrganizationRepository organizationRepository;
+    private final OrganizationManager organizationManager;
     private final FileUploadManager fileUploadManager;
     private final ExtensionManager extensionManager;
 
@@ -147,7 +147,8 @@ public class ResourceController {
                     ContentLanguage.ALL_LANGUAGES_IDENTIFIER, 0, PriceContainer.VatStatus.NONE, "1", Event.Status.PUBLIC);
             }
 
-            Organization organization = organizationRepository.getById(organizationId);
+            Organization organization = organizationManager.getById(organizationId);
+
             Optional<TemplateResource.ImageData> image = TemplateProcessor.extractImageModel(event, fileUploadManager);
             Map<String, Object> model = name.prepareSampleModel(organization, event, image);
             String renderedTemplate = templateManager.renderString(event, template.getFileAsString(), model, loc, name.getTemplateOutput());

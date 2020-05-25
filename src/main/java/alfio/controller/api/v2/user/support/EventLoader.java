@@ -20,14 +20,16 @@ import alfio.controller.api.v2.model.AnalyticsConfiguration;
 import alfio.controller.api.v2.model.EventWithAdditionalInfo;
 import alfio.controller.support.Formatters;
 import alfio.manager.EuVatChecker;
+import alfio.manager.EventManager;
+import alfio.manager.PromoCodeRequestManager;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.user.OrganizationManager;
 import alfio.model.Event;
 import alfio.model.modification.support.LocationDescriptor;
 import alfio.model.system.ConfigurationKeys;
-import alfio.repository.*;
-import alfio.repository.user.OrganizationRepository;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.Validate;
 import org.springframework.stereotype.Component;
@@ -41,26 +43,24 @@ import static alfio.model.system.ConfigurationKeys.*;
 @AllArgsConstructor
 public class EventLoader {
 
-    private final EventRepository eventRepository;
+    private final EventManager eventManager;
     private final MessageSourceManager messageSourceManager;
-    private final EventDescriptionRepository eventDescriptionRepository;
-    private final OrganizationRepository organizationRepository;
+    private final OrganizationManager organizationManager;
     private final ConfigurationManager configurationManager;
-    private final TicketCategoryRepository ticketCategoryRepository;
-    private final TicketRepository ticketRepository;
-    private final PromoCodeDiscountRepository promoCodeRepository;
+    private final TicketReservationManager ticketReservationManager;
+    private final PromoCodeRequestManager promoCodeRequestManager;
 
     public Optional<EventWithAdditionalInfo> loadEventInfo(String eventName, HttpSession session) {
-        return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
+        return eventManager.getOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED)//
             .map(event -> {
                 //
                 var messageSourceAndOverride = messageSourceManager.getMessageSourceForEventAndOverride(event);
                 var messageSource = messageSourceAndOverride.getLeft();
                 var i18nOverride = messageSourceAndOverride.getRight();
 
-                var descriptions = Formatters.applyCommonMark(eventDescriptionRepository.findDescriptionByEventIdAsMap(event.getId()));
+                var descriptions = Formatters.applyCommonMark(eventManager.getDescriptionByEventIdAsMap(event.getId()));
 
-                var organization = organizationRepository.getContactById(event.getOrganizationId());
+                var organization = organizationManager.getContactById(event.getOrganizationId());
 
                 var configurationsValues = configurationManager.getFor(List.of(
                     MAPS_PROVIDER,
@@ -139,8 +139,8 @@ public class EventLoader {
 
                 //promotion codes
                 boolean hasAccessPromotions = configurationsValues.get(DISPLAY_DISCOUNT_CODE_BOX).getValueAsBooleanOrDefault(true) &&
-                    (ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
-                        promoCodeRepository.countByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
+                    (ticketReservationManager.getCountAccessRestrictedRepositoryByEventId(event.getId()) > 0 ||
+                        promoCodeRequestManager.getCountByEventAndOrganizationId(event.getId(), event.getOrganizationId()) > 0);
                 boolean usePartnerCode = configurationsValues.get(USE_PARTNER_CODE_INSTEAD_OF_PROMOTIONAL).getValueAsBooleanOrDefault(false);
                 var promoConf = new EventWithAdditionalInfo.PromotionsConfiguration(hasAccessPromotions, usePartnerCode);
                 //
@@ -151,7 +151,7 @@ public class EventLoader {
 
                 Integer availableTicketsCount = null;
                 if (configurationsValues.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault(false)) {
-                    availableTicketsCount = ticketRepository.countFreeTicketsForPublicStatistics(event.getId());
+                    availableTicketsCount = ticketReservationManager.getCountFreeTicketsForPublicStatistics(event.getId());
                 }
 
                 return new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,

@@ -19,13 +19,16 @@ package alfio.manager.support;
 import alfio.model.TicketFieldValueForAdditionalService;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Getter
+@Transactional
 @RequiredArgsConstructor
 public class AdditionalServiceInfo {
     private final String name;
     private final int count;
     private final List<TicketFieldValueForAdditionalService> fields;
+
 }

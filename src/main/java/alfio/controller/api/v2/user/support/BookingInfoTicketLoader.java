@@ -19,6 +19,7 @@ package alfio.controller.api.v2.user.support;
 import alfio.controller.api.support.TicketHelper;
 import alfio.controller.api.v2.model.ReservationInfo;
 import alfio.controller.support.Formatters;
+import alfio.manager.AdditionalServiceItemManager;
 import alfio.manager.EventManager;
 import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.MessageSourceManager;
@@ -26,7 +27,6 @@ import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.model.*;
 import alfio.repository.AdditionalServiceItemRepository;
-import alfio.repository.TicketFieldRepository;
 import alfio.util.EventUtil;
 import alfio.util.Validator;
 import lombok.AllArgsConstructor;
@@ -45,19 +45,18 @@ public class BookingInfoTicketLoader {
 
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
-    private final TicketFieldRepository ticketFieldRepository;
     private final TicketHelper ticketHelper;
-    private final AdditionalServiceItemRepository additionalServiceItemRepository;
+    private final AdditionalServiceItemManager additionalServiceItemManager;
     private final TicketReservationManager ticketReservationManager;
     private final MessageSourceManager messageSourceManager;
 
 
     public ReservationInfo.BookingInfoTicket toBookingInfoTicket(Ticket ticket, Event event) {
-        var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
+        var descriptionsByTicketFieldId = ticketReservationManager.getFindDescriptions(event.getShortName())
             .stream()
             .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
 
-        var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(List.of(ticket.getId()))
+        var valuesByTicketIds = ticketReservationManager.getAllValuesByTicketIds(List.of(ticket.getId()))
             .stream()
             .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
 
@@ -108,9 +107,9 @@ public class BookingInfoTicketLoader {
     }
 
     public Validator.TicketFieldsFilterer getTicketFieldsFilterer(String reservationId, EventAndOrganizationId event) {
-        var fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        var fields = ticketReservationManager.getFindAdditionalFieldsForEvent(event.getId());
         return new Validator.TicketFieldsFilterer(fields, ticketHelper.getTicketUUIDToCategoryId(),
-            new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(reservationId)),
+            new HashSet<>(additionalServiceItemManager.getFindAdditionalServiceIdsByReservationUuid(reservationId)),
             ticketReservationManager.findFirstInReservation(reservationId));
     }
 

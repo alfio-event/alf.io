@@ -42,6 +42,7 @@ import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MonetaryUtil;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
+import ch.digitalfondue.npjt.Bind;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
@@ -125,6 +126,10 @@ public class EventManager {
     public Optional<Event> getOptionalByName(String eventName, String username) {
         return eventRepository.findOptionalByShortName(eventName)
             .filter(checkOwnership(username, organizationRepository));
+    }
+
+    public Optional<Event> getOptionalById(int eventId) {
+        return eventRepository.findOptionalById(eventId);
     }
 
     public Optional<EventAndOrganizationId> getOptionalEventAndOrganizationIdByName(String eventName, String username) {
@@ -1086,4 +1091,41 @@ public class EventManager {
     public AlfioMetadata getMetadataForCategory(EventAndOrganizationId event, int categoryId) {
         return ticketCategoryRepository.getMetadata(event.getId(), categoryId);
     }
+
+    public List<EventDescription> getFindByEventId(int eventId){
+        return eventDescriptionRepository.findByEventId(eventId);
+    }
+
+    public Optional<EventAndOrganizationId> getFindOptionalEventAndOrganizationIdByShortName(String eventName){
+        return eventRepository.findOptionalEventAndOrganizationIdByShortName(eventName);
+    }
+
+    public String getEventCurrencyCode(int eventId){
+        return eventRepository.getEventCurrencyCode(eventId);
+    }
+
+    public ZoneId getZoneIdByEventId(int eventId){
+        return eventRepository.getZoneIdByEventId(eventId);
+    }
+
+    public Optional<Event> getOptionalByShortName(String eventName){
+        return eventRepository.findOptionalByShortName(eventName);
+    }
+
+    public Map<String, String> getDescriptionByEventIdAsMap(int eventId){
+        return eventDescriptionRepository.findDescriptionByEventIdAsMap(eventId);
+    }
+
+    public Optional<String> getDescriptionByEventIdTypeAndLocale(int eventId,EventDescription.EventDescriptionType type,String locale){
+        return eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(eventId,type,locale);
+    }
+
+    public boolean getExistsByShortName(String eventName){
+        return eventRepository.existsByShortName(eventName);
+    }
+
+    public Event getByShortName( String eventName){
+        return eventRepository.findByShortName(eventName);
+    }
+
 }

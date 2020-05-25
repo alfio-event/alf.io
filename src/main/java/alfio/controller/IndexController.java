@@ -19,9 +19,13 @@ package alfio.controller;
 import alfio.config.Initializer;
 import alfio.config.WebSecurityConfig;
 import alfio.controller.api.v2.user.support.EventLoader;
+import alfio.manager.EventManager;
+import alfio.manager.FileUploadManager;
+import alfio.manager.TicketReservationManager;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.user.OrganizationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.ContentLanguage;
 import alfio.model.EventDescription;
@@ -29,11 +33,6 @@ import alfio.model.FileBlobMetadata;
 import alfio.model.TicketReservationStatusAndValidation;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.Role;
-import alfio.repository.EventDescriptionRepository;
-import alfio.repository.EventRepository;
-import alfio.repository.FileUploadRepository;
-import alfio.repository.TicketReservationRepository;
-import alfio.repository.user.OrganizationRepository;
 import alfio.util.Json;
 import alfio.util.MustacheCustomTag;
 import alfio.util.RequestUtils;
@@ -98,15 +97,14 @@ public class IndexController {
     }
 
     private final ConfigurationManager configurationManager;
-    private final EventRepository eventRepository;
+    private final EventManager eventManager;
     private final Environment environment;
     private final UserManager userManager;
     private final TemplateManager templateManager;
-    private final FileUploadRepository fileUploadRepository;
+    private final FileUploadManager fileUploadManager;
     private final MessageSourceManager messageSourceManager;
-    private final EventDescriptionRepository eventDescriptionRepository;
-    private final OrganizationRepository organizationRepository;
-    private final TicketReservationRepository ticketReservationRepository;
+    private final OrganizationManager organizationManager;
+    private final TicketReservationManager ticketReservationManager;
     private final EventLoader eventLoader;
 
 
@@ -166,7 +164,7 @@ public class IndexController {
         response.setCharacterEncoding(UTF_8);
         var nonce = addCspHeader(response);
 
-        if (eventShortName != null && RequestUtils.isSocialMediaShareUA(userAgent) && eventRepository.existsByShortName(eventShortName)) {
+        if (eventShortName != null && RequestUtils.isSocialMediaShareUA(userAgent) && eventManager.getExistsByShortName(eventShortName)) {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
                 var res = getOpenGraphPage((Document) OPEN_GRAPH_PAGE.cloneNode(true), eventShortName, request, lang);
                 JFiveParse.serialize(res, osw);
@@ -190,8 +188,8 @@ public class IndexController {
 
     @GetMapping("/event/{eventShortName}/reservation/{reservationId}")
     public String redirectToReservation(@PathVariable(value = "eventShortName") String eventShortName, @PathVariable(value = "reservationId") String reservationId) {
-        if (eventRepository.existsByShortName(eventShortName)) {
-            var reservationStatusUrlSegment = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
+        if (eventManager.getExistsByShortName(eventShortName)) {
+            var reservationStatusUrlSegment = ticketReservationManager.getOptionalStatusAndValidationById(reservationId)
                 .map(IndexController::reservationStatusToUrlMapping).orElse("not-found");
 
             return "redirect:" + UriComponentsBuilder.fromPath("/event/{eventShortName}/reservation/{reservationId}/{status}")
@@ -230,7 +228,7 @@ public class IndexController {
     // see https://github.com/alfio-event/alf.io/issues/708
     // use ngrok to test the preview
     private Document getOpenGraphPage(Document eventOpenGraph, String eventShortName, ServletWebRequest request, String lang) {
-        var event = eventRepository.findByShortName(eventShortName);
+        var event = eventManager.getByShortName(eventShortName);
         var locale = RequestUtils.getMatchingLocale(request, event);
         if (lang != null && event.getContentLanguages().stream().map(ContentLanguage::getLanguage).anyMatch(lang::equalsIgnoreCase)) {
             locale = Locale.forLanguageTag(lang);
@@ -253,16 +251,16 @@ public class IndexController {
         getMetaElement(eventOpenGraph, "property", "og:title").setAttribute("content", title);
         getMetaElement(eventOpenGraph, "property","og:image").setAttribute("content", baseUrl + "/file/" + event.getFileBlobId());
 
-        var eventDesc = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.toLanguageTag()).orElse("").trim();
+        var eventDesc = eventManager.getDescriptionByEventIdTypeAndLocale(event.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale.toLanguageTag()).orElse("").trim();
         var firstLine = Pattern.compile("\n").splitAsStream(MustacheCustomTag.renderToTextCommonmark(eventDesc)).findFirst().orElse("");
         getMetaElement(eventOpenGraph, "property","og:description").setAttribute("content", firstLine);
 
 
-        var org = organizationRepository.getById(event.getOrganizationId());
+        var org = organizationManager.getById(event.getOrganizationId());
         var author = String.format("%s <%s>", org.getName(), org.getEmail());
         getMetaElement(eventOpenGraph, "name", "author").setAttribute("content", author);
 
-        fileUploadRepository.findById(event.getFileBlobId()).ifPresent(metadata -> {
+        fileUploadManager.findMetadata(event.getFileBlobId()).ifPresent(metadata -> {
             var attributes = metadata.getAttributes();
             if (attributes.containsKey(FileBlobMetadata.ATTR_IMG_HEIGHT) && attributes.containsKey(FileBlobMetadata.ATTR_IMG_WIDTH)) {
                 head.appendChild(buildMetaTag("og:image:width", attributes.get(FileBlobMetadata.ATTR_IMG_WIDTH)));

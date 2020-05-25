@@ -29,7 +29,6 @@ import alfio.model.result.ErrorCode;
 import alfio.model.result.Result;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
-import alfio.repository.ExtensionRepository;
 import alfio.util.Json;
 import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -68,7 +67,7 @@ public class EventApiV1Controller {
     private final EventStatisticsManager eventStatisticsManager;
     private final GroupManager groupManager;
     private final ExtensionService extensionService;
-    private final ExtensionRepository extensionRepository;
+    private final ExtensionManager extensionManager;
 
     @PostMapping("/create")
     @Transactional
@@ -240,7 +239,7 @@ public class EventApiV1Controller {
                     .collect(Collectors.groupingBy(EventCreationRequest.ExtensionSetting::getExtensionId))
                     .forEach((id,settings) -> {
                         List<ExtensionSupport.ExtensionMetadata> metadata = extensionService.getSingle(organization, e, id)
-                            .map(es -> extensionRepository.findAllParametersForExtension(es.getId()))
+                            .map(es ->extensionManager.getFindAllParametersForExtension(es.getId()))
                             .orElseGet(Collections::emptyList);
 
                         List<ExtensionMetadataValue> values = settings.stream()

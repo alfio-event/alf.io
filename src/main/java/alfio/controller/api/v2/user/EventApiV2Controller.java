@@ -72,20 +72,14 @@ import static java.util.stream.Collectors.*;
 public class EventApiV2Controller {
 
     private final EventManager eventManager;
-    private final EventRepository eventRepository;
     private final ConfigurationManager configurationManager;
-    private final EventDescriptionRepository eventDescriptionRepository;
-    private final TicketCategoryDescriptionRepository ticketCategoryDescriptionRepository;
     private final PaymentManager paymentManager;
     private final MessageSourceManager messageSourceManager;
-    private final AdditionalServiceRepository additionalServiceRepository;
-    private final AdditionalServiceTextRepository additionalServiceTextRepository;
+    private final AdditionalServiceManager additionalServiceManager;
+    private final AdditionalServiceTextManager additionalServiceTextManager;
     private final WaitingQueueManager waitingQueueManager;
     private final I18nManager i18nManager;
-    private final TicketCategoryRepository ticketCategoryRepository;
-    private final TicketRepository ticketRepository;
     private final TicketReservationManager ticketReservationManager;
-    private final PromoCodeDiscountRepository promoCodeRepository;
     private final EventStatisticsManager eventStatisticsManager;
     private final RecaptchaService recaptchaService;
     private final PromoCodeRequestManager promoCodeRequestManager;
@@ -122,7 +116,7 @@ public class EventApiV2Controller {
                                                                              @RequestBody WaitingQueueSubscriptionForm subscription,
                                                                              BindingResult bindingResult) {
 
-        Optional<ResponseEntity<ValidatedResponse<Boolean>>> res = eventRepository.findOptionalByShortName(eventName).map(event -> {
+        Optional<ResponseEntity<ValidatedResponse<Boolean>>> res = eventManager.getOptionalByShortName(eventName).map(event -> {
             Validator.validateWaitingQueueSubscription(subscription, bindingResult, event);
             if (bindingResult.hasErrors()) {
                 return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ValidatedResponse.toResponse(bindingResult, null));
@@ -139,7 +133,7 @@ public class EventApiV2Controller {
     public ResponseEntity<ItemsByCategory> getTicketCategories(@PathVariable("eventName") String eventName, @RequestParam(value = "code", required = false) String code) {
 
         //
-        return eventRepository.findOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
+        return eventManager.getOptionalByShortName(eventName).filter(e -> e.getStatus() != Event.Status.DISABLED).map(event -> {
 
             var configurations = configurationManager.getFor(List.of(DISPLAY_TICKETS_LEFT_INDICATOR, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION, DISPLAY_EXPIRED_CATEGORIES), ConfigurationLevel.event(event));
             var ticketCategoryLevelConfiguration = configurationManager.getAllCategoriesAndValueWith(event, MAX_AMOUNT_OF_TICKETS_BY_RESERVATION);
@@ -152,7 +146,7 @@ public class EventApiV2Controller {
 
             final ZonedDateTime now = ZonedDateTime.now(event.getZoneId());
             //hide access restricted ticket categories
-            var ticketCategories = ticketCategoryRepository.findAllTicketCategories(event.getId());
+            var ticketCategories = ticketReservationManager.getAllTicketCategories(event.getId());
 
             List<SaleableTicketCategory> saleableTicketCategories = ticketCategories.stream()
                 .filter((c) -> !c.isAccessRestricted() || shouldDisplayRestrictedCategory(specialCode, c, promoCodeDiscount))
@@ -162,7 +156,7 @@ public class EventApiV2Controller {
                     if (specialCode.isPresent()) {
                         maxTickets = Math.min(1, maxTickets);
                     } else if (filteredPromoCode != null && filteredPromoCode.getMaxUsage() != null) {
-                        maxTickets = filteredPromoCode.getMaxUsage() - promoCodeRepository.countConfirmedPromoCode(filteredPromoCode.getId(), categoriesOrNull(filteredPromoCode), null, categoriesOrNull(filteredPromoCode) != null ? "X" : null);
+                        maxTickets = filteredPromoCode.getMaxUsage() - promoCodeRequestManager.getCountConfirmedPromoCode(filteredPromoCode.getId(), categoriesOrNull(filteredPromoCode), null, categoriesOrNull(filteredPromoCode) != null ? "X" : null);
                     }
                     return new SaleableTicketCategory(category,
                         now, event, ticketReservationManager.countAvailableTickets(event, category), maxTickets,
@@ -176,7 +170,7 @@ public class EventApiV2Controller {
             //
 
             var ticketCategoryIds = valid.stream().map(SaleableTicketCategory::getId).collect(Collectors.toList());
-            var ticketCategoryDescriptions = ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
+            var ticketCategoryDescriptions = ticketReservationManager.getDescriptionsByTicketCategory(ticketCategoryIds);
 
             boolean displayTicketsLeft = configurations.get(DISPLAY_TICKETS_LEFT_INDICATOR).getValueAsBooleanOrDefault(false);
             var categoriesByExpiredFlag = saleableTicketCategories.stream()
@@ -195,7 +189,7 @@ public class EventApiV2Controller {
                 .flatMap(Pair::getRight);
 
             //
-            var saleableAdditionalServices = additionalServiceRepository.loadAllForEvent(event.getId())
+            var saleableAdditionalServices = additionalServiceManager.getLoadAllForEvent(event.getId())
                 .stream()
                 .map(as -> new SaleableAdditionalService(event, as, promoCode.orElse(null)))
                 .filter(SaleableAdditionalService::isNotExpired)
@@ -204,7 +198,7 @@ public class EventApiV2Controller {
             // will be used for fetching descriptions and titles for all the languages
             var saleableAdditionalServicesIds = saleableAdditionalServices.stream().map(SaleableAdditionalService::getId).collect(Collectors.toList());
 
-            var additionalServiceTexts = additionalServiceTextRepository.getDescriptionsByAdditionalServiceIds(saleableAdditionalServicesIds);
+            var additionalServiceTexts = additionalServiceTextManager.getDescriptionsByAdditionalServiceIds(saleableAdditionalServicesIds);
 
             var additionalServicesRes = saleableAdditionalServices.stream().map(as -> {
                 var expiration = Formatters.getFormattedDate(event, as.getZonedExpiration(), "common.ticket-category.date-format", messageSource);
@@ -250,9 +244,9 @@ public class EventApiV2Controller {
                             @RequestParam(value = "ticketId", required = false) String ticketId,
                             HttpServletResponse response) {
 
-        eventRepository.findOptionalByShortName(eventName).ifPresentOrElse(ev -> {
-            var description = eventDescriptionRepository.findDescriptionByEventIdTypeAndLocale(ev.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale).orElse("");
-            var category = ticketRepository.findOptionalByUUID(ticketId).map(t -> ticketCategoryRepository.getById(t.getCategoryId())).orElse(null);
+        eventManager.getOptionalByShortName(eventName).ifPresentOrElse(ev -> {
+            var description = eventManager.getDescriptionByEventIdTypeAndLocale(ev.getId(), EventDescription.EventDescriptionType.DESCRIPTION, locale).orElse("");
+            var category = ticketReservationManager.getOptionalByUUID(ticketId).map(t -> ticketReservationManager.getByCategoryId(t.getCategoryId())).orElse(null);
             if ("google".equals(calendarType)) {
                 try {
                     response.sendRedirect(EventUtil.getGoogleCalendarURL(ev, category, description));
@@ -294,7 +288,7 @@ public class EventApiV2Controller {
 
 
 
-        Optional<ResponseEntity<ValidatedResponse<String>>> r = eventRepository.findOptionalByShortName(eventName).map(event -> {
+        Optional<ResponseEntity<ValidatedResponse<String>>> r = eventManager.getOptionalByShortName(eventName).map(event -> {
 
             Locale locale = LocaleUtil.forLanguageTag(lang, event);
 
@@ -363,12 +357,12 @@ public class EventApiV2Controller {
 
     @PostMapping("event/{eventName}/check-discount")
     public ResponseEntity<DynamicDiscount> checkDiscount(@PathVariable("eventName") String eventName, @RequestBody ReservationForm reservation) {
-        return eventRepository.findOptionalByShortName(eventName)
+        return eventManager.getOptionalByShortName(eventName)
             .flatMap(event -> {
                 Map<Integer, Long> quantityByCategory = reservation.getReservation().stream()
                     .filter(trm -> trm.getAmount() > 0)
                     .collect(groupingBy(TicketReservationModification::getTicketCategoryId, summingLong(TicketReservationModification::getAmount)));
-                if(quantityByCategory.isEmpty() || ticketCategoryRepository.countPaidCategoriesInReservation(quantityByCategory.keySet()) == 0) {
+                if(quantityByCategory.isEmpty() || ticketReservationManager.getCountPaidCategoriesInReservation(quantityByCategory.keySet()) == 0) {
                     return Optional.empty();
                 }
                 return extensionManager.handleDynamicDiscount(event, quantityByCategory, null)

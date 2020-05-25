@@ -78,10 +78,7 @@ import static java.util.stream.Collectors.toMap;
 public class ReservationApiV2Controller {
 
     private final EventManager eventManager;
-    private final EventRepository eventRepository;
     private final TicketReservationManager ticketReservationManager;
-    private final TicketReservationRepository ticketReservationRepository;
-    private final TicketFieldRepository ticketFieldRepository;
     private final MessageSourceManager messageSourceManager;
     private final ConfigurationManager configurationManager;
     private final PaymentManager paymentManager;
@@ -92,9 +89,9 @@ public class ReservationApiV2Controller {
     private final EuVatChecker vatChecker;
     private final RecaptchaService recaptchaService;
     private final BookingInfoTicketLoader bookingInfoTicketLoader;
-    private final PromoCodeDiscountRepository promoCodeDiscountRepository;
-    private final AdditionalServiceItemRepository additionalServiceItemRepository;
-    private final AdditionalServiceRepository additionalServiceRepository;
+    private final PromoCodeRequestManager promoCodeRequestManager;
+    private final AdditionalServiceItemManager additionalServiceItemManager;
+    private final AdditionalServiceManager additionalServiceManager;
     private final BillingDocumentManager billingDocumentManager;
 
     /**
@@ -108,7 +105,7 @@ public class ReservationApiV2Controller {
     public ResponseEntity<ReservationInfo> getReservationInfo(@PathVariable("eventName") String eventName,
                                                               @PathVariable("reservationId") String reservationId) {
 
-        Optional<ReservationInfo> res = eventRepository.findOptionalByShortName(eventName).flatMap(event -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
+        Optional<ReservationInfo> res = eventManager.getOptionalByShortName(eventName).flatMap(event -> ticketReservationManager.findById(reservationId).flatMap(reservation -> {
 
             var orderSummary = ticketReservationManager.orderSummaryForReservationId(reservationId, event);
 
@@ -116,11 +113,11 @@ public class ReservationApiV2Controller {
 
             var ticketIds = tickets.stream().map(Ticket::getId).collect(Collectors.toSet());
 
-            var descriptionsByTicketFieldId = ticketFieldRepository.findDescriptions(event.getShortName())
+            var descriptionsByTicketFieldId = ticketReservationManager.getFindDescriptions(event.getShortName())
                 .stream()
                 .collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
 
-            var valuesByTicketIds = ticketFieldRepository.findAllValuesByTicketIds(ticketIds)
+            var valuesByTicketIds = ticketReservationManager.getAllValuesByTicketIds(ticketIds)
                 .stream()
                 .collect(Collectors.groupingBy(TicketFieldValue::getTicketId));
 
@@ -145,7 +142,7 @@ public class ReservationApiV2Controller {
                 .collect(Collectors.toList());
 
             //
-            var additionalInfo = ticketReservationRepository.getAdditionalInfo(reservationId);
+            var additionalInfo = ticketReservationManager.getAdditionalInfo(reservationId);
 
             var italianInvoicing = additionalInfo.getInvoicingAdditionalInfo().getItalianEInvoicing() == null ?
                 new TicketReservationInvoicingAdditionalInfo.ItalianEInvoicing(null, null, null, null) :
@@ -199,7 +196,7 @@ public class ReservationApiV2Controller {
                                                                                    String reservationId) {
         if(!event.isFreeOfCharge()) {
             var blacklistedMethodsForReservation = configurationManager.getBlacklistedMethodsForReservation(event, categoryIds);
-            return paymentManager.getPaymentMethods(event, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationRepository.getBillingDetailsForReservation(reservationId)))
+            return paymentManager.getPaymentMethods(event, new TransactionRequest(orderSummary.getOriginalTotalPrice(), ticketReservationManager.getBillingDetailsForReservation(reservationId)))
                 .stream()
                 .filter(p -> !blacklistedMethodsForReservation.contains(p.getPaymentMethod()))
                 .filter(p -> TicketReservationManager.isValidPaymentMethod(p, event, configurationManager))
@@ -214,8 +211,8 @@ public class ReservationApiV2Controller {
                                                                       @PathVariable("reservationId") String reservationId) {
 
         Optional<ReservationStatusInfo> res = Optional.empty();
-        if (eventRepository.existsByShortName(eventName)) {
-            res = ticketReservationRepository.findOptionalStatusAndValidationById(reservationId)
+        if (eventManager.getExistsByShortName(eventName)) {
+            res = ticketReservationManager.getOptionalStatusAndValidationById(reservationId)
                 .map(status -> new ReservationStatusInfo(status.getStatus(), Boolean.TRUE.equals(status.getValidated())));
         }
 
@@ -237,7 +234,7 @@ public class ReservationApiV2Controller {
                                                  @PathVariable("reservationId") String reservationId) {
 
         getReservationWithPendingStatus(eventName, reservationId)
-            .ifPresent(er -> ticketReservationRepository.updateValidationStatus(reservationId, false));
+            .ifPresent(er -> ticketReservationManager.getUpdateValidationStatus(reservationId, false));
 
 
         return ResponseEntity.ok(true);
@@ -354,7 +351,7 @@ public class ReservationApiV2Controller {
             CustomerName customerName = new CustomerName(contactAndTicketsForm.getFullName(), contactAndTicketsForm.getFirstName(), contactAndTicketsForm.getLastName(), event.mustUseFirstAndLastName(), false);
 
 
-            ticketReservationRepository.resetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), event.getVatStatus(),
+            ticketReservationManager.getResetVat(reservationId, contactAndTicketsForm.isInvoiceRequested(), event.getVatStatus(),
                 reservation.getSrcPriceCts(), reservationCost.getPriceWithVAT(), reservationCost.getVAT(), Math.abs(reservationCost.getDiscount()), reservation.getCurrencyCode());
             if(contactAndTicketsForm.isBusiness()) {
                 checkAndApplyVATRules(eventName, reservationId, contactAndTicketsForm, bindingResult, event);
@@ -392,7 +389,7 @@ public class ReservationApiV2Controller {
             }
 
             if(!bindingResult.hasErrors()) {
-                ticketReservationRepository.updateValidationStatus(reservationId, true);
+                ticketReservationManager. getUpdateValidationStatus(reservationId, true);
             }
 
             var body = ValidatedResponse.toResponse(bindingResult, !bindingResult.hasErrors());
@@ -433,8 +430,8 @@ public class ReservationApiV2Controller {
         }
 
         try {
-            Optional<VatDetail> vatDetail = eventRepository.findOptionalByShortName(eventName)
-                .flatMap(e -> ticketReservationRepository.findOptionalReservationById(reservationId).map(r -> Pair.of(e, r)))
+            Optional<VatDetail> vatDetail = eventManager.getOptionalByShortName(eventName)
+                .flatMap(e -> ticketReservationManager.findById(reservationId).map(r -> Pair.of(e, r)))
                 .filter(e -> EnumSet.of(INCLUDED, NOT_INCLUDED).contains(e.getKey().getVatStatus()))
                 .filter(e -> vatChecker.isReverseChargeEnabledFor(e.getKey()))
                 .flatMap(e -> vatChecker.checkVat(contactAndTicketsForm.getVatNr(), country, e.getKey()));
@@ -447,11 +444,11 @@ public class ReservationApiV2Controller {
                     var reservation = ticketReservationManager.findById(reservationId).orElseThrow();
                     var currencyCode = reservation.getCurrencyCode();
                     PriceContainer.VatStatus vatStatus = determineVatStatus(event.getVatStatus(), vatValidation.isVatExempt());
-                    var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeDiscountRepository.findById(reservation.getPromoCodeDiscountId()) : null;
-                    var additionalServiceItems = additionalServiceItemRepository.findByReservationUuid(reservationId);
+                    var discount = reservation.getPromoCodeDiscountId() != null ? promoCodeRequestManager.getById(reservation.getPromoCodeDiscountId()) : null;
+                    var additionalServiceItems = additionalServiceItemManager. getByReservationUuid(reservationId);
                     var tickets = ticketReservationManager.findTicketsInReservation(reservationId);
-                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServiceRepository.loadAllForEvent(event.getId()), event);
-                    ticketReservationRepository.updateBillingData(vatStatus, reservation.getSrcPriceCts(),
+                    var calculator = new ReservationPriceCalculator(reservation.withVatStatus(vatStatus), discount, tickets, additionalServiceItems, additionalServiceManager.getLoadAllForEvent(event.getId()), event);
+                    ticketReservationManager.getUpdateBillingData(vatStatus, reservation.getSrcPriceCts(),
                         unitToCents(calculator.getFinalPrice(), currencyCode), unitToCents(calculator.getVAT(), currencyCode), unitToCents(calculator.getAppliedDiscount(), currencyCode),
                         reservation.getCurrencyCode(), StringUtils.trimToNull(vatValidation.getVatNr()),
                         country, contactAndTicketsForm.isInvoiceRequested(), reservationId);
@@ -464,13 +461,13 @@ public class ReservationApiV2Controller {
     }
 
     private Optional<Pair<Event, TicketReservation>> getReservation(String eventName, String reservationId) {
-        return eventRepository.findOptionalByShortName(eventName)
+        return eventManager.getOptionalByShortName(eventName)
             .flatMap(event -> ticketReservationManager.findById(reservationId)
                 .flatMap(reservation -> Optional.of(Pair.of(event, reservation))));
     }
 
     private Optional<Pair<Event, TicketReservation>> getReservationWithPendingStatus(String eventName, String reservationId) {
-        return eventRepository.findOptionalByShortName(eventName)
+        return eventManager.getOptionalByShortName(eventName)
             .flatMap(event -> ticketReservationManager.findById(reservationId)
                 .filter(reservation -> reservation.getStatus() == TicketReservation.TicketReservationStatus.PENDING)
                 .flatMap(reservation -> Optional.of(Pair.of(event, reservation))));
@@ -484,7 +481,7 @@ public class ReservationApiV2Controller {
 
 
 
-        var res = eventRepository.findOptionalByShortName(eventName).map(event ->
+        var res = eventManager.getOptionalByShortName(eventName).map(event ->
             ticketReservationManager.findById(reservationId).map(ticketReservation -> {
                 ticketReservationManager.sendConfirmationEmail(event, ticketReservation, LocaleUtil.forLanguageTag(lang, event), principal != null ? principal.getName() : null);
                 return true;
@@ -520,7 +517,7 @@ public class ReservationApiV2Controller {
 
 
 
-        return eventRepository.findOptionalByShortName(eventName).map(event -> {
+        return eventManager.getOptionalByShortName(eventName).map(event -> {
                 if(canAccessReceiptOrInvoice(event, authentication)) {
                     return ticketReservationManager.findById(reservationId).map(ticketReservation -> with.apply(event, ticketReservation)).orElse(notFound);
                 } else {
@@ -600,7 +597,7 @@ public class ReservationApiV2Controller {
     }
 
     private Optional<Pair<Event, TicketReservation>> getEventReservationPair(String eventName, String reservationId) {
-        return eventRepository.findOptionalByShortName(eventName)
+        return eventManager.getOptionalByShortName(eventName)
             .map(event -> Pair.of(event, ticketReservationManager.findById(reservationId)))
             .filter(pair -> pair.getRight().isPresent())
             .map(pair -> Pair.of(pair.getLeft(), pair.getRight().orElseThrow()));

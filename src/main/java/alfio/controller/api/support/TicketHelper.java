@@ -21,11 +21,11 @@ import alfio.controller.support.TemplateProcessor;
 import alfio.manager.*;
 import alfio.manager.support.PartialTicketTextGenerator;
 import alfio.manager.system.ConfigurationManager;
+import alfio.manager.user.OrganizationManager;
 import alfio.model.*;
 import alfio.model.result.ValidationResult;
 import alfio.model.user.Organization;
 import alfio.repository.*;
-import alfio.repository.user.OrganizationRepository;
 import alfio.util.EventUtil;
 import alfio.util.LocaleUtil;
 import alfio.util.TemplateManager;
@@ -51,12 +51,13 @@ public class TicketHelper {
     private static final Set<TicketReservation.TicketReservationStatus> PENDING_RESERVATION_STATUSES = EnumSet.of(TicketReservation.TicketReservationStatus.PENDING, TicketReservation.TicketReservationStatus.OFFLINE_PAYMENT);
 
     private final TicketReservationManager ticketReservationManager;
-    private final OrganizationRepository organizationRepository;
+    private final OrganizationManager organizationManager;
     private final TicketCategoryRepository ticketCategoryRepository;
     private final TicketRepository ticketRepository;
     private final TemplateManager templateManager;
     private final TicketFieldRepository ticketFieldRepository;
     private final AdditionalServiceItemRepository additionalServiceItemRepository;
+    private final AdditionalServiceItemManager additionalServiceItemManager;
     private final EuVatChecker vatChecker;
     private final GroupManager groupManager;
     private final ConfigurationManager configurationManager;
@@ -102,21 +103,21 @@ public class TicketHelper {
         }
 
         final TicketReservation ticketReservation = result.getMiddle();
-        List<TicketFieldConfiguration> fieldConf = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
+        List<TicketFieldConfiguration> fieldConf = ticketReservationManager.getFindAdditionalFieldsForEvent(event.getId());
         var sameCountryValidator = new SameCountryValidator(configurationManager, extensionManager, event, ticketReservation.getId(), vatChecker);
         AdvancedTicketAssignmentValidator advancedValidator = new AdvancedTicketAssignmentValidator(sameCountryValidator,
             new GroupManager.WhitelistValidator(event.getId(), groupManager));
 
 
-        var additionalServiceIds = new HashSet<>(additionalServiceItemRepository.findAdditionalServiceIdsByReservationUuid(t.getTicketsReservationId()));
+        var additionalServiceIds = new HashSet<>(additionalServiceItemManager.getFindAdditionalServiceIdsByReservationUuid(t.getTicketsReservationId()));
 
-        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf, ticketUUID -> t.getCategoryId(), additionalServiceIds, ticketRepository.findFirstTicketInReservation(t.getTicketsReservationId()));
+        var ticketFieldFilterer = new Validator.TicketFieldsFilterer(fieldConf, ticketUUID -> t.getCategoryId(), additionalServiceIds, ticketReservationManager.findFirstInReservation(t.getTicketsReservationId()));
 
         Validator.AdvancedValidationContext context = new Validator.AdvancedValidationContext(updateTicketOwner, fieldConf, t.getCategoryId(), t.getUuid(), formPrefix);
         ValidationResult validationResult = Validator.validateTicketAssignment(updateTicketOwner, ticketFieldFilterer.getFieldsForTicket(t.getUuid()), bindingResult, event, formPrefix, sameCountryValidator)
                 .or(Validator.performAdvancedValidation(advancedValidator, context, bindingResult.orElse(null)))
                 .ifSuccess(() -> updateTicketOwner(updateTicketOwner, fallbackLocale, t, event, ticketReservation, userDetails));
-        return Triple.of(validationResult, event, ticketRepository.findByUUID(t.getUuid()));
+        return Triple.of(validationResult, event, ticketReservationManager.getByUUID(t.getUuid()));
     }
 
     /**
@@ -202,19 +203,19 @@ public class TicketHelper {
                 .filter(StringUtils::isNotBlank)
                 .map(LocaleUtil::forLanguageTag)
                 .orElse(fallBackLocale);
-        TicketCategory category = ticketCategoryRepository.getById(t.getCategoryId());
+        TicketCategory category = ticketReservationManager.getByCategoryId(t.getCategoryId());
         var ticketLanguage = LocaleUtil.getTicketLanguage(t, fallBackLocale);
         ticketReservationManager.updateTicketOwner(t, language, event, updateTicketOwner,
                 getConfirmationTextBuilder(ticketLanguage, event, ticketReservation, t, category),
                 getOwnerChangeTextBuilder(ticketLanguage, t, event),
                 userDetails);
         if(t.hasBeenSold() && !groupManager.findLinks(event.getId(), t.getCategoryId()).isEmpty()) {
-            ticketRepository.forbidReassignment(Collections.singletonList(t.getId()));
+            ticketReservationManager.getForbidReassignment(Collections.singletonList(t.getId()));
         }
     }
 
     private PartialTicketTextGenerator getOwnerChangeTextBuilder(Locale ticketLanguage, Ticket t, Event event) {
-        Organization organization = organizationRepository.getById(event.getOrganizationId());
+        Organization organization = organizationManager.getById(event.getOrganizationId());
         String ticketUrl = ticketReservationManager.ticketUpdateUrl(event, t.getUuid());
         return TemplateProcessor.buildEmailForOwnerChange(event, t, organization, ticketUrl, templateManager, ticketLanguage);
     }

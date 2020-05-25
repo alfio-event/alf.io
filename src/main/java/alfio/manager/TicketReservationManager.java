@@ -58,6 +58,8 @@ import alfio.repository.*;
 import alfio.repository.user.OrganizationRepository;
 import alfio.repository.user.UserRepository;
 import alfio.util.*;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -2351,5 +2353,106 @@ public class TicketReservationManager {
             log.warn("Unable to confirm reservation "+reservationId, ex);
             return false;
         }
+    }
+
+    public Map<String, String> getFindAllValuesForTicketId(int ticketId){
+        return ticketFieldRepository.findAllValuesForTicketId(ticketId);
+    }
+
+    public List<TicketFieldConfiguration> getFindAdditionalFieldsForEvent(int eventId){
+        return ticketFieldRepository.findAdditionalFieldsForEvent(eventId);
+    }
+
+    public List<TicketFieldConfiguration> getFindAdditionalFieldsForEvent(String eventName){
+        return ticketFieldRepository.findAdditionalFieldsForEvent(eventName);
+    }
+
+    public List<String> getFindFieldsForEvent(String eventShortName){
+        return ticketFieldRepository.findFieldsForEvent(eventShortName);
+    }
+
+    public List<TicketFieldDescription> getFindDescriptions(String eventShortName){
+        return ticketFieldRepository.findDescriptions(eventShortName);
+    }
+
+    public TicketFieldConfiguration getFindById(int id){
+        return ticketFieldRepository.findById(id);
+    }
+
+    public List<RestrictedValueStats> getRetrieveStats(int configurationId){
+        return ticketFieldRepository.retrieveStats(configurationId);
+    }
+
+    public TicketCategory getByCategoryId(int id){
+        return ticketCategoryRepository.getById(id);
+    }
+
+   public Ticket getByUUID(String uuid){
+        return ticketRepository.findByUUID(uuid);
+   }
+
+   public int getForbidReassignment(Collection<Integer> ticketIds){
+        return ticketRepository.forbidReassignment(ticketIds);
+   }
+
+   public List<TicketFieldValue> getAllValuesByTicketIds(Collection<Integer> ticketIds){
+        return ticketFieldRepository.findAllValuesByTicketIds(ticketIds);
+   }
+
+   public Integer getCountAccessRestrictedRepositoryByEventId(int eventId){
+        return ticketCategoryRepository.countAccessRestrictedRepositoryByEventId(eventId);
+   }
+
+   public Integer getCountFreeTicketsForPublicStatistics(int eventId){
+        return ticketRepository.countFreeTicketsForPublicStatistics(eventId);
+   }
+   
+   public Map<Integer, Map<String, String>> getDescriptionsByTicketCategory(Collection<Integer> ticketCategoryIds){
+        return ticketCategoryDescriptionRepository.descriptionsByTicketCategory(ticketCategoryIds);
+    }
+
+    public List<TicketCategory> getAllTicketCategories(int eventId){
+        return ticketCategoryRepository.findAllTicketCategories(eventId);
+    }
+
+    public Integer getCountPaidCategoriesInReservation(Collection<Integer> categoryIds){
+        return ticketCategoryRepository.countPaidCategoriesInReservation(categoryIds);
+    }
+
+    public Optional<Ticket> getOptionalByUUID(String uuid){
+        return ticketRepository.findOptionalByUUID(uuid);
+    }
+
+    public TicketReservationAdditionalInfo getAdditionalInfo( String reservationId){
+        return  ticketReservationRepository.getAdditionalInfo(reservationId);
+    }
+    public BillingDetails getBillingDetailsForReservation(String reservationId){
+        return ticketReservationRepository.getBillingDetailsForReservation(reservationId);
+    }
+
+    public Optional<TicketReservationStatusAndValidation> getOptionalStatusAndValidationById(String id){
+        return ticketReservationRepository.findOptionalStatusAndValidationById(id);
+    }
+
+    public int getUpdateValidationStatus( String reservationId, boolean validated){
+       return ticketReservationRepository.updateValidationStatus(reservationId,validated);
+    }
+
+    public int getResetVat(String reservationId, boolean invoiceRequested, PriceContainer.VatStatus vatStatus,
+                       int srcPriceCts, int finalPriceCts, int vatCts, int discountCts, String currencyCode){
+        return ticketReservationRepository.resetVat(reservationId,invoiceRequested,vatStatus,srcPriceCts,
+            finalPriceCts,vatCts,discountCts,currencyCode);
+    }
+
+    public int getUpdateBillingData( PriceContainer.VatStatus vatStatus, int srcPriceCts, int finalPriceCts,
+                          int vatCts, int discountCts, String currencyCode, String vatNr, String country,
+                         boolean invoiceRequested, String reservationId){
+        return ticketReservationRepository.updateBillingData(vatStatus,srcPriceCts,finalPriceCts,vatCts,
+                            discountCts,currencyCode,vatNr,country,invoiceRequested,reservationId);
+    }
+
+
+    public  TicketCategory getByIdAndActive(int id,int eventId){
+        return ticketCategoryRepository.getByIdAndActive(id,eventId);
     }
 }

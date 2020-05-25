@@ -29,6 +29,8 @@ import alfio.repository.SpecialPriceRepository;
 import alfio.repository.TicketCategoryRepository;
 import alfio.util.ErrorsCode;
 import alfio.util.RequestUtils;
+import ch.digitalfondue.npjt.Bind;
+import ch.digitalfondue.npjt.Query;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -40,6 +42,7 @@ import org.springframework.web.context.request.ServletWebRequest;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Optional;
@@ -203,5 +206,29 @@ public class PromoCodeRequestManager {
         return reservation.validate(bindingResult, ticketReservationManager, eventManager, promoCodeDiscount.orElse(null), event)
             .flatMap(selected -> ticketReservationManager.createTicketReservation(event, selected.getLeft(), selected.getRight(), promoCodeDiscount, locale, bindingResult));
     }
+
+
+    public PromoCodeDiscount getById(int id){
+        return promoCodeRepository.findById(id);
+    }
+
+    public int getUpdateEventPromoCodeEnd(int id,ZonedDateTime end){
+        return promoCodeRepository.updateEventPromoCodeEnd(id,end);
+    }
+
+    public Optional<PromoCodeDiscount> getOptionalById(int id){
+        return promoCodeRepository.findOptionalById(id);
+    }
+
+    public Integer getCountConfirmedPromoCode(int id,Collection<Integer> categories, String currentReservationId,
+                                               String categoriesJson){
+        return promoCodeRepository.countConfirmedPromoCode(id,categories,currentReservationId,categoriesJson);
+
+    }
+
+    public Integer getCountByEventAndOrganizationId(int eventId,int organizationId){
+        return promoCodeRepository.countByEventAndOrganizationId(eventId,organizationId);
+    }
+
 
 }

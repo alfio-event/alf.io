@@ -46,7 +46,7 @@ import java.util.Collections;
 import java.util.List;
 
 @Configuration
-@ComponentScan(basePackages = {"alfio.controller", "alfio.config"})
+@ComponentScan(basePackages = {"alfio.controller", "alfio.config","alfio.Handler"})
 @EnableWebMvc
 @EnableJdbcHttpSession(maxInactiveIntervalInSeconds = 4 * 60 * 60) //4h
 public class MvcConfiguration implements WebMvcConfigurer {
