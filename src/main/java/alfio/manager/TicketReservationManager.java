@@ -720,7 +720,7 @@ public class TicketReservationManager {
                         attributeList);
 
                     var promoCode = VoucherGenerator.generateRandomVoucher();
-                    // the promo code will be binded to the event for a better management in admin console
+                    // the promo code will be binded to the organization
                     if (discount != -1) {
                         eventManager.addPromoCode(
                             promoCode,

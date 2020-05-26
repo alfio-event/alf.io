@@ -33,6 +33,7 @@ import com.openhtmltopdf.extend.FSStreamFactory;
 import com.openhtmltopdf.pdfboxout.PdfBoxRenderer;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import lombok.extern.log4j.Log4j2;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.core.io.ClassPathResource;
@@ -60,6 +61,15 @@ public final class TemplateProcessor {
 
     private TemplateProcessor() {}
 
+    public static Pair<String, String> buildGenericEmail(TemplateManager templateManager ,
+                                                         TemplateResource template,
+                                                         Locale language,
+                                                         Map<String, Object> model,
+                                                         EventAndOrganizationId eventAndOrganizationId
+                                                         ) {
+
+        return templateManager.renderTemplate(eventAndOrganizationId, template , model, language);
+    }
 
     public static PartialTicketTextGenerator buildPartialEmail(Event event,
                                                                Organization organization,

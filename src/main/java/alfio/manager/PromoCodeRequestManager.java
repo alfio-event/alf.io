@@ -17,15 +17,16 @@
 package alfio.manager;
 
 import alfio.controller.form.ReservationForm;
+import alfio.controller.support.TemplateProcessor;
 import alfio.manager.support.response.ValidatedResponse;
+import alfio.manager.system.Mailer;
 import alfio.model.*;
 import alfio.model.metadata.AlfioMetadata;
 import alfio.model.modification.TicketReservationModification;
 import alfio.model.result.ValidationResult;
+import alfio.model.user.Organization;
 import alfio.repository.*;
-import alfio.util.ErrorsCode;
-import alfio.util.RequestUtils;
-import alfio.util.VoucherGenerator;
+import alfio.util.*;
 import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -35,6 +36,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.context.request.ServletWebRequest;
 
+import java.time.Clock;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -47,6 +49,7 @@ import static alfio.model.PromoCodeDiscount.categoriesOrNull;
 @AllArgsConstructor
 public class PromoCodeRequestManager {
 
+    public static final Clock UTC = Clock.systemUTC();
     private SpecialPriceRepository specialPriceRepository;
     private PromoCodeDiscountRepository promoCodeRepository;
     private TicketCategoryRepository ticketCategoryRepository;
@@ -55,6 +58,8 @@ public class PromoCodeRequestManager {
     private TicketReservationManager ticketReservationManager;
     private TicketRepository ticketRepository;
     private NotificationManager notificationManager;
+    private final TemplateManager templateManager;
+    private final EmailMessageRepository emailMessageRepository;
 
     enum PromoCodeType {
         SPECIAL_PRICE, PROMO_CODE_DISCOUNT, TICKET_CATEGORY_CODE, NOT_FOUND
@@ -204,10 +209,37 @@ public class PromoCodeRequestManager {
 
     public boolean sendEMail(int promoCodeId) {
         var pCode = promoCodeRepository.findOptionalById(promoCodeId);
+        var locale = Locale.ITALY;
         if (pCode.isEmpty() || pCode.get().getEmailReference().isEmpty()){
             return false;
         }
-        //TODO ADD-SEND EMAIL LOGIC
+
+        var model = new HashMap<String, Object>();
+        model.put("promoCode", pCode.get().getPromoCode());
+        model.put("promoCodeAmount", pCode.get().getDiscountAmount());
+        model.put("refEmail",pCode.get().getEmailReference());
+        model.put("promoCodeDetails",pCode.get().getDescription());
+
+        //get associated event, if any
+        int eventId = 0;
+        if ( pCode.get().getAlfioMetadata().getAttributes().containsKey("idEvent") ) {
+            eventId = Integer.parseInt(pCode.get().getAlfioMetadata().getAttributes().get("idEvent").toString());
+        } else {
+            //no event, no mail (event_id is a FK on email table) :( attaching fake event
+            var eventList = eventRepository.findByOrganizationIds(Collections.singleton(pCode.get().getOrganizationId()));
+            if (eventList.size() == 0) {
+                return false; //no event for this organization
+            } else {
+                eventId = eventList.get(0).getId(); //I don't care what event is binded to promocode
+            }
+        }
+
+        EventAndOrganizationId eventAndOrganizationId = new EventAndOrganizationId(eventId,pCode.get().getOrganizationId());
+        var temp = TemplateProcessor.buildGenericEmail(templateManager, TemplateResource.EMAIL_FOR_PROMO_CODE, locale, model, eventAndOrganizationId );
+        var subject = "Promo code activation";
+        var textRender = temp.getLeft();
+        var htmlRender = temp.getRight();
+        emailMessageRepository.insertWithOrganization(eventId, "", pCode.get().getEmailReference(), null, subject, textRender, htmlRender, "", "", ZonedDateTime.now(UTC),pCode.get().getOrganizationId());
         return true;
     }
 

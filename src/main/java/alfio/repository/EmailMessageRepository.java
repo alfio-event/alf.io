@@ -51,6 +51,18 @@ public interface EmailMessageRepository {
                @Bind("checksum") String checksum,
                @Bind("timestamp") ZonedDateTime requestTimestamp);
 
+    @Query("insert into email_message (event_id, reservation_id, status, recipient, subject, message, html_message, attachments, checksum, request_ts, email_cc, organization_id_fk) values(:eventId, :reservationId, 'WAITING', :recipient, :subject, :message, :htmlMessage, :attachments, :checksum, :timestamp, :emailCC, :organization_id)")
+    int insertWithOrganization(@Bind("eventId") int eventId,
+               @Bind("reservationId") String reservationId,
+               @Bind("recipient") String recipient,
+               @Bind("emailCC") String cc,
+               @Bind("subject") String subject,
+               @Bind("message") String message,
+               @Bind("htmlMessage") String htmlMessage,
+               @Bind("attachments") String attachments,
+               @Bind("checksum") String checksum,
+               @Bind("timestamp") ZonedDateTime requestTimestamp,
+               @Bind("organization_id") int organization_id);
 
     @Query("update email_message set status = :status where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatus(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("status") String status, @Bind("expectedStatuses") List<String> expectedStatuses);

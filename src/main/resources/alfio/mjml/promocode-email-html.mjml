@@ -1,0 +1,74 @@
+<mjml>
+  <mj-head>
+	    <mj-font name="Source Sans Pro" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" />
+	    <mj-attributes>
+	    	<mj-all font-family="Source Sans Pro, Helvetica" />
+	    </mj-attributes>
+	    <mj-style>
+	      a {
+	      	color: #0056b3;
+	      	text-decoration: none;
+	      }
+	      a:hover {
+	      	color: #0056b3;
+	      	text-decoration: underline;
+	      }
+	      tr {
+	      	line-height:2;
+	      	text-align:center;
+	      }
+
+	      tr .bottom-border {
+	      	border-bottom:2px solid #ecedee;
+	      }
+	    </mj-style>
+	  </mj-head>
+	<mj-body background-color="#e5e5e5">
+		<mj-section padding-bottom="0px" background-color="white">
+			<mj-column width="100%">
+				<mj-divider
+					padding-top="20px" padding-bottom="0px" padding-left="0px"
+					padding-right="0px" border-width="1px" border-color="#f4f4f4"></mj-divider>
+			</mj-column>
+		</mj-section>
+   		<mj-section background-color="white">
+			<mj-column width="100%">
+		        <mj-text align="center" font-size="14px">
+		        	{{#i18n}}email.hello [{{refEmail}}]{{/i18n}}<br/>
+              		{{custom-header-text}}
+		        </mj-text>
+	        
+	        	<mj-text align="center" font-size="20px">{{#i18n}}email.ticket.promocode.maintitle{{/i18n}}</mj-text>
+
+			</mj-column>
+		</mj-section>
+
+	    <mj-section background-color="white">
+
+	    	<mj-column width="480px">
+	    		<mj-text font-size="20px" align="center" color="#212529">
+					{{#i18n}}email.ticket.promocode.carnetcode{{/i18n}}
+				</mj-text>
+                
+				<mj-text align="center" font-size="22px" background-color="#7C8B95">
+                    {{promoCode}}
+			    </mj-text>
+			    
+			    <mj-text align="center" font-size="14px">{{#i18n}}email.ticket.promocode.amount [{{promoCodeAmount}}]{{/i18n}}</mj-text>
+                <mj-text align="center" font-size="12px">{{promoCodeDetails}}</mj-text>
+	    	</mj-column>
+	    		
+	   	</mj-section>
+	   	
+	   	<mj-raw>{{#custom-footer-text?}}</mj-raw>
+	    <mj-section background-color="white">
+	      <mj-column width="100%">
+	    	<mj-text align="center">
+	        	{{custom-footer-text}}
+	        </mj-text>
+	      </mj-column>
+	    </mj-section>
+	    <mj-raw>{{/custom-footer-text?}}</mj-raw>
+	</mj-body>
+</mjml>
+
