@@ -23,6 +23,7 @@ import alfio.model.modification.PromoCodeDiscountWithFormattedTimeAndAmount;
 import alfio.repository.EventRepository;
 import alfio.repository.PromoCodeDiscountRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Clock;
@@ -42,6 +43,8 @@ public class PromoCodeDiscountApiController {
     private final EventRepository eventRepository;
     private final PromoCodeDiscountRepository promoCodeRepository;
     private final EventManager eventManager;
+    private static final String ADMIN = "ADMIN";
+    private static final String OWNER = "OWNER";
 
     @PostMapping("/promo-code")
     public void addPromoCode(@RequestBody PromoCodeDiscountModification promoCode) {
@@ -74,6 +77,7 @@ public class PromoCodeDiscountApiController {
     }
 
     @GetMapping("/events/{eventId}/promo-code")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public List<PromoCodeDiscountWithFormattedTimeAndAmount> listPromoCodeInEvent(@PathVariable("eventId") int eventId) {
         return eventManager.findPromoCodesInEvent(eventId);
     }

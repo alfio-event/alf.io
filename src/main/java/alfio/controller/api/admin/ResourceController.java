@@ -57,6 +57,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -83,6 +84,8 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 public class ResourceController {
 
+    private static final String ADMIN = "ADMIN";
+    private static final String OWNER = "OWNER";
 
     private final UploadedResourceManager uploadedResourceManager;
     private final UserManager userManager;
@@ -105,6 +108,7 @@ public class ResourceController {
     }
 
     @GetMapping("/overridable-template/")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public List<TemplateResource> getOverridableTemplates() {
         return Stream.of(TemplateResource.values()).filter(TemplateResource::overridable).collect(Collectors.toList());
     }

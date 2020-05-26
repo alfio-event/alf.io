@@ -64,6 +64,8 @@ public class UsersApiController {
     private static final String SUPERVISOR = "ROLE_SUPERVISOR";
     public static final String OPERATOR = "ROLE_OPERATOR";
     public static final String SPONSOR = "ROLE_SPONSOR";
+    private static final String ADMIN = "ADMIN";
+    private static final String OWNER = "OWNER";
 
     private final UserManager userManager;
     private final ConfigurationManager configurationManager;
@@ -127,6 +129,7 @@ public class UsersApiController {
     }
 
     @GetMapping("/users")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public List<UserWithOrganizations> getAllUsers(Principal principal) {
         return userManager.findAllUsers(principal.getName());
     }
@@ -143,6 +146,7 @@ public class UsersApiController {
     }
 
     @PostMapping("/organizations/new")
+    @PreAuthorize("hasRole('"+ADMIN+"')")
     public String insertOrganization(@RequestBody OrganizationModification om) {
         userManager.createOrganization(om.getName(), om.getDescription(), om.getEmail());
         return OK;
@@ -160,6 +164,7 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/check")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+SUPERVISOR+"','"+OWNER+"')")
     public ValidationResult validateUser(@RequestBody UserModification userModification) {
         if(userModification.getType() == User.Type.API_KEY) {
             return ValidationResult.success();
@@ -170,6 +175,7 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/edit")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public String editUser(@RequestBody UserModification userModification, Principal principal) {
         userManager.editUser(userModification.getId(), userModification.getOrganizationId(),
             userModification.getUsername(), userModification.getFirstName(), userModification.getLastName(),
@@ -179,6 +185,7 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/new")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public UserWithPasswordAndQRCode insertUser(@RequestBody UserModification userModification, @RequestParam("baseUrl") String baseUrl, Principal principal) {
         Role requested = Role.valueOf(userModification.getRole());
         Validate.isTrue(userManager.getAvailableRoles(principal.getName()).stream().anyMatch(requested::equals), String.format("Requested role %s is not available for current user", userModification.getRole()));
@@ -229,18 +236,21 @@ public class UsersApiController {
     }
 
     @DeleteMapping("/users/{id}")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public String deleteUser(@PathVariable("id") int userId, Principal principal) {
         userManager.deleteUser(userId, principal.getName());
         return OK;
     }
 
     @PostMapping("/users/{id}/enable/{enable}")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public String enableUser(@PathVariable("id") int userId, @PathVariable("enable")boolean enable, Principal principal) {
         userManager.enable(userId, principal.getName(), enable);
         return OK;
     }
 
     @GetMapping("/users/{id}")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public UserModification loadUser(@PathVariable("id") int userId) {
         User user = userManager.findUser(userId);
         List<Organization> userOrganizations = userManager.findUserOrganizations(user.getUsername());
@@ -250,6 +260,7 @@ public class UsersApiController {
     }
 
     @GetMapping("/users/current")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+SUPERVISOR+"','"+OWNER+"')")
     public UserModification loadCurrentUser(Principal principal) {
         User user = userManager.findUserByUsername(principal.getName());
         Optional<Organization> userOrganization = userManager.findUserOrganizations(user.getUsername()).stream().findFirst();
@@ -259,12 +270,14 @@ public class UsersApiController {
     }
 
     @PostMapping("/users/current/update-password")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+SUPERVISOR+"','"+OWNER+"')")
     public ValidationResult updateCurrentUserPassword(@RequestBody PasswordModification passwordModification, Principal principal) {
         return userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
             .ifSuccess(() -> userManager.updatePassword(principal.getName(), passwordModification.newPassword));
     }
 
     @PostMapping("/users/current/edit")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+SUPERVISOR+"','"+OWNER+"')")
     public void updateCurrentUser(@RequestBody UserModification userModification, Principal principal) {
         User user = userManager.findUserByUsername(principal.getName());
         userManager.updateUserContactInfo(user.getId(), userModification.getFirstName(), userModification.getLastName(), userModification.getEmailAddress());
@@ -272,6 +285,7 @@ public class UsersApiController {
     }
 
     @PutMapping("/users/{id}/reset-password")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public UserWithPasswordAndQRCode resetPassword(@PathVariable("id") int userId, @RequestParam("baseUrl") String baseUrl) {
         UserWithPassword userWithPassword = userManager.resetPassword(userId);
         return new UserWithPasswordAndQRCode(userWithPassword, Base64.getEncoder().encodeToString(generateQRCode(userWithPassword, baseUrl)));

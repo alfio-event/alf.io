@@ -31,6 +31,7 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -48,11 +49,16 @@ import static alfio.util.FileUtil.sendPdf;
 @AllArgsConstructor
 public class AdminReservationApiController {
 
+    private static final String ADMIN = "ADMIN";
+    private static final String OWNER = "OWNER";
+    private static final String SUPERVISOR = "SUPERVISOR";
+
     private final AdminReservationManager adminReservationManager;
     private final EventManager eventManager;
     private final TicketReservationManager ticketReservationManager;
 
     @PostMapping("/event/{eventName}/new")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"','"+SUPERVISOR+"')")
     public Result<String> createNew(@PathVariable("eventName") String eventName, @RequestBody AdminReservationModification reservation, Principal principal) {
         return adminReservationManager.createReservation(reservation, eventName, principal.getName()).map(r -> r.getLeft().getId());
     }
@@ -64,6 +70,7 @@ public class AdminReservationApiController {
     }
 
     @GetMapping("/event/{eventName}/reservations/list")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public PageAndContent<List<TicketReservation>> findAll(@PathVariable("eventName") String eventName,
                                                           @RequestParam(value = "page", required = false) Integer page,
                                                           @RequestParam(value = "search", required = false) String search,
@@ -77,18 +84,21 @@ public class AdminReservationApiController {
     }
 
     @PutMapping("/event/{eventName}/{reservationId}/confirm")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"','"+SUPERVISOR+"')")
     public Result<TicketReservationDescriptor> confirmReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.confirmReservation(eventName, reservationId, principal.getName(), AdminReservationModification.Notification.EMPTY)
             .map(triple -> toReservationDescriptor(reservationId, triple));
     }
 
     @PostMapping("/event/{eventName}/{reservationId}")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"','"+SUPERVISOR+"')")
     public Result<Boolean> updateReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
                                              @RequestBody AdminReservationModification arm, Principal principal) {
         return adminReservationManager.updateReservation(eventName, reservationId, arm, principal.getName());
     }
 
     @PutMapping("/event/{eventName}/{reservationId}/notify")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"','"+SUPERVISOR+"')")
     public Result<Boolean> notifyReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId,
                                              @RequestBody AdminReservationModification arm, Principal principal) {
         return adminReservationManager.notify(eventName, reservationId, arm, principal.getName());
@@ -103,6 +113,7 @@ public class AdminReservationApiController {
     }
 
     @GetMapping("/event/{eventName}/{reservationId}/audit")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public Result<List<Audit>> getAudit(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.getAudit(eventName, reservationId, principal.getName());
     }
@@ -154,6 +165,7 @@ public class AdminReservationApiController {
     }
 
     @GetMapping("/event/{eventName}/{reservationId}")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"','"+SUPERVISOR+"')")
     public Result<TicketReservationDescriptor> loadReservation(@PathVariable("eventName") String eventName, @PathVariable("reservationId") String reservationId, Principal principal) {
         return adminReservationManager.loadReservation(eventName, reservationId, principal.getName())
             .map(triple -> toReservationDescriptor(reservationId, triple));

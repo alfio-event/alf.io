@@ -34,6 +34,7 @@ import lombok.Data;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -52,6 +53,8 @@ import static java.util.Collections.singletonList;
 @AllArgsConstructor
 public class AdminWaitingQueueApiController {
 
+    private static final String ADMIN = "ADMIN";
+    private static final String OWNER = "OWNER";
     private final WaitingQueueManager waitingQueueManager;
     private final EventManager eventManager;
     private final TicketReservationManager ticketReservationManager;
@@ -103,6 +106,7 @@ public class AdminWaitingQueueApiController {
     }
 
     @GetMapping("/load")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public List<WaitingQueueSubscription> loadAllSubscriptions(@PathVariable("eventName") String eventName, Principal principal, HttpServletResponse response) {
         Optional<List<WaitingQueueSubscription>> count = eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> waitingQueueManager.loadAllSubscriptionsForEvent(e.getId()));

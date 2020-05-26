@@ -96,6 +96,8 @@ public class EventApiController {
     private static final String SUPERVISOR = "ROLE_SUPERVISOR";
     public static final String OPERATOR = "ROLE_OPERATOR";
     public static final String SPONSOR = "ROLE_SPONSOR";
+    private static final String ADMIN = "ADMIN";
+    private static final String OWNER = "OWNER";
 
     private final EventManager eventManager;
     private final EventStatisticsManager eventStatisticsManager;
@@ -306,6 +308,7 @@ public class EventApiController {
     private static final List<String> ITALIAN_E_INVOICING_FIELDS = List.of("Fiscal Code", "Reference Type", "Addressee Code", "PEC");
 
     @GetMapping("/events/{eventName}/export")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public void downloadAllTicketsCSV(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletRequest request, HttpServletResponse response, Principal principal) throws IOException {
         List<String> fields = Arrays.asList(Optional.ofNullable(request.getParameterValues("fields")).orElse(new String[] {}));
         Event event = loadEvent(eventName, principal);
@@ -402,6 +405,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/sponsor-scan/export")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public void downloadSponsorScanExport(@PathVariable("eventName") String eventName, @RequestParam(name = "format", defaultValue = "excel") String format, HttpServletResponse response, Principal principal) throws IOException {
         var event = eventManager.getSingleEvent(eventName, principal.getName());
         List<TicketFieldConfiguration> fields = ticketFieldRepository.findAdditionalFieldsForEvent(event.getId());
@@ -476,6 +480,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/additional-field")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public List<TicketFieldConfigurationAndAllDescriptions> getAllAdditionalField(@PathVariable("eventName") String eventName) {
         final Map<Integer, List<TicketFieldDescription>> descById = ticketFieldRepository.findDescriptions(eventName).stream().collect(Collectors.groupingBy(TicketFieldDescription::getTicketFieldConfigurationId));
         return ticketFieldRepository.findAdditionalFieldsForEvent(eventName).stream()
@@ -538,6 +543,7 @@ public class EventApiController {
 
 
     @GetMapping("/events/{eventName}/pending-payments")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public List<TicketReservationWithTransaction> getPendingPayments(@PathVariable("eventName") String eventName) {
         return ticketReservationManager.getPendingPayments(eventName);
     }
@@ -608,6 +614,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events/{eventName}/invoices/count")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public Integer countInvoicesForEvent(@PathVariable("eventName") String eventName, Principal principal) {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .map(e -> ticketReservationManager.countInvoices(e.getId()))

@@ -27,6 +27,7 @@ import lombok.experimental.Delegate;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -40,6 +41,8 @@ import java.util.stream.Collectors;
 @RequestMapping("/admin/api/events/{eventName}/email")
 public class EmailMessageApiController {
 
+    private static final String ADMIN = "ADMIN";
+    private static final String OWNER = "OWNER";
     private final NotificationManager notificationManager;
     private final EventManager eventManager;
 
@@ -50,6 +53,7 @@ public class EmailMessageApiController {
     }
 
     @GetMapping("/")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public PageAndContent<List<LightweightEmailMessage>> loadEmailMessages(@PathVariable("eventName") String eventName,
                                                                                     @RequestParam(value = "page", required = false) Integer page,
                                                                                     @RequestParam(value = "search", required = false) String search,

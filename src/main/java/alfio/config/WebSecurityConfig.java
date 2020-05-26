@@ -308,35 +308,10 @@ public class WebSecurityConfig {
             csrfWhitelistPredicate = csrfWhitelistPredicate.or(r -> r.getRequestURI().equals("/report-csp-violation"));
             configurer.requireCsrfProtectionMatcher(new NegatedRequestMatcher(csrfWhitelistPredicate::test));
 
-            String[] ownershipRequired = new String[]{
-                ADMIN_API + "/overridable-template",
-                ADMIN_API + "/additional-services",
-                ADMIN_API + "/events/*/additional-field",
-                ADMIN_API + "/event/*/additional-services/",
-                ADMIN_API + "/overridable-template/",
-                ADMIN_API + "/events/*/promo-code",
-                ADMIN_API + "/reservation/event/*/reservations/list",
-                ADMIN_API + "/events/*/email/",
-                ADMIN_API + "/event/*/waiting-queue/load",
-                ADMIN_API + "/events/*/pending-payments",
-                ADMIN_API + "/events/*/export",
-                ADMIN_API + "/events/*/sponsor-scan/export",
-                ADMIN_API + "/events/*/invoices/**",
-                ADMIN_API + "/reservation/event/*/*/audit"
-            };
-
             configurer.csrfTokenRepository(csrfTokenRepository)
                 .and()
                 .authorizeRequests()
-                .antMatchers(HttpMethod.GET, ADMIN_API + "/users/current").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                .antMatchers(HttpMethod.POST, ADMIN_API + "/users/check", ADMIN_API + "/users/current/edit", ADMIN_API + "/users/current/update-password").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                .antMatchers(ADMIN_API + "/configuration/**", ADMIN_API + "/users/**").hasAnyRole(ADMIN, OWNER)
-                .antMatchers(ADMIN_API + "/organizations/new").hasRole(ADMIN)
-                .antMatchers(ADMIN_API + "/check-in/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                .antMatchers(HttpMethod.GET, ownershipRequired).hasAnyRole(ADMIN, OWNER)
                 .antMatchers(HttpMethod.GET, ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                .antMatchers(HttpMethod.POST, ADMIN_API + "/reservation/event/*/new", ADMIN_API + "/reservation/event/*/*").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
-                .antMatchers(HttpMethod.PUT, ADMIN_API + "/reservation/event/*/*/notify", ADMIN_API + "/reservation/event/*/*/confirm").hasAnyRole(ADMIN, OWNER, SUPERVISOR)
                 .antMatchers(ADMIN_API + "/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**/export/**").hasAnyRole(ADMIN, OWNER)
                 .antMatchers("/admin/**").hasAnyRole(ADMIN, OWNER, SUPERVISOR)

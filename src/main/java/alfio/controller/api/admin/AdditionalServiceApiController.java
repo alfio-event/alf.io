@@ -32,6 +32,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.Validate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -56,6 +57,9 @@ public class AdditionalServiceApiController {
     private final AdditionalServiceTextRepository additionalServiceTextRepository;
     private final EventManager eventManager;
 
+    private static final String ADMIN = "ADMIN";
+    private static final String OWNER = "OWNER";
+
 
     @ExceptionHandler({IllegalArgumentException.class})
     public ResponseEntity<String> handleBadRequest(Exception e) {
@@ -70,6 +74,7 @@ public class AdditionalServiceApiController {
     }
 
     @GetMapping("/event/{eventId}/additional-services")
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public List<EventModification.AdditionalService> loadAll(@PathVariable("eventId") int eventId) {
         return eventRepository.findOptionalById(eventId)
             .map(event -> additionalServiceRepository.loadAllForEvent(eventId)
@@ -113,6 +118,7 @@ public class AdditionalServiceApiController {
 
     @PostMapping(value = "/event/{eventId}/additional-services")
     @Transactional
+    @PreAuthorize("hasAnyRole('"+ADMIN+"','"+OWNER+"')")
     public ResponseEntity<EventModification.AdditionalService> insert(@PathVariable("eventId") int eventId, @RequestBody EventModification.AdditionalService additionalService, BindingResult bindingResult) {
         ValidationResult validationResult = Validator.validateAdditionalService(additionalService, bindingResult);
         Validate.isTrue(validationResult.isSuccess(), "validation failed");
