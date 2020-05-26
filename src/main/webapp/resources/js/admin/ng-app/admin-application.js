@@ -160,6 +160,7 @@
                 data: {
                     view: 'EVENT_DETAIL'
                 }
+
             })
             .state('events.single.dataToCollect', {
                 url:'/attendee-data-to-collect',
