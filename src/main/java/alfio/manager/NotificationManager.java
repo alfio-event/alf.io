@@ -357,7 +357,8 @@ public class NotificationManager {
     }
 
     private void sendMessage(EventAndOrganizationId event, EmailMessage message) {
-        String displayName = eventRepository.getDisplayNameById(message.getEventId());
+        String displayName = organizationRepository.getName(event.getOrganizationId());
+        log.info(displayName);
         mailer.send(event, displayName, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.ofNullable(message.getHtmlMessage()), decodeAttachments(message.getAttachments()));
         emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
