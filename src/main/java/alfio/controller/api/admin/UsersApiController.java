@@ -36,6 +36,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StreamUtils;
@@ -60,6 +61,10 @@ import static org.apache.commons.lang3.StringUtils.trimToNull;
 public class UsersApiController {
 
     private static final String OK = "OK";
+    private static final String SUPERVISOR = "ROLE_SUPERVISOR";
+    public static final String OPERATOR = "ROLE_OPERATOR";
+    public static final String SPONSOR = "ROLE_SPONSOR";
+
     private final UserManager userManager;
     private final ConfigurationManager configurationManager;
 
@@ -81,6 +86,7 @@ public class UsersApiController {
      * @return "SPONSOR" or "OPERATOR", depending on current user's privileges.
      */
     @GetMapping("/user-type")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"') or hasRole('"+SPONSOR+"')")
     public String getLoggedUserType() {
         return SecurityContextHolder.getContext()
             .getAuthentication()
@@ -94,6 +100,7 @@ public class UsersApiController {
     }
 
     @GetMapping("/user/details")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"') or hasRole('"+SPONSOR+"')")
     public Map<String, String> retrieveDetails(Principal principal) {
         User user = userManager.findUserByUsername(principal.getName());
         Map<String, String> result = new HashMap<>();

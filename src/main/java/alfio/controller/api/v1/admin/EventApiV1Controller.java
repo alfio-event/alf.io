@@ -36,6 +36,7 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.Errors;
@@ -60,6 +61,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 @Log4j2
 public class EventApiV1Controller {
 
+    private static final String API_CLIENT = "ROLE_API_CLIENT";
     private final EventManager eventManager;
     private final EventNameManager eventNameManager;
     private final FileUploadManager fileUploadManager;
@@ -72,6 +74,7 @@ public class EventApiV1Controller {
 
     @PostMapping("/create")
     @Transactional
+    @PreAuthorize("hasRole('"+API_CLIENT+"')")
     public ResponseEntity<String> create(@RequestBody EventCreationRequest request, Principal user) {
 
 
@@ -115,6 +118,7 @@ public class EventApiV1Controller {
     }
 
     @GetMapping("/{slug}/stats")
+    @PreAuthorize("hasRole('"+API_CLIENT+"')")
     public ResponseEntity<EventWithAdditionalInfo> stats(@PathVariable("slug") String slug, Principal user) {
         Result<EventWithAdditionalInfo> result = new Result.Builder<EventWithAdditionalInfo>()
             .build(() -> eventStatisticsManager.getEventWithAdditionalInfo(slug,user.getName()));
@@ -127,6 +131,7 @@ public class EventApiV1Controller {
     }
 
     @DeleteMapping("/{slug}")
+    @PreAuthorize("hasRole('"+API_CLIENT+"')")
     public ResponseEntity<String> delete(@PathVariable("slug") String slug, Principal user) {
         Result<String> result =  new Result.Builder<String>()
             .build(() -> {
@@ -142,6 +147,7 @@ public class EventApiV1Controller {
 
 
     @PostMapping("/update/{slug}")
+    @PreAuthorize("hasRole('"+API_CLIENT+"')")
     public ResponseEntity<String> update(@PathVariable("slug") String slug, @RequestBody EventCreationRequest request, Principal user) {
 
         String imageRef = fetchImage(request.getImageUrl());

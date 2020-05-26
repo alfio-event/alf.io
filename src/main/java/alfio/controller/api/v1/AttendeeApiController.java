@@ -34,6 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -50,6 +51,11 @@ import static alfio.util.Wrappers.optionally;
 @RequestMapping("/api/attendees")
 @Log4j2
 public class AttendeeApiController {
+
+    public static final String SPONSOR = "ROLE_SPONSOR";
+    private static final String SUPERVISOR = "ROLE_SUPERVISOR";
+    public static final String OPERATOR = "ROLE_OPERATOR";
+    private static final String API_CLIENT = "ROLE_API_CLIENT";
 
     private final AttendeeManager attendeeManager;
 
@@ -72,6 +78,7 @@ public class AttendeeApiController {
 
 
     @PostMapping("/sponsor-scan")
+    @PreAuthorize("hasRole('"+SPONSOR+"')")
     public ResponseEntity<TicketAndCheckInResult> scanBadge(@RequestBody SponsorScanRequest request, Principal principal) {
         return ResponseEntity.ok(attendeeManager.registerSponsorScan(request.eventName, request.ticketIdentifier, request.notes, request.leadStatus, principal.getName()));
     }
@@ -111,6 +118,7 @@ public class AttendeeApiController {
      * @return
      */
     @GetMapping("/{eventKey}/ticket/{UUID}")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"') or hasRole('"+API_CLIENT+"')")
     public Result<TicketWithAdditionalFields> getTicketDetails(@PathVariable("eventKey") String eventShortName, @PathVariable("UUID") String uuid, Principal principal) {
         return attendeeManager.retrieveTicket(eventShortName, uuid, principal.getName());
     }

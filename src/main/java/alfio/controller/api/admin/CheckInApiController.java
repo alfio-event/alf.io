@@ -38,6 +38,7 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
@@ -54,6 +55,8 @@ import static alfio.util.Wrappers.optionally;
 public class CheckInApiController {
 
     private static final String ALFIO_TIMESTAMP_HEADER = "Alfio-TIME";
+    private static final String SUPERVISOR = "ROLE_SUPERVISOR";
+    public static final String OPERATOR = "ROLE_OPERATOR";
     private final CheckInManager checkInManager;
     private final EventManager eventManager;
     private final ConfigurationManager configurationManager;
@@ -70,16 +73,19 @@ public class CheckInApiController {
     }
     
     @GetMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
         return checkInManager.evaluateTicketStatus(eventId, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
     @GetMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public TicketAndCheckInResult findTicketWithUUID(@PathVariable("eventName") String eventName, @PathVariable("ticketIdentifier") String ticketIdentifier, @RequestParam("qrCode") String qrCode) {
         return checkInManager.evaluateTicketStatus(eventName, ticketIdentifier, Optional.ofNullable(qrCode));
     }
 
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public TicketAndCheckInResult checkIn(@PathVariable("eventId") int eventId,
                                           @PathVariable("ticketIdentifier") String ticketIdentifier,
                                           @RequestBody TicketCode ticketCode,
@@ -88,6 +94,7 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public TicketAndCheckInResult checkIn(@PathVariable("eventName") String eventName,
                                           @PathVariable("ticketIdentifier") String ticketIdentifier,
                                           @RequestBody TicketCode ticketCode,
@@ -99,6 +106,7 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/event/{eventName}/bulk")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public Map<String, TicketAndCheckInResult> bulkCheckIn(@PathVariable("eventName") String eventName,
                                                            @RequestBody List<TicketIdentifierCode> ticketIdentifierCodes,
                                                            @RequestParam(value = "offlineUser", required = false) String offlineUser,
@@ -118,6 +126,7 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/manual-check-in")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public boolean manualCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
@@ -126,6 +135,7 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/revert-check-in")
+    @PreAuthorize("hasRole('ROLE_OPERATOR') or hasRole('ROLE_SUPERVISOR')")
     public boolean revertCheckIn(@PathVariable("eventId") int eventId,
                                  @PathVariable("ticketIdentifier") String ticketIdentifier,
                                  Principal principal) {
@@ -134,6 +144,7 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/event/{eventName}/ticket/{ticketIdentifier}/confirm-on-site-payment")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public TicketAndCheckInResult confirmOnSitePayment(@PathVariable("eventName") String eventName,
                                                        @PathVariable("ticketIdentifier") String ticketIdentifier,
                                                        @RequestBody TicketCode ticketCode,
@@ -145,11 +156,13 @@ public class CheckInApiController {
     }
 
     @GetMapping("/check-in/event/{eventName}/statistics")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public CheckInStatistics getStatistics(@PathVariable("eventName") String eventName, Principal principal) {
         return checkInManager.getStatistics(eventName, principal.getName());
     }
     
     @PostMapping("/check-in/{eventId}/ticket/{ticketIdentifier}/confirm-on-site-payment")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public OnSitePaymentConfirmation confirmOnSitePayment(@PathVariable("eventId") int eventId, @PathVariable("ticketIdentifier") String ticketIdentifier) {
         return checkInManager.confirmOnSitePayment(ticketIdentifier)
             .map(s -> new OnSitePaymentConfirmation(true, "ok"))
@@ -157,6 +170,7 @@ public class CheckInApiController {
     }
 
     @GetMapping("/check-in/{eventId}/ticket-identifiers")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public List<Integer> findAllIdentifiersForAdminCheckIn(@PathVariable("eventId") int eventId,
                                                @RequestParam(value = "changedSince", required = false) Long changedSince,
                                                HttpServletResponse response,
@@ -166,6 +180,7 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/{eventId}/tickets")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public List<FullTicketInfo> findAllTicketsForAdminCheckIn(@PathVariable("eventId") int eventId,
                                                               @RequestBody List<Integer> ids,
                                                               Principal principal) {
@@ -174,6 +189,7 @@ public class CheckInApiController {
     }
 
     @GetMapping("/check-in/{eventName}/label-layout")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public ResponseEntity<LabelLayout> getLabelLayoutForEvent(@PathVariable("eventName") String eventName, Principal principal) {
         return eventManager.getOptionalEventAndOrganizationIdByName(eventName, principal.getName())
             .filter(checkInManager.isOfflineCheckInAndLabelPrintingEnabled())
@@ -182,6 +198,7 @@ public class CheckInApiController {
     }
 
     @GetMapping("/check-in/{eventName}/offline-identifiers")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public List<Integer> getOfflineIdentifiers(@PathVariable("eventName") String eventName,
                                               @RequestParam(value = "changedSince", required = false) Long changedSince,
                                               HttpServletResponse resp,
@@ -196,6 +213,7 @@ public class CheckInApiController {
     }
 
     @PostMapping("/check-in/{eventName}/offline")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"')")
     public Map<String, String> getOfflineEncryptedInfo(@PathVariable("eventName") String eventName,
                                                        @RequestParam(value = "additionalField", required = false) List<String> additionalFields,
                                                        @RequestBody List<Integer> ids,

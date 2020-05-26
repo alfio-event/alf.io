@@ -52,6 +52,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StreamUtils;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.*;
@@ -92,6 +93,10 @@ public class EventApiController {
 
     private static final String OK = "OK";
     private static final String CUSTOM_FIELDS_PREFIX = "custom:";
+    private static final String SUPERVISOR = "ROLE_SUPERVISOR";
+    public static final String OPERATOR = "ROLE_OPERATOR";
+    public static final String SPONSOR = "ROLE_SPONSOR";
+
     private final EventManager eventManager;
     private final EventStatisticsManager eventStatisticsManager;
     private final I18nManager i18nManager;
@@ -135,6 +140,7 @@ public class EventApiController {
     }
 
     @GetMapping(value = "/events", headers = "Authorization")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"') or hasRole('"+SPONSOR+"')")
     public List<EventListItem> getAllEventsForExternal(Principal principal, HttpServletRequest request) {
         List<Integer> userOrganizations = userManager.findUserOrganizations(principal.getName()).stream().map(Organization::getId).collect(toList());
         return eventManager.getActiveEvents().stream()
@@ -145,6 +151,7 @@ public class EventApiController {
     }
 
     @GetMapping("/events")
+    @PreAuthorize("hasRole('"+OPERATOR+"') or hasRole('"+SUPERVISOR+"') or hasRole('"+SPONSOR+"')")
     public List<EventStatistic> getAllEvents(Principal principal) {
         return eventStatisticsManager.getAllEventsWithStatistics(principal.getName());
     }
