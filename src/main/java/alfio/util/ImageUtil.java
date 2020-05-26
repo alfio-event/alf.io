@@ -43,13 +43,11 @@ public final class ImageUtil {
 
     public static byte[] createQRCode(String text) {
         try {
-            System.out.println("Inside Try createQRCode");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             BitMatrix matrix = drawQRCode(text);
             MatrixToImageWriter.writeToStream(matrix, "png", baos);
             return baos.toByteArray();
         } catch (WriterException | IOException e) {
-            System.out.println("Inside catch createQRCode");
             throw new IllegalStateException(e);
         }
     }
