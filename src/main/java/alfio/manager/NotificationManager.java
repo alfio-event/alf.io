@@ -231,7 +231,7 @@ public class NotificationManager {
             attachments.add(CustomMessageManager.generateTicketAttachment(ticket, reservation, ticketCategory, organization));
         }
 
-        String displayName = event.getDisplayName();
+        String displayName = organizationRepository.getName(event.getOrganizationId());
 
         String encodedAttachments = encodeAttachments(attachments.toArray(new Mailer.Attachment[0]));
         String subject = messageSourceManager.getMessageSourceForEvent(event).getMessage("ticket-email-subject", new Object[]{displayName}, locale);
@@ -358,7 +358,6 @@ public class NotificationManager {
 
     private void sendMessage(EventAndOrganizationId event, EmailMessage message) {
         String displayName = organizationRepository.getName(event.getOrganizationId());
-        log.info(displayName);
         mailer.send(event, displayName, message.getRecipient(), message.getCc(), message.getSubject(), message.getMessage(), Optional.ofNullable(message.getHtmlMessage()), decodeAttachments(message.getAttachments()));
         emailMessageRepository.updateStatusToSent(message.getEventId(), message.getChecksum(), ZonedDateTime.now(UTC), Collections.singletonList(IN_PROCESS.name()));
     }
