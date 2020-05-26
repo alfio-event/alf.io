@@ -30,8 +30,8 @@
             <div class="input-group">
                 <input type="text" data-ng-model="tmpTag" name="tag" id="tag" class="form-control" data-ng-change="addTag(tmpTag)" data-ng-model-options="{ updateOn: 'blur', debounce: 500}"/>
                 <span class="input-group-btn">
-                         <button class="btn btn-success" type="button" ng-click="addTag(tmpTag)">Add tag</button>
-                    </span>
+                     <button title="Add the TAG" class="btn btn-success" type="button" ng-click="addTag(tmpTag)"><i class="fa fa-plus"></i></button>
+                </span>
             </div><!-- /input-group -->
         </div>
 
@@ -43,6 +43,12 @@
         <div class="form-group">
             <label for="emailReference">Contact</label>
             <input type="email" class="form-control" id="emailReference" ng-model="promocode.emailReference" name="emailReference" maxlength="256">
+        </div>
+
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" id="sendEmail" ng-model="promocode.sendEmailToRecipient" name="sendEmail"> Send the code immediately by email
+            </label>
         </div>
 
         <div class="clearfix"></div>

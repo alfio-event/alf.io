@@ -221,16 +221,19 @@ public class PromoCodeRequestManager {
         model.put("promoCodeDetails",pCode.get().getDescription());
 
         //get associated event, if any
-        int eventId = 0;
-        if ( pCode.get().getAlfioMetadata().getAttributes().containsKey("idEvent") ) {
-            eventId = Integer.parseInt(pCode.get().getAlfioMetadata().getAttributes().get("idEvent").toString());
-        } else {
-            //no event, no mail (event_id is a FK on email table) :( attaching fake event
-            var eventList = eventRepository.findByOrganizationIds(Collections.singleton(pCode.get().getOrganizationId()));
-            if (eventList.size() == 0) {
-                return false; //no event for this organization
+        var eventId = pCode.get().getEventId();
+        if (eventId == null) {
+            //let's find a suitable eventID
+            if (pCode.get().getAlfioMetadata().getAttributes().containsKey("idEvent")) {
+                eventId = Integer.parseInt(pCode.get().getAlfioMetadata().getAttributes().get("idEvent").toString());
             } else {
-                eventId = eventList.get(0).getId(); //I don't care what event is binded to promocode
+                //no event, no mail (event_id is a FK on email table) :( attaching fake event
+                var eventList = eventRepository.findByOrganizationIds(Collections.singleton(pCode.get().getOrganizationId()));
+                if (eventList.size() == 0) {
+                    return false; //no event for this organization
+                } else {
+                    eventId = eventList.get(0).getId(); //I don't care what event is binded to promocode
+                }
             }
         }
 

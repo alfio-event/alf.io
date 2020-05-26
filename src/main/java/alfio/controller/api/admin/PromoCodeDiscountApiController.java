@@ -66,6 +66,13 @@ public class PromoCodeDiscountApiController {
         eventManager.addPromoCode(promoCode.getPromoCode(), eventId, organizationId, promoCode.getStart().toZonedDateTime(zoneId),
             promoCode.getEnd().toZonedDateTime(zoneId), discount, promoCode.getDiscountType(), promoCode.getCategories(), promoCode.getMaxUsage(),
             promoCode.getDescription(), promoCode.getEmailReference(), promoCode.getCodeType(), promoCode.getHiddenCategoryId(), mData);
+
+        if (promoCode.isSendEmailToRecipient()){
+            var pCode = promoCodeRepository.getPromoCodeRaw(promoCode.getPromoCode());
+            if (pCode.isPresent()){
+                promoCodeRequestManager.sendEMail(pCode.get().getId());
+            }
+        }
     }
 
     @PostMapping("/promo-code/{promoCodeId}")
@@ -75,6 +82,9 @@ public class PromoCodeDiscountApiController {
         eventManager.updatePromoCodeWithMetaData(promoCodeId, promoCode.getStart().toZonedDateTime(zoneId),
             promoCode.getEnd().toZonedDateTime(zoneId), promoCode.getMaxUsage(), promoCode.getCategories(),
             promoCode.getDescription(), promoCode.getEmailReference(), promoCode.getHiddenCategoryId(), promoCode.getAlfioMetadata());
+        if (promoCode.isSendEmailToRecipient()){
+            promoCodeRequestManager.sendEMail(pcd.getId());
+        }
     }
 
     private ZoneId zoneIdFromEventId(Integer eventId, Integer utcOffset) {

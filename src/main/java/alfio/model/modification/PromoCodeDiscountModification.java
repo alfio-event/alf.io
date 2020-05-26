@@ -49,6 +49,7 @@ public class PromoCodeDiscountModification {
     private final PromoCodeDiscount.CodeType codeType;
     private final Integer hiddenCategoryId;
     private final AlfioMetadata alfioMetadata;
+    private final boolean sendEmailToRecipient;
 
 
     @JsonCreator
@@ -67,7 +68,8 @@ public class PromoCodeDiscountModification {
         @JsonProperty("emailReference") String emailReference,
         @JsonProperty("codeType") PromoCodeDiscount.CodeType codeType,
         @JsonProperty("hiddenCategoryId") Integer hiddenCategoryId,
-        @JsonProperty("alfioMetadata") AlfioMetadata alfioMetadata) {
+        @JsonProperty("alfioMetadata") AlfioMetadata alfioMetadata,
+        @JsonProperty("sendEmailToRecipient") boolean sendEmailToRecipient) {
 
         this.organizationId = organizationId;
         this.eventId = eventId;
@@ -84,6 +86,7 @@ public class PromoCodeDiscountModification {
         this.codeType = Optional.ofNullable(codeType).orElse(PromoCodeDiscount.CodeType.DISCOUNT);
         this.hiddenCategoryId = hiddenCategoryId;
         this.alfioMetadata = alfioMetadata;
+        this.sendEmailToRecipient = sendEmailToRecipient;
     }
     
     private int getDiscountAsPercent() {

@@ -1,6 +1,13 @@
-<div class="form-group">
+<!--<div class="form-group">-->
+<!--    <input placeholder="Find promo codes.." ng-model="searchText" name="searchText" id="searchText" class="form-control"/>-->
+<!--</div>-->
+<div class="input-group">
+    <span class="input-group-btn">
+        <button class="btn btn-success" title="Add new promo code" type="button" ng-click="$ctrl.addPromoCode($ctrl.promoCodeType)"><i class="fa fa-plus"></i></button>
+    </span>
     <input placeholder="Find promo codes.." ng-model="searchText" name="searchText" id="searchText" class="form-control"/>
-</div>
+</div><!-- /input-group -->
+<!--<div>TYPE {{$ctrl.promoCodeType}}</div>-->
 <div class="table-responsive">
     <table class="table" data-ng-if="$ctrl.promocodes.length > 0">
         <thead>
@@ -53,7 +60,7 @@
             <td ng-bind="promocode.emailReference"></td>
             <td>
                 <button title="Edit" class="btn btn-xs btn-default" ng-click="$ctrl.changeDate(promocode)"><i class="fa fa-edit"></i></button>
-                <button title="Send promocode by email" data-ng-hide="!promocode.emailReference" class="btn btn-xs btn-success" data-ng-click="$ctrl.sendEmail(promocode)"><i class="fa fa-envelope"></i></button>
+                <button title="Send promocode by email" data-ng-hide="!promocode.emailReference || promocode.expired" class="btn btn-xs btn-success" data-ng-click="$ctrl.sendEmail(promocode)"><i class="fa fa-envelope"></i></button>
                 <button title="Disable" data-ng-hide="promocode.expired" class="btn btn-xs btn-warning" data-ng-click="$ctrl.disablePromocode(promocode)"><i class="fa fa-ban"></i></button>
                 <button title="Remove" data-ng-show="promocode.useCount === 0" class="btn btn-xs btn-danger" data-ng-click="$ctrl.deletePromocode(promocode)"><i class="fa fa-trash"></i></button>
             </td>

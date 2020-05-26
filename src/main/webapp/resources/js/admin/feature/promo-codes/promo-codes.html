@@ -12,10 +12,12 @@
                          disable-promocode="$ctrl.disablePromocode"
                          delete-promocode="$ctrl.deletePromocode"
                          send-email="$ctrl.sendEmail"
+                         add-promo-code="$ctrl.addPromoCode"
+                         promo-code-type="'DISCOUNT'"
                          promocodes="$ctrl.promocodes"></promo-code-list>
-        <div>
-            <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode('DISCOUNT')"><i class="fa fa-plus"></i> add {{$ctrl.promoCodeDescription}} Code</button>
-        </div>
+<!--        <div>-->
+<!--            <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode('DISCOUNT')"><i class="fa fa-plus"></i> add {{$ctrl.promoCodeDescription}} Code</button>-->
+<!--        </div>-->
     </div>
 
     <div data-ng-if="$ctrl.forEvent && $ctrl.restrictedCategories.length > 0" class="wMarginTop30px">
@@ -31,10 +33,13 @@
                          disable-promocode="$ctrl.disablePromocode"
                          delete-promocode="$ctrl.deletePromocode"
                          promocodes="$ctrl.accesscodes"
+                         send-email="$ctrl.sendEmail"
+                         add-promo-code="$ctrl.addPromoCode"
+                         promo-code-type="'ACCESS'"
                          is-access="true"></promo-code-list>
-        <div>
-            <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode('ACCESS')"><i class="fa fa-plus"></i> add Access Code</button>
-        </div>
+<!--        <div>-->
+<!--            <button type="button" class="btn btn-success" data-ng-click="$ctrl.addPromoCode('ACCESS')"><i class="fa fa-plus"></i> add Access Code</button>-->
+<!--        </div>-->
     </div>
 
     <div class="alert alert-warning wMarginTop30px" ng-if="$ctrl.forEvent && $ctrl.restrictedCategories.length === 0 && $ctrl.event.freeOfCharge">

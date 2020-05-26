@@ -7,7 +7,12 @@
         <div class="col-sm-12 col-md-8 col-md-offset-2">
             <div class="form-group" bs-form-error="promocode.promoCode">
                 <label for="promoCode">name (min length is 7 characters)</label>
-                <input type="text" id="promoCode" data-ng-model="promocode.promoCode" class="form-control to-uppercase" required minlength="7" pattern="^[A-Za-z0-9_\-:@!$*,;]*$" data-required-pattern="'Letters and Numbers, underscore and hyphens'"/>
+                <div class="input-group">
+                    <input type="text" id="promoCode" data-ng-model="promocode.promoCode" class="form-control to-uppercase" required minlength="7" pattern="^[A-Za-z0-9_\-:@!$*,;]*$" data-required-pattern="'Letters and Numbers, underscore and hyphens'"/>
+                    <span class="input-group-btn">
+                        <button title="Generate new random promo code" class="btn btn-default" type="button" ng-click="newCode()"><i class="fa fa-refresh"></i></button>
+                    </span>
+                </div>
                 <field-error data-form-obj="promoCodeForm" data-field-obj="promocode.promoCode" data-show-existing-errors="showExistingErrors"></field-error>
                 <span id="helpBlock" class="help-block">Allowed characters: Letters, numbers, and <code>-:_@!$*,;</code></span>
             </div>
@@ -17,7 +22,7 @@
                 <div class="input-group">
                     <input type="text" data-ng-model="tmpTag" name="tag" id="tag" class="form-control" data-ng-change="addTag(tmpTag)" data-ng-model-options="{ updateOn: 'blur', debounce: 500}"/>
                     <span class="input-group-btn">
-                         <button class="btn btn-success" type="button" ng-click="addTag(tmpTag)">Add tag</button>
+                         <button title="Add the TAG" class="btn btn-success" type="button" ng-click="addTag(tmpTag)"><i class="fa fa-plus"></i></button>
                     </span>
                 </div><!-- /input-group -->
             </div>
@@ -79,6 +84,11 @@
             <div class="form-group">
                 <label for="emailReference">Contact</label>
                 <input type="email" class="form-control" id="emailReference" ng-model="promocode.emailReference" name="emailReference" maxlength="256">
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" id="sendEmail" ng-model="promocode.sendEmailToRecipient" name="sendEmail"> Send the code immediately by email
+                </label>
             </div>
         </div>
     

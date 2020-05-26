@@ -25,6 +25,8 @@
                 sendEmail: '<',
                 disablePromocode: '<',
                 deletePromocode: '<',
+                addPromoCode: '<',
+                promoCodeType: '<',
                 isAccess: '<'
             }
         });
@@ -36,9 +38,9 @@
         ctrl.isInternal = isInternal;
         ctrl.deletePromocode = deletePromocode;
         ctrl.disablePromocode = disablePromocode;
+        ctrl.addPromoCode = addPromoCode;
         ctrl.sendEmail = sendEmail;
         ctrl.changeDate = changeDate;
-        ctrl.addPromoCode = addPromoCode;
 
         ctrl.$onInit = function() {
             loadData();
@@ -100,7 +102,6 @@
         }
 
         function disablePromocode(promocode) {
-            console.log("Porca madonna", promocode);
             if($window.confirm('Disable ' +ctrl.promoCodeDescription+ ' code ' + promocode.promoCode + '?')) {
                 PromoCodeService.disable(promocode.id).then(loadData, errorHandler);
             }
@@ -108,7 +109,7 @@
 
         function sendEmail(promocode) {
             if($window.confirm('Send ' +promocode.promoCode+ ' code to ' + promocode.emailReference + '?')) {
-                PromoCodeService.sendEmail(promocode.id).then(loadData, errorHandler);
+                PromoCodeService.sendEmail(promocode.id).then(emailSent, errorHandler);
             }
         }
 
@@ -244,7 +245,8 @@
                         categories:[],
                         codeType: codeType,
                         hiddenCategoryId: null,
-                        alfioMetadata: { 'tags' : []}
+                        alfioMetadata: { 'tags' : []},
+                        promoCode: makeCode(10)
                     };
 
                     $scope.addCategory = function addCategory(index, value) {
@@ -294,6 +296,19 @@
                             $scope.promocode.alfioMetadata.tags.splice(idx,1);
                         }
                     };
+                    $scope.newCode = function() {
+                        $scope.promocode.promoCode = makeCode(10);
+                    }
+
+                    function makeCode(length) {
+                       var result           = '';
+                       var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-:_@!$*';
+                       var charactersLength = characters.length;
+                       for ( var i = 0; i < length; i++ ) {
+                          result += characters.charAt(Math.floor(Math.random() * charactersLength));
+                       }
+                       return result;
+                    }
                 }
             });
         };
