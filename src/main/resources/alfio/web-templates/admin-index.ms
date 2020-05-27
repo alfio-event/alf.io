@@ -113,7 +113,7 @@
     <div class="navbar navbar-default navbar-fixed-top" role="navigation" data-ng-controller="MenuController as ctrl">
         <div class="container-fluid">
             <div class="row">
-                <div class= "col-xs-12 col-lg-12">
+                <div class="col-xs-12 col-lg-12">
                     <div class="navbar-header">
                         <button type="button" class="navbar-toggle" data-ng-click="ctrl.toggleCollapse(ctrl.menuCollapsed)">
                             <span class="sr-only">Toggle navigation</span>

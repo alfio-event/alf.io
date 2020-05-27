@@ -826,3 +826,12 @@ div.preformatted {
     background-color: white !important;
     margin-bottom: 0 !important;
 }
+
+@media (max-width:1220px){
+    .navbar-text{
+        display:none !important
+    }
+    .row {
+        font-size : 16px;
+    }
+}
