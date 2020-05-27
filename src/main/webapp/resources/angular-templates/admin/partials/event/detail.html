@@ -1,23 +1,5 @@
 <div class="fa fa-refresh fa-spin fa-2x text-muted" data-ng-if="!event">
 </div>
-<style>
-    #sold{
-        background-color:#69b949;
-    }
-    #dynamic{
-        background-color:#0000ff;
-    }
-    #reserved{
-        background-color:#ee82ee;
-    }
-    #pending{
-        background-color:#f0ad4e;
-    }
-    #checkedIn{
-        background-color: #87ceeb;
-    }
-
-</style>
 <div data-ng-if="event">
 
     <event-header data-ng-if="!editEventHeader">
@@ -82,11 +64,11 @@
                                 </div>
                                 <div class="hidden-xs hidden-sm col-md-4">
                                     <uib-progress max="getActualCapacity(ticketCategory, event)" uib-tooltip-template="'categoryStats.html'" tooltip-popup-close-delay="500">
-                                        <uib-bar id="checkedIn" value="ticketCategory.checkedInTickets" type="success"><span>{{ticketCategory.checkedInTickets}}</span></uib-bar>
-                                        <uib-bar id="sold" value="ticketCategory.soldTickets" type="warning"><span>{{ticketCategory.soldTickets}}</span></uib-bar>
-                                        <uib-bar id="pending" value="ticketCategory.pendingTickets" type="info" class="slice-pending">{{ticketCategory.pendingTickets}}</uib-bar>
-                                        <uib-bar id="reserved" value="ticketCategory.notSoldTickets" type="info">{{ticketCategory.notSoldTickets}}</uib-bar>
-                                        <uib-bar id="dynamic" ng-if="!ticketCategory.bounded" value="event.dynamicAllocation" type="default">{{event.dynamicAllocation}}</uib-bar>
+                                        <uib-bar class="ticket-checkedIn" value="ticketCategory.checkedInTickets" ><span>{{ticketCategory.checkedInTickets}}</span></uib-bar>
+                                        <uib-bar class="ticket-sold" value="ticketCategory.soldTickets" ><span>{{ticketCategory.soldTickets}}</span></uib-bar>
+                                        <uib-bar class="ticket-pending" value="ticketCategory.pendingTickets">{{ticketCategory.pendingTickets}}</uib-bar>
+                                        <uib-bar class="ticket-reserved" value="ticketCategory.notSoldTickets">{{ticketCategory.notSoldTickets}}</uib-bar>
+                                        <uib-bar class="ticket-dynamic" ng-if="!ticketCategory.bounded" value="event.dynamicAllocation" >{{event.dynamicAllocation}}</uib-bar>
                                     </uib-progress>
                                 </div>
                                 <div class="col-xs-12 col-md-5">

@@ -826,3 +826,19 @@ div.preformatted {
     background-color: white !important;
     margin-bottom: 0 !important;
 }
+
+.ticket-sold{
+     background-color:#69b949;
+ }
+.ticket-dynamic{
+    background-color:#0000ff;
+}
+.ticket-reserved{
+    background-color:#ee82ee;
+}
+.ticket-pending{
+    background-color:#f0ad4e;
+}
+.ticket-checkedIn{
+    background-color: #87ceeb;
+}
