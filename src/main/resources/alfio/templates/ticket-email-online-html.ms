@@ -91,6 +91,15 @@
     }
   </style>
   <style type="text/css">
+    body {
+      background: white;
+      color: #393939;
+    }
+
+    .content-section {
+      background: white;
+    }
+
     a {
       color: #0056b3;
       text-decoration: none;
@@ -99,6 +108,23 @@
     a:hover {
       color: #0056b3;
       text-decoration: underline;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: black;
+        color: #ccc;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      a:hover {
+        color: inherit;
+        text-decoration: underline;
+      }
     }
 
     tr {
@@ -112,8 +138,8 @@
   </style>
 </head>
 
-<body style="background-color:#e5e5e5;">
-  <div style="background-color:#e5e5e5;">
+<body>
+  <div style="">
     <!--[if mso | IE]>
       <table
          align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600"
@@ -274,19 +300,6 @@
                       <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email-ticket.confirmation-event [{{event.displayName}}]{{/i18n}}</div>
                     </td>
                   </tr>
-                  <tr>
-                    <td align="center" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
-                        <tr>
-                          <td align="center" bgcolor="#28a745" role="presentation" style="border:none;border-radius:3px;cursor:auto;mso-padding-alt:10px 25px;background:#28a745;" valign="middle">
-                            <a href="{{ticketUrl}}" style="display:inline-block;background:#28a745;color:#ffffff;font-family:Source Sans Pro, Helvetica;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank">
-                              {{#i18n}}email-ticket.view-modify{{/i18n}}
-                            </a>
-                          </td>
-                        </tr>
-                      </table>
-                    </td>
-                  </tr>
                   {{#custom-body-text?}}
                     <tr>
                       <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
@@ -321,6 +334,99 @@
       <![endif]-->
     <div style="background:#f8f8ff;background-color:#f8f8ff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#f8f8ff;background-color:#f8f8ff;width:100%;">
+        <tbody>
+          <tr>
+            <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
+              <!--[if mso | IE]>
+                  <table role="presentation" border="0" cellpadding="0" cellspacing="0">
+                
+        <tr>
+      
+            <td
+               class="" style="vertical-align:top;width:130px;"
+            >
+          <![endif]-->
+              <div class="mj-column-px-130 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
+                <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
+                  <tr>
+                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
+                      <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
+                        <tbody>
+                          <tr>
+                            <td style="width:80px;">
+                              <img height="auto" src="{{baseUrl}}/resources/images/email/icon_link.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="80" />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              <!--[if mso | IE]>
+            </td>
+          
+            <td
+               class="" style="vertical-align:top;width:350px;"
+            >
+          <![endif]-->
+              <div class="mj-column-px-350 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
+                <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
+                  <tr>
+                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">{{#i18n}}email.event.online.important-information{{/i18n}}</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:14px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email.event.online.check-in{{/i18n}}</div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
+                      <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
+                        <tr>
+                          <td align="center" bgcolor="#28a745" role="presentation" style="border:none;border-radius:3px;cursor:auto;mso-padding-alt:10px 25px;background:#28a745;" valign="middle">
+                            <a href="{{onlineCheckInUrl}}" style="display:inline-block;background:#28a745;color:#ffffff;font-family:Source Sans Pro, Helvetica;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank">
+                              {{#i18n}}email-ticket.online.join-event{{/i18n}}
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
+                      <div style="font-family:Source Sans Pro, Helvetica;font-size:14px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email-ticket.look-forward{{/i18n}}</div>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+              <!--[if mso | IE]>
+            </td>
+          
+        </tr>
+      
+                  </table>
+                <![endif]-->
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!--[if mso | IE]>
+          </td>
+        </tr>
+      </table>
+      
+      <table
+         align="center" border="0" cellpadding="0" cellspacing="0" class="" style="width:600px;" width="600"
+      >
+        <tr>
+          <td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;">
+      <![endif]-->
+    <div style="background:white;background-color:white;margin:0px auto;max-width:600px;">
+      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:white;background-color:white;width:100%;">
         <tbody>
           <tr>
             <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
@@ -419,8 +525,8 @@
         <tr>
           <td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;">
       <![endif]-->
-    <div style="background:white;background-color:white;margin:0px auto;max-width:600px;">
-      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:white;background-color:white;width:100%;">
+    <div style="margin:0px auto;max-width:600px;">
+      <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="width:100%;">
         <tbody>
           <tr>
             <td style="direction:ltr;font-size:0px;padding:20px 0;text-align:center;">
@@ -430,61 +536,22 @@
         <tr>
       
             <td
-               class="" style="vertical-align:top;width:130px;"
+               class="" style="vertical-align:top;width:600px;"
             >
           <![endif]-->
-              <div class="mj-column-px-130 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
+              <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
-                  <tr>
-                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:collapse;border-spacing:0px;">
-                        <tbody>
-                          <tr>
-                            <td style="width:80px;">
-                              <img height="auto" src="{{baseUrl}}/resources/images/email/icon_link.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="80" />
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-              <!--[if mso | IE]>
-            </td>
-          
-            <td
-               class="" style="vertical-align:top;width:350px;"
-            >
-          <![endif]-->
-              <div class="mj-column-px-350 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
-                <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
-                  <tr>
-                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Source Sans Pro, Helvetica;font-size:20px;line-height:1;text-align:center;color:#212529;">{{#i18n}}email.event.online.important-information{{/i18n}}</div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Source Sans Pro, Helvetica;font-size:14px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email.event.online.check-in{{/i18n}}</div>
-                    </td>
-                  </tr>
                   <tr>
                     <td align="center" vertical-align="middle" style="font-size:0px;padding:10px 25px;word-break:break-word;">
                       <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;line-height:100%;">
                         <tr>
                           <td align="center" bgcolor="#7C8B95" role="presentation" style="border:none;border-radius:3px;cursor:auto;mso-padding-alt:10px 25px;background:#7C8B95;" valign="middle">
-                            <a href="{{onlineCheckInUrl}}" style="display:inline-block;background:#7C8B95;color:#ffffff;font-family:Source Sans Pro, Helvetica;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank">
-                              {{#i18n}}email-ticket.online.join-event{{/i18n}}
+                            <a href="{{ticketUrl}}" style="display:inline-block;background:#7C8B95;color:#ffffff;font-family:Source Sans Pro, Helvetica;font-size:13px;font-weight:normal;line-height:120%;margin:0;text-decoration:none;text-transform:none;padding:10px 25px;mso-padding-alt:0px;border-radius:3px;" target="_blank">
+                              {{#i18n}}email-ticket.view-modify{{/i18n}}
                             </a>
                           </td>
                         </tr>
                       </table>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td align="center" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                      <div style="font-family:Source Sans Pro, Helvetica;font-size:14px;line-height:1;text-align:center;color:#000000;">{{#i18n}}email-ticket.look-forward{{/i18n}}</div>
                     </td>
                   </tr>
                 </table>
