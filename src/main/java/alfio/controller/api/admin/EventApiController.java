@@ -234,8 +234,8 @@ public class EventApiController {
     }
 
     @PostMapping("/events/new")
-    public String insertEvent(@RequestBody EventModification eventModification) {
-        eventManager.createEvent(eventModification);
+    public String insertEvent(@RequestBody EventModification eventModification, Principal principal) {
+        eventManager.createEvent(eventModification, principal.getName());
         return OK;
     }
 

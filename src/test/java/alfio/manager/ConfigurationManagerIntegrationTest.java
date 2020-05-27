@@ -113,7 +113,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7, null, null, AlfioMetadata.empty());
-        eventManager.createEvent(em);
+        eventManager.createEvent(em, USERNAME);
 
         event = eventManager.getSingleEvent("eventShortName", "test");
         ticketCategory = ticketCategoryRepository.findAllTicketCategories(event.getId()).get(0);

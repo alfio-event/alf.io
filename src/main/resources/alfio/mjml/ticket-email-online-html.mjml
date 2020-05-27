@@ -4,26 +4,49 @@
 	    <mj-attributes>
 	    	<mj-all font-family="Source Sans Pro, Helvetica" />
 	    </mj-attributes>
-	    <mj-style>
-	      a {
-	      	color: #0056b3;
-	      	text-decoration: none;
-	      }
-	      a:hover {
-	      	color: #0056b3;
-	      	text-decoration: underline;
-	      }
-	      tr {
-	      	line-height:2;
-	      	text-align:center;
-	      }
+        <mj-style>
+              body {
+                background: white;
+                color: #393939;
+              }
+              .content-section {
+                background: white;
+              }
+              a {
+                color: #0056b3;
+                text-decoration: none;
+              }
+              a:hover {
+                color: #0056b3;
+                text-decoration: underline;
+              }
 
-	      tr .bottom-border {
-	      	border-bottom:2px solid #ecedee;
-	      }
-	    </mj-style>
+              @media (prefers-color-scheme: dark) {
+                body {
+                  background: black;
+                  color: #ccc;
+                }
+                a {
+                  color: inherit;
+                  text-decoration: none;
+                }
+                a:hover {
+                  color: inherit;
+                  text-decoration: underline;
+                }
+              }
+
+              tr {
+                line-height:2;
+                text-align:center;
+              }
+
+              tr .bottom-border {
+                border-bottom:2px solid #ecedee;
+              }
+        </mj-style>
 	  </mj-head>
-	<mj-body background-color="#e5e5e5">
+	<mj-body>
 		<mj-section padding-bottom="0px" background-color="white">
 			<mj-column width="100%">
 				<mj-divider
@@ -52,8 +75,6 @@
 	        	<mj-text align="center" font-size="20px">{{#i18n}}email-ticket.thank-you{{/i18n}}</mj-text>
 				
 				<mj-text align="center" font-size="20px">{{#i18n}}email-ticket.confirmation-event [{{event.displayName}}]{{/i18n}}</mj-text>
-				
-			    <mj-button background-color="#28a745" href="{{ticketUrl}}"> {{#i18n}}email-ticket.view-modify{{/i18n}}</mj-button>
 			    
 			    <mj-raw>{{#custom-body-text?}}</mj-raw>
 			    <mj-text align="center" font-size="14px">{{custom-body-text}}</mj-text>
@@ -61,8 +82,24 @@
 			    
 			</mj-column>
 		</mj-section>
+		<mj-section background-color="#f8f8ff">
+            <mj-column width="130px">
+                <mj-image src="{{baseUrl}}/resources/images/email/icon_link.png"></mj-image>
+            </mj-column>
+            <mj-column width="350px">
+                <mj-text font-size="20px" align="center" color="#212529">
+                    {{#i18n}}email.event.online.important-information{{/i18n}}
+                </mj-text>
+                <mj-text align="center" font-size="14px">{{#i18n}}email.event.online.check-in{{/i18n}}</mj-text>
+                <mj-button background-color="#28a745" href="{{onlineCheckInUrl}}">
+                    {{#i18n}}email-ticket.online.join-event{{/i18n}}
+                </mj-button>
+                <mj-text align="center" font-size="14px">{{#i18n}}email-ticket.look-forward{{/i18n}}</mj-text>
+            </mj-column>
 
-	     <mj-section background-color="#f8f8ff">
+        </mj-section>
+
+	     <mj-section background-color="white">
 			<mj-column width="130px">
 	   			<mj-image src="{{baseUrl}}/resources/images/email/icon_calendar.png"></mj-image>
 			</mj-column>
@@ -97,26 +134,11 @@
 			</mj-column>
 		</mj-section>
     
-	    <mj-section background-color="white">
-	   		<mj-column width="130px">
-	   			<mj-image src="{{baseUrl}}/resources/images/email/icon_link.png"></mj-image>
-			</mj-column>
-			
-	    	<mj-column width="350px">
-	    		<mj-text font-size="20px" align="center" color="#212529">
-					{{#i18n}}email.event.online.important-information{{/i18n}}
-				</mj-text>
-				
-				<mj-text align="center" font-size="14px">{{#i18n}}email.event.online.check-in{{/i18n}}</mj-text>
-				
-				<mj-button background-color="#7C8B95" href="{{onlineCheckInUrl}}">
-			        {{#i18n}}email-ticket.online.join-event{{/i18n}}
-			    </mj-button>
-			    
-			    <mj-text align="center" font-size="14px">{{#i18n}}email-ticket.look-forward{{/i18n}}</mj-text>
-	    	</mj-column>
-	    		
-	   	</mj-section>
+	    <mj-section>
+            <mj-column width="100%">
+                <mj-button align="center" background-color="#7C8B95" href="{{ticketUrl}}"> {{#i18n}}email-ticket.view-modify{{/i18n}}</mj-button>
+            </mj-column>
+	    </mj-section>
 	   	
 	   	<mj-raw>{{#custom-footer-text?}}</mj-raw>
 	    <mj-section background-color="white">

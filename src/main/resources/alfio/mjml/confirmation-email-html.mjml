@@ -5,6 +5,17 @@
 	    	<mj-all font-family="Source Sans Pro, Helvetica" />
 	    </mj-attributes>
 	    <mj-style>
+          body {
+            background: white;
+            color: #393939;
+          }
+
+          @media (prefers-color-scheme: dark) {
+            body {
+            background: black;
+            color: #ccc;
+            }
+          }
 	      a {
 	      	color: #0056b3;
 	      	text-decoration: none;

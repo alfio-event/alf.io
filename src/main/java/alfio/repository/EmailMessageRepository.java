@@ -68,7 +68,7 @@ public interface EmailMessageRepository {
     @Query("select id from email_message where event_id = :eventId and (status = 'WAITING' or status = 'RETRY') and request_ts <= :date limit 100 for update skip locked")
     List<Integer> loadIdsWaitingForProcessing(@Bind("eventId") int eventId, @Bind("date") Date date);
 
-    @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
+    @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp, html_message = null where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatusToSent(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);
 
     String FIND_MAILS = "select id, event_id, status, recipient, subject, message, checksum, request_ts, sent_ts, attempts, email_cc from email_message where event_id = :eventId and " +

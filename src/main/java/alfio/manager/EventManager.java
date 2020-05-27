@@ -180,7 +180,12 @@ public class EventManager {
         return eventRepository.existsById(eventId);
     }
 
-    public void createEvent(EventModification em) {
+    public void createEvent(EventModification em, String username) {
+        var organization = organizationRepository.findAllForUser(username)
+            .stream()
+            .filter(org -> org.getId() == em.getOrganizationId())
+            .findFirst()
+            .orElseThrow();
         int eventId = insertEvent(em);
         Event event = eventRepository.findById(eventId);
         createOrUpdateEventDescription(eventId, em);
@@ -189,7 +194,7 @@ public class EventManager {
         createCategoriesForEvent(em, event);
         createAllTicketsForEvent(event, em);
         extensionManager.handleEventCreation(event);
-        var eventMetadata = extensionManager.handleMetadataUpdate(event, AlfioMetadata.empty());
+        var eventMetadata = extensionManager.handleMetadataUpdate(event, organization, AlfioMetadata.empty());
         if(eventMetadata != null) {
             eventRepository.updateMetadata(eventMetadata, eventId);
         }
@@ -1067,7 +1072,7 @@ public class EventManager {
     }
 
     public boolean updateMetadata(Event event, AlfioMetadata metadata) {
-        var updatedMetadata = extensionManager.handleMetadataUpdate(event, metadata);
+        var updatedMetadata = extensionManager.handleMetadataUpdate(event, organizationRepository.getById(event.getOrganizationId()), metadata);
         if(updatedMetadata != null) {
             eventRepository.updateMetadata(updatedMetadata, event.getId());
         }
