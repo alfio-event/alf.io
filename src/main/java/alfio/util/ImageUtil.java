@@ -16,13 +16,6 @@
  */
 package alfio.util;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.EncodeHintType;
-import com.google.zxing.MultiFormatWriter;
-import com.google.zxing.WriterException;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import io.nayuki.qrcodegen.QrCode;
 import org.springframework.core.io.ClassPathResource;
 
@@ -32,8 +25,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.EnumMap;
-import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.center;
 import static org.apache.commons.lang3.StringUtils.truncate;
@@ -41,18 +32,18 @@ import static org.apache.commons.lang3.StringUtils.truncate;
 public final class ImageUtil {
     private ImageUtil() {
     }
-    static int width = 200;
-    static int height = 200;
-    static int border = 0;
+    private static final int WIDTH = 200;
+    private static final int HEIGHT = 200;
+    private static final int BORDER = 0;
     public static byte[] createQRCode(String text){
         try {
             QrCode qr = QrCode.encodeText(text, QrCode.Ecc.HIGH);
-            int paddedSize = qr.size + border * 2;
-            int scale = Math.min(width, height) / paddedSize;
-            BufferedImage bufferedImage = qr.toImage(scale, border);
-            BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            int paddedSize = qr.size + BORDER * 2;
+            int scale = Math.min(WIDTH, HEIGHT) / paddedSize;
+            BufferedImage bufferedImage = qr.toImage(scale, BORDER);
+            BufferedImage scaled = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_ARGB);
             Graphics g = scaled.createGraphics();
-            g.drawImage(bufferedImage, (width - paddedSize * scale) / 2, (height - paddedSize * scale) / 2, null);
+            g.drawImage(bufferedImage, (WIDTH - paddedSize * scale) / 2, (HEIGHT - paddedSize * scale) / 2, null);
             g.dispose();
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ImageIO.write(scaled, "png", outputStream);
@@ -68,12 +59,12 @@ public final class ImageUtil {
             InputStream fi = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             QrCode qr = QrCode.encodeText(text, QrCode.Ecc.HIGH);
-            int paddedSize = qr.size + border * 2;
-            int scale = Math.min(width, height) / paddedSize;
-            BufferedImage bufferedImage = qr.toImage(scale, border);
+            int paddedSize = qr.size + BORDER * 2;
+            int scale = Math.min(WIDTH, HEIGHT) / paddedSize;
+            BufferedImage bufferedImage = qr.toImage(scale, BORDER);
             BufferedImage scaled = new BufferedImage(200, 230, BufferedImage.TYPE_INT_ARGB);
             Graphics g = scaled.createGraphics();
-            g.drawImage(bufferedImage, (width - paddedSize * scale) / 2, (height - paddedSize * scale) / 2, null);
+            g.drawImage(bufferedImage, (WIDTH - paddedSize * scale) / 2, (HEIGHT - paddedSize * scale) / 2, null);
             g.dispose();
             Graphics2D graphics = (Graphics2D) scaled.getGraphics();
             graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
