@@ -48,6 +48,7 @@ import alfio.util.WorkingDaysAdjusters;
 import ch.digitalfondue.npjt.AffectedRowCountAndKey;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.MessageSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -1277,5 +1278,73 @@ class TicketReservationManagerTest {
         when(configurationManager.getBlacklistedMethodsForReservation(eq(event), any())).thenReturn(List.of(PaymentMethod.CREDIT_CARD));
         when(paymentManager.getPaymentMethods(eq(event), any())).thenReturn(Arrays.stream(PaymentProxy.values()).map(pp -> new PaymentMethodDTO(pp, pp.getPaymentMethod(), PaymentMethodStatus.ACTIVE)).collect(Collectors.toList()));
         assertTrue(trm.canProceedWithPayment(event, totalPrice, RESERVATION_ID));
+    }
+
+    @Nested
+    class SendReservationEmailIfNecessary {
+
+        private MaybeConfiguration maybeConfiguration;
+        private final String reservationEmail = "blabla@example.org";
+
+
+        @BeforeEach
+        @SuppressWarnings("unchecked")
+        void setUp() {
+            maybeConfiguration = mock(MaybeConfiguration.class);
+            Map<ConfigurationKeys, MaybeConfiguration> configurations = mock(Map.class);
+            when(configurations.get(any(ConfigurationKeys.class))).thenReturn(maybeConfiguration);
+            when(configurationManager.getFor(anyCollection(), any())).thenReturn(configurations);
+            when(ticketReservation.getSrcPriceCts()).thenReturn(0);
+            when(ticketReservation.getEmail()).thenReturn(reservationEmail);
+            when(ticket.getEmail()).thenReturn(reservationEmail);
+        }
+
+        @Test
+        void emailSentBecauseReservationIsNotFreeOfCharge() {
+            when(ticketReservation.getSrcPriceCts()).thenReturn(1);
+            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+        }
+
+        @Test
+        void emailSentBecauseThereIsMoreThanOneTicketInTheReservation() {
+            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket, ticket), event, Locale.ENGLISH, null);
+            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+        }
+
+        @Test
+        void emailSentBecauseTicketListIsNull() {
+            trm.sendConfirmationEmailIfNecessary(ticketReservation, null, event, Locale.ENGLISH, null);
+            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
+        }
+
+        @Test
+        void emailSentBecauseTicketListIsEmpty() {
+            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(), event, Locale.ENGLISH, null);
+            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
+        }
+
+        @Test
+        void emailSentBecauseTicketHolderEmailIsDifferentFromReservation() {
+            when(ticket.getEmail()).thenReturn("blabla2@example.org");
+            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+        }
+
+        @Test
+        void emailSentBecauseFlagIsSetToFalse() {
+            when(configurationManager.getFor(eq(SEND_RESERVATION_EMAIL_IF_NECESSARY), any())).thenReturn(maybeConfiguration);
+            when(maybeConfiguration.getValueAsBooleanOrDefault(true)).thenReturn(false);
+            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            verify(notificationManager).sendSimpleEmail(eq(event), anyString(), eq(reservationEmail), isNull(), any(), anyList());
+        }
+
+        @Test
+        void emailNOTSentBecauseFlagIsSetToTrue() {
+            when(configurationManager.getFor(eq(SEND_RESERVATION_EMAIL_IF_NECESSARY), any())).thenReturn(maybeConfiguration);
+            when(maybeConfiguration.getValueAsBooleanOrDefault(true)).thenReturn(true);
+            trm.sendConfirmationEmailIfNecessary(ticketReservation, List.of(ticket), event, Locale.ENGLISH, null);
+            verify(notificationManager, never()).sendSimpleEmail(eq(event), anyString(), anyString(), isNull(), any(), anyList());
+        }
     }
 }

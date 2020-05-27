@@ -60,6 +60,7 @@ import alfio.repository.user.UserRepository;
 import alfio.util.*;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -995,8 +996,9 @@ public class TicketReservationManager {
         int eventId = spec.getEvent().getId();
         final TicketReservation reservation = ticketReservationRepository.findReservationById(reservationId);
         Locale locale = LocaleUtil.forLanguageTag(reservation.getUserLanguage());
+        List<Ticket> tickets = null;
         if(paymentProxy != PaymentProxy.OFFLINE) {
-            acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent(), sendTickets);
+            tickets = acquireItems(paymentProxy, reservationId, spec.getEmail(), spec.getCustomerName(), spec.getLocale().getLanguage(), spec.getBillingAddress(), spec.getCustomerReference(), spec.getEvent(), sendTickets);
             extensionManager.handleReservationConfirmation(reservation, ticketReservationRepository.getBillingDetailsForReservation(reservationId), eventId);
         }
 
@@ -1013,8 +1015,22 @@ public class TicketReservationManager {
 
         if(sendReservationConfirmationEmail) {
             TicketReservation updatedReservation = ticketReservationRepository.findReservationById(reservationId);
-            sendConfirmationEmail(spec.getEvent(), updatedReservation, locale, username);
+            sendConfirmationEmailIfNecessary(updatedReservation, tickets, spec.getEvent(), locale, username);
             sendReservationCompleteEmailToOrganizer(spec.getEvent(), updatedReservation, locale, username);
+        }
+    }
+
+    void sendConfirmationEmailIfNecessary(TicketReservation ticketReservation,
+                                          List<Ticket> tickets,
+                                          Event event,
+                                          Locale locale,
+                                          String username) {
+        if(ticketReservation.getSrcPriceCts() > 0
+            || CollectionUtils.isEmpty(tickets) || tickets.size() > 1
+            || !tickets.get(0).getEmail().equals(ticketReservation.getEmail())
+            || !configurationManager.getFor(SEND_RESERVATION_EMAIL_IF_NECESSARY, ConfigurationLevel.event(event)).getValueAsBooleanOrDefault(true)
+            ) {
+            sendConfirmationEmail(event, ticketReservation, locale, username);
         }
     }
 
@@ -1022,7 +1038,7 @@ public class TicketReservationManager {
         return StringUtils.isNotBlank(event.getPrivacyPolicyLinkOrNull());
     }
 
-    private void acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
+    private List<Ticket> acquireItems(PaymentProxy paymentProxy, String reservationId, String email, CustomerName customerName,
                               String userLanguage, String billingAddress, String customerReference, Event event, boolean sendTickets) {
 
         TicketStatus ticketStatus = paymentProxy.isDeskPaymentRequired() ? TicketStatus.TO_BE_PAID : TicketStatus.ACQUIRED;
@@ -1058,7 +1074,8 @@ public class TicketReservationManager {
         waitingQueueManager.fireReservationConfirmed(reservationId);
         //we must notify the plugins about ticket assignment and send them by email
         TicketReservation reservation = findById(reservationId).orElseThrow(IllegalStateException::new);
-        findTicketsInReservation(reservationId).stream()
+        List<Ticket> assignedTickets = findTicketsInReservation(reservationId);
+        assignedTickets.stream()
             .filter(ticket -> StringUtils.isNotBlank(ticket.getFullName()) || StringUtils.isNotBlank(ticket.getFirstName()) || StringUtils.isNotBlank(ticket.getEmail()))
             .forEach(ticket -> {
                 Locale locale = LocaleUtil.forLanguageTag(ticket.getUserLanguage());
@@ -1070,7 +1087,7 @@ public class TicketReservationManager {
                     .collect(groupingBy(FieldNameAndValue::getName, mapping(FieldNameAndValue::getValue, toList())));
                 extensionManager.handleTicketAssignment(ticket, additionalInfo);
             });
-
+        return assignedTickets;
     }
 
     public PartialTicketTextGenerator getTicketEmailGenerator(Event event, TicketReservation ticketReservation, Locale ticketLanguage) {
