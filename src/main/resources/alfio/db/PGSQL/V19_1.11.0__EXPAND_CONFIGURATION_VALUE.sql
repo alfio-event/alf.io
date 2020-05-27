@@ -16,6 +16,7 @@
 --
 
 alter table configuration alter column c_value SET DATA TYPE text;
+alter table configuration add column last_modified_date timestamp with time zone;
 alter table configuration_organization alter column c_value SET DATA TYPE text;
 alter table configuration_event alter column c_value SET DATA TYPE text;
 alter table configuration_ticket_category alter column c_value SET DATA TYPE text;

@@ -24,6 +24,7 @@ import org.apache.commons.lang3.builder.CompareToBuilder;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+import java.util.Date;
 import java.util.function.Function;
 
 @Getter
@@ -37,7 +38,6 @@ public class Configuration implements Comparable<Configuration> {
     private final ConfigurationPathLevel configurationPathLevel;
     private final boolean basic;
     private final boolean internal;
-
 
     public Configuration(@Column("id") int id,
                          @Column("c_key") String key,
