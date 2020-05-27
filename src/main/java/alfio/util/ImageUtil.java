@@ -23,6 +23,7 @@ import com.google.zxing.WriterException;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+import io.nayuki.qrcodegen.QrCode;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.imageio.ImageIO;
@@ -40,33 +41,43 @@ import static org.apache.commons.lang3.StringUtils.truncate;
 public final class ImageUtil {
     private ImageUtil() {
     }
-
-    public static byte[] createQRCode(String text) {
+    static int width = 200;
+    static int height = 200;
+    static int border = 0;
+    public static byte[] createQRCode(String text){
         try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            BitMatrix matrix = drawQRCode(text);
-            MatrixToImageWriter.writeToStream(matrix, "png", baos);
-            return baos.toByteArray();
-        } catch (WriterException | IOException e) {
+            QrCode qr = QrCode.encodeText(text, QrCode.Ecc.HIGH);
+            int paddedSize = qr.size + border * 2;
+            int scale = Math.min(width, height) / paddedSize;
+            BufferedImage bufferedImage = qr.toImage(scale, border);
+            BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            Graphics g = scaled.createGraphics();
+            g.drawImage(bufferedImage, (width - paddedSize * scale) / 2, (height - paddedSize * scale) / 2, null);
+            g.dispose();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            ImageIO.write(scaled, "png", outputStream);
+            return outputStream.toByteArray();
+        }
+        catch ( IOException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private static BitMatrix drawQRCode(String text) throws WriterException {
-        Map<EncodeHintType, Object> hintMap = new EnumMap<>(EncodeHintType.class);
-        hintMap.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
-        return new MultiFormatWriter().encode(text, BarcodeFormat.QR_CODE, 200, 200, hintMap);
-    }
-
     public static byte[] createQRCodeWithDescription(String text, String description) {
-        try (InputStream fi = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
-             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            BitMatrix matrix = drawQRCode(text);
-            BufferedImage bufferedImage = MatrixToImageWriter.toBufferedImage(matrix);
+        try {
+            InputStream fi = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            QrCode qr = QrCode.encodeText(text, QrCode.Ecc.HIGH);
+            int paddedSize = qr.size + border * 2;
+            int scale = Math.min(width, height) / paddedSize;
+            BufferedImage bufferedImage = qr.toImage(scale, border);
             BufferedImage scaled = new BufferedImage(200, 230, BufferedImage.TYPE_INT_ARGB);
-            Graphics2D graphics = (Graphics2D)scaled.getGraphics();
+            Graphics g = scaled.createGraphics();
+            g.drawImage(bufferedImage, (width - paddedSize * scale) / 2, (height - paddedSize * scale) / 2, null);
+            g.dispose();
+            Graphics2D graphics = (Graphics2D) scaled.getGraphics();
             graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-            graphics.drawImage(bufferedImage, 0,0, null);
+            graphics.drawImage(bufferedImage, 0, 0, null);
             graphics.setColor(Color.WHITE);
             graphics.fillRect(0, 200, 200, 30);
             graphics.setColor(Color.BLACK);
@@ -74,9 +85,9 @@ public final class ImageUtil {
             graphics.drawString(center(truncate(description, 23), 25), 0, 215);
             ImageIO.write(scaled, "png", baos);
             return baos.toByteArray();
-        } catch (WriterException | IOException | FontFormatException e) {
+        }
+        catch (IOException | FontFormatException e) {
             throw new IllegalStateException(e);
         }
     }
-
 }

@@ -140,6 +140,7 @@ dependencies {
     compile "ch.digitalfondue.jfiveparse:jfiveparse:0.7.1"
     compile "guru.nidi.com.kitfox:svgSalamander:1.1.3"
     /**/
+    compile group: 'io.nayuki', name: 'qrcodegen', version: '1.5.0'
     compile "com.google.zxing:core:3.4.0"
     compile "com.google.zxing:javase:3.4.0"
     compile "org.flywaydb:flyway-core:6.0.8"
