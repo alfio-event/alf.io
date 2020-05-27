@@ -116,7 +116,7 @@ public class ExtensionManager {
         Map<String, Object> payload = new HashMap<>();
         payload.put("metadata", metadata);
         payload.put("organization", organization);
-        payload.put("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organization.getId())));
+        payload.put("baseUrl", configurationManager.getFor(ConfigurationKeys.BASE_URL, ConfigurationLevel.organization(organization.getId())).getRequiredValue());
         return syncCall(ExtensionEvent.EVENT_METADATA_UPDATE, event, payload, AlfioMetadata.class);
     }
 
