@@ -55,9 +55,8 @@ public final class ImageUtil {
     }
 
     public static byte[] createQRCodeWithDescription(String text, String description) {
-        try {
-            InputStream fi = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try(InputStream fi = new ClassPathResource("/alfio/font/DejaVuSansMono.ttf").getInputStream();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             QrCode qr = QrCode.encodeText(text, QrCode.Ecc.HIGH);
             int paddedSize = qr.size + BORDER * 2;
             int scale = Math.min(WIDTH, HEIGHT) / paddedSize;
