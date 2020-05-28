@@ -44,6 +44,7 @@ public class DefaultMailer implements Mailer {
         mailers.put("mailgun", new MailgunMailer(httpClient, configurationManager));
         mailers.put("mailjet", new MailjetMailer(httpClient, configurationManager));
         mailers.put("sendgrid", new SendGridMailer(httpClient, configurationManager));
+        mailers.put("sendinblue",new SendInBlueMailer(httpClient,configurationManager));
         mailers.put("disabled", new MockMailer(configurationManager, environment));
     }
 

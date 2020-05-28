@@ -38,6 +38,7 @@ public final class HttpUtils {
     public static final String APPLICATION_FORM_URLENCODED = "application/x-www-form-urlencoded";
     public static final String MULTIPART_FORM_DATA = "multipart/form-data";
     public static final String AUTHORIZATION = "Authorization";
+    public static final String API_KEY="api-key";
 
     public static boolean callSuccessful(HttpResponse<?> response) {
         return statusCodeIsSuccessful(response.statusCode());
