@@ -17,6 +17,7 @@
 package alfio.controller.api.admin;
 
 import alfio.config.WebSecurityConfig;
+import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
 import alfio.manager.user.UserManager;
 import alfio.model.modification.OrganizationModification;
@@ -24,6 +25,7 @@ import alfio.model.modification.UserModification;
 import alfio.model.result.ValidationResult;
 import alfio.model.system.ConfigurationKeys;
 import alfio.model.user.*;
+import alfio.repository.user.OrganizationRepository;
 import alfio.util.ImageUtil;
 import alfio.util.Json;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -42,14 +44,19 @@ import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static alfio.model.system.ConfigurationKeys.WRITE_USER_CREDENTIAL_FOR_JITSI_SYNC;
 import static org.apache.commons.lang3.StringUtils.defaultString;
 import static org.apache.commons.lang3.StringUtils.trimToNull;
 
@@ -61,6 +68,7 @@ public class UsersApiController {
 
     private static final String OK = "OK";
     private final UserManager userManager;
+    private final OrganizationRepository organizationRepository;
     private final ConfigurationManager configurationManager;
 
     @ExceptionHandler(Exception.class)
@@ -253,8 +261,22 @@ public class UsersApiController {
 
     @PostMapping("/users/current/update-password")
     public ValidationResult updateCurrentUserPassword(@RequestBody PasswordModification passwordModification, Principal principal) {
-        return userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
+        var res = userManager.validateNewPassword(principal.getName(), passwordModification.oldPassword, passwordModification.newPassword, passwordModification.newPasswordConfirm)
             .ifSuccess(() -> userManager.updatePassword(principal.getName(), passwordModification.newPassword));
+        // this check should be inside the userManager but it generates circular dependecy with configuration manager..
+        var org = organizationRepository.findAllOrganizationIdForUser(principal.getName());
+        if(org.size() > 0 && configurationManager.getFor(WRITE_USER_CREDENTIAL_FOR_JITSI_SYNC, ConfigurationLevel.organization(org.get(0))).getValueAsBooleanOrDefault(false)) {
+            try {
+                File directory = new File("/users");
+                if (!directory.exists()) {
+                    directory.mkdirs();
+                }
+                Files.write(Paths.get(directory + "/" + principal.getName()), Collections.singleton(passwordModification.newPassword), StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                log.error(e);
+            }
+        }
+        return res;
     }
 
     @PostMapping("/users/current/edit")

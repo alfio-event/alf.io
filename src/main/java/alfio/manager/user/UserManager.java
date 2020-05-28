@@ -16,7 +16,10 @@
  */
 package alfio.manager.user;
 
+import alfio.manager.system.ConfigurationLevel;
+import alfio.manager.system.ConfigurationManager;
 import alfio.model.result.ValidationResult;
+import alfio.model.system.Configuration;
 import alfio.model.user.*;
 import alfio.model.user.join.UserOrganization;
 import alfio.repository.InvoiceSequencesRepository;
@@ -37,6 +40,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -44,6 +52,8 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static alfio.model.system.ConfigurationKeys.ENABLE_TICKET_TRANSFER;
+import static alfio.model.system.ConfigurationKeys.WRITE_USER_CREDENTIAL_FOR_JITSI_SYNC;
 import static java.util.stream.Collectors.toList;
 
 @Component
