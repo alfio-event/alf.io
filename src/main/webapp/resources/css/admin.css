@@ -815,6 +815,7 @@ div.preformatted {
 .pi-dark {
     background-color: #343a40;
     color: #343a40;
+
 }
 
 .daterangepicker select.hourselect, .daterangepicker select.minuteselect, .daterangepicker select.secondselect, .daterangepicker select.ampmselect {
@@ -829,9 +830,9 @@ div.preformatted {
 
 @media (max-width:1220px){
     .navbar-text{
-        display:none !important
+        display: none !important
     }
     .row {
-        font-size : 16px;
+        font-size: 94%;
     }
 }
