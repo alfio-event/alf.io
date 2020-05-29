@@ -38,7 +38,7 @@ public class Configuration implements Comparable<Configuration> {
     private final ConfigurationPathLevel configurationPathLevel;
     private final boolean basic;
     private final boolean internal;
-
+    private final Date lastModifeiedDate;
     public Configuration(@Column("id") int id,
                          @Column("c_key") String key,
                          @Column("c_value") String value,
@@ -51,6 +51,7 @@ public class Configuration implements Comparable<Configuration> {
         this.configurationPathLevel = configurationPathLevel;
         this.basic = this.configurationKey.isBasic();
         this.internal = this.configurationKey.isInternal();
+        lastModifeiedDate = new Date();
     }
 
     public ComponentType getComponentType() {
