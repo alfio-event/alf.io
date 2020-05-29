@@ -29,6 +29,9 @@ USER 1001
 
 # Define working directory.
 RUN mkdir /home/alfio/app
+RUN mkdir /home/alfio/users
+VOLUME /home/alfio/users
+RUN chown -R alfio:alfio /home/alfio/users
 WORKDIR /home/alfio/app
 
 RUN mkdir logs

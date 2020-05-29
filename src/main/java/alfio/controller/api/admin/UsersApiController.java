@@ -267,11 +267,12 @@ public class UsersApiController {
         var org = organizationRepository.findAllOrganizationIdForUser(principal.getName());
         if(org.size() > 0 && configurationManager.getFor(WRITE_USER_CREDENTIAL_FOR_JITSI_SYNC, ConfigurationLevel.organization(org.get(0))).getValueAsBooleanOrDefault(false)) {
             try {
-                File directory = new File("/users");
+                File directory = new File("/home/alfio/users");
                 if (!directory.exists()) {
                     directory.mkdirs();
                 }
                 Files.write(Paths.get(directory + "/" + principal.getName()), Collections.singleton(passwordModification.newPassword), StandardCharsets.UTF_8);
+                log.info("Psw update for User " + principal.getName());
             } catch (IOException e) {
                 log.error(e);
             }
