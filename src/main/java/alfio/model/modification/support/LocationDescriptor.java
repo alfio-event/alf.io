@@ -85,8 +85,7 @@ public class LocationDescriptor {
             return ConfigurationKeys.GeoInfoProvider.GOOGLE;
         } else if (geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) && geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isPresent()) {
             return geoConf.get(ConfigurationKeys.MAPS_PROVIDER).getValue().map(ConfigurationKeys.GeoInfoProvider::valueOf).orElseThrow(IllegalStateException::new);
-        }
-        else {
+        } else {
             return ConfigurationKeys.GeoInfoProvider.NONE;
         }
     }
