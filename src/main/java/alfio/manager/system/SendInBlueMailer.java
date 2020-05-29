@@ -57,7 +57,6 @@ public class SendInBlueMailer implements Mailer {
         payload.put("cc",createPersonalizations(cc));
         payload.put("replyTo",config.get(ConfigurationKeys.MAIL_REPLY_TO).getRequiredValue());
         payload.put("subject",subject);
-        payload.put("templateId",config.get(ConfigurationKeys.SENDINBLUE_TEMPLATE_ID).getRequiredValue());
         payload.put("htmlContent",html);
         payload.put("textContent",text);
 

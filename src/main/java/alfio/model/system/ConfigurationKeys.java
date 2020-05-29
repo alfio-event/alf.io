@@ -147,7 +147,6 @@ public enum ConfigurationKeys {
     //sendinblue realted config
     SENDINBLUE_API_KEY("Sendinblue api key", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
     SENDINBLUE_FROM("Sendinblue E-Mail sender", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
-    SENDINBLUE_TEMPLATE_ID("Sendinblue templateId", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
 
     // mailjet
     MAILJET_APIKEY_PUBLIC("Mailjet public api key", false, SettingCategory.MAIL, ComponentType.TEXT, false, EnumSet.of(SYSTEM)),
