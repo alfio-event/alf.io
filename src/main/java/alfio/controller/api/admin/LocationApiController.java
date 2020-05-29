@@ -75,7 +75,7 @@ public class LocationApiController {
     }
 
     private Map<ConfigurationKeys, ConfigurationManager.MaybeConfiguration> getGeoConf() {
-        var keys = Set.of(MAPS_PROVIDER, MAPS_CLIENT_API_KEY, MAPS_HERE_API_KEY);
+        var keys = Set.of(MAPS_PROVIDER, MAPS_CLIENT_API_KEY, MAPS_HERE_API_KEY,MAPS_MAPQUEST_API_KEY);
         return configurationManager.getFor(keys, ConfigurationLevel.system());
     }
 

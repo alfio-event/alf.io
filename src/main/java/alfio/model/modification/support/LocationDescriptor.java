@@ -85,7 +85,8 @@ public class LocationDescriptor {
             return ConfigurationKeys.GeoInfoProvider.GOOGLE;
         } else if (geoConf.containsKey(ConfigurationKeys.MAPS_PROVIDER) && geoConf.get(ConfigurationKeys.MAPS_PROVIDER).isPresent()) {
             return geoConf.get(ConfigurationKeys.MAPS_PROVIDER).getValue().map(ConfigurationKeys.GeoInfoProvider::valueOf).orElseThrow(IllegalStateException::new);
-        } else {
+        }
+        else {
             return ConfigurationKeys.GeoInfoProvider.NONE;
         }
     }
@@ -94,6 +95,7 @@ public class LocationDescriptor {
         switch (provider) {
             case GOOGLE: return "https://maps.googleapis.com/maps/api/staticmap?center=${latitude},${longitude}&key=${key}&zoom=16&size=400x400&markers=color:blue%7Clabel:E%7C${latitude},${longitude}";
             case HERE: return "https://image.maps.ls.hereapi.com/mia/1.6/mapview?c=${latitude},${longitude}&z=16&w=400&h=400&poi=${latitude},${longitude}&apikey=${key}";
+            case MAPQUEST:return "https://www.mapquestapi.com/staticmap/v4/getmap?key=${key}&size=400,400&type=map&imagetype=jpg&zoom=16&center=${latitude},${longitude}&pois=https://www.mapquestapi.com/staticmap/geticon?uri=poi-red_1.png,${latitude},${longitude}";
             default: return "";
         }
     }
@@ -103,6 +105,8 @@ public class LocationDescriptor {
             geoConf.get(ConfigurationKeys.MAPS_CLIENT_API_KEY).getValue().ifPresent(key -> params.put("key", key));
         } else if (ConfigurationKeys.GeoInfoProvider.HERE == provider) {
             geoConf.get(ConfigurationKeys.MAPS_HERE_API_KEY).getValue().ifPresent(key -> params.put("key", key));
+        } else if(ConfigurationKeys.GeoInfoProvider.MAPQUEST==provider) {
+            geoConf.get(ConfigurationKeys.MAPS_MAPQUEST_API_KEY).getValue().ifPresent(key -> params.put("key",key));
         }
     }
 
