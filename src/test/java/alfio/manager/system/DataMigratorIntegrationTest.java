@@ -119,7 +119,7 @@ public class DataMigratorIntegrationTest extends BaseIntegrationTest {
 
         EventModification em = new EventModification(null, Event.EventFormat.IN_PERSON, "url", "url", "url", "privacy", null, null,
                 eventName, displayName, organization.getId(),
-                "muh location",
+                vanue, "muh location",
                 "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now().plusHours(1)),

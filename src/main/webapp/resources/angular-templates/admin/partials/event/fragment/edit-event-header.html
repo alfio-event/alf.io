@@ -18,8 +18,13 @@
                 <label for="format">Event will be held</label>
                 <select data-ng-model="obj.format" name="format" id="format" class="form-control" required data-ng-options="format.id as format.description for format in formats"></select>
             </div>
+            <div class="form-group" bs-form-error="editEventHeader.vanue">
+                <label for="displayName">Event Vanue</label>
+                <input type="text" data-ng-model="obj.vanue" name="vanue" data-grab-focus id="vanue" class="form-control" data-ng-model-options="{ updateOn: 'default blur', debounce: 500}"/>
+                <field-error data-form-obj="editEventHeader" data-min-char="1" data-field-obj="editEventHeader.vanue" data-show-existing-errors="showExistingErrors"></field-error>
+            </div>
             <div class="form-group" bs-form-error="editEventHeader.location" data-ng-if="obj.format !== 'ONLINE'">
-                <label for="location">Event Location</label>
+                <label for="location">Event Address</label>
                 <textarea data-ng-model="obj.location" name="location" id="location" class="form-control" required data-ng-minlength="10" data-ng-change="updateLocation(obj.location)" data-ng-model-options="{ updateOn: 'blur'}" placeholder="Please enter the address of the Location. This will be used for displaying the map on the event page."></textarea>
                 <field-error data-form-obj="editEventHeader" data-field-obj="editEventHeader.location" data-min-char="10" data-show-existing-errors="showExistingErrors"></field-error>
             </div>

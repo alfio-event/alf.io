@@ -259,7 +259,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), null,
+        EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), vanue, null,
             "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty());
@@ -284,7 +284,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), null,
+        EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), vanue, null,
             "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 40, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty());
@@ -306,7 +306,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", false, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), null,
+        EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), vanue, null,
             "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty());
@@ -327,7 +327,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
                         DESCRIPTION, BigDecimal.TEN, false, "", true, null, null, null, null, null, 0, null, null, AlfioMetadata.empty()));
         Pair<Event, String> pair = initEvent(categories, organizationRepository, userManager, eventManager, eventRepository);
         Event event = pair.getKey();
-        EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), null,
+        EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), vanue, null,
             "0.0", "0.0", ZoneId.systemDefault().getId(), null,
                 DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), 10, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty());
@@ -412,7 +412,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
             event.getShortName(),
             "new display name",
             event.getOrganizationId(),
-            event.getLocation(),
+                vanue, event.getLocation(),
             "0.0",
             "0.0",
             ZoneId.systemDefault().getId(),
@@ -816,7 +816,7 @@ public class EventManagerIntegrationTest extends BaseIntegrationTest {
 
         Event event = pair.getKey();
         if(newEventSize != AVAILABLE_SEATS) {
-            EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), null, null,
+            EventModification update = new EventModification(event.getId(), Event.EventFormat.IN_PERSON, null, null, null, null, null, null, null, null, event.getOrganizationId(), vanue, null, null,
                 null, event.getZoneId().toString(), Collections.emptyMap(), DateTimeModification.fromZonedDateTime(event.getBegin()), DateTimeModification.fromZonedDateTime(event.getEnd()),
                 event.getRegularPrice(), event.getCurrency(), newEventSize, event.getVat(), event.isVatIncluded(), event.getAllowedPaymentProxies(), null, event.isFreeOfCharge(), null, 7, null, null, AlfioMetadata.empty());
             eventManager.updateEventPrices(event, update, pair.getValue());

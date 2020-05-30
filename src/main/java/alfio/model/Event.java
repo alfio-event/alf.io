@@ -61,6 +61,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     private final String privacyPolicyUrl;
     private final String imageUrl;
     private final String fileBlobId;
+    private final String vanue;
     private final String location;
     private final String latitude;
     private final String longitude;
@@ -75,18 +76,16 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     private final String privateKey;
     private final ZoneId timeZone;
     private final int locales;
-
     private final int srcPriceCts;
     private final PriceContainer.VatStatus vatStatus;
     private final String version;
     private final Status status;
 
-
-
     public Event(@Column("id") int id,
                  @Column("format") EventFormat format,
                  @Column("short_name") String shortName,
                  @Column("display_name") String displayName,
+                 @Column("vanue") String vanue,
                  @Column("location") String location,
                  @Column("latitude") String latitude,
                  @Column("longitude") String longitude,
@@ -123,6 +122,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         final ZoneId zoneId = TimeZone.getTimeZone(timeZone).toZoneId();
 
         this.shortName = shortName;
+        this.vanue = vanue;
         this.location = location;
         this.latitude = latitude;
         this.longitude = longitude;
@@ -133,7 +133,6 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         this.vatIncluded = vatStatus == PriceContainer.VatStatus.INCLUDED;
         this.vat = vat;
         this.privateKey = privateKey;
-
         this.locales = locales;
         this.allowedPaymentProxies = Arrays.stream(Optional.ofNullable(allowedPaymentProxies).orElse("").split(","))
                 .filter(StringUtils::isNotBlank)

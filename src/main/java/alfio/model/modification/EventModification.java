@@ -47,6 +47,7 @@ public class EventModification {
     private final String shortName;
     private final String displayName;
     private final int organizationId;
+    private final String vanue;
     private final String location;
     private final String latitude;
     private final String longitude;
@@ -82,6 +83,7 @@ public class EventModification {
                              @JsonProperty("shortName") String shortName,
                              @JsonProperty("displayName") String displayName,
                              @JsonProperty("organizationId") int organizationId,
+                             @JsonProperty("vanue") String vanue,
                              @JsonProperty("location") String location,
                              @JsonProperty("latitude") String latitude,
                              @JsonProperty("longitude") String longitude,
@@ -113,6 +115,7 @@ public class EventModification {
         this.shortName = shortName;
         this.displayName = displayName;
         this.organizationId = organizationId;
+        this.vanue = vanue;
         this.location = location;
         this.latitude= latitude;
         this.longitude = longitude;
