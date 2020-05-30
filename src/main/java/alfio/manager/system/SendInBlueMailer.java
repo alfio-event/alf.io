@@ -25,7 +25,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
-import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.net.URI;
@@ -52,7 +51,7 @@ public class SendInBlueMailer implements Mailer {
         if (ArrayUtils.isNotEmpty(attachment)) {
             addAttachments(payload, attachment);
         }
-        ArrayList toList=new ArrayList<>();
+        final var toList=new ArrayList<>();
         toList.add(Map.of("email",to));
         payload.put("sender", Map.of("email", from, "name", fromName));
         payload.put("to", toList);
