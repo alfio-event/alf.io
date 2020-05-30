@@ -52,8 +52,10 @@ public class SendInBlueMailer implements Mailer {
         if (ArrayUtils.isNotEmpty(attachment)) {
             addAttachments(payload, attachment);
         }
+        ArrayList toList=new ArrayList<>();
+        toList.add(Map.of("email",to));
         payload.put("sender", Map.of("email", from, "name", fromName));
-        payload.put("to", Map.of("email",to));
+        payload.put("to", toList);
         payload.put("cc",createPersonalizations(cc));
         payload.put("replyTo",config.get(ConfigurationKeys.MAIL_REPLY_TO).getRequiredValue());
         payload.put("subject",subject);
@@ -79,6 +81,7 @@ public class SendInBlueMailer implements Mailer {
             log.warn("error while sending email using sendinblue", e);
         }
     }
+
 
     private ArrayList<Object> createPersonalizations(final List<String> cc) {
         final var recipients = new ArrayList<>();
