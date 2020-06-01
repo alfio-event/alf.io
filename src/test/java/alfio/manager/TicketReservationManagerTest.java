@@ -1090,6 +1090,7 @@ class TicketReservationManagerTest {
             event.getFormat(),
             event.getShortName(),
             event.getDisplayName(),
+            event.getVenue(),
             event.getLocation(),
             event.getLatitude(),
             event.getLongitude(),
