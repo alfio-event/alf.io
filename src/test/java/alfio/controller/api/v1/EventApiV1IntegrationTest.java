@@ -117,6 +117,7 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
         return new EventCreationRequest(
             "Title",
             this.shortName,
+            null,
             Collections.singletonList(new EventCreationRequest.DescriptionRequest("en", "desc")),
             new EventCreationRequest.LocationRequest(
                 "Pollegio 6742 Switzerland",
@@ -197,7 +198,7 @@ public class EventApiV1IntegrationTest extends BaseIntegrationTest {
 
 
         String newTitle = "new title";
-        EventCreationRequest updateRequest = new EventCreationRequest(newTitle,null,null,null,null,null,null,null,null, null,null,
+        EventCreationRequest updateRequest = new EventCreationRequest(newTitle,null,null,null,null,null,null,null,null,null, null,null,
             new EventCreationRequest.TicketRequest(null,10,null,null,null,null,null,null), null, null
         );
         controller.update(shortName,updateRequest,mockPrincipal);

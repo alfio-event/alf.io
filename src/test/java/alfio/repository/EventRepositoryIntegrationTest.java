@@ -97,7 +97,7 @@ public class EventRepositoryIntegrationTest extends BaseIntegrationTest {
 
 
         AffectedRowCountAndKey<Integer> pair = eventRepository.insert("unittest", Event.EventFormat.IN_PERSON, "display Name", "http://localhost:8080/", "http://localhost:8080",
-            "http://localhost:8080", null,null, null, "Lugano", "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, "CHF", 4, true,
+            "http://localhost:8080", null,null, null, "Lugano",null, "9", "8", beginEventDate, endEventDate, NEW_YORK_TZ, "CHF", 4, true,
             new BigDecimal(1), "", "", orgId, 7, PriceContainer.VatStatus.INCLUDED, 0, null, Event.Status.PUBLIC, AlfioMetadata.empty());
         Event e = eventRepository.findById(pair.getKey());
         assertNotNull("Event not found in DB", e);
