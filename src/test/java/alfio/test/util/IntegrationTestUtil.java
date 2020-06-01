@@ -112,7 +112,7 @@ public class IntegrationTestUtil {
 
         EventModification em = new EventModification(null, Event.EventFormat.IN_PERSON, "url", "url", "url", "privacy","url", null,
                 eventName, "event display name", organization.getId(),
-                vanue, "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
+                "venue", "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
                 new DateTimeModification(LocalDate.now().plusDays(5), LocalTime.now()),
                 new DateTimeModification(expiration.toLocalDate(), expiration.toLocalTime()),
                 BigDecimal.TEN, "CHF", AVAILABLE_SEATS, BigDecimal.ONE, true, Collections.singletonList(PaymentProxy.OFFLINE), categories, false, new LocationDescriptor("","","",""), 7, null, additionalServices, AlfioMetadata.empty());

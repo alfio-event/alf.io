@@ -15,4 +15,4 @@
 -- along with alf.io.  If not, see <http://www.gnu.org/licenses/>.
 --
 
-alter table event add COLUMN vanue VARCHAR(255) not null DEFAULT 'PUBLIC';
+alter table event add COLUMN venue VARCHAR(255);

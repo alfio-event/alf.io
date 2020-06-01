@@ -47,7 +47,7 @@ public class EventCreationRequest{
     private String title;
     private String slug;
     private List<DescriptionRequest> description;
-    private String vanue;
+    private String venue;
     private LocationRequest location;
     private String timezone;
     private LocalDateTime startDate;
@@ -84,7 +84,7 @@ public class EventCreationRequest{
             slug,
             title,
             organization.getId(),
-            vanue,
+            venue,
             location.getFullAddress(),
             location.getCoordinate().getLatitude(),
             location.getCoordinate().getLongitude(),
@@ -137,7 +137,7 @@ public class EventCreationRequest{
             original.getShortName(),
             first(title,original.getDisplayName()),
             organization.getId(),
-            original.getVanue(),
+            original.getVenue(),
             location != null ? first(location.getFullAddress(),original.getLocation()) : original.getLocation(),
             location != null && location.getCoordinate() != null ? location.getCoordinate().getLatitude() : original.getLatitude(),
             location != null && location.getCoordinate() != null ? location.getCoordinate().getLongitude() : original.getLongitude(),

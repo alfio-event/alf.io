@@ -109,7 +109,7 @@ public class ConfigurationManagerIntegrationTest extends BaseIntegrationTest {
                 null, null, null, 0, null, null, AlfioMetadata.empty()));
         EventModification em = new EventModification(null, Event.EventFormat.IN_PERSON, "url", "url", "url", null, null, null,
             "eventShortName", "displayName", organization.getId(),
-                vanue, "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
+                "venue", "muh location", "0.0", "0.0", ZoneId.systemDefault().getId(), desc,
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             new DateTimeModification(LocalDate.now(), LocalTime.now()),
             BigDecimal.TEN, "CHF", 20, BigDecimal.ONE, true, null, ticketsCategory, false, new LocationDescriptor("","","",""), 7, null, null, AlfioMetadata.empty());

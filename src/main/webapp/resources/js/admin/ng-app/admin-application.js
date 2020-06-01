@@ -7,7 +7,7 @@
     //
     var FIELD_TYPES = ['input:text', 'input:tel', 'textarea', 'select', 'country'];
     var ERROR_CODES = { DUPLICATE:'duplicate', MAX_LENGTH:'maxlength', MIN_LENGTH:'minlength'};
-    
+
     var admin = angular.module('adminApplication', ['ngSanitize','ui.bootstrap', 'ui.router', 'adminDirectives',
         'adminServices', 'utilFilters', 'ngMessages', 'ngFileUpload', 'nzToggle', 'alfio-email', 'alfio-util', 'alfio-configuration', 'alfio-additional-services', 'alfio-event-statistic',
         'ui.ace', 'monospaced.qrcode', 'checklist-model', 'group', angularDragula(angular)]);
@@ -28,11 +28,11 @@
             .state('index', {
                 url: "/",
                 template: ['<div class="container" container-fluid-responsive="">',
-                               '<h1>Dashboard</h1>',
-                               '<hr />',
-                               '<active-events-list></active-events-list>',
-                               '<expired-events-list></expired-events-list>',
-                           '</div>'].join('')
+                    '<h1>Dashboard</h1>',
+                    '<hr />',
+                    '<active-events-list></active-events-list>',
+                    '<expired-events-list></expired-events-list>',
+                    '</div>'].join('')
             })
             .state('organizations', {
                 url: "/organizations/",
@@ -255,87 +255,87 @@
                     view: 'WAITING_QUEUE'
                 }
             }).state('events.single.show-resources', {
-                url: '/show-resources',
-                template: '<resources-show event="ctrl.event"></resources-show>',
-                controller: function(getEvent) {
-                    this.event = getEvent.data.event;
-                },
-                controllerAs: 'ctrl'
-            }).state('events.single.edit-resources', {
-                url: '/show-resources/:resourceName/',
-                template: '<resources-edit event="ctrl.event" resource-name="ctrl.resourceName"></resources-show>',
-                controller: function(getEvent, $state) {
-                    this.event = getEvent.data.event;
-                    this.resourceName = $state.params.resourceName;
-                },
-                controllerAs: 'ctrl'
-            }).state('events.single.create-reservation', {
-                url:'/reservation/new',
-                template: '<reservation-create event="ctrl.event"></reservation-create>',
-                controller: function(getEvent) {
-                    this.event = getEvent.data.event;
-                },
-                controllerAs: 'ctrl',
-                data: {
-                    view: 'CREATE_RESERVATION'
+            url: '/show-resources',
+            template: '<resources-show event="ctrl.event"></resources-show>',
+            controller: function(getEvent) {
+                this.event = getEvent.data.event;
+            },
+            controllerAs: 'ctrl'
+        }).state('events.single.edit-resources', {
+            url: '/show-resources/:resourceName/',
+            template: '<resources-edit event="ctrl.event" resource-name="ctrl.resourceName"></resources-show>',
+            controller: function(getEvent, $state) {
+                this.event = getEvent.data.event;
+                this.resourceName = $state.params.resourceName;
+            },
+            controllerAs: 'ctrl'
+        }).state('events.single.create-reservation', {
+            url:'/reservation/new',
+            template: '<reservation-create event="ctrl.event"></reservation-create>',
+            controller: function(getEvent) {
+                this.event = getEvent.data.event;
+            },
+            controllerAs: 'ctrl',
+            data: {
+                view: 'CREATE_RESERVATION'
+            }
+        }).state('events.single.import-reservation', {
+            url:'/reservation/import',
+            template: '<reservation-import event="ctrl.event"></reservation-import>',
+            controller: function(getEvent) {
+                this.event = getEvent.data.event;
+            },
+            controllerAs: 'ctrl',
+            data: {
+                view: 'IMPORT_RESERVATION'
+            }
+        }).state('events.single.import-status', {
+            url:'/reservation/import/:requestId/status',
+            template: '<reservation-import-progress event="ctrl.event"></reservation-import-progress>',
+            controller: function(getEvent) {
+                this.event = getEvent.data.event;
+            },
+            controllerAs: 'ctrl',
+            data: {
+                view: 'IMPORT_STATUS'
+            }
+        }).state('events.single.view-reservation', {
+            url:'/reservation/:reservationId?fromCreation',
+            template: '<reservation-view event="ctrl.event" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',
+            controller: function(getEvent, getReservationDescriptor) {
+                this.event = getEvent.data.event;
+                this.reservationDescriptor = getReservationDescriptor.data.data;
+            },
+            controllerAs: 'ctrl',
+            data: {
+                view: 'VIEW_RESERVATION'
+            },
+            resolve: {
+                'getReservationDescriptor': function(AdminReservationService, $stateParams) {
+                    return AdminReservationService.load($stateParams.eventName, $stateParams.reservationId);
                 }
-            }).state('events.single.import-reservation', {
-                url:'/reservation/import',
-                template: '<reservation-import event="ctrl.event"></reservation-import>',
-                controller: function(getEvent) {
-                    this.event = getEvent.data.event;
-                },
-                controllerAs: 'ctrl',
-                data: {
-                    view: 'IMPORT_RESERVATION'
-                }
-            }).state('events.single.import-status', {
-                url:'/reservation/import/:requestId/status',
-                template: '<reservation-import-progress event="ctrl.event"></reservation-import-progress>',
-                controller: function(getEvent) {
-                    this.event = getEvent.data.event;
-                },
-                controllerAs: 'ctrl',
-                data: {
-                    view: 'IMPORT_STATUS'
-                }
-            }).state('events.single.view-reservation', {
-                url:'/reservation/:reservationId?fromCreation',
-                template: '<reservation-view event="ctrl.event" reservation-descriptor="ctrl.reservationDescriptor"></reservation-view>',
-                controller: function(getEvent, getReservationDescriptor) {
-                    this.event = getEvent.data.event;
-                    this.reservationDescriptor = getReservationDescriptor.data.data;
-                },
-                controllerAs: 'ctrl',
-                data: {
-                    view: 'VIEW_RESERVATION'
-                },
-                resolve: {
-                    'getReservationDescriptor': function(AdminReservationService, $stateParams) {
-                        return AdminReservationService.load($stateParams.eventName, $stateParams.reservationId);
-                    }
-                }
-            }).state('extension', {
-                url: '/extension',
-                abstract: true,
-                template: '<div><div data-ui-view></div></div>'
-            }).state('extension.list', {
-                url: '/list',
-                template: '<extension></extension>'
-            }).state('extension.new', {
-                url: '/new',
-                template: '<extension-add-update></extension-add-update>'
-            }).state('extension.edit', {
-                url: '/:path/:name/edit',
-                template: '<extension-add-update to-update="ctrl.toUpdate" close="ctrl.close($script)" dismiss="ctrl.dismiss()"></extension-add-update>',
-                controllerAs: 'ctrl',
-                controller: ['$stateParams', function($stateParams) {
-                    this.toUpdate = {path: $stateParams.path, name: $stateParams.name};
-                }]
-            }).state('extension.log', {
-                url: '/log',
-                template: '<extension-log></extension-log>'
-            });
+            }
+        }).state('extension', {
+            url: '/extension',
+            abstract: true,
+            template: '<div><div data-ui-view></div></div>'
+        }).state('extension.list', {
+            url: '/list',
+            template: '<extension></extension>'
+        }).state('extension.new', {
+            url: '/new',
+            template: '<extension-add-update></extension-add-update>'
+        }).state('extension.edit', {
+            url: '/:path/:name/edit',
+            template: '<extension-add-update to-update="ctrl.toUpdate" close="ctrl.close($script)" dismiss="ctrl.dismiss()"></extension-add-update>',
+            controllerAs: 'ctrl',
+            controller: ['$stateParams', function($stateParams) {
+                this.toUpdate = {path: $stateParams.path, name: $stateParams.name};
+            }]
+        }).state('extension.log', {
+            url: '/log',
+            template: '<extension-log></extension-log>'
+        });
 
         growlProvider.globalPosition('bottom-right');
     });
@@ -554,7 +554,7 @@
 
         //----------
 
-        // 
+        //
         $scope.fieldTypes = FIELD_TYPES;
 
         $scope.addNewTicketField = function(event) {
@@ -631,12 +631,12 @@
             //
         } else {
             $scope.event = {
-                    freeOfCharge: false,
-                    begin: {},
-                    end: {},
-                    metadata: {}
-                };
-                initTicketCategoriesAndAdditionalServices();
+                freeOfCharge: false,
+                begin: {},
+                end: {},
+                metadata: {}
+            };
+            initTicketCategoriesAndAdditionalServices();
         }
 
         $scope.joinTitle = function(titles) {
@@ -1386,7 +1386,7 @@
             $scope.eventHasBeenActivated = false;
             loadData();
         });
-        
+
         $scope.updateSelectionText = function() {
             $rootScope.$emit('CategoryFilterUpdated', $scope.selection);
         };
@@ -1534,7 +1534,7 @@
                 });
             });
         }
-        
+
         $scope.reloadTickets = reloadTickets;
 
         $scope.showReservationModal = function showReservationModal(event, ticket) {
@@ -1623,8 +1623,8 @@
                     }
                 })
                 .then($scope.reloadTickets).then(function() {
-                    $scope.selection = {};
-                });
+                $scope.selection = {};
+            });
         };
 
         $scope.showQrCode = function(ticket, event) {
@@ -2056,7 +2056,7 @@
 
         $q.all([EventService.getSelectedLanguages($stateParams.eventName),
             EventService.getEvent($stateParams.eventName)])
-        .then(function(results) {
+            .then(function(results) {
                 $scope.messages = _.map(results[0].data, function(r) {
                     return {
                         textExample: '{{organizationName}} <{{organizationEmail}}>',
@@ -2076,7 +2076,7 @@
                 $scope.organization = eventDescriptor.organization;
                 $scope.eventName = eventDescriptor.event.shortName;
                 $scope.onlineEvent = eventDescriptor.event.online;
-        });
+            });
 
         $scope.cancel = function() {
             $state.go('events.single.detail', {eventName: $stateParams.eventName});
@@ -2209,7 +2209,7 @@
 
         $rootScope.calcCategoryPricePercent = PriceCalculator.calcCategoryPricePercent;
 
-        $rootScope.calcCategoryPrice = PriceCalculator.calcCategoryPrice; 
+        $rootScope.calcCategoryPrice = PriceCalculator.calcCategoryPrice;
 
         $rootScope.calcPercentage = PriceCalculator.calcPercentage;
 

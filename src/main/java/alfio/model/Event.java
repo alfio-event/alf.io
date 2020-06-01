@@ -61,7 +61,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
     private final String privacyPolicyUrl;
     private final String imageUrl;
     private final String fileBlobId;
-    private final String vanue;
+    private final String venue;
     private final String location;
     private final String latitude;
     private final String longitude;
@@ -85,7 +85,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
                  @Column("format") EventFormat format,
                  @Column("short_name") String shortName,
                  @Column("display_name") String displayName,
-                 @Column("vanue") String vanue,
+                 @Column("venue") String venue,
                  @Column("location") String location,
                  @Column("latitude") String latitude,
                  @Column("longitude") String longitude,
@@ -122,7 +122,7 @@ public class Event extends EventAndOrganizationId implements EventHiddenFieldCon
         final ZoneId zoneId = TimeZone.getTimeZone(timeZone).toZoneId();
 
         this.shortName = shortName;
-        this.vanue = vanue;
+        this.venue = venue;
         this.location = location;
         this.latitude = latitude;
         this.longitude = longitude;
