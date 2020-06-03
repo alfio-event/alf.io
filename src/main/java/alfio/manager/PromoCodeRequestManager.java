@@ -216,7 +216,7 @@ public class PromoCodeRequestManager {
 
         var model = new HashMap<String, Object>();
         model.put("promoCode", pCode.get().getPromoCode());
-        model.put("promoCodeAmount", pCode.get().getDiscountAmount());
+        model.put("promoCodeAmount", pCode.get().getMaxUsage());
         model.put("refEmail",pCode.get().getEmailReference());
         model.put("promoCodeDetails",pCode.get().getDescription());
 
@@ -242,7 +242,7 @@ public class PromoCodeRequestManager {
         var subject = "Promo code activation";
         var textRender = temp.getLeft();
         var htmlRender = temp.getRight();
-        emailMessageRepository.insertWithOrganization(eventId, "", pCode.get().getEmailReference(), null, subject, textRender, htmlRender, "", "", ZonedDateTime.now(UTC),pCode.get().getOrganizationId());
+        emailMessageRepository.insertWithPromoCode(eventId, "", pCode.get().getEmailReference(), null, subject, textRender, htmlRender, "", "", ZonedDateTime.now(UTC),pCode.get().getOrganizationId());
         return true;
     }
 

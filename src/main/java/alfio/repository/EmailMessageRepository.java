@@ -64,6 +64,19 @@ public interface EmailMessageRepository {
                @Bind("timestamp") ZonedDateTime requestTimestamp,
                @Bind("organization_id") int organization_id);
 
+    @Query("insert into email_message (event_id, reservation_id, status, recipient, subject, message, html_message, attachments, checksum, request_ts, email_cc, organization_id_fk) values(:eventId, :reservationId, 'PROMO_CODE', :recipient, :subject, :message, :htmlMessage, :attachments, :checksum, :timestamp, :emailCC, :organization_id)")
+    int insertWithPromoCode(@Bind("eventId") int eventId,
+               @Bind("reservationId") String reservationId,
+               @Bind("recipient") String recipient,
+               @Bind("emailCC") String cc,
+               @Bind("subject") String subject,
+               @Bind("message") String message,
+               @Bind("htmlMessage") String htmlMessage,
+               @Bind("attachments") String attachments,
+               @Bind("checksum") String checksum,
+               @Bind("timestamp") ZonedDateTime requestTimestamp,
+               @Bind("organization_id") int organization_id);
+
     @Query("update email_message set status = :status where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatus(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("status") String status, @Bind("expectedStatuses") List<String> expectedStatuses);
 
@@ -79,6 +92,9 @@ public interface EmailMessageRepository {
 
     @Query("select id from email_message where event_id = :eventId and (status = 'WAITING' or status = 'RETRY') and request_ts <= :date limit 100 for update skip locked")
     List<Integer> loadIdsWaitingForProcessing(@Bind("eventId") int eventId, @Bind("date") Date date);
+
+    @Query("select id from email_message where status = 'PROMO_CODE' and request_ts <= :date limit 100 for update skip locked")
+    List<Integer> loadIdsPromoCodesForProcessing(@Bind("date") Date date);
 
     @Query("update email_message set status = 'SENT', sent_ts = :sentTimestamp where event_id = :eventId and checksum = :checksum and status in (:expectedStatuses)")
     int updateStatusToSent(@Bind("eventId") int eventId, @Bind("checksum") String checksum, @Bind("sentTimestamp") ZonedDateTime sentTimestamp, @Bind("expectedStatuses") List<String> expectedStatuses);

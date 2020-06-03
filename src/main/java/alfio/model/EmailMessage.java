@@ -33,7 +33,7 @@ import java.util.List;
 public class EmailMessage implements Comparable<EmailMessage> {
 
     public enum Status {
-        WAITING, RETRY, IN_PROCESS, SENT, ERROR
+        WAITING, RETRY, IN_PROCESS, SENT, ERROR, PROMO_CODE
     }
     
     private final int id;
