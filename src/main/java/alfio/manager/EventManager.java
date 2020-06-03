@@ -1105,10 +1105,20 @@ public class EventManager {
 
     public boolean updateMetadata(Event event, AlfioMetadata metadata) {
         var updatedMetadata = extensionManager.handleMetadataUpdate(event, metadata);
-        if(updatedMetadata != null) {
-            eventRepository.updateMetadata(updatedMetadata, event.getId());
+        var baseUrl = configurationManager.getFor(ConfigurationKeys.LOCAL_URL_FOR_JITSI_JWT, ConfigurationLevel.organization(event.getOrganizationId())).getValueOrDefault(null);
+        HashMap<String, Object> attr = null;
+        if (baseUrl!=null && !baseUrl.equals("")){
+            attr = new HashMap<String, Object>();
+            attr.putAll(metadata.getAttributes());
+            attr.put("enableJitsiJWT",true);
         }
-        eventRepository.updateMetadata(metadata, event.getId());
+        if(updatedMetadata == null) {
+            updatedMetadata = metadata;
+        }
+        if (attr!= null) {
+            updatedMetadata = new AlfioMetadata(updatedMetadata.getTags(),updatedMetadata.getOnlineConfiguration(),updatedMetadata.getRequirementsDescriptions(),updatedMetadata.getConditionsToBeAccepted(),attr);
+        }
+        eventRepository.updateMetadata(updatedMetadata, event.getId());
         return true;
     }
 

@@ -11,7 +11,11 @@
         </thead>
         <tbody>
         <tr data-ng-repeat="callLink in $ctrl.metadata.onlineConfiguration.callLinks">
-            <td><a ng-href="{{callLink.link}}" target="_blank">{{callLink.link}}</a></td>
+            <td>
+                <a ng-href="{{callLink.link}}" target="_blank">{{callLink.link}}</a>
+                <button class="btn btn-sm btn-success" data-ng-if="callLink.enableJWT" data-ng-click="$ctrl.createRoom(callLink)" title="Start meeting"><i class="fa fa-comments"></i></button>
+                <button class="btn btn-sm btn-warning" data-ng-if="callLink.enableJWT" data-ng-click="$ctrl.createGuestAccess(callLink)" title="Start meeting"><i class="fa fa-comments"></i></button>
+            </td>
             <td data-ng-bind="callLink.validFrom | formatDate"></td>
             <td data-ng-bind="callLink.validTo | formatDate"></td>
         </tr>

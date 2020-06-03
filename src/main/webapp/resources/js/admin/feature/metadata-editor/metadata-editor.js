@@ -67,6 +67,12 @@
                     ctrl.metadata = result.data;
                 })
             });
+        };
+        ctrl.createRoom = function(callLink) {
+            console.log('Create Room', callLink);
+        }
+        ctrl.createGuestAccess = function(callLink) {
+            console.log('Create GuestAccess', callLink);
         }
     }
 
