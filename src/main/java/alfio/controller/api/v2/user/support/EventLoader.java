@@ -92,7 +92,8 @@ public class EventLoader {
                     ENABLE_EU_VAT_DIRECTIVE,
                     COUNTRY_OF_BUSINESS,
 
-                    DISPLAY_TICKETS_LEFT_INDICATOR
+                    DISPLAY_TICKETS_LEFT_INDICATOR,
+                    EVENT_CUSTOM_CSS
                 ), ConfigurationLevel.event(event));
 
                 var locationDescriptor = LocationDescriptor.fromGeoData(event.getFormat(), event.getLatLong(), TimeZone.getTimeZone(event.getTimeZone()), configurationsValues);
@@ -154,12 +155,14 @@ public class EventLoader {
                     availableTicketsCount = ticketRepository.countFreeTicketsForPublicStatistics(event.getId());
                 }
 
+                var customCss = configurationsValues.get(EVENT_CUSTOM_CSS).getValueOrDefault(null);
+
                 return new EventWithAdditionalInfo(event, locationDescriptor.getMapUrl(), organization, descriptions,
                     bankAccount, bankAccountOwner,
                     formattedDates.beginDate, formattedDates.beginTime,
                     formattedDates.endDate, formattedDates.endTime,
                     invoicingConf, captchaConf, assignmentConf, promoConf, analyticsConf,
-                    i18nOverride, availableTicketsCount);
+                    i18nOverride, availableTicketsCount, customCss);
             });
     }
 
