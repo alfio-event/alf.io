@@ -24,7 +24,19 @@
         },
         controller: MetadataEditorCtrl,
         templateUrl: '../resources/js/admin/feature/metadata-editor/metadata-editor-modal.html'
-    });
+    }).component('showlink', {
+          bindings: {
+              title: '<',
+              link: '<',
+              availableLanguages: '<',
+              level: '<',
+              ok: '<',
+              cancel: '<',
+              guest: '<'
+          },
+          controller: MetadataEditorCtrl,
+          templateUrl: '../resources/js/admin/feature/metadata-editor/showlink-modal.html'
+      });
 
     function MetadataViewerCtrl($uibModal, EventService) {
         var ctrl = this;
@@ -70,9 +82,53 @@
         };
         ctrl.createRoom = function(callLink) {
             console.log('Create Room', callLink);
+            EventService.createRoom(ctrl.event.shortName, callLink).then(function (result) {
+                console.log('createRoom result', result);
+                $uibModal.open({
+                        size:'lg',
+                        template:'<showlink title="$ctrl.title" link="$ctrl.link" available-languages="$ctrl.availableLanguages" cancel="$ctrl.cancel" ok="$ctrl.ok"></showlink>',
+                        backdrop: 'static',
+                        controllerAs: '$ctrl',
+                        controller: function($scope) {
+                            this.title = 'Room creation'
+                            this.link = result.data;
+                            this.availableLanguages = ctrl.availableLanguages;
+                            this.ok = function() {
+                                $scope.$close('OK');
+                            };
+                            this.cancel = function() {
+                                $scope.$dismiss();
+                            };
+                        }
+                    }).result.then(function() {
+                        console.log('Game over');
+                    });
+            } )
         }
         ctrl.createGuestAccess = function(callLink) {
             console.log('Create GuestAccess', callLink);
+            EventService.createGuestAccess(ctrl.event.shortName, callLink).then(function (result) {
+                console.log('guestLink', result);
+                $uibModal.open({
+                        size:'lg',
+                        template:'<showlink title="$ctrl.title" link="$ctrl.link" available-languages="$ctrl.availableLanguages" cancel="$ctrl.cancel" ok="$ctrl.ok"></showlink>',
+                        backdrop: 'static',
+                        controllerAs: '$ctrl',
+                        controller: function($scope) {
+                            this.title = 'Enable guest access'
+                            this.link = result.data;
+                            this.availableLanguages = ctrl.availableLanguages;
+                            this.ok = function() {
+                                $scope.$close('OK');
+                            };
+                            this.cancel = function() {
+                                $scope.$dismiss();
+                            };
+                        }
+                    }).result.then(function() {
+                        console.log('Game over guest access');
+                    });
+            } )
         }
     }
 
@@ -87,11 +143,11 @@
         };
         ctrl.$onInit = function() {
             var callLinks;
-            if(!ctrl.metadata.onlineConfiguration) {
+            if(!ctrl.metadata?.onlineConfiguration) {
                 callLinks = [{
                     link: '',
-                    validFrom: moment(ctrl.event.formattedBegin),
-                    validTo: moment(ctrl.event.formattedEnd)
+                    validFrom: moment(ctrl.event?.formattedBegin),
+                    validTo: moment(ctrl.event?.formattedEnd)
                 }];
             } else {
                 callLinks = _.clone(ctrl.metadata.onlineConfiguration.callLinks, true);
@@ -104,7 +160,7 @@
                 }
             });
 
-            ctrl.prerequisites = ctrl.metadata.requirementsDescriptions || {};
+            ctrl.prerequisites = ctrl.metadata?.requirementsDescriptions || {};
             syncSelectedLanguages();
             ctrl.languageDescription = languageDescription(ctrl.availableLanguages);
             ctrl.categoryLevel = ctrl.level === 'category';

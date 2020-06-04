@@ -452,6 +452,12 @@
             retrieveMetadata: function(eventName) {
                 return $http.get('/admin/api/events/'+eventName+'/metadata').error(HttpErrorHandler.handle);
             },
+            createRoom: function(eventName, callLink) {
+                return $http.post('/admin/api/events/'+eventName+'/createRoom', callLink).error(HttpErrorHandler.handle);
+            },
+            createGuestAccess: function(eventName, callLink) {
+                return $http.post('/admin/api/events/'+eventName+'/createGuestAccess', callLink).error(HttpErrorHandler.handle);
+            },
 
             updateCategoryMetadata: function(eventName, categoryId, metadata) {
                 return $http.put('/admin/api/events/'+eventName+'/category/'+categoryId+'/metadata', metadata).error(HttpErrorHandler.handle);

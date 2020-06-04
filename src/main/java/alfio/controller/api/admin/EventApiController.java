@@ -713,6 +713,26 @@ public class EventApiController {
             .map(event -> eventManager.updateMetadata(event, metadataModification.toMetadataObj())));
     }
 
+    @PostMapping("/events/{eventName}/createRoom")
+    public ResponseEntity<String> createRoom(@PathVariable("eventName") String eventName,
+                                                  @RequestBody Object callLink,
+                                                  Principal principal) {
+//        if(!callLink.isValid()) {
+//            return ResponseEntity.badRequest().build();
+//        }
+        return ResponseEntity.of(Optional.of("Stanza create ok"));
+    }
+
+    @PostMapping("/events/{eventName}/createGuestAccess")
+    public ResponseEntity<String> createGuestAccess(@PathVariable("eventName") String eventName,
+                                             @RequestBody Object callLink,
+                                             Principal principal) {
+//        if(!callLink.isValid()) {
+//            return ResponseEntity.badRequest().build();
+//        }
+        return ResponseEntity.of(Optional.of("Guest access create ok"));
+    }
+
     @GetMapping("/events/{eventName}/metadata")
     public ResponseEntity<AlfioMetadata> loadMetadata(@PathVariable("eventName") String eventName,
                                                       Principal principal) {

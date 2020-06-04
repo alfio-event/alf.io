@@ -1,0 +1,14 @@
+<div class="modal-header">
+    <h2 class="modal-title">{{$ctrl.title}}</h2>
+</div>
+<div class="modal-body">
+<!--    <div class="page-header">-->
+        <h3>Use the following link</h3>
+        <a ng-href="{{$ctrl.link}}">{{$ctrl.link}}</a>
+<!--    </div>-->
+</div>
+<div class="modal-footer">
+    <div class="pull-right">
+        <button type="button" title="Close this window" class="btn btn-default" data-ng-click="$ctrl.cancel()" style="margin-bottom: 10px"><i class="fa fa-check"></i> OK</button>
+    </div>
+</div>
