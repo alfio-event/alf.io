@@ -22,7 +22,6 @@ import alfio.controller.api.v2.user.support.EventLoader;
 import alfio.manager.i18n.MessageSourceManager;
 import alfio.manager.system.ConfigurationLevel;
 import alfio.manager.system.ConfigurationManager;
-import alfio.manager.user.UserManager;
 import alfio.model.ContentLanguage;
 import alfio.model.EventDescription;
 import alfio.model.FileBlobMetadata;
@@ -68,8 +67,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static alfio.model.system.ConfigurationKeys.ENABLE_CAPTCHA_FOR_LOGIN;
-import static alfio.model.system.ConfigurationKeys.RECAPTCHA_API_KEY;
+import static alfio.model.system.ConfigurationKeys.*;
 
 @Controller
 @AllArgsConstructor
@@ -100,7 +98,6 @@ public class IndexController {
     private final ConfigurationManager configurationManager;
     private final EventRepository eventRepository;
     private final Environment environment;
-    private final UserManager userManager;
     private final TemplateManager templateManager;
     private final FileUploadRepository fileUploadRepository;
     private final MessageSourceManager messageSourceManager;
@@ -173,11 +170,18 @@ public class IndexController {
             }
         } else {
             try (var os = response.getOutputStream(); var osw = new OutputStreamWriter(os, StandardCharsets.UTF_8)) {
+                var baseCustomCss = configurationManager.getForSystem(BASE_CUSTOM_CSS).getValueOrDefault(null);
                 var idx = INDEX_PAGE.cloneNode(true);
                 idx.getElementsByTagName("script").forEach(element -> element.setAttribute("nonce", nonce));
                 var head = idx.getElementsByTagName("head").get(0);
                 head.appendChild(buildScripTag(Json.toJson(configurationManager.getInfo(session)), "application/json", "preload-info", null));
                 head.appendChild(buildScripTag(Json.toJson(messageSourceManager.getBundleAsMap("alfio.i18n.public", true, "en")), "application/json", "preload-bundle", "en"));
+                if (baseCustomCss != null) {
+                    var style = new Element("style");
+                    style.setAttribute("type", "text/css");
+                    style.appendChild(new Text(baseCustomCss));
+                    head.appendChild(style);
+                }
                 if (eventShortName != null) {
                     eventLoader.loadEventInfo(eventShortName, session).ifPresent(ev -> {
                         head.appendChild(buildScripTag(Json.toJson(ev), "application/json", "preload-event", eventShortName));
